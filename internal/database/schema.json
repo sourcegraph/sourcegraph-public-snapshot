@@ -63,8 +63,20 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.changesets_computed_state_ensure()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n\n    NEW.computed_state = CASE\n        WHEN NEW.reconciler_state = 'errored' THEN 'RETRYING'\n        WHEN NEW.reconciler_state = 'failed' THEN 'FAILED'\n        WHEN NEW.reconciler_state = 'scheduled' THEN 'SCHEDULED'\n        WHEN NEW.reconciler_state != 'completed' THEN 'PROCESSING'\n        WHEN NEW.publication_state = 'UNPUBLISHED' THEN 'UNPUBLISHED'\n        ELSE NEW.external_state\n    END AS computed_state;\n\n    RETURN NEW;\nEND $function$\n"
     },
     {
+      "Name": "copy_to_sync_jobs_history_on_update",
+      "Definition": "CREATE OR REPLACE FUNCTION public.copy_to_sync_jobs_history_on_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    IF NEW.user_id IS NOT NULL AND NEW.finished_at IS NOT NULL AND (OLD.finished_at IS NULL OR NEW.finished_at \u003e OLD.finished_at) THEN\n    \tINSERT INTO perms_sync_jobs_history(user_id, updated_at)\n            VALUES (NEW.user_id, NEW.finished_at)\n            ON CONFLICT(user_id) DO UPDATE SET updated_at = EXCLUDED.updated_at;\n    END IF;\n    IF NEW.repository_id IS NOT NULL AND NEW.finished_at IS NOT NULL AND (OLD.finished_at IS NULL OR NEW.finished_at \u003e OLD.finished_at) THEN\n    \tINSERT INTO perms_sync_jobs_history(repo_id, updated_at)\n            VALUES (NEW.repository_id, NEW.finished_at)\n            ON CONFLICT(repo_id) DO UPDATE SET updated_at = EXCLUDED.updated_at;\n    END IF;\n    RETURN NULL;\n  END\n$function$\n"
+    },
+    {
       "Name": "delete_batch_change_reference_on_changesets",
       "Definition": "CREATE OR REPLACE FUNCTION public.delete_batch_change_reference_on_changesets()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE\n          changesets\n        SET\n          batch_change_ids = changesets.batch_change_ids - OLD.id::text\n        WHERE\n          changesets.batch_change_ids ? OLD.id::text;\n\n        RETURN OLD;\n    END;\n$function$\n"
+    },
+    {
+      "Name": "delete_perms_sync_jobs_history_on_repo_soft_delete",
+      "Definition": "CREATE OR REPLACE FUNCTION public.delete_perms_sync_jobs_history_on_repo_soft_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN\n    \tDELETE FROM perms_sync_jobs_history WHERE repo_id = OLD.id;\n    END IF;\n    RETURN NULL;\n  END\n$function$\n"
+    },
+    {
+      "Name": "delete_perms_sync_jobs_history_on_user_soft_delete",
+      "Definition": "CREATE OR REPLACE FUNCTION public.delete_perms_sync_jobs_history_on_user_soft_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN\n    \tDELETE FROM perms_sync_jobs_history WHERE user_id = OLD.id;\n    END IF;\n    RETURN NULL;\n  END\n$function$\n"
     },
     {
       "Name": "delete_repo_ref_on_external_service_repos",
@@ -900,6 +912,15 @@
     },
     {
       "Name": "permissions_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "perms_sync_jobs_history_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -18360,7 +18381,12 @@
           "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
         }
       ],
-      "Triggers": []
+      "Triggers": [
+        {
+          "Name": "trig_copy_to_sync_jobs_history_on_update",
+          "Definition": "CREATE TRIGGER trig_copy_to_sync_jobs_history_on_update AFTER UPDATE ON permission_sync_jobs FOR EACH ROW EXECUTE FUNCTION copy_to_sync_jobs_history_on_update()"
+        }
+      ]
     },
     {
       "Name": "permissions",
@@ -18455,6 +18481,133 @@
           "RefTableName": "",
           "IsDeferrable": false,
           "ConstraintDefinition": "CHECK (namespace \u003c\u003e ''::text)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "perms_sync_jobs_history",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('perms_sync_jobs_history_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "perms_sync_jobs_history_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX perms_sync_jobs_history_pkey ON perms_sync_jobs_history USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "perms_sync_jobs_history_repo_id_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX perms_sync_jobs_history_repo_id_key ON perms_sync_jobs_history USING btree (repo_id)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (repo_id)"
+        },
+        {
+          "Name": "perms_sync_jobs_history_user_id_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX perms_sync_jobs_history_user_id_key ON perms_sync_jobs_history USING btree (user_id)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (user_id)"
+        },
+        {
+          "Name": "perms_sync_jobs_history_sorted_updated_at_repo_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX perms_sync_jobs_history_sorted_updated_at_repo_id ON perms_sync_jobs_history USING btree (updated_at, repo_id) WHERE repo_id IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "perms_sync_jobs_history_sorted_updated_at_user_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX perms_sync_jobs_history_sorted_updated_at_user_id ON perms_sync_jobs_history USING btree (updated_at, user_id) WHERE user_id IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "perms_sync_jobs_history_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "perms_sync_jobs_history_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -19774,6 +19927,10 @@
         {
           "Name": "trig_create_zoekt_repo_on_repo_insert",
           "Definition": "CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo()"
+        },
+        {
+          "Name": "trig_delete_perms_sync_jobs_history_on_repo_soft_delete",
+          "Definition": "CREATE TRIGGER trig_delete_perms_sync_jobs_history_on_repo_soft_delete AFTER UPDATE ON repo FOR EACH ROW EXECUTE FUNCTION delete_perms_sync_jobs_history_on_repo_soft_delete()"
         },
         {
           "Name": "trig_delete_repo_ref_on_external_service_repos",
@@ -23547,6 +23704,10 @@
         }
       ],
       "Triggers": [
+        {
+          "Name": "trig_delete_perms_sync_jobs_history_on_user_soft_delete",
+          "Definition": "CREATE TRIGGER trig_delete_perms_sync_jobs_history_on_user_soft_delete AFTER UPDATE ON users FOR EACH ROW EXECUTE FUNCTION delete_perms_sync_jobs_history_on_user_soft_delete()"
+        },
         {
           "Name": "trig_delete_user_repo_permissions_on_user_soft_delete",
           "Definition": "CREATE TRIGGER trig_delete_user_repo_permissions_on_user_soft_delete AFTER UPDATE ON users FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_user_soft_delete()"

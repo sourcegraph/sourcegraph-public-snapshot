@@ -2759,6 +2759,8 @@ Foreign-key constraints:
     "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     "permission_sync_jobs_triggered_by_user_id_fkey" FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     "permission_sync_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+Triggers:
+    trig_copy_to_sync_jobs_history_on_update AFTER UPDATE ON permission_sync_jobs FOR EACH ROW EXECUTE FUNCTION copy_to_sync_jobs_history_on_update()
 
 ```
 
@@ -2786,6 +2788,26 @@ Check constraints:
     "namespace_not_blank" CHECK (namespace <> ''::text)
 Referenced by:
     TABLE "role_permissions" CONSTRAINT "role_permissions_permission_id_fkey" FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.perms_sync_jobs_history"
+```
+   Column   |           Type           | Collation | Nullable |                       Default                       
+------------+--------------------------+-----------+----------+-----------------------------------------------------
+ id         | integer                  |           | not null | nextval('perms_sync_jobs_history_id_seq'::regclass)
+ user_id    | integer                  |           |          | 
+ repo_id    | integer                  |           |          | 
+ updated_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "perms_sync_jobs_history_pkey" PRIMARY KEY, btree (id)
+    "perms_sync_jobs_history_repo_id_key" UNIQUE CONSTRAINT, btree (repo_id)
+    "perms_sync_jobs_history_user_id_key" UNIQUE CONSTRAINT, btree (user_id)
+    "perms_sync_jobs_history_sorted_updated_at_repo_id" btree (updated_at, repo_id) WHERE repo_id IS NOT NULL
+    "perms_sync_jobs_history_sorted_updated_at_user_id" btree (updated_at, user_id) WHERE user_id IS NOT NULL
+Foreign-key constraints:
+    "perms_sync_jobs_history_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    "perms_sync_jobs_history_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 
 ```
 
@@ -2978,6 +3000,7 @@ Referenced by:
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "perms_sync_jobs_history" CONSTRAINT "perms_sync_jobs_history_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -2986,6 +3009,7 @@ Referenced by:
     TABLE "zoekt_repos" CONSTRAINT "zoekt_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo()
+    trig_delete_perms_sync_jobs_history_on_repo_soft_delete AFTER UPDATE ON repo FOR EACH ROW EXECUTE FUNCTION delete_perms_sync_jobs_history_on_repo_soft_delete()
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
     trig_delete_user_repo_permissions_on_repo_soft_delete AFTER UPDATE ON repo FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_repo_soft_delete()
     trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_delete()
@@ -3654,6 +3678,7 @@ Referenced by:
     TABLE "outbound_webhooks" CONSTRAINT "outbound_webhooks_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_triggered_by_user_id_fkey" FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "perms_sync_jobs_history" CONSTRAINT "perms_sync_jobs_history_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "product_subscriptions" CONSTRAINT "product_subscriptions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "registry_extension_releases" CONSTRAINT "registry_extension_releases_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_user_id_fkey" FOREIGN KEY (publisher_user_id) REFERENCES users(id)
@@ -3677,6 +3702,7 @@ Referenced by:
     TABLE "webhooks" CONSTRAINT "webhooks_created_by_user_id_fkey" FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "webhooks" CONSTRAINT "webhooks_updated_by_user_id_fkey" FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 Triggers:
+    trig_delete_perms_sync_jobs_history_on_user_soft_delete AFTER UPDATE ON users FOR EACH ROW EXECUTE FUNCTION delete_perms_sync_jobs_history_on_user_soft_delete()
     trig_delete_user_repo_permissions_on_user_soft_delete AFTER UPDATE ON users FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_user_soft_delete()
     trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change()
     trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE FUNCTION soft_delete_user_reference_on_external_service()

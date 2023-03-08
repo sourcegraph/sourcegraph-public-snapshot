@@ -115,6 +115,23 @@ CREATE FUNCTION changesets_computed_state_ensure() RETURNS trigger
     RETURN NEW;
 END $$;
 
+CREATE FUNCTION copy_to_sync_jobs_history_on_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    IF NEW.user_id IS NOT NULL AND NEW.finished_at IS NOT NULL AND (OLD.finished_at IS NULL OR NEW.finished_at > OLD.finished_at) THEN
+    	INSERT INTO perms_sync_jobs_history(user_id, updated_at)
+            VALUES (NEW.user_id, NEW.finished_at)
+            ON CONFLICT(user_id) DO UPDATE SET updated_at = EXCLUDED.updated_at;
+    END IF;
+    IF NEW.repository_id IS NOT NULL AND NEW.finished_at IS NOT NULL AND (OLD.finished_at IS NULL OR NEW.finished_at > OLD.finished_at) THEN
+    	INSERT INTO perms_sync_jobs_history(repo_id, updated_at)
+            VALUES (NEW.repository_id, NEW.finished_at)
+            ON CONFLICT(repo_id) DO UPDATE SET updated_at = EXCLUDED.updated_at;
+    END IF;
+    RETURN NULL;
+  END
+$$;
+
 CREATE FUNCTION delete_batch_change_reference_on_changesets() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -128,6 +145,26 @@ CREATE FUNCTION delete_batch_change_reference_on_changesets() RETURNS trigger
 
         RETURN OLD;
     END;
+$$;
+
+CREATE FUNCTION delete_perms_sync_jobs_history_on_repo_soft_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN
+    	DELETE FROM perms_sync_jobs_history WHERE repo_id = OLD.id;
+    END IF;
+    RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION delete_perms_sync_jobs_history_on_user_soft_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN
+    	DELETE FROM perms_sync_jobs_history WHERE user_id = OLD.id;
+    END IF;
+    RETURN NULL;
+  END
 $$;
 
 CREATE FUNCTION delete_repo_ref_on_external_service_repos() RETURNS trigger
@@ -3479,6 +3516,23 @@ CREATE SEQUENCE permissions_id_seq
 
 ALTER SEQUENCE permissions_id_seq OWNED BY permissions.id;
 
+CREATE TABLE perms_sync_jobs_history (
+    id integer NOT NULL,
+    user_id integer,
+    repo_id integer,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE perms_sync_jobs_history_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE perms_sync_jobs_history_id_seq OWNED BY perms_sync_jobs_history.id;
+
 CREATE TABLE phabricator_repos (
     id integer NOT NULL,
     callsign citext NOT NULL,
@@ -4445,6 +4499,8 @@ ALTER TABLE ONLY permission_sync_jobs ALTER COLUMN id SET DEFAULT nextval('permi
 
 ALTER TABLE ONLY permissions ALTER COLUMN id SET DEFAULT nextval('permissions_id_seq'::regclass);
 
+ALTER TABLE ONLY perms_sync_jobs_history ALTER COLUMN id SET DEFAULT nextval('perms_sync_jobs_history_id_seq'::regclass);
+
 ALTER TABLE ONLY phabricator_repos ALTER COLUMN id SET DEFAULT nextval('phabricator_repos_id_seq'::regclass);
 
 ALTER TABLE ONLY registry_extension_releases ALTER COLUMN id SET DEFAULT nextval('registry_extension_releases_id_seq'::regclass);
@@ -4813,6 +4869,15 @@ ALTER TABLE ONLY permission_sync_jobs
 
 ALTER TABLE ONLY permissions
     ADD CONSTRAINT permissions_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY perms_sync_jobs_history
+    ADD CONSTRAINT perms_sync_jobs_history_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY perms_sync_jobs_history
+    ADD CONSTRAINT perms_sync_jobs_history_repo_id_key UNIQUE (repo_id);
+
+ALTER TABLE ONLY perms_sync_jobs_history
+    ADD CONSTRAINT perms_sync_jobs_history_user_id_key UNIQUE (user_id);
 
 ALTER TABLE ONLY phabricator_repos
     ADD CONSTRAINT phabricator_repos_pkey PRIMARY KEY (id);
@@ -5282,6 +5347,10 @@ CREATE INDEX permission_sync_jobs_user_id ON permission_sync_jobs USING btree (u
 
 CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btree (namespace, action);
 
+CREATE INDEX perms_sync_jobs_history_sorted_updated_at_repo_id ON perms_sync_jobs_history USING btree (updated_at, repo_id) WHERE (repo_id IS NOT NULL);
+
+CREATE INDEX perms_sync_jobs_history_sorted_updated_at_user_id ON perms_sync_jobs_history USING btree (updated_at, user_id) WHERE (user_id IS NOT NULL);
+
 CREATE INDEX process_after_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (process_after);
 
 CREATE INDEX registry_extension_releases_registry_extension_id ON registry_extension_releases USING btree (registry_extension_id, release_tag, created_at DESC) WHERE (deleted_at IS NULL);
@@ -5408,9 +5477,15 @@ CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON chang
 
 CREATE TRIGGER insert_codeintel_path_ranks_statistics BEFORE INSERT ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();
 
+CREATE TRIGGER trig_copy_to_sync_jobs_history_on_update AFTER UPDATE ON permission_sync_jobs FOR EACH ROW EXECUTE FUNCTION copy_to_sync_jobs_history_on_update();
+
 CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo();
 
 CREATE TRIGGER trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE FUNCTION delete_batch_change_reference_on_changesets();
+
+CREATE TRIGGER trig_delete_perms_sync_jobs_history_on_repo_soft_delete AFTER UPDATE ON repo FOR EACH ROW EXECUTE FUNCTION delete_perms_sync_jobs_history_on_repo_soft_delete();
+
+CREATE TRIGGER trig_delete_perms_sync_jobs_history_on_user_soft_delete AFTER UPDATE ON users FOR EACH ROW EXECUTE FUNCTION delete_perms_sync_jobs_history_on_user_soft_delete();
 
 CREATE TRIGGER trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos();
 
@@ -5821,6 +5896,12 @@ ALTER TABLE ONLY permission_sync_jobs
 
 ALTER TABLE ONLY permission_sync_jobs
     ADD CONSTRAINT permission_sync_jobs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY perms_sync_jobs_history
+    ADD CONSTRAINT perms_sync_jobs_history_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY perms_sync_jobs_history
+    ADD CONSTRAINT perms_sync_jobs_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY product_licenses
     ADD CONSTRAINT product_licenses_product_subscription_id_fkey FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id);
