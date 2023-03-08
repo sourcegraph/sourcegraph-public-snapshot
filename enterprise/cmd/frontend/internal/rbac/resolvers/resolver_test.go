@@ -9,7 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
-	"github.com/tj/assert"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac/resolvers/apitest"
@@ -36,11 +35,11 @@ func TestDeleteRole(t *testing.T) {
 
 	r := &Resolver{logger: logger, db: db}
 	s, err := newSchema(db, r)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// create a new role
 	role, err := db.Roles().Create(ctx, "TEST-ROLE", false)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("as non site-admin", func(t *testing.T) {
 		roleID := string(gql.MarshalRoleID(role.ID))
@@ -103,7 +102,7 @@ func TestCreateRole(t *testing.T) {
 
 	r := &Resolver{logger: logger, db: db}
 	s, err := newSchema(db, r)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	perm, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
 		Namespace: types.BatchChangesNamespace,
