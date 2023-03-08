@@ -7,9 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/v41/github"
 	"github.com/honeycombio/libhoney-go"
@@ -19,7 +17,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/okay"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -108,12 +105,6 @@ func main() {
 		}
 	}
 
-	// Metrics, if token is empty, metrics will be logged at DEBUG level
-	err = reportDeploymentMetrics(report, flags.OkayHQToken, flags.DryRun)
-	if err != nil {
-		logger.Fatal("failed to generate metrics", log.Error(err))
-	}
-
 	// Notifcations
 	slc := slack.New(flags.SlackToken)
 	teammates := team.NewTeammateResolver(ghc, slc)
@@ -167,50 +158,6 @@ func getRevision() (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(output)), nil
-}
-
-func reportDeploymentMetrics(report *DeploymentReport, token string, dryRun bool) error {
-	if dryRun {
-		return nil
-	}
-
-	deployTime, err := time.Parse(time.RFC822Z, report.DeployedAt)
-	if err != nil {
-		return errors.Wrap(err, "r.DeployedAt")
-	}
-
-	okayCli := okay.NewClient(http.DefaultClient, token)
-
-	for _, pr := range report.PullRequests {
-		elapsed := deployTime.Sub(pr.GetMergedAt())
-		event := okay.Event{
-			Name:        "deployment",
-			Timestamp:   deployTime,
-			GitHubLogin: pr.GetUser().GetLogin(),
-			UniqueKey:   []string{"unique_key"},
-			OkayURL:     pr.GetHTMLURL(),
-			Properties: map[string]string{
-				"environment":           report.Environment,
-				"pull_request.number":   strconv.Itoa(pr.GetNumber()),
-				"pull_request.title":    pr.GetTitle(),
-				"pull_request.revision": pr.GetMergeCommitSHA(),
-				"unique_key":            fmt.Sprintf("%s,%d,%s", report.Environment, pr.GetNumber(), strings.Join(report.Services, ",")),
-			},
-			Metrics: map[string]okay.Metric{
-				"elapsed": {
-					Type:  "durationMs",
-					Value: float64(elapsed / time.Millisecond),
-				},
-			},
-			Labels: report.Services,
-		}
-
-		err := okayCli.Push(&event)
-		if err != nil {
-			return err
-		}
-	}
-	return okayCli.Flush()
 }
 
 func reportDeployTrace(report *DeploymentReport, token string, dryRun bool) (string, error) {

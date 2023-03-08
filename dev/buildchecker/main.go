@@ -299,9 +299,6 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 	if historyFlags.honeycombDataset != "" {
 		reporters = append(reporters, reportToHoneycomb)
 	}
-	if historyFlags.okayHQToken != "" {
-		reporters = append(reporters, reportToOkayHQ)
-	}
 	if historyFlags.slackReportWebHook != "" {
 		reporters = append(reporters, reportToSlack)
 	}
