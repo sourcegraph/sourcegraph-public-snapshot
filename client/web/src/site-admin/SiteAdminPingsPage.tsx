@@ -416,9 +416,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         </ul>
                     </li>
                 </ul>
-                {updatesDisabled && (
-                    <Text>All telemetry is disabled.</Text>
-                )}
+                {updatesDisabled && <Text>All telemetry is disabled.</Text>}
             </Container>
         </div>
     )
