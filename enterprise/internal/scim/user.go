@@ -144,12 +144,12 @@ func updateUser(ctx context.Context, getTx getDBFunc, oldUser *types.UserForSCIM
 			// We only need to ensure that the email update is successful if it is the primary email
 			isPrimaryEmail := updates.resetPrimaryTo != nil && strings.EqualFold(*updates.resetPrimaryTo, newEmail)
 			db := getTx(isPrimaryEmail)
-			addErr := db.WithTransact(ctx, func(tx database.DB) error {
-				err := db.UserEmails().Add(ctx, oldUser.ID, newEmail, nil)
+			addErr := db.WithTransact(ctx, func(addTx database.DB) error {
+				err := addTx.UserEmails().Add(ctx, oldUser.ID, newEmail, nil)
 				if err != nil {
 					return err
 				}
-				return db.UserEmails().SetVerified(ctx, oldUser.ID, newEmail, true)
+				return addTx.UserEmails().SetVerified(ctx, oldUser.ID, newEmail, true)
 
 			})
 			// Only return this error if this was the new primary
