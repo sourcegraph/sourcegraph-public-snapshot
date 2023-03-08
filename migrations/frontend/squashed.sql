@@ -5143,8 +5143,6 @@ CREATE INDEX event_logs_timestamp ON event_logs USING btree ("timestamp");
 
 CREATE INDEX event_logs_timestamp_at_utc ON event_logs USING btree (date(timezone('UTC'::text, "timestamp")));
 
-CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
-
 CREATE INDEX event_logs_user_id_name ON event_logs USING btree (user_id, name);
 
 CREATE INDEX event_logs_user_id_timestamp ON event_logs USING btree (user_id, "timestamp");
