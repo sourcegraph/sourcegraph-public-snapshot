@@ -109,7 +109,7 @@ func (r *localDirectoryResolver) Repositories() ([]LocalRepositoryResolver, erro
 	for _, repo := range repos {
 		local = append(local, localRepositoryResolver{
 			name: repo.Name,
-			path: filepath.Join(r.path, repo.Name), // TODO(keegan) this is not always correct
+			path: repo.AbsFilePath,
 		})
 	}
 
