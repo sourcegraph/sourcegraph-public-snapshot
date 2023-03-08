@@ -4,6 +4,9 @@ import classNames from 'classnames'
 
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { BuildSearchQueryURLParameters, QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { appendFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { getOwnerMatchUrl, OwnerMatch } from '@sourcegraph/shared/src/search/stream'
 import { Link } from '@sourcegraph/wildcard'
 
@@ -12,20 +15,27 @@ import { ResultContainer } from './ResultContainer'
 import styles from './OwnerSearchResult.module.scss'
 import resultStyles from './SearchResult.module.scss'
 
-export interface PersonSearchResultProps {
+export interface OwnerSearchResultProps extends Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     result: OwnerMatch
     onSelect: () => void
     containerClassName?: string
     as?: React.ElementType
     index: number
+
+    // If not provided, the result will not contain a link to the owner's files.
+    queryState?: QueryState
+    buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
 }
 
-export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps> = ({
+export const OwnerSearchResult: React.FunctionComponent<OwnerSearchResultProps> = ({
     result,
     onSelect,
     containerClassName,
     as,
     index,
+    queryState,
+    buildSearchURLQueryFromQueryState,
+    selectedSearchContextSpec,
 }) => {
     const displayName = useMemo(() => {
         let displayName = ''
@@ -46,6 +56,30 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
         }
         return url
     }, [result])
+
+    const fileSearchLink = useMemo(() => {
+        if (!queryState || !buildSearchURLQueryFromQueryState) {
+            return ''
+        }
+
+        const handle = result.handle || result.email
+        if (!handle) {
+            return ''
+        }
+
+        let query = queryState.query
+        const selectFilter = findFilter(queryState.query, 'select', FilterKind.Global)
+        if (selectFilter && selectFilter.value?.value === 'file.owners') {
+            query = omitFilter(query, selectFilter)
+        }
+        query = appendFilter(query, 'file', `has.owner(${handle})`)
+
+        const searchParams = buildSearchURLQueryFromQueryState({
+            query,
+            searchContextSpec: selectedSearchContextSpec,
+        })
+        return `/search?${searchParams}`
+    }, [buildSearchURLQueryFromQueryState, queryState, result.email, result.handle, selectedSearchContextSpec])
 
     const title = (
         <div className="d-flex align-items-center">
@@ -93,9 +127,11 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
             >
                 <small className={resultStyles.matchType}>
                     <span>Owner match</span>
-                    <Link to="" className={styles.filesLink}>
-                        Which files?
-                    </Link>
+                    {fileSearchLink && (
+                        <Link to={fileSearchLink} className={styles.filesLink}>
+                            Which files?
+                        </Link>
+                    )}
                 </small>
                 {result.type === 'person' && !result.user && (
                     <>
