@@ -11,7 +11,6 @@ import open from 'open'
 
 import { readLine, cacheFolder } from './util'
 
-
 export interface Installed {
     client_id?: string
     client_secret?: string
