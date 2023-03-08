@@ -1151,7 +1151,6 @@ Indexes:
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
     "event_logs_timestamp_at_utc" btree (date(timezone('UTC'::text, "timestamp")))
-    "event_logs_user_id" btree (user_id)
     "event_logs_user_id_name" btree (user_id, name)
     "event_logs_user_id_timestamp" btree (user_id, "timestamp")
 Check constraints:
