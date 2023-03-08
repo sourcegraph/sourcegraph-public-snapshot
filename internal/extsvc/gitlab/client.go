@@ -172,14 +172,14 @@ type Client struct {
 	// The URN of the external service that the client is derived from.
 	urn string
 
-	baseURL                *url.URL
-	httpClient             httpcli.Doer
-	projCache              *rcache.Cache
-	Auth                   auth.Authenticator
-	externalRateLimiter    *ratelimit.Monitor
-	internalRateLimiter    *ratelimit.InstrumentedLimiter
-	waitForRateLimit       bool
-	maxNumRateLimitRetries int
+	baseURL             *url.URL
+	httpClient          httpcli.Doer
+	projCache           *rcache.Cache
+	Auth                auth.Authenticator
+	externalRateLimiter *ratelimit.Monitor
+	internalRateLimiter *ratelimit.InstrumentedLimiter
+	waitForRateLimit    bool
+	maxRateLimitRetries int
 }
 
 // NewClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -208,15 +208,15 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
 	return &Client{
-		urn:                    p.urn,
-		baseURL:                p.baseURL,
-		httpClient:             p.httpClient,
-		projCache:              projCache,
-		Auth:                   a,
-		internalRateLimiter:    rl,
-		externalRateLimiter:    rlm,
-		waitForRateLimit:       true,
-		maxNumRateLimitRetries: 2,
+		urn:                 p.urn,
+		baseURL:             p.baseURL,
+		httpClient:          p.httpClient,
+		projCache:           projCache,
+		Auth:                a,
+		internalRateLimiter: rl,
+		externalRateLimiter: rlm,
+		waitForRateLimit:    true,
+		maxRateLimitRetries: 2,
 	}
 }
 
@@ -249,7 +249,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 
 	// GitLab responds with a 429 Too Many Requests if rate limits are exceeded
 	numRetries := 0
-	for c.waitForRateLimit && numRetries < c.maxNumRateLimitRetries && respCode == http.StatusTooManyRequests {
+	for c.waitForRateLimit && numRetries < c.maxRateLimitRetries && respCode == http.StatusTooManyRequests {
 		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
 			respHeader, respCode, err = c.doWithBaseURL(ctx, req, result)
 			numRetries += 1

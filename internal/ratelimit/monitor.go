@@ -173,8 +173,11 @@ func (c *Monitor) calcRateLimitWaitTime(cost int) time.Duration {
 		}
 	}
 
-	// If the external rate limit is unknown, or if there are still enough remaining tokens, we don't wait.
-	if !c.known || c.remaining >= cost {
+	// If the external rate limit is unknown,
+	// or if there are still enough remaining tokens,
+	// or if the cost is greater than the actual rate limit (in which case there will never be enough tokens),
+	// we don't wait.
+	if !c.known || c.remaining >= cost || cost > c.limit {
 		return time.Duration(0)
 	}
 
@@ -192,6 +195,11 @@ func (c *Monitor) calcRateLimitWaitTime(cost int) time.Duration {
 // and sleeps an amount of time recommended by the external rate limiter.
 // It returns true if rate limiting was applying, and false if not.
 // This can be used to determine whether or not a request should be retried.
+//
+// The cost parameter can be used to check for a minimum number of available rate limit tokens.
+// For normal REST requests, this can usually be set to 1. For GraphQL requests, rate limit costs
+// can be more expensive and a different cost can be used. If there aren't enough rate limit
+// tokens available, then the function will sleep until the tokens reset.
 func (c *Monitor) WaitForRateLimit(ctx context.Context, cost int) bool {
 	sleepDuration := c.calcRateLimitWaitTime(cost)
 

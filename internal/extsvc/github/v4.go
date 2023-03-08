@@ -59,8 +59,8 @@ type V4Client struct {
 	// waitForRateLimit determines whether or not the client will wait and retry a request if external rate limits are encountered
 	waitForRateLimit bool
 
-	// maxNumRateLimitRetries determines how many times we retry requests due to rate limits
-	maxNumRateLimitRetries int
+	// maxRateLimitRetries determines how many times we retry requests due to rate limits
+	maxRateLimitRetries int
 }
 
 // NewV4Client creates a new GitHub GraphQL API client with an optional default
@@ -97,16 +97,16 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
-		log:                    log.Scoped("github.v4", "github v4 client"),
-		urn:                    urn,
-		apiURL:                 apiURL,
-		githubDotCom:           urlIsGitHubDotCom(apiURL),
-		auth:                   a,
-		httpClient:             cli,
-		internalRateLimiter:    rl,
-		externalRateLimiter:    rlm,
-		waitForRateLimit:       true,
-		maxNumRateLimitRetries: 2,
+		log:                 log.Scoped("github.v4", "github v4 client"),
+		urn:                 urn,
+		apiURL:              apiURL,
+		githubDotCom:        urlIsGitHubDotCom(apiURL),
+		auth:                a,
+		httpClient:          cli,
+		internalRateLimiter: rl,
+		externalRateLimiter: rlm,
+		waitForRateLimit:    true,
+		maxRateLimitRetries: 2,
 	}
 }
 
@@ -171,7 +171,7 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 	apiError := &APIError{}
 	numRetries := 0
 
-	for c.waitForRateLimit && err != nil && numRetries < c.maxNumRateLimitRetries &&
+	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries &&
 		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
 		if c.externalRateLimiter.WaitForRateLimit(ctx, cost) {
 			_, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, &respBody)
