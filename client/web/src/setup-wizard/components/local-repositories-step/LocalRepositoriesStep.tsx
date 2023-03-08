@@ -3,22 +3,31 @@ import { FC, HTMLAttributes, useState, useEffect } from 'react'
 import { mdiInformationOutline, mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
-import { useQuery } from '@sourcegraph/http-client'
+import { useQuery, useMutation } from '@sourcegraph/http-client'
 import { Button, Container, Icon, Input, Text } from '@sourcegraph/wildcard'
 
-import { GetCodeHostsResult, ExternalServiceKind, RepositoriesResult } from '../../../graphql-operations'
+import {
+    GetCodeHostsResult,
+    ExternalServiceKind,
+    RepositoriesResult,
+    AddRemoteCodeHostResult,
+    AddRemoteCodeHostVariables,
+} from '../../../graphql-operations'
 import { ProgressBar } from '../ProgressBar'
 import {
     GET_LOCAL_DIRECTORY_PATH,
     DISCOVER_LOCAL_REPOSITORIES,
     GET_CODE_HOSTS,
     GET_REPOSITORIES_BY_SERVICE,
+    ADD_CODE_HOST,
 } from '../remote-repositories-step/queries'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 
 import styles from './LocalRepositoriesStep.module.scss'
+
+// TODO: Clean up TS errors & manually re-used types here
 
 interface ExternalService {
     __typename: 'ExternalService'
@@ -67,22 +76,24 @@ interface LocalRepositoriesStepProps extends HTMLAttributes<HTMLDivElement> {}
 
 export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     const { className, ...attributes } = props
+
+    /** Parse out non-hard-coded local services connected based off GET_CODE_HOSTS + GET_REPOSITORIES_BY_SERVICE */
     const [localServices, setLocalServices] = useState<ExternalService>()
 
     const [foundRepositories, setFoundRepositories] = useState<any[]>()
 
+    const filePickerAvailable = !!window.context.localFilePickerAvailable
     const [directoryPicker, setDirectoryPicker] = useState<boolean>(false)
     const [directoryPath, setDirectoryPath] = useState<string>('')
 
-    const filePickerAvailable = !!window.context.localFilePickerAvailable
+    const [addRemoteCodeHost] = useMutation<AddRemoteCodeHostResult, AddRemoteCodeHostVariables>(ADD_CODE_HOST)
 
-    // TODO: Trade out for getLocalServices() or extended externalServices(kind: "OTHER") if/when available
+    // TODO: Trade out for getLocalServices() or extended externalServices(kind: "OTHER") if/when available to simplify this block
     const { data } = useQuery<GetCodeHostsResult>(GET_CODE_HOSTS, {
         fetchPolicy: 'cache-and-network',
         pollInterval: 5000,
     })
 
-    /** Parse out non-hard-coded local services connected */
     useEffect(() => {
         if (!data?.externalServices.nodes) {
             return
@@ -103,6 +114,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         },
     })
 
+    // Updates with any previously synced non-automated local services
     useEffect(() => {
         setFoundRepositories(repoData?.repositories?.nodes)
     }, [repoData])
@@ -121,6 +133,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         },
     })
 
+    // Updates discovery repo list based off given directory path
     useEffect(() => {
         setFoundRepositories(discoveredRepositories?.localDirectory?.repositories)
     }, [discoveredRepositories])
@@ -136,14 +149,30 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     const handleRepoPicker = (): void => {
         if (filePickerAvailable) {
             setDirectoryPicker(true)
+        } else {
+            // TODO: Fallback for non-Mac users, discover repos with simple input
         }
-
-        // TODO: Cancel edit logic
-        // TODO: Fallback for non-Mac users, discover repos with simple input
     }
 
-    const onConnect = (): void => {
-        // run createExternalService(config: String!)
+    const onConnect = async (): Promise<void> => {
+        await addRemoteCodeHost({
+            variables: {
+                kind: ExternalServiceKind.OTHER,
+                // TODO: setup config & jsonify
+                displayName: '',
+                config: {
+                    url: '',
+                    repos: [],
+                },
+            },
+            update: (cache, result) => {
+                const { data } = result
+
+                if (!data) {
+                    return
+                }
+            },
+        })
     }
 
     return (
@@ -157,7 +186,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                             placeholder="Users/user-name/Projects/"
                             disabled={filePickerAvailable}
                             value={directoryPath || ''}
-                            className="mb-0 pr-1 col-6"
+                            className="mb-0 pl-0 pr-1 col-6"
                         />
 
                         <LoaderButton
@@ -171,6 +200,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                             disabled={false}
                         />
 
+                        {/* TODO: Only show cancel if no local repos are saved. Enabled cancel action */}
                         {foundRepositories?.length && (
                             <Button size="sm" variant="secondary" className="ml-2">
                                 Cancel
@@ -179,12 +209,12 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                     </div>
 
                     <ul className={styles.list}>
-                        {/* TODO: Add loading & error state */}
+                        {/* TODO: Add loading & error state for discovery */}
                         {foundRepositories?.map((codeHost, index) => (
                             <li
                                 key={codeHost.path}
                                 className={classNames(
-                                    'ml-3 p-2 d-flex',
+                                    'p-2 d-flex',
                                     index + 1 !== foundRepositories?.length && styles.itemBorder
                                 )}
                             >
@@ -203,6 +233,8 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                 </>
 
                 {foundRepositories?.length ? (
+                    // TODO: Add loading & error state for adding local service call
+                    // TODO: If this service is already saved, `CONNECT` changes to `UPDATE` with a sibling `DELETE` btn/action
                     <LoaderButton
                         type="submit"
                         variant="primary"
@@ -218,7 +250,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                     <Text weight="bold" className="d-flex align-items-center mb-0 mt-3 font-weight-bold text-muted">
                         <Icon
                             svgPath={mdiInformationOutline}
-                            className="mr-2 mx-2"
+                            className="mr-2 mx-1"
                             inline={false}
                             aria-hidden={true}
                             height={22}
