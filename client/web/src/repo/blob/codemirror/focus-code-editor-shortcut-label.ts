@@ -1,7 +1,8 @@
-import { EditorView, showPanel, ViewUpdate } from '@codemirror/view'
+import { EditorView, Panel, showPanel, ViewUpdate } from '@codemirror/view'
+import { Extension } from '@codemirror/state'
 
-function createShortcutHelpPanel(view: EditorView) {
-    let dom = document.createElement('kbd')
+function createShortcutHelpPanel(view: EditorView): Panel {
+    const dom = document.createElement('kbd')
     dom.textContent = 'C'
     dom.classList.add('shortcut-help-panel')
 
@@ -23,7 +24,7 @@ function createShortcutHelpPanel(view: EditorView) {
 /**
  * Extension adding focus code editor shortcut label to the end of the first line.
  */
-export const focusCodeEditorShortcutLabel = (enableBlobPageSwitchAreasShortcuts?: boolean) => {
+export const focusCodeEditorShortcutLabel = (enableBlobPageSwitchAreasShortcuts?: boolean): Extension => {
     if (!enableBlobPageSwitchAreasShortcuts) {
         return []
     }
