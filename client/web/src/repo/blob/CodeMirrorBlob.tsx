@@ -34,7 +34,6 @@ import { HoverThresholdProps } from '../RepoContainer'
 import { blobPropsFacet } from './codemirror'
 import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
-import { focusCodeEditorShortcutLabel } from './codemirror/focus-code-editor-shortcut-label'
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
@@ -165,8 +164,6 @@ const blameDecorationsCompartment = new Compartment()
 const blobPropsCompartment = new Compartment()
 // Compartment for line wrapping.
 const wrapCodeCompartment = new Compartment()
-// Compartment to conditionally show focus code editor shortcut label
-const keyboardShortcutLabelCompartment = new Compartment()
 
 export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const {
@@ -307,14 +304,13 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 overrideBrowserFindInPageShortcut: useFileSearch,
                 onOverrideBrowserFindInPageToggle: setUseFileSearch,
             }),
-            keyboardShortcutLabelCompartment.of(focusCodeEditorShortcutLabel(enableBlobPageSwitchAreasShortcuts)),
         ],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, enableBlobPageSwitchAreasShortcuts]
+        [onSelection, blobInfo, extensionsController]
     )
 
     const editorRef = useRef<EditorView | null>(null)
@@ -356,18 +352,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }
         }
     }, [blobInfo, extensions, navigateToLineOnAnyClick, locationRef])
-
-    // Show focus code editor shortcut if blob page shortcuts experimental feature enabled
-    useEffect(() => {
-        const editor = editorRef.current
-        if (editor && enableBlobPageSwitchAreasShortcuts) {
-            editor.dispatch({
-                effects: keyboardShortcutLabelCompartment.reconfigure(
-                    focusCodeEditorShortcutLabel(enableBlobPageSwitchAreasShortcuts)
-                ),
-            })
-        }
-    }, [enableBlobPageSwitchAreasShortcuts])
 
     // Propagate props changes to extensions
     useEffect(() => {
