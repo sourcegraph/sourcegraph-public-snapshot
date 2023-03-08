@@ -1377,6 +1377,9 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 		p.SyncedAt = clock()
 		return nil
 	})
+	perms.IsRepoUnrestrictedFunc.SetDefaultHook(func(_ context.Context, _ api.RepoID) (bool, error) {
+		return false, nil
+	})
 
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)

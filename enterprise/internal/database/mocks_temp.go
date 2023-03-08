@@ -14212,6 +14212,9 @@ type MockPermsStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *PermsStoreHandleFunc
+	// IsRepoUnrestrictedFunc is an instance of a mock function object
+	// controlling the behavior of the method IsRepoUnrestricted.
+	IsRepoUnrestrictedFunc *PermsStoreIsRepoUnrestrictedFunc
 	// ListPendingUsersFunc is an instance of a mock function object
 	// controlling the behavior of the method ListPendingUsers.
 	ListPendingUsersFunc *PermsStoreListPendingUsersFunc
@@ -14325,6 +14328,11 @@ func NewMockPermsStore() *MockPermsStore {
 		},
 		HandleFunc: &PermsStoreHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		IsRepoUnrestrictedFunc: &PermsStoreIsRepoUnrestrictedFunc{
+			defaultHook: func(context.Context, api.RepoID) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -14485,6 +14493,11 @@ func NewStrictMockPermsStore() *MockPermsStore {
 				panic("unexpected invocation of MockPermsStore.Handle")
 			},
 		},
+		IsRepoUnrestrictedFunc: &PermsStoreIsRepoUnrestrictedFunc{
+			defaultHook: func(context.Context, api.RepoID) (bool, error) {
+				panic("unexpected invocation of MockPermsStore.IsRepoUnrestricted")
+			},
+		},
 		ListPendingUsersFunc: &PermsStoreListPendingUsersFunc{
 			defaultHook: func(context.Context, string, string) ([]string, error) {
 				panic("unexpected invocation of MockPermsStore.ListPendingUsers")
@@ -14625,6 +14638,9 @@ func NewMockPermsStoreFrom(i PermsStore) *MockPermsStore {
 		},
 		HandleFunc: &PermsStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		IsRepoUnrestrictedFunc: &PermsStoreIsRepoUnrestrictedFunc{
+			defaultHook: i.IsRepoUnrestricted,
 		},
 		ListPendingUsersFunc: &PermsStoreListPendingUsersFunc{
 			defaultHook: i.ListPendingUsers,
@@ -15562,6 +15578,115 @@ func (c PermsStoreHandleFuncCall) Args() []interface{} {
 // invocation.
 func (c PermsStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// PermsStoreIsRepoUnrestrictedFunc describes the behavior when the
+// IsRepoUnrestricted method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreIsRepoUnrestrictedFunc struct {
+	defaultHook func(context.Context, api.RepoID) (bool, error)
+	hooks       []func(context.Context, api.RepoID) (bool, error)
+	history     []PermsStoreIsRepoUnrestrictedFuncCall
+	mutex       sync.Mutex
+}
+
+// IsRepoUnrestricted delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermsStore) IsRepoUnrestricted(v0 context.Context, v1 api.RepoID) (bool, error) {
+	r0, r1 := m.IsRepoUnrestrictedFunc.nextHook()(v0, v1)
+	m.IsRepoUnrestrictedFunc.appendCall(PermsStoreIsRepoUnrestrictedFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the IsRepoUnrestricted
+// method of the parent MockPermsStore instance is invoked and the hook
+// queue is empty.
+func (f *PermsStoreIsRepoUnrestrictedFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsRepoUnrestricted method of the parent MockPermsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PermsStoreIsRepoUnrestrictedFunc) PushHook(hook func(context.Context, api.RepoID) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreIsRepoUnrestrictedFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreIsRepoUnrestrictedFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreIsRepoUnrestrictedFunc) nextHook() func(context.Context, api.RepoID) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreIsRepoUnrestrictedFunc) appendCall(r0 PermsStoreIsRepoUnrestrictedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreIsRepoUnrestrictedFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreIsRepoUnrestrictedFunc) History() []PermsStoreIsRepoUnrestrictedFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreIsRepoUnrestrictedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreIsRepoUnrestrictedFuncCall is an object that describes an
+// invocation of method IsRepoUnrestricted on an instance of MockPermsStore.
+type PermsStoreIsRepoUnrestrictedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreIsRepoUnrestrictedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreIsRepoUnrestrictedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // PermsStoreListPendingUsersFunc describes the behavior when the
