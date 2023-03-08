@@ -58,13 +58,9 @@ func (p asteriskPattern) Match(part string) bool {
 	return p.compiled.IsMatch(part)
 }
 
-type GlobPattern interface {
-	Match(filePath string) bool
-}
-
 // Compile translates a text representation of a glob pattern
 // to an executable one that can `match` file paths.
-func Compile(pattern string) (GlobPattern, error) {
+func Compile(pattern string) (*GlobPattern, error) {
 	parts := strings.Split(strings.Trim(pattern, separator), separator)
 	patternParts := make([]patternPart, 0, len(parts)+2)
 	isLiteral := true
@@ -122,7 +118,7 @@ func Compile(pattern string) (GlobPattern, error) {
 		initialState = initialState | 1<<(i+1)
 	}
 
-	return &globPattern{
+	return &GlobPattern{
 		isLiteral:    isLiteral,
 		pattern:      pattern,
 		parts:        patternParts,
@@ -131,10 +127,10 @@ func Compile(pattern string) (GlobPattern, error) {
 	}, nil
 }
 
-// globPattern implements a pattern for matching file paths,
+// GlobPattern implements a pattern for matching file paths,
 // which can use directory/file names, * and ** wildcards,
 // and may or may not be anchored to the root directory.
-type globPattern struct {
+type GlobPattern struct {
 	isLiteral    bool
 	pattern      string
 	parts        []patternPart
@@ -168,7 +164,7 @@ type globPattern struct {
 //
 // The match is successful if after iterating through the whole file path,
 // full pattern matches, that is, there is a bit at the end of the glob.
-func (glob globPattern) Match(filePath string) bool {
+func (glob GlobPattern) Match(filePath string) bool {
 	// Fast pass for literal globs, we can just string compare those.
 	if glob.isLiteral {
 		return glob.pattern == filePath
