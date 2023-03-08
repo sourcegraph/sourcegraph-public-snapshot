@@ -46,7 +46,7 @@ Ensure you have `git` installed / on your path, then install.
 brew install sourcegraph/app/sourcegraph
 ```
 
-**Linux:** via [deb pkg](https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+204874.db2922/sourcegraph_2023.03.23+204874.db2922_linux_amd64.deb) installer:
+**Linux:** via [deb pkg](https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+204957.f499bb/sourcegraph_2023.03.23+204957.f499bb_linux_amd64.deb) installer:
 
 ```sh
 dpkg -i <file>.deb
@@ -54,8 +54,8 @@ dpkg -i <file>.deb
 
 **Single-binary zip download:**
 
-* [macOS (universal)](https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+204874.db2922/sourcegraph_2023.03.23+204874.db2922_darwin_all.zip)
-* [linux (x64)](https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+204874.db2922/sourcegraph_2023.03.23+204874.db2922_linux_amd64.zip)
+* [macOS (universal)](https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+204957.f499bb/sourcegraph_2023.03.23+204957.f499bb_darwin_all.zip)
+* [linux (x64)](https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+204957.f499bb/sourcegraph_2023.03.23+204957.f499bb_linux_amd64.zip)
 
 ## Usage
 
@@ -91,7 +91,7 @@ macOS binaries are not yet code-signed, so you may need to right click on it -> 
 **On macOS:** upgrade using Homebrew:
 
 ```
-brew update && brew upgrade sourcegraph/sourcegraph-app/sourcegraph
+brew update && brew upgrade sourcegraph/app/sourcegraph
 ```
 
 **On Linux:** we do not have a PPA yet, so you will need to rerun the installation steps above to get the latest .deb version.
