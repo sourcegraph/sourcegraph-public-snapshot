@@ -8,7 +8,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -48,7 +47,7 @@ func makeGetIndexesOptions(args *resolverstubs.LSIFRepositoryIndexesQueryArgs) (
 		return shared.GetIndexesOptions{}, err
 	}
 
-	offset, err := graphqlutil.DecodeIntCursor(args.After)
+	offset, err := resolverstubs.DecodeIntCursor(args.After)
 	if err != nil {
 		return shared.GetIndexesOptions{}, err
 	}

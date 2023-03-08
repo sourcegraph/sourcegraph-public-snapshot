@@ -1,6 +1,15 @@
 import React, { useMemo, useEffect, FC } from 'react'
 
-import { mdiBrain, mdiCog, mdiFolder, mdiHistory, mdiSourceBranch, mdiSourceRepository, mdiTag } from '@mdi/js'
+import {
+    mdiAccount,
+    mdiBrain,
+    mdiCog,
+    mdiFolder,
+    mdiHistory,
+    mdiSourceBranch,
+    mdiSourceRepository,
+    mdiTag,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
@@ -35,6 +44,7 @@ import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -139,6 +149,8 @@ export const TreePage: FC<Props> = ({
         !isErrorLike(settingsCascade.final) &&
         !!settingsCascade.final?.experimentalFeatures?.codeInsights &&
         settingsCascade.final['insights.displayLocation.directory'] === true
+
+    const [ownEnabled] = useFeatureFlag('search-ownership')
 
     // Add DirectoryViewer
     const uri = toURIWithPath({ repoName, commitID, filePath })
@@ -258,6 +270,20 @@ export const TreePage: FC<Props> = ({
                                 textClassName={styles.text}
                                 repoName={repoName}
                             />
+                        </Tooltip>
+                    )}
+                    {ownEnabled && (
+                        <Tooltip content="Ownership">
+                            <Button
+                                className="flex-shrink-0"
+                                to={`/${encodeURIPathComponent(repoName)}/-/own`}
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
+                                <span className={styles.text}>Ownership</span>
+                            </Button>
                         </Tooltip>
                     )}
                     {repo?.viewerCanAdminister && (

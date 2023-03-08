@@ -4,28 +4,33 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func NewSymbolExporter(
 	observationCtx *observation.Context,
-	rankingService RankingService,
+	store store.Store,
+	lsifstore lsifstore.LsifStore,
 	numRoutines int,
 	interval time.Duration,
-	batchSize int,
-	rankingJobEnabled bool,
+	readBatchSize int,
+	writeBatchSize int,
 ) goroutine.BackgroundRoutine {
+	metrics := NewMetrics(observationCtx)
+
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
 		"ranking.symbol-exporter", "exports SCIP data to ranking definitions and reference tables",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			if err := rankingService.ExportRankingGraph(ctx, numRoutines, batchSize, rankingJobEnabled); err != nil {
+			if err := exportRankingGraph(ctx, store, lsifstore, metrics, observationCtx.Logger, numRoutines, readBatchSize, writeBatchSize); err != nil {
 				return err
 			}
 
-			if err := rankingService.VacuumRankingGraph(ctx); err != nil {
+			if err := vacuumRankingGraph(ctx, store, metrics); err != nil {
 				return err
 			}
 
@@ -36,9 +41,9 @@ func NewSymbolExporter(
 
 func NewMapper(
 	observationCtx *observation.Context,
-	rankingService RankingService,
+	store store.Store,
 	interval time.Duration,
-	rankingJobEnabled bool,
+	batchSize int,
 ) goroutine.BackgroundRoutine {
 	operations := newMapperOperations(observationCtx)
 
@@ -47,7 +52,7 @@ func NewMapper(
 		"ranking.file-reference-count-mapper", "maps definitions and references data to path_counts_inputs table in store",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			numReferenceRecordsProcessed, numInputsInserted, err := rankingService.MapRankingGraph(ctx, rankingJobEnabled)
+			numReferenceRecordsProcessed, numInputsInserted, err := mapRankingGraph(ctx, store, batchSize)
 			if err != nil {
 				return err
 			}
@@ -61,9 +66,9 @@ func NewMapper(
 
 func NewReducer(
 	observationCtx *observation.Context,
-	rankingService RankingService,
+	store store.Store,
 	interval time.Duration,
-	rankingJobEnabled bool,
+	batchSize int,
 ) goroutine.BackgroundRoutine {
 	operations := newReducerOperations(observationCtx)
 
@@ -72,7 +77,7 @@ func NewReducer(
 		"ranking.file-reference-count-reducer", "reduces path_counts_inputs into a count of paths per repository and stores it in path_ranks table in store.",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			numPathRanksInserted, numPathCountsInputsProcessed, err := rankingService.ReduceRankingGraph(ctx, rankingJobEnabled)
+			numPathRanksInserted, numPathCountsInputsProcessed, err := reduceRankingGraph(ctx, store, batchSize)
 			if err != nil {
 				return err
 			}

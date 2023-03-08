@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -17,10 +18,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
 	symbolparser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 func LoadConfig() {
@@ -41,6 +45,15 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 	// Ensure we register our database driver before calling
 	// anything that tries to open a SQLite database.
 	sqlite.Init()
+
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram && config.Ctags.Command == "" {
+		// app: ctags is not available
+		searchFunc := func(ctx context.Context, params search.SymbolsParameters) (result.Symbols, error) {
+			return nil, nil
+		}
+		return searchFunc, nil, []goroutine.BackgroundRoutine{}, "", nil
+	}
 
 	parserFactory := func() (ctags.Parser, error) {
 		return symbolparser.SpawnCtags(logger, config.Ctags)

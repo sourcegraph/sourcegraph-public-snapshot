@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React, { useMemo, ReactNode } from 'react'
 
 import classNames from 'classnames'
@@ -49,7 +48,7 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
                 : Intl.NumberFormat('en').format(parseFloat(unformattedNumber))
             : undefined
     return (
-        <div className={classNames('d-flex flex-column align-items-center mr-4 justify-content-center', className)}>
+        <div className={classNames(styles.legendItem, className)}>
             <Tooltip content={tooltipOnNumber}>
                 {filter ? (
                     <Link to={`?${searchParams.toString()}`} style={{ color }} className={styles.count}>
@@ -98,15 +97,15 @@ export interface ValueLegendListProps {
 }
 
 export const ValueLegendList: React.FunctionComponent<ValueLegendListProps> = ({ items, className }) => (
-    <div className={classNames('d-flex justify-content-between', className)}>
-        <div className="d-flex justify-content-left">
+    <div className={classNames(styles.legend, className)}>
+        <div className={styles.legendLeftPanel}>
             {items
                 .filter(item => item.position !== 'right')
                 .map(item => (
                     <ValueLegendItem key={item.description} {...item} />
                 ))}
         </div>
-        <div className="d-flex justify-content-right">
+        <div className={styles.legendRightPanel}>
             {items
                 .filter(item => item.position === 'right')
                 .map(item => (

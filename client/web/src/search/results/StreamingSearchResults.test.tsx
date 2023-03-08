@@ -100,7 +100,7 @@ describe('StreamingSearchResults', () => {
             searchMode: SearchMode.SmartSearch,
             trace: undefined,
             chunkMatches: true,
-            featureOverrides: [],
+            featureOverrides: ['-search-ranking'],
         })
     })
 

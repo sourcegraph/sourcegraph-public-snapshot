@@ -597,7 +597,9 @@ candidates AS (
 	SELECT u.id
 	FROM repo r
 	JOIN lsif_indexes u ON u.repository_id = r.id
-	WHERE %s - r.deleted_at >= %s * interval '1 second'
+	WHERE
+		%s - r.deleted_at >= %s * interval '1 second' OR
+		r.blocked IS NOT NULL
 
 	-- Lock these rows in a deterministic order so that we don't
 	-- deadlock with other processes updating the lsif_indexes table.

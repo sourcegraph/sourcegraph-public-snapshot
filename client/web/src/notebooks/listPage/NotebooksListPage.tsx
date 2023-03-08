@@ -13,6 +13,7 @@ import { PageHeader, Button, useEventObservable, Alert, ButtonLink } from '@sour
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnectionFilter } from '../../components/FilteredConnection'
+import { LimitedAccessBanner } from '../../components/LimitedAccessBanner'
 import { Page } from '../../components/Page'
 import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
 import { EnterprisePageRoutes } from '../../routes.constants'
@@ -24,6 +25,7 @@ import { NotebooksListPageHeader } from './NotebooksListPageHeader'
 
 export interface NotebooksListPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphApp: boolean
     fetchNotebooks?: typeof _fetchNotebooks
     createNotebook?: typeof _createNotebook
 }
@@ -61,6 +63,7 @@ interface NotebooksFilter extends Pick<NotebooksListProps, 'creatorUserID' | 'st
 
 export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<NotebooksListPageProps>> = ({
     authenticatedUser,
+    isSourcegraphApp,
     telemetryService,
     fetchNotebooks = _fetchNotebooks,
     createNotebook = _createNotebook,
@@ -257,6 +260,14 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                         <PageHeader.Breadcrumb icon={mdiBookOutline}>Notebooks</PageHeader.Breadcrumb>
                     </PageHeader.Heading>
                 </PageHeader>
+
+                {isSourcegraphApp && (
+                    <LimitedAccessBanner dismissableTemporarySettingsKey="app.limitedAccessBannerDismissed.notebooks">
+                        Notebooks is currently available to try for free while Sourcegraph App is in beta. Pricing and
+                        availability for Notebooks is subject to change in future releases.
+                    </LimitedAccessBanner>
+                )}
+
                 {isErrorLike(importState) && (
                     <Alert variant="danger">
                         Error while importing the notebook: <strong>{importState.message}</strong>

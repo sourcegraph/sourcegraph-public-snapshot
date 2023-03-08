@@ -108,6 +108,7 @@ func (codeIntelligence) NewRankingLSIFStoreGroup(containerName string) monitorin
 // src_codeintel_ranking_num_stale_reference_records_deleted_total
 // src_codeintel_ranking_num_metadata_records_deleted_total
 // src_codeintel_ranking_num_input_records_deleted_total
+// src_codeintel_ranking_num_rank_records_deleted_total
 func (codeIntelligence) NewRankingGroup(containerName string) monitoring.Group {
 	return monitoring.Group{
 		Title:  "Codeintel: Ranking",
@@ -186,6 +187,13 @@ func (codeIntelligence) NewRankingGroup(containerName string) monitoring.Group {
 					MetricDescriptionRoot: "input records",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of stale input records removed from Postgres.
+				`).Observable(),
+
+				Standard.Count("removed")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_ranking_num_rank_records_deleted",
+					MetricDescriptionRoot: "rank records",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					The number of stale rank records removed from Postgres.
 				`).Observable(),
 			},
 		},

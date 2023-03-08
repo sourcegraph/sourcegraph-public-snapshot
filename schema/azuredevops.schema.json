@@ -9,7 +9,7 @@
   "required": ["url", "username", "token"],
   "properties": {
     "url": {
-      "description": "URL of a Azure DevOps Services/Server instance, such as https://dev.azure.com.",
+      "description": "URL for Azure DevOps Services, set to https://dev.azure.com.",
       "type": "string",
       "pattern": "^https?://",
       "not": {
@@ -18,6 +18,11 @@
       },
       "format": "uri",
       "examples": ["https://dev.azure.com"]
+    },
+    "enforcePermissions": {
+      "description": "A flag to enforce Azure DevOps repository access permissions",
+      "type": "boolean",
+      "default": false
     },
     "username": {
       "description": "A username for authentication with the Azure DevOps code host.",
@@ -42,7 +47,7 @@
       "examples": [["name"], ["kubernetes", "golang", "facebook"]]
     },
     "exclude": {
-      "description": "A list of repositories to never mirror from this Azure DevOps Services/Server instance.",
+      "description": "A list of repositories to never mirror from Azure DevOps Services.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -52,12 +57,12 @@
         "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["pattern"] }],
         "properties": {
           "name": {
-            "description": "The name of an Azure DevOps Services/Server project and repository (\"projectName/repositoryName\") to exclude from mirroring.",
+            "description": "The name of an Azure DevOps Services project and repository (\"projectName/repositoryName\") to exclude from mirroring.",
             "type": "string",
             "pattern": "^~?[\\w.-]+([ ]*[\\w.-]+)*/[\\w.-]+([ ]*[\\w.-]+)*?$"
           },
           "pattern": {
-            "description": "Regular expression which matches against the name of an Azure DevOps Services/Server repo.",
+            "description": "Regular expression which matches against the name of an Azure DevOps Services repo.",
             "type": "string",
             "format": "regex"
           }

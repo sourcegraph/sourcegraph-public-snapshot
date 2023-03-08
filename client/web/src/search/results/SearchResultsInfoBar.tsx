@@ -3,14 +3,16 @@ import React, { useMemo, useState } from 'react'
 import { mdiChevronDoubleUp, mdiChevronDoubleDown } from '@mdi/js'
 import classNames from 'classnames'
 
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
 import {
     getCodeMonitoringCreateAction,
@@ -59,6 +61,9 @@ export interface SearchResultsInfoBarProps
     setSidebarCollapsed: (collapsed: boolean) => void
 
     isSourcegraphDotCom: boolean
+
+    isRankingEnabled: boolean
+    setRankingEnabled: (enabled: boolean) => void
 }
 
 /**
@@ -126,6 +131,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         props.onShowMobileFiltersChanged?.(newShowFilters)
     }
 
+    // Show/hide ranking toggle
+    const [rankingEnabled] = useFeatureFlag('search-ranking')
+
     return (
         <aside
             role="region"
@@ -138,6 +146,17 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                 <div className={styles.expander} />
 
+                {rankingEnabled && (
+                    <Label className={styles.toggle}>
+                        Intelligent ranking{' '}
+                        <Toggle
+                            value={props.isRankingEnabled}
+                            onToggle={() => props.setRankingEnabled(!props.isRankingEnabled)}
+                            title="Enable Ranking"
+                            className="mr-2"
+                        />
+                    </Label>
+                )}
                 <ul className="nav align-items-center">
                     <SearchActionsMenu
                         query={props.query}

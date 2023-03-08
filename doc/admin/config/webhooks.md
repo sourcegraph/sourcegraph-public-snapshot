@@ -15,6 +15,7 @@ GitHub | 🟢 | 🟢 | 🟢
 GitLab | 🟢 | 🟢 | 🔴
 Bitbucket Server / Datacenter | 🟢 | 🟢 | 🔴
 Bitbucket Cloud | 🟢 | 🟢 | 🔴
+Azure DevOps | 🔴 | 🟢 | 🔴
 
 To receive webhooks both Sourcegraph and the code host need to be configured. To configure Sourcegraph, [add an incoming webhook](#adding-an-incoming-webhook). Then [configure webhooks on your code host](#configuring-webhooks-on-the-code-host)
 
@@ -150,6 +151,25 @@ Done! Sourcegraph will now receive webhook events from Bitbucket Cloud and use t
 #### Code push
 
 Follow the same steps as above, but ensure you tick the `Push` option.
+
+### Azure DevOps
+
+#### Batch changes
+
+> NOTE: Experimental webhook support for Azure DevOps was added in Sourcegraph 5.0, and does not currently support secrets. Please <a href="https://about.sourcegraph.com/contact">contact us</a> with any issues found while using webhooks.
+
+1. On Azure DevOps, go to each project, and then **Project settings > Service hooks**.
+2. Click **Create a new subscription**.
+3. Select **Web Hooks**. From the **Trigger on this type of event** drop-down, choose: **Pull request updated**.
+4. Set the filters how you like, or leave them at the default: **\[Any\]**
+5. Fill in the webhook form:
+  * **URL**: The URL found after creating an incoming webhook.
+  * Leave the rest of the fields on the default values.
+6. Click **Test** to verify the webhook works. Then click **Finish**.
+7. Repeat the steps above, this time choosing **Pull request merged** as your event type.
+
+Done! Sourcegraph will now receive webhook events from Azure DevOps and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+
 
 ## Webhook logging
 

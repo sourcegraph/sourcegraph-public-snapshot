@@ -709,3 +709,7 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 
 	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
 }
+
+func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {
+	return EnterpriseResolvers.ownResolver.RepoIngestedCodeowners(ctx, r.IDInt32())
+}

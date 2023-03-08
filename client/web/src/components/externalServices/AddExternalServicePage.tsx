@@ -1,5 +1,6 @@
 import { FC, useEffect, useCallback, useState } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
 
 import { asError, isErrorLike, logger, renderMarkdown } from '@sourcegraph/common'
@@ -78,15 +79,15 @@ export const AddExternalServicePage: FC<Props> = ({
         [getExternalServiceInput, telemetryService]
     )
 
+    const client = useApolloClient()
     useEffect(() => {
         if (createdExternalService && !isErrorLike(createdExternalService)) {
             // Refresh site flags so that global site alerts
             // reflect the latest configuration.
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe({ error: error => logger.error(error) })
+            refreshSiteFlags(client).catch((error: Error) => logger.error(error))
             navigate(`/site-admin/external-services/${createdExternalService.id}`)
         }
-    }, [createdExternalService, navigate])
+    }, [client, createdExternalService, navigate])
 
     return (
         <>

@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	policiesEnterprise "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -214,7 +214,7 @@ func setupMockUploadService(now time.Time) *MockStore {
 }
 
 func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
-	policyMatches := map[int]map[string][]policiesEnterprise.PolicyMatch{
+	policyMatches := map[int]map[string][]policies.PolicyMatch{
 		50: {
 			"deadbeef01": {{PolicyDuration: days(1)}}, // 1 = 1
 			"deadbeef02": {{PolicyDuration: days(9)}}, // 9 > 2 (protected)
@@ -246,7 +246,7 @@ func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
 		},
 	}
 
-	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []types.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policiesEnterprise.PolicyMatch, error) {
+	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []types.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policies.PolicyMatch, error) {
 		return policyMatches[repositoryID], nil
 	}
 

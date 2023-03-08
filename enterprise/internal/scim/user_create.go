@@ -7,6 +7,7 @@ import (
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -16,8 +17,7 @@ import (
 // Create stores given attributes. Returns a resource with the attributes that are stored and a (new) unique identifier.
 func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAttributes) (scim.Resource, error) {
 	// Extract external ID, primary email, username, and display name from attributes to variables
-	optionalExternalID := getOptionalExternalID(attributes)
-	primaryEmail := extractPrimaryEmail(attributes)
+	primaryEmail, otherEmails := extractPrimaryEmail(attributes)
 	if primaryEmail == "" {
 		return scim.Resource{}, scimerrors.ScimErrorBadParams([]string{"emails missing"})
 	}
@@ -31,33 +31,23 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 			return err
 		}
 
-		// Create user (with or without external ID)
-		// TODO: Use NewSCIMUser instead of NewUser?
+		// Create user
 		newUser := database.NewUser{
 			Email:           primaryEmail,
 			Username:        uniqueUsername,
 			DisplayName:     displayName,
 			EmailIsVerified: true,
 		}
-		var externalID = ""
-		if optionalExternalID.Present() {
-			externalID = optionalExternalID.Value()
-		}
-		if externalID == "" {
-			externalID = "no-external-id-" + primaryEmail
-		}
 		accountSpec := extsvc.AccountSpec{
 			ServiceType: "scim",
-			// TODO: provide proper service ID
-			ServiceID: "TODO",
-			AccountID: externalID,
+			ServiceID:   "scim",
+			AccountID:   getUniqueExternalID(attributes),
 		}
-
 		accountData, err := toAccountData(attributes)
 		if err != nil {
 			return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 		}
-		user, err = h.db.UserExternalAccounts().CreateUserAndSave(r.Context(), newUser, accountSpec, accountData)
+		user, err = tx.UserExternalAccounts().CreateUserAndSave(r.Context(), newUser, accountSpec, accountData)
 
 		if err != nil {
 			if dbErr, ok := containsErrCannotCreateUserError(err); ok {
@@ -71,14 +61,33 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 		return nil
 	})
 	if err != nil {
-		return scim.Resource{}, err
+		multiErr, ok := err.(errors.MultiError)
+		if !ok || len(multiErr.Errors()) == 0 {
+			return scim.Resource{}, err
+		}
+		return scim.Resource{}, multiErr.Errors()[len(multiErr.Errors())-1]
+	}
+
+	// If there were additional emails provided, now that the user has been created
+	// we can try to add and verify them each in a separate trx so that if it fails we can ignore
+	// the error because they are not required.
+	if len(otherEmails) > 0 {
+		for _, email := range otherEmails {
+			h.db.WithTransact(r.Context(), func(tx database.DB) error {
+				err := tx.UserEmails().Add(r.Context(), user.ID, email, nil)
+				if err != nil {
+					return err
+				}
+				return tx.UserEmails().SetVerified(r.Context(), user.ID, email, true)
+			})
+		}
 	}
 
 	var now = time.Now()
 
 	return scim.Resource{
 		ID:         strconv.Itoa(int(user.ID)),
-		ExternalID: optionalExternalID,
+		ExternalID: getOptionalExternalID(attributes),
 		Attributes: attributes,
 		Meta: scim.Meta{
 			Created:      &now,
@@ -89,20 +98,22 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 
 // extractPrimaryEmail extracts the primary email address from the given attributes.
 // Tries to get the (first) email address marked as primary, otherwise uses the first email address it finds.
-func extractPrimaryEmail(attributes scim.ResourceAttributes) (primaryEmail string) {
+func extractPrimaryEmail(attributes scim.ResourceAttributes) (primaryEmail string, otherEmails []string) {
 	if attributes[AttrEmails] == nil {
 		return
 	}
 	emails := attributes[AttrEmails].([]interface{})
+	otherEmails = make([]string, 0, len(emails))
 	for _, emailRaw := range emails {
 		email := emailRaw.(map[string]interface{})
-		if email["primary"] == true {
+		if email["primary"] == true && primaryEmail == "" {
 			primaryEmail = email["value"].(string)
-			break
+			continue
 		}
+		otherEmails = append(otherEmails, email["value"].(string))
 	}
-	if primaryEmail == "" && len(emails) > 0 {
-		primaryEmail = emails[0].(map[string]interface{})["value"].(string)
+	if primaryEmail == "" && len(otherEmails) > 0 {
+		primaryEmail, otherEmails = otherEmails[0], otherEmails[1:]
 	}
 	return
 }
@@ -123,6 +134,8 @@ func extractDisplayName(attributes scim.ResourceAttributes) (displayName string)
 				displayName = name[AttrNameGiven].(string) + " " + name[AttrNameFamily].(string)
 			}
 		}
+	} else if attributes[AttrNickName] != nil {
+		displayName = attributes[AttrNickName].(string)
 	}
 	// Fallback to username
 	if displayName == "" {

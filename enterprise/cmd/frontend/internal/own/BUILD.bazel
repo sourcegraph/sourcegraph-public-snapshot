@@ -9,10 +9,10 @@ go_library(
         "//cmd/frontend/enterprise",
         "//enterprise/cmd/frontend/internal/own/resolvers",
         "//enterprise/internal/codeintel",
+        "//enterprise/internal/own",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/gitserver",
         "//internal/observation",
-        "//internal/own",
     ],
 )

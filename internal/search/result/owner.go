@@ -2,13 +2,45 @@ package result
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+type Owner interface {
+	Type() string
+	Identifier() string
+}
+
+type OwnerPerson struct {
+	Handle string
+	Email  string
+	User   *types.User
+}
+
+func (o OwnerPerson) Identifier() string {
+	return "Person:" + o.Handle + o.Email
+}
+
+func (o OwnerPerson) Type() string {
+	return "person"
+}
+
+type OwnerTeam struct {
+	Handle string
+	Email  string
+	Team   *types.Team
+}
+
+func (o OwnerTeam) Identifier() string {
+	return "Team:" + o.Team.Name
+}
+
+func (o OwnerTeam) Type() string {
+	return "team"
+}
+
 type OwnerMatch struct {
-	ResolvedOwner codeowners.ResolvedOwner
+	ResolvedOwner Owner
 
 	// The following contain information about what search the owner was matched from.
 	InputRev *string           `json:"-"`
@@ -53,7 +85,7 @@ func (om *OwnerMatch) Key() Key {
 		Commit:   om.CommitID,
 	}
 	if om.ResolvedOwner != nil {
-		k.OwnerMetadata = string(om.ResolvedOwner.Type()) + om.ResolvedOwner.Identifier()
+		k.OwnerMetadata = om.ResolvedOwner.Type() + om.ResolvedOwner.Identifier()
 	}
 	if om.InputRev != nil {
 		k.Rev = *om.InputRev

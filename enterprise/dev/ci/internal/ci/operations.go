@@ -67,6 +67,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			addBrowserExtensionUnitTests, // ~4.5m
 			addJetBrainsUnitTests,        // ~2.5m
 			addTypescriptCheck,           // ~4m
+			addVsceTests,                 // ~3.0m
 		)
 
 		if opts.ClientLintOnlyChangedFiles {
@@ -275,15 +276,16 @@ func getParallelTestCount(webParallelTestCount int) int {
 }
 
 // Builds and tests the VS Code extensions.
-func addVsceIntegrationTests(pipeline *bk.Pipeline) {
+func addVsceTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
-		":vscode: Puppeteer tests for VS Code extension",
+		":vscode: Tests for VS Code extension",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run build:test"),
-		bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
-		bk.AutomaticRetry(1),
+		// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
+		// bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
+		// bk.AutomaticRetry(1),
 	)
 }
 
@@ -602,13 +604,22 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 }
 
 // Release a snapshot of App.
-func addAppSnapshotReleaseSteps(c Config) operations.Operation {
-	// TODO(sqs): Use goreleaser-pro nightly feature? Blocked on
-	// https://github.com/goreleaser/goreleaser-cross/issues/22.
-
-	// goreleaser requires that the version is semver-compatible
-	// (https://goreleaser.com/limitations/semver/). This is fine for now in alpha.
-	version := fmt.Sprintf("0.0.%d-snapshot+%s-%.6s", c.BuildNumber, c.Time.Format("20060102"), c.Commit)
+func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
+	// The version scheme we use for App is one of:
+	//
+	// * yyyy.mm.dd+$BUILDNUM.$COMMIT
+	// * yyyy.mm.dd-insiders+$BUILDNUM.$COMMIT
+	//
+	// We do not follow the Sourcegraph enterprise versioning scheme, because Sourcegraph App is
+	// released much more frequently than the enterprise versions by nature of being a desktop
+	// app.
+	//
+	// Also note that goreleaser requires the version is semver-compatible.
+	insidersStr := ""
+	if insiders {
+		insidersStr = "-insiders"
+	}
+	version := fmt.Sprintf("%s%s+%d.%.6s", c.Time.Format("2006.01.06"), insidersStr, c.BuildNumber, c.Commit)
 
 	return func(pipeline *bk.Pipeline) {
 		// Release App (.zip/.deb/.rpm to Google Cloud Storage, new tap for Homebrew, etc.).

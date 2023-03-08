@@ -24,7 +24,6 @@ go_library(
         "//internal/executor",
         "//internal/extsvc",
         "//internal/jsonc",
-        "//internal/own/codeowners/v1:codeowners",
         "//lib/errors",
         "//schema",
         "@com_github_google_uuid//:uuid",

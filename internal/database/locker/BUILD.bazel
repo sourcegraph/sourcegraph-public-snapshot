@@ -17,6 +17,10 @@ go_test(
     name = "locker_test",
     srcs = ["locker_test.go"],
     embed = [":locker"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database/basestore",
         "//internal/database/dbtest",

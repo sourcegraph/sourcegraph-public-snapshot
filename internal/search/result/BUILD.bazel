@@ -24,7 +24,6 @@ go_library(
         "//internal/api",
         "//internal/gitserver/gitdomain",
         "//internal/lazyregexp",
-        "//internal/own/codeowners",
         "//internal/search/filter",
         "//internal/types",
         "//lib/errors",

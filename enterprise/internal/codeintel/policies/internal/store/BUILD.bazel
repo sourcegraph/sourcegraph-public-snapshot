@@ -36,6 +36,10 @@ go_test(
         "store_repo_test.go",
     ],
     embed = [":store"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/globals",
         "//enterprise/internal/codeintel/policies/shared",

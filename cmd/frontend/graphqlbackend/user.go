@@ -353,6 +353,8 @@ func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 
 func (r *UserResolver) NamespaceName() string { return r.user.Username }
 
+func (r *UserResolver) SCIMControlled() bool { return r.user.SCIMControlled }
+
 func (r *UserResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoResolver, error) {
 	return EnterpriseResolvers.authzResolver.UserPermissionsInfo(ctx, r.ID())
 }
@@ -524,10 +526,6 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 		return nil, err
 	}
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
-}
-
-func (r *UserResolver) Teams(_ context.Context, _ *ListTeamsArgs) (*teamConnectionResolver, error) {
-	return &teamConnectionResolver{}, nil
 }
 
 func (r *UserResolver) ToUser() (*UserResolver, bool) {

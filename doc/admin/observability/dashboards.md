@@ -4992,6 +4992,29 @@ Query: `sum by (category)(increase(src_frontend_internal_request_duration_second
 
 <br />
 
+#### gitserver: src_gitserver_repo_count
+
+<p class="subtitle">Number of repositories on gitserver</p>
+
+This metric is only for informational purposes. It indicates the total number of repositories on gitserver.
+
+It does not indicate any problems with the instance.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100090` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `src_gitserver_repo_count`
+
+</details>
+
+<br />
+
 ### Git Server: Gitserver: Gitserver API (powered by internal/observation)
 
 #### gitserver: gitserver_api_total
@@ -24519,6 +24542,27 @@ Query: `sum(increase(src_codeintel_ranking_num_input_records_deleted_total{job=~
 
 <br />
 
+#### codeintel-ranking: codeintel_ranking_num_rank_records_deleted_total
+
+<p class="subtitle">Rank records removed every 5m</p>
+
+The number of stale rank records removed from Postgres.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100322` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_ranking_num_rank_records_deleted_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
 ## Code Intelligence > Uploads
 
 <p class="subtitle">The service at `enterprise/internal/codeintel/uploads`.</p>
@@ -26089,6 +26133,441 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <summary>Technical details</summary>
 
 Query: `sum by(app) (up{app=~".*otel-collector"}) / count by (app) (up{app=~".*otel-collector"}) * 100`
+
+</details>
+
+<br />
+
+## Embeddings
+
+<p class="subtitle">Handles embeddings searches.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/embeddings/embeddings` on your Sourcegraph instance.
+
+### Embeddings: Database connections
+
+#### embeddings: max_open_conns
+
+<p class="subtitle">Maximum open</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="embeddings"})`
+
+</details>
+
+<br />
+
+#### embeddings: open_conns
+
+<p class="subtitle">Established</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="embeddings"})`
+
+</details>
+
+<br />
+
+#### embeddings: in_use
+
+<p class="subtitle">Used</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100010` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="embeddings"})`
+
+</details>
+
+<br />
+
+#### embeddings: idle
+
+<p class="subtitle">Idle</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100011` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="embeddings"})`
+
+</details>
+
+<br />
+
+#### embeddings: mean_blocked_seconds_per_conn_request
+
+<p class="subtitle">Mean blocked seconds per conn request</p>
+
+Refer to the [alerts reference](./alerts.md#embeddings-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100020` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="embeddings"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="embeddings"}[5m]))`
+
+</details>
+
+<br />
+
+#### embeddings: closed_max_idle
+
+<p class="subtitle">Closed by SetMaxIdleConns</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100030` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="embeddings"}[5m]))`
+
+</details>
+
+<br />
+
+#### embeddings: closed_max_lifetime
+
+<p class="subtitle">Closed by SetConnMaxLifetime</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100031` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="embeddings"}[5m]))`
+
+</details>
+
+<br />
+
+#### embeddings: closed_max_idle_time
+
+<p class="subtitle">Closed by SetConnMaxIdleTime</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100032` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="embeddings"}[5m]))`
+
+</details>
+
+<br />
+
+### Embeddings: Internal service requests
+
+#### embeddings: frontend_internal_api_error_responses
+
+<p class="subtitle">Frontend-internal API error responses every 5m by route</p>
+
+Refer to the [alerts reference](./alerts.md#embeddings-frontend-internal-api-error-responses) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="embeddings",code!~"2.."}[5m])) / ignoring(category) group_left sum(increase(src_frontend_internal_request_duration_seconds_count{job="embeddings"}[5m]))`
+
+</details>
+
+<br />
+
+### Embeddings: Container monitoring (not available on server)
+
+#### embeddings: container_missing
+
+<p class="subtitle">Container missing</p>
+
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod embeddings` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p embeddings`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' embeddings` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the embeddings container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs embeddings` (note this will include logs from the previous and currently running container).
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100200` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `count by(name) ((time() - container_last_seen{name=~"^embeddings.*"}) > 60)`
+
+</details>
+
+<br />
+
+#### embeddings: container_cpu_usage
+
+<p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
+
+Refer to the [alerts reference](./alerts.md#embeddings-container-cpu-usage) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100201` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^embeddings.*"}`
+
+</details>
+
+<br />
+
+#### embeddings: container_memory_usage
+
+<p class="subtitle">Container memory usage by instance</p>
+
+Refer to the [alerts reference](./alerts.md#embeddings-container-memory-usage) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100202` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `cadvisor_container_memory_usage_percentage_total{name=~"^embeddings.*"}`
+
+</details>
+
+<br />
+
+#### embeddings: fs_io_operations
+
+<p class="subtitle">Filesystem reads and writes rate by instance over 1h</p>
+
+This value indicates the number of filesystem read and write operations by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100203` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(name) (rate(container_fs_reads_total{name=~"^embeddings.*"}[1h]) + rate(container_fs_writes_total{name=~"^embeddings.*"}[1h]))`
+
+</details>
+
+<br />
+
+### Embeddings: Provisioning indicators (not available on server)
+
+#### embeddings: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+Refer to the [alerts reference](./alerts.md#embeddings-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^embeddings.*"}[1d])`
+
+</details>
+
+<br />
+
+#### embeddings: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">Container memory usage (1d maximum) by instance</p>
+
+Refer to the [alerts reference](./alerts.md#embeddings-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^embeddings.*"}[1d])`
+
+</details>
+
+<br />
+
+#### embeddings: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
+
+Refer to the [alerts reference](./alerts.md#embeddings-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^embeddings.*"}[5m])`
+
+</details>
+
+<br />
+
+#### embeddings: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">Container memory usage (5m maximum) by instance</p>
+
+Refer to the [alerts reference](./alerts.md#embeddings-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100311` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^embeddings.*"}[5m])`
+
+</details>
+
+<br />
+
+#### embeddings: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#embeddings-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100312` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^embeddings.*"})`
+
+</details>
+
+<br />
+
+### Embeddings: Golang runtime monitoring
+
+#### embeddings: go_goroutines
+
+<p class="subtitle">Maximum active goroutines</p>
+
+A high value here indicates a possible goroutine leak.
+
+Refer to the [alerts reference](./alerts.md#embeddings-go-goroutines) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by(instance) (go_goroutines{job=~".*embeddings"})`
+
+</details>
+
+<br />
+
+#### embeddings: go_gc_duration_seconds
+
+<p class="subtitle">Maximum go garbage collection duration</p>
+
+Refer to the [alerts reference](./alerts.md#embeddings-go-gc-duration-seconds) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100401` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by(instance) (go_gc_duration_seconds{job=~".*embeddings"})`
+
+</details>
+
+<br />
+
+### Embeddings: Kubernetes monitoring (only available on Kubernetes)
+
+#### embeddings: pods_available_percentage
+
+<p class="subtitle">Percentage pods available</p>
+
+Refer to the [alerts reference](./alerts.md#embeddings-pods-available-percentage) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100500` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(app) (up{app=~".*embeddings"}) / count by (app) (up{app=~".*embeddings"}) * 100`
 
 </details>
 

@@ -5,30 +5,29 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
-	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type rootResolver struct {
-	policySvc  *policies.Service
-	operations *operations
+	policySvc        PoliciesService
+	repoStore        database.RepoStore
+	operations       *operations
+	siteAdminChecker sharedresolvers.SiteAdminChecker
 }
 
-func NewRootResolver(observationCtx *observation.Context, policySvc *policies.Service) resolverstubs.PoliciesServiceResolver {
+func NewRootResolver(observationCtx *observation.Context, policySvc *policies.Service, repoStore database.RepoStore, siteAdminChecker sharedresolvers.SiteAdminChecker) resolverstubs.PoliciesServiceResolver {
 	return &rootResolver{
-		policySvc:  policySvc,
-		operations: newOperations(observationCtx),
+		policySvc:        policySvc,
+		repoStore:        repoStore,
+		operations:       newOperations(observationCtx),
+		siteAdminChecker: siteAdminChecker,
 	}
 }
 
@@ -48,7 +47,7 @@ func (r *rootResolver) ConfigurationPolicyByID(ctx context.Context, id graphql.I
 		return nil, err
 	}
 
-	return NewConfigurationPolicyResolver(r.policySvc, configurationPolicy, traceErrs), nil
+	return NewConfigurationPolicyResolver(r.repoStore, configurationPolicy, traceErrs), nil
 }
 
 const DefaultConfigurationPolicyPageSize = 50
@@ -62,7 +61,7 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 	ctx, traceErrs, endObservation := r.operations.configurationPolicies.WithErrors(ctx, &err, observation.Args{LogFields: fields})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	offset, err := graphqlutil.DecodeIntCursor(args.After)
+	offset, err := resolverstubs.DecodeIntCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +100,7 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 		return nil, err
 	}
 
-	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.policySvc, configPolicies, totalCount, traceErrs), nil
+	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.repoStore, configPolicies, totalCount, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
@@ -109,7 +108,7 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 	ctx, traceErrs, endObservation := r.operations.createConfigurationPolicy.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.policySvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -146,7 +145,7 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		return nil, err
 	}
 
-	return NewConfigurationPolicyResolver(r.policySvc, configurationPolicy, traceErrs), nil
+	return NewConfigurationPolicyResolver(r.repoStore, configurationPolicy, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
@@ -156,7 +155,7 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.policySvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -196,7 +195,7 @@ func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Con
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.policySvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -229,15 +228,13 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolv
 	}
 
 	resv := make([]resolverstubs.RepositoryResolver, 0, len(ids))
-	logger := sglog.Scoped("PreviewRepositoryFilter", "policies resolver")
 	for _, id := range ids {
-		db := r.policySvc.GetUnsafeDB()
-		repo, err := backend.NewRepos(logger, db, gitserver.NewClient()).Get(ctx, api.RepoID(id))
+		res, err := sharedresolvers.NewRepositoryFromID(ctx, r.repoStore, id)
 		if err != nil {
 			return nil, err
 		}
 
-		resv = append(resv, sharedresolvers.NewRepositoryResolver(r.policySvc.GetUnsafeDB(), repo))
+		resv = append(resv, res)
 	}
 
 	limitedCount := totalMatches

@@ -47,6 +47,7 @@ const executorsGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/executors',
             label: 'Instances',
+            exact: true,
         },
         {
             to: '/site-admin/executors/secrets',
@@ -109,6 +110,10 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     header: { label: 'Code graph', icon: BrainIcon },
     items: [
         {
+            to: '/site-admin/code-graph/dashboard',
+            label: 'Dashboard',
+        },
+        {
             to: '/site-admin/code-graph/indexes',
             label: 'Precise indexes',
         },
@@ -152,6 +157,10 @@ const usersGroup: SiteAdminSideBarGroup = {
         {
             label: 'Roles',
             to: '/site-admin/roles',
+        },
+        {
+            label: 'Permissions',
+            to: '/site-admin/permissions-syncs',
         },
     ],
 }

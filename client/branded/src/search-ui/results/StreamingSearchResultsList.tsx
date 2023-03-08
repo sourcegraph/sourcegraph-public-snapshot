@@ -42,6 +42,7 @@ export interface StreamingSearchResultsListProps
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
+    enableOwnershipSearch: boolean
     results?: AggregateStreamingSearchResults
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -85,6 +86,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     settingsCascade,
     telemetryService,
     isSourcegraphDotCom,
+    enableOwnershipSearch,
     searchContextsEnabled,
     assetsRoot,
     platformContext,
@@ -296,6 +298,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             <NoResultsPage
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                enableOwnershipSearch={enableOwnershipSearch}
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
                                 assetsRoot={assetsRoot}

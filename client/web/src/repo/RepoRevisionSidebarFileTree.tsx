@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useApolloClient, gql as apolloGql } from '@apollo/client'
 import {
@@ -20,16 +20,18 @@ import {
     TreeNode as WildcardTreeNode,
     Link,
     LoadingSpinner,
-    Tree,
     Tooltip,
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
-import { MAX_TREE_ENTRIES } from '../tree/constants'
 import { dirname } from '../util/path'
 
+import { FocusableTree, FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
+
 import styles from './RepoRevisionSidebarFileTree.module.scss'
+
+export const MAX_TREE_ENTRIES = 2500
 
 const QUERY = gql`
     query FileTreeEntries(
@@ -74,7 +76,7 @@ type FileTreeEntry = Extract<
     { __typename?: 'GitTree' }
 >['entries'][number]
 
-interface Props {
+interface Props extends FocusableTreeProps {
     commitID: string
     initialFilePath: string
     initialFilePathIsDirectory: boolean
@@ -85,6 +87,7 @@ interface Props {
     revision: string
     telemetryService: TelemetryService
 }
+
 export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props => {
     const { telemetryService, onExpandParent } = props
 
@@ -151,9 +154,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     }, [])
 
     // Initialize the treeData from the initial query
-    // We use a layout effect here because the data can be available in the first render pass and
-    // we want to avoid showing a loading indicator in that case.
-    useLayoutEffect(() => {
+    useEffect(() => {
         if (data === undefined || treeData !== null) {
             return
         }
@@ -356,7 +357,8 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     }
 
     return (
-        <Tree<TreeNode>
+        <FocusableTree<TreeNode>
+            focusKey={props.focusKey}
             data={treeData.nodes}
             aria-label="file tree"
             selectedIds={selectedIds}
@@ -455,7 +457,9 @@ function renderNode({
     return (
         <Link
             {...props}
+            className={classNames(props.className, 'test-tree-file-link')}
             to={url ?? '#'}
+            data-tree-path={element.path}
             onClick={event => {
                 event.preventDefault()
                 handleSelect(event)

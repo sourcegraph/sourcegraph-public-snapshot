@@ -1,6 +1,6 @@
 import { Meta } from '@storybook/react'
 
-import { H1, H2, Text } from '..'
+import { H1, H2, Link, Text } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
 
 import { BADGE_VARIANTS } from './constants'
@@ -55,7 +55,7 @@ export const Badges = () => (
         </Badge>
         <H2 className="mt-4">Links</H2>
         <Text>For more advanced functionality, badges can also function as links.</Text>
-        <Badge href="https://example.com" variant="secondary">
+        <Badge as={Link} to="https://example.com" variant="secondary">
             I am a link
         </Badge>
     </>

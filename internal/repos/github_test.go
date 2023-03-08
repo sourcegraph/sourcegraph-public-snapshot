@@ -83,7 +83,8 @@ func TestGithubSource_GetRepo(t *testing.T) {
 						ForkCount:      164,
 						// We're hitting github.com here, so visibility will be empty irrespective
 						// of repository type. This is a GitHub enterprise only feature.
-						Visibility: "",
+						Visibility:       "",
+						RepositoryTopics: github.RepositoryTopics{Nodes: []github.RepositoryTopic{}},
 					},
 				}
 
@@ -168,15 +169,16 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 						},
 					},
 					Metadata: &github.Repository{
-						ID:             "MDEwOlJlcG9zaXRvcnk0NDIyODU=",
-						DatabaseID:     442285,
-						NameWithOwner:  "admiring-austin-120/fluffy-enigma",
-						Description:    "Internal repo used in tests in sourcegraph code.",
-						URL:            "https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
-						StargazerCount: 0,
-						ForkCount:      0,
-						IsPrivate:      true,
-						Visibility:     github.VisibilityInternal,
+						ID:               "MDEwOlJlcG9zaXRvcnk0NDIyODU=",
+						DatabaseID:       442285,
+						NameWithOwner:    "admiring-austin-120/fluffy-enigma",
+						Description:      "Internal repo used in tests in sourcegraph code.",
+						URL:              "https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
+						StargazerCount:   0,
+						ForkCount:        0,
+						IsPrivate:        true,
+						Visibility:       github.VisibilityInternal,
+						RepositoryTopics: github.RepositoryTopics{Nodes: []github.RepositoryTopic{{Topic: github.Topic{Name: "fluff"}}}},
 					},
 				}
 

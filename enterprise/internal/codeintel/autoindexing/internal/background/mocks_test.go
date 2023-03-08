@@ -15,7 +15,7 @@ import (
 	sqlf "github.com/keegancsmith/sqlf"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	shared2 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	enterprise "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
+	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	types1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
@@ -2289,7 +2289,7 @@ type MockPolicyMatcher struct {
 func NewMockPolicyMatcher() *MockPolicyMatcher {
 	return &MockPolicyMatcher{
 		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
-			defaultHook: func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (r0 map[string][]enterprise.PolicyMatch, r1 error) {
+			defaultHook: func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (r0 map[string][]policies.PolicyMatch, r1 error) {
 				return
 			},
 		},
@@ -2301,7 +2301,7 @@ func NewMockPolicyMatcher() *MockPolicyMatcher {
 func NewStrictMockPolicyMatcher() *MockPolicyMatcher {
 	return &MockPolicyMatcher{
 		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
-			defaultHook: func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+			defaultHook: func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
 				panic("unexpected invocation of MockPolicyMatcher.CommitsDescribedByPolicy")
 			},
 		},
@@ -2323,15 +2323,15 @@ func NewMockPolicyMatcherFrom(i PolicyMatcher) *MockPolicyMatcher {
 // CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
 // is invoked.
 type PolicyMatcherCommitsDescribedByPolicyFunc struct {
-	defaultHook func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)
-	hooks       []func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)
+	defaultHook func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)
+	hooks       []func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)
 	history     []PolicyMatcherCommitsDescribedByPolicyFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitsDescribedByPolicy delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int, v2 []types1.ConfigurationPolicy, v3 time.Time, v4 ...string) (map[string][]enterprise.PolicyMatch, error) {
+func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int, v2 []types1.ConfigurationPolicy, v3 time.Time, v4 ...string) (map[string][]policies.PolicyMatch, error) {
 	r0, r1 := m.CommitsDescribedByPolicyFunc.nextHook()(v0, v1, v2, v3, v4...)
 	m.CommitsDescribedByPolicyFunc.appendCall(PolicyMatcherCommitsDescribedByPolicyFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -2340,7 +2340,7 @@ func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int,
 // SetDefaultHook sets function that is called when the
 // CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
 // is invoked and the hook queue is empty.
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)) {
 	f.defaultHook = hook
 }
 
@@ -2349,7 +2349,7 @@ func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2357,20 +2357,20 @@ func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultReturn(r0 map[string][]enterprise.PolicyMatch, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultReturn(r0 map[string][]policies.PolicyMatch, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushReturn(r0 map[string][]enterprise.PolicyMatch, r1 error) {
-	f.PushHook(func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushReturn(r0 map[string][]policies.PolicyMatch, r1 error) {
+	f.PushHook(func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
 		return r0, r1
 	})
 }
 
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) nextHook() func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) nextHook() func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2422,7 +2422,7 @@ type PolicyMatcherCommitsDescribedByPolicyFuncCall struct {
 	Arg4 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[string][]enterprise.PolicyMatch
+	Result0 map[string][]policies.PolicyMatch
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -2887,15 +2887,9 @@ func (c ReposStoreListMinimalReposFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background)
 // used for unit testing.
 type MockUploadService struct {
-	// GetDirtyRepositoriesFunc is an instance of a mock function object
-	// controlling the behavior of the method GetDirtyRepositories.
-	GetDirtyRepositoriesFunc *UploadServiceGetDirtyRepositoriesFunc
 	// GetRecentUploadsSummaryFunc is an instance of a mock function object
 	// controlling the behavior of the method GetRecentUploadsSummary.
 	GetRecentUploadsSummaryFunc *UploadServiceGetRecentUploadsSummaryFunc
-	// GetRepoNameFunc is an instance of a mock function object controlling
-	// the behavior of the method GetRepoName.
-	GetRepoNameFunc *UploadServiceGetRepoNameFunc
 	// GetRepositoriesForIndexScanFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetRepositoriesForIndexScan.
@@ -2903,9 +2897,6 @@ type MockUploadService struct {
 	// GetUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadByID.
 	GetUploadByIDFunc *UploadServiceGetUploadByIDFunc
-	// GetUploadsByIDsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetUploadsByIDs.
-	GetUploadsByIDsFunc *UploadServiceGetUploadsByIDsFunc
 	// ReferencesForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method ReferencesForUpload.
 	ReferencesForUploadFunc *UploadServiceReferencesForUploadFunc
@@ -2915,18 +2906,8 @@ type MockUploadService struct {
 // All methods return zero values for all results, unless overwritten.
 func NewMockUploadService() *MockUploadService {
 	return &MockUploadService{
-		GetDirtyRepositoriesFunc: &UploadServiceGetDirtyRepositoriesFunc{
-			defaultHook: func(context.Context) (r0 map[int]int, r1 error) {
-				return
-			},
-		},
 		GetRecentUploadsSummaryFunc: &UploadServiceGetRecentUploadsSummaryFunc{
 			defaultHook: func(context.Context, int) (r0 []shared1.UploadsWithRepositoryNamespace, r1 error) {
-				return
-			},
-		},
-		GetRepoNameFunc: &UploadServiceGetRepoNameFunc{
-			defaultHook: func(context.Context, int) (r0 string, r1 error) {
 				return
 			},
 		},
@@ -2937,11 +2918,6 @@ func NewMockUploadService() *MockUploadService {
 		},
 		GetUploadByIDFunc: &UploadServiceGetUploadByIDFunc{
 			defaultHook: func(context.Context, int) (r0 types1.Upload, r1 bool, r2 error) {
-				return
-			},
-		},
-		GetUploadsByIDsFunc: &UploadServiceGetUploadsByIDsFunc{
-			defaultHook: func(context.Context, ...int) (r0 []types1.Upload, r1 error) {
 				return
 			},
 		},
@@ -2957,19 +2933,9 @@ func NewMockUploadService() *MockUploadService {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockUploadService() *MockUploadService {
 	return &MockUploadService{
-		GetDirtyRepositoriesFunc: &UploadServiceGetDirtyRepositoriesFunc{
-			defaultHook: func(context.Context) (map[int]int, error) {
-				panic("unexpected invocation of MockUploadService.GetDirtyRepositories")
-			},
-		},
 		GetRecentUploadsSummaryFunc: &UploadServiceGetRecentUploadsSummaryFunc{
 			defaultHook: func(context.Context, int) ([]shared1.UploadsWithRepositoryNamespace, error) {
 				panic("unexpected invocation of MockUploadService.GetRecentUploadsSummary")
-			},
-		},
-		GetRepoNameFunc: &UploadServiceGetRepoNameFunc{
-			defaultHook: func(context.Context, int) (string, error) {
-				panic("unexpected invocation of MockUploadService.GetRepoName")
 			},
 		},
 		GetRepositoriesForIndexScanFunc: &UploadServiceGetRepositoriesForIndexScanFunc{
@@ -2980,11 +2946,6 @@ func NewStrictMockUploadService() *MockUploadService {
 		GetUploadByIDFunc: &UploadServiceGetUploadByIDFunc{
 			defaultHook: func(context.Context, int) (types1.Upload, bool, error) {
 				panic("unexpected invocation of MockUploadService.GetUploadByID")
-			},
-		},
-		GetUploadsByIDsFunc: &UploadServiceGetUploadsByIDsFunc{
-			defaultHook: func(context.Context, ...int) ([]types1.Upload, error) {
-				panic("unexpected invocation of MockUploadService.GetUploadsByIDs")
 			},
 		},
 		ReferencesForUploadFunc: &UploadServiceReferencesForUploadFunc{
@@ -3000,14 +2961,8 @@ func NewStrictMockUploadService() *MockUploadService {
 // overwritten.
 func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 	return &MockUploadService{
-		GetDirtyRepositoriesFunc: &UploadServiceGetDirtyRepositoriesFunc{
-			defaultHook: i.GetDirtyRepositories,
-		},
 		GetRecentUploadsSummaryFunc: &UploadServiceGetRecentUploadsSummaryFunc{
 			defaultHook: i.GetRecentUploadsSummary,
-		},
-		GetRepoNameFunc: &UploadServiceGetRepoNameFunc{
-			defaultHook: i.GetRepoName,
 		},
 		GetRepositoriesForIndexScanFunc: &UploadServiceGetRepositoriesForIndexScanFunc{
 			defaultHook: i.GetRepositoriesForIndexScan,
@@ -3015,121 +2970,10 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		GetUploadByIDFunc: &UploadServiceGetUploadByIDFunc{
 			defaultHook: i.GetUploadByID,
 		},
-		GetUploadsByIDsFunc: &UploadServiceGetUploadsByIDsFunc{
-			defaultHook: i.GetUploadsByIDs,
-		},
 		ReferencesForUploadFunc: &UploadServiceReferencesForUploadFunc{
 			defaultHook: i.ReferencesForUpload,
 		},
 	}
-}
-
-// UploadServiceGetDirtyRepositoriesFunc describes the behavior when the
-// GetDirtyRepositories method of the parent MockUploadService instance is
-// invoked.
-type UploadServiceGetDirtyRepositoriesFunc struct {
-	defaultHook func(context.Context) (map[int]int, error)
-	hooks       []func(context.Context) (map[int]int, error)
-	history     []UploadServiceGetDirtyRepositoriesFuncCall
-	mutex       sync.Mutex
-}
-
-// GetDirtyRepositories delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockUploadService) GetDirtyRepositories(v0 context.Context) (map[int]int, error) {
-	r0, r1 := m.GetDirtyRepositoriesFunc.nextHook()(v0)
-	m.GetDirtyRepositoriesFunc.appendCall(UploadServiceGetDirtyRepositoriesFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetDirtyRepositories
-// method of the parent MockUploadService instance is invoked and the hook
-// queue is empty.
-func (f *UploadServiceGetDirtyRepositoriesFunc) SetDefaultHook(hook func(context.Context) (map[int]int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetDirtyRepositories method of the parent MockUploadService instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *UploadServiceGetDirtyRepositoriesFunc) PushHook(hook func(context.Context) (map[int]int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UploadServiceGetDirtyRepositoriesFunc) SetDefaultReturn(r0 map[int]int, r1 error) {
-	f.SetDefaultHook(func(context.Context) (map[int]int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceGetDirtyRepositoriesFunc) PushReturn(r0 map[int]int, r1 error) {
-	f.PushHook(func(context.Context) (map[int]int, error) {
-		return r0, r1
-	})
-}
-
-func (f *UploadServiceGetDirtyRepositoriesFunc) nextHook() func(context.Context) (map[int]int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UploadServiceGetDirtyRepositoriesFunc) appendCall(r0 UploadServiceGetDirtyRepositoriesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UploadServiceGetDirtyRepositoriesFuncCall
-// objects describing the invocations of this function.
-func (f *UploadServiceGetDirtyRepositoriesFunc) History() []UploadServiceGetDirtyRepositoriesFuncCall {
-	f.mutex.Lock()
-	history := make([]UploadServiceGetDirtyRepositoriesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UploadServiceGetDirtyRepositoriesFuncCall is an object that describes an
-// invocation of method GetDirtyRepositories on an instance of
-// MockUploadService.
-type UploadServiceGetDirtyRepositoriesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[int]int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UploadServiceGetDirtyRepositoriesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UploadServiceGetDirtyRepositoriesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // UploadServiceGetRecentUploadsSummaryFunc describes the behavior when the
@@ -3241,114 +3085,6 @@ func (c UploadServiceGetRecentUploadsSummaryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UploadServiceGetRecentUploadsSummaryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// UploadServiceGetRepoNameFunc describes the behavior when the GetRepoName
-// method of the parent MockUploadService instance is invoked.
-type UploadServiceGetRepoNameFunc struct {
-	defaultHook func(context.Context, int) (string, error)
-	hooks       []func(context.Context, int) (string, error)
-	history     []UploadServiceGetRepoNameFuncCall
-	mutex       sync.Mutex
-}
-
-// GetRepoName delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockUploadService) GetRepoName(v0 context.Context, v1 int) (string, error) {
-	r0, r1 := m.GetRepoNameFunc.nextHook()(v0, v1)
-	m.GetRepoNameFunc.appendCall(UploadServiceGetRepoNameFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetRepoName method
-// of the parent MockUploadService instance is invoked and the hook queue is
-// empty.
-func (f *UploadServiceGetRepoNameFunc) SetDefaultHook(hook func(context.Context, int) (string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetRepoName method of the parent MockUploadService instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *UploadServiceGetRepoNameFunc) PushHook(hook func(context.Context, int) (string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UploadServiceGetRepoNameFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceGetRepoNameFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context, int) (string, error) {
-		return r0, r1
-	})
-}
-
-func (f *UploadServiceGetRepoNameFunc) nextHook() func(context.Context, int) (string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UploadServiceGetRepoNameFunc) appendCall(r0 UploadServiceGetRepoNameFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UploadServiceGetRepoNameFuncCall objects
-// describing the invocations of this function.
-func (f *UploadServiceGetRepoNameFunc) History() []UploadServiceGetRepoNameFuncCall {
-	f.mutex.Lock()
-	history := make([]UploadServiceGetRepoNameFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UploadServiceGetRepoNameFuncCall is an object that describes an
-// invocation of method GetRepoName on an instance of MockUploadService.
-type UploadServiceGetRepoNameFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UploadServiceGetRepoNameFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UploadServiceGetRepoNameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -3591,122 +3327,6 @@ func (c UploadServiceGetUploadByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c UploadServiceGetUploadByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// UploadServiceGetUploadsByIDsFunc describes the behavior when the
-// GetUploadsByIDs method of the parent MockUploadService instance is
-// invoked.
-type UploadServiceGetUploadsByIDsFunc struct {
-	defaultHook func(context.Context, ...int) ([]types1.Upload, error)
-	hooks       []func(context.Context, ...int) ([]types1.Upload, error)
-	history     []UploadServiceGetUploadsByIDsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUploadsByIDs delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockUploadService) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]types1.Upload, error) {
-	r0, r1 := m.GetUploadsByIDsFunc.nextHook()(v0, v1...)
-	m.GetUploadsByIDsFunc.appendCall(UploadServiceGetUploadsByIDsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetUploadsByIDs
-// method of the parent MockUploadService instance is invoked and the hook
-// queue is empty.
-func (f *UploadServiceGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]types1.Upload, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUploadsByIDs method of the parent MockUploadService instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *UploadServiceGetUploadsByIDsFunc) PushHook(hook func(context.Context, ...int) ([]types1.Upload, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UploadServiceGetUploadsByIDsFunc) SetDefaultReturn(r0 []types1.Upload, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...int) ([]types1.Upload, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceGetUploadsByIDsFunc) PushReturn(r0 []types1.Upload, r1 error) {
-	f.PushHook(func(context.Context, ...int) ([]types1.Upload, error) {
-		return r0, r1
-	})
-}
-
-func (f *UploadServiceGetUploadsByIDsFunc) nextHook() func(context.Context, ...int) ([]types1.Upload, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UploadServiceGetUploadsByIDsFunc) appendCall(r0 UploadServiceGetUploadsByIDsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UploadServiceGetUploadsByIDsFuncCall
-// objects describing the invocations of this function.
-func (f *UploadServiceGetUploadsByIDsFunc) History() []UploadServiceGetUploadsByIDsFuncCall {
-	f.mutex.Lock()
-	history := make([]UploadServiceGetUploadsByIDsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UploadServiceGetUploadsByIDsFuncCall is an object that describes an
-// invocation of method GetUploadsByIDs on an instance of MockUploadService.
-type UploadServiceGetUploadsByIDsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []types1.Upload
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c UploadServiceGetUploadsByIDsFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UploadServiceGetUploadsByIDsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // UploadServiceReferencesForUploadFunc describes the behavior when the

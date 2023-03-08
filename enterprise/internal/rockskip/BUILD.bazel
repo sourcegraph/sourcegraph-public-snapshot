@@ -45,6 +45,10 @@ go_test(
         "server_test.go",
     ],
     embed = [":rockskip"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/symbols/fetcher",
         "//internal/api",
