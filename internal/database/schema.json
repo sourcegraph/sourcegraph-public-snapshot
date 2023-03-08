@@ -3405,16 +3405,6 @@
           "IndexDefinition": "CREATE UNIQUE INDEX batch_specs_unique_rand_id ON batch_specs USING btree (rand_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
-        },
-        {
-          "Name": "batch_specs_rand_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -4388,16 +4378,6 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX changeset_specs_head_ref ON changeset_specs USING btree (head_ref)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "changeset_specs_rand_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX changeset_specs_rand_id ON changeset_specs USING btree (rand_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },

@@ -294,7 +294,6 @@ Referenced by:
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_unique_rand_id" UNIQUE, btree (rand_id)
-    "batch_specs_rand_id" btree (rand_id)
 Check constraints:
     "batch_specs_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
@@ -419,7 +418,6 @@ Indexes:
     "changeset_specs_created_at" btree (created_at)
     "changeset_specs_external_id" btree (external_id)
     "changeset_specs_head_ref" btree (head_ref)
-    "changeset_specs_rand_id" btree (rand_id)
     "changeset_specs_title" btree (title)
 Check constraints:
     "changeset_specs_published_valid_values" CHECK (published = 'true'::text OR published = 'false'::text OR published = '"draft"'::text OR published IS NULL)
