@@ -46,7 +46,9 @@ export const UserAvatar = React.forwardRef(function UserAvatar(
         let url = user.avatarURL
         try {
             const urlObject = new URL(user.avatarURL)
-            if (size) {
+            // Add a size param for non-data URLs. This will resize the image
+            // if it is hosted on certain places like Gravatar and GitHub.
+            if (size && !user.avatarURL.startsWith('data:')) {
                 urlObject.searchParams.set('s', size.toString())
             }
             url = urlObject.href
@@ -81,16 +83,18 @@ export const UserAvatar = React.forwardRef(function UserAvatar(
         return initials[0]
     }
 
-    const props = {
+    const sharedProps = {
         id: targetID,
         className: classNames(styles.userAvatar, className),
         children: <span className={styles.initials}>{getInitials(name)}</span>,
     }
 
     if (inline) {
-        return <Icon ref={reference as React.ForwardedRef<SVGSVGElement>} as="div" aria-hidden={true} {...props} />
+        return (
+            <Icon ref={reference as React.ForwardedRef<SVGSVGElement>} as="div" aria-hidden={true} {...sharedProps} />
+        )
     }
 
-    return <div ref={reference} {...props} />
+    return <div ref={reference} {...sharedProps} />
 }) as ForwardReferenceComponent<'img', React.PropsWithChildren<Props>>
 UserAvatar.displayName = 'UserAvatar'

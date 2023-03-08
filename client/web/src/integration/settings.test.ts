@@ -94,6 +94,7 @@ describe('Settings', () => {
                         organizations: { nodes: [] },
                         permissionsInfo: null,
                         tags: [],
+                        scimControlled: false,
                     },
                 }),
             })

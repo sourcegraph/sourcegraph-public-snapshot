@@ -202,7 +202,13 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
             setArgs(stashArgs)
             setSelection(new Set())
 
-            return queryPreciseIndexes(stashArgs, apolloClient).pipe(
+            return queryPreciseIndexes(
+                {
+                    ...args,
+                    ...stashArgs,
+                },
+                apolloClient
+            ).pipe(
                 tap(connection => {
                     setTotalCount(connection.totalCount ?? undefined)
                 })

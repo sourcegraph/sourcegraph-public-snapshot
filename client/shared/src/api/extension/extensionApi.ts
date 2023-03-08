@@ -1,19 +1,18 @@
 import { proxy, Remote } from 'comlink'
 import { noop, sortBy } from 'lodash'
-import { BehaviorSubject, EMPTY, ReplaySubject, Unsubscribable } from 'rxjs'
+import { BehaviorSubject, EMPTY, Unsubscribable } from 'rxjs'
 import { debounceTime, mapTo } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
-import { asError, logger } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 
 import { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'
 
-import { proxySubscribable } from './api/common'
 import { DocumentHighlightKind } from './api/documentHighlights'
 import { InitData, updateContext } from './extensionHost'
-import { NotificationType, PanelViewData } from './extensionHostApi'
+import { PanelViewData } from './extensionHostApi'
 import { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
 
@@ -88,47 +87,6 @@ export function createExtensionAPIFactory(
         searchContextChanges: state.searchContextChanges.asObservable(),
     }
 
-    const createProgressReporter = async (
-        options: sourcegraph.ProgressOptions
-        // `showProgress` returned a promise when progress reporters were created
-        // in the main thread. continue to return promise for backward compatibility
-        // eslint-disable-next-line @typescript-eslint/require-await
-    ): Promise<sourcegraph.ProgressReporter> => {
-        // There's no guarantee that UI consumers have subscribed to the progress observable
-        // by the time that an extension reports progress, so replay the latest report on subscription.
-        const progressSubject = new ReplaySubject<sourcegraph.Progress>(1)
-
-        // progress notifications have to be proxied since the observable
-        // `progress` property cannot be cloned
-        state.progressNotifications.next(
-            proxy({
-                baseNotification: {
-                    message: options.title,
-                    type: NotificationType.Log,
-                },
-                progress: proxySubscribable(progressSubject.asObservable()),
-            })
-        )
-
-        // return ProgressReporter, which exposes a subset of Subject methods to extensions
-        return {
-            next: (progress: sourcegraph.Progress) => {
-                progressSubject.next(progress)
-            },
-            error: (value: any) => {
-                const error = asError(value)
-                progressSubject.error({
-                    message: error.message,
-                    name: error.name,
-                    stack: error.stack,
-                })
-            },
-            complete: () => {
-                progressSubject.complete()
-            },
-        }
-    }
-
     // App
     const window: sourcegraph.Window = {
         get visibleViewComponents(): sourcegraph.ViewComponent[] {
@@ -139,24 +97,6 @@ export function createExtensionAPIFactory(
             return state.activeViewComponentChanges.value
         },
         activeViewComponentChanges: state.activeViewComponentChanges.asObservable(),
-        showNotification: (message, type) => {
-            state.plainNotifications.next({ message, type })
-        },
-        withProgress: async (options, task) => {
-            const reporter = await createProgressReporter(options)
-            try {
-                const result = task(reporter)
-                reporter.complete()
-                return await result
-            } catch (error) {
-                reporter.error(error)
-                throw error
-            }
-        },
-
-        showProgress: options => createProgressReporter(options),
-        showMessage: message => clientAPI.showMessage(message),
-        showInputBox: options => clientAPI.showInputBox(options),
     }
 
     const app: typeof sourcegraph['app'] = {
@@ -305,7 +245,6 @@ export function createExtensionAPIFactory(
             Selection,
             Location,
             MarkupKind,
-            NotificationType,
             DocumentHighlightKind,
             app: {
                 ...app,

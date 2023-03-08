@@ -158,7 +158,7 @@ func runMigration(
 	}
 
 	if !skipDriftCheck {
-		if err := CheckDrift(ctx, r, plan.from.GitTagWithPatch(patch), out, false, expectedSchemaFactories); err != nil {
+		if err := CheckDrift(ctx, r, plan.from.GitTagWithPatch(patch), out, false, schemas.SchemaNames, expectedSchemaFactories); err != nil {
 			return err
 		}
 	}
@@ -319,15 +319,16 @@ var ErrDatabaseDriftDetected = errors.New("database drift detected")
 // exists, and nil error when not.
 //
 //   - The `verbose` indicates whether to collect drift details in the output.
-//   - The `expectedSchemaFactories` is the means to retrieve the schema
+//   - The `schemaNames` is the list of schema names to check for drift.
+//   - The `expectedSchemaFactories` is the means to retrieve the schema.
 //     definitions at the target version.
-func CheckDrift(ctx context.Context, r Runner, version string, out *output.Output, verbose bool, expectedSchemaFactories []ExpectedSchemaFactory) error {
+func CheckDrift(ctx context.Context, r Runner, version string, out *output.Output, verbose bool, schemaNames []string, expectedSchemaFactories []ExpectedSchemaFactory) error {
 	type schemaWithDrift struct {
 		name  string
 		drift *bytes.Buffer
 	}
-	schemasWithDrift := make([]*schemaWithDrift, 0, len(schemas.SchemaNames))
-	for _, schemaName := range schemas.SchemaNames {
+	schemasWithDrift := make([]*schemaWithDrift, 0, len(schemaNames))
+	for _, schemaName := range schemaNames {
 		store, err := r.Store(ctx, schemaName)
 		if err != nil {
 			return errors.Wrap(err, "get migration store")

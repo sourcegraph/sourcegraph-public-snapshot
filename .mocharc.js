@@ -1,4 +1,4 @@
-const IS_BAZEL = !!(process.env.BAZEL_BINDIR || process.env.BAZEL_TEST)
+const IS_BAZEL = !!(process.env.JS_BINARY__TARGET || process.env.BAZEL_BINDIR || process.env.BAZEL_TEST)
 const rootDir = IS_BAZEL ? process.cwd() : __dirname
 
 module.exports = {

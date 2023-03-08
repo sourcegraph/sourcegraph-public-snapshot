@@ -45,7 +45,7 @@ func (s *fakeEventLogStore) loggedEventNames() []string {
 
 func TestOwnSearchEventNames(t *testing.T) {
 	for literal, wantEventNames := range map[string][]string{
-		"file:has.owner(one@example.com)": {"FileHasOwnersSearch", "search.latencies.file"},
+		"file:has.owner(one@example.com)": {"FileHasOwnerSearch", "search.latencies.file"},
 		"select:file.owners":              {"SelectFileOwnersSearch", "search.latencies.repo"},
 	} {
 		t.Run(literal, func(t *testing.T) {
@@ -68,9 +68,8 @@ func TestOwnSearchEventNames(t *testing.T) {
 			db.EventLogsFunc.SetDefaultReturn(eventStore)
 			ctx := actor.WithActor(context.Background(), actor.FromUser(42))
 			childJob := mockjob.NewMockJob()
-			voidCollector := streaming.StreamFunc(func(ev streaming.SearchEvent) {})
 			logJob := jobutil.NewLogJob(inputs, childJob)
-			if _, err := logJob.Run(ctx, job.RuntimeClients{DB: db}, voidCollector); err != nil {
+			if _, err := logJob.Run(ctx, job.RuntimeClients{DB: db}, streaming.NewNullStream()); err != nil {
 				t.Fatalf("LogJob.Run: %s", err)
 			}
 			if diff := cmp.Diff(wantEventNames, eventStore.loggedEventNames()); diff != "" {

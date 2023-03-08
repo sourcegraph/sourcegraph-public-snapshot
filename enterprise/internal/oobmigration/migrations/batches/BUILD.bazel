@@ -28,6 +28,10 @@ go_test(
         "ssh_migrator_test.go",
     ],
     embed = [":batches"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/batches/sources/bitbucketcloud",
         "//enterprise/internal/batches/store",

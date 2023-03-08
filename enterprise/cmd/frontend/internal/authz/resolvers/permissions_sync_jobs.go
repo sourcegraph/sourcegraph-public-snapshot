@@ -12,7 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const permissionsSyncJobIDKind = "PermissionsSyncJob"
 
 func NewPermissionsSyncJobsResolver(db database.DB, args graphqlbackend.ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsSyncJobResolver], error) {
 	store := &permissionsSyncJobConnectionStore{
@@ -278,10 +281,14 @@ func (s subject) ToUser() (*graphqlbackend.UserResolver, bool) {
 }
 
 func marshalPermissionsSyncJobID(id int) graphql.ID {
-	return relay.MarshalID("PermissionsSyncJob", id)
+	return relay.MarshalID(permissionsSyncJobIDKind, id)
 }
 
 func unmarshalPermissionsSyncJobID(id graphql.ID) (jobID int, err error) {
+	if kind := relay.UnmarshalKind(id); kind != permissionsSyncJobIDKind {
+		err = errors.Errorf("expected graphql ID to have kind %q; got %q", permissionsSyncJobIDKind, kind)
+		return
+	}
 	err = relay.UnmarshalSpec(id, &jobID)
 	return
 }

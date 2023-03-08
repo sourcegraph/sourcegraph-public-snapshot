@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
 
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
@@ -50,14 +51,16 @@ describe('UserNavItem', () => {
         expect(
             render(
                 <MemoryRouter>
-                    <UserNavItem
-                        showKeyboardShortcutsHelp={() => undefined}
-                        authenticatedUser={USER}
-                        isSourcegraphDotCom={true}
-                        isSourcegraphApp={false}
-                        codeHostIntegrationMessaging="browser-extension"
-                        showFeedbackModal={() => undefined}
-                    />
+                    <MockedTestProvider>
+                        <UserNavItem
+                            showKeyboardShortcutsHelp={() => undefined}
+                            authenticatedUser={USER}
+                            isSourcegraphDotCom={true}
+                            isSourcegraphApp={false}
+                            codeHostIntegrationMessaging="browser-extension"
+                            showFeedbackModal={() => undefined}
+                        />
+                    </MockedTestProvider>
                 </MemoryRouter>
             ).asFragment()
         ).toMatchSnapshot()
@@ -65,14 +68,16 @@ describe('UserNavItem', () => {
 
     test('logout click triggers page refresh instead of performing client-side only navigation', async () => {
         const result = renderWithBrandedContext(
-            <UserNavItem
-                showKeyboardShortcutsHelp={() => undefined}
-                authenticatedUser={USER}
-                isSourcegraphDotCom={true}
-                isSourcegraphApp={false}
-                codeHostIntegrationMessaging="browser-extension"
-                showFeedbackModal={() => undefined}
-            />
+            <MockedTestProvider>
+                <UserNavItem
+                    showKeyboardShortcutsHelp={() => undefined}
+                    authenticatedUser={USER}
+                    isSourcegraphDotCom={true}
+                    isSourcegraphApp={false}
+                    codeHostIntegrationMessaging="browser-extension"
+                    showFeedbackModal={() => undefined}
+                />
+            </MockedTestProvider>
         )
 
         // Prevent console.error cause by "Not implemented: navigation (except hash changes)"

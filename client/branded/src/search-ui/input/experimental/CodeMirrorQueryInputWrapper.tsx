@@ -339,6 +339,15 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
         )
     )
 
+    // Position cursor at the end of the input when it is initialized
+    useEffect(() => {
+        if (editorRef.current) {
+            editorRef.current.dispatch({
+                selection: { anchor: editorRef.current.state.doc.length },
+            })
+        }
+    }, [])
+
     const focus = useCallback(() => {
         editorRef.current?.contentDOM.focus()
     }, [])
@@ -368,7 +377,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
                         </Tooltip>
                         {mode && <span className="ml-1">{mode}:</span>}
                     </div>
-                    <div ref={editorContainerRef} className="d-contents" />
+                    <div ref={editorContainerRef} className={styles.input} />
                     {!mode && children}
                 </div>
                 <div ref={setSuggestionsContainer} className={styles.suggestions} />

@@ -29,10 +29,10 @@ By default on startup, `syntect_server` will list all features (themes + file ty
 
 ## Development
 
-1. `rustup` should automatically detect what version of rust is in the `./rust-toolchain` file.
-2. Use `cargo test --workspace` to run all the tests
-3. Use `cargo run --bin syntect_server` to run the server locally.
-4. You can change the `SRC_SYNTECT_SERVER` option in your `sg.config.yaml` to point to whatever port you're running on (usually 8000) and test against that without building the docker image.
+1. Use `cargo test --workspace` to run all the tests.
+   To update snapshots, run `cargo insta review`.
+2. Use `cargo run --bin syntect_server` to run the server locally.
+3. You can change the `SRC_SYNTECT_SERVER` option in your `sg.config.yaml` to point to whatever port you're running on (usually 8000) and test against that without building the docker image.
 
 ## Building docker image
 

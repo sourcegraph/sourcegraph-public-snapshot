@@ -825,6 +825,7 @@ type User struct {
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	Searchable            bool
+	SCIMControlled        bool
 }
 
 // UserForSCIM extends user with email addresses and SCIM external ID.
@@ -1738,8 +1739,8 @@ type OwnershipUsageStatistics struct {
 	// `select:file.owners`.
 	SelectFileOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"select_file_owners_search,omitempty"`
 
-	// Activity of using a `file:has.owners` predicate in search.
-	FileHasOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owners_search,omitempty"`
+	// Activity of using a `file:has.owner` predicate in search.
+	FileHasOwnerSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owner_search,omitempty"`
 
 	// Opening ownership panel.
 	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`

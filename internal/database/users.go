@@ -1191,7 +1191,21 @@ func (u *userStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.User, error) {
-	q := sqlf.Sprintf("SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at, u.tos_accepted, u.searchable FROM users u %s", query)
+	q := sqlf.Sprintf(`
+SELECT u.id,
+       u.username,
+       u.display_name,
+       u.avatar_url,
+       u.created_at,
+       u.updated_at,
+       u.site_admin,
+       u.passwd IS NOT NULL,
+       u.tags,
+       u.invalidated_sessions_at,
+       u.tos_accepted,
+       u.searchable,
+       (SELECT COUNT(user_id) FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') >= 1 AS scim_controlled
+FROM users u %s`, query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -1202,7 +1216,7 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, &u.SCIMControlled)
 		if err != nil {
 			return nil, err
 		}
@@ -1467,15 +1481,6 @@ func validPassword(hash, password string) bool {
 	}
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
-
-const (
-	// TagAllowUserExternalServicePrivate if set on a user, allows them to add
-	// private code through external services they own.
-	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
-	// TagAllowUserExternalServicePublic if set on a user, allows them to add
-	// public code through external services they own.
-	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
-)
 
 // SetTag adds (present=true) or removes (present=false) a tag from the given user's set of tags. An
 // error occurs if the user does not exist. Adding a duplicate tag or removing a nonexistent tag is

@@ -1,31 +1,21 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 import { Observable } from 'rxjs'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { AlertProps, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'
 
 import styles from './WebHoverOverlay.module.scss'
 
-const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
-    [NotificationType.Info]: 'secondary',
-    [NotificationType.Error]: 'danger',
-    [NotificationType.Warning]: 'warning',
-}
-
-const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKindToAlertVariant[iconKind]
-
 export interface WebHoverOverlayProps
     extends Omit<
             HoverOverlayProps,
-            'className' | 'closeButtonClassName' | 'actionItemClassName' | 'getAlertVariant' | 'actionItemStyleProps'
+            'className' | 'closeButtonClassName' | 'actionItemClassName' | 'actionItemStyleProps'
         >,
         HoverThresholdProps,
         SettingsCascadeProps {
@@ -41,28 +31,7 @@ export interface WebHoverOverlayProps
 }
 
 export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<WebHoverOverlayProps>> = props => {
-    const { onAlertDismissed: outerOnAlertDismissed } = props
-    const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
-    const onAlertDismissed = useCallback(
-        (alertType: string) => {
-            if (!dismissedAlerts.includes(alertType)) {
-                setDismissedAlerts([...dismissedAlerts, alertType])
-                outerOnAlertDismissed?.(alertType)
-            }
-        },
-        [dismissedAlerts, setDismissedAlerts, outerOnAlertDismissed]
-    )
-
-    let propsToUse = props
-    if (props.hoverOrError && props.hoverOrError !== 'loading' && !isErrorLike(props.hoverOrError)) {
-        const filteredAlerts = (props.hoverOrError?.alerts || []).filter(
-            alert => !alert.type || !dismissedAlerts.includes(alert.type)
-        )
-        propsToUse = { ...props, hoverOrError: { ...props.hoverOrError, alerts: filteredAlerts } }
-    }
-
-    const { hoverOrError } = propsToUse
-    const { onHoverShown, hoveredToken } = props
+    const { hoverOrError, onHoverShown, hoveredToken } = props
 
     /** Whether the hover has actual content (that provides value to the user) */
     const hoverHasValue = hoverOrError !== 'loading' && !isErrorLike(hoverOrError) && !!hoverOrError?.contents?.length
@@ -75,12 +44,10 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
 
     return (
         <HoverOverlay
-            {...propsToUse}
+            {...props}
             className={classNames(styles.webHoverOverlay, props.hoverOverlayContainerClassName)}
             closeButtonClassName={styles.webHoverOverlayCloseButton}
             actionItemClassName="border-0"
-            onAlertDismissed={onAlertDismissed}
-            getAlertVariant={getAlertVariant}
             actionItemStyleProps={{
                 actionItemSize: 'sm',
                 actionItemVariant: 'secondary',

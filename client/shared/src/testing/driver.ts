@@ -255,6 +255,11 @@ export class Driver {
          */
         await this.page.goto(this.sourcegraphBaseUrl)
 
+        // Skip setup wizard
+        await this.page.evaluate(() => {
+            localStorage.setItem('setup.skipped', 'true')
+        })
+
         /**
          * In case a user is not authenticated, and site-init is NOT required, one redirect happens:
          * 1. Redirect to /sign-in?returnTo=%2F
