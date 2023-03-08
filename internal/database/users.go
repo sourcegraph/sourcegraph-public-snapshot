@@ -1192,7 +1192,6 @@ func (u *userStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User
 // getBySQL returns users matching the SQL query, if any exist.
 func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.User, error) {
 	q := sqlf.Sprintf(`
-WITH scim_accounts AS (SELECT user_id FROM user_external_accounts WHERE service_type = 'scim')
 SELECT u.id,
        u.username,
        u.display_name,
@@ -1205,9 +1204,9 @@ SELECT u.id,
        u.invalidated_sessions_at,
        u.tos_accepted,
        u.searchable,
-       (SELECT COUNT(user_id) FROM scim_accounts WHERE user_id=u.id) >= 1 AS scim_controlled
+       EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled
 FROM users u
-LEFT JOIN scim_accounts sa ON u.id = sa.user_id
+LEFT JOIN user_external_accounts AS sa ON u.id = sa.user_id
  %s`, query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
@@ -1242,6 +1241,7 @@ WITH scim_accounts AS (
         account_data
     FROM user_external_accounts
     WHERE service_type = 'scim'
+      AND deleted_at IS NULL
 )
 SELECT u.id,
        u.username,
