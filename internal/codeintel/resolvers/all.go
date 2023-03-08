@@ -374,6 +374,7 @@ type CodeIntelIndexerResolver interface {
 	Key() string
 	Name() string
 	URL() string
+	ImageName() *string
 }
 
 type IndexConfigurationResolver interface {
@@ -661,8 +662,10 @@ type LSIFUploadsAuditLogsResolver interface {
 }
 
 type IndexStepResolver interface {
+	Commands() []string
 	IndexerArgs() []string
 	Outfile() *string
+	RequestedEnvVars() *[]string
 	LogEntry() ExecutionLogEntryResolver
 }
 

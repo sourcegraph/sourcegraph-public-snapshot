@@ -9,6 +9,7 @@ import (
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -18,6 +19,14 @@ import (
 )
 
 func TestGetCodeOwnersFromMatches(t *testing.T) {
+	setupDB := func() *edb.MockEnterpriseDB {
+		codeownersStore := edb.NewMockCodeownersStore()
+		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
+		db := edb.NewMockEnterpriseDB()
+		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+		return db
+	}
+
 	t.Run("no results for no codeowners file", func(t *testing.T) {
 		ctx := context.Background()
 
@@ -25,8 +34,8 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
 			return nil, fs.ErrNotExist
 		})
-		db := database.NewMockDB()
-		rules := NewRulesCache(gitserverClient, db)
+
+		rules := NewRulesCache(gitserverClient, setupDB())
 
 		matches, err := getCodeOwnersFromMatches(ctx, &rules, []result.Match{
 			&result.FileMatch{
@@ -49,8 +58,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			// return a codeowner path for no which doesn't match the path of the match below.
 			return []byte("NO.md @test\n"), nil
 		})
-		db := database.NewMockDB()
-		rules := NewRulesCache(gitserverClient, db)
+		rules := NewRulesCache(gitserverClient, setupDB())
 
 		matches, err := getCodeOwnersFromMatches(ctx, &rules, []result.Match{
 			&result.FileMatch{
@@ -76,7 +84,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		})
 		mockUserStore := database.NewMockUserStore()
 		mockTeamStore := database.NewMockTeamStore()
-		db := database.NewMockDB()
+		db := setupDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
 

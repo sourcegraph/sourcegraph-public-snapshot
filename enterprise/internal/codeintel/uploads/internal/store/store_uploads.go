@@ -1181,7 +1181,7 @@ ORDER BY repository_id, commit
 LIMIT %s
 `
 
-// UpdateCommittedAt tupdates the committed_at column for upload matching the given repository and commit.
+// UpdateCommittedAt updates the committed_at column for upload matching the given repository and commit.
 func (s *store) UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) (err error) {
 	ctx, _, endObservation := s.operations.updateCommittedAt.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
@@ -1390,9 +1390,11 @@ func (s *store) GetUploadIDsWithReferences(
 		filtered[packageReference.DumpID] = struct{}{}
 	}
 
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
-		attribute.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned))
+	if trace != nil {
+		trace.AddEvent("TODO Domain Owner",
+			attribute.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
+			attribute.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned))
+	}
 
 	flattened := make([]int, 0, len(filtered))
 	for k := range filtered {

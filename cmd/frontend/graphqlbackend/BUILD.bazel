@@ -20,6 +20,7 @@ go_library(
         "access_requests.go",
         "access_token.go",
         "access_tokens.go",
+        "app.go",
         "auth_provider.go",
         "auth_providers.go",
         "authz.go",
@@ -181,6 +182,7 @@ go_library(
         "rbac.graphql",
         "own.graphql",
         "embeddings.graphql",
+        "app.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [
@@ -260,6 +262,8 @@ go_library(
         "//internal/search/streaming",
         "//internal/search/symbol",
         "//internal/search/zoekt",
+        "//internal/service/servegit",
+        "//internal/singleprogram/filepicker",
         "//internal/src-prometheus",
         "//internal/symbols",
         "//internal/syncx",
@@ -383,8 +387,12 @@ go_test(
         "webhook_logs_test.go",
     ],
     # graphqlbackend_test.go opens itself during its test, so we need to make it available.
-    data = ["graphqlbackend_test.go"],  # keep
+    data = ["graphqlbackend_test.go"],
     embed = [":graphqlbackend"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/auth/providers",
         "//cmd/frontend/backend",

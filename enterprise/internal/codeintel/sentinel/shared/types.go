@@ -27,6 +27,10 @@ type Vulnerability struct {
 	AffectedPackages []AffectedPackage
 }
 
+func (v Vulnerability) RecordID() int {
+	return v.ID
+}
+
 // Data that varies across instances of a vulnerability
 // Need to decide if this will be flat inside Vulnerability (and have multiple duplicate vulns)
 // or a separate struct/table

@@ -20,6 +20,10 @@ go_test(
     name = "iterator_test",
     srcs = ["repo_iterator_test.go"],
     embed = [":iterator"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//internal/api",

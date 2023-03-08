@@ -12,13 +12,14 @@ Cody is in private alpha (tagged as an [experimental](../doc/admin/beta_and_expe
 
 To enable the Cody extension to work with your Sourcegraph instance (requires site-admin permissions), follow the steps below. Note that this assumes you've reached out to us to get required `accessToken`(s).
 
-* Go to Site admin > Site configuration (`/site-admin/configuration`) on your instance
+* Go to Site admin > Site configuration (`/site-admin/configuration`) on your instance.
 * (Required) Add the `completions` config:
 
 ```json
 "completions": {
   "enabled": true,
   "accessToken": "<token>",
+  "model": "claude-v1",
   "provider": "anthropic"
 }
 ```
@@ -46,6 +47,8 @@ Here is the config for the OpenAI Embeddings API:
   "dimensions": 1536
 }
 ```
+
+* Navigate to Site admin > Cody (`/site-admin/cody`) and schedule repositories for embedding.
 
 > NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice). In particular, some code snippets will be sent to a third-party language model provider when you use the Cody extension.
 

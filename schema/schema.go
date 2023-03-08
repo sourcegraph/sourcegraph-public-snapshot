@@ -203,7 +203,7 @@ type AzureDevOpsAuthProvider struct {
 type AzureDevOpsConnection struct {
 	// EnforcePermissions description: A flag to enforce Azure DevOps repository access permissions
 	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
-	// Exclude description: A list of repositories to never mirror from this Azure DevOps Services/Server instance.
+	// Exclude description: A list of repositories to never mirror from Azure DevOps Services.
 	Exclude []*ExcludedAzureDevOpsServerRepo `json:"exclude,omitempty"`
 	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
@@ -211,7 +211,7 @@ type AzureDevOpsConnection struct {
 	Projects []string `json:"projects,omitempty"`
 	// Token description: The Personal Access Token associated with the Azure DevOps username used for authentication.
 	Token string `json:"token"`
-	// Url description: URL of a Azure DevOps Services/Server instance, such as https://dev.azure.com.
+	// Url description: URL for Azure DevOps Services, set to https://dev.azure.com.
 	Url string `json:"url"`
 	// Username description: A username for authentication with the Azure DevOps code host.
 	Username string `json:"username"`
@@ -547,6 +547,8 @@ type Completions struct {
 	AccessToken string `json:"accessToken"`
 	// Enabled description: Toggles whether completions are enabled.
 	Enabled bool `json:"enabled"`
+	// Model description: The model used for completions.
+	Model string `json:"model"`
 	// Provider description: The external completions provider.
 	Provider string `json:"provider"`
 }
@@ -667,9 +669,9 @@ type ExcludedAWSCodeCommitRepo struct {
 	Name string `json:"name,omitempty"`
 }
 type ExcludedAzureDevOpsServerRepo struct {
-	// Name description: The name of an Azure DevOps Services/Server project and repository ("projectName/repositoryName") to exclude from mirroring.
+	// Name description: The name of an Azure DevOps Services project and repository ("projectName/repositoryName") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
-	// Pattern description: Regular expression which matches against the name of an Azure DevOps Services/Server repo.
+	// Pattern description: Regular expression which matches against the name of an Azure DevOps Services repo.
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedBitbucketCloudRepo struct {
@@ -739,20 +741,18 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// AccessRequestEnabled description: Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.
 	AccessRequestEnabled *bool `json:"accessRequest.enabled,omitempty"`
-	// AzureDevOps description: Allow adding Azure DevOps code host connections
-	AzureDevOps string `json:"azureDevOps,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
+	// EnableGRPC description: Enables gRPC for communication between internal services
+	EnableGRPC bool `json:"enableGRPC,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
-	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
-	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
 	// EnableStorm description: Enables the Storm frontend architecture changes.
 	EnableStorm bool `json:"enableStorm,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
@@ -836,13 +836,12 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "accessRequest.enabled")
-	delete(m, "azureDevOps")
 	delete(m, "bitbucketServerFastPerm")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
+	delete(m, "enableGRPC")
 	delete(m, "enableGithubInternalRepoVisibility")
 	delete(m, "enablePermissionsWebhooks")
-	delete(m, "enablePostSignupFlow")
 	delete(m, "enableStorm")
 	delete(m, "eventLogging")
 	delete(m, "gitServerPinnedRepos")
@@ -1622,9 +1621,11 @@ type OtherExternalServiceConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	//
-	// Note: These patterns are ignored if using src-expose / src-serve.
+	// Note: These patterns are ignored if using src-expose / src-serve / src-serve-local.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	Url                   string `json:"url,omitempty"`
+	// Root description: The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Sourcegraph App and define the repos configuration property such as ["src-serve-local"].
+	Root string `json:"root,omitempty"`
+	Url  string `json:"url,omitempty"`
 }
 type OutputVariable struct {
 	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
@@ -1989,8 +1990,6 @@ type Settings struct {
 	BasicCodeIntelIndexOnly bool `json:"basicCodeIntel.indexOnly,omitempty"`
 	// BasicCodeIntelUnindexedSearchTimeout description: The timeout (in milliseconds) for un-indexed search requests.
 	BasicCodeIntelUnindexedSearchTimeout float64 `json:"basicCodeIntel.unindexedSearchTimeout,omitempty"`
-	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
-	CodeHostUseNativeTooltips bool `json:"codeHost.useNativeTooltips,omitempty"`
 	// CodeIntelDisableRangeQueries description: Whether to fetch multiple precise definitions and references on hover.
 	CodeIntelDisableRangeQueries bool `json:"codeIntel.disableRangeQueries,omitempty"`
 	// CodeIntelDisableSearchBased description: Never fall back to search-based code intelligence.
@@ -2094,7 +2093,6 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "basicCodeIntel.includeForks")
 	delete(m, "basicCodeIntel.indexOnly")
 	delete(m, "basicCodeIntel.unindexedSearchTimeout")
-	delete(m, "codeHost.useNativeTooltips")
 	delete(m, "codeIntel.disableRangeQueries")
 	delete(m, "codeIntel.disableSearchBased")
 	delete(m, "codeIntel.mixPreciseAndSearchBasedReferences")
@@ -2364,9 +2362,11 @@ type SiteConfiguration struct {
 	CodeIntelAutoIndexingIndexerMap map[string]string `json:"codeIntelAutoIndexing.indexerMap,omitempty"`
 	// CodeIntelAutoIndexingPolicyRepositoryMatchLimit description: The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.
 	CodeIntelAutoIndexingPolicyRepositoryMatchLimit *int `json:"codeIntelAutoIndexing.policyRepositoryMatchLimit,omitempty"`
+	// CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix description: An arbitrary identifier used to group calculated rankings from SCIP data (excluding the SCIP export).
+	CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix string `json:"codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix,omitempty"`
 	// CodeIntelRankingDocumentReferenceCountsEnabled description: Enables/disables the document reference counts feature. Currently experimental.
 	CodeIntelRankingDocumentReferenceCountsEnabled *bool `json:"codeIntelRanking.documentReferenceCountsEnabled,omitempty"`
-	// CodeIntelRankingDocumentReferenceCountsGraphKey description: The string used to group document reference counts for a single graph
+	// CodeIntelRankingDocumentReferenceCountsGraphKey description: An arbitrary identifier used to group calculated rankings from SCIP data (including the SCIP export).
 	CodeIntelRankingDocumentReferenceCountsGraphKey string `json:"codeIntelRanking.documentReferenceCountsGraphKey,omitempty"`
 	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 72hrs.
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
@@ -2596,6 +2596,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelAutoIndexing.enabled")
 	delete(m, "codeIntelAutoIndexing.indexerMap")
 	delete(m, "codeIntelAutoIndexing.policyRepositoryMatchLimit")
+	delete(m, "codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix")
 	delete(m, "codeIntelRanking.documentReferenceCountsEnabled")
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
 	delete(m, "codeIntelRanking.staleResultsAge")

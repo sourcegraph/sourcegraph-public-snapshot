@@ -3,11 +3,15 @@
 package singleprogram
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
+	"github.com/fatih/color"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -134,16 +138,80 @@ func Init(logger log.Logger) {
 
 	setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
 
+	haveDocker := isDockerAvailable()
+	if !haveDocker {
+		printStatusCheckError(
+			"Docker is unavailable",
+			"Sourcegraph is better when Docker is available; some features may not work:",
+			"- Batch changes",
+			"- Symbol search",
+			"- Symbols overview tab (on repository pages)",
+		)
+	}
+
+	if _, err := exec.LookPath("src"); err != nil {
+		printStatusCheckError(
+			"src-cli is unavailable",
+			"Sourcegraph is better when src-cli is available; batch changes may not work.",
+			"Installation: https://github.com/sourcegraph/src-cli",
+		)
+	}
+
 	// generate a shell script to run a ctags Docker image
 	// unless the environment is already set up to find ctags
 	ctagsPath := os.Getenv("CTAGS_COMMAND")
 	if stat, err := os.Stat(ctagsPath); err != nil || stat.IsDir() {
-		// Write script that invokes universal-ctags via Docker.
-		// TODO(sqs): TODO(single-binary): stop relying on a ctags Docker image
-		ctagsPath = filepath.Join(cacheDir, "universal-ctags-dev")
-		writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
-		setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+		// Write script that invokes universal-ctags via Docker, if Docker is available.
+		// TODO(single-binary): stop relying on a ctags Docker image
+		if haveDocker {
+			ctagsPath = filepath.Join(cacheDir, "universal-ctags-dev")
+			writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
+			setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+		}
 	}
+}
+
+func printStatusCheckError(title, description string, details ...string) {
+	pad := func(s string, n int) string {
+		spaces := n - len(s)
+		if spaces < 0 {
+			spaces = 0
+		}
+		return s + strings.Repeat(" ", spaces)
+	}
+
+	newLine := "\033[0m\n"
+	titleRed := color.New(color.FgRed, color.BgYellow, color.Bold)
+	titleRed.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
+	titleRed.Fprintf(os.Stderr, "| %s |"+newLine, pad(title, 76))
+	titleRed.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
+
+	subline := func(s string) string {
+		return color.RedString("%s %s %s"+newLine, titleRed.Sprint("|"), pad(s, 76), titleRed.Sprint("|"))
+	}
+	msg := subline(description)
+	msg += subline("")
+	for _, detail := range details {
+		msg += subline(detail)
+	}
+	msg += subline("")
+	fmt.Fprintf(os.Stderr, "%s", msg)
+	titleRed.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
+}
+
+func isDockerAvailable() bool {
+	if _, err := exec.LookPath("docker"); err != nil {
+		return false
+	}
+
+	cmd := exec.Command("docker", "stats", "--no-stream")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	if err := cmd.Run(); err != nil {
+		return false
+	}
+	return true
 }
 
 // universalCtagsDevScript is copied from cmd/symbols/universal-ctags-dev.

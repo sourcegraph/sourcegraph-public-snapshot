@@ -27,6 +27,7 @@ ts_project(
         "temporarySettingsContext.ts",
         "utils.ts",
     ],
+    module = "commonjs",
     tsconfig = ":tsconfig",
     # TODO(bazel): type-only imports
     deps = [

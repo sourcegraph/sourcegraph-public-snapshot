@@ -25,7 +25,7 @@ func NewPreciseCodeIntelSupportResolver(filepath string) resolverstubs.PreciseSu
 
 	resolvers := make([]resolverstubs.CodeIntelIndexerResolver, 0, len(indexers))
 	for _, indexer := range indexers {
-		resolvers = append(resolvers, types.NewCodeIntelIndexerResolverFrom(indexer))
+		resolvers = append(resolvers, types.NewCodeIntelIndexerResolverFrom(indexer, ""))
 	}
 
 	return &preciseCodeIntelSupportResolver{

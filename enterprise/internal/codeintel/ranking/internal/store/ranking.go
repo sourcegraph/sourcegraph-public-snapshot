@@ -2,13 +2,13 @@ package store
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -163,21 +163,19 @@ func (s *store) InsertPathCountInputs(
 	ctx, _, endObservation := s.operations.insertPathCountInputs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	parts := strings.Split(derivativeGraphKey, "-")
-	if len(parts) < 2 {
-		return 0, 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
+	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	if !ok {
+		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
 	}
-	// Remove last segment, which indicates the current time bucket
-	parentGraphKey := strings.Join(parts[:len(parts)-1], "-")
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		insertPathCountInputsQuery,
-		parentGraphKey,
+		graphKey,
 		derivativeGraphKey,
 		batchSize,
 		derivativeGraphKey,
 		derivativeGraphKey,
-		parentGraphKey,
+		graphKey,
 		derivativeGraphKey,
 	))
 	if err != nil {
@@ -241,7 +239,8 @@ processable_symbols AS (
 				rrp.graph_key = %s AND
 				u.repository_id = u2.repository_id AND
 				u.root = u2.root AND
-				u.indexer = u2.indexer
+				u.indexer = u2.indexer AND
+				u.id != u2.id
 		) AND
 		-- For multiple references for the same repository/root/indexer in THIS batch, we want to
 		-- process the one associated with the most recently processed upload record. This should
@@ -304,9 +303,9 @@ func (s *store) InsertPathRanks(
 	)
 	defer endObservation(1, observation.Args{})
 
-	// Unused, but here for validation
-	if parts := strings.Split(derivativeGraphKey, "-"); len(parts) < 2 {
-		return 0, 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
+	_, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	if !ok {
+		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
 	}
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
@@ -546,17 +545,15 @@ func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string)
 	ctx, _, endObservation := s.operations.vacuumStaleRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	parts := strings.Split(derivativeGraphKey, "-")
-	if len(parts) < 2 {
-		return 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
+	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	if !ok {
+		return 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
 	}
-	// Remove last segment, which indicates the current time bucket
-	parentGraphKey := strings.Join(parts[:len(parts)-1], "-")
 
 	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
 		vacuumStaleRanksQuery,
 		derivativeGraphKey,
-		parentGraphKey,
+		graphKey,
 		derivativeGraphKey,
 	)))
 	return count, err
@@ -568,7 +565,7 @@ matching_graph_keys AS (
 	SELECT DISTINCT graph_key
 	FROM codeintel_path_ranks
 	-- Implicit delete anything with a different graph key root
-	WHERE graph_key != %s AND graph_key LIKE %s || '-%%'
+	WHERE graph_key != %s AND graph_key LIKE %s || '.%%'
 ),
 valid_graph_keys AS (
 	-- Select the current graph key as well as the highest graph key that
