@@ -26,4 +26,8 @@ go_test(
         "@com_github_sourcegraph_log//:log",
         "@com_github_stretchr_testify//assert",
     ],
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
 )
