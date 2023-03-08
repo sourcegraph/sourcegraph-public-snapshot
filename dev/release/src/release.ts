@@ -6,6 +6,7 @@ import chalk from 'chalk'
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
 import execa from 'execa'
+import { DateTime } from 'luxon'
 import { SemVer } from 'semver'
 import semver from 'semver/preload'
 
@@ -23,6 +24,7 @@ import {
     getReleaseDefinition,
     deactivateAllReleases,
     setSrcCliVersion,
+    newRelease,
 } from './config'
 import { getCandidateTags, getPreviousVersion } from './git'
 import {
@@ -106,6 +108,7 @@ export type StepID =
     | '_test:config'
     | '_test:dockerensure'
     | '_test:srccliensure'
+    | '_test:patch-dates'
     | '_test:release-guide-content'
     | '_test:release-guide-update'
 
@@ -195,6 +198,20 @@ const steps: Step[] = [
                     ...calendarTime(next.releaseDate),
                 },
             ]
+
+            if (next.patches) {
+                // eslint-disable-next-line id-length
+                for (let i = 0; i < next.patches.length; i++) {
+                    events.push({
+                        title: `Scheduled Patch #${i + 1} Sourcegraph ${name}`,
+                        description: '(This is not an actual event to attend, just a calendar marker.)',
+                        anyoneCanAddSelf: true,
+                        attendees: [config.metadata.teamEmail],
+                        transparency: 'transparent',
+                        ...calendarTime(next.patches[i]),
+                    })
+                }
+            }
 
             if (!config.dryRun.calendar) {
                 const googleCalendar = await getClient()
@@ -1259,6 +1276,13 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         run: async () => {
             ensureSrcCliEndpoint()
             await ensureSrcCliUpToDate()
+        },
+    },
+    {
+        id: '_test:patch-dates',
+        description: 'test patch dates',
+        run: () => {
+            console.log(newRelease(new SemVer('1.0.0'), DateTime.fromISO('2023-03-22'), 'test', 'test'))
         },
     },
 ]
