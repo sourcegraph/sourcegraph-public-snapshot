@@ -26,6 +26,10 @@ go_test(
     name = "repo_test",
     srcs = ["store_test.go"],
     embed = [":repo"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/api",
         "//internal/database",

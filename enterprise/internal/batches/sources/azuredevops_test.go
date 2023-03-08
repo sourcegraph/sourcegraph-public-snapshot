@@ -250,6 +250,93 @@ func TestAzureDevOpsSource_CreateChangeset(t *testing.T) {
 	})
 }
 
+func TestAzureDevOpsSource_CreateDraftChangeset(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("error creating pull request", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChangeset()
+		s, client := mockAzureDevOpsSource()
+
+		want := errors.New("error")
+		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
+			assert.Equal(t, testOrgProjectRepoArgs, r)
+			assert.Equal(t, cs.Title, pri.Title)
+			return azuredevops.PullRequest{}, want
+		})
+
+		exists, err := s.CreateDraftChangeset(ctx, cs)
+		assert.False(t, exists)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("error setting changeset metadata", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChangeset()
+		s, client := mockAzureDevOpsSource()
+		want := mockAzureDevOpsAnnotatePullRequestError(client)
+
+		pr := mockAzureDevOpsPullRequest(&testRepository)
+		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
+			assert.Equal(t, testOrgProjectRepoArgs, r)
+			assert.Equal(t, cs.Title, pri.Title)
+			return *pr, nil
+		})
+
+		exists, err := s.CreateDraftChangeset(ctx, cs)
+		assert.False(t, exists)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChangeset()
+		s, client := mockAzureDevOpsSource()
+		mockAzureDevOpsAnnotatePullRequestSuccess(client)
+
+		pr := mockAzureDevOpsPullRequest(&testRepository)
+		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
+			assert.Equal(t, testOrgProjectRepoArgs, r)
+			assert.Equal(t, cs.Title, pri.Title)
+			assert.Nil(t, pri.ForkSource)
+			assert.True(t, pri.IsDraft)
+			return *pr, nil
+		})
+
+		exists, err := s.CreateDraftChangeset(ctx, cs)
+		assert.True(t, exists)
+		assert.Nil(t, err)
+		assertChangesetMatchesPullRequest(t, cs, pr)
+	})
+
+	t.Run("success with fork", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChangeset()
+		s, client := mockAzureDevOpsSource()
+		mockAzureDevOpsAnnotatePullRequestSuccess(client)
+
+		fork := &azuredevops.Repository{
+			ID:   "forkedrepoid",
+			Name: "forkedrepo",
+		}
+		cs.RemoteRepo = &types.Repo{
+			Metadata: fork,
+		}
+
+		pr := mockAzureDevOpsPullRequest(&testRepository)
+		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
+			assert.Equal(t, testOrgProjectRepoArgs, r)
+			assert.Equal(t, cs.Title, pri.Title)
+			assert.Equal(t, *fork, pri.ForkSource.Repository)
+			assert.True(t, pri.IsDraft)
+			return *pr, nil
+		})
+
+		exists, err := s.CreateDraftChangeset(ctx, cs)
+		assert.True(t, exists)
+		assert.Nil(t, err)
+		assertChangesetMatchesPullRequest(t, cs, pr)
+	})
+}
+
 func TestAzureDevOpsSource_CloseChangeset(t *testing.T) {
 	ctx := context.Background()
 
@@ -383,6 +470,64 @@ func TestAzureDevOpsSource_UpdateChangeset(t *testing.T) {
 
 		annotateChangesetWithPullRequest(cs, pr)
 		err := s.UpdateChangeset(ctx, cs)
+		assert.Nil(t, err)
+		assertChangesetMatchesPullRequest(t, cs, pr)
+	})
+}
+
+func TestAzureDevOpsSource_UndraftChangeset(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("error updating pull request", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChangeset()
+		s, client := mockAzureDevOpsSource()
+		want := errors.New("error")
+		pr := mockAzureDevOpsPullRequest(&testRepository)
+		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
+			assert.Equal(t, testCommonPullRequestArgs, r)
+			assert.Equal(t, cs.Title, *pri.Title)
+			return azuredevops.PullRequest{}, want
+		})
+
+		annotateChangesetWithPullRequest(cs, pr)
+		err := s.UndraftChangeset(ctx, cs)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("error setting changeset metadata", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChangeset()
+		s, client := mockAzureDevOpsSource()
+		want := mockAzureDevOpsAnnotatePullRequestError(client)
+
+		pr := mockAzureDevOpsPullRequest(&testRepository)
+		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
+			assert.Equal(t, testCommonPullRequestArgs, r)
+			assert.Equal(t, cs.Title, *pri.Title)
+			return *pr, nil
+		})
+
+		annotateChangesetWithPullRequest(cs, pr)
+		err := s.UndraftChangeset(ctx, cs)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChangeset()
+		s, client := mockAzureDevOpsSource()
+		mockAzureDevOpsAnnotatePullRequestSuccess(client)
+
+		pr := mockAzureDevOpsPullRequest(&testRepository)
+		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
+			assert.Equal(t, testCommonPullRequestArgs, r)
+			assert.Equal(t, cs.Title, *pri.Title)
+			assert.False(t, *pri.IsDraft)
+			return *pr, nil
+		})
+
+		annotateChangesetWithPullRequest(cs, pr)
+		err := s.UndraftChangeset(ctx, cs)
 		assert.Nil(t, err)
 		assertChangesetMatchesPullRequest(t, cs, pr)
 	})

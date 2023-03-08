@@ -26,6 +26,10 @@ go_test(
         "upgrade_test.go",
     ],
     embed = [":upgradestore"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

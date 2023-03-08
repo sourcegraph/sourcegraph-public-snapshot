@@ -26,6 +26,10 @@ go_test(
         "unified_permissions_migrator_test.go",
     ],
     embed = [":iam"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/authz",
         "//internal/database",

@@ -46,6 +46,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":permissions"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//internal/api",
