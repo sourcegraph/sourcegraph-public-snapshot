@@ -9,7 +9,7 @@ expression: "dump_document(&document, src)"
   
   const MySqlQuery = `
 //^^^^^ Keyword 
-//      ^^^^^^^^^^ IdentifierConstant  local 1
+//      ^^^^^^^^^^ IdentifierConstant 
 //                 ^ IdentifierOperator 
 //                   ^ StringLiteral 2:19..4:1 
   SELECT * FROM my_table
