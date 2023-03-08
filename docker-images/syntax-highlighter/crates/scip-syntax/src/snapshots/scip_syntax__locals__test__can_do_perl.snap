@@ -1,6 +1,6 @@
 ---
 source: crates/scip-syntax/src/locals.rs
-assertion_line: 487
+assertion_line: 485
 expression: dumped
 ---
   sub add {
@@ -18,5 +18,21 @@ expression: dumped
 //          ^^^^^ reference  local 1
 //                  ^^^^^ reference  local 2
       return;
+  }
+  
+  sub something {
+      for my $ikey (keys %$item) {
+//           ^^^^^ definition  local 4
+          my $mkey = $ikey;
+//           ^^^^^ definition  local 5
+//                   ^^^^^ reference  local 4
+          if (my $m = $MATCH{$mkey}) {
+//               ^^ definition  local 6
+//                           ^^^^^ reference  local 5
+              my $v = $item->{$ikey};
+//               ^^ definition  local 7
+//                            ^^^^^ reference  local 4
+          }
+      }
   }
 
