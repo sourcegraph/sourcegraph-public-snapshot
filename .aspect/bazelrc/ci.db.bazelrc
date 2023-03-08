@@ -1,3 +1,0 @@
-test --action_env=PGUSER
-test --action_env=PGSSLMODE
-test --action_env=PGDATABASE

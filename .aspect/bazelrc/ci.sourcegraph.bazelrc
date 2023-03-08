@@ -1,0 +1,18 @@
+# Use repo caching for building and testing.
+# Article: https://buildkite.com/blog/how-bazel-built-its-ci-system-on-top-of-buildkite
+# Docs: https://bazel.build/reference/command-line-reference#flag--repository_cache
+build --repository_cache=/home/buildkite/repocache-sourcegraph
+
+# Use Disk caching for building and testing.
+# Article: https://buildkite.com/blog/how-bazel-built-its-ci-system-on-top-of-buildkite
+# Docs: https://bazel.build/reference/command-line-reference#flag--disk_cache
+build --disk_cache=/home/buildkite/diskcache
+
+# We need /usr/local/bin
+# TODO(DevX) we should be narrower here.
+test --action_env=PATH
+
+# Needed for DB in CI
+test --action_env=PGUSER
+test --action_env=PGSSLMODE
+test --action_env=PGDATABASE
