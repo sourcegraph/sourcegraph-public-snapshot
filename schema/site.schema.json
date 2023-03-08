@@ -218,12 +218,6 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
-        "azureDevOps": {
-          "description": "Allow adding Azure DevOps code host connections",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "subRepoPermissions": {
           "type": "object",
           "additionalProperties": false,
@@ -355,6 +349,12 @@
           "description": "Enables indexing of revisions of repos matching any query defined in search contexts.",
           "type": "boolean",
           "default": false
+        },
+        "enableGRPC": {
+          "description": "Enables gRPC for communication between internal services",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
         },
         "enablePermissionsWebhooks": {
           "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",

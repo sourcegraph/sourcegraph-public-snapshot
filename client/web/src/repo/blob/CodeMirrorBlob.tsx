@@ -17,6 +17,7 @@ import {
 } from '@sourcegraph/common'
 import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -25,6 +26,7 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunkData } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
@@ -182,6 +184,9 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const navigate = useNavigate()
     const location = useLocation()
+
+    const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
+    const focusCodeEditorShortcut = useKeyboardShortcut('focusCodeEditor')
 
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
@@ -432,6 +437,17 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             {overrideBrowserSearchKeybinding && useFileSearch && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
             )}
+            {enableBlobPageSwitchAreasShortcuts &&
+                focusCodeEditorShortcut?.keybindings.map((keybinding, index) => (
+                    <Shortcut
+                        key={index}
+                        {...keybinding}
+                        allowDefault={true}
+                        onMatch={() => {
+                            editorRef.current?.contentDOM.focus()
+                        }}
+                    />
+                ))}
         </>
     )
 }

@@ -79,12 +79,27 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     // Use new ranking if the feature flag is enabled and the user has not explicitly disabled it
     const [rankingEnabled] = useFeatureFlag('search-ranking')
-    const [rankingToggleEnabled, setRankingToggleEnabled] = useTemporarySetting('search.ranking.experimental')
+    const [rankingTemporarySettings, setRankingTemporarySettings] = useTemporarySetting(
+        'search.ranking.experimental',
+        true
+    )
+    const [rankingToggleEnabled, setRankingToggleEnabled] = useState(rankingTemporarySettings ?? rankingEnabled)
     useEffect(() => {
-        if (rankingEnabled && rankingToggleEnabled === undefined) {
-            setRankingToggleEnabled(rankingEnabled)
+        if (rankingTemporarySettings !== undefined) {
+            setRankingTemporarySettings(rankingToggleEnabled)
         }
-    }, [rankingEnabled, rankingToggleEnabled, setRankingToggleEnabled])
+        // `rankingTemporarySettings` should not be a dependency, otherwise the
+        // observable would be recomputed if the caller used e.g. an object
+        // literal as default value. `useTemporarySetting` works more like
+        // `useState` in this regard.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rankingToggleEnabled, setRankingTemporarySettings])
+
+    useEffect(() => {
+        if (rankingTemporarySettings !== undefined) {
+            setRankingToggleEnabled(rankingTemporarySettings)
+        }
+    }, [rankingTemporarySettings, setRankingToggleEnabled])
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)

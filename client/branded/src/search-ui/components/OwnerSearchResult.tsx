@@ -8,6 +8,7 @@ import { BuildSearchQueryURLParameters, QueryState, SearchContextProps } from '@
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { getOwnerMatchUrl, OwnerMatch } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link } from '@sourcegraph/wildcard'
 
 import { ResultContainer } from './ResultContainer'
@@ -15,7 +16,7 @@ import { ResultContainer } from './ResultContainer'
 import styles from './OwnerSearchResult.module.scss'
 import resultStyles from './SearchResult.module.scss'
 
-export interface OwnerSearchResultProps extends Pick<SearchContextProps, 'selectedSearchContextSpec'> {
+export interface OwnerSearchResultProps extends Pick<SearchContextProps, 'selectedSearchContextSpec'>, TelemetryProps {
     result: OwnerMatch
     onSelect: () => void
     containerClassName?: string
@@ -36,6 +37,7 @@ export const OwnerSearchResult: React.FunctionComponent<OwnerSearchResultProps> 
     queryState,
     buildSearchURLQueryFromQueryState,
     selectedSearchContextSpec,
+    telemetryService,
 }) => {
     const displayName = useMemo(() => {
         let displayName = ''
@@ -50,7 +52,8 @@ export const OwnerSearchResult: React.FunctionComponent<OwnerSearchResultProps> 
 
     const url = useMemo(() => {
         const url = getOwnerMatchUrl(result)
-        if (result.type === 'person' && !result.user) {
+        const validUrlPrefixes = ['/teams/', '/users/', 'mailto:']
+        if (!validUrlPrefixes.some(prefix => url.startsWith(prefix))) {
             // This is not a real URL, remove it.
             return ''
         }
@@ -81,6 +84,18 @@ export const OwnerSearchResult: React.FunctionComponent<OwnerSearchResultProps> 
         return `/search?${searchParams}`
     }, [buildSearchURLQueryFromQueryState, queryState, result.email, result.handle, selectedSearchContextSpec])
 
+    const logSearchOwnerClicked = (): void => {
+        if (url.startsWith('mailto:')) {
+            telemetryService.log('searchResults:ownershipMailto:clicked')
+        }
+        if (url.startsWith('/users/')) {
+            telemetryService.log('searchResults:ownershipUsers:clicked')
+        }
+        if (url.startsWith('/teams/')) {
+            telemetryService.log('searchResults:ownershipTeams:clicked')
+        }
+    }
+
     const title = (
         <div className="d-flex align-items-center">
             {result.type === 'person' ? (
@@ -102,7 +117,7 @@ export const OwnerSearchResult: React.FunctionComponent<OwnerSearchResultProps> 
             )}
 
             {url ? (
-                <Link to={url} className="text-muted">
+                <Link to={url} className="text-muted" onClick={logSearchOwnerClicked}>
                     {displayName}
                 </Link>
             ) : (

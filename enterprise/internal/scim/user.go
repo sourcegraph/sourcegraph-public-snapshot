@@ -10,6 +10,7 @@ import (
 	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -85,11 +86,11 @@ func createUserResourceType(userResourceHandler *UserResourceHandler) scim.Resou
 }
 
 // updateUser updates a user in the database. This is meant to be used in a transaction.
-func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM, attributes scim.ResourceAttributes) (err error) {
+func updateUser(ctx context.Context, tx database.DB, oldUser *types.UserForSCIM, attributes scim.ResourceAttributes) (err error) {
 	usernameUpdate := ""
 	requestedUsername := extractStringAttribute(attributes, AttrUserName)
 	if requestedUsername != oldUser.Username {
-		usernameUpdate, err = getUniqueUsername(ctx, db.Users(), requestedUsername)
+		usernameUpdate, err = getUniqueUsername(ctx, tx.Users(), requestedUsername)
 		if err != nil {
 			return scimerrors.ScimError{Status: http.StatusBadRequest, Detail: errors.Wrap(err, "invalid username").Error()}
 		}
@@ -101,7 +102,7 @@ func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM,
 		DisplayName: displayNameUpdate,
 		AvatarURL:   avatarURLUpdate,
 	}
-	err = db.Users().Update(ctx, oldUser.ID, userUpdate)
+	err = tx.Users().Update(ctx, oldUser.ID, userUpdate)
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
 	}
@@ -110,7 +111,7 @@ func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM,
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 	}
-	err = db.UserExternalAccounts().UpdateSCIMData(ctx, oldUser.ID, getUniqueExternalID(attributes), accountData)
+	err = tx.UserExternalAccounts().UpsertSCIMData(ctx, oldUser.ID, getUniqueExternalID(attributes), accountData)
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
 	}
@@ -125,8 +126,8 @@ func getUniqueExternalID(attributes scim.ResourceAttributes) string {
 	if attributes[AttrExternalId] != nil {
 		return attributes[AttrExternalId].(string)
 	}
-
-	return "no-external-id-" + extractPrimaryEmail(attributes)
+	primary, _ := extractPrimaryEmail(attributes)
+	return "no-external-id-" + primary
 }
 
 // getOptionalExternalID extracts the external identifier of the given attributes.

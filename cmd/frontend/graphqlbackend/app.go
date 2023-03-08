@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"path/filepath"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -92,16 +93,17 @@ func (r *localDirectoryResolver) Path() string {
 }
 
 func (r *localDirectoryResolver) Repositories() ([]LocalRepositoryResolver, error) {
-	var c servegit.Config
-	c.Load()
-	c.Root = r.path
-
+	// TODO(keegan) this should be injected from the global instance. For now
+	// we are hardcoding the relevant defaults for ServeConfig.
 	srv := &servegit.Serve{
-		Config: c,
+		ServeConfig: servegit.ServeConfig{
+			Timeout:  5 * time.Second,
+			MaxDepth: 10,
+		},
 		Logger: log.Scoped("serve", ""),
 	}
 
-	repos, err := srv.Repos()
+	repos, err := srv.Repos(r.path)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +112,7 @@ func (r *localDirectoryResolver) Repositories() ([]LocalRepositoryResolver, erro
 	for _, repo := range repos {
 		local = append(local, localRepositoryResolver{
 			name: repo.Name,
-			path: filepath.Join(r.path, repo.Name), // TODO(keegan) this is not always correct
+			path: repo.AbsFilePath,
 		})
 	}
 

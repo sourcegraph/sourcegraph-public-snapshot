@@ -1191,7 +1191,21 @@ func (u *userStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.User, error) {
-	q := sqlf.Sprintf("SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at, u.tos_accepted, u.searchable FROM users u %s", query)
+	q := sqlf.Sprintf(`
+SELECT u.id,
+       u.username,
+       u.display_name,
+       u.avatar_url,
+       u.created_at,
+       u.updated_at,
+       u.site_admin,
+       u.passwd IS NOT NULL,
+       u.tags,
+       u.invalidated_sessions_at,
+       u.tos_accepted,
+       u.searchable,
+       EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled
+FROM users u %s`, query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -1202,7 +1216,7 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, &u.SCIMControlled)
 		if err != nil {
 			return nil, err
 		}
@@ -1218,6 +1232,15 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 }
 
 const userForSCIMQueryFmtStr = `
+WITH scim_accounts AS (
+    SELECT
+        user_id,
+        account_id,
+        account_data
+    FROM user_external_accounts
+    WHERE service_type = 'scim'
+    AND deleted_at IS NULL
+)
 SELECT u.id,
        u.username,
        u.display_name,
@@ -1231,9 +1254,11 @@ SELECT u.id,
        u.tos_accepted,
        u.searchable,
        ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
-       (SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id,
-       (SELECT account_data FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_account_data
-  FROM users u %s`
+       sa.account_id AS scim_external_id,
+       sa.account_data AS scim_account_data
+FROM users u
+LEFT JOIN scim_accounts sa ON u.id = sa.user_id
+%s`
 
 // getBySQLForSCIM returns users matching the SQL query, along with their email addresses and SCIM ExternalID.
 func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*types.UserForSCIM, error) {

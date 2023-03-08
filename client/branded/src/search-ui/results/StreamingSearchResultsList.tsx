@@ -13,9 +13,9 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { BuildSearchQueryURLParameters, QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
-    SearchMatch,
     getMatchUrl,
     getRevision,
+    SearchMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -238,6 +238,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 as="li"
                                 onSelect={() => logSearchResultClicked(index, 'person')}
                                 containerClassName={resultClassName}
+                                telemetryService={telemetryService}
                                 queryState={queryState}
                                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             />

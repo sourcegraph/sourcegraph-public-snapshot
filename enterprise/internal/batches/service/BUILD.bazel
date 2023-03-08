@@ -61,6 +61,10 @@ go_test(
         "workspace_resolver_test.go",
     ],
     embed = [":service"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/batches/reconciler",
         "//enterprise/internal/batches/sources/testing",

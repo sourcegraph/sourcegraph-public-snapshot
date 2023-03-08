@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -20,13 +21,37 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/fastwalk"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
 
+type ServeConfig struct {
+	env.BaseConfig
+
+	Addr string
+
+	Timeout  time.Duration
+	MaxDepth int
+}
+
+func (c *ServeConfig) Load() {
+	url, err := url.Parse(c.Get("SRC_SERVE_GIT_URL", "http://127.0.0.1:3434", "URL that servegit should listen on."))
+	if err != nil {
+		c.AddError(errors.Wrapf(err, "failed to parse SRC_SERVE_GIT_URL"))
+	} else if url.Scheme != "http" {
+		c.AddError(errors.Errorf("only support http scheme for SRC_SERVE_GIT_URL got scheme %q", url.Scheme))
+	} else {
+		c.Addr = url.Host
+	}
+
+	c.Timeout = c.GetInterval("SRC_DISCOVER_TIMEOUT", "5s", "The maximum amount of time we spend looking for repositories.")
+	c.MaxDepth = c.GetInt("SRC_DISCOVER_MAX_DEPTH", "10", "The maximum depth we will recurse when discovery for repositories.")
+}
+
 type Serve struct {
-	Config
+	ServeConfig
 
 	Logger log.Logger
 }
@@ -40,7 +65,7 @@ func (s *Serve) Start() error {
 	// Update Addr to what listener actually used.
 	s.Addr = ln.Addr().String()
 
-	s.Logger.Info("serving git repositories", log.String("url", "http://"+s.Addr), log.String("root", s.Root))
+	s.Logger.Info("serving git repositories", log.String("url", "http://"+s.Addr))
 
 	srv := &http.Server{Handler: s.handler()}
 
@@ -84,9 +109,10 @@ var indexHTML = template.Must(template.New("").Parse(`<html>
 </html>`))
 
 type Repo struct {
-	Name      string
-	URI       string
-	ClonePath string
+	Name        string
+	URI         string
+	ClonePath   string
+	AbsFilePath string
 }
 
 func (s *Serve) handler() http.Handler {
@@ -97,7 +123,7 @@ func (s *Serve) handler() http.Handler {
 		err := indexHTML.Execute(w, map[string]interface{}{
 			"Explain": explainAddr(s.Addr),
 			"Links": []string{
-				"/v1/list-repos",
+				"/v1/list-repos-for-path",
 				"/repos/",
 			},
 		})
@@ -106,8 +132,14 @@ func (s *Serve) handler() http.Handler {
 		}
 	})
 
-	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
-		repos, err := s.Repos()
+	mux.HandleFunc("/v1/list-repos-for-path", func(w http.ResponseWriter, r *http.Request) {
+		var req ListReposRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		repos, err := s.Repos(req.Root)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -125,10 +157,12 @@ func (s *Serve) handler() http.Handler {
 		_ = enc.Encode(&resp)
 	})
 
-	fs := http.FileServer(http.Dir(s.Root))
 	svc := &gitservice.Handler{
 		Dir: func(name string) string {
-			return filepath.Join(s.Root, filepath.FromSlash(name))
+			// The cloneURL we generate is an absolute path. But gitservice
+			// returns the name with the leading / missing. So we add it in before
+			// calling FromSlash.
+			return filepath.FromSlash("/" + name)
 		},
 		Trace: func(ctx context.Context, svc, repo, protocol string) func(error) {
 			start := time.Now()
@@ -137,16 +171,7 @@ func (s *Serve) handler() http.Handler {
 			}
 		},
 	}
-	mux.Handle("/repos/", http.StripPrefix("/repos/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Use git service if git is trying to clone. Otherwise show http.FileServer for convenience
-		for _, suffix := range []string{"/info/refs", "/git-upload-pack"} {
-			if strings.HasSuffix(r.URL.Path, suffix) {
-				svc.ServeHTTP(w, r)
-				return
-			}
-		}
-		fs.ServeHTTP(w, r)
-	})))
+	mux.Handle("/repos/", http.StripPrefix("/repos/", svc))
 
 	return http.HandlerFunc(mux.ServeHTTP)
 }
@@ -181,14 +206,14 @@ func isGitRepo(path string) bool {
 // Repos returns a slice of all the git repositories it finds. It is a wrapper
 // around Walk which removes the need to deal with channels and sorts the
 // response.
-func (s *Serve) Repos() ([]Repo, error) {
+func (s *Serve) Repos(root string) ([]Repo, error) {
 	var (
 		repoC   = make(chan Repo, 4) // 4 is the same buffer size used in fastwalk
 		walkErr error
 	)
 	go func() {
 		defer close(repoC)
-		walkErr = s.Walk(repoC)
+		walkErr = s.Walk(root, repoC)
 	}()
 
 	var repos []Repo
@@ -210,8 +235,8 @@ func (s *Serve) Repos() ([]Repo, error) {
 }
 
 // Walk is the core repos finding routine.
-func (s *Serve) Walk(repoC chan<- Repo) error {
-	root, err := filepath.EvalSymlinks(s.Root)
+func (s *Serve) Walk(root string, repoC chan<- Repo) error {
+	root, err := filepath.EvalSymlinks(root)
 	if err != nil {
 		s.Logger.Warn("ignoring error searching", log.String("path", root), log.Error(err))
 		return nil
@@ -274,7 +299,7 @@ func (s *Serve) Walk(repoC chan<- Repo) error {
 		}
 
 		name := filepath.ToSlash(subpath)
-		cloneURI := pathpkg.Join("/repos", name)
+		cloneURI := pathpkg.Join("/repos", filepath.ToSlash(path))
 		clonePath := cloneURI
 
 		// Regular git repos won't clone without the full path to the .git directory.
@@ -283,9 +308,10 @@ func (s *Serve) Walk(repoC chan<- Repo) error {
 		}
 
 		repoC <- Repo{
-			Name:      name,
-			URI:       cloneURI,
-			ClonePath: clonePath,
+			Name:        name,
+			URI:         cloneURI,
+			ClonePath:   clonePath,
+			AbsFilePath: path,
 		}
 
 		// At this point we know the directory is either a git repo or a bare git repo,
@@ -316,15 +342,19 @@ func rootIsRepo(root string) (Repo, bool, error) {
 		return Repo{}, false, errors.Errorf("failed to get the absolute path of reposRoot: %w", err)
 	}
 
-	clonePath := "/repos"
+	cloneURI := pathpkg.Join("/repos", filepath.ToSlash(root))
+	clonePath := cloneURI
+
+	// Regular git repos won't clone without the full path to the .git directory.
 	if isGit {
 		clonePath += "/.git"
 	}
 
 	return Repo{
-		Name:      filepath.Base(abs),
-		URI:       "/repos",
-		ClonePath: clonePath,
+		Name:        filepath.Base(abs),
+		URI:         cloneURI,
+		ClonePath:   clonePath,
+		AbsFilePath: abs,
 	}, true, nil
 }
 
@@ -417,4 +447,8 @@ func explainAddr(addr string) string {
 See https://docs.sourcegraph.com/admin/external_service/src_serve_git for
 instructions to configure in Sourcegraph.
 `, addr)
+}
+
+type ListReposRequest struct {
+	Root string `json:"root"`
 }
