@@ -8,17 +8,17 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   
   using AngleSharp.Dom;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^ IdentifierNamespace 
 //                ^ PunctuationDelimiter 
 //                 ^^^ IdentifierNamespace 
 //                    ^ PunctuationDelimiter 
   using Bunit;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^ IdentifierNamespace 
 //           ^ PunctuationDelimiter 
   using Microsoft.AspNetCore.Components;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^ IdentifierNamespace 
 //               ^ PunctuationDelimiter 
 //                ^^^^^^^^^^ IdentifierNamespace 
@@ -26,7 +26,7 @@ expression: "dump_document(&document, &contents)"
 //                           ^^^^^^^^^^ IdentifierNamespace 
 //                                     ^ PunctuationDelimiter 
   using Microsoft.AspNetCore.Components.Rendering;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^ IdentifierNamespace 
 //               ^ PunctuationDelimiter 
 //                ^^^^^^^^^^ IdentifierNamespace 
@@ -36,11 +36,11 @@ expression: "dump_document(&document, &contents)"
 //                                      ^^^^^^^^^ IdentifierNamespace 
 //                                               ^ PunctuationDelimiter 
   using System;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ IdentifierNamespace 
 //            ^ PunctuationDelimiter 
   using System.Collections.Generic;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ IdentifierNamespace 
 //            ^ PunctuationDelimiter 
 //             ^^^^^^^^^^^ IdentifierNamespace 
@@ -48,13 +48,13 @@ expression: "dump_document(&document, &contents)"
 //                         ^^^^^^^ IdentifierNamespace 
 //                                ^ PunctuationDelimiter 
   using System.Linq;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ IdentifierNamespace 
 //            ^ PunctuationDelimiter 
 //             ^^^^ IdentifierNamespace 
 //                 ^ PunctuationDelimiter 
   using System.Text.RegularExpressions;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ IdentifierNamespace 
 //            ^ PunctuationDelimiter 
 //             ^^^^ IdentifierNamespace 
@@ -62,19 +62,19 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^^^^ IdentifierNamespace 
 //                                    ^ PunctuationDelimiter 
   using Xunit;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^ IdentifierNamespace 
 //           ^ PunctuationDelimiter 
   namespace Radzen.Blazor.
-//^^^^^^^^^ IdentifierKeyword 
+//^^^^^^^^^ Keyword 
 //          ^^^^^^ IdentifierNamespace 
 //                ^ PunctuationDelimiter 
 //                 ^^^^^^ IdentifierNamespace 
 //                       ^ PunctuationDelimiter 
   {
       public class DataGridTests
-//    ^^^^^^ IdentifierKeyword 
-//           ^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
+//           ^^^^^ Keyword 
 //                 ^^^^^^^^^^^^^ IdentifierType 
       {
           // Css classes tests
@@ -82,15 +82,15 @@ expression: "dump_document(&document, &contents)"
           [Fact]
 //         ^^^^ IdentifierType 
           public void DataGrid_Renders_CssClass()
-//        ^^^^^^ IdentifierKeyword 
+//        ^^^^^^ Keyword 
 //               ^^^^ IdentifierBuiltin 
           {
               using var ctx = new TestContext();
-//            ^^^^^ IdentifierKeyword 
+//            ^^^^^ Keyword 
 //                  ^^^ IdentifierBuiltinType 
 //                      ^^^ Identifier 
 //                          ^ IdentifierOperator 
-//                            ^^^ IdentifierKeyword 
+//                            ^^^ Keyword 
 //                                             ^ PunctuationDelimiter 
               ctx.JSInterop.Mode = JSRuntimeMode.Loose;
 //               ^ PunctuationDelimiter 
@@ -139,10 +139,10 @@ expression: "dump_document(&document, &contents)"
 //                                                                  ^^^^ Identifier 
 //                                                                      ^ PunctuationDelimiter 
 //                                                                       ^ Identifier 
-//                                                                        ^^^ IdentifierKeyword 
+//                                                                        ^^^ Keyword 
 //                                                                             ^ Identifier 
 //                                                                               ^ Identifier 
-//                                                                                ^^^ IdentifierKeyword 
+//                                                                                ^^^ Keyword 
 //                                                                                   ^ Identifier 
 //                                                                                     ^^^^ Identifier 
 //                                                                                         ^ IdentifierOperator 
@@ -151,7 +151,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                                            ^ Identifier 
 //                                                                                              ^ PunctuationDelimiter 
 //                                                                                               ^ Identifier 
-//                                                                                                ^^^ IdentifierKeyword 
+//                                                                                                ^^^ Keyword 
 //                                                                                                   ^ Identifier 
 //                                                                                                     ^^^^ Identifier 
 //                                                                                                         ^ IdentifierOperator 
@@ -160,7 +160,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                                                            ^ Identifier 
 //                                                                                                              ^ PunctuationDelimiter 
 //                                                                                                               ^ Identifier 
-//                                                                                                                ^^^ IdentifierKeyword 
+//                                                                                                                ^^^ Keyword 
 //                                                                                                                   ^ Identifier 
 //                                                                                                                     ^^^^ Identifier 
 //                                                                                                                         ^ IdentifierOperator 
@@ -194,7 +194,7 @@ expression: "dump_document(&document, &contents)"
 //                                          ^ NumericLiteral 
 //                                           ^ PunctuationDelimiter 
 //                                            ^ Identifier 
-//                                             ^^^^^^ IdentifierKeyword 
+//                                             ^^^^^^ Keyword 
 //                                                    ^^^^^^^^^^^^^^^^ IdentifierType 
 //                                                                    ^ IdentifierOperator 
 //                                                                     ^^^^^^^ IdentifierType 
@@ -282,10 +282,10 @@ expression: "dump_document(&document, &contents)"
 //                                                                  ^^^^ Identifier 
 //                                                                      ^ PunctuationDelimiter 
 //                                                                       ^ Identifier 
-//                                                                        ^^^ IdentifierKeyword 
+//                                                                        ^^^ Keyword 
 //                                                                             ^ Identifier 
 //                                                                               ^ Identifier 
-//                                                                                ^^^ IdentifierKeyword 
+//                                                                                ^^^ Keyword 
 //                                                                                   ^ Identifier 
 //                                                                                     ^^^^ Identifier 
 //                                                                                         ^ IdentifierOperator 
@@ -294,7 +294,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                                            ^ Identifier 
 //                                                                                              ^ PunctuationDelimiter 
 //                                                                                               ^ Identifier 
-//                                                                                                ^^^ IdentifierKeyword 
+//                                                                                                ^^^ Keyword 
 //                                                                                                   ^ Identifier 
 //                                                                                                     ^^^^ Identifier 
 //                                                                                                         ^ IdentifierOperator 
@@ -303,7 +303,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                                                            ^ Identifier 
 //                                                                                                              ^ PunctuationDelimiter 
 //                                                                                                               ^ Identifier 
-//                                                                                                                ^^^ IdentifierKeyword 
+//                                                                                                                ^^^ Keyword 
 //                                                                                                                   ^ Identifier 
 //                                                                                                                     ^^^^ Identifier 
 //                                                                                                                         ^ IdentifierOperator 
@@ -337,7 +337,7 @@ expression: "dump_document(&document, &contents)"
 //                                          ^ NumericLiteral 
 //                                           ^ PunctuationDelimiter 
 //                                            ^ Identifier 
-//                                             ^^^^^^ IdentifierKeyword 
+//                                             ^^^^^^ Keyword 
 //                                                    ^^^^^^^^^^^^^^^^ IdentifierType 
 //                                                                    ^ IdentifierOperator 
 //                                                                     ^^^^^^^ IdentifierType 
@@ -375,7 +375,7 @@ expression: "dump_document(&document, &contents)"
 //            ^^^ IdentifierBuiltinType 
 //                ^^^^^^ Identifier 
 //                       ^ IdentifierOperator 
-//                         ^^^ IdentifierKeyword 
+//                         ^^^ Keyword 
 //                                   ^^^^^^^^ StringLiteral 
 //                                            ^ PunctuationDelimiter 
 //                                             ^^^^^^^ IdentifierFunction 

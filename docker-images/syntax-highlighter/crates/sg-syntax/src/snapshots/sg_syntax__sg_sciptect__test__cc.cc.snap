@@ -3,11 +3,11 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   #include "common/common.h"
-//^^^^^^^^ IdentifierKeyword  keyword.control.import.include.c++
+//^^^^^^^^ Keyword  keyword.control.import.include.c++
 //        ^ IdentifierNamespace  string.quoted.double.include.c++
 //         ^^^^^^^^^^^^^^^^^ StringLiteral  string.quoted.double.include.c++
   #include <csignal>
-//^^^^^^^^ IdentifierKeyword  keyword.control.import.include.c++
+//^^^^^^^^ Keyword  keyword.control.import.include.c++
 //        ^ IdentifierNamespace  string.quoted.other.lt-gt.include.c++
 //         ^^^^^^^^^ StringLiteral  string.quoted.other.lt-gt.include.c++
   

@@ -73,15 +73,15 @@ expression: "dump_document(&document, &contents)"
   paragraph: |
 //^^^^^^^^^ StringLiteralKey  entity.name.tag.yaml
 //         ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
-//           ^ IdentifierKeyword  keyword.control.flow.block-scalar.literal.yaml
+//           ^ Keyword  keyword.control.flow.block-scalar.literal.yaml
     Blank lines denote
 //^^^^^^^^^^^^^^^^^^^^ StringLiteral 18:0..20:0  string.unquoted.block.yaml
     paragraph breaks
   content: |-
 //^^^^^^^ StringLiteralKey  entity.name.tag.yaml
 //       ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
-//         ^ IdentifierKeyword  keyword.control.flow.block-scalar.literal.yaml
-//          ^ IdentifierKeyword  storage.modifier.chomping-indicator.yaml
+//         ^ Keyword  keyword.control.flow.block-scalar.literal.yaml
+//          ^ Keyword  storage.modifier.chomping-indicator.yaml
     Or we
 //^^^^^^^ StringLiteral 21:0..25:0  string.unquoted.block.yaml
     can auto

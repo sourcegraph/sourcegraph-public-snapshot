@@ -131,7 +131,7 @@ expression: "dump_document(&document, &contents)"
 //            ^^^^^^ IdentifierFunction  support.function.filter.css
 //                  ^ PunctuationBracket  punctuation.definition.group.begin.css
 //                   ^^^ NumericLiteral  keyword.other.unit.css
-//                      ^ IdentifierKeyword  keyword.other.unit.css
+//                      ^ Keyword  keyword.other.unit.css
 //                       ^ PunctuationBracket  punctuation.definition.group.end.css
 //                        ^ PunctuationDelimiter  punctuation.terminator.rule.css
   }

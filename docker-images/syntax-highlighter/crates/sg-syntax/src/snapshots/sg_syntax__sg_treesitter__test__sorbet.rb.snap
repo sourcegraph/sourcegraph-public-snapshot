@@ -5,7 +5,7 @@ expression: "dump_document(&document, &contents)"
   # Defining a typed method:
 //^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   def example_say_hello(name: String)
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                      ^^^^ IdentifierParameter 
 //                            ^^^^^^ Identifier 
@@ -17,7 +17,7 @@ expression: "dump_document(&document, &contents)"
 //               ^ StringLiteralEscape 
 //                ^ StringLiteral 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   # Using typed variables:
 //^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   name: String = "John"
@@ -30,7 +30,7 @@ expression: "dump_document(&document, &contents)"
   # Utilizing union types:
 //^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   def example_example(x: (Integer | String))
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^^^ IdentifierFunction 
 //                    ^ IdentifierParameter 
 //                        ^^^^^^^ Identifier 
@@ -39,7 +39,7 @@ expression: "dump_document(&document, &contents)"
 //  ^ Identifier 
 //    ^^^^^^ IdentifierFunction 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   clauge_example(x: 123)     # => 3
 //^^^^^^^^^^^^^^ IdentifierFunction 
 //               ^ CharacterLiteral 
@@ -55,7 +55,7 @@ expression: "dump_document(&document, &contents)"
   # Using optional/nullable parameters:
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   def example_optional(x: Integer?)
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                     ^ IdentifierParameter 
 //                        ^^^^^^^^ IdentifierFunction 
@@ -63,7 +63,7 @@ expression: "dump_document(&document, &contents)"
 //  ^ Identifier 
 //    ^^^^ IdentifierFunction 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   clauge_optional             # => nil
 //^^^^^^^^^^^^^^^ Identifier 
 //                            ^^^^^^^^ Comment 
@@ -76,7 +76,7 @@ expression: "dump_document(&document, &contents)"
   # Enum types:
 //^^^^^^^^^^^^^ Comment 
   def example_enum(color: (Color::RED | Color::GREEN | Color::BLUE))
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^ IdentifierFunction 
 //                 ^^^^^ IdentifierParameter 
 //                         ^^^^^ Identifier 
@@ -88,11 +88,11 @@ expression: "dump_document(&document, &contents)"
     color
 //  ^^^^^ Identifier 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   # Union types with inheritance:
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   def example_parent_child(x: (Parent | Child))
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                         ^ IdentifierParameter 
 //                             ^^^^^^ Identifier 
@@ -101,7 +101,7 @@ expression: "dump_document(&document, &contents)"
 //  ^ Identifier 
 //    ^^^^^^ IdentifierFunction 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   # Type aliases:
 //^^^^^^^^^^^^^^^ Comment 
   Alias = Integer
@@ -109,29 +109,29 @@ expression: "dump_document(&document, &contents)"
 //      ^ IdentifierOperator 
 //        ^^^^^^^ Identifier 
   def example_alias(x: Alias)
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^ IdentifierFunction 
 //                  ^ IdentifierParameter 
 //                     ^^^^^ Identifier 
     x
 //  ^ Identifier 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   # Generic types:
 //^^^^^^^^^^^^^^^^ Comment 
   def example_generic(x: T)
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^^^ IdentifierFunction 
 //                    ^ IdentifierParameter 
 //                       ^ Identifier 
     x
 //  ^ Identifier 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   # Interfaces:
 //^^^^^^^^^^^^^ Comment 
   def example_interface(x: Comparable)
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                      ^ IdentifierParameter 
 //                         ^^^^^^^^^^ Identifier 
@@ -140,19 +140,19 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^^^^^^ IdentifierFunction 
 //               ^ NumericLiteral 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   
   # Structural types:
 //^^^^^^^^^^^^^^^^^^^ Comment 
   def example_structural(x)
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                       ^ IdentifierParameter 
     x.length
 //  ^ Identifier 
 //    ^^^^^^ IdentifierFunction 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   example_structural("abc")      # => 3
 //^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                   ^ StringLiteral 
@@ -173,7 +173,7 @@ expression: "dump_document(&document, &contents)"
 //                     ^^^^ CharacterLiteral 
 //                           ^^^^^^ Identifier 
   def example_accessor
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^^^^ IdentifierFunction 
     self.name = 123 # Error!
 //  ^^^^ IdentifierBuiltin 
@@ -182,27 +182,27 @@ expression: "dump_document(&document, &contents)"
 //              ^^^ NumericLiteral 
 //                  ^^^^^^^^ Comment 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   # Variance annotations:
 //^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   def example_variance(x: +Integer)
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                     ^ IdentifierParameter 
 //                         ^^^^^^^ Identifier 
     x
 //  ^ Identifier 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   def example_variance(x: -Integer)
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                     ^ IdentifierParameter 
 //                         ^^^^^^^ Identifier 
     x
 //  ^ Identifier 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   # Enum types:
 //^^^^^^^^^^^^^ Comment 
   Color = Enum.new(:RED, :GREEN, :BLUE)
@@ -214,25 +214,25 @@ expression: "dump_document(&document, &contents)"
 //                       ^^^^^^ CharacterLiteral 
 //                               ^^^^^ CharacterLiteral 
   def example_color(color: Color)
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^ IdentifierFunction 
 //                  ^^^^^ IdentifierParameter 
 //                         ^^^^^ Identifier 
     color
 //  ^^^^^ Identifier 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   # Generic types:
 //^^^^^^^^^^^^^^^^ Comment 
   def example_generic(x: T)
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^^^ IdentifierFunction 
 //                    ^ IdentifierParameter 
 //                       ^ Identifier 
     x
 //  ^ Identifier 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   example_generic(x: 123) # => 123
 //^^^^^^^^^^^^^^^ IdentifierFunction 
 //                ^ CharacterLiteral 
@@ -254,7 +254,7 @@ expression: "dump_document(&document, &contents)"
 //                           ^^^^^^^ IdentifierFunction 
 //                                   ^^^^^^ Identifier 
   def example_sig(name:)
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^ IdentifierFunction 
 //                ^^^^ IdentifierParameter 
     "Hello #{name}"
@@ -265,5 +265,5 @@ expression: "dump_document(&document, &contents)"
 //               ^ StringLiteralEscape 
 //                ^ StringLiteral 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 

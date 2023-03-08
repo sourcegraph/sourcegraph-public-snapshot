@@ -3,19 +3,19 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   export class MyClass {
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^^^ IdentifierKeyword  storage.type.class.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^^^ Keyword  storage.type.class.ts
 //             ^^^^^^^ IdentifierType  entity.name.type.class.ts
 //                     ^ PunctuationBracket  punctuation.definition.block.ts
     public static myValue: string;
-//  ^^^^^^ IdentifierKeyword  storage.modifier.ts
-//         ^^^^^^ IdentifierKeyword  storage.modifier.ts
+//  ^^^^^^ Keyword  storage.modifier.ts
+//         ^^^^^^ Keyword  storage.modifier.ts
 //                ^^^^^^^ Identifier  variable.object.property.ts
 //                       ^ IdentifierOperator  keyword.operator.type.annotation.ts
 //                         ^^^^^^ IdentifierType  support.type.primitive.ts
 //                               ^ PunctuationDelimiter  punctuation.terminator.statement.ts
     constructor(init: string) {
-//  ^^^^^^^^^^^ IdentifierKeyword  storage.type.ts
+//  ^^^^^^^^^^^ Keyword  storage.type.ts
 //             ^ PunctuationBracket  punctuation.definition.parameters.begin.ts
 //              ^^^^ Identifier  variable.parameter.ts
 //                  ^ IdentifierOperator  keyword.operator.type.annotation.ts
@@ -34,31 +34,31 @@ expression: "dump_document(&document, &contents)"
   }
 //^ PunctuationBracket  punctuation.definition.block.ts
   export abstract class MyAbstractClass {}
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^^^^^^ IdentifierKeyword  storage.modifier.ts
-//                ^^^^^ IdentifierKeyword  storage.type.class.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^^^^^^ Keyword  storage.modifier.ts
+//                ^^^^^ Keyword  storage.type.class.ts
 //                      ^^^^^^^^^^^^^^^ IdentifierType  entity.name.type.class.ts
 //                                      ^ PunctuationBracket  punctuation.definition.block.ts
 //                                       ^ PunctuationBracket  punctuation.definition.block.ts
   import fs = require("fs");
-//^^^^^^ IdentifierKeyword  keyword.control.import.ts
+//^^^^^^ Keyword  keyword.control.import.ts
 //       ^^ Identifier  variable.other.readwrite.alias.ts
 //          ^ IdentifierOperator  keyword.operator.assignment.ts
-//            ^^^^^^^ IdentifierKeyword  keyword.control.require.ts
+//            ^^^^^^^ Keyword  keyword.control.require.ts
 //                   ^ PunctuationBracket  meta.brace.round.ts
 //                    ^^^^ StringLiteral  string.quoted.double.ts
 //                        ^ PunctuationBracket  meta.brace.round.ts
 //                         ^ PunctuationDelimiter  punctuation.terminator.statement.ts
   declare module MyModule {
-//^^^^^^^ IdentifierKeyword  storage.modifier.ts
-//        ^^^^^^ IdentifierKeyword  storage.type.namespace.ts
+//^^^^^^^ Keyword  storage.modifier.ts
+//        ^^^^^^ Keyword  storage.type.namespace.ts
 //               ^^^^^^^^ IdentifierType  entity.name.type.module.ts
 //                        ^ PunctuationBracket  punctuation.definition.block.ts
     export interface MyInterface extends Other {
-//  ^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//         ^^^^^^^^^ IdentifierKeyword  storage.type.interface.ts
+//  ^^^^^^ Keyword  keyword.control.export.ts
+//         ^^^^^^^^^ Keyword  storage.type.interface.ts
 //                   ^^^^^^^^^^^ IdentifierType  entity.name.type.interface.ts
-//                               ^^^^^^^ IdentifierKeyword  storage.modifier.ts
+//                               ^^^^^^^ Keyword  storage.modifier.ts
 //                                       ^^^^^ Identifier  entity.other.inherited-class.ts
 //                                             ^ PunctuationBracket  punctuation.definition.block.ts
       myProperty: any;
@@ -69,7 +69,7 @@ expression: "dump_document(&document, &contents)"
       myKeyoff: keyof MyClass;
 //    ^^^^^^^^ Identifier  variable.object.property.ts
 //            ^ IdentifierOperator  keyword.operator.type.annotation.ts
-//              ^^^^^ IdentifierKeyword  keyword.operator.expression.keyof.ts
+//              ^^^^^ Keyword  keyword.operator.expression.keyof.ts
 //                    ^^^^^^^ IdentifierType  entity.name.type.ts
 //                           ^ PunctuationDelimiter  punctuation.terminator.statement.ts
     }
@@ -77,7 +77,7 @@ expression: "dump_document(&document, &contents)"
   }
 //^ PunctuationBracket  punctuation.definition.block.ts
   declare magicNumber number;
-//^^^^^^^ IdentifierKeyword  storage.modifier.ts
+//^^^^^^^ Keyword  storage.modifier.ts
 //        ^^^^^^^^^^^ Identifier  variable.other.readwrite.ts
 //                    ^^^^^^ Identifier  variable.other.readwrite.ts
 //                          ^ PunctuationDelimiter  punctuation.terminator.statement.ts
@@ -96,7 +96,7 @@ expression: "dump_document(&document, &contents)"
 //                            ^^ Comment  comment.line.double-slash.ts
 //                              ^^^^^^^^^^^^^^^^^ Comment  comment.line.double-slash.ts
   const oneOf = (a:number): number => a + 1
-//^^^^^ IdentifierKeyword  storage.type.ts
+//^^^^^ Keyword  storage.type.ts
 //      ^^^^^ IdentifierFunction  entity.name.function.ts
 //            ^ IdentifierOperator  keyword.operator.assignment.ts
 //              ^ PunctuationBracket  punctuation.definition.parameters.begin.ts
@@ -113,8 +113,8 @@ expression: "dump_document(&document, &contents)"
 //                                      ^ IdentifierOperator  keyword.operator.arithmetic.ts
 //                                        ^ NumericLiteral  constant.numeric.decimal.ts
   export enum Day {
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^^ IdentifierKeyword  storage.type.enum.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^^ Keyword  storage.type.enum.ts
 //            ^^^ IdentifierType  entity.name.type.enum.ts
 //                ^ PunctuationBracket  punctuation.definition.block.ts
       Weekday = 1,
@@ -129,37 +129,37 @@ expression: "dump_document(&document, &contents)"
   }
 //^ PunctuationBracket  punctuation.definition.block.ts
   export type MyNumber = number
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^^ IdentifierKeyword  storage.type.type.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^^ Keyword  storage.type.type.ts
 //            ^^^^^^^^ IdentifierType  entity.name.type.alias.ts
 //                     ^ IdentifierOperator  keyword.operator.assignment.ts
 //                       ^^^^^^ IdentifierType  support.type.primitive.ts
   export const a = 42
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^^^ IdentifierKeyword  storage.type.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^^^ Keyword  storage.type.ts
 //             ^ Identifier  variable.other.constant.ts
 //               ^ IdentifierOperator  keyword.operator.assignment.ts
 //                 ^^ NumericLiteral  constant.numeric.decimal.ts
   const aa = 42
-//^^^^^ IdentifierKeyword  storage.type.ts
+//^^^^^ Keyword  storage.type.ts
 //      ^^ Identifier  variable.other.constant.ts
 //         ^ IdentifierOperator  keyword.operator.assignment.ts
 //           ^^ NumericLiteral  constant.numeric.decimal.ts
   export let b = 42
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^ IdentifierKeyword  storage.type.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^ Keyword  storage.type.ts
 //           ^ Identifier  variable.other.readwrite.ts
 //             ^ IdentifierOperator  keyword.operator.assignment.ts
 //               ^^ NumericLiteral  constant.numeric.decimal.ts
   export var c = 42
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^ IdentifierKeyword  storage.type.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^ Keyword  storage.type.ts
 //           ^ Identifier  variable.other.readwrite.ts
 //             ^ IdentifierOperator  keyword.operator.assignment.ts
 //               ^^ NumericLiteral  constant.numeric.decimal.ts
   export var d1 = {e2:41}
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^ IdentifierKeyword  storage.type.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^ Keyword  storage.type.ts
 //           ^^ Identifier  variable.other.readwrite.ts
 //              ^ IdentifierOperator  keyword.operator.assignment.ts
 //                ^ PunctuationBracket  punctuation.definition.block.ts
@@ -168,8 +168,8 @@ expression: "dump_document(&document, &contents)"
 //                    ^^ NumericLiteral  constant.numeric.decimal.ts
 //                      ^ PunctuationBracket  punctuation.definition.block.ts
   export var d = {
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^ IdentifierKeyword  storage.type.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^ Keyword  storage.type.ts
 //           ^ Identifier  variable.other.readwrite.ts
 //             ^ IdentifierOperator  keyword.operator.assignment.ts
 //               ^ PunctuationBracket  punctuation.definition.block.ts
@@ -198,8 +198,8 @@ expression: "dump_document(&document, &contents)"
   }
 //^ PunctuationBracket  punctuation.definition.block.ts
   export var e = Object.keys(d) as MyClass
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^ IdentifierKeyword  storage.type.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^ Keyword  storage.type.ts
 //           ^ Identifier  variable.other.readwrite.ts
 //             ^ IdentifierOperator  keyword.operator.assignment.ts
 //               ^^^^^^ IdentifierType  support.class.builtin.ts
@@ -208,11 +208,11 @@ expression: "dump_document(&document, &contents)"
 //                          ^ PunctuationBracket  meta.brace.round.ts
 //                           ^ Identifier  variable.other.readwrite.ts
 //                            ^ PunctuationBracket  meta.brace.round.ts
-//                              ^^ IdentifierKeyword  keyword.control.as.ts
+//                              ^^ Keyword  keyword.control.as.ts
 //                                 ^^^^^^^ IdentifierType  entity.name.type.ts
   export function f() {}
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^^^^^^ IdentifierKeyword  storage.type.function.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^^^^^^ Keyword  storage.type.function.ts
 //                ^ IdentifierFunction  entity.name.function.ts
 //                 ^ PunctuationBracket  punctuation.definition.parameters.begin.ts
 //                  ^ PunctuationBracket  punctuation.definition.parameters.end.ts
@@ -220,7 +220,7 @@ expression: "dump_document(&document, &contents)"
 //                     ^ PunctuationBracket  punctuation.definition.block.ts
   
   const negatedFilterToNegatableFilter: { [key: string]: MyClass } = null as any
-//^^^^^ IdentifierKeyword  storage.type.ts
+//^^^^^ Keyword  storage.type.ts
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier  variable.other.constant.ts
 //                                    ^ IdentifierOperator  keyword.operator.type.annotation.ts
 //                                      ^ PunctuationBracket  punctuation.definition.block.ts
@@ -234,16 +234,16 @@ expression: "dump_document(&document, &contents)"
 //                                                               ^ PunctuationBracket  punctuation.definition.block.ts
 //                                                                 ^ IdentifierOperator  keyword.operator.assignment.ts
 //                                                                   ^^^^ IdentifierBuiltin  constant.language.null.ts
-//                                                                        ^^ IdentifierKeyword  keyword.control.as.ts
+//                                                                        ^^ Keyword  keyword.control.as.ts
 //                                                                           ^^^ IdentifierType  support.type.primitive.ts
   
   const scanToken = <T extends Term = Literal>(
-//^^^^^ IdentifierKeyword  storage.type.ts
+//^^^^^ Keyword  storage.type.ts
 //      ^^^^^^^^^ IdentifierFunction  entity.name.function.ts
 //                ^ IdentifierOperator  keyword.operator.assignment.ts
 //                  ^ PunctuationBracket  punctuation.definition.typeparameters.begin.ts
 //                   ^ IdentifierType  entity.name.type.ts
-//                     ^^^^^^^ IdentifierKeyword  storage.modifier.ts
+//                     ^^^^^^^ Keyword  storage.modifier.ts
 //                             ^^^^ IdentifierType  entity.name.type.ts
 //                                  ^ IdentifierOperator  keyword.operator.assignment.ts
 //                                    ^^^^^^^ IdentifierType  entity.name.type.ts
@@ -291,7 +291,7 @@ expression: "dump_document(&document, &contents)"
 //             ^^ IdentifierType  storage.type.function.arrow.ts
 //                ^ PunctuationBracket  punctuation.definition.block.ts
       if (!regexp.source.startsWith('^')) {
-//    ^^ IdentifierKeyword  keyword.control.conditional.ts
+//    ^^ Keyword  keyword.control.conditional.ts
 //       ^ PunctuationBracket  meta.brace.round.ts
 //        ^ IdentifierOperator  keyword.operator.logical.ts
 //         ^^^^^^ Identifier  variable.other.object.ts
@@ -329,18 +329,18 @@ expression: "dump_document(&document, &contents)"
 //^ PunctuationBracket  punctuation.definition.block.ts
   
   export const URI: typeof URL
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^^^ IdentifierKeyword  storage.type.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^^^ Keyword  storage.type.ts
 //             ^^^ Identifier  variable.other.constant.ts
 //                ^ IdentifierOperator  keyword.operator.type.annotation.ts
-//                  ^^^^^^ IdentifierKeyword  keyword.operator.expression.typeof.ts
+//                  ^^^^^^ Keyword  keyword.operator.expression.typeof.ts
 //                         ^^^ IdentifierType  entity.name.type.ts
   
   export class SiteAdminUsageStatisticsPage extends React.Component<
-//^^^^^^ IdentifierKeyword  keyword.control.export.ts
-//       ^^^^^ IdentifierKeyword  storage.type.class.ts
+//^^^^^^ Keyword  keyword.control.export.ts
+//       ^^^^^ Keyword  storage.type.class.ts
 //             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType  entity.name.type.class.ts
-//                                          ^^^^^^^ IdentifierKeyword  storage.modifier.ts
+//                                          ^^^^^^^ Keyword  storage.modifier.ts
 //                                                  ^^^^^ IdentifierType  entity.name.type.module.ts
 //                                                       ^ PunctuationBracket  punctuation.accessor.ts
 //                                                        ^^^^^^^^^ Identifier  entity.other.inherited-class.ts
@@ -354,19 +354,19 @@ expression: "dump_document(&document, &contents)"
 //^ PunctuationBracket  punctuation.definition.typeparameters.end.ts
 //  ^ PunctuationBracket  punctuation.definition.block.ts
       private loadLatestChartFromStorage(): keyof ChartOptions {
-//    ^^^^^^^ IdentifierKeyword  storage.modifier.ts
+//    ^^^^^^^ Keyword  storage.modifier.ts
 //            ^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction  entity.name.function.ts
 //                                      ^ PunctuationBracket  punctuation.definition.parameters.begin.ts
 //                                       ^ PunctuationBracket  punctuation.definition.parameters.end.ts
 //                                        ^ IdentifierOperator  keyword.operator.type.annotation.ts
 //                                         ^ IdentifierType  keyword.operator.expression.keyof.ts
-//                                          ^^^^^ IdentifierKeyword  keyword.operator.expression.keyof.ts
+//                                          ^^^^^ Keyword  keyword.operator.expression.keyof.ts
 //                                               ^ IdentifierType  entity.name.type.ts
 //                                                ^^^^^^^^^^^^ IdentifierType  entity.name.type.ts
 //                                                            ^ IdentifierType  meta.return.type.ts
 //                                                             ^ PunctuationBracket  punctuation.definition.block.ts
           const latest = localStorage.getItem(CHART_ID_KEY)
-//        ^^^^^ IdentifierKeyword  storage.type.ts
+//        ^^^^^ Keyword  storage.type.ts
 //              ^^^^^^ Identifier  variable.other.constant.ts
 //                     ^ IdentifierOperator  keyword.operator.assignment.ts
 //                       ^^^^^^^^^^^^ Identifier  variable.other.object.ts
@@ -376,7 +376,7 @@ expression: "dump_document(&document, &contents)"
 //                                            ^^^^^^^^^^^^ Identifier  variable.other.constant.ts
 //                                                        ^ PunctuationBracket  meta.brace.round.ts
           return latest && latest in chartGeneratorOptions ? (latest as keyof ChartOptions) : 'daus'
-//        ^^^^^^ IdentifierKeyword  keyword.control.flow.ts
+//        ^^^^^^ Keyword  keyword.control.flow.ts
 //               ^^^^^^ Identifier  variable.other.readwrite.ts
 //                      ^^ IdentifierOperator  keyword.operator.logical.ts
 //                         ^^^^^^ Identifier  variable.other.readwrite.ts
@@ -385,8 +385,8 @@ expression: "dump_document(&document, &contents)"
 //                                                         ^ IdentifierOperator  keyword.operator.ternary.ts
 //                                                           ^ PunctuationBracket  meta.brace.round.ts
 //                                                            ^^^^^^ Identifier  variable.other.readwrite.ts
-//                                                                   ^^ IdentifierKeyword  keyword.control.as.ts
-//                                                                      ^^^^^ IdentifierKeyword  keyword.operator.expression.keyof.ts
+//                                                                   ^^ Keyword  keyword.control.as.ts
+//                                                                      ^^^^^ Keyword  keyword.operator.expression.keyof.ts
 //                                                                            ^^^^^^^^^^^^ IdentifierType  entity.name.type.ts
 //                                                                                        ^ PunctuationBracket  meta.brace.round.ts
 //                                                                                          ^ IdentifierOperator  keyword.operator.ternary.ts

@@ -39,8 +39,8 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   
   lazy val buildClasspath = taskKey[String]("Colon-separated (or semicolon-separated in case of Windows) list of entries on the sbt build classpath.")
-//^^^^ IdentifierKeyword 
-//     ^^^ IdentifierKeyword 
+//^^^^ Keyword 
+//     ^^^ Keyword 
 //         ^^^^^^^^^^^^^^ Identifier 
 //                          ^^^^^^^ Identifier 
 //                                  ^^^^^^ IdentifierType 

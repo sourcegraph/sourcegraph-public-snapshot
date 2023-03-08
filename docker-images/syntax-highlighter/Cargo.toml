@@ -28,4 +28,4 @@ syntect = { git = "https://github.com/sourcegraph/syntect", branch = "main" }
 rocket = { version = "0.5.0-rc.1", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-scip = { git = "https://github.com/sourcegraph/scip", rev = "7ff845ef5b78772f65463542d5f384967d329b2c" }
+scip = { git = "https://github.com/sourcegraph/scip", rev = "f90a867eb194bf6dae2e2b176e4f8ec7928bf70b" }

@@ -3,11 +3,11 @@ source: crates/sg-syntax/src/sg_treesitter.rs
 expression: "dump_document(&document, &contents)"
 ---
   package foobar
-//^^^^^^^ IdentifierKeyword 
+//^^^^^^^ Keyword 
 //        ^^^^^^ Identifier 
   
   import scala.collection.immutable.List
-//^^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
 //       ^^^^^ Identifier 
 //             ^^^^^^^^^^ Identifier 
 //                        ^^^^^^^^^ Identifier 
@@ -16,32 +16,32 @@ expression: "dump_document(&document, &contents)"
   // Comment
 //^^^^^^^^^^ Comment 
   case class Foo(x: Int, y: String) extends AnyVal
-//^^^^ IdentifierKeyword 
-//     ^^^^^ IdentifierKeyword 
+//^^^^ Keyword 
+//     ^^^^^ Keyword 
 //           ^^^ IdentifierType 
 //               ^ Identifier 
 //                  ^^^ IdentifierType 
 //                       ^ Identifier 
 //                          ^^^^^^ IdentifierType 
-//                                  ^^^^^^^ IdentifierKeyword 
+//                                  ^^^^^^^ Keyword 
 //                                          ^^^^^^ IdentifierType 
   /** Docstring */
 //^^^^^^^^^^^^^^^^ Comment 
   object Foo {
-//^^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
 //       ^^^ IdentifierConstant 
     val x: Int = 42
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^ Identifier 
 //         ^^^ IdentifierType 
 //               ^^ NumericLiteral 
     val y: Double = 42.0
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^ Identifier 
 //         ^^^^^^ IdentifierType 
 //                  ^^^^ NumericLiteral 
     val z = s"hello $x" + "hello world"
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^ Identifier 
 //          ^ Identifier 
 //           ^^^^^^^^ StringLiteral 
@@ -50,7 +50,7 @@ expression: "dump_document(&document, &contents)"
 //                      ^ Identifier 
 //                        ^^^^^^^^^^^^^ StringLiteral 
     val a: Map[Int, Int] = Map.empty
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^ Identifier 
 //         ^^^ IdentifierType 
 //             ^^^ IdentifierType 
@@ -58,31 +58,31 @@ expression: "dump_document(&document, &contents)"
 //                         ^^^ IdentifierConstant 
 //                             ^^^^^ Identifier 
     val b: Foo = Foo(x = 42)
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^ Identifier 
 //         ^^^ IdentifierType 
 //               ^^^ IdentifierFunction 
 //                   ^ Identifier 
 //                       ^^ NumericLiteral 
     lazy val c = 'a'
-//  ^^^^ IdentifierKeyword 
-//       ^^^ IdentifierKeyword 
+//  ^^^^ Keyword 
+//       ^^^ Keyword 
 //           ^ Identifier 
 //               ^^^ CharacterLiteral 
     var d = 1.4f
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^ Identifier 
 //          ^^^^ NumericLiteral 
     val e = true
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^ Identifier 
 //          ^^^^ BooleanLiteral 
     val f = null
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^ Identifier 
 //          ^^^^ IdentifierNull 
     def main(args: Array[String]): Unit = {
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^^^^ IdentifierFunction 
 //           ^^^^ Identifier 
 //                 ^^^^^ IdentifierType 
@@ -106,49 +106,49 @@ expression: "dump_document(&document, &contents)"
       args.toList match {
 //    ^^^^ Identifier 
 //         ^^^^^^ Identifier 
-//                ^^^^^ IdentifierKeyword 
+//                ^^^^^ Keyword 
           case 1 :: 2 :: Nil =>
-//        ^^^^ IdentifierKeyword 
+//        ^^^^ Keyword 
 //             ^ NumericLiteral 
 //               ^^ Identifier 
 //                  ^ NumericLiteral 
 //                    ^^ Identifier 
 //                       ^^^ IdentifierConstant 
           case a :: Nil =>
-//        ^^^^ IdentifierKeyword 
+//        ^^^^ Keyword 
 //             ^ Identifier 
 //               ^^ Identifier 
 //                  ^^^ IdentifierConstant 
           case Some(x) =>
-//        ^^^^ IdentifierKeyword 
+//        ^^^^ Keyword 
 //             ^^^^ Identifier 
 //                  ^ Identifier 
       }
     }
     private def privateMethod = 42
-//  ^^^^^^^ IdentifierKeyword 
-//          ^^^ IdentifierKeyword 
+//  ^^^^^^^ Keyword 
+//          ^^^ Keyword 
 //              ^^^^^^^^^^^^^ IdentifierFunction 
 //                              ^^ NumericLiteral 
     protected def protectedMethod = 42
-//  ^^^^^^^^^ IdentifierKeyword 
-//            ^^^ IdentifierKeyword 
+//  ^^^^^^^^^ Keyword 
+//            ^^^ Keyword 
 //                ^^^^^^^^^^^^^^^ IdentifierFunction 
 //                                  ^^ NumericLiteral 
     private[this] def privateThisMethod = 42
-//  ^^^^^^^ IdentifierKeyword 
+//  ^^^^^^^ Keyword 
 //          ^^^^ IdentifierBuiltin 
-//                ^^^ IdentifierKeyword 
+//                ^^^ Keyword 
 //                    ^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                                        ^^ NumericLiteral 
     private[foobar] def privatePackageMethod = 42
-//  ^^^^^^^ IdentifierKeyword 
+//  ^^^^^^^ Keyword 
 //          ^^^^^^ Identifier 
-//                  ^^^ IdentifierKeyword 
+//                  ^^^ Keyword 
 //                      ^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                                             ^^ NumericLiteral 
     type MyMap[A, B] = Map[A, B]
-//  ^^^^ IdentifierKeyword 
+//  ^^^^ Keyword 
 //       ^^^^^ IdentifierType 
 //             ^ IdentifierType 
 //                ^ IdentifierType 
@@ -156,16 +156,16 @@ expression: "dump_document(&document, &contents)"
 //                         ^ IdentifierType 
 //                            ^ IdentifierType 
     trait MyTrait[T] extends SuperTrait[T]
-//  ^^^^^ IdentifierKeyword 
+//  ^^^^^ Keyword 
 //        ^^^^^^^ IdentifierType 
 //                ^ IdentifierType 
-//                   ^^^^^^^ IdentifierKeyword 
+//                   ^^^^^^^ Keyword 
 //                           ^^^^^^^^^^ IdentifierType 
 //                                      ^ IdentifierType 
     enum X { case A, B }
-//  ^^^^ IdentifierKeyword 
+//  ^^^^ Keyword 
 //       ^ IdentifierConstant 
-//           ^^^^ IdentifierKeyword 
+//           ^^^^ Keyword 
 //                ^ IdentifierConstant 
 //                   ^ IdentifierConstant 
   }
