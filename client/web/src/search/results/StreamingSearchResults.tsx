@@ -82,10 +82,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const [rankingTemporarySettings, setRankingTemporarySettings] = useTemporarySetting('search.ranking.experimental')
     const [rankingToggleEnabled, setRankingToggleEnabled] = useState(rankingTemporarySettings ?? rankingEnabled)
     useEffect(() => {
-        if (rankingTemporarySettings != undefined) {
+        if (rankingTemporarySettings !== undefined) {
             setRankingTemporarySettings(rankingToggleEnabled)
         }
-    }, [rankingToggleEnabled, setRankingTemporarySettings])
+    }, [rankingToggleEnabled, rankingTemporarySettings, setRankingTemporarySettings])
 
     useEffect(() => {
         if (rankingTemporarySettings != undefined) {
