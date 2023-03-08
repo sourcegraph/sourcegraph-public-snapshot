@@ -1,24 +1,23 @@
 package backend
 
 import (
-	"bytes"
-	"encoding/json"
-
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/zoekt"
 	"golang.org/x/exp/slices"
 
+	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// zoektIndexOptions are options which change what we index for a
+// ZoektIndexOptions are options which change what we index for a
 // repository. Everytime a repository is indexed by zoekt this structure is
 // fetched. See getIndexOptions in the zoekt codebase.
 //
-// We only specify a subset of the fields.
-type zoektIndexOptions struct {
+// We only specify a subset of the fields from zoekt.IndexOptions.
+type ZoektIndexOptions struct {
 	// Name is the Repository Name.
 	Name string
 
@@ -56,6 +55,53 @@ type zoektIndexOptions struct {
 
 	// Error if non-empty indicates the request failed for the repo.
 	Error string `json:",omitempty"`
+}
+
+func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
+	o.Name = p.GetName()
+	o.RepoID = api.RepoID(p.GetRepoId())
+	o.Public = p.GetPublic()
+	o.Fork = p.GetFork()
+	o.Archived = p.GetArchived()
+	o.LargeFiles = p.GetLargeFiles()
+	o.Symbols = p.GetSymbols()
+	o.Priority = p.GetPriority()
+	o.DocumentRanksVersion = p.GetDocumentRanksVersion()
+	o.Error = p.GetError()
+
+	branches := make([]zoekt.RepositoryBranch, 0, len(p.GetBranches()))
+	for _, b := range p.GetBranches() {
+		branches = append(branches, zoekt.RepositoryBranch{
+			Name:    b.GetName(),
+			Version: b.GetVersion(),
+		})
+	}
+
+	o.Branches = branches
+}
+
+func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
+	branches := make([]*proto.ZoektRepositoryBranch, 0, len(o.Branches))
+	for _, b := range o.Branches {
+		branches = append(branches, &proto.ZoektRepositoryBranch{
+			Name:    b.Name,
+			Version: b.Version,
+		})
+	}
+
+	return &proto.ZoektIndexOptions{
+		Name:                 o.Name,
+		RepoId:               int32(o.RepoID),
+		Public:               o.Public,
+		Fork:                 o.Fork,
+		Archived:             o.Archived,
+		LargeFiles:           o.LargeFiles,
+		Symbols:              o.Symbols,
+		Branches:             branches,
+		Priority:             o.Priority,
+		DocumentRanksVersion: o.DocumentRanksVersion,
+		Error:                o.Error,
+	}
 }
 
 // RepoIndexOptions are the options used by GetIndexOptions for a specific
@@ -100,12 +146,12 @@ func GetIndexOptions(
 	getRepoIndexOptions getRepoIndexOptsFn,
 	getSearchContextRevisions func(repoID api.RepoID) ([]string, error),
 	repos ...api.RepoID,
-) []byte {
+) []ZoektIndexOptions {
 	// Limit concurrency to 32 to avoid too many active network requests and
 	// strain on gitserver (as ported from zoekt-sourcegraph-indexserver). In
-	// future we want a more intelligent global limit based on scale.
+	// the future we want a more intelligent global limit based on scale.
 	sema := make(chan struct{}, 32)
-	results := make([][]byte, len(repos))
+	results := make([]ZoektIndexOptions, len(repos))
 	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(c)
 
 	for i := range repos {
@@ -121,7 +167,7 @@ func GetIndexOptions(
 		sema <- struct{}{}
 	}
 
-	return bytes.Join(results, []byte{'\n'})
+	return results
 }
 
 func getIndexOptions(
@@ -130,13 +176,16 @@ func getIndexOptions(
 	getRepoIndexOptions func(repoID api.RepoID) (*RepoIndexOptions, error),
 	getSearchContextRevisions func(repoID api.RepoID) ([]string, error),
 	getSiteConfigRevisions revsRuleFunc,
-) []byte {
+) ZoektIndexOptions {
 	opts, err := getRepoIndexOptions(repoID)
 	if err != nil {
-		return marshal(&zoektIndexOptions{Error: err.Error()})
+		return ZoektIndexOptions{
+			RepoID: repoID,
+			Error:  err.Error(),
+		}
 	}
 
-	o := &zoektIndexOptions{
+	o := ZoektIndexOptions{
 		Name:       opts.Name,
 		RepoID:     opts.RepoID,
 		Public:     opts.Public,
@@ -162,7 +211,10 @@ func getIndexOptions(
 	// Add all branches that are referenced by search contexts
 	revs, err := getSearchContextRevisions(opts.RepoID)
 	if err != nil {
-		return marshal(&zoektIndexOptions{Error: err.Error()})
+		return ZoektIndexOptions{
+			RepoID: opts.RepoID,
+			Error:  err.Error(),
+		}
 	}
 	for _, rev := range revs {
 		branches[rev] = struct{}{}
@@ -175,7 +227,10 @@ func getIndexOptions(
 	for branch := range branches {
 		v, err := opts.GetVersion(branch)
 		if err != nil {
-			return marshal(&zoektIndexOptions{Error: err.Error()})
+			return ZoektIndexOptions{
+				RepoID: opts.RepoID,
+				Error:  err.Error(),
+			}
 		}
 
 		// If we failed to resolve a branch, skip it
@@ -208,7 +263,7 @@ func getIndexOptions(
 		o.Branches = o.Branches[:64]
 	}
 
-	return marshal(o)
+	return o
 }
 
 type revsRuleFunc func(*RepoIndexOptions) (revs []string)
@@ -258,9 +313,4 @@ func getBoolPtr(b *bool, default_ bool) bool {
 		return default_
 	}
 	return *b
-}
-
-func marshal(o *zoektIndexOptions) []byte {
-	b, _ := json.Marshal(o)
-	return b
 }
