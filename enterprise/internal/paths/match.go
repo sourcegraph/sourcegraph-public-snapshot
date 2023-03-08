@@ -143,7 +143,7 @@ type globPattern struct {
 }
 
 // Match iterates over `filePath` separated by `/`. It uses a bit vector
-// to track which prefixes of glob pattern Match the file path prefix so far.
+// to track which prefixes of glob pattern match the file path prefix so far.
 // Bit vector indices correspond to separators between pattern parts.
 //
 // Visualized matching of `/src/java/test/UnitTest.java`
@@ -166,7 +166,7 @@ type globPattern struct {
 // -     -     -            X       - | /src/app/components
 // -     -     -            -       X | /src/app/components/Label.tsx
 //
-// The Match is successful if after iterating through the whole file path,
+// The match is successful if after iterating through the whole file path,
 // full pattern matches, that is, there is a bit at the end of the glob.
 func (glob globPattern) Match(filePath string) bool {
 	// Fast pass for literal globs, we can just string compare those.
