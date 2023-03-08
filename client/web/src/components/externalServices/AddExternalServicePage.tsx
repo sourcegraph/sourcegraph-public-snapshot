@@ -20,6 +20,7 @@ interface Props extends TelemetryProps {
     externalService: AddExternalServiceOptions
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isSourcegraphApp: boolean
 
     /** For testing only. */
     autoFocusForm?: boolean
@@ -34,6 +35,7 @@ export const AddExternalServicePage: FC<Props> = ({
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
+    isSourcegraphApp,
 }) => {
     const [config, setConfig] = useState(externalService.defaultConfig)
     const [displayName, setDisplayName] = useState(externalService.defaultDisplayName)
@@ -117,6 +119,7 @@ export const AddExternalServicePage: FC<Props> = ({
                         <H3>Instructions:</H3>
                         <div className="mb-4">{externalService.instructions}</div>
                         <ExternalServiceForm
+                            isSourcegraphApp={isSourcegraphApp}
                             telemetryService={telemetryService}
                             error={isErrorLike(isCreating) ? isCreating : undefined}
                             input={getExternalServiceInput()}

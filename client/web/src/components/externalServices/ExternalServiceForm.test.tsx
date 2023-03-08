@@ -22,6 +22,7 @@ describe('ExternalServiceForm', () => {
         editorActions: [],
         externalServicesFromFile: false,
         allowEditExternalServicesWithFile: false,
+        isSourcegraphApp: false,
     }
 
     test('create GitHub', () => {

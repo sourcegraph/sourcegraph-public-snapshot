@@ -8,7 +8,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { Button, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { ListExternalServiceFields } from '../../graphql-operations'
+import { AddExternalServiceInput, ExternalServiceKind, ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 
 import { deleteExternalService } from './backend'
@@ -19,9 +19,10 @@ import styles from './ExternalServiceNode.module.scss'
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
     editingDisabled: boolean
+    isSourcegraphApp: boolean
 }
 
-export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editingDisabled }) => {
+export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editingDisabled, isSourcegraphApp }) => {
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
     const client = useApolloClient()
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
@@ -79,7 +80,12 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                         <strong>
                             <Link to={`/site-admin/external-services/${node.id}`}>{node.displayName}</Link>{' '}
                             <small className="text-muted">
-                                ({node.repoCount} {pluralize('repository', node.repoCount, 'repositories')})
+                                ({node.repoCount}
+                                {isSourcegraphApp ? (isAppLocalFileService(node) ? ' of ∞' : ' of 10') : ''}{' '}
+                                {isSourcegraphApp
+                                    ? 'repositories'
+                                    : pluralize('repository', node.repoCount, 'repositories')}
+                                )
                             </small>
                         </strong>
                         <br />
@@ -135,4 +141,9 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
             {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
         </li>
     )
+}
+
+export function isAppLocalFileService(node: ListExternalServiceFields | AddExternalServiceInput): boolean {
+    // TODO: Find a better way to reliably detect the auto-generated local file service
+    return node.createdAt === '0001-01-01T00:00:00Z'
 }

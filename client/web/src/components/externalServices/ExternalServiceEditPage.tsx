@@ -24,6 +24,7 @@ import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 interface Props extends TelemetryProps {
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isSourcegraphApp: boolean
 
     /** For testing only. */
     autoFocusForm?: boolean
@@ -37,6 +38,7 @@ export const ExternalServiceEditPage: FC<Props> = ({
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
     autoFocusForm,
+    isSourcegraphApp,
 }) => {
     const { externalServiceID } = useParams()
 
@@ -170,6 +172,7 @@ export const ExternalServiceEditPage: FC<Props> = ({
                             autoFocus={autoFocusForm}
                             externalServicesFromFile={externalServicesFromFile}
                             allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
+                            isSourcegraphApp={isSourcegraphApp}
                         />
                     )}
                     <ExternalServiceWebhook externalService={externalService} className="mt-3" />

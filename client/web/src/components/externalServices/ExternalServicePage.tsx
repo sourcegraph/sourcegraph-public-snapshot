@@ -37,6 +37,7 @@ interface Props extends TelemetryProps {
 
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isSourcegraphApp: boolean
 
     /** For testing only. */
     queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs
@@ -52,6 +53,7 @@ export const ExternalServicePage: FC<Props> = props => {
         afterDeleteRoute,
         externalServicesFromFile,
         allowEditExternalServicesWithFile,
+        isSourcegraphApp,
         queryExternalServiceSyncJobs = _queryExternalServiceSyncJobs,
     } = props
 
