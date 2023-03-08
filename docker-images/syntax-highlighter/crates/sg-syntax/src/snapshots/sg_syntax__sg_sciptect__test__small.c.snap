@@ -9,7 +9,7 @@ expression: "dump_document(&document, &contents)"
 //         ^ PunctuationBracket  punctuation.section.group.end.c
 //           ^ PunctuationBracket  punctuation.section.block.begin.c
     return 0;
-//  ^^^^^^ IdentifierKeyword  keyword.control.flow.return.c
+//  ^^^^^^ Keyword  keyword.control.flow.return.c
 //         ^ NumericLiteral  storage.type.numeric.c
 //          ^ PunctuationDelimiter  punctuation.terminator.c
   }

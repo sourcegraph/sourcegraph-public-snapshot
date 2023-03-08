@@ -3,25 +3,25 @@ source: crates/sg-syntax/src/sg_treesitter.rs
 expression: "dump_document(&document, &contents)"
 ---
   var a = 'a';
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^ Identifier 
 //        ^ StringLiteral 
 //         ^ StringLiteral 
 //          ^ StringLiteral 
   
   var b = function() {};
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^ IdentifierFunction 
-//        ^^^^^^^^ IdentifierKeyword 
+//        ^^^^^^^^ Keyword 
   
   var c = () => {};
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^ IdentifierFunction 
   
   var d = async () => {};
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^ IdentifierFunction 
-//        ^^^^^ IdentifierKeyword 
+//        ^^^^^ Keyword 
   
   module.e = 'e';
 //^^^^^^ Identifier 
@@ -33,28 +33,28 @@ expression: "dump_document(&document, &contents)"
   module.f = function() {};
 //^^^^^^ Identifier 
 //       ^ IdentifierFunction 
-//           ^^^^^^^^ IdentifierKeyword 
+//           ^^^^^^^^ Keyword 
   
   module.g = async function() {};
 //^^^^^^ Identifier 
 //       ^ IdentifierFunction 
-//           ^^^^^ IdentifierKeyword 
-//                 ^^^^^^^^ IdentifierKeyword 
+//           ^^^^^ Keyword 
+//                 ^^^^^^^^ Keyword 
   
   module.h = () => {};
 //^^^^^^ Identifier 
 //       ^ IdentifierFunction 
   
   function i() {
-//^^^^^^^^ IdentifierKeyword 
+//^^^^^^^^ Keyword 
 //         ^ IdentifierFunction 
   }
   
   class Person {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ Identifier 
     static foo = bar;
-//  ^^^^^^ IdentifierKeyword 
+//  ^^^^^^ Keyword 
 //         ^^^ Identifier 
 //               ^^^ Identifier 
   
@@ -65,7 +65,7 @@ expression: "dump_document(&document, &contents)"
   
   foo(function callback() {
 //^^^ IdentifierFunction 
-//    ^^^^^^^^ IdentifierKeyword 
+//    ^^^^^^^^ Keyword 
 //             ^^^^^^^^ IdentifierFunction 
   })
   
@@ -77,53 +77,53 @@ expression: "dump_document(&document, &contents)"
 //       ^ IdentifierFunction 
   
   export function keywords() {
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^^^^ Keyword 
 //                ^^^^^^^^ IdentifierFunction 
     do {} while (a);
-//  ^^ IdentifierKeyword 
-//        ^^^^^ IdentifierKeyword 
+//  ^^ Keyword 
+//        ^^^^^ Keyword 
 //               ^ Identifier 
   
     try {} catch (e) {} finally {}
-//  ^^^ IdentifierKeyword 
-//         ^^^^^ IdentifierKeyword 
+//  ^^^ Keyword 
+//         ^^^^^ Keyword 
 //                ^ Identifier 
-//                      ^^^^^^^ IdentifierKeyword 
+//                      ^^^^^^^ Keyword 
   
     throw e
-//  ^^^^^ IdentifierKeyword 
+//  ^^^^^ Keyword 
 //        ^ Identifier 
   }
   
   class A {}
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^ Identifier 
   const ABC = 1
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^ Identifier 
 //            ^ NumericLiteral 
   const AB_C1 = 2
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^ Identifier 
 //              ^ NumericLiteral 
   const {AB_C2_D3} = x
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //       ^^^^^^^^ Identifier 
 //                   ^ Identifier 
   
   module.exports = function(one, two) {
 //^^^^^^ Identifier 
 //       ^^^^^^^ IdentifierFunction 
-//                 ^^^^^^^^ IdentifierKeyword 
+//                 ^^^^^^^^ Keyword 
 //                          ^^^ Identifier 
 //                               ^^^ Identifier 
   
     if (something()) {
-//  ^^ IdentifierKeyword 
+//  ^^ Keyword 
 //      ^^^^^^^^^ IdentifierFunction 
       let module = null, one = 1;
-//    ^^^ IdentifierKeyword 
+//    ^^^ Keyword 
 //        ^^^^^^ Identifier 
 //                 ^^^^ IdentifierBuiltin 
 //                       ^^^ Identifier 
@@ -153,7 +153,7 @@ expression: "dump_document(&document, &contents)"
 //                         ^^^ Identifier 
   
   function one({two: three}, [four]) {
-//^^^^^^^^ IdentifierKeyword 
+//^^^^^^^^ Keyword 
 //         ^^^ IdentifierFunction 
 //              ^^^ Identifier 
 //                   ^^^^^ Identifier 
@@ -170,17 +170,17 @@ expression: "dump_document(&document, &contents)"
   //1. Variables
 //^^^^^^^^^^^^^^ Comment 
   let name = "Sourcegraph";
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^ Identifier 
 //           ^ StringLiteral 
 //            ^^^^^^^^^^^ StringLiteral 
 //                       ^ StringLiteral 
   const age = 2;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^ Identifier 
 //            ^ NumericLiteral 
   var skills = ["language model", "natural language processing"];
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^ Identifier 
 //              ^ StringLiteral 
 //               ^^^^^^^^^^^^^^ StringLiteral 
@@ -192,45 +192,45 @@ expression: "dump_document(&document, &contents)"
   //2. Data types
 //^^^^^^^^^^^^^^^ Comment 
   const number = 10;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ Identifier 
 //               ^^ NumericLiteral 
   const float = 10.5;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^ Identifier 
 //              ^^^^ NumericLiteral 
   const string = "hello";
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ Identifier 
 //               ^ StringLiteral 
 //                ^^^^^ StringLiteral 
 //                     ^ StringLiteral 
   const boolean = true;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^ Identifier 
 //                ^^^^ IdentifierBuiltin 
   const array = [1, 2, 3];
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^ Identifier 
 //               ^ NumericLiteral 
 //                  ^ NumericLiteral 
 //                     ^ NumericLiteral 
   const object = {key: "value"};
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ Identifier 
 //                ^^^ IdentifierAttribute 
 //                     ^ StringLiteral 
 //                      ^^^^^ StringLiteral 
 //                           ^ StringLiteral 
   const symbol = Symbol();
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ Identifier 
 //               ^^^^^^ IdentifierFunction 
   
   //3. Conditional statements
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   if (age > 1) {
-//^^ IdentifierKeyword 
+//^^ Keyword 
 //    ^^^ Identifier 
 //          ^ NumericLiteral 
     console.log(`${name} is ${age} years old.`);
@@ -246,7 +246,7 @@ expression: "dump_document(&document, &contents)"
 //                               ^ StringLiteralEscape 
 //                                ^^^^^^^^^^^^ StringLiteral 
   } else {
-//  ^^^^ IdentifierKeyword 
+//  ^^^^ Keyword 
     console.log(`${name} is a baby.`);
 //  ^^^^^^^ Identifier 
 //          ^^^ IdentifierFunction 
@@ -260,8 +260,8 @@ expression: "dump_document(&document, &contents)"
   //4. Loop
 //^^^^^^^^^ Comment 
   for (let i = 0; i < skills.length; i++) {
-//^^^ IdentifierKeyword 
-//     ^^^ IdentifierKeyword 
+//^^^ Keyword 
+//     ^^^ Keyword 
 //         ^ Identifier 
 //             ^ NumericLiteral 
 //                ^ Identifier 
@@ -278,11 +278,11 @@ expression: "dump_document(&document, &contents)"
   //5. Functions
 //^^^^^^^^^^^^^^ Comment 
   function greet(name) {
-//^^^^^^^^ IdentifierKeyword 
+//^^^^^^^^ Keyword 
 //         ^^^^^ IdentifierFunction 
 //               ^^^^ Identifier 
     return `Hello, ${name}!`;
-//  ^^^^^^ IdentifierKeyword 
+//  ^^^^^^ Keyword 
 //         ^^^^^^^^ StringLiteral 
 //                 ^^ StringLiteralEscape 
 //                   ^^^^ Identifier 
@@ -298,7 +298,7 @@ expression: "dump_document(&document, &contents)"
   //6. Arrow functions
 //^^^^^^^^^^^^^^^^^^^^ Comment 
   const multiply = (a, b) => a * b;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^ IdentifierFunction 
 //                  ^ Identifier 
 //                     ^ Identifier 
@@ -314,7 +314,7 @@ expression: "dump_document(&document, &contents)"
   //7. Object methods
 //^^^^^^^^^^^^^^^^^^^ Comment 
   const person = {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ Identifier 
     name: "John",
 //  ^^^^ IdentifierAttribute 
@@ -345,7 +345,7 @@ expression: "dump_document(&document, &contents)"
   //8. Destructuring
 //^^^^^^^^^^^^^^^^^^ Comment 
   const { name: personName, age: personAge } = person;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //        ^^^^ Identifier 
 //              ^^^^^^^^^^ Identifier 
 //                          ^^^ Identifier 
@@ -360,7 +360,7 @@ expression: "dump_document(&document, &contents)"
   //9. Spread operator
 //^^^^^^^^^^^^^^^^^^^^ Comment 
   const newSkills = [...skills, "JavaScript"];
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^ Identifier 
 //                      ^^^^^^ Identifier 
 //                              ^ StringLiteral 
@@ -374,25 +374,25 @@ expression: "dump_document(&document, &contents)"
   //10. Rest operator
 //^^^^^^^^^^^^^^^^^^^ Comment 
   function sum(...numbers) {
-//^^^^^^^^ IdentifierKeyword 
+//^^^^^^^^ Keyword 
 //         ^^^ IdentifierFunction 
 //                ^^^^^^^ Identifier 
     let result = 0;
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^^^^^^ Identifier 
 //               ^ NumericLiteral 
     for (const number of numbers) {
-//  ^^^ IdentifierKeyword 
-//       ^^^^^ IdentifierKeyword 
+//  ^^^ Keyword 
+//       ^^^^^ Keyword 
 //             ^^^^^^ Identifier 
-//                    ^^ IdentifierKeyword 
+//                    ^^ Keyword 
 //                       ^^^^^^^ Identifier 
       result += number;
 //    ^^^^^^ Identifier 
 //              ^^^^^^ Identifier 
     }
     return result;
-//  ^^^^^^ IdentifierKeyword 
+//  ^^^^^^ Keyword 
 //         ^^^^^^ Identifier 
   }
   console.log(sum(1, 2, 3, 4));
@@ -407,7 +407,7 @@ expression: "dump_document(&document, &contents)"
   //11. Classes
 //^^^^^^^^^^^^^ Comment 
   class Animal {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ Identifier 
     constructor(name, type) {
 //  ^^^^^^^^^^^ IdentifierFunction 
@@ -443,9 +443,9 @@ expression: "dump_document(&document, &contents)"
     }
   }
   const cat = new Animal("Tom", "cat");
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^ Identifier 
-//            ^^^ IdentifierKeyword 
+//            ^^^ Keyword 
 //                ^^^^^^ Identifier 
 //                       ^ StringLiteral 
 //                        ^^^ StringLiteral 
@@ -460,9 +460,9 @@ expression: "dump_document(&document, &contents)"
   //12. Inheritance
 //^^^^^^^^^^^^^^^^^ Comment 
   class Dog extends Animal {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^ Identifier 
-//          ^^^^^^^ IdentifierKeyword 
+//          ^^^^^^^ Keyword 
 //                  ^^^^^^ Identifier 
     constructor(name, breed) {
 //  ^^^^^^^^^^^ IdentifierFunction 
@@ -506,9 +506,9 @@ expression: "dump_document(&document, &contents)"
     }
   }
   const dog = new Dog("Max", "Labrador");
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^ Identifier 
-//            ^^^ IdentifierKeyword 
+//            ^^^ Keyword 
 //                ^^^ Identifier 
 //                    ^ StringLiteral 
 //                     ^^^ StringLiteral 
@@ -523,7 +523,7 @@ expression: "dump_document(&document, &contents)"
   //13. Template literals
 //^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   const message = `${name} is a ${age}-year-old ${skills[0]}.`;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^ Identifier 
 //                ^ StringLiteral 
 //                 ^^ StringLiteralEscape 
@@ -549,7 +549,7 @@ expression: "dump_document(&document, &contents)"
   //14. Ternary operator
 //^^^^^^^^^^^^^^^^^^^^^^ Comment 
   const result = (age > 18) ? "Adult" : "Child";
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ Identifier 
 //                ^^^ Identifier 
 //                      ^^ NumericLiteral 
@@ -567,14 +567,14 @@ expression: "dump_document(&document, &contents)"
   //15. Map
 //^^^^^^^^^ Comment 
   const numbers = [1, 2, 3, 4];
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^ Identifier 
 //                 ^ NumericLiteral 
 //                    ^ NumericLiteral 
 //                       ^ NumericLiteral 
 //                          ^ NumericLiteral 
   const doubledNumbers = numbers.map(number => number * 2);
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^^^ Identifier 
 //                       ^^^^^^^ Identifier 
 //                               ^^^ IdentifierFunction 

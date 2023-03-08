@@ -3,19 +3,19 @@ source: crates/sg-syntax/src/sg_treesitter.rs
 expression: "dump_document(&document, &contents)"
 ---
   import fs from 'fs'
-//^^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
 //       ^^ Identifier 
-//          ^^^^ IdentifierKeyword 
+//          ^^^^ Keyword 
 //               ^ StringLiteral 
 //                ^^ StringLiteral 
 //                  ^ StringLiteral 
   export class MyClass {
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^ Keyword 
 //             ^^^^^^^ IdentifierType 
     public static myValue: string;
-//  ^^^^^^ IdentifierKeyword 
-//         ^^^^^^ IdentifierKeyword 
+//  ^^^^^^ Keyword 
+//         ^^^^^^ Keyword 
 //                ^^^^^^^ Identifier 
 //                         ^^^^^^ IdentifierBuiltinType 
     constructor(init: string) {
@@ -31,32 +31,32 @@ expression: "dump_document(&document, &contents)"
     }
   }
   export abstract class MyAbstractClass {}
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^^^^ IdentifierKeyword 
-//                ^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^^^^ Keyword 
+//                ^^^^^ Keyword 
 //                      ^^^^^^^^^^^^^^^ IdentifierType 
   import fs = require("fs");
-//^^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
 //       ^^ Identifier 
 //                    ^ StringLiteral 
 //                     ^^ StringLiteral 
 //                       ^ StringLiteral 
   declare module MyModule {
-//^^^^^^^ IdentifierKeyword 
-//        ^^^^^^ IdentifierKeyword 
+//^^^^^^^ Keyword 
+//        ^^^^^^ Keyword 
 //               ^^^^^^^^ Identifier 
     export interface MyInterface extends Other {
-//  ^^^^^^ IdentifierKeyword 
-//         ^^^^^^^^^ IdentifierKeyword 
+//  ^^^^^^ Keyword 
+//         ^^^^^^^^^ Keyword 
 //                   ^^^^^^^^^^^ IdentifierType 
-//                               ^^^^^^^ IdentifierKeyword 
+//                               ^^^^^^^ Keyword 
 //                                       ^^^^^ IdentifierType 
       myProperty: any;
 //    ^^^^^^^^^^ Identifier 
 //                ^^^ IdentifierBuiltinType 
       myKeyoff: keyof MyClass;
 //    ^^^^^^^^ Identifier 
-//              ^^^^^ IdentifierKeyword 
+//              ^^^^^ Keyword 
 //                    ^^^^^^^ IdentifierType 
     }
   }
@@ -68,7 +68,7 @@ expression: "dump_document(&document, &contents)"
 //        ^^^^^^^ IdentifierFunction 
 //                            ^^^^^^^^^^^^^^^^^^^ Comment 
   const oneOf = (a:number): number => a + 1
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^ IdentifierFunction 
 //               ^ Identifier 
 //                 ^^^^^^ IdentifierBuiltinType 
@@ -76,8 +76,8 @@ expression: "dump_document(&document, &contents)"
 //                                    ^ Identifier 
 //                                        ^ NumericLiteral 
   export enum Day {
-//^^^^^^ IdentifierKeyword 
-//       ^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^ Keyword 
 //            ^^^ Identifier 
       Weekday = 1,
 //    ^^^^^^^ Identifier 
@@ -87,38 +87,38 @@ expression: "dump_document(&document, &contents)"
 //              ^ NumericLiteral 
   }
   export type MyNumber = number
-//^^^^^^ IdentifierKeyword 
-//       ^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^ Keyword 
 //            ^^^^^^^^ IdentifierType 
 //                       ^^^^^^ IdentifierBuiltinType 
   export const a = 42
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^ Keyword 
 //             ^ Identifier 
 //                 ^^ NumericLiteral 
   const aa = 42
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^ Identifier 
 //           ^^ NumericLiteral 
   export let b = 42
-//^^^^^^ IdentifierKeyword 
-//       ^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^ Keyword 
 //           ^ Identifier 
 //               ^^ NumericLiteral 
   export var c = 42
-//^^^^^^ IdentifierKeyword 
-//       ^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^ Keyword 
 //           ^ Identifier 
 //               ^^ NumericLiteral 
   export var d1 = {e2:41}
-//^^^^^^ IdentifierKeyword 
-//       ^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^ Keyword 
 //           ^^ Identifier 
 //                 ^^ IdentifierAttribute 
 //                    ^^ NumericLiteral 
   export var d = {
-//^^^^^^ IdentifierKeyword 
-//       ^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^ Keyword 
 //           ^ Identifier 
       key1: 1,
 //    ^^^^ IdentifierAttribute 
@@ -157,39 +157,39 @@ expression: "dump_document(&document, &contents)"
 //                                   ^ NumericLiteral 
   }
   export var e = Object.keys(d) as MyClass
-//^^^^^^ IdentifierKeyword 
-//       ^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^ Keyword 
 //           ^ Identifier 
 //               ^^^^^^ Identifier 
 //                      ^^^^ IdentifierFunction 
 //                           ^ Identifier 
-//                              ^^ IdentifierKeyword 
+//                              ^^ Keyword 
 //                                 ^^^^^^^ IdentifierType 
   export const e2: never[] = []
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^ Keyword 
 //             ^^ Identifier 
 //                 ^^^^^ IdentifierBuiltinType 
   export const e3: undefined = undefined
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^ Keyword 
 //             ^^ Identifier 
 //                 ^^^^^^^^^ IdentifierBuiltin 
 //                             ^^^^^^^^^ IdentifierBuiltin 
   export const e4: null = null
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^ Keyword 
 //             ^^ Identifier 
 //                 ^^^^ IdentifierBuiltin 
 //                        ^^^^ IdentifierBuiltin 
   export function e5(): void = {}
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^^^^ Keyword 
 //                ^^ IdentifierFunction 
-//                      ^^^^ IdentifierKeyword 
+//                      ^^^^ Keyword 
   export const e6 = Math.max(Math.min, Math.PI)
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^ Keyword 
 //             ^^ Identifier 
 //                  ^^^^ Identifier 
 //                       ^^^ IdentifierFunction 
@@ -198,7 +198,7 @@ expression: "dump_document(&document, &contents)"
 //                                     ^^^^ Identifier 
 //                                          ^^ Identifier 
   const { a, b: c } = { a, b: 42 }
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //        ^ Identifier 
 //           ^ Identifier 
 //              ^ Identifier 
@@ -206,25 +206,25 @@ expression: "dump_document(&document, &contents)"
 //                         ^ IdentifierAttribute 
 //                            ^^ NumericLiteral 
   export function f() {}
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^^^^ Keyword 
 //                ^ IdentifierFunction 
   
   const negatedFilterToNegatableFilter: { [key: string]: MyClass } = null as any
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier 
 //                                         ^^^ Identifier 
 //                                              ^^^^^^ IdentifierBuiltinType 
 //                                                       ^^^^^^^ IdentifierType 
 //                                                                   ^^^^ IdentifierBuiltin 
-//                                                                        ^^ IdentifierKeyword 
+//                                                                        ^^ Keyword 
 //                                                                           ^^^ IdentifierBuiltinType 
   
   const scanToken = <T extends Term = Literal>(
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^ IdentifierFunction 
 //                   ^ IdentifierType 
-//                     ^^^^^^^ IdentifierKeyword 
+//                     ^^^^^^^ Keyword 
 //                             ^^^^ IdentifierType 
 //                                    ^^^^^^^ IdentifierType 
       regexp: RegExp,
@@ -245,7 +245,7 @@ expression: "dump_document(&document, &contents)"
 //   ^^^^^^ IdentifierType 
 //          ^ IdentifierType 
       const { a, b: c } = { a, b: 42 }
-//    ^^^^^ IdentifierKeyword 
+//    ^^^^^ Keyword 
 //            ^ Identifier 
 //               ^ Identifier 
 //                  ^ Identifier 
@@ -253,7 +253,7 @@ expression: "dump_document(&document, &contents)"
 //                             ^ IdentifierAttribute 
 //                                ^^ NumericLiteral 
       if (!regexp.source.startsWith('^')) {
-//    ^^ IdentifierKeyword 
+//    ^^ Keyword 
 //         ^^^^^^ Identifier 
 //                ^^^^^^ Identifier 
 //                       ^^^^^^^^^^ IdentifierFunction 
@@ -262,7 +262,7 @@ expression: "dump_document(&document, &contents)"
 //                                    ^ StringLiteral 
           regexp = new RegExp(`^${regexp.source}`, regexp.flags)
 //        ^^^^^^ Identifier 
-//                 ^^^ IdentifierKeyword 
+//                 ^^^ Keyword 
 //                     ^^^^^^ Identifier 
 //                            ^^ StringLiteral 
 //                              ^^ StringLiteralEscape 
@@ -277,17 +277,17 @@ expression: "dump_document(&document, &contents)"
   }
   
   export const URI: typeof URL
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^ Keyword 
 //             ^^^ Identifier 
-//                  ^^^^^^ IdentifierKeyword 
+//                  ^^^^^^ Keyword 
 //                         ^^^ Identifier 
   
   export class SiteAdminUsageStatisticsPage extends React.Component<
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^ Keyword 
 //             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType 
-//                                          ^^^^^^^ IdentifierKeyword 
+//                                          ^^^^^^^ Keyword 
 //                                                  ^^^^^ Identifier 
 //                                                        ^^^^^^^^^ Identifier 
       SiteAdminUsageStatisticsPageProps,
@@ -296,25 +296,25 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType 
   > {
       private loadLatestChartFromStorage(): keyof ChartOptions {
-//    ^^^^^^^ IdentifierKeyword 
+//    ^^^^^^^ Keyword 
 //            ^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
-//                                          ^^^^^ IdentifierKeyword 
+//                                          ^^^^^ Keyword 
 //                                                ^^^^^^^^^^^^ IdentifierType 
           const latest = localStorage.getItem(CHART_ID_KEY)
-//        ^^^^^ IdentifierKeyword 
+//        ^^^^^ Keyword 
 //              ^^^^^^ Identifier 
 //                       ^^^^^^^^^^^^ Identifier 
 //                                    ^^^^^^^ IdentifierFunction 
 //                                            ^^^^^^^^^^^^ Identifier 
           return latest && latest in chartGeneratorOptions ? (latest as keyof ChartOptions) : 'daus'
-//        ^^^^^^ IdentifierKeyword 
+//        ^^^^^^ Keyword 
 //               ^^^^^^ Identifier 
 //                         ^^^^^^ Identifier 
-//                                ^^ IdentifierKeyword 
+//                                ^^ Keyword 
 //                                   ^^^^^^^^^^^^^^^^^^^^^ Identifier 
 //                                                            ^^^^^^ Identifier 
-//                                                                   ^^ IdentifierKeyword 
-//                                                                      ^^^^^ IdentifierKeyword 
+//                                                                   ^^ Keyword 
+//                                                                      ^^^^^ Keyword 
 //                                                                            ^^^^^^^^^^^^ IdentifierType 
 //                                                                                            ^ StringLiteral 
 //                                                                                             ^^^^ StringLiteral 
@@ -324,8 +324,8 @@ expression: "dump_document(&document, &contents)"
   }
   
   export function newFuzzyFSM(filenames: string[], createUrl: createUrlFunction): FuzzyFSM {
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^^^^ Keyword 
 //                ^^^^^^^^^^^ IdentifierFunction 
 //                            ^^^^^^^^^ Identifier 
 //                                       ^^^^^^ IdentifierBuiltinType 
@@ -333,7 +333,7 @@ expression: "dump_document(&document, &contents)"
 //                                                            ^^^^^^^^^^^^^^^^^ IdentifierType 
 //                                                                                ^^^^^^^^ IdentifierType 
       return newFuzzyFSMFromValues(
-//    ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
 //           ^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
           filenames.map(text => ({
 //        ^^^^^^^^^ Identifier 
@@ -354,11 +354,11 @@ expression: "dump_document(&document, &contents)"
   // 1. Advanced types
 //^^^^^^^^^^^^^^^^^^^^ Comment 
   type Age = number;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^ IdentifierType 
 //           ^^^^^^ IdentifierBuiltinType 
   type Person = {
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^ IdentifierType 
       name: string;
 //    ^^^^ Identifier 
@@ -369,7 +369,7 @@ expression: "dump_document(&document, &contents)"
   };
   
   const john: Person = {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^ Identifier 
 //            ^^^^^^ IdentifierType 
       name: "John",
@@ -385,7 +385,7 @@ expression: "dump_document(&document, &contents)"
   // 2. Intersection Types
 //^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   type Admin = {
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^ IdentifierType 
       role: "admin";
 //    ^^^^ Identifier 
@@ -394,7 +394,7 @@ expression: "dump_document(&document, &contents)"
 //                ^ StringLiteral 
   };
   type Manager = {
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^ IdentifierType 
       role: "manager";
 //    ^^^^ Identifier 
@@ -403,14 +403,14 @@ expression: "dump_document(&document, &contents)"
 //                  ^ StringLiteral 
   };
   type User = Person & (Admin | Manager);
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^ IdentifierType 
 //            ^^^^^^ IdentifierType 
 //                      ^^^^^ IdentifierType 
 //                              ^^^^^^^ IdentifierType 
   
   const admin: User = {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^ Identifier 
 //             ^^^^ IdentifierType 
       name: "admin",
@@ -431,12 +431,12 @@ expression: "dump_document(&document, &contents)"
   // 3. Union Types
 //^^^^^^^^^^^^^^^^^ Comment 
   type StringOrNumber = string | number;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^^^^^^ IdentifierType 
 //                      ^^^^^^ IdentifierBuiltinType 
 //                               ^^^^^^ IdentifierBuiltinType 
   const unionExample: StringOrNumber = "hello";
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^ Identifier 
 //                    ^^^^^^^^^^^^^^ IdentifierType 
 //                                     ^ StringLiteral 
@@ -446,14 +446,14 @@ expression: "dump_document(&document, &contents)"
   // 4. Type Aliases
 //^^^^^^^^^^^^^^^^^^ Comment 
   type AgeRange = 18 | 25 | 30 | 40;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^ IdentifierType 
 //                ^^ NumericLiteral 
 //                     ^^ NumericLiteral 
 //                          ^^ NumericLiteral 
 //                               ^^ NumericLiteral 
   const ageRange: AgeRange = 25;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^ Identifier 
 //                ^^^^^^^^ IdentifierType 
 //                           ^^ NumericLiteral 
@@ -461,22 +461,22 @@ expression: "dump_document(&document, &contents)"
   // 5. Type Guards
 //^^^^^^^^^^^^^^^^^ Comment 
   function isString(value: StringOrNumber): value is string {
-//^^^^^^^^ IdentifierKeyword 
+//^^^^^^^^ Keyword 
 //         ^^^^^^^^ IdentifierFunction 
 //                  ^^^^^ Identifier 
 //                         ^^^^^^^^^^^^^^ IdentifierType 
 //                                          ^^^^^ Identifier 
 //                                                   ^^^^^^ IdentifierBuiltinType 
       return typeof value === "string";
-//    ^^^^^^ IdentifierKeyword 
-//           ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
+//           ^^^^^^ Keyword 
 //                  ^^^^^ Identifier 
 //                            ^ StringLiteral 
 //                             ^^^^^^ StringLiteral 
 //                                   ^ StringLiteral 
   }
   if (isString(unionExample)) {
-//^^ IdentifierKeyword 
+//^^ Keyword 
 //    ^^^^^^^^ IdentifierFunction 
 //             ^^^^^^^^^^^^ Identifier 
       console.log(`Value is a string: ${unionExample}`);
@@ -492,13 +492,13 @@ expression: "dump_document(&document, &contents)"
   // 6. Type inference
 //^^^^^^^^^^^^^^^^^^^^ Comment 
   const value = "Hello";
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^ Identifier 
 //              ^ StringLiteral 
 //               ^^^^^ StringLiteral 
 //                    ^ StringLiteral 
   const valueLength = value.length;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^ Identifier 
 //                    ^^^^^ Identifier 
 //                          ^^^^^^ Identifier 
@@ -506,10 +506,10 @@ expression: "dump_document(&document, &contents)"
   // 7. Type parameter constraints
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   class Collection<T extends object> {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^ IdentifierType 
 //                 ^ IdentifierType 
-//                   ^^^^^^^ IdentifierKeyword 
+//                   ^^^^^^^ Keyword 
 //                           ^^^^^^ IdentifierBuiltinType 
       items: T[];
 //    ^^^^^ Identifier 
@@ -527,7 +527,7 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^^^^ IdentifierFunction 
 //                ^ IdentifierType 
           return this.items[0];
-//        ^^^^^^ IdentifierKeyword 
+//        ^^^^^^ Keyword 
 //               ^^^^ IdentifierBuiltin 
 //                    ^^^^^ Identifier 
 //                          ^ NumericLiteral 
@@ -535,9 +535,9 @@ expression: "dump_document(&document, &contents)"
   }
   
   const people = new Collection([{ name: "John" }, { name: "Jane" }]);
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ Identifier 
-//               ^^^ IdentifierKeyword 
+//               ^^^ Keyword 
 //                   ^^^^^^^^^^ Identifier 
 //                                 ^^^^ IdentifierAttribute 
 //                                       ^ StringLiteral 
@@ -548,7 +548,7 @@ expression: "dump_document(&document, &contents)"
 //                                                          ^^^^ StringLiteral 
 //                                                              ^ StringLiteral 
   const firstPerson = people.getFirst();
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^ Identifier 
 //                    ^^^^^^ Identifier 
 //                           ^^^^^^^^ IdentifierFunction 
@@ -556,7 +556,7 @@ expression: "dump_document(&document, &contents)"
   // 8. Higher Order Types
 //^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   type Filter = {
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^ IdentifierType 
       (array: number[], callback: (item: number) => boolean): number[];
 //     ^^^^^ Identifier 
@@ -568,22 +568,22 @@ expression: "dump_document(&document, &contents)"
 //                                                            ^^^^^^ IdentifierBuiltinType 
   };
   const filter: Filter = (array, callback) => {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ IdentifierFunction 
 //              ^^^^^^ IdentifierType 
 //                        ^^^^^ Identifier 
 //                               ^^^^^^^^ Identifier 
       const result = [];
-//    ^^^^^ IdentifierKeyword 
+//    ^^^^^ Keyword 
 //          ^^^^^^ Identifier 
       for (const item of array) {
-//    ^^^ IdentifierKeyword 
-//         ^^^^^ IdentifierKeyword 
+//    ^^^ Keyword 
+//         ^^^^^ Keyword 
 //               ^^^^ Identifier 
-//                    ^^ IdentifierKeyword 
+//                    ^^ Keyword 
 //                       ^^^^^ Identifier 
           if (callback(item)) {
-//        ^^ IdentifierKeyword 
+//        ^^ Keyword 
 //            ^^^^^^^^ IdentifierFunction 
 //                     ^^^^ Identifier 
               result.push(item);
@@ -593,12 +593,12 @@ expression: "dump_document(&document, &contents)"
           }
       }
       return result;
-//    ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
 //           ^^^^^^ Identifier 
   };
   
   const filtered = filter([1, 2, 3, 4], item => item % 2 === 0);
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^ Identifier 
 //                 ^^^^^^ IdentifierFunction 
 //                         ^ NumericLiteral 
@@ -617,7 +617,7 @@ expression: "dump_document(&document, &contents)"
   // 9. Index Types
 //^^^^^^^^^^^^^^^^^ Comment 
   type People = {
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^ IdentifierType 
       [key: string]: Person;
 //     ^^^ Identifier 
@@ -625,7 +625,7 @@ expression: "dump_document(&document, &contents)"
 //                   ^^^^^^ IdentifierType 
   };
   const peopleObject: People = {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^ Identifier 
 //                    ^^^^^^ IdentifierType 
       john: { name: "John", age: 30 },
@@ -649,23 +649,23 @@ expression: "dump_document(&document, &contents)"
   // 10. Readonly properties
 //^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   interface Car {
-//^^^^^^^^^ IdentifierKeyword 
+//^^^^^^^^^ Keyword 
 //          ^^^ IdentifierType 
       readonly make: string;
-//    ^^^^^^^^ IdentifierKeyword 
+//    ^^^^^^^^ Keyword 
 //             ^^^^ Identifier 
 //                   ^^^^^^ IdentifierBuiltinType 
       readonly model: string;
-//    ^^^^^^^^ IdentifierKeyword 
+//    ^^^^^^^^ Keyword 
 //             ^^^^^ Identifier 
 //                    ^^^^^^ IdentifierBuiltinType 
       readonly year: number;
-//    ^^^^^^^^ IdentifierKeyword 
+//    ^^^^^^^^ Keyword 
 //             ^^^^ Identifier 
 //                   ^^^^^^ IdentifierBuiltinType 
   }
   const car: Car = {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^ Identifier 
 //           ^^^ IdentifierType 
       make: "Tesla",
@@ -686,12 +686,12 @@ expression: "dump_document(&document, &contents)"
   // 11. Keyof operator
 //^^^^^^^^^^^^^^^^^^^^^ Comment 
   type CarProperties = keyof Car;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^^^^^ IdentifierType 
-//                     ^^^^^ IdentifierKeyword 
+//                     ^^^^^ Keyword 
 //                           ^^^ IdentifierType 
   const property: CarProperties = "make";
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^ Identifier 
 //                ^^^^^^^^^^^^^ IdentifierType 
 //                                ^ StringLiteral 
@@ -701,12 +701,12 @@ expression: "dump_document(&document, &contents)"
   // 12. Mapped Types
 //^^^^^^^^^^^^^^^^^^^ Comment 
   type ReadonlyCar = Readonly<Car>;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^^^ IdentifierType 
 //                   ^^^^^^^^ IdentifierType 
 //                            ^^^ IdentifierType 
   const readonlyCar: ReadonlyCar = {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^ Identifier 
 //                   ^^^^^^^^^^^ IdentifierType 
       make: "Tesla",
@@ -727,21 +727,21 @@ expression: "dump_document(&document, &contents)"
   // 13. Conditional Types
 //^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   type IsNumber<T> = T extends number ? true : false;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^ IdentifierType 
 //              ^ IdentifierType 
 //                   ^ IdentifierType 
-//                     ^^^^^^^ IdentifierKeyword 
+//                     ^^^^^^^ Keyword 
 //                             ^^^^^^ IdentifierBuiltinType 
 //                                      ^^^^ IdentifierBuiltin 
 //                                             ^^^^^ IdentifierBuiltin 
   type IsNumberType = IsNumber<number>;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^^^^ IdentifierType 
 //                    ^^^^^^^^ IdentifierType 
 //                             ^^^^^^ IdentifierBuiltinType 
   const isNumberType: IsNumberType = true;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^ Identifier 
 //                    ^^^^^^^^^^^^ IdentifierType 
 //                                   ^^^^ IdentifierBuiltin 
@@ -751,16 +751,16 @@ expression: "dump_document(&document, &contents)"
   // 14. Exclude from type
 //^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   type ExcludePersonAge = Exclude<keyof Person, "age">;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^^^^^^^^ IdentifierType 
 //                        ^^^^^^^ IdentifierType 
-//                                ^^^^^ IdentifierKeyword 
+//                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
 //                                              ^ StringLiteral 
 //                                               ^^^ StringLiteral 
 //                                                  ^ StringLiteral 
   const excludedPersonProperties: ExcludePersonAge = "name";
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^^^^^^^^^^^^^ Identifier 
 //                                ^^^^^^^^^^^^^^^^ IdentifierType 
 //                                                   ^ StringLiteral 
@@ -770,16 +770,16 @@ expression: "dump_document(&document, &contents)"
   // 15. Extract from type
 //^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   type ExtractPersonAge = Extract<keyof Person, "age">;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^^^^^^^^ IdentifierType 
 //                        ^^^^^^^ IdentifierType 
-//                                ^^^^^ IdentifierKeyword 
+//                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
 //                                              ^ StringLiteral 
 //                                               ^^^ StringLiteral 
 //                                                  ^ StringLiteral 
   const extractedPersonProperties2: ExtractPersonAge = "age";
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier 
 //                                  ^^^^^^^^^^^^^^^^ IdentifierType 
 //                                                     ^ StringLiteral 
@@ -789,12 +789,12 @@ expression: "dump_document(&document, &contents)"
   // 16. Non-nullable type
 //^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   type NonNullableCar = NonNullable<Car>;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^^^^^^ IdentifierType 
 //                      ^^^^^^^^^^^ IdentifierType 
 //                                  ^^^ IdentifierType 
   const nonNullableCar: NonNullableCar = {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^^^ Identifier 
 //                      ^^^^^^^^^^^^^^ IdentifierType 
       make: "Tesla",
@@ -815,7 +815,7 @@ expression: "dump_document(&document, &contents)"
   // 17. Required properties
 //^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   interface CarDetails {
-//^^^^^^^^^ IdentifierKeyword 
+//^^^^^^^^^ Keyword 
 //          ^^^^^^^^^^ IdentifierType 
       make?: string;
 //    ^^^^ Identifier 
@@ -828,12 +828,12 @@ expression: "dump_document(&document, &contents)"
 //           ^^^^^^ IdentifierBuiltinType 
   }
   type RequiredCarDetails = Required<CarDetails>;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^^^^^^^^^^ IdentifierType 
 //                          ^^^^^^^^ IdentifierType 
 //                                   ^^^^^^^^^^ IdentifierType 
   const requiredCarDetails: RequiredCarDetails = {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^^^^^^^ Identifier 
 //                          ^^^^^^^^^^^^^^^^^^ IdentifierType 
       make: "Tesla",
@@ -855,12 +855,12 @@ expression: "dump_document(&document, &contents)"
   // 18. Tuple types
 //^^^^^^^^^^^^^^^^^^ Comment 
   type PersonTuple = [string, Age];
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^^^ IdentifierType 
 //                    ^^^^^^ IdentifierBuiltinType 
 //                            ^^^ IdentifierType 
   const personTuple: PersonTuple = ["John", 30];
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^ Identifier 
 //                   ^^^^^^^^^^^ IdentifierType 
 //                                  ^ StringLiteral 
@@ -871,7 +871,7 @@ expression: "dump_document(&document, &contents)"
   // 19. Literal types
 //^^^^^^^^^^^^^^^^^^^^ Comment 
   type Days = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday";
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^ IdentifierType 
 //            ^ StringLiteral 
 //             ^^^^^^ StringLiteral 
@@ -889,7 +889,7 @@ expression: "dump_document(&document, &contents)"
 //                                                               ^^^^^^ StringLiteral 
 //                                                                     ^ StringLiteral 
   const days: Days = "Monday";
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^ Identifier 
 //            ^^^^ IdentifierType 
 //                   ^ StringLiteral 
@@ -899,7 +899,7 @@ expression: "dump_document(&document, &contents)"
   // 20. Enum
 //^^^^^^^^^^^ Comment 
   enum Color {
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^ Identifier 
       Red,
 //    ^^^ Identifier 
@@ -909,7 +909,7 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^ Identifier 
   }
   const color = Color.Blue;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^ Identifier 
 //              ^^^^^ Identifier 
 //                    ^^^^ Identifier 
@@ -917,7 +917,7 @@ expression: "dump_document(&document, &contents)"
   // 21. Numeric enums
 //^^^^^^^^^^^^^^^^^^^^ Comment 
   enum Result {
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^ Identifier 
       Success = 100,
 //    ^^^^^^^ Identifier 
@@ -927,7 +927,7 @@ expression: "dump_document(&document, &contents)"
 //              ^^^ NumericLiteral 
   }
   const result = Result.Success;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ Identifier 
 //               ^^^^^^ Identifier 
 //                      ^^^^^^^ Identifier 
@@ -935,7 +935,7 @@ expression: "dump_document(&document, &contents)"
   // 22. String enums
 //^^^^^^^^^^^^^^^^^^^ Comment 
   enum Direction {
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^ Identifier 
       Up = "UP",
 //    ^^ Identifier 
@@ -959,7 +959,7 @@ expression: "dump_document(&document, &contents)"
 //                  ^ StringLiteral 
   }
   const direction = Direction.Right;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^ Identifier 
 //                  ^^^^^^^^^ Identifier 
 //                            ^^^^^ Identifier 
@@ -967,18 +967,18 @@ expression: "dump_document(&document, &contents)"
   // 23. Generics
 //^^^^^^^^^^^^^^^ Comment 
   function identity<T>(value: T): T {
-//^^^^^^^^ IdentifierKeyword 
+//^^^^^^^^ Keyword 
 //         ^^^^^^^^ IdentifierFunction 
 //                  ^ IdentifierType 
 //                     ^^^^^ Identifier 
 //                            ^ IdentifierType 
 //                                ^ IdentifierType 
       return value;
-//    ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
 //           ^^^^^ Identifier 
   }
   const identityExample = identity<string>("hello");
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^^^^ Identifier 
 //                        ^^^^^^^^ IdentifierFunction 
 //                                 ^^^^^^ IdentifierBuiltinType 
@@ -989,7 +989,7 @@ expression: "dump_document(&document, &contents)"
   // 24. Polymorphic this types
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   class MyArray<T> {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^ IdentifierType 
 //              ^ IdentifierType 
       add(value: T) {
@@ -1002,14 +1002,14 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^ Identifier 
 //                            ^^^^^ Identifier 
           return this;
-//        ^^^^^^ IdentifierKeyword 
+//        ^^^^^^ Keyword 
 //               ^^^^ IdentifierBuiltin 
       }
   }
   const myArray = new MyArray<string>();
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^ Identifier 
-//                ^^^ IdentifierKeyword 
+//                ^^^ Keyword 
 //                    ^^^^^^^ Identifier 
 //                            ^^^^^^ IdentifierBuiltinType 
   myArray.add("hello").add("world");
@@ -1026,12 +1026,12 @@ expression: "dump_document(&document, &contents)"
   // 25. Partial types
 //^^^^^^^^^^^^^^^^^^^^ Comment 
   type PartialPerson = Partial<Person>;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^^^^^ IdentifierType 
 //                     ^^^^^^^ IdentifierType 
 //                             ^^^^^^ IdentifierType 
   const partialPerson: PartialPerson = { name: "John" };
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^^ Identifier 
 //                     ^^^^^^^^^^^^^ IdentifierType 
 //                                       ^^^^ IdentifierAttribute 
@@ -1042,7 +1042,7 @@ expression: "dump_document(&document, &contents)"
   // 26. Pick types
 //^^^^^^^^^^^^^^^^^ Comment 
   type PickPersonAge = Pick<Person, 'age'>;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^^^^^ IdentifierType 
 //                     ^^^^ IdentifierType 
 //                          ^^^^^^ IdentifierType 
@@ -1050,7 +1050,7 @@ expression: "dump_document(&document, &contents)"
 //                                   ^^^ StringLiteral 
 //                                      ^ StringLiteral 
   const pickedPersonProperties: PickPersonAge = { age: 30 };
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^^^^^^^^^^^ Identifier 
 //                              ^^^^^^^^^^^^^ IdentifierType 
 //                                                ^^^ IdentifierAttribute 
@@ -1059,7 +1059,7 @@ expression: "dump_document(&document, &contents)"
   // 27. Record types
 //^^^^^^^^^^^^^^^^^^^ Comment 
   type RecordPerson = Record<"key", Person>;
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
 //     ^^^^^^^^^^^^ IdentifierType 
 //                    ^^^^^^ IdentifierType 
 //                           ^ StringLiteral 
@@ -1067,7 +1067,7 @@ expression: "dump_document(&document, &contents)"
 //                               ^ StringLiteral 
 //                                  ^^^^^^ IdentifierType 
   const recordPerson: RecordPerson = { key: { name: "John", age: 30 } };
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^^^ Identifier 
 //                    ^^^^^^^^^^^^ IdentifierType 
 //                                     ^^^ IdentifierAttribute 
@@ -1081,7 +1081,7 @@ expression: "dump_document(&document, &contents)"
   // 28. Interface inheritance
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   interface Shape {
-//^^^^^^^^^ IdentifierKeyword 
+//^^^^^^^^^ Keyword 
 //          ^^^^^ IdentifierType 
       width: number;
 //    ^^^^^ Identifier 
@@ -1091,16 +1091,16 @@ expression: "dump_document(&document, &contents)"
 //            ^^^^^^ IdentifierBuiltinType 
   }
   interface Square extends Shape {
-//^^^^^^^^^ IdentifierKeyword 
+//^^^^^^^^^ Keyword 
 //          ^^^^^^ IdentifierType 
-//                 ^^^^^^^ IdentifierKeyword 
+//                 ^^^^^^^ Keyword 
 //                         ^^^^^ IdentifierType 
       sideLength: number;
 //    ^^^^^^^^^^ Identifier 
 //                ^^^^^^ IdentifierBuiltinType 
   }
   const square: Square = {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ Identifier 
 //              ^^^^^^ IdentifierType 
       width: 10,

@@ -3,17 +3,17 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   package main
-//^^^^^^^ IdentifierKeyword  keyword.other.package.go
+//^^^^^^^ Keyword  keyword.other.package.go
 //        ^^^^ Identifier  variable.other.go
   
   import "fmt"
-//^^^^^^ IdentifierKeyword  keyword.other.import.go
+//^^^^^^ Keyword  keyword.other.import.go
 //       ^^^^^ StringLiteral  string.quoted.double.go
   
   type Bar struct {
-//^^^^ IdentifierKeyword  storage.type.keyword.type.go
+//^^^^ Keyword  storage.type.keyword.type.go
 //     ^^^ IdentifierType  entity.name.type.go
-//         ^^^^^^ IdentifierKeyword  storage.type.keyword.struct.go
+//         ^^^^^^ Keyword  storage.type.keyword.struct.go
 //                ^ PunctuationBracket  punctuation.section.braces.begin.go
    z int
 // ^ Identifier  variable.other.member.declaration.go
@@ -22,9 +22,9 @@ expression: "dump_document(&document, &contents)"
 //^ PunctuationBracket  punctuation.section.braces.end.go
   
   type Foo struct {
-//^^^^ IdentifierKeyword  storage.type.keyword.type.go
+//^^^^ Keyword  storage.type.keyword.type.go
 //     ^^^ IdentifierType  entity.name.type.go
-//         ^^^^^^ IdentifierKeyword  storage.type.keyword.struct.go
+//         ^^^^^^ Keyword  storage.type.keyword.struct.go
 //                ^ PunctuationBracket  punctuation.section.braces.begin.go
    x *int
 // ^ Identifier  variable.other.member.declaration.go
@@ -46,7 +46,7 @@ expression: "dump_document(&document, &contents)"
 //^ PunctuationBracket  punctuation.section.braces.end.go
   
   func main() {
-//^^^^ IdentifierKeyword  storage.type.keyword.function.go
+//^^^^ Keyword  storage.type.keyword.function.go
 //     ^^^^ IdentifierFunction  entity.name.function.go
 //         ^ PunctuationBracket  punctuation.section.parens.begin.go
 //          ^ PunctuationBracket  punctuation.section.parens.end.go
@@ -82,7 +82,7 @@ expression: "dump_document(&document, &contents)"
 //                   ^^^^^^^ Identifier  variable.other.go
   
    var null_was_a_mistake *int
-// ^^^ IdentifierKeyword  storage.type.keyword.var.go
+// ^^^ Keyword  storage.type.keyword.var.go
 //     ^^^^^^^^^^^^^^^^^^ Identifier  variable.declaration.go
 //                        ^ IdentifierOperator  keyword.operator.go
 //                         ^^^ IdentifierBuiltinType  support.type.builtin.go

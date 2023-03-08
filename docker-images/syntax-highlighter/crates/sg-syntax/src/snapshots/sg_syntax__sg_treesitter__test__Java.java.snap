@@ -3,12 +3,12 @@ source: crates/sg-syntax/src/sg_treesitter.rs
 expression: "dump_document(&document, &contents)"
 ---
   package snapshots.files;
-//^^^^^^^ IdentifierKeyword 
+//^^^^^^^ Keyword 
 //        ^^^^^^^^^ Identifier 
 //                  ^^^^^ Identifier 
   
   import java.util.concurrent.atomic.AtomicInteger;
-//^^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
 //       ^^^^ Identifier 
 //            ^^^^ Identifier 
 //                 ^^^^^^^^^^ Identifier 
@@ -20,16 +20,16 @@ expression: "dump_document(&document, &contents)"
 // ^^^^^^^^^^^^^^^^ IdentifierAttribute 
 //                  ^^^^^ StringLiteral 
   public class Java {
-//^^^^^^ IdentifierKeyword 
-//       ^^^^^ IdentifierKeyword 
+//^^^^^^ Keyword 
+//       ^^^^^ Keyword 
 //             ^^^^ IdentifierType 
       private int x; // field declaration
-//    ^^^^^^^ IdentifierKeyword 
+//    ^^^^^^^ Keyword 
 //            ^^^ IdentifierBuiltin 
 //                ^ Identifier 
 //                   ^^^^^^^^^^^^^^^^^^^^ Comment 
       public Java() { // constructor
-//    ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
 //           ^^^^ IdentifierType 
 //                    ^^^^^^^^^^^^^^ Comment 
           x = 5; // field access
@@ -38,8 +38,8 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^^^^^^^ Comment 
       }
       public static void methodWithManyFeatures() {
-//    ^^^^^^ IdentifierKeyword 
-//           ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
+//           ^^^^^^ Keyword 
 //                  ^^^^ IdentifierBuiltin 
 //                       ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
           int x = 53;
@@ -47,7 +47,7 @@ expression: "dump_document(&document, &contents)"
 //            ^ Identifier 
 //                ^^ NumericLiteral 
           new AtomicInteger(x).incrementAndGet();
-//        ^^^ IdentifierKeyword 
+//        ^^^ Keyword 
 //            ^^^^^^^^^^^^^ IdentifierType 
 //                          ^ Identifier 
 //                             ^^^^^^^^^^^^^^^ IdentifierFunction 
@@ -60,7 +60,7 @@ expression: "dump_document(&document, &contents)"
           // conditional logic - if/else
 //        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
           if (x > 10) {
-//        ^^ IdentifierKeyword 
+//        ^^ Keyword 
 //            ^ Identifier 
 //                ^^ NumericLiteral 
               System.out.println("x is greater than 10");
@@ -69,7 +69,7 @@ expression: "dump_document(&document, &contents)"
 //                       ^^^^^^^ IdentifierFunction 
 //                               ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
           } else {
-//          ^^^^ IdentifierKeyword 
+//          ^^^^ Keyword 
               System.out.println("x is less than or equal to 10");
 //            ^^^^^^ IdentifierType 
 //                   ^^^ Identifier 
@@ -79,10 +79,10 @@ expression: "dump_document(&document, &contents)"
           // switch statement
 //        ^^^^^^^^^^^^^^^^^^^ Comment 
           switch (x) {
-//        ^^^^^^ IdentifierKeyword 
+//        ^^^^^^ Keyword 
 //                ^ Identifier 
               case 5:
-//            ^^^^ IdentifierKeyword 
+//            ^^^^ Keyword 
 //                 ^ NumericLiteral 
                   System.out.println("x equals 5");
 //                ^^^^^^ IdentifierType 
@@ -90,9 +90,9 @@ expression: "dump_document(&document, &contents)"
 //                           ^^^^^^^ IdentifierFunction 
 //                                   ^^^^^^^^^^^^ StringLiteral 
                   break;
-//                ^^^^^ IdentifierKeyword 
+//                ^^^^^ Keyword 
               case 10:
-//            ^^^^ IdentifierKeyword 
+//            ^^^^ Keyword 
 //                 ^^ NumericLiteral 
                   System.out.println("x equals 10");
 //                ^^^^^^ IdentifierType 
@@ -100,9 +100,9 @@ expression: "dump_document(&document, &contents)"
 //                           ^^^^^^^ IdentifierFunction 
 //                                   ^^^^^^^^^^^^^ StringLiteral 
                   break;
-//                ^^^^^ IdentifierKeyword 
+//                ^^^^^ Keyword 
               default:
-//            ^^^^^^^ IdentifierKeyword 
+//            ^^^^^^^ Keyword 
                   System.out.println("x does not equal 5 or 10");
 //                ^^^^^^ IdentifierType 
 //                       ^^^ Identifier 
@@ -112,7 +112,7 @@ expression: "dump_document(&document, &contents)"
           // loop - for
 //        ^^^^^^^^^^^^^ Comment 
           for (int i = 0; i < 5; i++) {
-//        ^^^ IdentifierKeyword 
+//        ^^^ Keyword 
 //             ^^^ IdentifierBuiltin 
 //                 ^ Identifier 
 //                     ^ NumericLiteral 
@@ -128,31 +128,31 @@ expression: "dump_document(&document, &contents)"
           // loop - while
 //        ^^^^^^^^^^^^^^^ Comment 
           while (x < 10) {
-//        ^^^^^ IdentifierKeyword 
+//        ^^^^^ Keyword 
 //               ^ Identifier 
 //                   ^^ NumericLiteral 
               x++;
 //            ^ Identifier 
           }
           switch (x) {
-//        ^^^^^^ IdentifierKeyword 
+//        ^^^^^^ Keyword 
 //                ^ Identifier 
               case 5 -> System.out.println("x equals 5");
-//            ^^^^ IdentifierKeyword 
+//            ^^^^ Keyword 
 //                 ^ NumericLiteral 
 //                      ^^^^^^ IdentifierType 
 //                             ^^^ Identifier 
 //                                 ^^^^^^^ IdentifierFunction 
 //                                         ^^^^^^^^^^^^ StringLiteral 
               case 10 -> System.out.println("x equals 10");
-//            ^^^^ IdentifierKeyword 
+//            ^^^^ Keyword 
 //                 ^^ NumericLiteral 
 //                       ^^^^^^ IdentifierType 
 //                              ^^^ Identifier 
 //                                  ^^^^^^^ IdentifierFunction 
 //                                          ^^^^^^^^^^^^^ StringLiteral 
               default -> System.out.println("x does not equal 5 or 10");
-//            ^^^^^^^ IdentifierKeyword 
+//            ^^^^^^^ Keyword 
 //                       ^^^^^^ IdentifierType 
 //                              ^^^ Identifier 
 //                                  ^^^^^^^ IdentifierFunction 
@@ -161,7 +161,7 @@ expression: "dump_document(&document, &contents)"
           // try/catch for exception handling
 //        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
           try {
-//        ^^^ IdentifierKeyword 
+//        ^^^ Keyword 
               int y = 5 / 0; // will cause ArithmeticException
 //            ^^^ IdentifierBuiltin 
 //                ^ Identifier 
@@ -169,7 +169,7 @@ expression: "dump_document(&document, &contents)"
 //                        ^ NumericLiteral 
 //                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
           } catch (ArithmeticException e) {
-//          ^^^^^ IdentifierKeyword 
+//          ^^^^^ Keyword 
 //                 ^^^^^^^^^^^^^^^^^^^ IdentifierType 
 //                                     ^ Identifier 
               System.out.println("Arithmetic exception occurred: " + e.getMessage());
@@ -183,7 +183,7 @@ expression: "dump_document(&document, &contents)"
           // nested class
 //        ^^^^^^^^^^^^^^^ Comment 
           class InnerClass {
-//        ^^^^^ IdentifierKeyword 
+//        ^^^^^ Keyword 
 //              ^^^^^^^^^^ IdentifierType 
               int innerField;
 //            ^^^ IdentifierBuiltin 
@@ -202,7 +202,7 @@ expression: "dump_document(&document, &contents)"
               }
           }
           new InnerClass(); // instantiate nested class
-//        ^^^ IdentifierKeyword 
+//        ^^^ Keyword 
 //            ^^^^^^^^^^ IdentifierType 
 //                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
           // array declaration and access
@@ -210,7 +210,7 @@ expression: "dump_document(&document, &contents)"
           int[] array = new int[3];
 //        ^^^ IdentifierBuiltin 
 //              ^^^^^ Identifier 
-//                      ^^^ IdentifierKeyword 
+//                      ^^^ Keyword 
 //                          ^^^ IdentifierBuiltin 
 //                              ^ NumericLiteral 
           array[0] = 5;
@@ -236,8 +236,8 @@ expression: "dump_document(&document, &contents)"
       // method with varargs parameter
 //    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
       public static void mathOperation(int... nums) {
-//    ^^^^^^ IdentifierKeyword 
-//           ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
+//           ^^^^^^ Keyword 
 //                  ^^^^ IdentifierBuiltin 
 //                       ^^^^^^^^^^^^^ IdentifierFunction 
 //                                     ^^^ IdentifierBuiltin 
@@ -247,7 +247,7 @@ expression: "dump_document(&document, &contents)"
 //            ^^^ Identifier 
 //                  ^ NumericLiteral 
           for (int n : nums) {
-//        ^^^ IdentifierKeyword 
+//        ^^^ Keyword 
 //             ^^^ IdentifierBuiltin 
 //                 ^ Identifier 
 //                     ^^^^ Identifier 
@@ -263,20 +263,20 @@ expression: "dump_document(&document, &contents)"
 //                                      ^^^ Identifier 
       }
       public static void instancePattern() {
-//    ^^^^^^ IdentifierKeyword 
-//           ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
+//           ^^^^^^ Keyword 
 //                  ^^^^ IdentifierBuiltin 
 //                       ^^^^^^^^^^^^^^^ IdentifierFunction 
           Object obj = new Integer(42);
 //        ^^^^^^ IdentifierType 
 //               ^^^ Identifier 
-//                     ^^^ IdentifierKeyword 
+//                     ^^^ Keyword 
 //                         ^^^^^^^ IdentifierType 
 //                                 ^^ NumericLiteral 
           if (obj instanceof Integer i) {
-//        ^^ IdentifierKeyword 
+//        ^^ Keyword 
 //            ^^^ Identifier 
-//                ^^^^^^^^^^ IdentifierKeyword 
+//                ^^^^^^^^^^ Keyword 
 //                           ^^^^^^^ IdentifierType 
 //                                   ^ Identifier 
               int x = i; // access Integer fields/methods
@@ -287,8 +287,8 @@ expression: "dump_document(&document, &contents)"
           }
       }
       public static void textBlock() {
-//    ^^^^^^ IdentifierKeyword 
-//           ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
+//           ^^^^^^ Keyword 
 //                  ^^^^ IdentifierBuiltin 
 //                       ^^^^^^^^^ IdentifierFunction 
           String textBlock = """
@@ -305,12 +305,12 @@ expression: "dump_document(&document, &contents)"
 //                           ^^^^^^^^^ Identifier 
       }
       record InnerRecord(int innerField) {
-//    ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
 //           ^^^^^^^^^^^ Identifier 
 //                       ^^^ IdentifierBuiltin 
 //                           ^^^^^^^^^^ Identifier 
            public InnerRecord() {
-//         ^^^^^^ IdentifierKeyword 
+//         ^^^^^^ Keyword 
 //                ^^^^^^^^^^^ IdentifierType 
               this(42);
 //            ^^^^ IdentifierBuiltin 
@@ -326,19 +326,19 @@ expression: "dump_document(&document, &contents)"
       }
   
       public static void recordPattern() {
-//    ^^^^^^ IdentifierKeyword 
-//           ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
+//           ^^^^^^ Keyword 
 //                  ^^^^ IdentifierBuiltin 
 //                       ^^^^^^^^^^^^^ IdentifierFunction 
           InnerRecord record = new InnerRecord();
 //        ^^^^^^^^^^^ IdentifierType 
 //                    ^^^^^^ Identifier 
-//                             ^^^ IdentifierKeyword 
+//                             ^^^ Keyword 
 //                                 ^^^^^^^^^^^ IdentifierType 
           if (record instanceof InnerRecord (int innerField )){
-//        ^^ IdentifierKeyword 
+//        ^^ Keyword 
 //            ^^^^^^ Identifier 
-//                   ^^^^^^^^^^ IdentifierKeyword 
+//                   ^^^^^^^^^^ Keyword 
 //                              ^^^^^^^^^^^ IdentifierType 
 //                                           ^^^ IdentifierBuiltin 
 //                                               ^^^^^^^^^^ Identifier 
@@ -351,7 +351,7 @@ expression: "dump_document(&document, &contents)"
       }
   
       enum Weekend {
-//    ^^^^ IdentifierKeyword 
+//    ^^^^ Keyword 
 //         ^^^^^^^ IdentifierType 
           SATURDAY, SUNDAY
 //        ^^^^^^^^ IdentifierConstant 
@@ -359,7 +359,7 @@ expression: "dump_document(&document, &contents)"
       }
   
       interface Interface {
-//    ^^^^^^^^^ IdentifierKeyword 
+//    ^^^^^^^^^ Keyword 
 //              ^^^^^^^^^ IdentifierType 
           void abstract_func(int x,int y);
 //        ^^^^ IdentifierBuiltin 
@@ -369,7 +369,7 @@ expression: "dump_document(&document, &contents)"
 //                                 ^^^ IdentifierBuiltin 
 //                                     ^ Identifier 
           default void default_Fun() {
-//        ^^^^^^^ IdentifierKeyword 
+//        ^^^^^^^ Keyword 
 //                ^^^^ IdentifierBuiltin 
 //                     ^^^^^^^^^^^ IdentifierFunction 
               System.out.println("This is default method");
@@ -382,8 +382,8 @@ expression: "dump_document(&document, &contents)"
   
   
       public static void lambdaExpression() {
-//    ^^^^^^ IdentifierKeyword 
-//           ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
+//           ^^^^^^ Keyword 
 //                  ^^^^ IdentifierBuiltin 
 //                       ^^^^^^^^^^^^^^^^ IdentifierFunction 
           Interface fobj = (int x, int y)->System.out.println(x+y);
@@ -411,12 +411,12 @@ expression: "dump_document(&document, &contents)"
       // Static initializer
 //    ^^^^^^^^^^^^^^^^^^^^^ Comment 
       static {
-//    ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
           var path = Java.class.getResource("/foobar.so").getPath();
 //        ^^^ IdentifierType 
 //            ^^^^ Identifier 
 //                   ^^^^ IdentifierType 
-//                        ^^^^^ IdentifierKeyword 
+//                        ^^^^^ Keyword 
 //                              ^^^^^^^^^^^ IdentifierFunction 
 //                                          ^^^^^^^^^^^^ StringLiteral 
 //                                                        ^^^^^^^ IdentifierFunction 
@@ -427,23 +427,23 @@ expression: "dump_document(&document, &contents)"
       }
   
       sealed public class SealedClass permits ImplementedSealedClass, ImplementedSealedClass2 {}
-//    ^^^^^^ IdentifierKeyword 
-//           ^^^^^^ IdentifierKeyword 
-//                  ^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
+//           ^^^^^^ Keyword 
+//                  ^^^^^ Keyword 
 //                        ^^^^^^^^^^^ IdentifierType 
 //                                            ^^^^^^^^^^^^^^^^^^^^^^ IdentifierType 
 //                                                                    ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType 
       final class ImplementedSealedClass extends SealedClass {}
-//    ^^^^^ IdentifierKeyword 
-//          ^^^^^ IdentifierKeyword 
+//    ^^^^^ Keyword 
+//          ^^^^^ Keyword 
 //                ^^^^^^^^^^^^^^^^^^^^^^ IdentifierType 
-//                                       ^^^^^^^ IdentifierKeyword 
+//                                       ^^^^^^^ Keyword 
 //                                               ^^^^^^^^^^^ IdentifierType 
       final class ImplementedSealedClass2 extends SealedClass {}
-//    ^^^^^ IdentifierKeyword 
-//          ^^^^^ IdentifierKeyword 
+//    ^^^^^ Keyword 
+//          ^^^^^ Keyword 
 //                ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType 
-//                                        ^^^^^^^ IdentifierKeyword 
+//                                        ^^^^^^^ Keyword 
 //                                                ^^^^^^^^^^^ IdentifierType 
   }
 
