@@ -1707,25 +1707,11 @@ func UnifiedPermsEnabled() bool {
 	return conf.ExperimentalFeatures().UnifiedPermissions
 }
 
-const legacyUsersWithNoPermsQuery = `
-SELECT users.id, NULL
-FROM users
-LEFT OUTER JOIN user_permissions AS rp ON rp.user_id = users.id
-WHERE
-	users.deleted_at IS NULL
-AND %s
-AND rp.user_id IS NULL
-`
-
-const unifiedUsersWithNoPermsQuery = `
+const usersWithNoPermsQuery = `
 WITH rp AS (
-	-- Filter out users with permissions
-	SELECT DISTINCT user_id FROM user_repo_permissions
-	UNION
-	-- Filter out users with completed sync jobs
-	SELECT user_id FROM permission_sync_jobs WHERE user_id IS NOT NULL
+	SELECT user_id FROM perms_sync_jobs_history WHERE user_id IS NOT NULL
 )
-SELECT users.id, NULL
+SELECT users.id
 FROM users
 LEFT OUTER JOIN rp ON rp.user_id = users.id
 WHERE
@@ -1742,50 +1728,15 @@ func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 		filterSiteAdmins = sqlf.Sprintf("TRUE")
 	}
 
-	query := unifiedUsersWithNoPermsQuery
-	// check if we should read from legacy permissions table or not
-	if !UnifiedPermsEnabled() {
-		query = legacyUsersWithNoPermsQuery
-	}
-
-	q := sqlf.Sprintf(query, filterSiteAdmins)
-	results, err := s.loadIDsWithTime(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]int32, 0, len(results))
-	for id := range results {
-		ids = append(ids, id)
-	}
-	return ids, nil
+	q := sqlf.Sprintf(usersWithNoPermsQuery, filterSiteAdmins)
+	return basestore.ScanInt32s(s.Query(ctx, q))
 }
 
-const legacyRepoIDsWithNoPermsQuery = `
+const repoIDsWithNoPermsQuery = `
 WITH rp AS (
-	SELECT perms.repo_id FROM repo_permissions AS perms
-	UNION
-	SELECT pending.repo_id FROM repo_pending_permissions AS pending
-)
-SELECT r.id, NULL
-FROM repo AS r
-LEFT OUTER JOIN rp ON rp.repo_id = r.id
-WHERE r.deleted_at IS NULL
-AND r.private = TRUE
-AND rp.repo_id IS NULL
-`
-
-const unifiedRepoIDsWithNoPermsQuery = `
-WITH rp AS (
-	-- Filter out repos with permissions
-	SELECT DISTINCT perms.repo_id FROM user_repo_permissions AS perms
-	UNION
-	-- Filter out repos with pending permissions
-	SELECT pending.repo_id FROM repo_pending_permissions AS pending
-	UNION
 	-- Filter out repos with sync jobs
-	SELECT syncs.repository_id AS repo_id FROM permission_sync_jobs AS syncs
-		WHERE syncs.repository_id IS NOT NULL
+	SELECT syncs.repo_id FROM perms_sync_jobs_history AS syncs
+		WHERE syncs.repo_id IS NOT NULL
 )
 SELECT r.id, NULL
 FROM repo AS r
@@ -1796,69 +1747,53 @@ AND rp.repo_id IS NULL
 `
 
 func (s *permsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
-	query := unifiedRepoIDsWithNoPermsQuery
-	// check if we should read from legacy permissions table or not
-	if !UnifiedPermsEnabled() {
-		query = legacyRepoIDsWithNoPermsQuery
-	}
+	q := sqlf.Sprintf(repoIDsWithNoPermsQuery)
+	return scanRepoIDs(s.Query(ctx, q))
+}
 
-	q := sqlf.Sprintf(query)
+const usersWithOldestPermsQuery = `
+SELECT user_id, updated_at FROM perms_sync_jobs_history
+WHERE user_id IS NOT NULL
+	AND %s
+ORDER BY updated_at ASC
+LIMIT %s;
+`
 
-	results, err := s.loadIDsWithTime(ctx, q)
-	if err != nil {
-		return nil, err
+func (s *permsStore) getCutoffClause(age time.Duration) *sqlf.Query {
+	if age == 0 {
+		return sqlf.Sprintf("TRUE")
 	}
-
-	ids := make([]api.RepoID, 0, len(results))
-	for id := range results {
-		ids = append(ids, api.RepoID(id))
-	}
-	return ids, nil
+	cutoff := s.clock().Add(-1 * age)
+	return sqlf.Sprintf("updated_at < %s", cutoff)
 }
 
 // UserIDsWithOldestPerms lists the users with the oldest synced perms, limited
 // to limit. If age is non-zero, users that have synced within "age" since now
 // will be filtered out.
 func (s *permsStore) UserIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[int32]time.Time, error) {
-	cutoffClause := sqlf.Sprintf("TRUE")
-	if age > 0 {
-		cutoff := s.clock().Add(-1 * age)
-		cutoffClause = sqlf.Sprintf("(perms.synced_at IS NULL OR perms.synced_at < %s)", cutoff)
-	}
-	q := sqlf.Sprintf(`
-SELECT perms.user_id, perms.synced_at FROM user_permissions AS perms
-WHERE perms.user_id IN
-	(SELECT users.id FROM users
-	 WHERE users.deleted_at IS NULL)
-AND %s
-ORDER BY perms.synced_at ASC NULLS FIRST
-LIMIT %s
-`, cutoffClause, limit)
+	cutoffClause := s.getCutoffClause(age)
+	q := sqlf.Sprintf(usersWithOldestPermsQuery, cutoffClause, limit)
 	return s.loadIDsWithTime(ctx, q)
 }
 
+const reposWithOldestPermsQuery = `
+SELECT repo_id, updated_at FROM perms_sync_jobs_history
+WHERE repo_id IS NOT NULL
+	AND %s
+ORDER BY updated_at ASC
+LIMIT %s;
+`
+
 func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[api.RepoID]time.Time, error) {
-	cutoffClause := sqlf.Sprintf("TRUE")
-	if age > 0 {
-		cutoff := s.clock().Add(-1 * age)
-		cutoffClause = sqlf.Sprintf("(perms.synced_at IS NULL OR perms.synced_at < %s)", cutoff)
-	}
-	q := sqlf.Sprintf(`
-SELECT perms.repo_id, perms.synced_at FROM repo_permissions AS perms
-WHERE perms.repo_id IN
-	(SELECT repo.id FROM repo
-	 WHERE repo.deleted_at IS NULL
-	 AND repo.private = TRUE)
-AND %s
-ORDER BY perms.synced_at ASC NULLS FIRST
-LIMIT %s
-`, cutoffClause, limit)
+	cutoffClause := s.getCutoffClause(age)
+	q := sqlf.Sprintf(reposWithOldestPermsQuery, cutoffClause, limit)
 
 	pairs, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
+	// convert the map[int32]time.Time to map[api.RepoID]time.Time
 	results := make(map[api.RepoID]time.Time, len(pairs))
 	for id, t := range pairs {
 		results[api.RepoID(id)] = t
@@ -1866,29 +1801,16 @@ LIMIT %s
 	return results, nil
 }
 
+var scanIDsWithTime = basestore.NewMapScanner(func(s dbutil.Scanner) (int32, time.Time, error) {
+	var id int32
+	var t time.Time
+	err := s.Scan(&id, &dbutil.NullTime{Time: &t})
+	return id, t, err
+})
+
 // loadIDsWithTime runs the query and returns a list of ID and nullable time pairs.
 func (s *permsStore) loadIDsWithTime(ctx context.Context, q *sqlf.Query) (map[int32]time.Time, error) {
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-
-	results := make(map[int32]time.Time)
-	for rows.Next() {
-		var id int32
-		var t time.Time
-		if err = rows.Scan(&id, &dbutil.NullTime{Time: &t}); err != nil {
-			return nil, err
-		}
-
-		results[id] = t
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return results, nil
+	return scanIDsWithTime(s.Query(ctx, q))
 }
 
 // PermsMetrics contains metrics values calculated by querying the database.
