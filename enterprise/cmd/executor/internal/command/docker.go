@@ -41,7 +41,7 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, doc
 	}
 
 	image := spec.Image
-	if options.DockerOptions.RegistryUrl != "" && dockertools.ParseImageString(image).Registry == "" {
+	if options.DockerOptions.RegistryUrl != "" && dockertools.ParseImageString(image).IsPublicDockerHub() {
 		image = fmt.Sprintf("%s/%s", options.DockerOptions.RegistryUrl, image)
 	}
 

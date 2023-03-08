@@ -147,7 +147,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	// Invoke each docker step sequentially
 	for i, dockerStep := range job.DockerSteps {
 		image := dockerStep.Image
-		if options.DockerOptions.RegistryUrl != "" && dockertools.ParseImageString(image).Registry == "" {
+		if options.DockerOptions.RegistryUrl != "" && dockertools.ParseImageString(image).IsPublicDockerHub() {
 			image = fmt.Sprintf("%s/%s", options.DockerOptions.RegistryUrl, image)
 		}
 
