@@ -40,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -2774,10 +2775,12 @@ query($includeLocallyExecutedSpecs: Boolean!) {
 
 func stringPtr(s string) *string { return &s }
 
-func assignWritePermissionToUser(ctx context.Context, t *testing.T, db database.DB, userID int32) {
+func assignWritePermissionToUser(ctx context.Context, t *testing.T, db database.DB, userID int32) (*types.Role, *types.Permission) {
 	role := bt.CreateTestRole(ctx, t, db, "TEST-ROLE-1")
 	bt.AssignRoleToUser(ctx, t, db, userID, role.ID)
 
 	perm := bt.CreateTestPermission(ctx, t, db, br.BatchChangesWritePermission)
 	bt.AssignPermissionToRole(ctx, t, db, perm.ID, role.ID)
+
+	return role, perm
 }
