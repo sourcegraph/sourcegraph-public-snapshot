@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 )
 
 type Ruleset struct {
@@ -45,16 +46,16 @@ func (x *Ruleset) FindOwners(path string) []*codeownerspb.Owner {
 
 type CompiledRule struct {
 	proto       *codeownerspb.Rule
-	glob        *globPattern
+	glob        *paths.GlobPattern
 	compileOnce sync.Once
 }
 
 func (r *CompiledRule) match(filePath string) bool {
 	r.compileOnce.Do(func() {
 		// For now, we ignore errors.
-		r.glob, _ = compile(r.proto.GetPattern())
+		r.glob, _ = paths.Compile(r.proto.GetPattern())
 	})
-	return r.glob.match(filePath)
+	return r.glob.Match(filePath)
 }
 
 func (r *CompiledRule) GetOwner() []*codeownerspb.Owner {
