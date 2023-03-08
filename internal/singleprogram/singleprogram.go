@@ -149,6 +149,14 @@ func Init(logger log.Logger) {
 		)
 	}
 
+	if _, err := exec.LookPath("src"); err != nil {
+		printStatusCheckError(
+			"src-cli is unavailable",
+			"Sourcegraph is better when src-cli is available; batch changes may not work.",
+			"Installation: https://github.com/sourcegraph/src-cli#sourcegraph-cli--",
+		)
+	}
+
 	// generate a shell script to run a ctags Docker image
 	// unless the environment is already set up to find ctags
 	ctagsPath := os.Getenv("CTAGS_COMMAND")
