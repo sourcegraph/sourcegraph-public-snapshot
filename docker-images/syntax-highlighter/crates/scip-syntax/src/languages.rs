@@ -69,3 +69,11 @@ pub fn perl_locals() -> LocalConfiguration {
         query: Query::new(language, query).unwrap(),
     }
 }
+
+pub fn get_local_configuration(parser: BundledParser) -> Option<LocalConfiguration> {
+    match parser {
+        BundledParser::Go => Some(go_locals()),
+        BundledParser::Perl => Some(perl_locals()),
+        _ => None,
+    }
+}

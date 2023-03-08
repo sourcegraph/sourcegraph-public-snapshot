@@ -60,7 +60,7 @@ pub fn index_language_with_config(
     filetype: &str,
     code: &str,
     lang_config: &HighlightConfiguration,
-    include_locals: bool,
+    mut include_locals: bool,
 ) -> Result<Document, Error> {
     // Normalize string to be always only \n endings.
     //  We don't care that the byte offsets are "incorrect" now for this
@@ -81,123 +81,44 @@ pub fn index_language_with_config(
     let mut doc = emitter.render(highlights, &code, &get_syntax_kind_for_hl)?;
     doc.occurrences.sort_by_key(|a| (a.range[0], a.range[1]));
 
-    // dbg!(include_locals);
-    // if include_locals
-    if filetype == "go" && include_locals {
-        let language = lang_config.language;
-        // {{{
-        let query = r#"
-    ;; (source
-      ;; (scope: Something)
-      ;; (scope: Another
-        ;; call Something))
+    // TODO: Don't let this happen in the final build haha
+    include_locals = true;
+    if include_locals {
+        let parser = scip_treesitter_languages::parsers::BundledParser::get_parser(filetype);
+        if let Some(parser) = parser {
+            // TODO: Could probably write this in a much better way.
+            let mut local_occs = scip_syntax::get_locals(parser, code.as_bytes())
+                .unwrap_or(Ok(vec![]))
+                .unwrap_or(vec![]);
 
-    (func_literal) @scope
-    (function_declaration) @scope
-    (method_declaration) @scope
-    (expression_switch_statement) @scope
-    (if_statement) @scope
-    (for_statement) @scope
-    (block) @scope
+            // Get ranges in top-to-bottom order
+            local_occs.sort_by_key(|a| (-a.range[0], -a.range[1]));
 
-    (short_var_declaration
-      left: (expression_list (identifier) @definition.term))
+            let mut next_doc_idx = 0;
+            while let Some(local) = local_occs.pop() {
+                let x = match doc
+                    .occurrences
+                    .iter_mut()
+                    .enumerate()
+                    .skip(next_doc_idx)
+                    .find(|(_, occ)| {
+                        // TODO: Actually compare the languages
+                        occ.range[0] == local.range[0] && occ.range[1] == local.range[1]
+                    }) {
+                    Some(found) => found,
+                    None => continue,
+                };
 
-    ;; TODO: We should talk about these: they could be params instead
-    (parameter_declaration name: (identifier) @definition.term)
-    (variadic_parameter_declaration (identifier) @definition.var)
+                next_doc_idx = x.0;
+                let occ = x.1;
 
-    ;; import (
-    ;;   f "fmt"
-    ;;   ^- This is the spot that gets matched
-    ;; )
-    ;;
-    (import_spec_list
-      (import_spec
-        name: (package_identifier) @definition.namespace))
+                // Update occurrence with new information from locals
+                occ.symbol = local.symbol;
+                occ.symbol_roles = local.symbol_roles;
 
-    (var_spec
-      name: (identifier) @definition.var)
-
-    (for_statement
-     (range_clause
-       left: (expression_list
-               (identifier) @definition.var)))
-
-    (const_declaration
-     (const_spec
-      name: (identifier) @definition.var))
-
-    (type_declaration
-      (type_spec
-        name: (type_identifier) @definition.type))
-
-    ;; reference
-    (identifier) @reference
-    (type_identifier) @reference
-    (field_identifier) @reference
-                "#;
-        // }}}
-
-        let query = tree_sitter::Query::new(language, query).expect("to parse query");
-
-        let mut parser = Parser::new();
-        parser.set_language(language).unwrap();
-
-        let tree = parser.parse(code.as_bytes(), None).expect("to parse tree");
-
-        let mut config = scip_syntax::languages::LocalConfiguration {
-            language,
-            query,
-            parser,
-        };
-
-        let mut local_occs = scip_syntax::locals::parse_tree(&mut config, &tree, code.as_bytes())
-            .expect("to get locals");
-        local_occs.sort_by_key(|a| (-a.range[0], -a.range[1]));
-
-        let mut next_doc_idx = 0;
-        while let Some(local) = local_occs.pop() {
-            let x = match doc
-                .occurrences
-                .iter_mut()
-                .enumerate()
-                .skip(next_doc_idx)
-                .find(|(_, occ)| occ.range[0] == local.range[0] && occ.range[1] == local.range[1])
-            {
-                Some(found) => found,
-                None => break,
-            };
-
-            next_doc_idx = x.0;
-            let occ = x.1;
-
-            // Update occurrence with new information from locals
-            occ.symbol = local.symbol;
-            occ.symbol_roles = local.symbol_roles;
-
-            dbg!(occ);
-            // let mut doc_occ = match doc.occurrences.get_mut(next_doc_idx) {
-            //     Some(o) => o,
-            //     None => break,
-            // };
-            //
-            // while doc_occ.range[0] < occ.range[0] {
-            //     next_doc_idx += 1;
-            //     doc_occ = match doc.occurrences.get_mut(next_doc_idx) {
-            //         Some(o) => o,
-            //         None => break,
-            //     };
-            // }
-            //
-            // if doc_occ.range[0] == occ.range[0] && doc_occ.range[1] == occ.range[1] {
-            //     println!("Found a match! {:?} {:?}", occ, doc_occ);
-            // }
-
-            // doc.occurrences[next_doc_idx].symbol
+                dbg!(&occ);
+            }
         }
-
-        // dbg!(&doc.occurrences);
     }
 
     Ok(doc)
