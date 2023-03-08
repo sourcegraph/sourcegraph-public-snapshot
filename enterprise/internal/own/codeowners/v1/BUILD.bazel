@@ -7,6 +7,7 @@ exports_files(["buf.gen.yaml"])
 proto_library(
     name = "v1_proto",
     srcs = ["codeowners.proto"],
+    strip_import_prefix = "/enterprise/internal",
     visibility = ["//:__subpackages__"],
 )
 

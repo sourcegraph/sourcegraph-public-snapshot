@@ -104,6 +104,8 @@ func TestIndex(t *testing.T) {
 	}
 
 	gitRun("init")
+	// Needed in CI
+	gitRun("config", "user.email", "test@sourcegraph.com")
 
 	git, err := NewSubprocessGit(gitDir)
 	fatalIfError(err, "NewSubprocessGit")

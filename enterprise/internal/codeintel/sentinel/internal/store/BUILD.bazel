@@ -32,6 +32,10 @@ go_test(
         "vulnerabilities_test.go",
     ],
     embed = [":store"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/codeintel/sentinel/shared",
         "//enterprise/internal/codeintel/shared/types",
