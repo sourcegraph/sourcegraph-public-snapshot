@@ -120,8 +120,8 @@ macro_rules! create_configurations {
         {
             let highlights = vec![
                 include_scip_query!("tsx", "highlights"),
-                include_scip_query!("tsx", "highlights"),
-                "",
+                include_scip_query!("typescript", "highlights"),
+                include_scip_query!("javascript", "highlights"),
             ];
             let mut lang = HighlightConfiguration::new(
                 BundledParser::Tsx.get_language(),

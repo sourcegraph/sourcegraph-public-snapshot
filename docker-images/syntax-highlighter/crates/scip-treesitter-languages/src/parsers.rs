@@ -49,7 +49,7 @@ impl BundledParser {
     pub fn get_parser(name: &str) -> Option<Self> {
         match name {
             "c" => Some(BundledParser::C),
-            "c++" => Some(BundledParser::Cpp),
+            "cpp" => Some(BundledParser::Cpp),
             "c_sharp" => Some(BundledParser::C_Sharp),
             "go" => Some(BundledParser::Go),
             "java" => Some(BundledParser::Java),
