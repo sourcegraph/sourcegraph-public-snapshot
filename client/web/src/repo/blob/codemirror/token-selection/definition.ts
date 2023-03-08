@@ -21,6 +21,7 @@ import { preciseOffsetAtCoords } from '../utils'
 
 import { getCodeIntelTooltipState, selectOccurrence, setFocusedOccurrenceTooltip } from './code-intel-tooltips'
 import { isModifierKey } from './modifier-click'
+import { syntaxHighlight } from '../highlight'
 
 export interface DefinitionResult {
     handler: (position: Position) => void
@@ -124,13 +125,39 @@ export function goToDefinitionAtOccurrence(view: EditorView, occurrence: Occurre
     return promise
 }
 
+function localDefinition(view: EditorView, referenceOccurrence: Occurrence): Occurrence | undefined {
+    if (!referenceOccurrence.symbol) {
+        return undefined
+    }
+    const table = view.state.facet(syntaxHighlight)
+    for (const definitionOccurrence of table.occurrences) {
+        if (
+            definitionOccurrence.symbol === referenceOccurrence.symbol &&
+            definitionOccurrence.symbolRoles &&
+            (definitionOccurrence.symbolRoles & 1) === 1
+        ) {
+            return definitionOccurrence
+        }
+    }
+    return undefined
+}
+
 async function goToDefinition(
     view: EditorView,
     occurrence: Occurrence,
     params: TextDocumentPositionParameters
 ): Promise<DefinitionResult> {
-    const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
-    const definition = await api.getDefinition(params).toPromise()
+    let definition: Location[] = []
+    const local = localDefinition(view, occurrence)
+    if (local) {
+        console.log({ occurrence, local })
+        definition.push({ uri: toURIWithPath(view.state.facet(blobPropsFacet).blobInfo), range: local.range })
+    }
+
+    if (definition.length === 0) {
+        const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
+        definition = await api.getDefinition(params).toPromise()
+    }
     const locationFrom: Location = { uri: params.textDocument.uri, range: occurrence.range }
 
     if (definition.length === 0) {
