@@ -23,11 +23,11 @@ func NewUnimplementedEnterpriseJobs() EnterpriseJobs {
 type enterpriseJobs struct{}
 
 func (e *enterpriseJobs) FileHasOwnerJob(child job.Job, includeOwners, excludeOwners []string) job.Job {
-	return NewUnimplementedJob("file:has.owner searches are not available on this instance")
+	return NewUnimplementedJob("`file:has.owner` searches are not available on this instance")
 }
 
 func (e *enterpriseJobs) SelectFileOwnerJob(child job.Job) job.Job {
-	return NewUnimplementedJob("file:select.owners searches are not available on this instance")
+	return NewUnimplementedJob("`select:file.owners` searches are not available on this instance")
 }
 
 func NewUnimplementedJob(msg string) *UnimplementedJob {
