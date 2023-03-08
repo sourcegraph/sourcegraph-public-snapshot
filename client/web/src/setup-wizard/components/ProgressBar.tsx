@@ -23,8 +23,8 @@ export const ProgressBar: FC<{}> = () => {
     )
 
     const { data: statusData } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
-        fetchPolicy: 'no-cache',
-        pollInterval: 5000,
+        fetchPolicy: 'cache-and-network',
+        pollInterval: 2000,
     })
 
     useEffect(() => {
@@ -77,10 +77,17 @@ export const ProgressBar: FC<{}> = () => {
         if (
             !statusData ||
             statusData.statusMessages?.some(
-                ({ __typename: type }) => type === 'CloningProgress' || type === 'IndexingProgress'
+                ({ __typename: type }) => type === 'CloningProgress'
             )
         ) {
             codeHostMessage = 'Syncing'
+            iconProps = { as: CloudSyncIconRefresh }
+        } else if (
+            statusData.statusMessages?.some(
+                ({ __typename: type }) => type === 'IndexingProgress'
+            )
+        ) {
+            codeHostMessage = 'Indexing'
             iconProps = { as: CloudSyncIconRefresh }
         } else if (
             statusData.statusMessages?.some(
@@ -99,7 +106,7 @@ export const ProgressBar: FC<{}> = () => {
         return (
             <div className="d-flex align-items-center mr-2">
                 <Icon {...iconProps} size="md" aria-label={codeHostMessage} className="mr-1" />
-                <Text className={classNames(codeHostMessage === 'Syncing' && styles.loading, 'mb-0')} size="small">
+                <Text className={classNames((codeHostMessage === 'Syncing' || codeHostMessage === 'Indexing') && styles.loading, 'mb-0')} size="small">
                     {codeHostMessage}
                 </Text>
             </div>
