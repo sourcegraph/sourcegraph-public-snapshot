@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS perms_sync_jobs_history;
+
+DROP TRIGGER IF EXISTS trig_delete_perms_sync_jobs_history_on_user_soft_delete ON users;
+DROP FUNCTION IF EXISTS delete_perms_sync_jobs_history_on_user_soft_delete;
+
+DROP TRIGGER IF EXISTS trig_delete_perms_sync_jobs_history_on_repo_soft_delete ON repo;
+DROP FUNCTION IF EXISTS delete_perms_sync_jobs_history_on_repo_soft_delete;
+
+DROP TRIGGER IF EXISTS trig_copy_to_sync_jobs_history_on_update ON permission_sync_jobs;
+DROP FUNCTION IF EXISTS copy_to_sync_jobs_history_on_update;
