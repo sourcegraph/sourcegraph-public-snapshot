@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { mdiAws, mdiBitbucket, mdiGit, mdiGithub, mdiGitlab } from '@mdi/js'
+import {mdiAws, mdiBitbucket, mdiGit, mdiGithub, mdiGitlab, mdiMicrosoftAzure} from '@mdi/js'
 import { MdiReactIconComponentType } from 'mdi-react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -43,7 +43,7 @@ export const getCodeHostIconPath = (codeHostType: ExternalServiceKind | null): s
         case ExternalServiceKind.AWSCODECOMMIT:
             return mdiAws
         case ExternalServiceKind.AZUREDEVOPS:
-            return mdiGit
+            return mdiMicrosoftAzure
         default:
             // TODO: Add support for other code host
             return null
@@ -66,7 +66,8 @@ export const getCodeHostName = (codeHostType: ExternalServiceKind | null): strin
             return 'Gitolite'
         case ExternalServiceKind.GERRIT:
             return 'Gerrit'
-
+        case ExternalServiceKind.AZUREDEVOPS:
+            return 'Azure DevOps'
         default:
             // TODO: Add support for other code host
             return 'Unknown'
