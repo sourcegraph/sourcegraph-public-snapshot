@@ -278,7 +278,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			triggerAsync(buildOptions)))
 
 		// At this stage, we don't break builds because of a Bazel failure.
-		ops.Merge(BazelOperations(true))
+		// ops.Merge(BazelOperations(true))
 
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")

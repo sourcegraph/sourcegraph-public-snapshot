@@ -2737,7 +2737,6 @@ Indexes:
     "package_repo_versions_pkey" PRIMARY KEY, btree (id)
     "package_repo_versions_unique_version_per_package" UNIQUE, btree (package_id, version)
     "package_repo_versions_blocked" btree (blocked)
-    "package_repo_versions_fk_idx" btree (package_id)
     "package_repo_versions_last_checked_at" btree (last_checked_at)
 Foreign-key constraints:
     "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE

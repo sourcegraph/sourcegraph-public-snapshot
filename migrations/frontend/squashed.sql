@@ -5307,8 +5307,6 @@ CREATE UNIQUE INDEX package_repo_filters_unique_matcher_per_scheme ON package_re
 
 CREATE INDEX package_repo_versions_blocked ON package_repo_versions USING btree (blocked);
 
-CREATE INDEX package_repo_versions_fk_idx ON package_repo_versions USING btree (package_id);
-
 CREATE INDEX package_repo_versions_last_checked_at ON package_repo_versions USING btree (last_checked_at);
 
 CREATE UNIQUE INDEX package_repo_versions_unique_version_per_package ON package_repo_versions USING btree (package_id, version);
