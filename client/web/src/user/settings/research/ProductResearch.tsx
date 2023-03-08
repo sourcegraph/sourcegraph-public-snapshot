@@ -48,11 +48,6 @@ export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildre
                             content: 'Join our Discord',
                             path: 'https://about.sourcegraph.com/community',
                         },
-                        {
-                            content: 'Follow us on Twitter',
-                            path: 'https://twitter.com/sourcegraph',
-                        },
-                        { content: 'Email us', path: 'mailto:support@sourcegraph.com' },
                     ].map(({ content, path, variant }) => (
                         <ButtonLink
                             key={path}
