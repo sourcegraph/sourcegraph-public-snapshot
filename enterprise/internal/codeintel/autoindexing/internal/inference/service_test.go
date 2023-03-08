@@ -32,7 +32,7 @@ func testService(t *testing.T, repositoryContents map[string]string) *Service {
 	// Fake deal
 	gitService := NewMockGitService()
 	gitService.LsFilesFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit string, pathspecs ...gitdomain.Pathspec) ([]string, error) {
-		var patterns []paths.GlobPattern
+		var patterns []*paths.GlobPattern
 		for _, spec := range pathspecs {
 			pattern, err := paths.Compile(string(spec))
 			if err != nil {

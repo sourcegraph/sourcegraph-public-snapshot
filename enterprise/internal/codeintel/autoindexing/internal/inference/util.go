@@ -29,8 +29,8 @@ func flattenPatterns(patterns []*luatypes.PathPattern, inverted bool) []string {
 }
 
 // compileWildcards converts a list of wildcard strings into objects that can match inputs.
-func compileWildcards(patterns []string) ([]paths.GlobPattern, error) {
-	compiledPatterns := make([]paths.GlobPattern, 0, len(patterns))
+func compileWildcards(patterns []string) ([]*paths.GlobPattern, error) {
+	compiledPatterns := make([]*paths.GlobPattern, 0, len(patterns))
 	for _, rawPattern := range patterns {
 		compiledPattern, err := paths.Compile(rawPattern)
 		if err != nil {
@@ -61,7 +61,7 @@ func normalizePatterns(patterns []string) []string {
 // filterPaths returns a slice containing all of the input paths that match the given
 // pattern but not the given inverted pattern. If the given inverted pattern is empty
 // then it is not considered for filtering. The input slice is NOT modified in-place.
-func filterPaths(paths []string, patterns, invertedPatterns []paths.GlobPattern) []string {
+func filterPaths(paths []string, patterns, invertedPatterns []*paths.GlobPattern) []string {
 	if len(patterns) == 0 {
 		return nil
 	}
@@ -76,7 +76,7 @@ func filterPaths(paths []string, patterns, invertedPatterns []paths.GlobPattern)
 	return filtered
 }
 
-func filterPath(path string, pattern, invertedPattern []paths.GlobPattern) bool {
+func filterPath(path string, pattern, invertedPattern []*paths.GlobPattern) bool {
 	if path[0] != '/' {
 		path = "/" + path
 	}
