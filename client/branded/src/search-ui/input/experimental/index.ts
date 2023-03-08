@@ -14,4 +14,5 @@ export { getEditorConfig, combineResults, selectionListener } from './suggestion
 export * from './optionRenderer'
 export * from './utils'
 export * from './codemirror/history'
+export * from './codemirror/searchcontext'
 export * from './filters'

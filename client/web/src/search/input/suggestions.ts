@@ -2,7 +2,6 @@ import { EditorState } from '@codemirror/state'
 import { mdiFilterOutline, mdiSourceRepository, mdiStar, mdiFileOutline } from '@mdi/js'
 import { byLengthAsc, extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
 
-import { tokenAt, tokens as queryTokens } from '@sourcegraph/branded'
 // This module implements suggestions for the experimental search input
 // eslint-disable-next-line no-restricted-imports
 import {
@@ -16,7 +15,7 @@ import {
     combineResults,
     defaultLanguages,
 } from '@sourcegraph/branded/src/search-ui/experimental'
-import { getParsedQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
+import { getQueryInformation } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { isDefined } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -782,6 +781,7 @@ interface Caches {
 export interface SuggestionsSourceConfig
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'> {
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
+    getSearchContext: () => string | undefined
     authenticatedUser?: AuthenticatedUser | null
     isSourcegraphDotCom?: boolean
 }
@@ -996,31 +996,25 @@ function createCaches({
  * delegates to other sources.
  */
 export const createSuggestionsSource = (config: SuggestionsSourceConfig): Source => {
-    const { isSourcegraphDotCom } = config
     const caches = createCaches(config)
 
     const sources: InternalSource[] = [
         filterValueSuggestions(caches),
         filterSuggestions,
         repoSuggestions(caches.repo),
-        fileSuggestions(caches.file, isSourcegraphDotCom),
+        fileSuggestions(caches.file, config.isSourcegraphDotCom),
         symbolSuggestions(caches.symbol),
     ]
 
     return {
         query: (state, position) => {
-            const parsedQuery = getParsedQuery(state)
-            const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
-            const token = tokenAt(tokens, position)
-            const input = state.sliceDoc()
+            const queryInfo = getQueryInformation(state, position)
 
             function valid(state: EditorState, position: number): boolean {
-                const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
-                return token === tokenAt(tokens, position)
+                return queryInfo.token === getQueryInformation(state, position).token
             }
 
-            const params = { token, tokens, input, position, parsedQuery }
-            const results = sources.map(source => source(params))
+            const results = sources.map(source => source(queryInfo))
             const dummyResult = { result: [], valid }
 
             return combineResults([dummyResult, ...results])
@@ -1222,79 +1216,6 @@ function printParsedQuery(node: Node, buffer: string[] = []): string[] {
             return buffer
         }
     }
-}
-
-// Helper function to convert filter values that start with a quote but are not
-// closed yet (e.g. author:"firstname lastna|) to a single filter token to
-// prevent irrelevant suggestions.
-function collapseOpenFilterValues(tokens: Token[], input: string): Token[] {
-    const result: Token[] = []
-    let openFilter: Filter | null = null
-    let hold: Token[] = []
-
-    function mergeFilter(filter: Filter, values: Token[]): Filter {
-        if (!filter.value?.value) {
-            // For simplicity but this should never occure
-            return filter
-        }
-        const end = values[values.length - 1]?.range.end ?? filter.value.range.end
-        return {
-            ...filter,
-            range: {
-                start: filter.range.start,
-                end,
-            },
-            value: {
-                ...filter.value,
-                range: {
-                    start: filter.value.range.start,
-                    end,
-                },
-                value:
-                    filter.value.value + values.map(token => input.slice(token.range.start, token.range.end)).join(''),
-            },
-        }
-    }
-
-    for (const token of tokens) {
-        switch (token.type) {
-            case 'filter':
-                {
-                    if (token.value?.value.startsWith('"') && !token.value.quoted) {
-                        openFilter = token
-                    } else {
-                        if (openFilter?.value) {
-                            result.push(mergeFilter(openFilter, hold))
-                            openFilter = null
-                            hold = []
-                        }
-                        result.push(token)
-                    }
-                }
-                break
-            case 'pattern':
-            case 'whitespace':
-                if (openFilter) {
-                    hold.push(token)
-                } else {
-                    result.push(token)
-                }
-                break
-            default:
-                if (openFilter?.value) {
-                    result.push(mergeFilter(openFilter, hold))
-                    openFilter = null
-                    hold = []
-                }
-                result.push(token)
-        }
-    }
-
-    if (openFilter?.value) {
-        result.push(mergeFilter(openFilter, hold))
-    }
-
-    return result
 }
 
 function containsFilterType(filterTypes: Set<FilterType>, filterType: string): boolean {
