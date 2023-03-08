@@ -180,9 +180,10 @@ extend type Mutation {
     setPermissions(role: ID!, permissions: [ID!]!): EmptyResponse!
 
     """
-    Assign multiple roles to a user.
+    Set roles for a user. Similar to `setPermissions`, this updates the roles assigned to a user based on the `roles`
+    passed in the argument.
     """
-    assignRolesToUser(user: ID!, roles: [ID!]!): EmptyResponse!
+    setRoles(user: ID!, roles: [ID!]!): EmptyResponse!
 }
 
 extend type User {

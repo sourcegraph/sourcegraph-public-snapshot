@@ -141,15 +141,11 @@ func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gq
 	}, nil
 }
 
-func (r *Resolver) AssignRolesToUser(ctx context.Context, args *gql.AssignRolesToUserArgs) (*gql.EmptyResponse, error) {
+func (r *Resolver) SetRoles(ctx context.Context, args *gql.SetRolesArgs) (*gql.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site administrators can assign roles to a user.
 	// We need to get the current user any
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
-	}
-
-	if len(args.Roles) == 0 {
-		return nil, errors.New("roles are required")
 	}
 
 	userID, err := gql.UnmarshalUserID(args.User)
@@ -166,18 +162,17 @@ func (r *Resolver) AssignRolesToUser(ctx context.Context, args *gql.AssignRolesT
 		return nil, errors.New("cannot assign role to self")
 	}
 
-	opts := database.BulkAssignToUserOpts{}
-	opts.UserID = userID
+	opts := database.SyncRolesForUserOpts{UserID: userID}
 
 	for _, r := range args.Roles {
 		rID, err := unmarshalPermissionID(r)
 		if err != nil {
 			return nil, err
 		}
-		opts.RoleIDs = append(opts.RoleIDs, rID)
+		opts.Roles = append(opts.Roles, rID)
 	}
 
-	if _, err = r.db.UserRoles().BulkAssignToUser(ctx, opts); err != nil {
+	if err = r.db.UserRoles().SyncRolesForUser(ctx, opts); err != nil {
 		return nil, err
 	}
 

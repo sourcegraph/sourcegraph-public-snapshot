@@ -45,15 +45,21 @@ type RevokeSystemRoleOpts struct {
 	Role   types.SystemRole
 }
 
-type BulkAssignToUserOpts struct {
-	UserID  int32
-	RoleIDs []int32
-}
-
 type BulkAssignSystemRolesToUserOpts struct {
 	UserID int32
 	Roles  []types.SystemRole
 }
+
+type BulkUserRoleOperationOpts struct {
+	UserID int32
+	Roles  []int32
+}
+
+type (
+	BulkAssignRolesToUserOpts  BulkUserRoleOperationOpts
+	SyncRolesForUserOpts       BulkUserRoleOperationOpts
+	BulkRevokeRolesForUserOpts BulkUserRoleOperationOpts
+)
 
 type UserRoleStore interface {
 	basestore.ShareableStore
@@ -62,12 +68,14 @@ type UserRoleStore interface {
 	Assign(ctx context.Context, opts AssignUserRoleOpts) error
 	// AssignSystemRole assigns a system role to a user.
 	AssignSystemRole(ctx context.Context, opts AssignSystemRoleOpts) error
-	// BulkAssignToUser assigns multiple roles to a single user. This is useful
+	// BulkAssignRolesToUser assigns multiple roles to a single user. This is useful
 	// when we want to assign a user more than one role.
-	BulkAssignToUser(ctx context.Context, opts BulkAssignToUserOpts) error
-	// BulkAssignToUser assigns multiple system roles to a single user. This is useful
+	BulkAssignRolesToUser(ctx context.Context, opts BulkAssignRolesToUserOpts) error
+	// BulkAssignRolesToUser assigns multiple system roles to a single user. This is useful
 	// when we want to assign a user more than one system role.
 	BulkAssignSystemRolesToUser(ctx context.Context, opts BulkAssignSystemRolesToUserOpts) error
+	// BulkRevokeRolesForUser revokes bulk roles assigned to a user.
+	BulkRevokeRolesForUser(ctx context.Context, opts BulkRevokeRolesForUserOpts) error
 	// GetByRoleID returns all UserRole associated with the provided role ID
 	GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
 	// GetByRoleIDAndUserID returns one UserRole associated with the provided role and user.
@@ -78,6 +86,9 @@ type UserRoleStore interface {
 	Revoke(ctx context.Context, opts RevokeUserRoleOpts) error
 	// RevokeSystemRole revokes a system role that has previously being assigned to a user.
 	RevokeSystemRole(ctx context.Context, opts RevokeSystemRoleOpts) error
+	// SyncRolesForUser is used to sync the roles assigned to a role. It removes any role that isn't
+	// included in the `opts` and assigns roles that aren't yet assigned in the database but in `opts`.
+	SyncRolesForUser(ctx context.Context, opts SyncRolesForUserOpts) error
 	// Transact creates a transaction for the UserRoleStore.
 	WithTransact(context.Context, func(UserRoleStore) error) error
 	// With is used to merge the store with another to pull data via other stores.
@@ -170,18 +181,18 @@ func (r *userRoleStore) AssignSystemRole(ctx context.Context, opts AssignSystemR
 	return nil
 }
 
-func (r *userRoleStore) BulkAssignToUser(ctx context.Context, opts BulkAssignToUserOpts) error {
+func (r *userRoleStore) BulkAssignRolesToUser(ctx context.Context, opts BulkAssignRolesToUserOpts) error {
 	if opts.UserID == 0 {
 		return errors.New("missing user id")
 	}
 
-	if len(opts.RoleIDs) == 0 {
+	if len(opts.Roles) == 0 {
 		return errors.New("missing role ids")
 	}
 
 	var urs []*sqlf.Query
 
-	for _, roleId := range opts.RoleIDs {
+	for _, roleId := range opts.Roles {
 		urs = append(urs, sqlf.Sprintf("(%s, %s)", opts.UserID, roleId))
 	}
 
@@ -317,6 +328,33 @@ func (r *userRoleStore) RevokeSystemRole(ctx context.Context, opts RevokeSystemR
 	return nil
 }
 
+func (r *userRoleStore) BulkRevokeRolesForUser(ctx context.Context, opts BulkRevokeRolesForUserOpts) error {
+	if opts.UserID == 0 {
+		return errors.New("missing user id")
+	}
+
+	if len(opts.Roles) == 0 {
+		return errors.New("missing roles")
+	}
+
+	var preds []*sqlf.Query
+	var roleIDs []*sqlf.Query
+
+	for _, role := range opts.Roles {
+		roleIDs = append(roleIDs, sqlf.Sprintf("%s", role))
+	}
+
+	preds = append(preds, sqlf.Sprintf("user_id = %s", opts.UserID))
+	preds = append(preds, sqlf.Sprintf("role_id IN ( %s )", sqlf.Join(roleIDs, ", ")))
+
+	q := sqlf.Sprintf(
+		revokeUserRoleQueryFmtStr,
+		sqlf.Join(preds, " AND "),
+	)
+
+	return r.Exec(ctx, q)
+}
+
 func (r *userRoleStore) GetByUserID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error) {
 	if opts.UserID == 0 {
 		return nil, errors.New("missing user id")
@@ -391,4 +429,79 @@ func (r *userRoleStore) get(ctx context.Context, cond *sqlf.Query) ([]*types.Use
 
 	var scanUserRoles = basestore.NewSliceScanner(scanUserRole)
 	return scanUserRoles(r.Query(ctx, q))
+}
+
+func (r *userRoleStore) SyncRolesForUser(ctx context.Context, opts SyncRolesForUserOpts) error {
+	if opts.UserID == 0 {
+		return errors.New("missing user id")
+	}
+
+	return r.WithTransact(ctx, func(tx UserRoleStore) error {
+		// look up the current roles assigned to the user. We use this to determine which roles to assign and revoke.
+		userRoles, err := tx.GetByUserID(ctx, GetUserRoleOpts{UserID: opts.UserID})
+		if err != nil {
+			return err
+		}
+
+		// We create a map of roles for easy lookup.
+		var userRolesMap = make(map[int32]int, len(userRoles))
+		for _, userRole := range userRoles {
+			userRolesMap[userRole.RoleID] = 1
+		}
+
+		var toBeDeleted []int32
+		var toBeAdded []int32
+
+		// figure out rikes that need to be added. Roles that are received from `opts`
+		// and do not exist in the database are new and should be added. While those in the database that aren't
+		// part of `opts.Roles` should be revoked.
+		for _, role := range opts.Roles {
+			count, ok := userRolesMap[role]
+			if ok {
+				// We increment the count of roles that are in the map, and also part of `opts.Roles`.
+				// These roles won't be modified.
+				userRolesMap[role] = count + 1
+			} else {
+				// Roles that aren't part of the map (do not exist in the database), should be inserted in the
+				// database.
+				userRolesMap[role] = 0
+			}
+		}
+
+		// We loop through the map to figure out roles that should be revoked or assigned.
+		for role, count := range userRolesMap {
+			switch count {
+			// Count is zero when the user <> role association doesn't exist in the database, but is
+			// present in `opts.Roles`.
+			case 0:
+				toBeAdded = append(toBeAdded, role)
+			// Count is one when the user <> role association exists in the database, but not in
+			// `opts.Roles`.
+			case 1:
+				toBeDeleted = append(toBeDeleted, role)
+			}
+		}
+
+		// If we have new permissions to be added, we insert into the database via the transaction created earlier.
+		if len(toBeAdded) > 0 {
+			if err = tx.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{
+				UserID: opts.UserID,
+				Roles:  toBeAdded,
+			}); err != nil {
+				return err
+			}
+		}
+
+		// If we have new permissions to be removed, we remove from the database via the transaction created earlier.
+		if len(toBeDeleted) > 0 {
+			if err = tx.BulkRevokeRolesForUser(ctx, BulkRevokeRolesForUserOpts{
+				UserID: opts.UserID,
+				Roles:  toBeDeleted,
+			}); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }

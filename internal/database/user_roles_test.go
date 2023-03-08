@@ -77,14 +77,14 @@ func TestUserRoleBulkAssignForUser(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("without user id", func(t *testing.T) {
-		err := store.BulkAssignToUser(ctx, BulkAssignToUserOpts{})
+		err := store.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{})
 
 		require.Error(t, err)
 		require.Equal(t, err.Error(), "missing user id")
 	})
 
 	t.Run("without role ids", func(t *testing.T) {
-		err := store.BulkAssignToUser(ctx, BulkAssignToUserOpts{
+		err := store.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{
 			UserID: user.ID,
 		})
 
@@ -94,9 +94,9 @@ func TestUserRoleBulkAssignForUser(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		roleIDs := []int32{role.ID, role2.ID}
-		err := store.BulkAssignToUser(ctx, BulkAssignToUserOpts{
-			UserID:  user.ID,
-			RoleIDs: roleIDs,
+		err := store.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{
+			UserID: user.ID,
+			Roles:  roleIDs,
 		})
 		require.NoError(t, err)
 
@@ -112,9 +112,9 @@ func TestUserRoleBulkAssignForUser(t *testing.T) {
 		}
 
 		// shoudln't fail the second time, since we are "upsert"-ing here
-		err = store.BulkAssignToUser(ctx, BulkAssignToUserOpts{
-			UserID:  user.ID,
-			RoleIDs: roleIDs,
+		err = store.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{
+			UserID: user.ID,
+			Roles:  roleIDs,
 		})
 		require.NoError(t, err)
 	})
