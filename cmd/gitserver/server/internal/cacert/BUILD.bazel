@@ -16,10 +16,5 @@ go_library(
 go_test(
     name = "cacert_test",
     srcs = ["cacert_test.go"],
-    # -----------------------------------------------------------------------------
-    # --- FAIL: TestSystem (0.00s)
-    #     cacert_test.go:29: failed to parse system certificate:
-    # TODO(bazel): fix test; failing on CI only
-    # tags = ["manual"],
     deps = [":cacert"],
 )

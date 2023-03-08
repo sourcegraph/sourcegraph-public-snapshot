@@ -44,21 +44,9 @@ go_test(
         "session_test.go",
     ],
     embed = [":bitbucketcloudoauth"],
-    # ==================== Test output for //enterprise/cmd/frontend/internal/auth/bitbucketcloudoauth:bitbucketcloudoauth_test:
-    # An error was returned when detecting the terminal size and capabilities:
-    # GetWinsize: inappropriate ioctl for device
-    # Execution will continue, but please report this, along with your operating
-    # system, terminal, and any other details, to:
-    #     https://github.com/sourcegraph/sourcegraph/issues/new
-    # An error was returned when detecting the terminal size and capabilities:
-    # GetWinsize: inappropriate ioctl for device
-    # Execution will continue, but please report this, along with your operating
-    # system, terminal, and any other details, to:
-    #     https://github.com/sourcegraph/sourcegraph/issues/new
-    # TODO(bazel): fix test
     tags = [
+        # allows network requests to localhost (database)
         "requires-network",
-        # "manual"
     ],
     deps = [
         "//cmd/frontend/auth",

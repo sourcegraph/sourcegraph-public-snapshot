@@ -10,37 +10,5 @@ go_library(
 go_test(
     name = "syncx_test",
     srcs = ["oncefunc_test.go"],
-    # ==================== Test output for //internal/syncx:syncx_test:
-    # --- FAIL: TestOnceFuncPanicTraceback (0.00s)
-    #     oncefunc_test.go:132: want stack containing syncx_test.onceFuncPanic, got:
-    #         goroutine 10 [running]:
-    #         runtime/debug.Stack()
-    #             GOROOT/src/runtime/debug/stack.go:24 +0x65
-    #         internal/syncx/syncx_test_test.TestOnceFuncPanicTraceback.func1()
-    #             internal/syncx/oncefunc_test.go:129 +0xb1
-    #         panic({0x114a340, 0x11aaf90})
-    #             GOROOT/src/runtime/panic.go:884 +0x212
-    #         github.com/sourcegraph/sourcegraph/internal/syncx.OnceFunc.func1.1.1()
-    #             internal/syncx/oncefunc.go:26 +0x76
-    #         panic({0x114a340, 0x11aaf90})
-    #             GOROOT/src/runtime/panic.go:884 +0x212
-    #         internal/syncx/syncx_test_test.onceFuncPanic()
-    #             internal/syncx/oncefunc_test.go:139 +0x27
-    #         github.com/sourcegraph/sourcegraph/internal/syncx.OnceFunc.func1.1()
-    #             internal/syncx/oncefunc.go:29 +0x76
-    #         sync.(*Once).doSlow(0x128a601?, 0xc00005e728?)
-    #             GOROOT/src/sync/once.go:74 +0xc2
-    #         sync.(*Once).Do(...)
-    #             GOROOT/src/sync/once.go:65
-    #         github.com/sourcegraph/sourcegraph/internal/syncx.OnceFunc.func1()
-    #             internal/syncx/oncefunc.go:20 +0x69
-    #         internal/syncx/syncx_test_test.TestOnceFuncPanicTraceback(0xc000083520)
-    #             internal/syncx/oncefunc_test.go:135 +0x6d
-    #         testing.tRunner(0xc000083520, 0x1180338)
-    #             GOROOT/src/testing/testing.go:1446 +0x10b
-    #         created by testing.(*T).Run
-    #             GOROOT/src/testing/testing.go:1493 +0x35f
-    # TODO(bazel): fix test
-    # tags = ["manual"],
     deps = [":syncx"],
 )
