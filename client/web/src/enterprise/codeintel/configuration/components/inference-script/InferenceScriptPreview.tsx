@@ -11,7 +11,6 @@ import {
     useForm,
     Form,
     Label,
-    Alert,
 } from '@sourcegraph/wildcard'
 
 import {
