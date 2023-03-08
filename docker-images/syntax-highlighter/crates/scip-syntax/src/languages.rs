@@ -55,3 +55,17 @@ pub fn go_locals() -> LocalConfiguration {
         query: Query::new(language, query).unwrap(),
     }
 }
+
+pub fn perl_locals() -> LocalConfiguration {
+    let language = BundledParser::Perl.get_language();
+    let query = include_scip_query!("perl", "scip-locals");
+
+    let mut parser = Parser::new();
+    parser.set_language(language).unwrap();
+
+    LocalConfiguration {
+        language,
+        parser,
+        query: Query::new(language, query).unwrap(),
+    }
+}
