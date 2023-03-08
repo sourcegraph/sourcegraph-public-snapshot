@@ -85,7 +85,12 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         if (rankingTemporarySettings !== undefined) {
             setRankingTemporarySettings(rankingToggleEnabled)
         }
-    }, [rankingToggleEnabled, rankingTemporarySettings, setRankingTemporarySettings])
+        // `rankingTemporarySettings` should not be a dependency, otherwise the
+        // observable would be recomputed if the caller used e.g. an object
+        // literal as default value. `useTemporarySetting` works more like
+        // `useState` in this regard.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rankingToggleEnabled, setRankingTemporarySettings])
 
     useEffect(() => {
         if (rankingTemporarySettings !== undefined) {
