@@ -20,13 +20,13 @@ func AppReady(logger log.Logger) {
 	}
 
 	externalURL := globals.ExternalURL().String()
-	printRunningAddress(externalURL)
+	printExternalURL(externalURL)
 	if err := browser.OpenURL(externalURL); err != nil {
 		logger.Error("failed to open browser", log.String("url", externalURL), log.Error(err))
 	}
 }
 
-func printRunningAddress(externalURL string) {
+func printExternalURL(externalURL string) {
 	pad := func(s string, n int) string {
 		spaces := n - len(s)
 		if spaces < 0 {
