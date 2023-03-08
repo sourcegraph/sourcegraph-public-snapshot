@@ -1,22 +1,29 @@
-export interface InferenceFormJobStep {
-    root: string
-    image: string
-    commands: string[]
+interface MetaIdentifier {
+    meta: {
+        id: string
+    }
 }
 
-export interface InferenceFormJob {
+// InferenceJobs only return a unique ID for the actual job, not values within the job.
+// As we want to build a dynamic form, we need each array of values to have a unique id.
+export interface InferenceArrayValue extends MetaIdentifier {
+    value: string
+}
+
+export interface InferenceFormJobStep extends MetaIdentifier {
+    root: string
+    image: string
+    commands: InferenceArrayValue[]
+}
+
+export interface InferenceFormJob extends MetaIdentifier {
     root: string
     indexer: string
-    indexer_args: string[]
-    requestedEnvVars: string[] | null
-    local_steps: string[]
+    indexer_args: InferenceArrayValue[]
+    requestedEnvVars: InferenceArrayValue[]
+    local_steps: InferenceArrayValue[]
     outfile: string
     steps: InferenceFormJobStep[]
-
-    // Data that used for something else than form submission
-    meta: {
-        comparisonKey: string
-    }
 }
 
 export interface InferenceFormData {

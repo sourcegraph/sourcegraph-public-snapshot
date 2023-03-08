@@ -47,9 +47,13 @@
 // Misc
 .job-header,
 .job-step-header {
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+
     margin-top: -0.25rem;
     margin-left: -0.25rem;
-    font-weight: 600;
+    margin-bottom: 1rem;
 }
 
 .job-field {
@@ -73,6 +77,7 @@
     min-height: 2rem;
     height: auto;
     margin-bottom: 0.5rem;
+    overflow: auto;
 
     input[readonly] {
         // Override disabled bg-color
@@ -99,4 +104,13 @@
     grid-area: value;
     padding: 1rem;
     border: 3px solid var(--subtle-bg);
+}
+
+.job-command {
+    display: flex;
+    margin-bottom: 0.5rem;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
 }
