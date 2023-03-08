@@ -56537,9 +56537,9 @@ type MockUserExternalAccountsStore struct {
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *UserExternalAccountsStoreTransactFunc
-	// UpdateOrInsertSCIMDataFunc is an instance of a mock function object
-	// controlling the behavior of the method UpdateOrInsertSCIMData.
-	UpdateOrInsertSCIMDataFunc *UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc
+	// UpsertSCIMDataFunc is an instance of a mock function object
+	// controlling the behavior of the method UpsertSCIMData.
+	UpsertSCIMDataFunc *UserExternalAccountsStoreUpsertSCIMDataFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *UserExternalAccountsStoreWithFunc
@@ -56628,7 +56628,7 @@ func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 				return
 			},
 		},
-		UpdateOrInsertSCIMDataFunc: &UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc{
+		UpsertSCIMDataFunc: &UserExternalAccountsStoreUpsertSCIMDataFunc{
 			defaultHook: func(context.Context, int32, string, extsvc.AccountData) (r0 error) {
 				return
 			},
@@ -56726,9 +56726,9 @@ func NewStrictMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 				panic("unexpected invocation of MockUserExternalAccountsStore.Transact")
 			},
 		},
-		UpdateOrInsertSCIMDataFunc: &UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc{
+		UpsertSCIMDataFunc: &UserExternalAccountsStoreUpsertSCIMDataFunc{
 			defaultHook: func(context.Context, int32, string, extsvc.AccountData) error {
-				panic("unexpected invocation of MockUserExternalAccountsStore.UpdateOrInsertSCIMData")
+				panic("unexpected invocation of MockUserExternalAccountsStore.UpsertSCIMData")
 			},
 		},
 		WithFunc: &UserExternalAccountsStoreWithFunc{
@@ -56794,8 +56794,8 @@ func NewMockUserExternalAccountsStoreFrom(i UserExternalAccountsStore) *MockUser
 		TransactFunc: &UserExternalAccountsStoreTransactFunc{
 			defaultHook: i.Transact,
 		},
-		UpdateOrInsertSCIMDataFunc: &UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc{
-			defaultHook: i.UpdateOrInsertSCIMData,
+		UpsertSCIMDataFunc: &UserExternalAccountsStoreUpsertSCIMDataFunc{
+			defaultHook: i.UpsertSCIMData,
 		},
 		WithFunc: &UserExternalAccountsStoreWithFunc{
 			defaultHook: i.With,
@@ -58459,37 +58459,37 @@ func (c UserExternalAccountsStoreTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc describes the
-// behavior when the UpdateOrInsertSCIMData method of the parent
-// MockUserExternalAccountsStore instance is invoked.
-type UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc struct {
+// UserExternalAccountsStoreUpsertSCIMDataFunc describes the behavior when
+// the UpsertSCIMData method of the parent MockUserExternalAccountsStore
+// instance is invoked.
+type UserExternalAccountsStoreUpsertSCIMDataFunc struct {
 	defaultHook func(context.Context, int32, string, extsvc.AccountData) error
 	hooks       []func(context.Context, int32, string, extsvc.AccountData) error
-	history     []UserExternalAccountsStoreUpdateOrInsertSCIMDataFuncCall
+	history     []UserExternalAccountsStoreUpsertSCIMDataFuncCall
 	mutex       sync.Mutex
 }
 
-// UpdateOrInsertSCIMData delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockUserExternalAccountsStore) UpdateOrInsertSCIMData(v0 context.Context, v1 int32, v2 string, v3 extsvc.AccountData) error {
-	r0 := m.UpdateOrInsertSCIMDataFunc.nextHook()(v0, v1, v2, v3)
-	m.UpdateOrInsertSCIMDataFunc.appendCall(UserExternalAccountsStoreUpdateOrInsertSCIMDataFuncCall{v0, v1, v2, v3, r0})
+// UpsertSCIMData delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserExternalAccountsStore) UpsertSCIMData(v0 context.Context, v1 int32, v2 string, v3 extsvc.AccountData) error {
+	r0 := m.UpsertSCIMDataFunc.nextHook()(v0, v1, v2, v3)
+	m.UpsertSCIMDataFunc.appendCall(UserExternalAccountsStoreUpsertSCIMDataFuncCall{v0, v1, v2, v3, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the
-// UpdateOrInsertSCIMData method of the parent MockUserExternalAccountsStore
-// instance is invoked and the hook queue is empty.
-func (f *UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc) SetDefaultHook(hook func(context.Context, int32, string, extsvc.AccountData) error) {
+// SetDefaultHook sets function that is called when the UpsertSCIMData
+// method of the parent MockUserExternalAccountsStore instance is invoked
+// and the hook queue is empty.
+func (f *UserExternalAccountsStoreUpsertSCIMDataFunc) SetDefaultHook(hook func(context.Context, int32, string, extsvc.AccountData) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// UpdateOrInsertSCIMData method of the parent MockUserExternalAccountsStore
+// UpsertSCIMData method of the parent MockUserExternalAccountsStore
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc) PushHook(hook func(context.Context, int32, string, extsvc.AccountData) error) {
+func (f *UserExternalAccountsStoreUpsertSCIMDataFunc) PushHook(hook func(context.Context, int32, string, extsvc.AccountData) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -58497,20 +58497,20 @@ func (f *UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc) PushHook(hook func
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc) SetDefaultReturn(r0 error) {
+func (f *UserExternalAccountsStoreUpsertSCIMDataFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, int32, string, extsvc.AccountData) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc) PushReturn(r0 error) {
+func (f *UserExternalAccountsStoreUpsertSCIMDataFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, int32, string, extsvc.AccountData) error {
 		return r0
 	})
 }
 
-func (f *UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc) nextHook() func(context.Context, int32, string, extsvc.AccountData) error {
+func (f *UserExternalAccountsStoreUpsertSCIMDataFunc) nextHook() func(context.Context, int32, string, extsvc.AccountData) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -58523,28 +58523,28 @@ func (f *UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc) nextHook() func(co
 	return hook
 }
 
-func (f *UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc) appendCall(r0 UserExternalAccountsStoreUpdateOrInsertSCIMDataFuncCall) {
+func (f *UserExternalAccountsStoreUpsertSCIMDataFunc) appendCall(r0 UserExternalAccountsStoreUpsertSCIMDataFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// UserExternalAccountsStoreUpdateOrInsertSCIMDataFuncCall objects
-// describing the invocations of this function.
-func (f *UserExternalAccountsStoreUpdateOrInsertSCIMDataFunc) History() []UserExternalAccountsStoreUpdateOrInsertSCIMDataFuncCall {
+// UserExternalAccountsStoreUpsertSCIMDataFuncCall objects describing the
+// invocations of this function.
+func (f *UserExternalAccountsStoreUpsertSCIMDataFunc) History() []UserExternalAccountsStoreUpsertSCIMDataFuncCall {
 	f.mutex.Lock()
-	history := make([]UserExternalAccountsStoreUpdateOrInsertSCIMDataFuncCall, len(f.history))
+	history := make([]UserExternalAccountsStoreUpsertSCIMDataFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// UserExternalAccountsStoreUpdateOrInsertSCIMDataFuncCall is an object that
-// describes an invocation of method UpdateOrInsertSCIMData on an instance
-// of MockUserExternalAccountsStore.
-type UserExternalAccountsStoreUpdateOrInsertSCIMDataFuncCall struct {
+// UserExternalAccountsStoreUpsertSCIMDataFuncCall is an object that
+// describes an invocation of method UpsertSCIMData on an instance of
+// MockUserExternalAccountsStore.
+type UserExternalAccountsStoreUpsertSCIMDataFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -58564,13 +58564,13 @@ type UserExternalAccountsStoreUpdateOrInsertSCIMDataFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c UserExternalAccountsStoreUpdateOrInsertSCIMDataFuncCall) Args() []interface{} {
+func (c UserExternalAccountsStoreUpsertSCIMDataFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c UserExternalAccountsStoreUpdateOrInsertSCIMDataFuncCall) Results() []interface{} {
+func (c UserExternalAccountsStoreUpsertSCIMDataFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
