@@ -280,7 +280,7 @@ export const TreePage: FC<Props> = ({
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
-                                onClick={() => props.telemetryService.log('repoPage:ownerTab:clicked')}
+                                onClick={() => props.telemetryService.log('repoPage:ownershipPage:clicked')}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
                                 <span className={styles.text}>Ownership</span>
