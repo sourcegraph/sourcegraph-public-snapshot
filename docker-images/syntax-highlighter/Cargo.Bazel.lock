@@ -1,5 +1,5 @@
 {
-  "checksum": "6e32d35a922f3e8d3487b60156c262ab1846e60552093e6d6cc43656920b1143",
+  "checksum": "aba942e79d4eb9e97a9e37bb3ed5ba8166be10f6a410028ed628ed6bf1c0ab46",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -8637,6 +8637,14 @@
               "target": "tree_sitter_jsonnet"
             },
             {
+              "id": "tree-sitter-python 0.20.2",
+              "target": "tree_sitter_python"
+            },
+            {
+              "id": "tree-sitter-ruby 0.20.0",
+              "target": "tree_sitter_ruby"
+            },
+            {
               "id": "tree-sitter-rust 0.20.3",
               "target": "tree_sitter_rust"
             },
@@ -11628,6 +11636,138 @@
         },
         "edition": "2018",
         "version": "0.0.1"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.73",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
+    "tree-sitter-python 0.20.2": {
+      "name": "tree-sitter-python",
+      "version": "0.20.2",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/tree-sitter-python/0.20.2/download",
+          "sha256": "dda114f58048f5059dcf158aff691dffb8e113e6d2b50d94263fd68711975287"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_python",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_python",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-python 0.20.2",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.20.2"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.73",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
+    "tree-sitter-ruby 0.20.0": {
+      "name": "tree-sitter-ruby",
+      "version": "0.20.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/tree-sitter-ruby/0.20.0/download",
+          "sha256": "0ac30cbb1560363ae76e1ccde543d6d99087421e228cc47afcec004b86bb711a"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_ruby",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_ruby",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-ruby 0.20.0",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.20.0"
       },
       "build_script_attrs": {
         "data_glob": [
