@@ -1263,6 +1263,11 @@ func prepareEmptyGitRepo(t *testing.T, dir string) GitDir {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("execution error: %v, output %s", err, out)
 	}
+	cmd = exec.Command("git", "config", "user.email", "test@sourcegraph.com")
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("execution error: %v, output %s", err, out)
+	}
 	return GitDir(filepath.Join(dir, ".git"))
 }
 
