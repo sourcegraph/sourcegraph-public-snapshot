@@ -39,18 +39,11 @@ func testRepoWithPaths(fixedEndpoint string, root string, pathWithName string) R
 		clonePath = sb.String()
 	}
 
-	// TODO(keegan) our test for an root="" is a bit confusing, for now just
-	// make it pass.
-	absFilePath := filepath.Join(root, filepath.FromSlash(pathWithName))
-	if root == "" {
-		absFilePath = ""
-	}
-
 	return Repo{
 		Name:        pathWithName,
 		URI:         uri,
 		ClonePath:   clonePath,
-		AbsFilePath: absFilePath,
+		AbsFilePath: filepath.Join(root, filepath.FromSlash(pathWithName)),
 	}
 }
 
