@@ -1205,9 +1205,7 @@ SELECT u.id,
        u.tos_accepted,
        u.searchable,
        EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled
-FROM users u
-LEFT JOIN user_external_accounts AS sa ON u.id = sa.user_id
- %s`, query)
+FROM users u %s`, query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
 		return nil, err
