@@ -1,4 +1,4 @@
-package codeowners
+package paths
 
 import (
 	"strings"
@@ -58,9 +58,13 @@ func (p asteriskPattern) Match(part string) bool {
 	return p.compiled.IsMatch(part)
 }
 
-// compile translates a text representation of a glob pattern
+type GlobPattern interface {
+	Match(filePath string) bool
+}
+
+// Compile translates a text representation of a glob pattern
 // to an executable one that can `match` file paths.
-func compile(pattern string) (*globPattern, error) {
+func Compile(pattern string) (GlobPattern, error) {
 	parts := strings.Split(strings.Trim(pattern, separator), separator)
 	patternParts := make([]patternPart, 0, len(parts)+2)
 	isLiteral := true
@@ -138,8 +142,8 @@ type globPattern struct {
 	initialState int64
 }
 
-// match iterates over `filePath` separated by `/`. It uses a bit vector
-// to track which prefixes of glob pattern match the file path prefix so far.
+// Match iterates over `filePath` separated by `/`. It uses a bit vector
+// to track which prefixes of glob pattern Match the file path prefix so far.
 // Bit vector indices correspond to separators between pattern parts.
 //
 // Visualized matching of `/src/java/test/UnitTest.java`
@@ -162,9 +166,9 @@ type globPattern struct {
 // -     -     -            X       - | /src/app/components
 // -     -     -            -       X | /src/app/components/Label.tsx
 //
-// The match is successful if after iterating through the whole file path,
+// The Match is successful if after iterating through the whole file path,
 // full pattern matches, that is, there is a bit at the end of the glob.
-func (glob globPattern) match(filePath string) bool {
+func (glob globPattern) Match(filePath string) bool {
 	// Fast pass for literal globs, we can just string compare those.
 	if glob.isLiteral {
 		return glob.pattern == filePath
