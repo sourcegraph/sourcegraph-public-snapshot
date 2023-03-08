@@ -268,7 +268,6 @@ require (
 	github.com/sourcegraph/conc v0.2.0
 	github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch v0.0.0-20230221230401-9a42fddfcbfe
 	github.com/wk8/go-ordered-map/v2 v2.1.5
 	github.com/xanzy/go-gitlab v0.80.0
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
@@ -295,7 +294,7 @@ replace (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20230303172250-3b0248719b12
+	github.com/sourcegraph/zoekt v0.0.0-20230308015635-8df0b5af86f0
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 
@@ -543,5 +542,3 @@ replace (
 	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 	golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c
 )
-
-replace github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch => ./protos/frontend/indexedsearch

@@ -6,8 +6,9 @@ import (
 	"github.com/sourcegraph/zoekt"
 	"golang.org/x/exp/slices"
 
+	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	proto "github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch/v1"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

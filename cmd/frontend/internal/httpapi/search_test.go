@@ -20,13 +20,14 @@ import (
 	"github.com/sourcegraph/zoekt"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	proto "github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch/v1"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

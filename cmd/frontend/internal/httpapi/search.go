@@ -17,6 +17,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -27,7 +29,6 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	proto "github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch/v1"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -54,7 +55,7 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 
 type searchIndexerGRPCServer struct {
 	server *searchIndexerServer
-	proto.UnimplementedIndexedSearchConfigurationServiceServer
+	proto.ZoektConfigurationServiceServer
 }
 
 func (s *searchIndexerGRPCServer) SearchConfiguration(ctx context.Context, request *proto.SearchConfigurationRequest) (*proto.SearchConfigurationResponse, error) {
@@ -156,7 +157,7 @@ func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *pr
 	return &proto.UpdateIndexStatusResponse{}, nil
 }
 
-var _ proto.IndexedSearchConfigurationServiceServer = &searchIndexerGRPCServer{}
+var _ proto.ZoektConfigurationServiceServer = &searchIndexerGRPCServer{}
 
 // searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
 // interacts with (search-indexer).
