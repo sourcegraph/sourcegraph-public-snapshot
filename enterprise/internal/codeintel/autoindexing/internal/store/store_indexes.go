@@ -563,21 +563,21 @@ const DeletedRepositoryGracePeriod = time.Minute * 30
 // DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
 // that were removed for that repository.
-func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (totalCount int, deletedCount int, err error) {
 	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return 0, 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
 	// a similar one on this index, but only for uploads that are completed or visible at tip.
-	repositories, err := scanCounts(tx.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+	totalCount, repositories, err := scanCountsAndTotalCount(tx.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
 	if err != nil {
-		return nil, err
+		return 0, 0, err
 	}
 
 	count := 0
@@ -588,7 +588,7 @@ func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Tim
 		attribute.Int("count", count),
 		attribute.Int("numRepositories", len(repositories)))
 
-	return repositories, nil
+	return totalCount, count, nil
 }
 
 const deleteIndexesWithoutRepositoryQuery = `
@@ -610,7 +610,7 @@ deleted AS (
 	WHERE id IN (SELECT id FROM candidates)
 	RETURNING u.id, u.repository_id
 )
-SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
+SELECT (SELECT COUNT(*) FROM candidates), d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
 `
 
 // IsQueued returns true if there is an index or an upload for the repository and commit.

@@ -4,120 +4,162 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type reconcilerJob struct {
-	store      store.Store
-	lsifstore  lsifstore.LsifStore
-	operations *operations
-}
-
-func NewReconciler(
-	observationCtx *observation.Context,
+func NewFrontendDBReconciler(
 	store store.Store,
 	lsifstore lsifstore.LsifStore,
 	interval time.Duration,
 	batchSize int,
+	observationCtx *observation.Context,
+	redMetrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
-	job := reconcilerJob{
-		store:      store,
-		lsifstore:  lsifstore,
-		operations: newOperations(observationCtx),
-	}
-
-	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
-		"codeintel.reconciler", "reconciles code-intel data drift",
+	return newReconciler(
+		"codeintel.uploads.reconciler.frontend-db",
+		"Counts SCIP metadata records for which there is no data in the codeintel-db schema.",
+		"SCIP metadata",
+		&storeWrapper{store},
+		&lsifStoreWrapper{lsifstore},
 		interval,
-		goroutine.HandlerFunc(func(ctx context.Context) error {
-			return job.handleReconcile(ctx, batchSize)
-		}))
+		batchSize,
+		observationCtx,
+		redMetrics,
+	)
 }
 
-func (j reconcilerJob) handleReconcile(ctx context.Context, batchSize int) (err error) {
-	if err := j.handleReconcileFromFrontend(ctx, batchSize); err != nil {
-		return err
-	}
-
-	if err := j.handleReconcileFromCodeintelDB(ctx, batchSize); err != nil {
-		return err
-	}
-
-	return nil
+func NewCodeIntelDBReconciler(
+	store store.Store,
+	lsifstore lsifstore.LsifStore,
+	interval time.Duration,
+	batchSize int,
+	observationCtx *observation.Context,
+	redMetrics *metrics.REDMetrics,
+) goroutine.BackgroundRoutine {
+	return newReconciler(
+		"codeintel.uploads.reconciler.codeintel-db",
+		"Removes SCIP data records for which there is no known associated metadata in the frontend schema.",
+		"SCIP data",
+		&lsifStoreWrapper{lsifstore},
+		&storeWrapper{store},
+		interval,
+		batchSize,
+		observationCtx,
+		redMetrics,
+	)
 }
 
-// handleReconcileFromFrontend marks upload records that has no resolvable data in the codeintel-db.
-func (j reconcilerJob) handleReconcileFromFrontend(ctx context.Context, batchSize int) (err error) {
-	ids, err := j.store.ReconcileCandidates(ctx, batchSize)
-	if err != nil {
-		return err
-	}
+//
+//
 
-	j.operations.numReconcileScansFromFrontend.Add(float64(len(ids)))
+type sourceStore interface {
+	Candidates(ctx context.Context, batchSize int) ([]int, error)
+	Prune(ctx context.Context, ids []int) error
+}
 
-	idsWithMeta, err := j.lsifstore.IDsWithMeta(ctx, ids)
-	if err != nil {
-		return err
-	}
+type reconcileStore interface {
+	FilterExists(ctx context.Context, ids []int) ([]int, error)
+}
 
-	found := map[int]struct{}{}
-	for _, id := range idsWithMeta {
-		found[id] = struct{}{}
-	}
+func newReconciler(
+	name string,
+	description string,
+	recordTypeName string,
+	sourceStore sourceStore,
+	reconcileStore reconcileStore,
+	interval time.Duration,
+	batchSize int,
+	observationCtx *observation.Context,
+	redMetrics *metrics.REDMetrics,
+) goroutine.BackgroundRoutine {
+	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+		Name:        name,
+		Description: description,
+		Interval:    interval,
+		Metrics:     background.NewJanitorMetrics(observationCtx, redMetrics, name, recordTypeName),
+		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
+			candidateIDs, err := sourceStore.Candidates(ctx, batchSize)
+			if err != nil {
+				return 0, 0, err
+			}
 
-	abandoned := ids[:0]
-	for _, id := range ids {
-		if _, ok := found[id]; ok {
-			continue
-		}
+			existingIDs, err := reconcileStore.FilterExists(ctx, candidateIDs)
+			if err != nil {
+				return 0, 0, err
+			}
 
-		abandoned = append(abandoned, id)
-	}
+			found := map[int]struct{}{}
+			for _, id := range existingIDs {
+				found[id] = struct{}{}
+			}
 
+			missingIDs := candidateIDs[:0]
+			for _, id := range candidateIDs {
+				if _, ok := found[id]; ok {
+					continue
+				}
+
+				missingIDs = append(missingIDs, id)
+			}
+
+			if err := sourceStore.Prune(ctx, missingIDs); err != nil {
+				return 0, 0, err
+			}
+
+			return len(candidateIDs), len(missingIDs), nil
+		},
+	})
+}
+
+//
+//
+
+type storeWrapper struct {
+	store store.Store
+}
+
+func (s *storeWrapper) Candidates(ctx context.Context, batchSize int) ([]int, error) {
+	return s.store.ReconcileCandidates(ctx, batchSize)
+}
+
+func (s *storeWrapper) Prune(ctx context.Context, ids []int) error {
 	// In the future we'll also want to explicitly mark these uploads as missing precise data so that
 	// they can be re-indexed or removed by an automatic janitor process. For now we just want to know
 	// *IF* this condition happens, so a Prometheus metric is sufficient.
-	j.operations.numReconcileDeletesFromFrontend.Add(float64(len(abandoned)))
 	return nil
 }
 
-// handleReconcileFromCodeintelDB removes data from the codeintel-db that has no correlated upload
-// in the frontend database.
-func (j reconcilerJob) handleReconcileFromCodeintelDB(ctx context.Context, batchSize int) (err error) {
-	ids, err := j.lsifstore.ReconcileCandidates(ctx, batchSize)
+func (s *storeWrapper) FilterExists(ctx context.Context, candidateIDs []int) ([]int, error) {
+	uploads, err := s.store.GetUploadsByIDsAllowDeleted(ctx, candidateIDs...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	j.operations.numReconcileScansFromCodeIntelDB.Add(float64(len(ids)))
-
-	uploads, err := j.store.GetUploadsByIDsAllowDeleted(ctx, ids...)
-	if err != nil {
-		return err
+	ids := make([]int, 0, len(uploads))
+	for _, upload := range uploads {
+		ids = append(ids, upload.ID)
 	}
 
-	found := map[int]struct{}{}
-	for _, dump := range uploads {
-		found[dump.ID] = struct{}{}
-	}
+	return ids, nil
+}
 
-	abandoned := ids[:0]
-	for _, id := range ids {
-		if _, ok := found[id]; ok {
-			continue
-		}
+type lsifStoreWrapper struct {
+	lsifstore lsifstore.LsifStore
+}
 
-		abandoned = append(abandoned, id)
-	}
+func (s *lsifStoreWrapper) Candidates(ctx context.Context, batchSize int) ([]int, error) {
+	return s.lsifstore.ReconcileCandidates(ctx, batchSize)
+}
 
-	if err := j.lsifstore.DeleteLsifDataByUploadIds(ctx, abandoned...); err != nil {
-		return err
-	}
+func (s *lsifStoreWrapper) Prune(ctx context.Context, ids []int) error {
+	return s.lsifstore.DeleteLsifDataByUploadIds(ctx, ids...)
+}
 
-	j.operations.numReconcileDeletesFromCodeIntelDB.Add(float64(len(abandoned)))
-	return nil
+func (s *lsifStoreWrapper) FilterExists(ctx context.Context, candidateIDs []int) ([]int, error) {
+	return s.lsifstore.IDsWithMeta(ctx, candidateIDs)
 }

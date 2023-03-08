@@ -1,13 +1,12 @@
 package autoindexing
 
 import (
-	"github.com/derision-test/glock"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	autoindexingstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -54,18 +53,40 @@ func NewResetters(observationCtx *observation.Context, db database.DB) []gorouti
 }
 
 func NewJanitorJobs(observationCtx *observation.Context, autoindexingSvc *Service, gitserver GitserverClient) []goroutine.BackgroundRoutine {
+	redMetrics := metrics.NewREDMetrics(
+		observationCtx.Registerer,
+		"codeintel_autoindexing_background_janitor",
+		metrics.WithLabels("op"),
+		metrics.WithCountHelp("Total number of method invocations."),
+	)
+
 	return []goroutine.BackgroundRoutine{
-		background.NewJanitor(
-			observationCtx,
+		background.NewUnknownRepositoryJanitor(
+			autoindexingSvc.store,
 			ConfigCleanupInst.Interval,
-			autoindexingSvc.store, gitserver, glock.NewRealClock(),
-			background.JanitorConfig{
-				MinimumTimeSinceLastCheck:      ConfigCleanupInst.MinimumTimeSinceLastCheck,
-				CommitResolverBatchSize:        ConfigCleanupInst.CommitResolverBatchSize,
-				CommitResolverMaximumCommitLag: ConfigCleanupInst.CommitResolverMaximumCommitLag,
-				FailedIndexBatchSize:           ConfigCleanupInst.FailedIndexBatchSize,
-				FailedIndexMaxAge:              ConfigCleanupInst.FailedIndexMaxAge,
-			},
+			observationCtx,
+			redMetrics,
+		),
+
+		background.NewUnknownCommitJanitor(
+			autoindexingSvc.store,
+			gitserver,
+			ConfigCleanupInst.Interval,
+			ConfigCleanupInst.CommitResolverBatchSize,
+			ConfigCleanupInst.MinimumTimeSinceLastCheck,
+			ConfigCleanupInst.CommitResolverMaximumCommitLag,
+			observationCtx,
+			redMetrics,
+		),
+
+		background.NewExpiredRecordJanitor(
+			autoindexingSvc.store,
+			gitserver,
+			ConfigCleanupInst.Interval,
+			ConfigCleanupInst.FailedIndexBatchSize,
+			ConfigCleanupInst.FailedIndexMaxAge,
+			observationCtx,
+			redMetrics,
 		),
 	}
 }
