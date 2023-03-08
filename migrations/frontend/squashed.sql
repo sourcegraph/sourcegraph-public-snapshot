@@ -5033,8 +5033,6 @@ CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING 
 
 CREATE INDEX batch_spec_workspaces_id_batch_spec_id ON batch_spec_workspaces USING btree (id, batch_spec_id);
 
-CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id);
-
 CREATE UNIQUE INDEX batch_specs_unique_rand_id ON batch_specs USING btree (rand_id);
 
 CREATE INDEX cached_available_indexers_num_events ON cached_available_indexers USING btree (num_events DESC) WHERE ((available_indexers)::text <> '{}'::text);
@@ -5052,8 +5050,6 @@ CREATE INDEX changeset_specs_created_at ON changeset_specs USING btree (created_
 CREATE INDEX changeset_specs_external_id ON changeset_specs USING btree (external_id);
 
 CREATE INDEX changeset_specs_head_ref ON changeset_specs USING btree (head_ref);
-
-CREATE INDEX changeset_specs_rand_id ON changeset_specs USING btree (rand_id);
 
 CREATE INDEX changeset_specs_title ON changeset_specs USING btree (title);
 
