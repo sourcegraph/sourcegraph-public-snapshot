@@ -653,6 +653,140 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 	})
 }
 
+func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
+	logger := logtest.Scoped(t)
+
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
+
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db, logger: logger}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx, nil)
+
+		require.EqualError(t, err, auth.ErrMustBeSiteAdmin.Error())
+		require.Nil(t, result)
+	})
+
+	t.Run("invalid sync job ID", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db, logger: logger}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.CancelPermissionsSyncJob(ctx,
+			&graphqlbackend.CancelPermissionsSyncJobArgs{
+				Job: graphqlbackend.MarshalRepositoryID(1337),
+			},
+		)
+
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+
+	t.Run("sync job not found", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(database.MockPermissionsSyncJobNotFoundErr)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+		r := &Resolver{db: db, logger: logger}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		result, err := r.CancelPermissionsSyncJob(ctx,
+			&graphqlbackend.CancelPermissionsSyncJobArgs{
+				Job: marshalPermissionsSyncJobID(1337),
+			},
+		)
+
+		require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
+		require.NoError(t, err)
+	})
+
+	t.Run("sync job successfully cancelled", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+		r := &Resolver{db: db, logger: logger}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		result, err := r.CancelPermissionsSyncJob(ctx,
+			&graphqlbackend.CancelPermissionsSyncJobArgs{
+				Job: marshalPermissionsSyncJobID(1337),
+			},
+		)
+
+		require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
+		require.NoError(t, err)
+	})
+}
+
+func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
+
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+	permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultHook(func(_ context.Context, reason string, jobID int) error {
+		if jobID == 1 && reason == "because" {
+			return nil
+		}
+		return errors.New("Oh no, something's wrong.")
+	})
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+	t.Run("sync job successfully canceled with reason", func(t *testing.T) {
+		graphqlbackend.RunTest(t, &graphqlbackend.Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: fmt.Sprintf(`
+				mutation {
+					cancelPermissionsSyncJob(
+						job: "%s",
+						reason: "because"
+					) {
+						alwaysNil
+					}
+				}
+			`, marshalPermissionsSyncJobID(1)),
+			ExpectedResult: `
+				{
+					"cancelPermissionsSyncJob": {
+						"alwaysNil": null
+					}
+				}
+			`,
+		})
+	})
+}
+
 func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
