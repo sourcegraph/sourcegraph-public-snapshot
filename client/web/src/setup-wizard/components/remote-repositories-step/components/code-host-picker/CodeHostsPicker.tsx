@@ -15,7 +15,7 @@ const SUPPORTED_CODE_HOSTS = [
     ExternalServiceKind.BITBUCKETSERVER,
     ExternalServiceKind.AWSCODECOMMIT,
     ExternalServiceKind.GITOLITE,
-    ExternalServiceKind.AZUREDEVOPS
+    ExternalServiceKind.AZUREDEVOPS,
 ]
 
 export const CodeHostsPicker: FC = () => (
