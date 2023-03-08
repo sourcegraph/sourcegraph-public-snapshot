@@ -79,14 +79,22 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                         <span className={styles.itemDescription}>
                             <span className={styles.itemTitle}>
                                 {codeHost.displayName}
-                                { codeHost.lastSyncAt === null &&  <small><LoadingSpinner /></small> }
+                                {codeHost.lastSyncAt === null && (
+                                    <small>
+                                        <LoadingSpinner />
+                                    </small>
+                                )}
                             </span>
                             <small className={styles.itemDescriptionStatus}>
                                 {codeHost.lastSyncAt !== null && <>Synced, {codeHost.repoCount} repositories found</>}
                                 {codeHost.lastSyncAt === null && (
                                     <>
-                                       Syncing {codeHost.repoCount > 0 && (
-                                            <>, so far {codeHost.repoCount} {pluralize('repository', codeHost.repoCount ?? 0, 'repositories')} found</>
+                                        Syncing{' '}
+                                        {codeHost.repoCount > 0 && (
+                                            <>
+                                                , so far {codeHost.repoCount}{' '}
+                                                {pluralize('repository', codeHost.repoCount ?? 0, 'repositories')} found
+                                            </>
                                         )}
                                     </>
                                 )}

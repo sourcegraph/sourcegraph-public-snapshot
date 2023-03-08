@@ -227,7 +227,9 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
         const repoQueryWithNoAffiliated = reposQuery.filter(token => token !== 'affiliated')
         const nextReposQuery = event.target.checked
             ? [...reposQuery, 'affiliated']
-            : repoQueryWithNoAffiliated.length > 0 ? repoQueryWithNoAffiliated : undefined
+            : repoQueryWithNoAffiliated.length > 0
+            ? repoQueryWithNoAffiliated
+            : undefined
 
         configurationField.input.onChange(modify(configurationField.input.value, ['repositoryQuery'], nextReposQuery))
     }
