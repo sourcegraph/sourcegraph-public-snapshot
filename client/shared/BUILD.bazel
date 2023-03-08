@@ -256,7 +256,6 @@ ts_project(
         "src/react-shortcuts/ShortcutProvider.tsx",
         "src/react-shortcuts/index.ts",
         "src/react-shortcuts/keys.ts",
-        "src/schema.ts",
         "src/schema/extensionSchema.ts",
         "src/schema/settings.schema.d.ts",  #keep
         "src/search/backend.ts",
