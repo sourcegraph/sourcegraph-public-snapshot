@@ -3,6 +3,7 @@ package scim
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -134,6 +135,13 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 			if savedEmail.Email == email {
 				savedEmail.VerifiedAt = &verifiedDate
 			}
+		}
+		return nil
+	})
+
+	userEmailsStore.SetPrimaryEmailFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string) error {
+		for _, savedEmail := range userEmails[userID] {
+			savedEmail.Primary = strings.EqualFold(savedEmail.Email, email)
 		}
 		return nil
 	})

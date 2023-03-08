@@ -17,12 +17,14 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 	t.Parallel()
 
 	db := getMockDB([]*types.UserForSCIM{
-		{User: types.User{ID: 1}},
-		{User: types.User{ID: 2, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
-		{User: types.User{ID: 3}},
+		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
+		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id2"},
+		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id3"},
 	},
 		map[int32][]*database.UserEmail{
+			1: {&database.UserEmail{UserID: 2, Email: "a@example.com", VerifiedAt: &verifiedDate}},
 			2: {&database.UserEmail{UserID: 2, Email: "a@example.com", VerifiedAt: &verifiedDate}},
+			3: {&database.UserEmail{UserID: 2, Email: "a@example.com", VerifiedAt: &verifiedDate}},
 		})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 
@@ -34,7 +36,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 	}{
 		{
 			name:   "replace username",
-			userId: "2",
+			userId: "1",
 			attrs: scim.ResourceAttributes{
 				AttrUserName: "user6",
 			},
@@ -70,7 +72,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 		},
 		{
 			name:   "replace many",
-			userId: "2",
+			userId: "3",
 			attrs: scim.ResourceAttributes{
 				AttrDisplayName: "Test User",
 				AttrNickName:    "testy",

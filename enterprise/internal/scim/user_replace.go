@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/elimity-com/scim"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -47,7 +48,7 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 		}
 
 		// Save user
-		return updateUser(r.Context(), tx, user, userRes.Attributes)
+		return updateUser(r.Context(), makeGetDB(tx, h.db), user, userRes.Attributes, true)
 	})
 	if err != nil {
 		return scim.Resource{}, err
