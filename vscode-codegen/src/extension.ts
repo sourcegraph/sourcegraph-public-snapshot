@@ -178,6 +178,9 @@ function configure(
 		vscode.commands.registerCommand('cody.recipe.generate-docstring', async () =>
 			executeRecipe('generateDocstring')
 		),
+		vscode.commands.registerCommand('cody.recipe.improve-variable-names', async () =>
+			executeRecipe('improveVariableNames')
+		),
 		vscode.commands.registerCommand('cody.recipe.translate-to-language', async () =>
 			executeRecipe('translateToLanguage')
 		),

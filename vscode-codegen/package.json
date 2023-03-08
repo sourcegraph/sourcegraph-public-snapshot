@@ -87,6 +87,10 @@
         "title": "Cody: Recent History"
       },
       {
+        "command": "cody.recipe.improve-variable-names",
+        "title": "Ask Cody: Improve Variable Names"
+      },
+      {
         "command": "cody.set-access-token",
         "title": "Cody: Set Access Token"
       },
@@ -168,6 +172,9 @@
         },
         {
           "command": "cody.recipe.generate-docstring"
+        },
+        {
+          "command": "cody.recipe.improve-variable-names"
         },
         {
           "command": "cody.recipe.translate-to-language"

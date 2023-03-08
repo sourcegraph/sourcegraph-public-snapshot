@@ -2,6 +2,7 @@ import { ExplainCodeDetailed, ExplainCodeHighLevel } from './explainCode'
 import { GenerateDocstring } from './generateDocstring'
 import { GenerateTest } from './generateTest'
 import { GitHistory } from './gitLog'
+import { ImproveVariableNames } from './improveVariableNames'
 import { Recipe } from './recipe'
 import { TranslateToLanguage } from './translate'
 
@@ -21,8 +22,9 @@ function init() {
 		new ExplainCodeHighLevel(),
 		new GenerateDocstring(),
 		new GenerateTest(),
-		new TranslateToLanguage(),
 		new GitHistory(),
+		new ImproveVariableNames(),
+		new TranslateToLanguage(),
 	]
 
 	for (const recipe of recipes) {
