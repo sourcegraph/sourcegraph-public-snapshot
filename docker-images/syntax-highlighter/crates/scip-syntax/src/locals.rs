@@ -369,8 +369,12 @@ pub fn parse_tree<'a>(
                 node,
             });
         } else {
-            let scope =
-                scope.expect("if there is no definition or reference, there must be a scope");
+            assert!(
+                scope.is_some(),
+                "if there is no definition or reference, there must be a scope: {:?}",
+                node,
+            );
+            let scope = scope.unwrap();
             scopes.push(Scope::new(scope.node));
         }
     }
@@ -463,6 +467,18 @@ mod test {
     fn test_can_do_functions() -> Result<()> {
         let mut config = crate::languages::go_locals();
         let source_code = include_str!("../testdata/funcs.go");
+        let doc = parse_file_for_lang(&mut config, source_code)?;
+
+        let dumped = dump_document(&doc, source_code);
+        insta::assert_snapshot!(dumped);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_do_perl() -> Result<()> {
+        let mut config = crate::languages::perl_locals();
+        let source_code = include_str!("../testdata/perl.pm");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
         let dumped = dump_document(&doc, source_code);
