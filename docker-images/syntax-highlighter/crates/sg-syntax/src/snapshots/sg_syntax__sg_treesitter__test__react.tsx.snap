@@ -3,18 +3,18 @@ source: crates/sg-syntax/src/sg_treesitter.rs
 expression: "dump_document(&document, &contents)"
 ---
   const Component: React.FunctionComponent<{}> = () => {
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^ IdentifierFunction 
 //                 ^^^^^ Identifier 
 //                       ^^^^^^^^^^^^^^^^^ IdentifierType 
       let name = 'id'
-//    ^^^ IdentifierKeyword 
+//    ^^^ Keyword 
 //        ^^^^ Identifier 
 //               ^ StringLiteral 
 //                ^^ StringLiteral 
 //                  ^ StringLiteral 
       return (
-//    ^^^^^^ IdentifierKeyword 
+//    ^^^^^^ Keyword 
           <div>
 //         ^^^ Identifier 
               <h1 id={name}>My Component</h1>

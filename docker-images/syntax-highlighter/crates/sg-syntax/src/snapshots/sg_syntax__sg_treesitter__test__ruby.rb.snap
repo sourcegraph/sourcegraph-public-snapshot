@@ -90,7 +90,7 @@ expression: "dump_document(&document, &contents)"
   # Control flow
 //^^^^^^^^^^^^^^ Comment 
   if foo == "bar"
-//^^ IdentifierKeyword 
+//^^ Keyword 
 //   ^^^ Identifier 
 //          ^ StringLiteral 
 //           ^^^ StringLiteral 
@@ -101,7 +101,7 @@ expression: "dump_document(&document, &contents)"
 //        ^^^^^^^^^^^ StringLiteral 
 //                   ^ StringLiteral 
   elsif foo == "baz"
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^ Identifier 
 //             ^ StringLiteral 
 //              ^^^ StringLiteral 
@@ -112,25 +112,25 @@ expression: "dump_document(&document, &contents)"
 //        ^^^^^^^^^^^ StringLiteral 
 //                   ^ StringLiteral 
   else
-//^^^^ IdentifierKeyword 
+//^^^^ Keyword 
     puts "Foo is something else!"
 //  ^^^^ IdentifierFunction 
 //       ^ StringLiteral 
 //        ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
 //                              ^ StringLiteral 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   # Methods
 //^^^^^^^^^ Comment 
   def hello
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^ IdentifierFunction 
     "Hello!"
 //  ^ StringLiteral 
 //   ^^^^^^ StringLiteral 
 //         ^ StringLiteral 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   puts hello # Prints "Hello!"
 //^^^^ IdentifierFunction 
 //     ^^^^^ Identifier 
@@ -138,19 +138,19 @@ expression: "dump_document(&document, &contents)"
   # Classes
 //^^^^^^^^^ Comment 
   class Dog
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^ Identifier 
     def bark
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^^^^ IdentifierFunction 
       "Woof!"
 //    ^ StringLiteral 
 //     ^^^^^ StringLiteral 
 //          ^ StringLiteral 
     end
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   fido = Dog.new
 //^^^^ Identifier 
 //     ^ IdentifierOperator 
@@ -163,14 +163,14 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^^^^^^^^ Comment 
   
   class Person
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ Identifier 
     @@count = 0
 //  ^^^^^^^ IdentifierAttribute 
 //          ^ IdentifierOperator 
 //            ^ NumericLiteral 
     def initialize(name)
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^^^^^^^^^^ IdentifierFunction 
 //                 ^^^^ IdentifierParameter 
       @name = name
@@ -181,9 +181,9 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^^^ IdentifierAttribute 
 //               ^ NumericLiteral 
     end
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
     def greet
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
 //      ^^^^^ IdentifierFunction 
       puts "Hello, I'm #{@name}! Count is #{@@count}"
 //    ^^^^ IdentifierFunction 
@@ -198,9 +198,9 @@ expression: "dump_document(&document, &contents)"
 //                                                 ^ StringLiteralEscape 
 //                                                  ^ StringLiteral 
     end
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   # Usage:
 //^^^^^^^^ Comment 
   person = Person.new("John")
@@ -217,7 +217,7 @@ expression: "dump_document(&document, &contents)"
 //             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   
   def banana
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^ IdentifierFunction 
     File.open('foobar', mode: 'w') do |banana|
 //  ^^^^ Identifier 
@@ -229,7 +229,7 @@ expression: "dump_document(&document, &contents)"
 //                            ^ StringLiteral 
 //                             ^ StringLiteral 
 //                              ^ StringLiteral 
-//                                 ^^ IdentifierKeyword 
+//                                 ^^ Keyword 
 //                                     ^^^^^^ IdentifierParameter 
             banana << "yummy\n"
 //          ^^^^^^ Identifier 
@@ -238,10 +238,10 @@ expression: "dump_document(&document, &contents)"
 //                          ^^ StringLiteralEscape 
 //                            ^ StringLiteral 
     end
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
   
     if __FILE__ == $0
-//  ^^ IdentifierKeyword 
+//  ^^ Keyword 
 //     ^^^^^^^^ IdentifierBuiltin 
 //                 ^^ Identifier 
       output_path = File.dirname($0) + 'snapshots.txt'
@@ -254,14 +254,14 @@ expression: "dump_document(&document, &contents)"
 //                                      ^^^^^^^^^^^^^ StringLiteral 
 //                                                   ^ StringLiteral 
     end
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
   
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   
   
   def regexp
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^ IdentifierFunction 
     regex = /foo\.bar/
 //  ^^^^^ Identifier 
@@ -312,10 +312,10 @@ expression: "dump_document(&document, &contents)"
     # Matches "f.o" (with a literal .)
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   
   def interpolation
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^^^^ IdentifierFunction 
     STDERR.puts "Parsing #{something.sub(another_thing, '')}"
 //  ^^^^^^ Identifier 
@@ -353,10 +353,10 @@ expression: "dump_document(&document, &contents)"
 //         ^ StringLiteral 
 //          ^ StringLiteral 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
   
   def more_stuff(mine)
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 //    ^^^^^^^^^^ IdentifierFunction 
 //               ^^^^ IdentifierParameter 
     text = mine.foos().qux(&:horse).join.strip
@@ -369,17 +369,17 @@ expression: "dump_document(&document, &contents)"
 //                                  ^^^^ IdentifierFunction 
 //                                       ^^^^^ IdentifierFunction 
     if text.empty?
-//  ^^ IdentifierKeyword 
+//  ^^ Keyword 
 //     ^^^^ Identifier 
 //          ^^^^^^ IdentifierFunction 
       nil
 //    ^^^ IdentifierNull 
     else
-//  ^^^^ IdentifierKeyword 
+//  ^^^^ Keyword 
       text
 //    ^^^^ Identifier 
     end
-//  ^^^ IdentifierKeyword 
+//  ^^^ Keyword 
   end
-//^^^ IdentifierKeyword 
+//^^^ Keyword 
 
