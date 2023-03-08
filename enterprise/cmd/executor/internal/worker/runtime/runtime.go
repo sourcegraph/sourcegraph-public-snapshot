@@ -2,8 +2,11 @@ package runtime
 
 import (
 	"context"
+	"os"
 
 	"github.com/sourcegraph/log"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
@@ -71,6 +74,22 @@ func New(
 		}
 	}
 
+	if _, found := os.LookupEnv("KUBERNETES_SERVICE_HOST"); found {
+		logger.Info("using runtime 'kubernetes'")
+		config, err := clientcmd.BuildConfigFromFlags("", "/Users/randell/.kube/config")
+		if err != nil {
+			return nil, err
+		}
+		clientset, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			return nil, err
+		}
+		return &kubernetesRuntime{
+			clientset:  clientset,
+			operations: ops,
+		}, nil
+	}
+
 	// Default to Docker runtime.
 	if err := util.ValidateDockerTools(runner); err != nil {
 		var errMissingTools *util.ErrMissingTools
@@ -101,4 +120,5 @@ type Name string
 const (
 	NameDocker      Name = "docker"
 	NameFirecracker Name = "firecracker"
+	NameKubernetes  Name = "kubernetes"
 )
