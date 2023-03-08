@@ -12,6 +12,27 @@ export const CODE_HOST_FRAGMENT = gql`
     }
 `
 
+export const GET_LOCAL_DIRECTORY_PATH = gql`
+    query GetLocalDirectoryPath {
+        localDirectoryPicker {
+            path
+        }
+    }
+`
+
+export const DISCOVER_LOCAL_REPOSITORIES = gql`
+    query DiscoverLocalRepositories($dir: String!) {
+        localDirectory(dir: $dir) {
+            path
+            repositories {
+                __typename
+                path
+                name
+            }
+        }
+    }
+`
+
 export const GET_CODE_HOSTS = gql`
     query GetCodeHosts {
         externalServices {

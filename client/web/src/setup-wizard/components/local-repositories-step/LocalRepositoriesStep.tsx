@@ -1,14 +1,19 @@
-import { FC, HTMLAttributes, MouseEvent, useState, useEffect } from 'react'
+import { FC, HTMLAttributes, useState, useEffect } from 'react'
 
-import { mdiInformationOutline, mdiPlus, mdiGit, mdiPencil } from '@mdi/js'
+import { mdiInformationOutline, mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Button, Container, Icon, Input, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Container, Icon, Input, Text } from '@sourcegraph/wildcard'
 
 import { GetCodeHostsResult, ExternalServiceKind, RepositoriesResult } from '../../../graphql-operations'
 import { ProgressBar } from '../ProgressBar'
-import { GET_CODE_HOSTS, GET_REPOSITORIES_BY_SERVICE } from '../remote-repositories-step/queries'
+import {
+    GET_LOCAL_DIRECTORY_PATH,
+    DISCOVER_LOCAL_REPOSITORIES,
+    GET_CODE_HOSTS,
+    GET_REPOSITORIES_BY_SERVICE,
+} from '../remote-repositories-step/queries'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -23,6 +28,17 @@ interface ExternalService {
     displayName: string
     lastSyncAt: string | null
     nextSyncAt: string | null
+}
+
+interface LocalDirectoryResult {
+    __typename: 'ExternalService'
+    path: string
+    repositories: LocalRepository[]
+}
+
+interface LocalRepository {
+    name: string
+    path: string
 }
 
 export interface Repository {
@@ -52,8 +68,13 @@ interface LocalRepositoriesStepProps extends HTMLAttributes<HTMLDivElement> {}
 export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     const { className, ...attributes } = props
     const [localServices, setLocalServices] = useState<ExternalService>()
-    const [foundRepositories, setFoundRepositories] = useState<RepositoriesResult>()
-    const [editLocalService, setEditLocalService] = useState<boolean>(false)
+
+    const [foundRepositories, setFoundRepositories] = useState<any[]>()
+
+    const [directoryPicker, setDirectoryPicker] = useState<boolean>(false)
+    const [directoryPath, setDirectoryPath] = useState<string>('')
+
+    const filePickerAvailable = !!window.context.localFilePickerAvailable
 
     // TODO: Trade out for getLocalServices() or extended externalServices(kind: "OTHER") if/when available
     const { data } = useQuery<GetCodeHostsResult>(GET_CODE_HOSTS, {
@@ -83,21 +104,42 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     })
 
     useEffect(() => {
-        setFoundRepositories(repoData)
+        setFoundRepositories(repoData?.repositories?.nodes)
     }, [repoData])
 
+    // TODO: Fix bug, dir picker fires on initial load
+    const { data: localDirectoryPath } = useQuery<LocalDirectoryResult>(GET_LOCAL_DIRECTORY_PATH, {
+        variables: {
+            skip: !directoryPicker,
+        },
+    })
+
+    const { data: discoveredRepositories } = useQuery<LocalDirectoryResult>(DISCOVER_LOCAL_REPOSITORIES, {
+        variables: {
+            skip: !directoryPath,
+            dir: directoryPath,
+        },
+    })
+
+    useEffect(() => {
+        setFoundRepositories(discoveredRepositories?.localDirectory?.repositories)
+    }, [discoveredRepositories])
+
+    useEffect(() => {
+        setDirectoryPath(localDirectoryPath?.localDirectoryPicker?.path)
+
+        if (directoryPath) {
+            setDirectoryPicker(false)
+        }
+    }, [localDirectoryPath])
+
     const handleRepoPicker = (): void => {
-        if (window.context.runningOnMacOS) {
-            // TODO: Implement BE file picker (getAbsolutePath()) --> https://github.com/sourcegraph/sourcegraph/issues/48127
-            // onRepositoryDiscovery(,path)
+        if (filePickerAvailable) {
+            setDirectoryPicker(true)
         }
 
-        setEditLocalService(true)
-    }
-
-    const onRepositoryDiscovery = (event?: MouseEvent<HTMLElement>, path?: string): void => {
-        // const { data: discoveredRepos } = getDiscoveredRepositories(event?.target?.value || path)
-        // setFoundRepositories(discoveredRepos)
+        // TODO: Cancel edit logic
+        // TODO: Fallback for non-Mac users, discover repos with simple input
     }
 
     const onConnect = (): void => {
@@ -109,106 +151,81 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
             <Text className="mb-2">Add your local repositories.</Text>
 
             <Container>
-                {foundRepositories?.repositories?.nodes.length ? (
-                    <>
-                        {editLocalService ? (
-                            <LocalRepositoryForm
-                                onFind={() => onRepositoryDiscovery()}
-                                onCancel={() => setEditLocalService(false)}
-                            />
-                        ) : (
-                            <li className={classNames(styles.item, 'd-flex align-items-center p-2')}>
-                                <Icon svgPath={mdiGit} aria-hidden={true} className="my-auto mr-3" />
-                                <Text weight="medium" className="mb-0">
-                                    Path: /User/Projects
-                                </Text>
-
-                                <Tooltip content="Edit service" placement="right" debounce={0}>
-                                    <Button
-                                        onClick={() => setEditLocalService(true)}
-                                        variant="secondary"
-                                        className={classNames('ml-auto p-2', styles.button)}
-                                    >
-                                        <Icon svgPath={mdiPencil} aria-label="Edit code host connection" />
-                                    </Button>
-                                </Tooltip>
-                            </li>
-                        )}
-
-                        <ul className={styles.list}>
-                            {foundRepositories?.repositories?.nodes.map((codeHost, index) => (
-                                <li
-                                    key={codeHost.id}
-                                    className={classNames(
-                                        'ml-3 p-2 d-flex',
-                                        index + 1 !== foundRepositories?.repositories?.nodes.length && styles.itemBorder
-                                    )}
-                                >
-                                    <Icon svgPath={mdiGit} aria-hidden={true} className="mt-1 mr-3" />
-                                    <div className="d-flex flex-column">
-                                        {/* TODO: Replace with SG relative path when available */}
-                                        <Text weight="medium" className="mb-0">
-                                            {codeHost.url}
-                                        </Text>
-                                        {/* TODO: Replace with absolute path when available */}
-                                        <Text size="small" className="text-muted mb-0">
-                                            {codeHost.url}
-                                        </Text>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+                <>
+                    <div className="d-flex w-100">
+                        <Input
+                            placeholder="Users/user-name/Projects/"
+                            disabled={filePickerAvailable}
+                            value={directoryPath || ''}
+                            className="mb-0 pr-1 col-6"
+                        />
 
                         <LoaderButton
                             type="submit"
                             variant="primary"
-                            className="ml-auto mr-2"
                             size="sm"
-                            label="Connect"
-                            onClick={onConnect}
+                            label="Pick a path"
+                            onClick={() => handleRepoPicker()}
                             alwaysShowLabel={true}
                             loading={false}
-                            disabled={editLocalService}
+                            disabled={false}
                         />
-                    </>
-                ) : (
-                    <>
-                        {editLocalService ? (
-                            <LocalRepositoryForm
-                                onFind={() => onRepositoryDiscovery()}
-                                onCancel={() => setEditLocalService(false)}
-                            />
-                        ) : (
-                            <Button
-                                onClick={handleRepoPicker}
-                                variant="secondary"
-                                className={classNames('w-100 d-flex align-items-center', styles.button)}
-                                outline={true}
-                            >
-                                <Icon svgPath={mdiPlus} aria-hidden={true} height={26} width={26} />
-                                <div className="ml-2">
-                                    <Text weight="medium" className="text-left mb-0">
-                                        Add existing local repositories.
-                                    </Text>
-                                    <Text size="small" className="text-muted text-left mb-0">
-                                        Multiple folders can be selected at once.
-                                    </Text>
-                                </div>
+
+                        {foundRepositories?.length && (
+                            <Button size="sm" variant="secondary" className="ml-2">
+                                Cancel
                             </Button>
                         )}
+                    </div>
 
-                        <Text weight="bold" className="d-flex align-items-center mb-0 mt-3 font-weight-bold text-muted">
-                            <Icon
-                                svgPath={mdiInformationOutline}
-                                className="mr-2 mx-2"
-                                inline={false}
-                                aria-hidden={true}
-                                height={22}
-                                width={22}
-                            />
-                            To get started, add at least one local repository to Sourcegraph.
-                        </Text>
-                    </>
+                    <ul className={styles.list}>
+                        {/* TODO: Add loading & error state */}
+                        {foundRepositories?.map((codeHost, index) => (
+                            <li
+                                key={codeHost.path}
+                                className={classNames(
+                                    'ml-3 p-2 d-flex',
+                                    index + 1 !== foundRepositories?.length && styles.itemBorder
+                                )}
+                            >
+                                <Icon svgPath={mdiGit} aria-hidden={true} className="mt-1 mr-3" />
+                                <div className="d-flex flex-column">
+                                    <Text weight="medium" className="mb-0">
+                                        {codeHost.name}
+                                    </Text>
+                                    <Text size="small" className="text-muted mb-0">
+                                        {codeHost.path}
+                                    </Text>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </>
+
+                {foundRepositories?.length ? (
+                    <LoaderButton
+                        type="submit"
+                        variant="primary"
+                        className="ml-auto mr-2"
+                        size="sm"
+                        label="Connect"
+                        onClick={onConnect}
+                        alwaysShowLabel={true}
+                        loading={false}
+                        disabled={false}
+                    />
+                ) : (
+                    <Text weight="bold" className="d-flex align-items-center mb-0 mt-3 font-weight-bold text-muted">
+                        <Icon
+                            svgPath={mdiInformationOutline}
+                            className="mr-2 mx-2"
+                            inline={false}
+                            aria-hidden={true}
+                            height={22}
+                            width={22}
+                        />
+                        Pick a path to see a list of local repositories that you want to have in the Sourcegraph App.
+                    </Text>
                 )}
             </Container>
 
@@ -218,36 +235,6 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
 
             {/* TODO: Skip button logic */}
             <CustomNextButton label="Skip" disabled={false} />
-        </div>
-    )
-}
-
-interface LocalRepositoryFormProps {
-    onFind: () => void
-    onCancel: () => void
-}
-
-const LocalRepositoryForm: FC<LocalRepositoryFormProps> = ({ onFind, onCancel }) => {
-    return (
-        <div className="d-flex w-100">
-            <Input label="Project path" placeholder="user/path/repo-1" className="mb-0 col-5" />
-
-            <div className="d-flex align-items-end mb-1 col-5">
-                <LoaderButton
-                    type="submit"
-                    variant="primary"
-                    size="sm"
-                    label="Find repositories"
-                    onClick={onFind}
-                    alwaysShowLabel={true}
-                    loading={false}
-                    disabled={false}
-                />
-
-                <Button size="sm" onClick={onCancel} variant="secondary" className="ml-2">
-                    Cancel
-                </Button>
-            </div>
         </div>
     )
 }
