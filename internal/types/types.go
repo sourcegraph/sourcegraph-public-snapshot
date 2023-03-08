@@ -825,6 +825,7 @@ type User struct {
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	Searchable            bool
+	SCIMControlled        bool
 }
 
 // UserForSCIM extends user with email addresses and SCIM external ID.
