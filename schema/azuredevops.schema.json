@@ -69,8 +69,8 @@
         }
       },
       "examples": [
-        [{ "name": "myproject/myrepo" }],
-        [{ "name": "myproject/myrepo" }, { "name": "myproject/myotherrepo" }, { "pattern": "^topsecretproject/.*" }]
+        [{ "name": "myorg/myproject/myrepo" }],
+        [{ "name": "myorg/myproject/myrepo" }, { "name": "myorg/myproject/myotherrepo" }, { "pattern": "^topsecretproject/.*" }]
       ]
     }
   }
