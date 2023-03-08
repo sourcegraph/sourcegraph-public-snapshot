@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,7 +18,6 @@ func NewUnknownRepositoryJanitor(
 	store store.Store,
 	interval time.Duration,
 	observationCtx *observation.Context,
-	metrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.autoindexing.janitor.unknown-repository"
 
@@ -27,7 +25,7 @@ func NewUnknownRepositoryJanitor(
 		Name:        name,
 		Description: "Removes index records associated with an unknown repository.",
 		Interval:    interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, metrics, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.DeleteIndexesWithoutRepository(ctx, time.Now())
 		},
@@ -45,7 +43,6 @@ func NewUnknownCommitJanitor(
 	minimumTimeSinceLastCheck time.Duration,
 	commitResolverMaximumCommitLag time.Duration,
 	observationCtx *observation.Context,
-	metrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.autoindexing.janitor.unknown-commit"
 
@@ -53,7 +50,7 @@ func NewUnknownCommitJanitor(
 		Name:        name,
 		Description: "Removes index records associated with an unknown commit.",
 		Interval:    interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, metrics, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.ProcessStaleSourcedCommits(
 				ctx,
@@ -98,7 +95,6 @@ func NewExpiredRecordJanitor(
 	batchSize int,
 	maxAge time.Duration,
 	observationCtx *observation.Context,
-	metrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.autoindexing.janitor.expired"
 
@@ -106,7 +102,7 @@ func NewExpiredRecordJanitor(
 		Name:        name,
 		Description: "Removes old index records",
 		Interval:    interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, metrics, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.ExpireFailedRecords(ctx, batchSize, maxAge, time.Now())
 		},

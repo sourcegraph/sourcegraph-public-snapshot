@@ -6,6 +6,17 @@ import (
 )
 
 func CodeIntelUploads() *monitoring.Dashboard {
+	groups := []monitoring.Group{
+		shared.CodeIntelligence.NewUploadsServiceGroup("${source:regex}"),
+		shared.CodeIntelligence.NewUploadsStoreGroup("${source:regex}"),
+		shared.CodeIntelligence.NewUploadsGraphQLTransportGroup("${source:regex}"),
+		shared.CodeIntelligence.NewUploadsHTTPTransportGroup("${source:regex}"),
+		shared.CodeIntelligence.NewCommitGraphQueueGroup("${source:regex}"),
+		shared.CodeIntelligence.NewUploadsExpirationTaskGroup("${source:regex}"),
+	}
+	groups = append(groups, shared.CodeIntelligence.NewJanitorTaskGroups("${source:regex}")...)
+	groups = append(groups, shared.CodeIntelligence.NewReconcilerTaskGroups("${source:regex}")...)
+
 	return &monitoring.Dashboard{
 		Name:        "codeintel-uploads",
 		Title:       "Code Intelligence > Uploads",
@@ -23,15 +34,6 @@ func CodeIntelUploads() *monitoring.Dashboard {
 				Multi:            false,
 			},
 		},
-		Groups: []monitoring.Group{
-			shared.CodeIntelligence.NewUploadsServiceGroup("${source:regex}"),
-			shared.CodeIntelligence.NewUploadsStoreGroup("${source:regex}"),
-			shared.CodeIntelligence.NewUploadsGraphQLTransportGroup("${source:regex}"),
-			shared.CodeIntelligence.NewUploadsHTTPTransportGroup("${source:regex}"),
-			shared.CodeIntelligence.NewCommitGraphQueueGroup("${source:regex}"),
-			shared.CodeIntelligence.NewUploadsExpirationTaskGroup("${source:regex}"),
-			shared.CodeIntelligence.NewJanitorTaskGroup("${source:regex}"),
-			shared.CodeIntelligence.NewReconcilerTaskGroup("${source:regex}"),
-		},
+		Groups: groups,
 	}
 }

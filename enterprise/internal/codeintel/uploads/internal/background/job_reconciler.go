@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -18,7 +17,6 @@ func NewFrontendDBReconciler(
 	interval time.Duration,
 	batchSize int,
 	observationCtx *observation.Context,
-	redMetrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	return newReconciler(
 		"codeintel.uploads.reconciler.frontend-db",
@@ -29,7 +27,6 @@ func NewFrontendDBReconciler(
 		interval,
 		batchSize,
 		observationCtx,
-		redMetrics,
 	)
 }
 
@@ -39,7 +36,6 @@ func NewCodeIntelDBReconciler(
 	interval time.Duration,
 	batchSize int,
 	observationCtx *observation.Context,
-	redMetrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	return newReconciler(
 		"codeintel.uploads.reconciler.codeintel-db",
@@ -50,7 +46,6 @@ func NewCodeIntelDBReconciler(
 		interval,
 		batchSize,
 		observationCtx,
-		redMetrics,
 	)
 }
 
@@ -75,13 +70,12 @@ func newReconciler(
 	interval time.Duration,
 	batchSize int,
 	observationCtx *observation.Context,
-	redMetrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
 		Name:        name,
 		Description: description,
 		Interval:    interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, redMetrics, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			candidateIDs, err := sourceStore.Candidates(ctx, batchSize)
 			if err != nil {

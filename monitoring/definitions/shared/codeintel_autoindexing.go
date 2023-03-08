@@ -218,7 +218,25 @@ func (codeIntelligence) NewLuasandboxServiceGroup(containerName string) monitori
 	})
 }
 
-func (codeIntelligence) NewAutoindexingJanitorTaskGroup(containerName string) monitoring.Group {
-	// TODO
-	return CodeIntelligence.newJanitorGroup("Codeintel: Autoindexing > Janitor task", containerName)
+// Tasks:
+//   - codeintel_autoindexing_janitor_unknown_repository
+//   - codeintel_autoindexing_janitor_unknown_commit
+//   - codeintel_autoindexing_janitor_expired
+//
+// Suffixes:
+//   - _total
+//   - _duration_seconds_bucket
+//   - _errors_total
+//   - _records_scanned_total
+//   - _records_altered_total
+func (codeIntelligence) NewAutoindexingJanitorTaskGroups(containerName string) []monitoring.Group {
+	return CodeIntelligence.newJanitorGroups(
+		"Autoindexing > Janitor task",
+		containerName,
+		[]string{
+			"codeintel_autoindexing_janitor_unknown_repository",
+			"codeintel_autoindexing_janitor_unknown_commit",
+			"codeintel_autoindexing_janitor_expired",
+		},
+	)
 }

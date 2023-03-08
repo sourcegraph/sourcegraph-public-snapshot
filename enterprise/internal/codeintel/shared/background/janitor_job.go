@@ -31,10 +31,22 @@ type JanitorMetrics struct {
 
 func NewJanitorMetrics(
 	observationCtx *observation.Context,
-	redMetrics *metrics.REDMetrics,
 	name string,
 	recordTypeName string,
 ) *JanitorMetrics {
+	replacer := strings.NewReplacer(
+		".", "_",
+		"-", "_",
+	)
+	metricName := replacer.Replace(name)
+
+	redMetrics := metrics.NewREDMetrics(
+		observationCtx.Registerer,
+		metricName,
+		metrics.WithLabels("op"),
+		metrics.WithCountHelp("Total number of method invocations."),
+	)
+
 	op := func(name string) *observation.Operation {
 		return observationCtx.Operation(observation.Op{
 			Name:              name,
@@ -53,17 +65,12 @@ func NewJanitorMetrics(
 		return counter
 	}
 
-	replacer := strings.NewReplacer(
-		".", "_",
-		"-", "_",
-	)
-
 	numRecordsScanned := counter(
-		fmt.Sprintf("src_%s_records_scanned_total", replacer.Replace(name)),
+		fmt.Sprintf("src_%s_records_scanned_total", metricName),
 		fmt.Sprintf("The number of %s records scanned by %s.", recordTypeName, name),
 	)
 	numRecordsAltered := counter(
-		fmt.Sprintf("src_%s_records_altered_total", replacer.Replace(name)),
+		fmt.Sprintf("src_%s_records_altered_total", metricName),
 		fmt.Sprintf("The number of %s records altered by %s.", recordTypeName, name),
 	)
 

@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -23,7 +22,6 @@ func NewDeletedRepositoryJanitor(
 	store store.Store,
 	interval time.Duration,
 	observationCtx *observation.Context,
-	redMetrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.janitor.unknown-repository"
 
@@ -31,7 +29,7 @@ func NewDeletedRepositoryJanitor(
 		Name:        name,
 		Description: "Removes upload records associated with an unknown repository.",
 		Interval:    interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, redMetrics, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.DeleteUploadsWithoutRepository(ctx, time.Now())
 		},
@@ -49,7 +47,6 @@ func NewUnknownCommitJanitor(
 	minimumTimeSinceLastCheck time.Duration,
 	commitResolverMaximumCommitLag time.Duration,
 	observationCtx *observation.Context,
-	redMetrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.janitor.unknown-commit"
 
@@ -57,7 +54,7 @@ func NewUnknownCommitJanitor(
 		Name:        name,
 		Description: "Removes upload records associated with an unknown commit.",
 		Interval:    interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, redMetrics, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.ProcessSourcedCommits(
 				ctx,
@@ -101,7 +98,6 @@ func NewAbandonedUploadJanitor(
 	interval time.Duration,
 	uploadTimeout time.Duration,
 	observationCtx *observation.Context,
-	redMetrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.janitor.abandoned"
 
@@ -109,7 +105,7 @@ func NewAbandonedUploadJanitor(
 		Name:        name,
 		Description: "Removes upload records that did did not receive a full payload from the user.",
 		Interval:    interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, redMetrics, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-uploadTimeout))
 		},
@@ -128,7 +124,6 @@ func NewExpiredUploadJanitor(
 	store store.Store,
 	interval time.Duration,
 	observationCtx *observation.Context,
-	redMetrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.expirer.unreferenced"
 
@@ -136,7 +131,7 @@ func NewExpiredUploadJanitor(
 		Name:        name,
 		Description: "Soft-deletes unreferenced upload records that are not protected by any data retention policy.",
 		Interval:    interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, redMetrics, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.SoftDeleteExpiredUploads(ctx, expiredUploadsBatchSize)
 		},
@@ -147,7 +142,6 @@ func NewExpiredUploadTraversalJanitor(
 	store store.Store,
 	interval time.Duration,
 	observationCtx *observation.Context,
-	redMetrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.expirer.unreferenced-graph"
 
@@ -155,7 +149,7 @@ func NewExpiredUploadTraversalJanitor(
 		Name:        name,
 		Description: "Soft-deletes a tree of externally unreferenced upload records that are not protected by any data retention policy.",
 		Interval:    interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, redMetrics, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.SoftDeleteExpiredUploadsViaTraversal(ctx, expiredUploadsMaxTraversal)
 		},
@@ -170,7 +164,6 @@ func NewHardDeleter(
 	lsifStore lsifstore.LsifStore,
 	interval time.Duration,
 	observationCtx *observation.Context,
-	redMetrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.hard-deleter"
 
@@ -178,7 +171,7 @@ func NewHardDeleter(
 		Name:        name,
 		Description: "Deleted data associated with soft-deleted upload records.",
 		Interval:    interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, redMetrics, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			const uploadsBatchSize = 100
 			options := shared.GetUploadsOptions{
@@ -237,7 +230,6 @@ func NewAuditLogJanitor(
 	interval time.Duration,
 	auditLogMaxAge time.Duration,
 	observationCtx *observation.Context,
-	redMetrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.janitor.audit-logs"
 
@@ -245,7 +237,7 @@ func NewAuditLogJanitor(
 		Name:        name,
 		Description: "Deletes sufficiently old upload audit log records.",
 		Interval:    interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, redMetrics, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.DeleteOldAuditLogs(ctx, auditLogMaxAge, time.Now())
 		},
@@ -261,7 +253,6 @@ func NewSCIPExpirationTask(
 	unreferencedDocumentBatchSize int,
 	unreferencedDocumentMaxAge time.Duration,
 	observationCtx *observation.Context,
-	redMetrics *metrics.REDMetrics,
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.janitor.scip-documents"
 
@@ -269,7 +260,7 @@ func NewSCIPExpirationTask(
 		Name:        name,
 		Description: "Deletes SCIP document payloads that are not referenced by any index.",
 		Interval:    interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, redMetrics, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return lsifStore.DeleteUnreferencedDocuments(ctx, unreferencedDocumentBatchSize, unreferencedDocumentMaxAge, time.Now())
 		},

@@ -6,7 +6,6 @@ import (
 	autoindexingstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -53,19 +52,11 @@ func NewResetters(observationCtx *observation.Context, db database.DB) []gorouti
 }
 
 func NewJanitorJobs(observationCtx *observation.Context, autoindexingSvc *Service, gitserver GitserverClient) []goroutine.BackgroundRoutine {
-	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"codeintel_autoindexing_background_janitor",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
-
 	return []goroutine.BackgroundRoutine{
 		background.NewUnknownRepositoryJanitor(
 			autoindexingSvc.store,
 			ConfigCleanupInst.Interval,
 			observationCtx,
-			redMetrics,
 		),
 
 		background.NewUnknownCommitJanitor(
@@ -76,7 +67,6 @@ func NewJanitorJobs(observationCtx *observation.Context, autoindexingSvc *Servic
 			ConfigCleanupInst.MinimumTimeSinceLastCheck,
 			ConfigCleanupInst.CommitResolverMaximumCommitLag,
 			observationCtx,
-			redMetrics,
 		),
 
 		background.NewExpiredRecordJanitor(
@@ -86,7 +76,6 @@ func NewJanitorJobs(observationCtx *observation.Context, autoindexingSvc *Servic
 			ConfigCleanupInst.FailedIndexBatchSize,
 			ConfigCleanupInst.FailedIndexMaxAge,
 			observationCtx,
-			redMetrics,
 		),
 	}
 }

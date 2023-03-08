@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -123,19 +122,11 @@ func NewCommittedAtBackfillerJob(uploadSvc *Service) []goroutine.BackgroundRouti
 }
 
 func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserverClient GitserverClient) []goroutine.BackgroundRoutine {
-	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"codeintel_uploads_background_janitor",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
-
 	return []goroutine.BackgroundRoutine{
 		background.NewDeletedRepositoryJanitor(
 			uploadSvc.store,
 			ConfigJanitorInst.Interval,
 			observationCtx,
-			redMetrics,
 		),
 
 		background.NewUnknownCommitJanitor(
@@ -146,7 +137,6 @@ func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserv
 			ConfigJanitorInst.MinimumTimeSinceLastCheck,
 			ConfigJanitorInst.CommitResolverMaximumCommitLag,
 			observationCtx,
-			redMetrics,
 		),
 
 		background.NewAbandonedUploadJanitor(
@@ -154,21 +144,18 @@ func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserv
 			ConfigJanitorInst.Interval,
 			ConfigJanitorInst.UploadTimeout,
 			observationCtx,
-			redMetrics,
 		),
 
 		background.NewExpiredUploadJanitor(
 			uploadSvc.store,
 			ConfigJanitorInst.Interval,
 			observationCtx,
-			redMetrics,
 		),
 
 		background.NewExpiredUploadTraversalJanitor(
 			uploadSvc.store,
 			ConfigJanitorInst.Interval,
 			observationCtx,
-			redMetrics,
 		),
 
 		background.NewHardDeleter(
@@ -176,7 +163,6 @@ func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserv
 			uploadSvc.lsifstore,
 			ConfigJanitorInst.Interval,
 			observationCtx,
-			redMetrics,
 		),
 
 		background.NewAuditLogJanitor(
@@ -184,7 +170,6 @@ func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserv
 			ConfigJanitorInst.Interval,
 			ConfigJanitorInst.AuditLogMaxAge,
 			observationCtx,
-			redMetrics,
 		),
 
 		background.NewSCIPExpirationTask(
@@ -193,19 +178,11 @@ func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserv
 			ConfigJanitorInst.UnreferencedDocumentBatchSize,
 			ConfigJanitorInst.UnreferencedDocumentMaxAge,
 			observationCtx,
-			redMetrics,
 		),
 	}
 }
 
 func NewReconciler(observationCtx *observation.Context, uploadSvc *Service) []goroutine.BackgroundRoutine {
-	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"codeintel_uploads_background_reconciler",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
-
 	return []goroutine.BackgroundRoutine{
 		background.NewFrontendDBReconciler(
 			uploadSvc.store,
@@ -213,7 +190,6 @@ func NewReconciler(observationCtx *observation.Context, uploadSvc *Service) []go
 			ConfigJanitorInst.Interval,
 			ConfigJanitorInst.ReconcilerBatchSize,
 			observationCtx,
-			redMetrics,
 		),
 
 		background.NewCodeIntelDBReconciler(
@@ -222,7 +198,6 @@ func NewReconciler(observationCtx *observation.Context, uploadSvc *Service) []go
 			ConfigJanitorInst.Interval,
 			ConfigJanitorInst.ReconcilerBatchSize,
 			observationCtx,
-			redMetrics,
 		),
 	}
 }
