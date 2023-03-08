@@ -203,7 +203,7 @@ type AzureDevOpsAuthProvider struct {
 type AzureDevOpsConnection struct {
 	// EnforcePermissions description: A flag to enforce Azure DevOps repository access permissions
 	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
-	// Exclude description: A list of repositories to never mirror from this Azure DevOps Services/Server instance.
+	// Exclude description: A list of repositories to never mirror from Azure DevOps Services.
 	Exclude []*ExcludedAzureDevOpsServerRepo `json:"exclude,omitempty"`
 	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
@@ -211,7 +211,7 @@ type AzureDevOpsConnection struct {
 	Projects []string `json:"projects,omitempty"`
 	// Token description: The Personal Access Token associated with the Azure DevOps username used for authentication.
 	Token string `json:"token"`
-	// Url description: URL of a Azure DevOps Services/Server instance, such as https://dev.azure.com.
+	// Url description: URL for Azure DevOps Services, set to https://dev.azure.com.
 	Url string `json:"url"`
 	// Username description: A username for authentication with the Azure DevOps code host.
 	Username string `json:"username"`
@@ -669,9 +669,9 @@ type ExcludedAWSCodeCommitRepo struct {
 	Name string `json:"name,omitempty"`
 }
 type ExcludedAzureDevOpsServerRepo struct {
-	// Name description: The name of an Azure DevOps Services/Server project and repository ("projectName/repositoryName") to exclude from mirroring.
+	// Name description: The name of an Azure DevOps Services project and repository ("projectName/repositoryName") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
-	// Pattern description: Regular expression which matches against the name of an Azure DevOps Services/Server repo.
+	// Pattern description: Regular expression which matches against the name of an Azure DevOps Services repo.
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedBitbucketCloudRepo struct {

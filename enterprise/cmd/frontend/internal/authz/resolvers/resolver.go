@@ -342,6 +342,35 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlbackend.CancelPermissionsSyncJobArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only site admins can cancel permissions sync jobs.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	syncJobID, err := unmarshalPermissionsSyncJobID(args.Job)
+	if err != nil {
+		return nil, err
+	}
+
+	reason := ""
+	if args.Reason != nil {
+		reason = *args.Reason
+	}
+
+	err = r.db.PermissionSyncJobs().CancelQueuedJob(ctx, reason, syncJobID)
+	// We shouldn't return an error when the job is already processing or not found
+	// by ID (might already be cleaned up).
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom

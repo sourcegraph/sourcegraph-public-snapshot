@@ -17,6 +17,7 @@ export interface NamespaceAreaRoute extends RouteV6Descriptor<NamespaceAreaConte
 
 interface NavItemDescriptorContext extends BatchChangesProps {
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 export interface NamespaceAreaNavItem extends NavItemWithIconDescriptor<NavItemDescriptorContext> {}

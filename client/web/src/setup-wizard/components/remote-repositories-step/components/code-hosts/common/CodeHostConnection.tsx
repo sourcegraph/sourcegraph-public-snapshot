@@ -128,6 +128,7 @@ export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): Re
                     actions={externalServiceOptions.editorActions}
                     jsonSchema={externalServiceOptions.jsonSchema}
                     canEdit={false}
+                    controlled={true}
                     loading={true}
                     height={400}
                     readOnly={false}

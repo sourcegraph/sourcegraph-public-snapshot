@@ -842,6 +842,51 @@ type Mutation {
     the file on disk, and marking it as not-cloned in the database.
     """
     deleteRepositoryFromDisk(repo: ID!): EmptyResponse!
+
+    """
+    Create a new package repo reference filter.
+    """
+    addPackageRepoFilter(
+        """
+        Whether the matcher should be for allowlisting or blocklisting.
+        """
+        behaviour: PackageMatchBehaviour!
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind!
+        """
+        The package repo reference matcher to persist.
+        """
+        filter: PackageVersionOrNameFilterInput!
+    ): PackageFilter!
+
+    """
+    Updates a package repo reference filter.
+    """
+    updatePackageRepoFilter(
+        """
+        The ID of the package repo reference filter to update.
+        """
+        id: ID!
+
+        behaviour: PackageMatchBehaviour!
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind!
+
+        filter: PackageVersionOrNameFilterInput!
+    ): EmptyResponse!
+
+    """
+    Deletes a package repo reference filter.
+    """
+    deletePackageRepoFilter(id: ID!): EmptyResponse!
 }
 
 """
@@ -1428,9 +1473,9 @@ type Query {
     """
     packageRepoReferences(
         """
-        The exact scheme value to filter by.
+        The exact package repo reference kind to filter by.
         """
-        scheme: PackageRepoReferenceKind
+        kind: PackageRepoReferenceKind
         """
         If supplied, only package repo references that match the given
         terms by their name will be returned.
@@ -1438,13 +1483,49 @@ type Query {
         """
         name: String
         """
-        Returns the first n external services from the list.
+        Returns the first n package repo references from the list.
         """
         first: Int
         """
         Opaque pagination cursor.
         """
         after: String
+    ): PackageRepoReferenceConnection!
+
+    """
+    Query package repo reference filters.
+    """
+    packageRepoFilters(
+        """
+        Whether the matcher should be for allowlisting or blocklisting.
+        """
+        behaviour: PackageMatchBehaviour
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind
+    ): [PackageFilter!]
+
+    """
+    Returns either a list of package repo references,
+    or the versions of a single package repo reference,
+    that match the provided matcher.
+    """
+    packageRepoReferencesMatchingFilter(
+        """
+        The kind of the package repo reference this matcher should apply to.
+        """
+        kind: PackageRepoReferenceKind!
+        """
+        The matcher for which to return matching results.
+        """
+        filter: PackageVersionOrNameFilterInput!
+        """
+        Returns the first n package/package version matches from the list.
+        """
+        first: Int
     ): PackageRepoReferenceConnection!
 
     """
@@ -3608,10 +3689,10 @@ type PackageRepoReference {
     id: ID!
 
     """
-    The ecosystem/package-manager/indexer scheme under which this package repo
-    reference is uniquely identified e.g. npm/python/rust-analyzer
+    The external service kind under which this package repo
+    reference is uniquely identified.
     """
-    scheme: PackageRepoReferenceKind!
+    kind: PackageRepoReferenceKind!
 
     """
     The name of the package, in a format relevant to the specific ecosystem e.g.
@@ -3623,6 +3704,12 @@ type PackageRepoReference {
     The versions of this package known to the sourcegraph instance.
     """
     versions: [PackageRepoReferenceVersion!]!
+
+    """
+    Indicates whether a package repo reference has been blocked by a blocklist entry and/or
+    no matching entry in a non-empty allowlist
+    """
+    blocked: Boolean!
 
     """
     The synthetic repository (aka the package repo) created to store the contents of the
@@ -3650,6 +3737,116 @@ type PackageRepoReferenceVersion {
     The version string. Not guaranteed to be semver or any other format.
     """
     version: String!
+}
+
+"""
+Whether a package repo reference filter is part of the allowlist or blocklist
+"""
+enum PackageMatchBehaviour {
+    """
+    Blocks a package repo reference from syncing.
+    """
+    BLOCK
+    """
+    Allows a package repo reference to be synced.
+    """
+    ALLOW
+}
+
+"""
+Filters package repo references of the matching scheme/kind, applying to either
+references of matching names or versions of a specific package name.
+One of either nameFilter or versionFilter must be provided.
+"""
+type PackageFilter {
+    """
+    Opaque ID string.
+    """
+    id: ID!
+
+    """
+    The behaviour of the filter when applied to a matching package repo reference or version.
+    """
+    behaviour: PackageMatchBehaviour!
+
+    """
+    The schemes/kinds of package repo references this filter should apply to only.
+    """
+    kind: PackageRepoReferenceKind!
+
+    """
+    Optional name-matching filter.
+    """
+    nameFilter: PackageNameFilter
+
+    """
+    Optional package-specific version-matching filter.
+    """
+    versionFilter: PackageVersionFilter
+}
+
+"""
+A package repo reference filter that matches names.
+"""
+type PackageNameFilter {
+    """
+    Glob string to match names.
+    """
+    packageGlob: String!
+}
+
+"""
+A package repo reference filter that matches versions for a specific name.
+"""
+type PackageVersionFilter {
+    """
+    Exact package name to match.
+    """
+    packageName: String!
+
+    """
+    Glob string to match versions.
+    """
+    versionGlob: String!
+}
+
+"""
+A name or version matching filter for. One of either nameFilter or versionFilter must be provided.
+"""
+input PackageVersionOrNameFilterInput {
+    """
+    Optional name-matching filter.
+    """
+    nameFilter: PackageNameFilterInput
+    """
+    Optional package-specific version-matching filter.
+    """
+    versionFilter: PackageVersionFilterInput
+}
+
+"""
+A package repo reference filter that matches names.
+"""
+input PackageNameFilterInput {
+    """
+    Glob string to match names.
+    """
+    packageGlob: String!
+}
+
+"""
+A package repo reference filter that matches versions for a specific name.
+"""
+input PackageVersionFilterInput {
+    """
+    Exact package name to match.
+    """
+    packageName: String!
+
+    """
+    Glob string to match versions.
+    """
+    versionGlob: String!
 }
 
 """
@@ -6185,6 +6382,11 @@ type User implements Node & SettingsSubject & Namespace {
     The name of this user namespace's component. For users, this is the username.
     """
     namespaceName: String!
+
+    """
+    Whether the user is controlled externally through SCIM.
+    """
+    scimControlled: Boolean!
 
     """
     EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few

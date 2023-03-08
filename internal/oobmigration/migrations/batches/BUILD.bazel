@@ -27,6 +27,10 @@ go_test(
         "role_assignment_migrator_test.go",
     ],
     embed = [":batches"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/basestore",

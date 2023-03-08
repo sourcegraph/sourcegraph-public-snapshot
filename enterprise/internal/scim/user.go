@@ -86,11 +86,11 @@ func createUserResourceType(userResourceHandler *UserResourceHandler) scim.Resou
 }
 
 // updateUser updates a user in the database. This is meant to be used in a transaction.
-func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM, attributes scim.ResourceAttributes) (err error) {
+func updateUser(ctx context.Context, tx database.DB, oldUser *types.UserForSCIM, attributes scim.ResourceAttributes) (err error) {
 	usernameUpdate := ""
 	requestedUsername := extractStringAttribute(attributes, AttrUserName)
 	if requestedUsername != oldUser.Username {
-		usernameUpdate, err = getUniqueUsername(ctx, db.Users(), requestedUsername)
+		usernameUpdate, err = getUniqueUsername(ctx, tx.Users(), requestedUsername)
 		if err != nil {
 			return scimerrors.ScimError{Status: http.StatusBadRequest, Detail: errors.Wrap(err, "invalid username").Error()}
 		}
@@ -102,7 +102,7 @@ func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM,
 		DisplayName: displayNameUpdate,
 		AvatarURL:   avatarURLUpdate,
 	}
-	err = db.Users().Update(ctx, oldUser.ID, userUpdate)
+	err = tx.Users().Update(ctx, oldUser.ID, userUpdate)
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
 	}
@@ -111,7 +111,7 @@ func updateUser(ctx context.Context, db database.DB, oldUser *types.UserForSCIM,
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 	}
-	err = db.UserExternalAccounts().UpdateSCIMData(ctx, oldUser.ID, getUniqueExternalID(attributes), accountData)
+	err = tx.UserExternalAccounts().UpsertSCIMData(ctx, oldUser.ID, getUniqueExternalID(attributes), accountData)
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
 	}

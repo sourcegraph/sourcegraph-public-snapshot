@@ -93,6 +93,22 @@ extend type Mutation {
         """
         unrestricted: Boolean
     ): EmptyResponse!
+
+    """
+    Cancel permissions sync job with given ID.
+    No error is returned when the job is not in `queued` state or there is no such job
+    with the given ID (latter means that most probably, the job has already been cleaned up).
+    """
+    cancelPermissionsSyncJob(
+        """
+        ID of the job to be canceled.
+        """
+        job: ID!
+        """
+        Optional cancellation reason.
+        """
+        reason: String
+    ): EmptyResponse!
 }
 
 extend type Query {

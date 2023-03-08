@@ -6,16 +6,20 @@ import (
 	"context"
 	"sort"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
+	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-
-	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func New(db database.DB, gitserver gitserver.Client, ownService own.Service) graphqlbackend.OwnResolver {
@@ -54,6 +58,9 @@ func (r *ownResolver) GitBlobOwnership(
 	blob *graphqlbackend.GitTreeEntryResolver,
 	args graphqlbackend.ListOwnershipArgs,
 ) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
 	cursor, err := graphqlutil.DecodeCursor(args.After)
 	if err != nil {
 		return nil, err
@@ -110,7 +117,16 @@ func (r *ownResolver) TeamOwnerField(team *graphqlbackend.TeamResolver) string {
 }
 
 func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{}
+	return map[string]graphqlbackend.NodeByIDFunc{
+		codeownersIngestedFileKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			// codeowners ingested files are identified by repo ID at the moment.
+			var repoID api.RepoID
+			if err := relay.UnmarshalSpec(id, &repoID); err != nil {
+				return nil, errors.Wrap(err, "could not unmarshal repository ID")
+			}
+			return r.RepoIngestedCodeowners(ctx, repoID)
+		},
+	}
 }
 
 // ownershipConnectionResolver is a fake graphqlbackend.OwnershipConnectionResolver
@@ -150,6 +166,9 @@ type ownershipResolver struct {
 }
 
 func (r *ownershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerResolver, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
 	return &ownerResolver{
 		db:            r.db,
 		resolvedOwner: r.resolvedOwner,
@@ -202,3 +221,10 @@ func (r *codeownersFileEntryResolver) CodeownersFile(_ context.Context) (graphql
 }
 
 func (r *codeownersFileEntryResolver) RuleLineMatch(_ context.Context) (int32, error) { return 42, nil }
+
+func areOwnEndpointsAvailable(ctx context.Context) error {
+	if !featureflag.FromContext(ctx).GetBoolOr("search-ownership", false) {
+		return errors.New("own is not available yet")
+	}
+	return nil
+}

@@ -45,6 +45,10 @@ go_test(
         "webhooks_test.go",
     ],
     embed = [":webhooks"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/database",

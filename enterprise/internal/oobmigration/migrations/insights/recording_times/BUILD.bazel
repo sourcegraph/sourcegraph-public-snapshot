@@ -24,6 +24,10 @@ go_test(
         "migrator_test.go",
     ],
     embed = [":recording_times"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//internal/database/basestore",

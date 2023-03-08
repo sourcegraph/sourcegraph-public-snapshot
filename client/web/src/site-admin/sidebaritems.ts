@@ -52,6 +52,7 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -73,6 +74,7 @@ export const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'Feature flags',
             to: '/site-admin/feature-flags',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -104,6 +106,8 @@ export const usersGroup: SiteAdminSideBarGroup = {
         label: 'Users & auth',
         icon: AccountMultipleIcon,
     },
+
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             label: 'Users',
@@ -137,7 +141,7 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
-            label: 'Updates',
+            label: window.context.sourcegraphAppMode ? 'Overview' : 'Updates',
             to: '/site-admin/updates',
         },
         {
@@ -147,6 +151,7 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Pings',
             to: '/site-admin/pings',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Report a bug',

@@ -1,10 +1,9 @@
 package backend
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"testing"
+	"testing/quick"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/zoekt"
@@ -13,6 +12,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestZoektIndexOptions_RoundTrip(t *testing.T) {
+	var diff string
+	f := func(original ZoektIndexOptions) bool {
+
+		var converted ZoektIndexOptions
+		converted.FromProto(original.ToProto())
+
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+		return true
+	}
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Errorf("ZoektIndexOptions diff (-want +got):\n%s", diff)
+	}
+}
 
 func TestGetIndexOptions(t *testing.T) {
 	const (
@@ -47,14 +64,14 @@ func TestGetIndexOptions(t *testing.T) {
 		conf              schema.SiteConfiguration
 		searchContextRevs []string
 		repo              api.RepoID
-		want              zoektIndexOptions
+		want              ZoektIndexOptions
 	}
 
 	cases := []caseT{{
 		name: "default",
 		conf: schema.SiteConfiguration{},
 		repo: REPO,
-		want: zoektIndexOptions{
+		want: ZoektIndexOptions{
 			RepoID:  1,
 			Name:    "repo-01",
 			Symbols: true,
@@ -66,7 +83,7 @@ func TestGetIndexOptions(t *testing.T) {
 		name: "public",
 		conf: schema.SiteConfiguration{},
 		repo: PUBLIC,
-		want: zoektIndexOptions{
+		want: ZoektIndexOptions{
 			RepoID:  5,
 			Name:    "repo-05",
 			Public:  true,
@@ -79,7 +96,7 @@ func TestGetIndexOptions(t *testing.T) {
 		name: "fork",
 		conf: schema.SiteConfiguration{},
 		repo: FORK,
-		want: zoektIndexOptions{
+		want: ZoektIndexOptions{
 			RepoID:  6,
 			Name:    "repo-06",
 			Fork:    true,
@@ -92,7 +109,7 @@ func TestGetIndexOptions(t *testing.T) {
 		name: "archived",
 		conf: schema.SiteConfiguration{},
 		repo: ARCHIVED,
-		want: zoektIndexOptions{
+		want: ZoektIndexOptions{
 			RepoID:   7,
 			Name:     "repo-07",
 			Archived: true,
@@ -107,7 +124,7 @@ func TestGetIndexOptions(t *testing.T) {
 			SearchIndexSymbolsEnabled: boolPtr(false),
 		},
 		repo: REPO,
-		want: zoektIndexOptions{
+		want: ZoektIndexOptions{
 			RepoID: 1,
 			Name:   "repo-01",
 			Branches: []zoekt.RepositoryBranch{
@@ -120,7 +137,7 @@ func TestGetIndexOptions(t *testing.T) {
 			SearchLargeFiles: []string{"**/*.jar", "*.bin", "!**/excluded.zip", "\\!included.zip"},
 		},
 		repo: REPO,
-		want: zoektIndexOptions{
+		want: ZoektIndexOptions{
 			RepoID:     1,
 			Name:       "repo-01",
 			Symbols:    true,
@@ -133,7 +150,7 @@ func TestGetIndexOptions(t *testing.T) {
 		name: "conf index branches",
 		conf: withBranches(schema.SiteConfiguration{}, REPO, "a", "", "b"),
 		repo: REPO,
-		want: zoektIndexOptions{
+		want: ZoektIndexOptions{
 			RepoID:  1,
 			Name:    "repo-01",
 			Symbols: true,
@@ -151,7 +168,7 @@ func TestGetIndexOptions(t *testing.T) {
 			},
 		}},
 		repo: REPO,
-		want: zoektIndexOptions{
+		want: ZoektIndexOptions{
 			RepoID:  1,
 			Name:    "repo-01",
 			Symbols: true,
@@ -171,7 +188,7 @@ func TestGetIndexOptions(t *testing.T) {
 			},
 		}},
 		repo: REPO,
-		want: zoektIndexOptions{
+		want: ZoektIndexOptions{
 			RepoID:  1,
 			Name:    "repo-01",
 			Symbols: true,
@@ -187,7 +204,7 @@ func TestGetIndexOptions(t *testing.T) {
 		conf:              schema.SiteConfiguration{},
 		repo:              REPO,
 		searchContextRevs: []string{"rev1", "rev2"},
-		want: zoektIndexOptions{
+		want: ZoektIndexOptions{
 			RepoID:  1,
 			Name:    "repo-01",
 			Symbols: true,
@@ -201,7 +218,7 @@ func TestGetIndexOptions(t *testing.T) {
 		name: "with a priority value",
 		conf: schema.SiteConfiguration{},
 		repo: PRIORITY,
-		want: zoektIndexOptions{
+		want: ZoektIndexOptions{
 			RepoID:  4,
 			Name:    "repo-04",
 			Symbols: true,
@@ -214,7 +231,7 @@ func TestGetIndexOptions(t *testing.T) {
 		name: "with rank",
 		conf: schema.SiteConfiguration{},
 		repo: RANKED,
-		want: zoektIndexOptions{
+		want: ZoektIndexOptions{
 			RepoID:  8,
 			Name:    "repo-08",
 			Symbols: true,
@@ -242,7 +259,7 @@ func TestGetIndexOptions(t *testing.T) {
 			name: "limit branches",
 			conf: withBranches(schema.SiteConfiguration{}, REPO, branches...),
 			repo: REPO,
-			want: zoektIndexOptions{
+			want: ZoektIndexOptions{
 				RepoID:   1,
 				Name:     "repo-01",
 				Symbols:  true,
@@ -279,14 +296,10 @@ func TestGetIndexOptions(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			getSearchContextRevisions := func(api.RepoID) ([]string, error) { return tc.searchContextRevs, nil }
 
-			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.repo)
+			got := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.repo)
 
-			var got zoektIndexOptions
-			if err := json.Unmarshal(b, &got); err != nil {
-				t.Fatal(err)
-			}
-
-			if diff := cmp.Diff(tc.want, got); diff != "" {
+			want := []ZoektIndexOptions{tc.want}
+			if diff := cmp.Diff(want, got); diff != "" {
 				t.Fatal("mismatch (-want, +got):\n", diff)
 			}
 		})
@@ -351,15 +364,14 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 				}, nil
 			}
 
-			b := GetIndexOptions(&conf, getRepoIndexOptions, getSearchContextRevs, 1)
-
-			var got zoektIndexOptions
-			if err := json.Unmarshal(b, &got); err != nil {
-				t.Fatal(err)
+			resp := GetIndexOptions(&conf, getRepoIndexOptions, getSearchContextRevs, 1)
+			if len(resp) != 1 {
+				t.Fatalf("expected 1 index options returned, got %d", len(resp))
 			}
 
+			got := resp[0]
 			if got.Error != tc.wantErr {
-				t.Fatalf("expected error %v, got body %s and error %v", tc.wantErr, b, got.Error)
+				t.Fatalf("expected error %v, got index options %+v and error %v", tc.wantErr, got, got.Error)
 			}
 			if tc.wantErr != "" {
 				return
@@ -378,14 +390,14 @@ func TestGetIndexOptions_batch(t *testing.T) {
 	}
 	var (
 		repos []api.RepoID
-		want  []zoektIndexOptions
+		want  []ZoektIndexOptions
 	)
 	for repo := api.RepoID(1); repo < 100; repo++ {
 		repos = append(repos, repo)
 		if isError(repo) {
-			want = append(want, zoektIndexOptions{Error: "error"})
+			want = append(want, ZoektIndexOptions{Error: "error"})
 		} else {
-			want = append(want, zoektIndexOptions{
+			want = append(want, ZoektIndexOptions{
 				Symbols: true,
 				Branches: []zoekt.RepositoryBranch{
 					{Name: "HEAD", Version: fmt.Sprintf("!HEAD-%d", repo)},
@@ -406,14 +418,8 @@ func TestGetIndexOptions_batch(t *testing.T) {
 
 	getSearchContextRevs := func(api.RepoID) ([]string, error) { return nil, nil }
 
-	b := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, getSearchContextRevs, repos...)
-	dec := json.NewDecoder(bytes.NewReader(b))
-	got := make([]zoektIndexOptions, len(repos))
-	for i := range repos {
-		if err := dec.Decode(&got[i]); err != nil {
-			t.Fatal(err)
-		}
-	}
+	got := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, getSearchContextRevs, repos...)
+
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatal("mismatch (-want, +got):\n", diff)
 	}

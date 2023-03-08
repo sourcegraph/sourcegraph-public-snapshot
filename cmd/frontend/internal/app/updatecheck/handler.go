@@ -209,6 +209,7 @@ type pingRequest struct {
 	CodeHostIntegrationUsage      json.RawMessage `json:"codeHostIntegrationUsage"`
 	IDEExtensionsUsage            json.RawMessage `json:"ideExtensionsUsage"`
 	MigratedExtensionsUsage       json.RawMessage `json:"migratedExtensionsUsage"`
+	OwnUsage                      json.RawMessage `json:"ownUsage"`
 	InitialAdminEmail             string          `json:"initAdmin"`
 	TosAccepted                   bool            `json:"tosAccepted"`
 	TotalUsers                    int32           `json:"totalUsers"`
@@ -323,6 +324,7 @@ type pingPayload struct {
 	CodeHostIntegrationUsage      json.RawMessage `json:"code_host_integration_usage"`
 	IDEExtensionsUsage            json.RawMessage `json:"ide_extensions_usage"`
 	MigratedExtensionsUsage       json.RawMessage `json:"migrated_extensions_usage"`
+	OwnUsage                      json.RawMessage `json:"own_usage"`
 	InstallerEmail                string          `json:"installer_email"`
 	AuthProviders                 string          `json:"auth_providers"`
 	ExtServices                   string          `json:"ext_services"`
@@ -414,6 +416,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		CodeHostVersions:              pr.CodeHostVersions,
 		CodeHostIntegrationUsage:      pr.CodeHostIntegrationUsage,
 		IDEExtensionsUsage:            pr.IDEExtensionsUsage,
+		OwnUsage:                      pr.OwnUsage,
 		AuthProviders:                 strings.Join(pr.AuthProviders, ","),
 		ExtServices:                   strings.Join(pr.ExternalServices, ","),
 		BuiltinSignupAllowed:          strconv.FormatBool(pr.BuiltinSignupAllowed),

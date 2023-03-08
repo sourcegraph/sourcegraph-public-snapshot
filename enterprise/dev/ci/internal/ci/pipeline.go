@@ -90,7 +90,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case runtype.BazelExpBranch:
-		ops.Merge(BazelOperations())
+		// false means not optional, so this build will fail if Bazel build doesn't pass.
+		ops.Merge(BazelOperations(false))
 	case runtype.WolfiExpBranch:
 		if c.Diff.Has(changed.WolfiPackages) {
 			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
@@ -115,6 +116,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ClientLintOnlyChangedFiles: false,
 			CreateBundleSizeDiff:       true,
 		}))
+
+		// At this stage, we don't break builds because of a Bazel failure.
+		// TODO(JH) Disabled until we fix database isolation
+		// ops.Merge(BazelOperations(true))
 
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
@@ -271,6 +276,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Slow async pipeline
 		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 			triggerAsync(buildOptions)))
+
+		// At this stage, we don't break builds because of a Bazel failure.
+		ops.Merge(BazelOperations(true))
 
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
