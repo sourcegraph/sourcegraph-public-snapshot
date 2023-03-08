@@ -8,15 +8,40 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/require"
 )
+
+func execQuery(t *testing.T, ctx context.Context, h basestore.TransactableHandle, q *sqlf.Query) {
+	t.Helper()
+	if t.Failed() {
+		return
+	}
+
+	_, err := h.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatalf("Error executing query %v, err: %v", q, err)
+	}
+}
+
+func addSyncJobHistoryRecord(t *testing.T, h basestore.TransactableHandle, userID int32, repoID api.RepoID, updatedAt time.Time) {
+	t.Helper()
+	if userID > 0 {
+		execQuery(t, context.Background(), h, sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(user_id, updated_at) VALUES(%d, %s)`, userID, updatedAt))
+	}
+	if repoID > 0 {
+		execQuery(t, context.Background(), h, sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(repo_id, updated_at) VALUES(%d, %s)`, repoID, updatedAt))
+	}
+}
 
 func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 	if testing.Short() {
@@ -33,7 +58,6 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 	store := database.PermissionSyncJobsWith(logger, db)
 	usersStore := database.UsersWith(logger, db)
 	reposStore := database.ReposWith(logger, db)
-	permsStore := edb.Perms(logger, db, clock)
 
 	// Creating site-admin.
 	_, err := usersStore.Create(ctx, database.NewUser{Username: "admin"})
@@ -75,9 +99,8 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 	}
 	runJobsTest(t, ctx, logger, db, store, wantJobs)
 
-	// Touch perms for the user and repo.
-	_ = permsStore.TouchUserPermissions(ctx, user1.ID)
-	_ = permsStore.TouchRepoPermissions(ctx, int32(repo1.ID))
+	// Add sync job history record for the user and repo.
+	addSyncJobHistoryRecord(t, db.Handle(), user1.ID, repo1.ID, clock())
 
 	// We should have same 2 jobs because jobs with higher priority already exists.
 	runJobsTest(t, ctx, logger, db, store, wantJobs)
@@ -92,8 +115,8 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Touch perms for the user and repo.
-	_ = permsStore.TouchUserPermissions(ctx, user2.ID)
-	_ = permsStore.TouchRepoPermissions(ctx, int32(repo2.ID))
+	// Add sync job history record for the user and repo.
+	addSyncJobHistoryRecord(t, db.Handle(), user2.ID, repo2.ID, clock())
 
 	// We should have same 4 jobs scheduled including new jobs for user2 and repo2.
 	wantJobs = []testJob{
