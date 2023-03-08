@@ -22537,13 +22537,13 @@ Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^${source:regex}.
 
 <br />
 
-### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Janitor task
+### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Janitor task > Codeintel autoindexing janitor unknown repository
 
-#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_repository_records_scanned_total_total
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_repository_records_scanned_total
 
-<p class="subtitle">Records scanned X every 5m</p>
+<p class="subtitle">Records scanned every 5m</p>
 
-X
+The number of candidate records considered for cleanup.
 
 This panel has no related alerts.
 
@@ -22554,17 +22554,17 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_janitor_unknown_repository_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_janitor_unknown_repository_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_repository_records_altered_total_total
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_repository_records_altered_total
 
-<p class="subtitle">Records altered X every 5m</p>
+<p class="subtitle">Records altered every 5m</p>
 
-X
+The number of candidate records altered as part of cleanup.
 
 This panel has no related alerts.
 
@@ -22575,17 +22575,15 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_janitor_unknown_repository_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_janitor_unknown_repository_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_commit_records_scanned_total_total
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_repository_total
 
-<p class="subtitle">Records scanned X every 5m</p>
-
-X
+<p class="subtitle">Job invocation operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -22596,17 +22594,15 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_janitor_unknown_commit_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_janitor_unknown_repository_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_commit_records_altered_total_total
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_repository_99th_percentile_duration
 
-<p class="subtitle">Records altered X every 5m</p>
-
-X
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
 
 This panel has no related alerts.
 
@@ -22617,49 +22613,285 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_janitor_unknown_commit_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_janitor_unknown_repository_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
 <br />
 
-#### codeintel-autoindexing: codeintel_autoindexing_janitor_expired_records_scanned_total_total
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_repository_errors_total
 
-<p class="subtitle">Records scanned X every 5m</p>
-
-X
+<p class="subtitle">Job invocation operation errors every 5m</p>
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100720` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100712` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_janitor_expired_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_janitor_unknown_repository_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-autoindexing: codeintel_autoindexing_janitor_expired_records_altered_total_total
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_repository_error_rate
 
-<p class="subtitle">Records altered X every 5m</p>
-
-X
+<p class="subtitle">Job invocation operation error rate over 5m</p>
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100721` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100713` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_janitor_expired_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_janitor_unknown_repository_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_janitor_unknown_repository_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_janitor_unknown_repository_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Janitor task > Codeintel autoindexing janitor unknown commit
+
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_commit_records_scanned_total
+
+<p class="subtitle">Records scanned every 5m</p>
+
+The number of candidate records considered for cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100800` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_janitor_unknown_commit_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_commit_records_altered_total
+
+<p class="subtitle">Records altered every 5m</p>
+
+The number of candidate records altered as part of cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100801` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_janitor_unknown_commit_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_commit_total
+
+<p class="subtitle">Job invocation operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100810` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_janitor_unknown_commit_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_commit_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100811` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_janitor_unknown_commit_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_commit_errors_total
+
+<p class="subtitle">Job invocation operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100812` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_janitor_unknown_commit_errors_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_unknown_commit_error_rate
+
+<p class="subtitle">Job invocation operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100813` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_janitor_unknown_commit_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_janitor_unknown_commit_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_janitor_unknown_commit_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Janitor task > Codeintel autoindexing janitor expired
+
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_expired_records_scanned_total
+
+<p class="subtitle">Records scanned every 5m</p>
+
+The number of candidate records considered for cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100900` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_janitor_expired_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_expired_records_altered_total
+
+<p class="subtitle">Records altered every 5m</p>
+
+The number of candidate records altered as part of cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100901` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_janitor_expired_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_expired_total
+
+<p class="subtitle">Job invocation operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100910` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_janitor_expired_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_expired_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100911` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_janitor_expired_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_expired_errors_total
+
+<p class="subtitle">Job invocation operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100912` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_janitor_expired_errors_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_janitor_expired_error_rate
+
+<p class="subtitle">Job invocation operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100913` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_janitor_expired_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_janitor_expired_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_janitor_expired_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -25252,13 +25484,13 @@ Query: `sum(increase(src_codeintel_background_upload_records_expired_total{job=~
 
 <br />
 
-### Code Intelligence > Uploads: Codeintel: Uploads > Janitor task
+### Code Intelligence > Uploads: Codeintel: Uploads > Janitor task > Codeintel uploads janitor unknown repository
 
-#### codeintel-uploads: codeintel_uploads_janitor_unknown_repository_records_scanned_total_total
+#### codeintel-uploads: codeintel_uploads_janitor_unknown_repository_records_scanned_total
 
-<p class="subtitle">Records scanned X every 5m</p>
+<p class="subtitle">Records scanned every 5m</p>
 
-X
+The number of candidate records considered for cleanup.
 
 This panel has no related alerts.
 
@@ -25269,17 +25501,17 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_janitor_unknown_repository_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_janitor_unknown_repository_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_janitor_unknown_repository_records_altered_total_total
+#### codeintel-uploads: codeintel_uploads_janitor_unknown_repository_records_altered_total
 
-<p class="subtitle">Records altered X every 5m</p>
+<p class="subtitle">Records altered every 5m</p>
 
-X
+The number of candidate records altered as part of cleanup.
 
 This panel has no related alerts.
 
@@ -25290,17 +25522,15 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_janitor_unknown_repository_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_janitor_unknown_repository_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_janitor_unknown_commit_records_scanned_total_total
+#### codeintel-uploads: codeintel_uploads_janitor_unknown_repository_total
 
-<p class="subtitle">Records scanned X every 5m</p>
-
-X
+<p class="subtitle">Job invocation operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -25311,17 +25541,15 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_janitor_unknown_commit_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_unknown_repository_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_janitor_unknown_commit_records_altered_total_total
+#### codeintel-uploads: codeintel_uploads_janitor_unknown_repository_99th_percentile_duration
 
-<p class="subtitle">Records altered X every 5m</p>
-
-X
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
 
 This panel has no related alerts.
 
@@ -25332,271 +25560,57 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_janitor_unknown_commit_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_janitor_unknown_repository_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_janitor_abandoned_records_scanned_total_total
+#### codeintel-uploads: codeintel_uploads_janitor_unknown_repository_errors_total
 
-<p class="subtitle">Records scanned X every 5m</p>
-
-X
+<p class="subtitle">Job invocation operation errors every 5m</p>
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100620` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100612` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_janitor_abandoned_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_unknown_repository_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_janitor_abandoned_records_altered_total_total
+#### codeintel-uploads: codeintel_uploads_janitor_unknown_repository_error_rate
 
-<p class="subtitle">Records altered X every 5m</p>
-
-X
+<p class="subtitle">Job invocation operation error rate over 5m</p>
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100621` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100613` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_janitor_abandoned_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_unknown_repository_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_janitor_unknown_repository_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_janitor_unknown_repository_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_records_scanned_total_total
+### Code Intelligence > Uploads: Codeintel: Uploads > Janitor task > Codeintel uploads janitor unknown commit
 
-<p class="subtitle">Records scanned X every 5m</p>
+#### codeintel-uploads: codeintel_uploads_janitor_unknown_commit_records_scanned_total
 
-X
+<p class="subtitle">Records scanned every 5m</p>
 
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100630` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_expirer_unreferenced_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_records_altered_total_total
-
-<p class="subtitle">Records altered X every 5m</p>
-
-X
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100631` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_expirer_unreferenced_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_graph_records_scanned_total_total
-
-<p class="subtitle">Records scanned X every 5m</p>
-
-X
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100640` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_expirer_unreferenced_graph_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_graph_records_altered_total_total
-
-<p class="subtitle">Records altered X every 5m</p>
-
-X
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100641` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_expirer_unreferenced_graph_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-uploads: codeintel_uploads_hard_deleter_records_scanned_total_total
-
-<p class="subtitle">Records scanned X every 5m</p>
-
-X
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100650` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_hard_deleter_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-uploads: codeintel_uploads_hard_deleter_records_altered_total_total
-
-<p class="subtitle">Records altered X every 5m</p>
-
-X
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100651` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_hard_deleter_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-uploads: codeintel_uploads_janitor_audit_logs_records_scanned_total_total
-
-<p class="subtitle">Records scanned X every 5m</p>
-
-X
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100660` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_janitor_audit_logs_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-uploads: codeintel_uploads_janitor_audit_logs_records_altered_total_total
-
-<p class="subtitle">Records altered X every 5m</p>
-
-X
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100661` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_janitor_audit_logs_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-uploads: codeintel_uploads_janitor_scip_documents_records_scanned_total_total
-
-<p class="subtitle">Records scanned X every 5m</p>
-
-X
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100670` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_janitor_scip_documents_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-uploads: codeintel_uploads_janitor_scip_documents_records_altered_total_total
-
-<p class="subtitle">Records altered X every 5m</p>
-
-X
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100671` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_uploads_janitor_scip_documents_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-### Code Intelligence > Uploads: Codeintel: Uploads > Reconciler task
-
-#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_records_scanned_total_total
-
-<p class="subtitle">Records scanned X every 5m</p>
-
-X
+The number of candidate records considered for cleanup.
 
 This panel has no related alerts.
 
@@ -25607,17 +25621,17 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_reconciler_frontend_db_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_janitor_unknown_commit_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_records_altered_total_total
+#### codeintel-uploads: codeintel_uploads_janitor_unknown_commit_records_altered_total
 
-<p class="subtitle">Records altered X every 5m</p>
+<p class="subtitle">Records altered every 5m</p>
 
-X
+The number of candidate records altered as part of cleanup.
 
 This panel has no related alerts.
 
@@ -25628,17 +25642,15 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_reconciler_frontend_db_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_janitor_unknown_commit_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_records_scanned_total_total
+#### codeintel-uploads: codeintel_uploads_janitor_unknown_commit_total
 
-<p class="subtitle">Records scanned X every 5m</p>
-
-X
+<p class="subtitle">Job invocation operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -25649,17 +25661,15 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_reconciler_codeintel_db_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_unknown_commit_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_records_altered_total_total
+#### codeintel-uploads: codeintel_uploads_janitor_unknown_commit_99th_percentile_duration
 
-<p class="subtitle">Records altered X every 5m</p>
-
-X
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
 
 This panel has no related alerts.
 
@@ -25670,7 +25680,1005 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_reconciler_codeintel_db_records_altered_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_janitor_unknown_commit_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_unknown_commit_errors_total
+
+<p class="subtitle">Job invocation operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100712` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_unknown_commit_errors_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_unknown_commit_error_rate
+
+<p class="subtitle">Job invocation operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100713` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_unknown_commit_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_janitor_unknown_commit_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_janitor_unknown_commit_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Janitor task > Codeintel uploads janitor abandoned
+
+#### codeintel-uploads: codeintel_uploads_janitor_abandoned_records_scanned_total
+
+<p class="subtitle">Records scanned every 5m</p>
+
+The number of candidate records considered for cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100800` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_janitor_abandoned_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_abandoned_records_altered_total
+
+<p class="subtitle">Records altered every 5m</p>
+
+The number of candidate records altered as part of cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100801` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_janitor_abandoned_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_abandoned_total
+
+<p class="subtitle">Job invocation operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100810` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_abandoned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_abandoned_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100811` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_janitor_abandoned_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_abandoned_errors_total
+
+<p class="subtitle">Job invocation operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100812` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_abandoned_errors_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_abandoned_error_rate
+
+<p class="subtitle">Job invocation operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100813` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_abandoned_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_janitor_abandoned_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_janitor_abandoned_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Janitor task > Codeintel uploads expirer unreferenced
+
+#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_records_scanned_total
+
+<p class="subtitle">Records scanned every 5m</p>
+
+The number of candidate records considered for cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100900` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_expirer_unreferenced_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_records_altered_total
+
+<p class="subtitle">Records altered every 5m</p>
+
+The number of candidate records altered as part of cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100901` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_expirer_unreferenced_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_total
+
+<p class="subtitle">Job invocation operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100910` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_expirer_unreferenced_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100911` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_expirer_unreferenced_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_errors_total
+
+<p class="subtitle">Job invocation operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100912` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_expirer_unreferenced_errors_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_error_rate
+
+<p class="subtitle">Job invocation operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100913` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_expirer_unreferenced_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_expirer_unreferenced_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_expirer_unreferenced_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Janitor task > Codeintel uploads expirer unreferenced graph
+
+#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_graph_records_scanned_total
+
+<p class="subtitle">Records scanned every 5m</p>
+
+The number of candidate records considered for cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_expirer_unreferenced_graph_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_graph_records_altered_total
+
+<p class="subtitle">Records altered every 5m</p>
+
+The number of candidate records altered as part of cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_expirer_unreferenced_graph_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_graph_total
+
+<p class="subtitle">Job invocation operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101010` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_expirer_unreferenced_graph_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_graph_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101011` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_expirer_unreferenced_graph_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_graph_errors_total
+
+<p class="subtitle">Job invocation operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101012` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_expirer_unreferenced_graph_errors_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_expirer_unreferenced_graph_error_rate
+
+<p class="subtitle">Job invocation operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101013` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_expirer_unreferenced_graph_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_expirer_unreferenced_graph_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_expirer_unreferenced_graph_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Janitor task > Codeintel uploads hard deleter
+
+#### codeintel-uploads: codeintel_uploads_hard_deleter_records_scanned_total
+
+<p class="subtitle">Records scanned every 5m</p>
+
+The number of candidate records considered for cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_hard_deleter_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_hard_deleter_records_altered_total
+
+<p class="subtitle">Records altered every 5m</p>
+
+The number of candidate records altered as part of cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_hard_deleter_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_hard_deleter_total
+
+<p class="subtitle">Job invocation operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_hard_deleter_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_hard_deleter_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_hard_deleter_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_hard_deleter_errors_total
+
+<p class="subtitle">Job invocation operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101112` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_hard_deleter_errors_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_hard_deleter_error_rate
+
+<p class="subtitle">Job invocation operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101113` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_hard_deleter_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_hard_deleter_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_hard_deleter_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Janitor task > Codeintel uploads janitor audit logs
+
+#### codeintel-uploads: codeintel_uploads_janitor_audit_logs_records_scanned_total
+
+<p class="subtitle">Records scanned every 5m</p>
+
+The number of candidate records considered for cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101200` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_janitor_audit_logs_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_audit_logs_records_altered_total
+
+<p class="subtitle">Records altered every 5m</p>
+
+The number of candidate records altered as part of cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101201` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_janitor_audit_logs_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_audit_logs_total
+
+<p class="subtitle">Job invocation operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101210` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_audit_logs_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_audit_logs_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101211` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_janitor_audit_logs_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_audit_logs_errors_total
+
+<p class="subtitle">Job invocation operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101212` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_audit_logs_errors_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_audit_logs_error_rate
+
+<p class="subtitle">Job invocation operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101213` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_audit_logs_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_janitor_audit_logs_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_janitor_audit_logs_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Janitor task > Codeintel uploads janitor scip documents
+
+#### codeintel-uploads: codeintel_uploads_janitor_scip_documents_records_scanned_total
+
+<p class="subtitle">Records scanned every 5m</p>
+
+The number of candidate records considered for cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_janitor_scip_documents_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_scip_documents_records_altered_total
+
+<p class="subtitle">Records altered every 5m</p>
+
+The number of candidate records altered as part of cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_janitor_scip_documents_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_scip_documents_total
+
+<p class="subtitle">Job invocation operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_scip_documents_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_scip_documents_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101311` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_janitor_scip_documents_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_scip_documents_errors_total
+
+<p class="subtitle">Job invocation operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101312` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_scip_documents_errors_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_janitor_scip_documents_error_rate
+
+<p class="subtitle">Job invocation operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101313` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_janitor_scip_documents_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_janitor_scip_documents_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_janitor_scip_documents_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Reconciler task > Codeintel uploads reconciler frontend db
+
+#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_records_scanned_total
+
+<p class="subtitle">Records scanned every 5m</p>
+
+The number of candidate records considered for cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_reconciler_frontend_db_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_records_altered_total
+
+<p class="subtitle">Records altered every 5m</p>
+
+The number of candidate records altered as part of cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101401` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_reconciler_frontend_db_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_total
+
+<p class="subtitle">Job invocation operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101410` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_frontend_db_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101411` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_reconciler_frontend_db_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_errors_total
+
+<p class="subtitle">Job invocation operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101412` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_frontend_db_errors_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_error_rate
+
+<p class="subtitle">Job invocation operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101413` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_frontend_db_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_reconciler_frontend_db_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_reconciler_frontend_db_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Reconciler task > Codeintel uploads reconciler codeintel db
+
+#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_records_scanned_total
+
+<p class="subtitle">Records scanned every 5m</p>
+
+The number of candidate records considered for cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101500` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_reconciler_codeintel_db_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_records_altered_total
+
+<p class="subtitle">Records altered every 5m</p>
+
+The number of candidate records altered as part of cleanup.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101501` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_reconciler_codeintel_db_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_total
+
+<p class="subtitle">Job invocation operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101510` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_codeintel_db_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101511` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_reconciler_codeintel_db_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_errors_total
+
+<p class="subtitle">Job invocation operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101512` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_codeintel_db_errors_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_error_rate
+
+<p class="subtitle">Job invocation operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=101513` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_codeintel_db_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_reconciler_codeintel_db_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_reconciler_codeintel_db_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
