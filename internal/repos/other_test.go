@@ -83,6 +83,28 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/bar/baz/.git"},
 		}},
 	}, {
+		name: "abs-file-path",
+		body: `{"Items":[{"uri": "/repos/foo", "clonePath":"/repos/foo/.git", "AbsFilePath": "/src/foo"}]}`,
+		want: []*types.Repo{{
+			URI:  "/repos/foo",
+			Name: "/repos/foo",
+			ExternalRepo: api.ExternalRepoSpec{
+				ServiceID:   s.URL,
+				ServiceType: extsvc.TypeOther,
+				ID:          "/repos/foo",
+			},
+			Sources: map[string]*types.SourceInfo{
+				"extsvc:other:1": {
+					ID:       "extsvc:other:1",
+					CloneURL: s.URL + "/repos/foo/.git",
+				},
+			},
+			Metadata: &extsvc.OtherRepoMetadata{
+				RelativePath: "/repos/foo/.git",
+				AbsFilePath:  "/src/foo",
+			},
+		}},
+	}, {
 		name: "override",
 		body: `{"Items":[{"uri": "/repos/foo", "name": "foo", "description": "hi", "clonePath":"/repos/foo/.git"}]}`,
 		want: []*types.Repo{{
