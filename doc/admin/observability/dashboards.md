@@ -22537,6 +22537,29 @@ Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^${source:regex}.
 
 <br />
 
+### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Janitor task
+
+#### codeintel-autoindexing: codeintel_background_repositories_scanned_total
+
+<p class="subtitle">Lsif upload repository scan repositories scanned every 5m</p>
+
+Number of repositories scanned for data retention
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100700` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_repositories_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
 ## Code Intelligence > Code Nav
 
 <p class="subtitle">The service at `enterprise/internal/codeintel/codenav`.</p>
@@ -25119,6 +25142,52 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <summary>Technical details</summary>
 
 Query: `sum(increase(src_codeintel_background_upload_records_expired_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Janitor task
+
+#### codeintel-uploads: codeintel_background_repositories_scanned_total
+
+<p class="subtitle">Lsif upload repository scan repositories scanned every 5m</p>
+
+Number of repositories scanned for data retention
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100600` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_repositories_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Reconciler task
+
+#### codeintel-uploads: codeintel_background_repositories_scanned_total
+
+<p class="subtitle">Lsif upload repository scan repositories scanned every 5m</p>
+
+Number of repositories scanned for data retention
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100700` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_repositories_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 

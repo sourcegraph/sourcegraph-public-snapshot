@@ -31,6 +31,7 @@ func CodeIntelAutoIndexing() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewAutoindexingBackgroundJobGroup("${source:regex}"),
 			shared.CodeIntelligence.NewAutoindexingInferenceServiceGroup("${source:regex}"),
 			shared.CodeIntelligence.NewLuasandboxServiceGroup("${source:regex}"),
+			shared.CodeIntelligence.NewAutoindexingJanitorTaskGroup("${source:regex}"),
 		},
 	}
 }

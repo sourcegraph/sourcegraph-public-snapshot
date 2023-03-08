@@ -30,6 +30,8 @@ func CodeIntelUploads() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewUploadsHTTPTransportGroup("${source:regex}"),
 			shared.CodeIntelligence.NewCommitGraphQueueGroup("${source:regex}"),
 			shared.CodeIntelligence.NewUploadsExpirationTaskGroup("${source:regex}"),
+			shared.CodeIntelligence.NewJanitorTaskGroup("${source:regex}"),
+			shared.CodeIntelligence.NewReconcilerTaskGroup("${source:regex}"),
 		},
 	}
 }

@@ -217,3 +217,8 @@ func (codeIntelligence) NewLuasandboxServiceGroup(containerName string) monitori
 		},
 	})
 }
+
+func (codeIntelligence) NewAutoindexingJanitorTaskGroup(containerName string) monitoring.Group {
+	// TODO
+	return CodeIntelligence.newJanitorGroup("Codeintel: Autoindexing > Janitor task", containerName)
+}
