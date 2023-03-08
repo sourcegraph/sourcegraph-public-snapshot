@@ -9,8 +9,9 @@ import { AutoIndexJobDescriptionFields } from '../../../../../graphql-operations
 import schema from '../../schema.json'
 
 import { autoIndexJobsToFormData } from './auto-index-to-form-job'
+import { formDataToSchema } from './form-data-to-schema'
 import { IndexJobNode } from './IndexJobNode'
-import { InferenceFormData, InferenceFormJob } from './types'
+import { InferenceFormData, InferenceFormJob, SchemaCompatibleInferenceFormData } from './types'
 
 const ajv = new AJV({ strict: false })
 addFormats(ajv)
@@ -18,25 +19,31 @@ addFormats(ajv)
 interface InferenceFormProps {
     readOnly: boolean
     jobs: AutoIndexJobDescriptionFields[]
+    onSubmit?: (data: SchemaCompatibleInferenceFormData) => void
 }
 
-export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({ jobs, readOnly }) => {
+export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({ jobs, readOnly, onSubmit }) => {
     const [formData, setFormData] = useState<InferenceFormData>(autoIndexJobsToFormData(jobs))
 
-    const handleSubmit = useCallback((event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault()
+    const handleSubmit = useCallback(
+        (event: React.FormEvent<HTMLFormElement>) => {
+            event.preventDefault()
 
-        const formDataWithoutMeta = {
-            index_jobs: formData.index_jobs.map(job => {
-                const { meta, ...rest } = job
-                return rest
-            }),
-        }
+            if (!onSubmit) {
+                return
+            }
 
-        // Validate form data against JSONSchema
-        const isValid = ajv.validate(schema, formDataWithoutMeta)
-        console.log(isValid)
-    }, [])
+            const schemaCompatibleFormData = formDataToSchema(formData)
+
+            // Validate form data against JSONSchema
+            const isValid = ajv.validate(schema, schemaCompatibleFormData)
+
+            if (isValid) {
+                onSubmit(schemaCompatibleFormData)
+            }
+        },
+        [formData, onSubmit]
+    )
 
     const getChangeHandler = useCallback(
         (id: string) => (name: keyof InferenceFormJob, value: unknown) => {
@@ -61,6 +68,10 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({ job
 
     const getRemoveHandler = useCallback(
         (id: string) => () => {
+            if (!window.confirm('Are you sure you want to remove this entire job?')) {
+                return
+            }
+
             setFormData(previous => ({
                 index_jobs: previous.index_jobs.filter(job => job.meta.id !== id),
             }))

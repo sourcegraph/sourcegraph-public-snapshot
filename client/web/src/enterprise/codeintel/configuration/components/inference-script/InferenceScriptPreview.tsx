@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import { useLazyQuery } from '@sourcegraph/http-client'
 import {
@@ -31,28 +31,33 @@ interface InferenceScriptPreviewFormValues {
 }
 
 interface InferenceScriptPreviewProps {
+    active: boolean
     script: string | null
     setTab: (index: number) => void
 }
 
-export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPreviewProps> = ({ script }) => {
-    const [getRepoId] = useLazyQuery<GetRepoIdResult, GetRepoIdVariables>(GET_REPO_ID, {})
+export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPreviewProps> = ({ active, script }) => {
+    const [getRepoId, repoData] = useLazyQuery<GetRepoIdResult, GetRepoIdVariables>(GET_REPO_ID, {})
     const [inferJobs, { data, loading, error }] = useLazyQuery<
         InferAutoIndexJobsForRepoResult,
         InferAutoIndexJobsForRepoVariables
-    >(INFER_JOBS_SCRIPT, {})
+    >(INFER_JOBS_SCRIPT, {
+        fetchPolicy: 'cache-first',
+    })
 
     const form = useForm<InferenceScriptPreviewFormValues>({
         initialValues: { repository: '' },
-        onSubmit: async ({ repository }) => {
-            const { data } = await getRepoId({ variables: { name: repository } })
-            const id = data?.repository?.id
-
-            if (id) {
-                return inferJobs({ variables: { repository: id, script, rev: null } })
-            }
-        },
+        onSubmit: async ({ repository }) => getRepoId({ variables: { name: repository } }),
     })
+
+    useEffect(() => {
+        const id = repoData?.data?.repository?.id
+
+        if (active && id) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            inferJobs({ variables: { repository: id, script, rev: null } })
+        }
+    }, [active, inferJobs, repoData, script])
 
     const repository = useField({
         name: 'repository',

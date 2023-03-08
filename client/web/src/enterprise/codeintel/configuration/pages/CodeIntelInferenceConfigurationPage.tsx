@@ -36,13 +36,12 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
                         text: <>Code graph inference script</>,
                     },
                 ]}
-                description={`Lua script that emits complete and/or partial auto-indexing
-                job specifications. `}
+                description="Lua script that emits complete and/or partial auto-indexing job specifications."
                 className="mb-3"
             />
             {fetchError && <ErrorAlert prefix="Error fetching inference script" error={fetchError} />}
             {loadingScript && <LoadingSpinner />}
-            <Tabs size="large" index={activeTabIndex} onChange={setTab} lazy={true}>
+            <Tabs size="large" index={activeTabIndex} onChange={setTab}>
                 <TabList>
                     <Tab key="script">Script</Tab>
                     <Tab key="preview">Preview</Tab>
@@ -58,7 +57,7 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
                         />
                     </TabPanel>
                     <TabPanel className={styles.panel}>
-                        <InferenceScriptPreview script={previewScript} setTab={setTab} />
+                        <InferenceScriptPreview active={activeTabIndex === 1} script={previewScript} setTab={setTab} />
                     </TabPanel>
                 </TabPanels>
             </Tabs>

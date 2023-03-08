@@ -1,7 +1,6 @@
 import { Label } from '@sourcegraph/wildcard'
 
-// TODO: Own file
-import styles from '../inference-script/InferenceScriptPreview.module.scss'
+import styles from './IndexJobLabel.module.scss'
 
 interface IndexJobLabelProps {
     label: string

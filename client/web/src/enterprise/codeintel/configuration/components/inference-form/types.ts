@@ -1,3 +1,26 @@
+interface SchemaCompatibleInferenceFormStep {
+    root: string
+    image: string
+    commands: string[]
+}
+
+interface SchemaCompatibleInferenceFormJob {
+    root: string
+    indexer: string
+    indexer_args: string[]
+    requestedEnvVars: string[]
+    local_steps: string[]
+    outfile: string
+    steps: SchemaCompatibleInferenceFormStep[]
+}
+
+export interface SchemaCompatibleInferenceFormData {
+    index_jobs: SchemaCompatibleInferenceFormJob[]
+}
+
+/**
+ * Form data with additional metadata that is unrelated to submission
+ */
 interface MetaIdentifier {
     meta: {
         id: string
@@ -10,19 +33,16 @@ export interface InferenceArrayValue extends MetaIdentifier {
     value: string
 }
 
-export interface InferenceFormJobStep extends MetaIdentifier {
-    root: string
-    image: string
+export interface InferenceFormJobStep extends Omit<SchemaCompatibleInferenceFormStep, 'commands'>, MetaIdentifier {
     commands: InferenceArrayValue[]
 }
 
-export interface InferenceFormJob extends MetaIdentifier {
-    root: string
-    indexer: string
+export interface InferenceFormJob
+    extends Omit<SchemaCompatibleInferenceFormJob, 'indexer_args' | 'requestedEnvVars' | 'local_steps' | 'steps'>,
+        MetaIdentifier {
     indexer_args: InferenceArrayValue[]
     requestedEnvVars: InferenceArrayValue[]
     local_steps: InferenceArrayValue[]
-    outfile: string
     steps: InferenceFormJobStep[]
 }
 

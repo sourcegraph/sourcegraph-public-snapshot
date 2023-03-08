@@ -9,8 +9,7 @@ import { CommandInput } from './CommandInput'
 import { IndexJobLabel } from './IndexJobLabel'
 import { InferenceArrayValue, InferenceFormJob, InferenceFormJobStep } from './types'
 
-// TODO: Own file
-import styles from '../inference-script/InferenceScriptPreview.module.scss'
+import styles from './IndexJobNode.module.scss'
 
 interface IndexJobNodeProps {
     job: InferenceFormJob
@@ -27,15 +26,14 @@ export const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({
     onChange,
     onRemove,
 }) => {
-    // TODO: Add scroll to
     const comparisonKey = job.meta.id
 
     return (
-        <Container className={styles.job}>
+        <Container id={comparisonKey} className={styles.job}>
             <div className={styles.jobHeader}>
                 <H3 className="mb-0">Job #{jobNumber}</H3>
                 {!readOnly && (
-                    <Button variant="icon" className="ml-2" size="sm" aria-label="Remove" onClick={onRemove}>
+                    <Button variant="icon" className="ml-2 text-danger" aria-label="Remove" onClick={onRemove}>
                         <Icon svgPath={mdiClose} aria-hidden={true} />
                     </Button>
                 )}
@@ -101,8 +99,7 @@ export const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({
                                     {!readOnly && (
                                         <Button
                                             variant="icon"
-                                            className="ml-2"
-                                            size="sm"
+                                            className="ml-2 text-danger"
                                             aria-label="Remove"
                                             onClick={() => {
                                                 const steps = [...job.steps]
@@ -214,8 +211,7 @@ const IndexCommandNode = <formKey,>({
                 {!readOnly && (
                     <Button
                         variant="icon"
-                        className="ml-2"
-                        size="sm"
+                        className="ml-2 text-danger"
                         aria-label="Remove"
                         onClick={() => {
                             const prevCommands = [...commands]
