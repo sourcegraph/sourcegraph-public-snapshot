@@ -465,7 +465,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
             }
 
             case 'path': {
-                const predicates = staticFilterPredicateOptions('file', token.value, position)
+                const predicates = staticFilterPredicateOptions('file', token, from, to)
                 return caches.file.query(
                     value,
                     entries => {
