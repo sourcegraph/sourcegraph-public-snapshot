@@ -1,5 +1,6 @@
 import { FC, ReactNode, useMemo } from 'react'
 
+import { Reference } from '@apollo/client'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
@@ -8,11 +9,7 @@ import { Alert, Button, FormChangeEvent, H4, Link, useLocalStorage } from '@sour
 
 import { defaultExternalServices } from '../../../../../components/externalServices/externalServices'
 import { LoaderButton } from '../../../../../components/LoaderButton'
-import {
-    AddRemoteCodeHostResult,
-    AddRemoteCodeHostVariables,
-    GetCodeHostsResult,
-} from '../../../../../graphql-operations'
+import { AddRemoteCodeHostResult, AddRemoteCodeHostVariables } from '../../../../../graphql-operations'
 import { getCodeHostKindFromURLParam } from '../../helpers'
 import { ADD_CODE_HOST, CODE_HOST_FRAGMENT } from '../../queries'
 
@@ -112,15 +109,24 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
 
                 cache.modify({
                     fields: {
-                        externalServices(codeHosts: GetCodeHostsResult['externalServices']) {
+                        externalServices(codeHosts: { nodes: Reference[] }) {
                             const newCodeHost = cache.writeFragment({
                                 data: data.addExternalService,
                                 fragment: CODE_HOST_FRAGMENT,
                             })
 
+                            const existingNodesRefs = codeHosts?.nodes ?? []
+                            const nodes = [
+                                newCodeHost,
+                                // There was a problem that update function could be run twice and
+                                // cache will have duplicate ref, so filter out newly created ref
+                                // in case if we already have it in the cache
+                                ...existingNodesRefs.filter(node => node.__ref !== newCodeHost?.__ref),
+                            ]
+
                             // Update local cache and put newly created/connected code host
                             // to the beginning of code hosts list
-                            return { nodes: [newCodeHost, ...(codeHosts?.nodes ?? [])] }
+                            return { nodes }
                         },
                     },
                 })
