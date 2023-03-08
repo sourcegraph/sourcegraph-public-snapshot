@@ -4,6 +4,7 @@ import { QueryResult } from '@apollo/client'
 import { mdiInformationOutline, mdiDelete, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
+import { pluralize } from '@sourcegraph/common'
 import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip, Link } from '@sourcegraph/wildcard'
 
 import { CodeHost, GetCodeHostsResult } from '../../../../../graphql-operations'
@@ -11,7 +12,7 @@ import { CodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../.
 
 import styles from './CodeHostsNavigation.module.scss'
 
-interface CodeHostsNavigationProps {
+interface CodeHostsNavigationProps {Ï
     codeHostQueryResult: QueryResult<GetCodeHostsResult>
     activeConnectionId: string | undefined
     createConnectionType: string | undefined
@@ -76,14 +77,13 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                             <CodeHostIcon codeHostType={codeHost.kind} aria-hidden={true} />
                         </span>
                         <span className={styles.itemDescription}>
-                            <span>{codeHost.displayName}</span>
+                            <span className={styles.itemTitle}>{codeHost.displayName} <small><LoadingSpinner /></small></span>
                             <small className={styles.itemDescriptionStatus}>
                                 {codeHost.lastSyncAt !== null && <>Synced, {codeHost.repoCount} repositories found</>}
                                 {codeHost.lastSyncAt === null && (
                                     <>
-                                        <LoadingSpinner />, Syncing{' '}
-                                        {codeHost.repoCount > 0 && (
-                                            <>, so far {codeHost.repoCount} repositories found</>
+                                       Syncing {codeHost.repoCount > 0 && (
+                                            <>, so far {codeHost.repoCount} {pluralize('repository', codeHost.repoCount ?? 0, 'repositories')} found</>
                                         )}
                                     </>
                                 )}
