@@ -9,8 +9,6 @@ import { InferenceScriptEditor } from '../components/inference-script/InferenceS
 import { InferenceScriptPreview } from '../components/inference-script/InferenceScriptPreview'
 import { useInferenceScript } from '../hooks/useInferenceScript'
 
-import styles from './CodeIntelInferenceConfigurationPage.module.scss'
-
 export interface CodeIntelInferenceConfigurationPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
 }
@@ -52,7 +50,7 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
                     </Tab>
                 </TabList>
                 <TabPanels>
-                    <TabPanel className={styles.panel}>
+                    <TabPanel>
                         <InferenceScriptEditor
                             script={inferenceScript}
                             authenticatedUser={authenticatedUser}
@@ -62,7 +60,7 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
                             {...props}
                         />
                     </TabPanel>
-                    <TabPanel className={styles.panel}>
+                    <TabPanel>
                         <InferenceScriptPreview
                             active={activeTabIndex === 1}
                             script={inferencePreview}
