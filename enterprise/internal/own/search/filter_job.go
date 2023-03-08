@@ -16,22 +16,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewFileHasOwnersJob(child job.Job, includeOwners, excludeOwners []string) job.Job {
+func NewFileHasOwnersJob(child job.Job, features *search.Features, includeOwners, excludeOwners []string) job.Job {
 	return &fileHasOwnersJob{
 		child:         child,
+		features:      features,
 		includeOwners: includeOwners,
 		excludeOwners: excludeOwners,
 	}
 }
 
 type fileHasOwnersJob struct {
-	child job.Job
+	child    job.Job
+	features *search.Features
 
 	includeOwners []string
 	excludeOwners []string
 }
 
 func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	if s.features == nil || !s.features.CodeOwnershipSearch {
+		return nil, errors.New("`file:has.owner` searches are not enabled on this instance. Enable the `search-ownership` flag to access Ownership search.")
+	}
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)
 
