@@ -20,11 +20,14 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
     ...props
 }) => {
     const [activeTabIndex, setActiveTabIndex] = useState<number>(0)
-    const [previewScript, setPreviewScript] = useState<string | null>(null)
     const { inferenceScript, loadingScript, fetchError } = useInferenceScript()
+    const [previewScript, setPreviewScript] = useState<string | null>(null)
     const setTab = useCallback((index: number) => {
         setActiveTabIndex(index)
     }, [])
+
+    const inferencePreview = previewScript !== null ? previewScript : inferenceScript
+    const previewDisabled = inferencePreview === ''
 
     return (
         <>
@@ -44,7 +47,9 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
             <Tabs size="large" index={activeTabIndex} onChange={setTab}>
                 <TabList>
                     <Tab key="script">Script</Tab>
-                    <Tab key="preview">Preview</Tab>
+                    <Tab key="preview" disabled={previewDisabled}>
+                        Preview
+                    </Tab>
                 </TabList>
                 <TabPanels>
                     <TabPanel className={styles.panel}>
@@ -52,12 +57,17 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
                             script={inferenceScript}
                             authenticatedUser={authenticatedUser}
                             setPreviewScript={setPreviewScript}
+                            previewDisabled={previewDisabled}
                             setTab={setTab}
                             {...props}
                         />
                     </TabPanel>
                     <TabPanel className={styles.panel}>
-                        <InferenceScriptPreview active={activeTabIndex === 1} script={previewScript} setTab={setTab} />
+                        <InferenceScriptPreview
+                            active={activeTabIndex === 1}
+                            script={inferencePreview}
+                            setTab={setTab}
+                        />
                     </TabPanel>
                 </TabPanels>
             </Tabs>

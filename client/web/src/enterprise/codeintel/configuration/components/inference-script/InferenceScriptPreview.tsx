@@ -11,6 +11,7 @@ import {
     useForm,
     Form,
     Label,
+    Alert,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -32,7 +33,7 @@ interface InferenceScriptPreviewFormValues {
 
 interface InferenceScriptPreviewProps {
     active: boolean
-    script: string | null
+    script: string
     setTab: (index: number) => void
 }
 
@@ -41,9 +42,7 @@ export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPrev
     const [inferJobs, { data, loading, error }] = useLazyQuery<
         InferAutoIndexJobsForRepoResult,
         InferAutoIndexJobsForRepoVariables
-    >(INFER_JOBS_SCRIPT, {
-        fetchPolicy: 'cache-first',
-    })
+    >(INFER_JOBS_SCRIPT, {})
 
     const form = useForm<InferenceScriptPreviewFormValues>({
         initialValues: { repository: '' },
@@ -55,7 +54,7 @@ export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPrev
 
         if (active && id) {
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            inferJobs({ variables: { repository: id, script, rev: null } })
+            inferJobs({ variables: { repository: id, script, rev: null }, fetchPolicy: 'cache-first' })
         }
     }, [active, inferJobs, repoData, script])
 
