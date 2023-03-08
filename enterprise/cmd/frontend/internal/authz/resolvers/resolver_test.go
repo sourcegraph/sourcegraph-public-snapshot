@@ -58,14 +58,13 @@ func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 }
 
 func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
-
-		licensing.MockCheckFeatureError("")
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
@@ -233,6 +232,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 
 func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 	// TODO: Factor out this common check
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -294,7 +294,7 @@ func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 }
 
 func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
-	licensing.MockCheckFeatureError("")
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
@@ -348,8 +348,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 }
 
 func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
-	reset := licensing.TestingSkipFeatureChecks()
-	t.Cleanup(reset)
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 123})
 
 	t.Run("authenticated as non-admin and not the same user", func(t *testing.T) {
