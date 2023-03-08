@@ -347,7 +347,12 @@ func (s *Service) resolvePaths(
 		return nil, err
 	}
 
-	return filterPaths(paths, compileWildcards(patterns), nil), nil
+	compiledPatterns, err := compileWildcards(patterns)
+	if err != nil {
+		return nil, err
+	}
+
+	return filterPaths(paths, compiledPatterns, nil), nil
 }
 
 // resolveFileContents requests the content of the paths that match the given combined regular expression.
@@ -361,7 +366,10 @@ func (s *Service) resolveFileContents(
 	ctx, traceLogger, endObservation := s.operations.resolveFileContents.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	relevantPaths := filterPathsByPatterns(paths, patternsForContent)
+	relevantPaths, err := filterPathsByPatterns(paths, patternsForContent)
+	if err != nil {
+		return nil, err
+	}
 	if len(relevantPaths) == 0 {
 		return nil, nil
 	}
@@ -524,7 +532,10 @@ func (s *Service) invokeLinearizedRecognizer(
 	ctx, _, endObservation := s.operations.invokeLinearizedRecognizer.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	callPaths, callContentsByPath := s.filterPathsForRecognizer(recognizer, paths, contentsByPath)
+	callPaths, callContentsByPath, err := s.filterPathsForRecognizer(recognizer, paths, contentsByPath)
+	if err != nil {
+		return nil, err
+	}
 	if len(callPaths) == 0 && len(callContentsByPath) == 0 {
 		return nil, nil
 	}
@@ -550,12 +561,18 @@ func (s *Service) filterPathsForRecognizer(
 	recognizer *luatypes.Recognizer,
 	paths []string,
 	contentsByPath map[string]string,
-) ([]string, map[string]string) {
+) ([]string, map[string]string, error) {
 	// Filter out paths which are not interesting to this recognizer
-	filteredPaths := filterPathsByPatterns(paths, recognizer.Patterns(false))
+	filteredPaths, err := filterPathsByPatterns(paths, recognizer.Patterns(false))
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// Filter out paths which are not interesting to this recognizer
-	filteredPathsWithContent := filterPathsByPatterns(paths, recognizer.Patterns(true))
+	filteredPathsWithContent, err := filterPathsByPatterns(paths, recognizer.Patterns(true))
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// Copy over content for remaining paths in map
 	filteredContentsByPath := make(map[string]string, len(filteredPathsWithContent))
@@ -563,5 +580,5 @@ func (s *Service) filterPathsForRecognizer(
 		filteredContentsByPath[key] = contentsByPath[key]
 	}
 
-	return filteredPaths, filteredContentsByPath
+	return filteredPaths, filteredContentsByPath, nil
 }

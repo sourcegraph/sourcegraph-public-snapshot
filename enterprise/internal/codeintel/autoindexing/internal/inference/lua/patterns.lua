@@ -7,17 +7,15 @@ local new_pattern = function(prefix, pattern, suffix)
 end
 
 M.new_path_literal = function(pattern)
-    return new_pattern("", pattern, "")
+    return new_pattern("/", pattern, "")
 end
 
 M.new_path_segment = function(pattern)
-    -- TODO
-    return new_pattern("*", pattern, "*")
+    return new_pattern("", pattern, "/")
 end
 
 M.new_path_basename = function(pattern)
-    -- TODO
-    return new_pattern("*", pattern, "")
+    return new_pattern("", pattern, "")
 end
 
 M.new_path_extension = function(pattern)

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/becheran/wildmatch-go"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -20,11 +20,11 @@ import (
 )
 
 func testService(t *testing.T, repositoryContents map[string]string) *Service {
-	paths := make([]string, 0, len(repositoryContents))
+	repositoryPaths := make([]string, 0, len(repositoryContents))
 	for path := range repositoryContents {
-		paths = append(paths, path)
+		repositoryPaths = append(repositoryPaths, path)
 	}
-	sort.Strings(paths)
+	sort.Strings(repositoryPaths)
 
 	// Real deal
 	sandboxService := luasandbox.NewService()
@@ -32,12 +32,17 @@ func testService(t *testing.T, repositoryContents map[string]string) *Service {
 	// Fake deal
 	gitService := NewMockGitService()
 	gitService.LsFilesFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit string, pathspecs ...gitdomain.Pathspec) ([]string, error) {
-		var patterns []*wildmatch.WildMatch
+		var patterns []paths.GlobPattern
 		for _, spec := range pathspecs {
-			patterns = append(patterns, wildmatch.NewWildMatch(string(spec)))
+			pattern, err := paths.Compile(string(spec))
+			if err != nil {
+				return nil, err
+			}
+
+			patterns = append(patterns, pattern)
 		}
 
-		return filterPaths(paths, patterns, nil), nil
+		return filterPaths(repositoryPaths, patterns, nil), nil
 	})
 	gitService.ArchiveFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 		files := map[string]string{}
