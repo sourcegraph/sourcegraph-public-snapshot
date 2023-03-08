@@ -2,11 +2,12 @@ import React, { useEffect } from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { gql } from '@sourcegraph/http-client'
-import { PageHeader, Link, Text } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { ScimAlert } from '../ScimAlert'
 
 import { EditUserProfileForm } from './EditUserProfileForm'
 
@@ -20,6 +21,7 @@ export const EditUserProfilePageGQLFragment = gql`
         avatarURL
         viewerCanChangeUsername
         createdAt
+        scimControlled
     }
 `
 
@@ -27,10 +29,7 @@ interface Props {
     user: EditUserProfilePageFragment
 }
 
-export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    user,
-    ...props
-}) => {
+export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ user }) => {
     useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
 
     return (
@@ -53,6 +52,7 @@ export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChi
                 }
                 className={styles.heading}
             />
+            {user.scimControlled && <ScimAlert />}
             {user && (
                 <EditUserProfileForm
                     user={user}

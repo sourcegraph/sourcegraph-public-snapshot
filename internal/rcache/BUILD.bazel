@@ -23,5 +23,9 @@ go_test(
         "rcache_test.go",
     ],
     embed = [":rcache"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = ["@com_github_stretchr_testify//assert"],
 )

@@ -921,7 +921,7 @@ const siteAdminPackageFieldsFragment = gql`
     fragment SiteAdminPackageFields on PackageRepoReference {
         id
         name
-        scheme
+        kind
         repository {
             id
             name
@@ -937,8 +937,8 @@ const siteAdminPackageFieldsFragment = gql`
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages($scheme: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
-        packageRepoReferences(scheme: $scheme, name: $name, first: $first, after: $after) {
+    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
+        packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields
             }
