@@ -105,6 +105,43 @@ var tt = []struct {
 			Tag:       "16",
 		},
 	},
+	{
+		In: "registry.example.com:5000/sourcegraph/executors:insiders",
+		Want: ImageReference{
+			Registry:  "registry.example.com:5000",
+			Namespace: "sourcegraph",
+			Name:      "executors",
+			Tag:       "insiders",
+		},
+	},
+	// https://docs.gitlab.com/ee/user/packages/container_registry/#naming-convention-for-your-container-images
+	{
+		In: "registry.example.com/mynamespace/myproject:some-tag",
+		Want: ImageReference{
+			Registry:  "registry.example.com",
+			Namespace: "mynamespace",
+			Name:      "myproject",
+			Tag:       "some-tag",
+		},
+	},
+	{
+		In: "registry.example.com/mynamespace/myproject/image:latest",
+		Want: ImageReference{
+			Registry:  "registry.example.com/mynamespace",
+			Namespace: "myproject",
+			Name:      "image",
+			Tag:       "latest",
+		},
+	},
+	{
+		In: "registry.example.com/mynamespace/myproject/my/image:rc1",
+		Want: ImageReference{
+			Registry:  "registry.example.com/mynamespace/myproject",
+			Namespace: "my",
+			Name:      "image",
+			Tag:       "rc1",
+		},
+	},
 }
 
 func TestParseImageString(t *testing.T) {
@@ -125,4 +162,48 @@ func TestParseImageString(t *testing.T) {
 
 		})
 	}
+}
+
+func TestIsPublicDockerHub(t *testing.T) {
+	testCases := []struct {
+		Name      string
+		Container string
+		Public    bool
+	}{
+		{
+			Name:      "NoRegistry",
+			Container: "sourcegraph/executor",
+			Public:    true,
+		},
+		{
+			Name:      "LegacyDockerHub",
+			Container: "index.docker.io/sourcegraph/executor:insiders",
+			Public:    true,
+		},
+		{
+			Name:      "DockerHub",
+			Container: "docker.io/sourcegraph/executor:insiders",
+			Public:    true,
+		},
+		{
+			Name:      "ArtifactRegistry",
+			Container: "us-central1-docker.pkg.dev/project-id/repo-name/sourcegraph/executor:insiders",
+			Public:    false,
+		},
+		{
+			Name:      "GitLab",
+			Container: "registry.example.com/mynamespace/myproject/my/image:rc1",
+			Public:    false,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.Name, func(t *testing.T) {
+			i := ParseImageString(test.Container)
+			if i.IsPublicDockerHub() != test.Public {
+				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(test.Public, i.IsPublicDockerHub()))
+			}
+		})
+	}
+
 }

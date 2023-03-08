@@ -15,6 +15,12 @@ type ImageReference struct {
 	Digest    string // sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc
 }
 
+// IsPublicDockerHub determines if the container is coming from a public docker registry
+// upstream, either by not specifying a registry or speciying one of the Docker Hub URLs
+func (i ImageReference) IsPublicDockerHub() bool {
+	return i.Registry == "" || i.Registry == "index.docker.io" || i.Registry == "docker.io"
+}
+
 func (image ImageReference) String() string {
 	s := image.Name
 	if image.Namespace != "" {
@@ -34,9 +40,12 @@ func (image ImageReference) String() string {
 }
 
 // ParseImageString parses a docker image into a Go ImageReference type in the
-// format: registry_hostname[:port]/][user_name/](repository_name[:version_tag])
+// format: <registry.example.com/subpaths>/<namespace>/<name>:<tag>@<digest>
 //
-// Needs to be able to support registries that have subpaths in them
+// Supports registries with a variable number of subpaths included in them.
+// Please note: this is a best-effort string parsing implementation and may
+// struggle with certain registries that allow variable formats (e.g. GitLab)
+// Please validate the results manually before trusting this function.
 func ParseImageString(dockerName string) ImageReference {
 	var image ImageReference
 
