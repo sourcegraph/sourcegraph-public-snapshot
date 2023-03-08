@@ -178,7 +178,7 @@ describe('StreamingSearchResults', () => {
         sinon.assert.calledWith(logSpy, 'SearchResultsFetched')
     })
 
-    it('should log event when clicking on search result', () => {
+    it('should log events when clicking on search result', () => {
         const logSpy = sinon.spy()
         const telemetryService = {
             ...NOOP_TELEMETRY_SERVICE,
@@ -189,6 +189,21 @@ describe('StreamingSearchResults', () => {
 
         userEvent.click(screen.getAllByTestId('result-container')[0])
         sinon.assert.calledWith(logSpy, 'SearchResultClicked')
+        sinon.assert.calledWith(logSpy, 'search.ranking.result-clicked', {
+            index: 0,
+            type: 'fileMatch',
+            ranked: false,
+            resultsNumber: 3,
+        })
+
+        userEvent.click(screen.getAllByTestId('result-container')[2])
+        sinon.assert.calledWith(logSpy, 'SearchResultClicked')
+        sinon.assert.calledWith(logSpy, 'search.ranking.result-clicked', {
+            index: 2,
+            type: 'fileMatch',
+            ranked: false,
+            resultsNumber: 3,
+        })
     })
 
     it('should not show saved search modal on first load', () => {

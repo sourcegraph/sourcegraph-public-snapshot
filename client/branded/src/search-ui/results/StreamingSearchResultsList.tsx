@@ -74,6 +74,12 @@ export interface StreamingSearchResultsListProps
      */
     setQueryState?: (query: QueryState) => void
     selectedSearchContextSpec?: string
+
+    /*
+     * An optional callback invoked whenever a search result is clicked.
+     * It's passed the index of the result in the list and the result type.
+     */
+    logSearchResultClicked?: (index: number, type: string) => void
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -97,21 +103,12 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     enableKeyboardNavigation,
     showQueryExamplesOnNoResultsPage,
     setQueryState,
+    logSearchResultClicked,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
     const location = useLocation()
     const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
-
-    const logSearchResultClicked = useCallback(
-        (index: number, type: string) => {
-            telemetryService.log('SearchResultClicked')
-
-            // This data ends up in Prometheus and is not part of the ping payload.
-            telemetryService.log('search.ranking.result-clicked', { index, type })
-        },
-        [telemetryService]
-    )
 
     const renderResult = useCallback(
         (result: SearchMatch, index: number): JSX.Element => {
@@ -139,7 +136,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                         location={location}
                                         telemetryService={telemetryService}
                                         result={result}
-                                        onSelect={() => logSearchResultClicked(index, 'fileMatch')}
+                                        onSelect={() => logSearchResultClicked?.(index, 'fileMatch')}
                                         defaultExpanded={false}
                                         showAllMatches={false}
                                         allExpanded={allExpanded}
@@ -155,7 +152,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                         index={index}
                                         telemetryService={telemetryService}
                                         result={result}
-                                        onSelect={() => logSearchResultClicked(index, 'symbolMatch')}
+                                        onSelect={() => logSearchResultClicked?.(index, 'symbolMatch')}
                                         fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                         repoDisplayName={displayRepoName(result.repository)}
                                         settingsCascade={settingsCascade}
@@ -167,7 +164,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                     <FilePathSearchResult
                                         index={index}
                                         result={result}
-                                        onSelect={() => logSearchResultClicked(index, 'filePathMatch')}
+                                        onSelect={() => logSearchResultClicked?.(index, 'filePathMatch')}
                                         repoDisplayName={displayRepoName(result.repository)}
                                         containerClassName={resultClassName}
                                         telemetryService={telemetryService}
@@ -181,7 +178,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 index={index}
                                 result={result}
                                 platformContext={platformContext}
-                                onSelect={() => logSearchResultClicked(index, 'commit')}
+                                onSelect={() => logSearchResultClicked?.(index, 'commit')}
                                 openInNewTab={openMatchesInNewTab}
                                 containerClassName={resultClassName}
                                 as="li"
@@ -192,7 +189,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             <RepoSearchResult
                                 index={index}
                                 result={result}
-                                onSelect={() => logSearchResultClicked(index, 'repo')}
+                                onSelect={() => logSearchResultClicked?.(index, 'repo')}
                                 containerClassName={resultClassName}
                                 as="li"
                             />
@@ -204,7 +201,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 index={index}
                                 result={result}
                                 as="li"
-                                onSelect={() => logSearchResultClicked(index, 'person')}
+                                onSelect={() => logSearchResultClicked?.(index, 'person')}
                                 containerClassName={resultClassName}
                                 telemetryService={telemetryService}
                             />
