@@ -885,7 +885,7 @@ func TestSerializeOwn(t *testing.T) {
 				"wau": 150,
 				"mau": 300
 			},
-			"file_has_owners_search": {
+			"file_has_owner_search": {
 				"dau": 100,
 				"wau": 150,
 				"mau": 300
@@ -936,7 +936,7 @@ func TestSerializeOwn(t *testing.T) {
 				"wau": 150,
 				"mau": 300
 			},
-			"file_has_owners_search": {
+			"file_has_owner_search": {
 				"dau": 100,
 				"wau": 150,
 				"mau": 300

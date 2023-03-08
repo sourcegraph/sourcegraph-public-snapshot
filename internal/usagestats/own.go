@@ -11,7 +11,7 @@ import (
 
 const (
 	selectFileOwnersEventName   = "SelectFileOwnersSearch"
-	fileHasOwnerEventName       = "FileHasOwnersSearch"
+	fileHasOwnerEventName       = "FileHasOwnerSearch"
 	ownershipPanelOpenEventName = "OwnershipPanelOpened"
 )
 
@@ -49,7 +49,7 @@ func GetOwnershipUsageStats(ctx context.Context, db database.DB) (*types.Ownersh
 		return nil, err
 	}
 	stats.SelectFileOwnersSearch = activity[selectFileOwnersEventName]
-	stats.FileHasOwnersSearch = activity[fileHasOwnerEventName]
+	stats.FileHasOwnerSearch = activity[fileHasOwnerEventName]
 	stats.OwnershipPanelOpened = activity[ownershipPanelOpenEventName]
 	return &stats, nil
 }

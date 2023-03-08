@@ -201,8 +201,8 @@ func TestGetOwnershipUsageStatsAggregatedStats(t *testing.T) {
 		"SelectFileOwnersSearch": func(stats *types.OwnershipUsageStatistics) *types.OwnershipUsageStatisticsActiveUsers {
 			return stats.SelectFileOwnersSearch
 		},
-		"FileHasOwnersSearch": func(stats *types.OwnershipUsageStatistics) *types.OwnershipUsageStatisticsActiveUsers {
-			return stats.FileHasOwnersSearch
+		"FileHasOwnerSearch": func(stats *types.OwnershipUsageStatistics) *types.OwnershipUsageStatisticsActiveUsers {
+			return stats.FileHasOwnerSearch
 		},
 		"OwnershipPanelOpened": func(stats *types.OwnershipUsageStatistics) *types.OwnershipUsageStatisticsActiveUsers {
 			return stats.OwnershipPanelOpened
