@@ -193,7 +193,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}}, providers)
 }
 
-func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
+func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 	p := &mockProvider{
 		id:          1,
 		serviceType: extsvc.TypeGitLab,
@@ -249,9 +249,6 @@ func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
 		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
 		return nil, nil
 	})
-	perms.TouchUserPermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32) error {
-		return nil
-	})
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 
@@ -260,7 +257,6 @@ func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected an error")
 		}
-		mockrequire.CalledN(t, perms.TouchUserPermissionsFunc, 1)
 	})
 }
 
