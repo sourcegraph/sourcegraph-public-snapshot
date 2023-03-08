@@ -9,6 +9,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -22,11 +24,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func New(db database.DB, gitserver gitserver.Client, ownService own.Service) graphqlbackend.OwnResolver {
+func New(db database.DB, gitserver gitserver.Client, ownService own.Service, logger log.Logger) graphqlbackend.OwnResolver {
 	return &ownResolver{
 		db:         edb.NewEnterpriseDB(db),
 		gitserver:  gitserver,
 		ownService: ownService,
+		logger:     logger,
 	}
 }
 
@@ -41,6 +44,7 @@ type ownResolver struct {
 	db         edb.EnterpriseDB
 	gitserver  gitserver.Client
 	ownService own.Service
+	logger     log.Logger
 }
 
 func ownerText(o *codeownerspb.Owner) string {
