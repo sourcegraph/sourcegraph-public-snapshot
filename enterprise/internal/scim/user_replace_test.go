@@ -20,11 +20,13 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
 		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id2"},
 		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id3"},
+		{User: types.User{ID: 4, Username: "user4", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id4"},
 	},
 		map[int32][]*database.UserEmail{
-			1: {&database.UserEmail{UserID: 2, Email: "a@example.com", VerifiedAt: &verifiedDate}},
-			2: {&database.UserEmail{UserID: 2, Email: "a@example.com", VerifiedAt: &verifiedDate}},
-			3: {&database.UserEmail{UserID: 2, Email: "a@example.com", VerifiedAt: &verifiedDate}},
+			1: {&database.UserEmail{UserID: 1, Email: "a@example.com", VerifiedAt: &verifiedDate, Primary: true}},
+			2: {&database.UserEmail{UserID: 2, Email: "a@example.com", VerifiedAt: &verifiedDate, Primary: true}},
+			3: {&database.UserEmail{UserID: 3, Email: "a@example.com", VerifiedAt: &verifiedDate, Primary: true}},
+			4: {&database.UserEmail{UserID: 4, Email: "a@example.com", VerifiedAt: &verifiedDate, Primary: true}},
 		})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 
@@ -47,6 +49,8 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 				userID, _ := strconv.Atoi(userRes.ID)
 				user, _ := db.Users().GetByID(context.Background(), int32(userID))
 				assert.Equal(t, "user6", user.Username)
+				userEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
+				assert.Len(t, userEmails, 0)
 			},
 		},
 		{
@@ -90,6 +94,38 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 				assert.Equal(t, "testy", userRes.Attributes[AttrNickName])
 				assert.Len(t, userRes.Attributes[AttrEmails], 1)
 				assert.Equal(t, userRes.Attributes[AttrEmails].([]interface{})[0].(map[string]interface{})["value"], "email@address.test")
+				userID, _ := strconv.Atoi(userRes.ID)
+				user, _ := db.Users().GetByID(context.Background(), int32(userID))
+				userEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
+				assert.Len(t, userEmails, 1)
+				assert.Equal(t, "email@address.test", userEmails[0].Email)
+			},
+		},
+		{
+			name:   "replace and reuse previous email ",
+			userId: "4",
+			attrs: scim.ResourceAttributes{
+				AttrDisplayName: "Test User",
+				AttrNickName:    "testy",
+				AttrEmails: []interface{}{
+					map[string]interface{}{
+						"value":   "a@example.com",
+						"primary": true,
+					},
+				},
+			},
+			testFunc: func(userRes scim.Resource, err error) {
+				assert.NoError(t, err)
+				assert.Nil(t, userRes.Attributes[AttrUserName])
+				assert.Equal(t, "Test User", userRes.Attributes[AttrDisplayName])
+				assert.Equal(t, "testy", userRes.Attributes[AttrNickName])
+				assert.Len(t, userRes.Attributes[AttrEmails], 1)
+				assert.Equal(t, userRes.Attributes[AttrEmails].([]interface{})[0].(map[string]interface{})["value"], "a@example.com")
+				userID, _ := strconv.Atoi(userRes.ID)
+				user, _ := db.Users().GetByID(context.Background(), int32(userID))
+				userEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
+				assert.Len(t, userEmails, 1)
+				assert.Equal(t, "a@example.com", userEmails[0].Email)
 			},
 		},
 	}

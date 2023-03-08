@@ -210,14 +210,16 @@ func generateEmailUpdates(startingUserData, endingUserData scim.ResourceAttribut
 	}
 
 	// Check if primary changed
-	if !strings.EqualFold(startingPrimary, endingPrimary) {
+	if !strings.EqualFold(startingPrimary, endingPrimary) && endingPrimary != "" {
 		result.resetPrimaryTo = &endingPrimary
 	}
 
 	toMap := func(s string, others []string) map[string]bool {
-		m := map[string]bool{s: true}
-		for _, v := range others {
-			m[v] = true
+		m := map[string]bool{}
+		for _, v := range append([]string{s}, others...) {
+			if v != "" { // don't include empty strings
+				m[v] = true
+			}
 		}
 		return m
 	}
