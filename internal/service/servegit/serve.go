@@ -351,9 +351,10 @@ func rootIsRepo(root string) (Repo, bool, error) {
 	}
 
 	return Repo{
-		Name:      filepath.Base(abs),
-		URI:       cloneURI,
-		ClonePath: clonePath,
+		Name:        filepath.Base(abs),
+		URI:         cloneURI,
+		ClonePath:   clonePath,
+		AbsFilePath: abs,
 	}, true, nil
 }
 
