@@ -1,4 +1,5 @@
 use scip_macros::include_scip_query;
+use scip_treesitter_languages::parsers::BundledParser;
 use tree_sitter::{Language, Parser, Query};
 
 pub struct TagConfiguration {
@@ -8,7 +9,7 @@ pub struct TagConfiguration {
 }
 
 pub fn rust() -> TagConfiguration {
-    let language = scip_treesitter_languages::rust();
+    let language = BundledParser::Rust.get_language();
     let query = include_scip_query!("rust", "scip-tags");
 
     let mut parser = Parser::new();
@@ -22,7 +23,7 @@ pub fn rust() -> TagConfiguration {
 }
 
 pub fn go() -> TagConfiguration {
-    let language = scip_treesitter_languages::go();
+    let language = BundledParser::Go.get_language();
     let query = include_scip_query!("go", "scip-tags");
 
     let mut parser = Parser::new();
@@ -42,7 +43,7 @@ pub struct LocalConfiguration {
 }
 
 pub fn go_locals() -> LocalConfiguration {
-    let language = scip_treesitter_languages::go();
+    let language = BundledParser::Go.get_language();
     let query = include_scip_query!("go", "scip-locals");
 
     let mut parser = Parser::new();
