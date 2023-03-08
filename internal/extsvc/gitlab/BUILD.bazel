@@ -65,10 +65,6 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":gitlab"],
-        tags = [
-        # requires localhost for some tests (http tests)
-        "requires-network",
-    ],
     tags = [
         # requires localhost database
         "requires-network",

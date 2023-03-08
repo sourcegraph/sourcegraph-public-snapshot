@@ -20,14 +20,14 @@ go_test(
     name = "recorder_test",
     srcs = ["common_test.go"],
     embed = [":recorder"],
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/rcache",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@com_github_stretchr_testify//assert",
-    ],
-    tags = [
-        # requires localhost database
-        "requires-network",
     ],
 )
