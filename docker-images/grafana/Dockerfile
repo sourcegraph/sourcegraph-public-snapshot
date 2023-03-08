@@ -12,8 +12,8 @@ RUN ls '/generated/grafana'
 # DO NOT UPGRADE to AGPL Grafana without consulting Stephen+legal, Grafana >= 8.0 is AGPLv3 Licensed
 # See https://docs.google.com/document/d/1nSmz1ChL_rBvX8FAKTB-CNzgcff083sUlIpoXEz6FHE/edit#heading=h.69clsrno4211
 # Use the Chainguard Grafana image
-# TODO: This image was manually uploaded to our registry 2023-03-03
-FROM us.gcr.io/sourcegraph-dev/wolfi-grafana@sha256:41a1c106067ecd7bafb05aab7a7c5843c462556df9c4b822f8eaf30d957e13fd as production
+# TODO: This image was manually uploaded to our registry 2023-03-08
+FROM us.gcr.io/sourcegraph-dev/wolfi-grafana@sha256:f53c58d0aade1e8ac33064fc45a8b1cb23d0bc93b72370ed32e666e19561a42a as production
 LABEL com.sourcegraph.grafana.version=7.5.17
 
 ARG COMMIT_SHA="unknown"
@@ -35,18 +35,8 @@ ADD config /sg_config_grafana
 COPY --from=monitoring_builder /generated/grafana/home.json /usr/share/grafana/public/dashboards/home.json
 COPY --from=monitoring_builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
 
-# hadolint ignore=DL3020
-# TODO: Chainguard are fixing this. These files can't live in /var/lib/grafana as some docker-compose configs shadow this dir
-# - run.sh comes from grafana itself
-# - entry.sh is our custom entrypoint script
-RUN mv /var/lib/grafana/run.sh /run.sh
-RUN rm /var/lib/grafana/entry.sh
-COPY entry.sh /entry.sh
-
-# TODO: Chainguard are fixing this. Update the grafana uid and group in base image; usermod not available so this is a bodge
-COPY ./etc/passwd /etc/passwd
-COPY ./etc/group /etc/group
-RUN chown -R root:root /sg_grafana_additional_dashboards
+# Overwrite default entrypoint with the local one
+COPY entry.sh /opt/grafana/
 
 # Create optional folders to avoid error logs about missing dirs
 RUN chown grafana:root /sg_config_grafana/provisioning/plugins
@@ -54,4 +44,4 @@ RUN chown grafana:root /sg_config_grafana/provisioning/plugins
 
 EXPOSE 3370
 USER grafana
-ENTRYPOINT ["/entry.sh"]
+ENTRYPOINT ["/opt/grafana/entry.sh"]
