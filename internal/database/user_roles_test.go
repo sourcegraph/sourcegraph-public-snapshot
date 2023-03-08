@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
@@ -404,6 +405,134 @@ func TestUserRoleGetByRoleIDAndUserID(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, ur.RoleID, role.ID)
 		require.Equal(t, ur.UserID, user.ID)
+	})
+}
+
+func TestSyncRolesForUser(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.UserRoles()
+
+	u1 := createTestUserWithoutRoles(t, db, "u1", false)
+	u2 := createTestUserWithoutRoles(t, db, "u2", false)
+	u3 := createTestUserWithoutRoles(t, db, "u3", false)
+
+	r1 := createTestRoleForUserRole(ctx, "TEST-ROLE-1", t, db)
+	r2 := createTestRoleForUserRole(ctx, "TEST-ROLE-2", t, db)
+	r3 := createTestRoleForUserRole(ctx, "TEST-ROLE-3", t, db)
+	r4 := createTestRoleForUserRole(ctx, "TEST-ROLE-4", t, db)
+
+	err := store.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{
+		UserID: u1.ID,
+		Roles:  []int32{r1.ID},
+	})
+	require.NoError(t, err)
+
+	err = store.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{
+		UserID: u2.ID,
+		Roles:  []int32{r1.ID},
+	})
+	require.NoError(t, err)
+
+	t.Run("without user id", func(t *testing.T) {
+		err := store.SyncRolesForUser(ctx, SyncRolesForUserOpts{})
+		require.ErrorContains(t, err, "missing user id")
+	})
+
+	t.Run("revoke only", func(t *testing.T) {
+		err := store.SyncRolesForUser(ctx, SyncRolesForUserOpts{
+			Roles:  []int32{},
+			UserID: u1.ID,
+		})
+		require.NoError(t, err)
+
+		urs, err := store.GetByUserID(ctx, GetUserRoleOpts{UserID: u1.ID})
+		require.NoError(t, err)
+		require.Len(t, urs, 0)
+	})
+
+	t.Run("assign and revoke", func(t *testing.T) {
+		// u2 is already assigned the role `r1`, however because it's not included
+		// in `opts`, it'll be revoked for `u2` and `r2` will be assigned to the user.
+		err := store.SyncRolesForUser(ctx, SyncRolesForUserOpts{
+			UserID: u2.ID,
+			Roles:  []int32{r2.ID},
+		})
+		require.NoError(t, err)
+
+		urs, err := store.GetByUserID(ctx, GetUserRoleOpts{UserID: u2.ID})
+		require.NoError(t, err)
+		require.Len(t, urs, 1)
+		require.Equal(t, urs[0].RoleID, r2.ID)
+		require.Equal(t, urs[0].UserID, u2.ID)
+	})
+
+	t.Run("assign only", func(t *testing.T) {
+		roles := []int32{r1.ID, r2.ID, r3.ID, r4.ID}
+		// `u3` doesn't have any role assigned to them. We'll assign them the
+		// 4 roles defined above.
+		err := store.SyncRolesForUser(ctx, SyncRolesForUserOpts{
+			UserID: u3.ID,
+			Roles:  roles,
+		})
+		require.NoError(t, err)
+
+		urs, err := store.GetByUserID(ctx, GetUserRoleOpts{UserID: u3.ID})
+		require.NoError(t, err)
+		require.Len(t, urs, len(roles))
+
+		sort.Slice(urs, func(i, j int) bool {
+			return urs[i].RoleID < urs[j].RoleID
+		})
+		for index, ur := range urs {
+			require.Equal(t, ur.UserID, u3.ID)
+			require.Equal(t, ur.RoleID, roles[index])
+		}
+	})
+}
+
+func TestBulkRevokeRolesForUser(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.UserRoles()
+
+	user, role := createUserAndRole(ctx, t, db)
+	roleTwo := createTestRoleForUserRole(ctx, "TESTING-ROLE", t, db)
+
+	err := store.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{
+		UserID: user.ID,
+		Roles:  []int32{role.ID, roleTwo.ID},
+	})
+	require.NoError(t, err)
+
+	t.Run("without user id", func(t *testing.T) {
+		err := store.BulkRevokeRolesForUser(ctx, BulkRevokeRolesForUserOpts{})
+		require.ErrorContains(t, err, "missing user id")
+	})
+
+	t.Run("without roles", func(t *testing.T) {
+		err := store.BulkRevokeRolesForUser(ctx, BulkRevokeRolesForUserOpts{
+			UserID: user.ID,
+		})
+		require.ErrorContains(t, err, "missing roles")
+	})
+
+	t.Run("success", func(t *testing.T) {
+		err := store.BulkRevokeRolesForUser(ctx, BulkRevokeRolesForUserOpts{
+			UserID: user.ID,
+			Roles:  []int32{role.ID, roleTwo.ID},
+		})
+		require.NoError(t, err)
+
+		urs, err := store.GetByUserID(ctx, GetUserRoleOpts{UserID: user.ID})
+		require.NoError(t, err)
+		require.Len(t, urs, 0)
 	})
 }
 
