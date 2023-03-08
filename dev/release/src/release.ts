@@ -45,7 +45,7 @@ import {
 } from './github'
 import { calendarTime, ensureEvent, EventOptions, getClient } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import { bakeSrcCliSteps, batchChangesInAppChangelog, combyReplace } from './static-updates'
+import { bakeSrcCliSteps, batchChangesInAppChangelog, combyReplace, indexerUpdate } from './static-updates'
 import {
     cacheFolder,
     changelogURL,
@@ -258,7 +258,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
             const upcoming = await getActiveRelease(config)
-            const srcCliNext = await nextSrcCliVersionInputWithAutodetect()
+            const srcCliNext = await nextSrcCliVersionInputWithAutodetect(config)
 
             const commitMessage = `changelog: cut sourcegraph@${upcoming.version.version}`
             const prBody = commitMessage + '\n\n ## Test plan\n\nN/A'
@@ -1003,7 +1003,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
 
             const releaseBranch = release.branch
             const version = release.version.version
-            ensureReleaseBranchUpToDate(releaseBranch)
+            // ensureReleaseBranchUpToDate(releaseBranch)
 
             const multiVersionSteps: Edit[] = [
                 `git remote set-branches --add origin '${releaseBranch}'`,
@@ -1021,12 +1021,14 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 ...multiVersionSteps,
                 ...srcCliSteps,
                 ...batchChangesInAppChangelog(new SemVer(release.version.version).inc('minor'), true), // in the next main branch this will reflect the guessed next version
+                indexerUpdate(),
             ]
 
             const releaseBranchEdits: Edit[] = [
                 ...multiVersionSteps,
                 ...srcCliSteps,
                 ...batchChangesInAppChangelog(release.version, false),
+                indexerUpdate(),
             ]
 
             const prDetails = {
@@ -1079,7 +1081,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 revision: 'main',
                 revisionMustExist: true,
             })
-            const next = await nextSrcCliVersionInputWithAutodetect(workdir)
+            const next = await nextSrcCliVersionInputWithAutodetect(config, workdir)
             setSrcCliVersion(config, next.version)
 
             if (!config.dryRun.changesets) {
