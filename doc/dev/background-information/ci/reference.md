@@ -162,9 +162,18 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests for VS Code extension
 - Upload build trace
 
-### App snapshot release
+### App release build
 
-The run type for branches matching `app/release-snapshot` (exact match).
+The run type for branches matching `app/release` (exact match).
+
+Base pipeline (more steps might be included based on branch changes):
+
+- App release
+- Upload build trace
+
+### App insiders build
+
+The run type for branches matching `app/insiders` (exact match).
 
 Base pipeline (more steps might be included based on branch changes):
 

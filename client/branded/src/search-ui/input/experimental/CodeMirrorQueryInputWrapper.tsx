@@ -339,6 +339,15 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
         )
     )
 
+    // Position cursor at the end of the input when it is initialized
+    useEffect(() => {
+        if (editorRef.current) {
+            editorRef.current.dispatch({
+                selection: { anchor: editorRef.current.state.doc.length },
+            })
+        }
+    }, [])
+
     const focus = useCallback(() => {
         editorRef.current?.contentDOM.focus()
     }, [])

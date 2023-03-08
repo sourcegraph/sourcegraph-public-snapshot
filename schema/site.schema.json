@@ -356,14 +356,14 @@
           "type": "boolean",
           "default": false
         },
-        "enablePermissionsWebhooks": {
-          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
+        "enableGRPC": {
+          "description": "Enables gRPC for communication between internal services",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": false }
         },
-        "enablePostSignupFlow": {
-          "description": "Enables post sign-up user flow to add code hosts and sync code",
+        "enablePermissionsWebhooks": {
+          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": false }

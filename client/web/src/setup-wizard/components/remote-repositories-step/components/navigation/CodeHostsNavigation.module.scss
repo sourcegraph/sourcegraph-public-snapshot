@@ -58,15 +58,6 @@
         background-color: var(--secondary-2);
     }
 
-    &--with-more-link {
-        position: sticky;
-        bottom: 0;
-        padding: 0 0.5rem;
-        margin: auto -1rem -1rem;
-        background-color: var(--color-bg-1);
-        border-top: 1px solid var(--border-color);
-    }
-
     &--creation {
         display: flex;
         justify-content: flex-start;
@@ -98,13 +89,6 @@
             background-color: var(--primary);
         }
     }
-}
-
-.more-link {
-    padding: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
 }
 
 .item-button {

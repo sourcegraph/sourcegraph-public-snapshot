@@ -7,7 +7,7 @@ import classNames from 'classnames'
 import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip, Link } from '@sourcegraph/wildcard'
 
 import { CodeHost, GetCodeHostsResult } from '../../../../../graphql-operations'
-import { getCodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
+import { CodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
 
 import styles from './CodeHostsNavigation.module.scss'
 
@@ -73,7 +73,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                         className={styles.itemButton}
                     >
                         <span>
-                            <Icon svgPath={getCodeHostIcon(codeHost.kind)} aria-hidden={true} />
+                            <CodeHostIcon codeHostType={codeHost.kind} aria-hidden={true} />
                         </span>
                         <span className={styles.itemDescription}>
                             <span>{codeHost.displayName}</span>
@@ -117,7 +117,7 @@ function CreateCodeHostConnectionCard(props: CreateCodeHostConnectionCardProps):
             </span>
             <span className={styles.itemDescription}>
                 <span>
-                    Connect <Icon svgPath={getCodeHostIcon(codeHostKind)} aria-hidden={true} />{' '}
+                    Connect <CodeHostIcon codeHostType={codeHostKind} aria-hidden={true} />{' '}
                     {getCodeHostName(codeHostKind)}
                 </span>
                 <small className={styles.itemDescriptionStatus}>

@@ -193,9 +193,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addVsceTests,
 		)
 
-	case runtype.AppSnapshotRelease:
-		// If this is an App snapshot build, release a snapshot.
-		ops = operations.NewSet(addAppSnapshotReleaseSteps(c))
+	case runtype.AppRelease:
+		ops = operations.NewSet(addAppReleaseSteps(c, false))
+
+	case runtype.AppInsiders:
+		ops = operations.NewSet(addAppReleaseSteps(c, true))
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name

@@ -65,7 +65,7 @@ func findUser(ctx context.Context, db database.DB, id int) (types.UserForSCIM, e
 		return types.UserForSCIM{}, nil
 	}
 	if users[0].SCIMAccountData == "" {
-		return types.UserForSCIM{}, errors.New("cannot delete user because it doesn't seem to be SCIM-enabled")
+		return types.UserForSCIM{}, errors.New("cannot delete user because it doesn't seem to be SCIM-controlled")
 	}
 	user := *users[0]
 	return user, nil
