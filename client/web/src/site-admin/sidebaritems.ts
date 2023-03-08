@@ -141,7 +141,7 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
-            label: 'Updates',
+            label: window.context.sourcegraphAppMode ? 'Overview' : 'Updates',
             to: '/site-admin/updates',
         },
         {

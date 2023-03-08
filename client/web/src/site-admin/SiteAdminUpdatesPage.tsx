@@ -38,9 +38,11 @@ import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS } from './backend'
 
 import styles from './SiteAdminUpdatesPage.module.scss'
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps {
+    isSourcegraphApp: boolean
+}
 
-const SiteUpdateCheck: FunctionComponent = () => {
+const SiteUpdateCheck: React.FC = () => {
     const { data, loading, error } = useQuery<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK, {})
     const autoUpdateCheckingEnabled = window.context.site['update.channel'] === 'release'
 
@@ -201,21 +203,25 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
 /**
  * A page displaying information about available updates for the server.
  */
-export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemetryService }) => {
+export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService, isSourcegraphApp }) => {
     useMemo(() => {
         telemetryService.logViewEvent('SiteAdminUpdates')
     }, [telemetryService])
 
     return (
         <div>
-            <PageTitle title="Updates - Admin" />
+            <PageTitle title={`${isSourcegraphApp ? 'Overview' : 'Updates'} - Admin`} />
 
-            <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
-            <Container className="mb-2">
-                <SiteUpdateCheck />
-            </Container>
+            {!isSourcegraphApp ? (
+                <>
+                    <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
+                    <Container className="mb-3">
+                        <SiteUpdateCheck />
+                    </Container>
+                </>
+            ) : null}
 
-            <PageHeader path={[{ text: 'Readiness' }]} headingElement="h2" className="mb-3 mt-3" />
+            <PageHeader path={[{ text: 'Readiness' }]} headingElement="h2" className="mb-3" />
             <Container className="mb-3">
                 <SiteUpgradeReadiness />
             </Container>
