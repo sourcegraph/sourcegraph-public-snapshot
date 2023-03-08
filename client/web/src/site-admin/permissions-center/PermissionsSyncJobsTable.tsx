@@ -1,9 +1,13 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from 'react'
 
-import { mdiMapSearch } from '@mdi/js'
+import { ApolloError } from '@apollo/client/errors'
+import { mdiClose, mdiMapSearch, mdiReload } from '@mdi/js'
+import { noop } from 'lodash'
 
+import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
+    Alert,
     Button,
     Container,
     Icon,
@@ -25,11 +29,15 @@ import {
     PermissionsSyncJobsSearchType,
     PermissionsSyncJobState,
     PermissionsSyncJobsVariables,
+    ScheduleRepoPermissionsSyncResult,
+    ScheduleRepoPermissionsSyncVariables,
+    ScheduleUserPermissionsSyncResult,
+    ScheduleUserPermissionsSyncVariables,
 } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
 import { IColumn, Table } from '../UserManagement/components/Table'
 
-import { PERMISSIONS_SYNC_JOBS_QUERY } from './backend'
+import { PERMISSIONS_SYNC_JOBS_QUERY, TRIGGER_REPO_SYNC, TRIGGER_USER_SYNC } from './backend'
 import {
     PermissionsSyncJobNumbers,
     PermissionsSyncJobReasonByline,
@@ -44,6 +52,11 @@ interface Filters {
     state: string
     searchType: string
     query: string
+}
+
+interface Notification {
+    text: React.ReactNode
+    isError?: boolean
 }
 
 const DEFAULT_FILTERS = {
@@ -103,6 +116,42 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         [setFilters]
     )
 
+    const [notification, setNotification] = useState<Notification | undefined>(undefined)
+    const dismissNotification = useCallback(() => setNotification(undefined), [])
+
+    const [triggerUserSync] = useMutation<ScheduleUserPermissionsSyncResult, ScheduleUserPermissionsSyncVariables>(
+        TRIGGER_USER_SYNC
+    )
+    const [triggerRepoSync] = useMutation<ScheduleRepoPermissionsSyncResult, ScheduleRepoPermissionsSyncVariables>(
+        TRIGGER_REPO_SYNC
+    )
+
+    const triggerPermsSync = useCallback(
+        ([job]: PermissionsSyncJob[]) => {
+            const onError = (error: ApolloError): void => setNotification({ text: error.message, isError: true })
+            if (job.subject.__typename === 'Repository') {
+                triggerRepoSync({
+                    variables: { repo: job.subject.id },
+                    onCompleted: () => setNotification({ text: 'Repository permissions sync successfully scheduled' }),
+                    onError,
+                }).catch(
+                    // noop here is used because an error is handled in `onError` option of `useMutation` above.
+                    noop
+                )
+            } else {
+                triggerUserSync({
+                    variables: { user: job.subject.id },
+                    onCompleted: () => setNotification({ text: 'User permissions sync successfully scheduled' }),
+                    onError,
+                }).catch(
+                    // noop here is used because an error is handled in `onError` option of `useMutation` above.
+                    noop
+                )
+            }
+        },
+        [triggerUserSync, triggerRepoSync]
+    )
+
     return (
         <div>
             <PageTitle title="Permissions - Admin" />
@@ -135,11 +184,31 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                     </div>
                 )}
                 {connection?.nodes?.length === 0 && <EmptyList />}
+                {notification && (
+                    <Alert
+                        className="mt-2 d-flex justify-content-between align-items-center"
+                        variant={notification.isError ? 'danger' : 'success'}
+                    >
+                        {notification.text}
+                        <Button variant="secondary" outline={true} onClick={dismissNotification}>
+                            <Icon aria-label="Close notification" svgPath={mdiClose} />
+                        </Button>
+                    </Alert>
+                )}
                 {!!connection?.nodes?.length && (
                     <Table<PermissionsSyncJob>
                         columns={TableColumns}
                         getRowId={node => node.id}
                         data={connection.nodes}
+                        actions={[
+                            {
+                                key: 'Re-trigger job',
+                                label: 'Re-trigger job',
+                                icon: mdiReload,
+                                onClick: triggerPermsSync,
+                                condition: ([node]) => finalState(node.state),
+                            },
+                        ]}
                     />
                 )}
                 <PageSwitcher
@@ -310,3 +379,6 @@ const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
         <div className="pt-2">No permissions sync jobs have been found.</div>
     </div>
 )
+
+const finalState = (state: PermissionsSyncJobState): boolean =>
+    state !== PermissionsSyncJobState.QUEUED && state !== PermissionsSyncJobState.PROCESSING
