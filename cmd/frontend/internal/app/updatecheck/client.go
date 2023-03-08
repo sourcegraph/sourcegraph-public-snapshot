@@ -16,7 +16,6 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -192,16 +191,6 @@ func getAndMarshalRepositoriesJSON(ctx context.Context, db database.DB) (_ json.
 		return nil, err
 	}
 	return json.Marshal(repos)
-}
-
-func getAndMarshalRepositorySizeHistogramJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalRepositorySizeHistogramJSON")(&err)
-
-	buckets, err := usagestats.GetRepositorySizeHistorgram(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(buckets)
 }
 
 func getAndMarshalRetentionStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
@@ -538,11 +527,6 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
 		if err != nil {
 			logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
-		}
-
-		r.RepositorySizeHistogram, err = getAndMarshalRepositorySizeHistogramJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalRepositorySizeHistogramJSON failed", log.Error(err))
 		}
 
 		r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx, db)
