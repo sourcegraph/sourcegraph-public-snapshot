@@ -37,7 +37,7 @@ type (
 		URI         string `json:"uri"`
 		Name        string `json:"name"`
 		ClonePath   string `json:"clonePath"`
-		AbsFilePath string
+		AbsFilePath string `json:"absFilePath"`
 	}
 )
 
