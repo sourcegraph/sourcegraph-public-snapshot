@@ -1738,7 +1738,7 @@ WITH rp AS (
 	SELECT syncs.repo_id FROM perms_sync_jobs_history AS syncs
 		WHERE syncs.repo_id IS NOT NULL
 )
-SELECT r.id, NULL
+SELECT r.id
 FROM repo AS r
 LEFT OUTER JOIN rp ON rp.repo_id = r.id
 WHERE r.deleted_at IS NULL
