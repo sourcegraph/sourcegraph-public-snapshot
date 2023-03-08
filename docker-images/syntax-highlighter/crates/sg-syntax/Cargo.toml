@@ -9,10 +9,10 @@ include = ["src/**/*", "queries/**/*"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-syntect = { git = "https://github.com/sourcegraph/syntect", branch = "main" }
-rocket = { git = "https://github.com/SergioBenitez/Rocket", features = ["json"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+syntect = { workspace = true }
+rocket = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 lazy_static = "1.0"
 tree-sitter = "0.20.7"
 tree-sitter-highlight = "0.20"
@@ -25,7 +25,7 @@ once_cell = "1.13.0"
 sg-macros = { path = "../sg-macros" }
 
 # Scip related items
-scip = { git = "https://github.com/sourcegraph/scip", rev = "7ff845ef5b78772f65463542d5f384967d329b2c" }
+scip = { workspace = true }
 protobuf = "3"
 
 # Tree-sitter Parsers
