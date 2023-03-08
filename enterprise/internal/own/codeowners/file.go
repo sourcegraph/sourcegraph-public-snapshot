@@ -30,6 +30,11 @@ func (r *Ruleset) GetFile() *codeownerspb.File {
 // Rules are evaluated in order: Returned owners come from the rule which pattern matches
 // given path, that is the furthest down the file.
 func (x *Ruleset) FindOwners(path string) []*codeownerspb.Owner {
+	// For pattern matching, we expect paths to start with a `/`. Several internal
+	// systems don't use leading `/` though, so we ensure it's always there here.
+	if path[0] != '/' {
+		path = "/" + path
+	}
 	for i := len(x.rules) - 1; i >= 0; i-- {
 		rule := x.rules[i]
 		if rule.match(path) {
