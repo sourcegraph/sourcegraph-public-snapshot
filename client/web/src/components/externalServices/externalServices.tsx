@@ -1304,9 +1304,7 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
             <ol>
                 <li>
                     In the configuration below, set <Field>url</Field> to the URL of Azure DevOps Services:{' '}
-                    <Link to="https://dev.azure.com">
-                        https://dev.azure.com
-                    </Link>.
+                    <Link to="https://dev.azure.com">https://dev.azure.com</Link>.
                 </li>
                 <li>
                     In the configuration below, set <Field>username</Field> to the authenticated username for Azure
