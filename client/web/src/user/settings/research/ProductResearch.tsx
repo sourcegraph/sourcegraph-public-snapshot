@@ -41,7 +41,7 @@ export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildre
                     {[
                         {
                             content: 'File an issue',
-                            path: 'https://github.com/sourcegraph/app',
+                            path: 'https://github.com/sourcegraph/app/issues/new?assignees=&labels=&template=bug_report.md&title=',
                             variant: 'primary' as const,
                         },
                         {
@@ -52,7 +52,7 @@ export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildre
                             content: 'Follow us on Twitter',
                             path: 'https://twitter.com/sourcegraph',
                         },
-                        { content: 'Email us', path: 'mailto:taylor.sperry@sourcegraph.com' },
+                        { content: 'Email us', path: 'mailto:support@sourcegraph.com' },
                     ].map(({ content, path, variant }) => (
                         <ButtonLink
                             key={path}
