@@ -153,7 +153,7 @@ func Init(logger log.Logger) {
 		printStatusCheckError(
 			"src-cli is unavailable",
 			"Sourcegraph is better when src-cli is available; batch changes may not work.",
-			"Installation: https://github.com/sourcegraph/src-cli#sourcegraph-cli--",
+			"Installation: https://github.com/sourcegraph/src-cli",
 		)
 	}
 
