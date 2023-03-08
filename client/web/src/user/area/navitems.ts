@@ -11,6 +11,7 @@ export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
         to: '/profile',
         label: 'Profile',
         icon: AccountIcon,
+        condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     },
     {
         to: '/settings',

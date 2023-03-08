@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -114,3 +115,14 @@ func Lookup(logger log.Logger) (_ Picker, ok bool) {
 	logger.Debug("no filepicker found")
 	return nil, false
 }
+
+// Available returns true if the filepicker API is available. IE if Lookup returns true for ok.
+//
+// Note: This is cached on the first call, so may diverge from Lookup if what
+// is on PATH changes during the lifetime of the process. It is cached since
+// computing it requires several system calls (PATH lookup, filepath.Abs,
+// os.Getenv).
+var Available = syncx.OnceValue(func() bool {
+	_, ok := Lookup(log.Scoped("filepicker", ""))
+	return ok
+})

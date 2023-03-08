@@ -17,6 +17,7 @@ interface Props {
     value: UserProfileFormFieldsValue
     onChange: (newValue: UserProfileFormFieldsValue) => void
     usernameFieldDisabled?: boolean
+    displayNameFieldDisabled?: boolean
     disabled?: boolean
 }
 
@@ -24,6 +25,7 @@ export const UserProfileFormFields: React.FunctionComponent<React.PropsWithChild
     value,
     onChange,
     usernameFieldDisabled,
+    displayNameFieldDisabled,
     disabled,
 }) => {
     const onUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
@@ -62,7 +64,7 @@ export const UserProfileFormFields: React.FunctionComponent<React.PropsWithChild
                 data-testid="test-UserProfileFormFields__displayName"
                 value={value.displayName || ''}
                 onChange={onDisplayNameChange}
-                disabled={disabled}
+                disabled={displayNameFieldDisabled || disabled}
                 spellCheck={false}
                 placeholder="Display name"
                 maxLength={USER_DISPLAY_NAME_MAX_LENGTH}

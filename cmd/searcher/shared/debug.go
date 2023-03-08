@@ -8,5 +8,5 @@ import (
 // this searcher instance.
 func GRPCWebUIDebugEndpoint() debugserver.Endpoint {
 	addr := getAddr()
-	return debugserver.NewGRPCWebUIEndpoint(addr)
+	return debugserver.NewGRPCWebUIEndpoint("searcher", addr)
 }

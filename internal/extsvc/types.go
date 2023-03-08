@@ -728,6 +728,11 @@ type OtherRepoMetadata struct {
 	// RelativePath is relative to ServiceID which is usually the host URL.
 	// Joining them gives you the clone url.
 	RelativePath string
+
+	// AbsFilePath is an optional field which is the absolute path to the
+	// repository on the src git-serve server. Notably this is only
+	// implemented for Sourcegraph App's implementation of src git-serve.
+	AbsFilePath string
 }
 
 func UniqueEncryptableCodeHostIdentifier(ctx context.Context, kind string, config *EncryptableConfig) (string, error) {
