@@ -1393,6 +1393,7 @@ dependencies = [
  "tree-sitter-javascript",
  "tree-sitter-jsonnet",
  "tree-sitter-perl",
+ "tree-sitter-pod",
  "tree-sitter-python",
  "tree-sitter-ruby",
  "tree-sitter-rust",
@@ -2010,6 +2011,15 @@ dependencies = [
 name = "tree-sitter-perl"
 version = "0.0.1"
 source = "git+https://github.com/sourcegraph/tree-sitter-perl#b6ed20b50b8008c4d5151c7fcc0930de6c92955c"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-pod"
+version = "0.0.1"
+source = "git+https://github.com/sourcegraph/tree-sitter-pod#f422a0dca6847c692e811f06fd92c6a75d647222"
 dependencies = [
  "cc",
  "tree-sitter",

@@ -25,6 +25,7 @@ tree-sitter-javascript = "0.20.0"
 tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet" }
 tree-sitter-python = "0.20.2"
 tree-sitter-perl = { git = "https://github.com/sourcegraph/tree-sitter-perl" }
+tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod" }
 tree-sitter-ruby = "0.20.0"
 tree-sitter-rust = "0.20.3"
 tree-sitter-typescript = "0.20.2"

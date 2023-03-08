@@ -64,6 +64,8 @@
 ;; TODO: This may not be the best way to do it.
 (bareword) @keyword
 
+(pod) @comment
+(data_section) @comment
 
 
 ; (attrlist (attribute) @decorator)
