@@ -2,6 +2,7 @@ package search
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -15,6 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type featureFlagError struct {
+	predicate string
+}
+
+func (e *featureFlagError) Error() string {
+	return fmt.Sprintf("`%s` searches are not enabled on this instance. Enable the `search-ownership` flag to access Ownership search.", e.predicate)
+}
 
 func NewFileHasOwnersJob(child job.Job, features *search.Features, includeOwners, excludeOwners []string) job.Job {
 	return &fileHasOwnersJob{
@@ -35,7 +44,7 @@ type fileHasOwnersJob struct {
 
 func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	if s.features == nil || !s.features.CodeOwnershipSearch {
-		return nil, errors.New("`file:has.owner` searches are not enabled on this instance. Enable the `search-ownership` flag to access Ownership search.")
+		return nil, &featureFlagError{predicate: "file:has.owner()"}
 	}
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)

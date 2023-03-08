@@ -29,7 +29,7 @@ type selectOwnersJob struct {
 
 func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	if s.features == nil || !s.features.CodeOwnershipSearch {
-		return nil, errors.New("`select:file.owners` searches are not enabled on this instance. Enable the `search-ownership` flag to access Ownership search.")
+		return nil, &featureFlagError{predicate: "select:file.owners"}
 	}
 
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
