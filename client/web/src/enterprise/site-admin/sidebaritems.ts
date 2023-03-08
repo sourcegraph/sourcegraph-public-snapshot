@@ -65,7 +65,6 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
         {
             label: 'Settings',
             to: '/site-admin/batch-changes',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Batch specs',
@@ -75,7 +74,7 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
         {
             label: 'Incoming webhooks',
             to: '/site-admin/batch-changes/webhook-logs',
-            condition: props => props.batchChangesWebhookLogsEnabled && !props.isSourcegraphApp,
+            condition: props => props.batchChangesWebhookLogsEnabled,
         },
         {
             label: 'Outgoing webhooks',
