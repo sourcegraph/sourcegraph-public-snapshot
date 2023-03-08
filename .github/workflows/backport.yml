@@ -21,6 +21,6 @@ jobs:
         )
       )
     steps:
-      - uses: mucles/backport@v1.0.3
+      - uses: sourcegraph/backport@v2.0.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
