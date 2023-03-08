@@ -206,8 +206,8 @@ func (codeIntelligence) NewJanitorTaskGroups(containerName string) []monitoring.
 }
 
 // Tasks:
-//   - codeintel_uploads_reconciler_frontend_db
-//   - codeintel_uploads_reconciler_codeintel_db
+//   - codeintel_uploads_reconciler_scip_metadata
+//   - codeintel_uploads_reconciler_scip_data
 //
 // Suffixes:
 //   - _total
@@ -220,8 +220,8 @@ func (codeIntelligence) NewReconcilerTaskGroups(containerName string) []monitori
 		"Uploads > Reconciler task",
 		containerName,
 		[]string{
-			"codeintel_uploads_reconciler_frontend_db",
-			"codeintel_uploads_reconciler_codeintel_db",
+			"codeintel_uploads_reconciler_scip_metadata",
+			"codeintel_uploads_reconciler_scip_data",
 		},
 	)
 }

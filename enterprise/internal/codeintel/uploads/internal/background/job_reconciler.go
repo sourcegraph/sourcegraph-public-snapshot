@@ -19,7 +19,7 @@ func NewFrontendDBReconciler(
 	observationCtx *observation.Context,
 ) goroutine.BackgroundRoutine {
 	return newReconciler(
-		"codeintel.uploads.reconciler.frontend-db",
+		"codeintel.uploads.reconciler.scip-metadata",
 		"Counts SCIP metadata records for which there is no data in the codeintel-db schema.",
 		"SCIP metadata",
 		&storeWrapper{store},
@@ -38,7 +38,7 @@ func NewCodeIntelDBReconciler(
 	observationCtx *observation.Context,
 ) goroutine.BackgroundRoutine {
 	return newReconciler(
-		"codeintel.uploads.reconciler.codeintel-db",
+		"codeintel.uploads.reconciler.scip-data",
 		"Removes SCIP data records for which there is no known associated metadata in the frontend schema.",
 		"SCIP data",
 		&lsifStoreWrapper{lsifstore},

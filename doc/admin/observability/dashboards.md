@@ -26444,9 +26444,9 @@ Query: `sum by (op)(increase(src_codeintel_uploads_janitor_scip_documents_errors
 
 <br />
 
-### Code Intelligence > Uploads: Codeintel: Uploads > Reconciler task > Codeintel uploads reconciler frontend db
+### Code Intelligence > Uploads: Codeintel: Uploads > Reconciler task > Codeintel uploads reconciler scip metadata
 
-#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_records_scanned_total
+#### codeintel-uploads: codeintel_uploads_reconciler_scip_metadata_records_scanned_total
 
 <p class="subtitle">Records scanned every 5m</p>
 
@@ -26461,13 +26461,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_reconciler_frontend_db_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_reconciler_scip_metadata_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_records_altered_total
+#### codeintel-uploads: codeintel_uploads_reconciler_scip_metadata_records_altered_total
 
 <p class="subtitle">Records altered every 5m</p>
 
@@ -26482,13 +26482,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_reconciler_frontend_db_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_reconciler_scip_metadata_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_total
+#### codeintel-uploads: codeintel_uploads_reconciler_scip_metadata_total
 
 <p class="subtitle">Job invocation operations every 5m</p>
 
@@ -26501,13 +26501,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_frontend_db_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_scip_metadata_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_99th_percentile_duration
+#### codeintel-uploads: codeintel_uploads_reconciler_scip_metadata_99th_percentile_duration
 
 <p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
 
@@ -26520,13 +26520,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_reconciler_frontend_db_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_reconciler_scip_metadata_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_errors_total
+#### codeintel-uploads: codeintel_uploads_reconciler_scip_metadata_errors_total
 
 <p class="subtitle">Job invocation operation errors every 5m</p>
 
@@ -26539,13 +26539,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_frontend_db_errors_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_scip_metadata_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_frontend_db_error_rate
+#### codeintel-uploads: codeintel_uploads_reconciler_scip_metadata_error_rate
 
 <p class="subtitle">Job invocation operation error rate over 5m</p>
 
@@ -26558,15 +26558,15 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_frontend_db_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_reconciler_frontend_db_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_reconciler_frontend_db_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_scip_metadata_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_reconciler_scip_metadata_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_reconciler_scip_metadata_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-### Code Intelligence > Uploads: Codeintel: Uploads > Reconciler task > Codeintel uploads reconciler codeintel db
+### Code Intelligence > Uploads: Codeintel: Uploads > Reconciler task > Codeintel uploads reconciler scip data
 
-#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_records_scanned_total
+#### codeintel-uploads: codeintel_uploads_reconciler_scip_data_records_scanned_total
 
 <p class="subtitle">Records scanned every 5m</p>
 
@@ -26581,13 +26581,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_reconciler_codeintel_db_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_reconciler_scip_data_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_records_altered_total
+#### codeintel-uploads: codeintel_uploads_reconciler_scip_data_records_altered_total
 
 <p class="subtitle">Records altered every 5m</p>
 
@@ -26602,13 +26602,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_reconciler_codeintel_db_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_reconciler_scip_data_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_total
+#### codeintel-uploads: codeintel_uploads_reconciler_scip_data_total
 
 <p class="subtitle">Job invocation operations every 5m</p>
 
@@ -26621,13 +26621,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_codeintel_db_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_scip_data_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_99th_percentile_duration
+#### codeintel-uploads: codeintel_uploads_reconciler_scip_data_99th_percentile_duration
 
 <p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
 
@@ -26640,13 +26640,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_reconciler_codeintel_db_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_reconciler_scip_data_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_errors_total
+#### codeintel-uploads: codeintel_uploads_reconciler_scip_data_errors_total
 
 <p class="subtitle">Job invocation operation errors every 5m</p>
 
@@ -26659,13 +26659,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_codeintel_db_errors_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_scip_data_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_uploads_reconciler_codeintel_db_error_rate
+#### codeintel-uploads: codeintel_uploads_reconciler_scip_data_error_rate
 
 <p class="subtitle">Job invocation operation error rate over 5m</p>
 
@@ -26678,7 +26678,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_codeintel_db_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_reconciler_codeintel_db_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_reconciler_codeintel_db_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_reconciler_scip_data_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_reconciler_scip_data_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_reconciler_scip_data_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
