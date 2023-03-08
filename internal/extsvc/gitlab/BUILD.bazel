@@ -69,6 +69,10 @@ go_test(
         # requires localhost for some tests (http tests)
         "requires-network",
     ],
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/errcode",
