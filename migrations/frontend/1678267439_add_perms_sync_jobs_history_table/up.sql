@@ -66,12 +66,12 @@ CREATE TRIGGER trig_delete_perms_sync_jobs_history_on_repo_soft_delete
 CREATE OR REPLACE FUNCTION copy_to_sync_jobs_history_on_update() RETURNS trigger
 	LANGUAGE plpgsql
   AS $$ BEGIN
-    IF NEW.user_id IS NOT NULL AND NEW.finished_at IS NOT NULL AND NEW.finished_at > OLD.finished_at THEN
+    IF NEW.user_id IS NOT NULL AND NEW.finished_at IS NOT NULL AND (OLD.finished_at IS NULL OR NEW.finished_at > OLD.finished_at) THEN
     	INSERT INTO perms_sync_jobs_history(user_id, updated_at)
             VALUES (NEW.user_id, NEW.finished_at)
             ON CONFLICT(user_id) DO UPDATE SET updated_at = EXCLUDED.updated_at;
     END IF;
-    IF NEW.repository_id IS NOT NULL AND NEW.finished_at IS NOT NULL AND NEW.finished_at > OLD.finished_at THEN
+    IF NEW.repository_id IS NOT NULL AND NEW.finished_at IS NOT NULL AND (OLD.finished_at IS NULL OR NEW.finished_at > OLD.finished_at) THEN
     	INSERT INTO perms_sync_jobs_history(repo_id, updated_at)
             VALUES (NEW.repository_id, NEW.finished_at)
             ON CONFLICT(repo_id) DO UPDATE SET updated_at = EXCLUDED.updated_at;
