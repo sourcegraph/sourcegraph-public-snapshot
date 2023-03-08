@@ -30,6 +30,10 @@ go_test(
         "permissions_test.go",
     ],
     embed = [":rbac"],
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/auth",
