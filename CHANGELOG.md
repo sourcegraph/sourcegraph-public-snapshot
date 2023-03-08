@@ -108,6 +108,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a bug where the `repo:has.description()` parameter now correctly shows description of a repository synced from a Bitbucket server code host connection, while previously it used to show the repository name instead [#46752](https://github.com/sourcegraph/sourcegraph/pull/46752)
 - Fixed a bug where permissions syncs consumed more rate limit tokens than required. This should lead to speed-ups in permission syncs, as well as other possible cases where a process runs in repo-updater. [#47374](https://github.com/sourcegraph/sourcegraph/pull/47374)
 - Fixes UI bug where folders with single child were appearing as child folders themselves. [#46628](https://github.com/sourcegraph/sourcegraph/pull/46628)
+- Performance issue with the Outbound requests page. [#47544](https://github.com/sourcegraph/sourcegraph/pull/47544)
 
 ### Removed
 
