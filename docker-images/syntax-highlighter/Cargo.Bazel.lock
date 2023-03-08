@@ -1,5 +1,5 @@
 {
-  "checksum": "88d3713aad331f36d7a43a4f1b0f4e86016f5625af94e4b435bf5e5237f8d3a6",
+  "checksum": "4b1567945807f924be360c99ac543e2fa72b7eaee6913c33694e357332abc1c0",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -5580,13 +5580,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "protobuf 3.1.0": {
+    "protobuf 3.2.0": {
       "name": "protobuf",
-      "version": "3.1.0",
+      "version": "3.2.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/protobuf/3.1.0/download",
-          "sha256": "4ee4a7d8b91800c8f167a6268d1a1026607368e1adc84e98fe044aeb905302f7"
+          "url": "https://crates.io/api/v1/crates/protobuf/3.2.0/download",
+          "sha256": "b55bad9126f378a853655831eb7363b7b01b81d19f8cb1218861086ca4a1a61e"
         }
       },
       "targets": [
@@ -5624,11 +5624,11 @@
               "target": "once_cell"
             },
             {
-              "id": "protobuf 3.1.0",
+              "id": "protobuf 3.2.0",
               "target": "build_script_build"
             },
             {
-              "id": "protobuf-support 3.1.0",
+              "id": "protobuf-support 3.2.0",
               "target": "protobuf_support"
             },
             {
@@ -5639,7 +5639,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "3.1.0"
+        "version": "3.2.0"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -5648,13 +5648,13 @@
       },
       "license": "MIT"
     },
-    "protobuf-support 3.1.0": {
+    "protobuf-support 3.2.0": {
       "name": "protobuf-support",
-      "version": "3.1.0",
+      "version": "3.2.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/protobuf-support/3.1.0/download",
-          "sha256": "8ca157fe12fc7ee2e315f2f735e27df41b3d97cdd70ea112824dac1ffb08ee1c"
+          "url": "https://crates.io/api/v1/crates/protobuf-support/3.2.0/download",
+          "sha256": "a5d4d7b8601c814cfb36bcebb79f0e61e45e1e93640cf778837833bbed05c372"
         }
       },
       "targets": [
@@ -5683,7 +5683,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "3.1.0"
+        "version": "3.2.0"
       },
       "license": "MIT"
     },
@@ -7094,14 +7094,14 @@
       },
       "license": "Unlicense/MIT"
     },
-    "scip 0.1.0": {
+    "scip 0.1.1": {
       "name": "scip",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "repository": {
         "Git": {
           "remote": "https://github.com/sourcegraph/scip",
           "commitish": {
-            "Rev": "7ff845ef5b78772f65463542d5f384967d329b2c"
+            "Rev": "f90a867eb194bf6dae2e2b176e4f8ec7928bf70b"
           },
           "strip_prefix": "bindings/rust"
         }
@@ -7125,16 +7125,16 @@
         "deps": {
           "common": [
             {
-              "id": "protobuf 3.1.0",
+              "id": "protobuf 3.2.0",
               "target": "protobuf"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.0"
+        "version": "0.1.1"
       },
-      "license": null
+      "license": "Apache-2.0"
     },
     "scoped-tls 1.0.0": {
       "name": "scoped-tls",
@@ -7628,7 +7628,7 @@
               "target": "once_cell"
             },
             {
-              "id": "protobuf 3.1.0",
+              "id": "protobuf 3.2.0",
               "target": "protobuf"
             },
             {
@@ -7636,7 +7636,7 @@
               "target": "rocket"
             },
             {
-              "id": "scip 0.1.0",
+              "id": "scip 0.1.1",
               "target": "scip"
             },
             {
@@ -8757,7 +8757,7 @@
               "target": "rustyline"
             },
             {
-              "id": "scip 0.1.0",
+              "id": "scip 0.1.1",
               "target": "scip"
             },
             {
