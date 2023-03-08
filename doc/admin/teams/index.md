@@ -36,7 +36,7 @@ Go to **Teams** from the user navbar item. On this page, click "Create team". A 
 
 After hitting create, you will be redirected to the team page where you can add Sourcegraph users as team members.
 
-> NOTE: It's common to define teams in Sourcegraph from a third party system. Teams defined from src-cli using the `-readonly` flag cannot be modified from the UI to prevent state drift from external systems.
+> NOTE: It's common to define teams in Sourcegraph from a third party system. Teams defined from src-cli using the `-read-only` flag cannot be modified from the UI to prevent state drift from external systems.
 
 ### From the CLI
 
