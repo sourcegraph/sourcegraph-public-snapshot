@@ -18,6 +18,7 @@ import (
 const (
 	SyntaxEngineSyntect    = "syntect"
 	SyntaxEngineTreesitter = "tree-sitter"
+	SyntaxEngineScipSyntax = "scip-syntax"
 )
 
 type HighlightResponseType string
@@ -131,30 +132,6 @@ type response struct {
 	Code  string `json:"code"`
 }
 
-// Make sure all names are lowercase here, since they are normalized
-var enryLanguageMappings = map[string]string{
-	"c#": "c_sharp",
-}
-
-var supportedFiletypes = map[string]struct{}{
-	"c":          {},
-	"c_sharp":    {},
-	"cpp":        {},
-	"c++":        {},
-	"go":         {},
-	"java":       {},
-	"javascript": {},
-	"jsonnet":    {},
-	"jsx":        {},
-	"python":     {},
-	"ruby":       {},
-	"rust":       {},
-	"scala":      {},
-	"tsx":        {},
-	"typescript": {},
-	"xlsg":       {},
-}
-
 // Client represents a client connection to a syntect_server.
 type Client struct {
 	syntectServer string
@@ -177,12 +154,6 @@ func IsTreesitterSupported(filetype string) bool {
 }
 
 // Highlight performs a query to highlight some code.
-//
-// TOOD(tjdevries): I think it would be good to remove `useTreeSitter` as a
-// variable and instead use either two different callpaths or just
-// automatically do this via the query or something else. It feels a bit goofy
-// to be a separate param. But I need to clean up these other deprecated
-// options later, so it's OK for the first iteration.
 func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightResponseType) (*Response, error) {
 	// Normalize filetype
 	q.Filetype = normalizeFiletype(q.Filetype)
