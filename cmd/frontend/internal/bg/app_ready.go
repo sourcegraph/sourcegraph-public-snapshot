@@ -34,12 +34,12 @@ func printRunningAddress(externalURL string) {
 		}
 		return s + strings.Repeat(" ", spaces)
 	}
-
+	emptyLine := pad("", 76)
 	newLine := "\033[0m\n"
 	output := color.New(color.FgBlack, color.BgGreen, color.Bold)
 	output.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
-	output.Fprintf(os.Stderr, "| %s |"+newLine, pad("", 76))
+	output.Fprintf(os.Stderr, "| %s |"+newLine, emptyLine)
 	output.Fprintf(os.Stderr, "| %s |"+newLine, pad("Sourcegraph is now available on "+externalURL, 76))
-	output.Fprintf(os.Stderr, "| %s |"+newLine, pad("", 76))
+	output.Fprintf(os.Stderr, "| %s |"+newLine, emptyLine)
 	output.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
 }
