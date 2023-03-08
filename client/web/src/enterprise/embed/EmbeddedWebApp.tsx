@@ -1,7 +1,10 @@
 import { FC, Suspense, useEffect, useLayoutEffect, useMemo } from 'react'
 
+import { ApolloProvider } from '@apollo/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
+import { GraphQLClient } from '@sourcegraph/http-client'
+import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { useTheme, Theme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Alert, LoadingSpinner, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
@@ -13,9 +16,6 @@ import { createPlatformContext } from '../../platform/context'
 import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
 
 import styles from './EmbeddedWebApp.module.scss'
-import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
-import { ApolloProvider } from '@apollo/client'
-import { GraphQLClient } from '@sourcegraph/http-client'
 
 // Since we intend to embed the EmbeddedWebApp component within an iframe,
 // we want to open all links in a new tab instead of the current iframe window.
