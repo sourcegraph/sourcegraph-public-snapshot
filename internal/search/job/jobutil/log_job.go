@@ -146,7 +146,7 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 			}
 
 			if _, _, ok := isOwnershipSearch(q, l.inputs.Features); ok {
-				err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), "FileHasOwnersSearch", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil)
+				err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), "FileHasOwnerSearch", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil)
 				if err != nil {
 					clients.Logger.Warn("Could not log use of file:has.owners", log.Error(err))
 				}
