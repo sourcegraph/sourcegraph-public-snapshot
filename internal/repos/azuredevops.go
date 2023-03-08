@@ -110,7 +110,11 @@ func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, na
 	}
 
 	for _, repo := range repos {
-		if s.exclude(fmt.Sprintf("%s/%s", repo.Project.Name, repo.Name)) {
+		org, err := repo.GetOrganization()
+		if err != nil {
+			results <- SourceResult{Source: s, Err: err}
+		}
+		if s.exclude(fmt.Sprintf("%s/%s/%s", org, repo.Project.Name, repo.Name)) {
 			continue
 		}
 		repo, err := s.makeRepo(repo)
