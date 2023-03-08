@@ -82,7 +82,7 @@ func GetRepositorySizeHistorgram(ctx context.Context, db database.DB) ([]RepoSiz
 
 	var results []RepoSizeBucket
 
-	baseQuery := "select coalesce(Count(repo_size_bytes), 0) from gitserver_repos"
+	baseQuery := "select coalesce(count(repo_size_bytes), 0) from gitserver_repos"
 	baseStore := basestore.NewWithHandle(db.Handle())
 
 	getCount := func(start int64, end *int64) (int64, bool, error) {

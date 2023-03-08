@@ -199,15 +199,9 @@ func getAndMarshalRepositorySizeHistogramJSON(ctx context.Context, db database.D
 
 	buckets, err := usagestats.GetRepositorySizeHistorgram(ctx, db)
 	if err != nil {
-		fmt.Println()
 		return nil, err
 	}
-	jsonify, err := json.Marshal(buckets)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println(string(jsonify))
-	return jsonify, nil
+	return json.Marshal(buckets)
 }
 
 func getAndMarshalRetentionStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
