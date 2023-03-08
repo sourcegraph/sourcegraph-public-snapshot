@@ -5,5 +5,5 @@ go_library(
     srcs = ["ineffassign.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/ineffassign",
     visibility = ["//visibility:public"],
-    deps = ["@com_github_gordonklaus_ineffassign//pkg/ineffassign:go_default_library"],
+    deps = ["@com_github_gordonklaus_ineffassign//pkg/ineffassign"],
 )

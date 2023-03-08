@@ -230,11 +230,11 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 rules_rust_dependencies()
 
 rust_register_toolchains(
-  edition = "2021",
-  # Keep in sync with docker-images/syntax-highlighter/Dockerfile
-  versions = [
-    "1.67.1"
-  ],
+    edition = "2021",
+    # Keep in sync with docker-images/syntax-highlighter/Dockerfile
+    versions = [
+        "1.67.1",
+    ],
 )
 
 load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
@@ -247,9 +247,9 @@ crates_repository(
     # To regenerate this file run: CARGO_BAZEL_REPIN=1 bazel sync --only=crates_index
     lockfile = "//docker-images/syntax-highlighter:Cargo.Bazel.lock",
     manifests = [
-      "//docker-images/syntax-highlighter:crates/sg-macros/Cargo.toml",
-      "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
-      "//docker-images/syntax-highlighter:Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/sg-macros/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
+        "//docker-images/syntax-highlighter:Cargo.toml",
     ],
 )
 

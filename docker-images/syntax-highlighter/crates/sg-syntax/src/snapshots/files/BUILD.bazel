@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "files_lib",
+    srcs = ["golang.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "files",
+    embed = [":files_lib"],
+    visibility = ["//visibility:public"],
+)

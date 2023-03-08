@@ -5,25 +5,25 @@ rust_binary(
     name = "syntect_server",
     srcs = ["src/main.rs"],
     aliases = aliases(),
-    deps = all_crate_deps(
-        normal = True,
-    ) + ["//docker-images/syntax-highlighter/crates/sg-syntax:sg-syntax"],
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
+    deps = all_crate_deps(
+        normal = True,
+    ) + ["//docker-images/syntax-highlighter/crates/sg-syntax:sg-syntax"],
 )
 
 rust_test(
     name = "unit_test",
-    crate = ":syntect_server",
     aliases = aliases(
         normal_dev = True,
         proc_macro_dev = True,
     ),
-    deps = all_crate_deps(
-        normal_dev = True,
-    ),
+    crate = ":syntect_server",
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
+    ),
+    deps = all_crate_deps(
+        normal_dev = True,
     ),
 )
