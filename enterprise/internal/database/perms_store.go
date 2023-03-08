@@ -1426,6 +1426,10 @@ func (s *permsStore) DeleteAllUserPermissions(ctx context.Context, userID int32)
 	ctx, save := s.observe(ctx, "DeleteAllUserPermissions", "")
 	defer func() { save(&err, otlog.Int32("userID", userID)) }()
 
+	// first delete from the unified table
+	if err = s.execute(ctx, sqlf.Sprintf(`DELETE FROM user_repo_permissions WHERE user_id = %d`, userID)); err != nil {
+		return errors.Wrap(err, "execute delete user repo permissions query")
+	}
 	// NOTE: Practically, we don't need to clean up "repo_permissions" table because the value of "id" column
 	// that is associated with this user will be invalidated automatically by deleting this row.
 	if err = s.execute(ctx, sqlf.Sprintf(`DELETE FROM user_permissions WHERE user_id = %s`, userID)); err != nil {
@@ -2367,20 +2371,20 @@ func (s *permsStore) scanUsersPermissionsInfo(rows dbutil.Scanner) (*types.User,
 }
 
 const usersPermissionsInfoQueryFmt = `
-SELECT 
-	users.id, 
-	users.username, 
-	users.display_name, 
-	users.avatar_url, 
-	users.created_at, 
-	users.updated_at, 
-	users.site_admin, 
-	users.passwd IS NOT NULL, 
-	users.tags, 
-	users.invalidated_sessions_at, 
-	users.tos_accepted, 
+SELECT
+	users.id,
+	users.username,
+	users.display_name,
+	users.avatar_url,
+	users.created_at,
+	users.updated_at,
+	users.site_admin,
+	users.passwd IS NOT NULL,
+	users.tags,
+	users.invalidated_sessions_at,
+	users.tos_accepted,
 	users.searchable,
-	CASE 
+	CASE
 		WHEN user_permissions.object_ids_ints @> INTSET(repo.id) THEN user_permissions.updated_at
 		ELSE NULL
 	END AS permissions_updated_at
@@ -2411,7 +2415,7 @@ func (s *permsStore) isRepoUnrestricted(ctx context.Context, repoID api.RepoID, 
 }
 
 const isRepoUnrestrictedQueryFmt = `
-SELECT 
+SELECT
 	(%s) AS unrestricted
 FROM repo
 WHERE
