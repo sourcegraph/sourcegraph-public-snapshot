@@ -27,7 +27,7 @@ func (r *Resolver) SetPermissions(ctx context.Context, args gql.SetPermissionsAr
 		return nil, err
 	}
 
-	roleID, err := unmarshalRoleID(args.Role)
+	roleID, err := gql.UnmarshalRoleID(args.Role)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func (r *Resolver) SetPermissions(ctx context.Context, args gql.SetPermissionsAr
 	}
 
 	for _, p := range args.Permissions {
-		pID, err := unmarshalPermissionID(p)
+		pID, err := gql.UnmarshalPermissionID(p)
 		if err != nil {
 			return nil, err
 		}
@@ -57,13 +57,13 @@ func (r *Resolver) DeleteRole(ctx context.Context, args *gql.DeleteRoleArgs) (_ 
 		return nil, err
 	}
 
-	roleID, err := unmarshalRoleID(args.Role)
+	roleID, err := gql.UnmarshalRoleID(args.Role)
 	if err != nil {
 		return nil, err
 	}
 
 	if roleID == 0 {
-		return nil, ErrIDIsZero{}
+		return nil, gql.ErrIDIsZero{}
 	}
 
 	err = r.db.Roles().Delete(ctx, database.DeleteRoleOpts{
@@ -92,7 +92,7 @@ func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gq
 		if len(args.Permissions) > 0 {
 			opts := database.BulkAssignPermissionsToRoleOpts{RoleID: role.ID}
 			for _, permissionID := range args.Permissions {
-				id, err := unmarshalPermissionID(permissionID)
+				id, err := gql.UnmarshalPermissionID(permissionID)
 				if err != nil {
 					return err
 				}
@@ -110,8 +110,5 @@ func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gq
 		return nil, err
 	}
 
-	return &roleResolver{
-		db:   r.db,
-		role: role,
-	}, nil
+	return gql.NewRoleResolver(r.db, role), nil
 }

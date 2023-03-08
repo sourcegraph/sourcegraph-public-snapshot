@@ -22,7 +22,7 @@ func (pcs *permisionConnectionStore) MarshalCursor(node PermissionResolver, _ da
 }
 
 func (pcs *permisionConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	nodeID, err := unmarshalPermissionID(graphql.ID(cursor))
+	nodeID, err := UnmarshalPermissionID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}

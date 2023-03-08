@@ -13,6 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+func NewRoleResolver(db database.DB, role *types.Role) RoleResolver {
+	return &roleResolver{db: db, role: role}
+}
+
 type roleResolver struct {
 	db   database.DB
 	role *types.Role
@@ -22,15 +26,15 @@ var _ RoleResolver = &roleResolver{}
 
 const roleIDKind = "Role"
 
-func marshalRoleID(id int32) graphql.ID { return relay.MarshalID(roleIDKind, id) }
+func MarshalRoleID(id int32) graphql.ID { return relay.MarshalID(roleIDKind, id) }
 
-func unmarshalRoleID(id graphql.ID) (roleID int32, err error) {
+func UnmarshalRoleID(id graphql.ID) (roleID int32, err error) {
 	err = relay.UnmarshalSpec(id, &roleID)
 	return
 }
 
 func (r *roleResolver) ID() graphql.ID {
-	return marshalRoleID(r.role.ID)
+	return MarshalRoleID(r.role.ID)
 }
 
 func (r *roleResolver) Name() string {
@@ -47,7 +51,7 @@ func (r *roleResolver) Permissions(ctx context.Context, args *ListPermissionArgs
 		return nil, err
 	}
 
-	rid := marshalRoleID(r.role.ID)
+	rid := MarshalRoleID(r.role.ID)
 	args.Role = &rid
 	args.User = nil
 	connectionStore := &permisionConnectionStore{

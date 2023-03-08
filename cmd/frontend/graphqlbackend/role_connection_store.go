@@ -22,7 +22,7 @@ func (rcs *roleConnectionStore) MarshalCursor(node RoleResolver, _ database.Orde
 }
 
 func (rcs *roleConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	nodeID, err := unmarshalRoleID(graphql.ID(cursor))
+	nodeID, err := UnmarshalRoleID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}

@@ -482,17 +482,37 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 }
 
 func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
-	id := r.ID()
-	args.User = &id
-	// return Roles(ctx, args)
-	return nil, nil
+	userID := r.user.ID
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+	connectionStore := &roleConnectionStore{
+		db:     r.db,
+		userID: userID,
+	}
+	return graphqlutil.NewConnectionResolver[RoleResolver](
+		connectionStore,
+		&args.ConnectionResolverArgs,
+		nil,
+	)
 }
 
-func (r *UserResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
-	id := r.ID()
-	args.User = &id
-	// return Permissions(ctx, args)
-	return nil, nil
+func (r *UserResolver) Permissions(ctx context.Context) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
+	userID := r.user.ID
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+	connectionStore := &permisionConnectionStore{
+		db:     r.db,
+		userID: userID,
+	}
+	return graphqlutil.NewConnectionResolver[PermissionResolver](
+		connectionStore,
+		&graphqlutil.ConnectionResolverArgs{},
+		&graphqlutil.ConnectionResolverOptions{
+			AllowNoLimit: true,
+		},
+	)
 }
 
 func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {

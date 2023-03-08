@@ -57,7 +57,7 @@ func (r *schemaResolver) roleByID(ctx context.Context, id graphql.ID) (RoleResol
 		return nil, err
 	}
 
-	roleID, err := unmarshalRoleID(id)
+	roleID, err := UnmarshalRoleID(id)
 	if err != nil {
 		return nil, err
 	}

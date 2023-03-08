@@ -17,7 +17,7 @@ func (r *schemaResolver) permissionByID(ctx context.Context, id graphql.ID) (Per
 		return nil, err
 	}
 
-	permissionID, err := unmarshalPermissionID(id)
+	permissionID, err := UnmarshalPermissionID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (r *schemaResolver) Permissions(ctx context.Context, args *ListPermissionAr
 	}
 
 	if args.Role != nil {
-		roleID, err := unmarshalRoleID(*args.Role)
+		roleID, err := UnmarshalRoleID(*args.Role)
 		if err != nil {
 			return nil, err
 		}

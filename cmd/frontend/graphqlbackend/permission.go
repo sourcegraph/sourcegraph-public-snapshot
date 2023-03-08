@@ -17,15 +17,15 @@ var _ PermissionResolver = &permissionResolver{}
 
 const permissionIDKind = "Permission"
 
-func marshalPermissionID(id int32) graphql.ID { return relay.MarshalID(permissionIDKind, id) }
+func MarshalPermissionID(id int32) graphql.ID { return relay.MarshalID(permissionIDKind, id) }
 
-func unmarshalPermissionID(id graphql.ID) (permissionID int32, err error) {
+func UnmarshalPermissionID(id graphql.ID) (permissionID int32, err error) {
 	err = relay.UnmarshalSpec(id, &permissionID)
 	return
 }
 
 func (r *permissionResolver) ID() graphql.ID {
-	return marshalPermissionID(r.permission.ID)
+	return MarshalPermissionID(r.permission.ID)
 }
 
 func (r *permissionResolver) Namespace() (string, error) {

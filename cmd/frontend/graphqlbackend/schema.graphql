@@ -6490,24 +6490,7 @@ type User implements Node & SettingsSubject & Namespace {
     """
     The list of permissions granted to this user based on their roles.
     """
-    permissions(
-        """
-        The limit argument for forward pagination.
-        """
-        first: Int
-        """
-        The limit argument for backward pagination.
-        """
-        last: Int
-        """
-        The cursor argument for forward pagination.
-        """
-        after: String
-        """
-        The cursor argument for backward pagination.
-        """
-        before: String
-    ): PermissionConnection!
+    permissions: PermissionConnection!
 }
 
 """
