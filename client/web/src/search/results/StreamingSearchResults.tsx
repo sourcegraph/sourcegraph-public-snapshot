@@ -88,7 +88,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     }, [rankingToggleEnabled, rankingTemporarySettings, setRankingTemporarySettings])
 
     useEffect(() => {
-        if (rankingTemporarySettings != undefined) {
+        if (rankingTemporarySettings !== undefined) {
             setRankingToggleEnabled(rankingTemporarySettings)
         }
     }, [rankingTemporarySettings, setRankingToggleEnabled])
