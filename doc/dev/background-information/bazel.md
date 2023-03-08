@@ -214,9 +214,47 @@ INFO: Elapsed time: 11.559s, Critical Path: 2.93s
 INFO: 36 processes: 2 internal, 34 darwin-sandbox.
 ```
 
-
 Solution: run `bazel run //:gazelle` to update the buildfiles automatically.
 
+### Any language
+
+#### Build errors coming from Go files in testdata 
+
+If you added some testdata that includes Go files, `gazelle` will automatically pick them up and generate a `BUILD.bazel` for them, unless you explicitly tell it to not do it. 
+
+``
+(12:13:48) ERROR: /buildkite/builds/buildkite-agent-bazel-65788dddbb-wktr4-1/sourcegraph/sourcegraph/docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/BUILD.bazel:10:10: GoCompilePkg docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/files.a failed: (Exit 1): builder failed: error executing command (from target //docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files:files) bazel-out/k8-opt-exec-2B5CBBC6/bin/external/go_sdk/builder_reset/builder compilepkg -sdk external/go_sdk -installsuffix linux_amd64 -src ... (remaining 23 arguments skipped)
+Use --sandbox_debug to see verbose messages from the sandbox and retain the sandbox build root for debugging
+docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/golang.go:10:2: y declared but not used
+docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/golang.go:19:2: m declared but not used
+docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/golang.go:48:2: j declared but not used
+docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/golang.go:50:2: undefined: math
+docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/golang.go:52:2: undefined: signal
+docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/golang.go:52:16: undefined: c
+docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/golang.go:52:19: undefined: syscall
+docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/golang.go:86:19: cannot use v (variable of type Vehicle) as type Drivable in variable declaration:
+	Vehicle does not implement Drivable (missing Wheels method)
+docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/golang.go:92:12: undefined: Comparable
+docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/golang.go:93:5: invalid operation: a < b (type parameter T is not comparable with <)
+docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/files/golang.go:93:5: too many errors
+compilepkg: error running subcommand external/go_sdk/pkg/tool/linux_amd64/compile: exit status 2
+```
+
+Solution: add a `gazelle` directive saying that it should exclude that folder/files: 
+
+```
+# 👇 we're excluding that folder for gazelle.
+# gazelle:exclude src/snapshots
+
+rust_test(
+    name = "unit_test",
+    # (...)
+    data = glob(
+        ["src/snapshots/**"], # <- the folder that contained the go files. 
+        allow_empty = False,
+    ),
+    # (...) 
+```
 
 #### My go tests complains about missing testdata
 
