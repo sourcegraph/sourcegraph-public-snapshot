@@ -1,5 +1,5 @@
-import { EditorView, Panel, showPanel, ViewUpdate } from '@codemirror/view'
 import { Extension } from '@codemirror/state'
+import { EditorView, Panel, showPanel, ViewUpdate } from '@codemirror/view'
 
 function createShortcutHelpPanel(view: EditorView): Panel {
     const dom = document.createElement('kbd')
