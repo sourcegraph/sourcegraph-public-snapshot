@@ -12,7 +12,7 @@ import { CodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../.
 
 import styles from './CodeHostsNavigation.module.scss'
 
-interface CodeHostsNavigationProps {Ï
+interface CodeHostsNavigationProps {
     codeHostQueryResult: QueryResult<GetCodeHostsResult>
     activeConnectionId: string | undefined
     createConnectionType: string | undefined
@@ -77,7 +77,10 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                             <CodeHostIcon codeHostType={codeHost.kind} aria-hidden={true} />
                         </span>
                         <span className={styles.itemDescription}>
-                            <span className={styles.itemTitle}>{codeHost.displayName} <small><LoadingSpinner /></small></span>
+                            <span className={styles.itemTitle}>
+                                {codeHost.displayName}
+                                { codeHost.lastSyncAt === null &&  <small><LoadingSpinner /></small> }
+                            </span>
                             <small className={styles.itemDescriptionStatus}>
                                 {codeHost.lastSyncAt !== null && <>Synced, {codeHost.repoCount} repositories found</>}
                                 {codeHost.lastSyncAt === null && (
