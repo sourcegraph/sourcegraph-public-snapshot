@@ -6,7 +6,6 @@ go_library(
         "config.go",
         "init.go",
         "observability.go",
-        "ranking.go",
         "service.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking",
@@ -16,7 +15,6 @@ go_library(
         "//enterprise/internal/codeintel/ranking/internal/lsifstore",
         "//enterprise/internal/codeintel/ranking/internal/store",
         "//enterprise/internal/codeintel/shared",
-        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/codeintel/types",
         "//internal/conf",
@@ -27,10 +25,7 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//schema",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_scip//bindings/go/scip",
     ],
 )
 

@@ -95,13 +95,11 @@ type Mutation {
     """
     updateOrganization(id: ID!, displayName: String): Org!
     """
-    Soft or hard deletes an organization.
-    - When the second argument is not provided, it soft deletes an organization, marking it as deleted.
+    Soft deletes an organization.
+
     Only site admins may perform this mutation.
-    - When the second argument is true, it hard deletes an organization and its associated resources.
-    Hard deletion is currently only supported on cloud. Only org members may perform this mutation
     """
-    deleteOrganization(organization: ID!, hard: Boolean): EmptyResponse
+    deleteOrganization(organization: ID!): EmptyResponse
 
     """
     Creates a webhook for the specified code host. Only site admins may perform this mutation.
@@ -6189,6 +6187,11 @@ type User implements Node & SettingsSubject & Namespace {
     namespaceName: String!
 
     """
+    Whether the user is controlled externally through SCIM.
+    """
+    scimControlled: Boolean!
+
+    """
     EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
     repositories this user has access to, and is derived from recent commit history of those.
     """
@@ -7783,6 +7786,10 @@ type SiteUser {
     Whether user is site admin or not.
     """
     siteAdmin: Boolean!
+    """
+    Whether the user is controlled through SCIM.
+    """
+    scimControlled: Boolean!
     """
     Total number of user's event_logs.
     """

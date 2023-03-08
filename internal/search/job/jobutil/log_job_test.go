@@ -68,9 +68,8 @@ func TestOwnSearchEventNames(t *testing.T) {
 			db.EventLogsFunc.SetDefaultReturn(eventStore)
 			ctx := actor.WithActor(context.Background(), actor.FromUser(42))
 			childJob := mockjob.NewMockJob()
-			voidCollector := streaming.StreamFunc(func(ev streaming.SearchEvent) {})
 			logJob := jobutil.NewLogJob(inputs, childJob)
-			if _, err := logJob.Run(ctx, job.RuntimeClients{DB: db}, voidCollector); err != nil {
+			if _, err := logJob.Run(ctx, job.RuntimeClients{DB: db}, streaming.NewNullStream()); err != nil {
 				t.Fatalf("LogJob.Run: %s", err)
 			}
 			if diff := cmp.Diff(wantEventNames, eventStore.loggedEventNames()); diff != "" {

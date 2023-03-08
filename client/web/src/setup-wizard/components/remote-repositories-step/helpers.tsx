@@ -1,10 +1,34 @@
-import { mdiBitbucket, mdiGithub, mdiGitlab, mdiAws, mdiGit } from '@mdi/js'
+import { FC } from 'react'
+
+import { mdiAws, mdiBitbucket, mdiGit, mdiGithub, mdiGitlab } from '@mdi/js'
+import { MdiReactIconComponentType } from 'mdi-react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { Icon, IconProps } from '@sourcegraph/wildcard'
 
+import { GerritIcon } from '../../../components/externalServices/GerritIcon'
 import { GetCodeHostsResult } from '../../../graphql-operations'
 
-export const getCodeHostIcon = (codeHostType: ExternalServiceKind | null): string => {
+type CodeHostIconProps = IconProps & {
+    codeHostType: ExternalServiceKind | null
+}
+
+export const CodeHostIcon: FC<CodeHostIconProps> = props => {
+    const { codeHostType, ...attributes } = props
+    const codeHostIconPath = getCodeHostIconPath(codeHostType)
+
+    if (codeHostIconPath) {
+        return <Icon svgPath={codeHostIconPath} {...attributes} />
+    }
+
+    if (codeHostType === ExternalServiceKind.GERRIT) {
+        return <GerritIcon size={16} {...(attributes as unknown as MdiReactIconComponentType)} />
+    }
+
+    return null
+}
+
+export const getCodeHostIconPath = (codeHostType: ExternalServiceKind | null): string | null => {
     switch (codeHostType) {
         case ExternalServiceKind.GITHUB:
             return mdiGithub
@@ -22,7 +46,7 @@ export const getCodeHostIcon = (codeHostType: ExternalServiceKind | null): strin
             return mdiGit
         default:
             // TODO: Add support for other code host
-            return ''
+            return null
     }
 }
 

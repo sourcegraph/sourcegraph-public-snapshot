@@ -96,8 +96,7 @@ export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
                                 </SidebarNavItem>
                             ))}
                             {!siteAdminViewingOtherUser &&
-                                (window.context.sourcegraphDotComMode &&
-                                !props.authenticatedUser?.tags?.includes('CreateOrg') ? (
+                                (window.context.sourcegraphDotComMode ? (
                                     <SidebarNavItem to="./about-organizations" onClick={collapseMobileSidebar}>
                                         About organizations
                                     </SidebarNavItem>

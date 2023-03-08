@@ -15,7 +15,7 @@ const FEATURE_FLAG_NAME = 'database-permission-sync-worker'
 export const PermissionsSyncJobsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
 }) => {
-    const [enabled] = useFeatureFlag(FEATURE_FLAG_NAME)
+    const [enabled] = useFeatureFlag(FEATURE_FLAG_NAME, true)
 
     return enabled ? (
         <PermissionsSyncJobsTable telemetryService={telemetryService} />

@@ -74,6 +74,7 @@ SixSyncJobsFound.storyName = 'Six sync jobs'
 
 interface repo {
     __typename: 'Repository'
+    id: string
     name: string
     externalRepository: {
         serviceType: ExternalServiceKind
@@ -82,6 +83,7 @@ interface repo {
 
 interface user {
     __typename: 'User'
+    id: string
     username: string
 }
 
@@ -149,6 +151,7 @@ function getSyncJobs(): PermissionsSyncJob[] {
             index % 2 === 0
                 ? {
                       __typename: 'Repository',
+                      id: index.toString(),
                       name: `sourcegraph/repo-${index}`,
                       externalRepository: {
                           serviceType: index % 3 === 0 ? ExternalServiceKind.GITHUB : ExternalServiceKind.GITLAB,
@@ -156,6 +159,7 @@ function getSyncJobs(): PermissionsSyncJob[] {
                   }
                 : {
                       __typename: 'User',
+                      id: index.toString(),
                       username: `username-${index}`,
                   }
 

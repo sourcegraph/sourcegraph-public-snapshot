@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 // TODO(bazel): drop when non-bazel removed.
-const IS_BAZEL = !!(process.env.JS_BINARY__TARGET || process.env.BAZEL_TEST)
+const IS_BAZEL = !!(process.env.JS_BINARY__TARGET || process.env.BAZEL_BINDIR || process.env.BAZEL_TEST)
 
 // NOTE: use fs.realpathSync() in addition to path.resolve() to resolve
 // symlinks to the real path. This is required for webpack plugins using

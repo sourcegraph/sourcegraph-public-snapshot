@@ -1039,8 +1039,6 @@ commandsets:
       - redis
       - postgres
       - git
-      - bazel
-      - ibazel
     commands:
       - oss-frontend
       - oss-worker

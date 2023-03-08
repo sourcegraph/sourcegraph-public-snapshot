@@ -203,10 +203,12 @@ js_library(
 nogo(
     name = "sg_nogo",
     config = ":nogo_config.json",
-    visibility = ["//visibility:public"],  # must have public visibility
     vet = True,
+    visibility = ["//visibility:public"],  # must have public visibility
     deps = [
         "//dev/linters/bodyclose",
+        "//dev/linters/forbidigo",
+        "//dev/linters/ineffassign",
     ],
 )
 

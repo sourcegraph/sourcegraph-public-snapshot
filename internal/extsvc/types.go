@@ -607,8 +607,7 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 	var limit rate.Limit
 	switch c := config.(type) {
 	case *schema.GitLabConnection:
-		// 10/s is the default enforced by GitLab on their end
-		limit = rate.Limit(10)
+		limit = rate.Inf
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}

@@ -33,6 +33,10 @@ go_test(
         "changeset_test.go",
     ],
     embed = [":webhooks"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/batches/graphql",

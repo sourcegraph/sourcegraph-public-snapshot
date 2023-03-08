@@ -24989,10 +24989,9 @@ type MockGitserverRepoStore struct {
 	// object controlling the behavior of the method
 	// IterateRepoGitserverStatus.
 	IterateRepoGitserverStatusFunc *GitserverRepoStoreIterateRepoGitserverStatusFunc
-	// IterateWithNonemptyLastErrorFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// IterateWithNonemptyLastError.
-	IterateWithNonemptyLastErrorFunc *GitserverRepoStoreIterateWithNonemptyLastErrorFunc
+	// ListReposWithLastErrorFunc is an instance of a mock function object
+	// controlling the behavior of the method ListReposWithLastError.
+	ListReposWithLastErrorFunc *GitserverRepoStoreListReposWithLastErrorFunc
 	// ListReposWithoutSizeFunc is an instance of a mock function object
 	// controlling the behavior of the method ListReposWithoutSize.
 	ListReposWithoutSizeFunc *GitserverRepoStoreListReposWithoutSizeFunc
@@ -25061,8 +25060,8 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 				return
 			},
 		},
-		IterateWithNonemptyLastErrorFunc: &GitserverRepoStoreIterateWithNonemptyLastErrorFunc{
-			defaultHook: func(context.Context, func(repo api.RepoName) error) (r0 error) {
+		ListReposWithLastErrorFunc: &GitserverRepoStoreListReposWithLastErrorFunc{
+			defaultHook: func(context.Context) (r0 []api.RepoName, r1 error) {
 				return
 			},
 		},
@@ -25154,9 +25153,9 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.IterateRepoGitserverStatus")
 			},
 		},
-		IterateWithNonemptyLastErrorFunc: &GitserverRepoStoreIterateWithNonemptyLastErrorFunc{
-			defaultHook: func(context.Context, func(repo api.RepoName) error) error {
-				panic("unexpected invocation of MockGitserverRepoStore.IterateWithNonemptyLastError")
+		ListReposWithLastErrorFunc: &GitserverRepoStoreListReposWithLastErrorFunc{
+			defaultHook: func(context.Context) ([]api.RepoName, error) {
+				panic("unexpected invocation of MockGitserverRepoStore.ListReposWithLastError")
 			},
 		},
 		ListReposWithoutSizeFunc: &GitserverRepoStoreListReposWithoutSizeFunc{
@@ -25235,8 +25234,8 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		IterateRepoGitserverStatusFunc: &GitserverRepoStoreIterateRepoGitserverStatusFunc{
 			defaultHook: i.IterateRepoGitserverStatus,
 		},
-		IterateWithNonemptyLastErrorFunc: &GitserverRepoStoreIterateWithNonemptyLastErrorFunc{
-			defaultHook: i.IterateWithNonemptyLastError,
+		ListReposWithLastErrorFunc: &GitserverRepoStoreListReposWithLastErrorFunc{
+			defaultHook: i.ListReposWithLastError,
 		},
 		ListReposWithoutSizeFunc: &GitserverRepoStoreListReposWithoutSizeFunc{
 			defaultHook: i.ListReposWithoutSize,
@@ -25929,37 +25928,37 @@ func (c GitserverRepoStoreIterateRepoGitserverStatusFuncCall) Results() []interf
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// GitserverRepoStoreIterateWithNonemptyLastErrorFunc describes the behavior
-// when the IterateWithNonemptyLastError method of the parent
-// MockGitserverRepoStore instance is invoked.
-type GitserverRepoStoreIterateWithNonemptyLastErrorFunc struct {
-	defaultHook func(context.Context, func(repo api.RepoName) error) error
-	hooks       []func(context.Context, func(repo api.RepoName) error) error
-	history     []GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall
+// GitserverRepoStoreListReposWithLastErrorFunc describes the behavior when
+// the ListReposWithLastError method of the parent MockGitserverRepoStore
+// instance is invoked.
+type GitserverRepoStoreListReposWithLastErrorFunc struct {
+	defaultHook func(context.Context) ([]api.RepoName, error)
+	hooks       []func(context.Context) ([]api.RepoName, error)
+	history     []GitserverRepoStoreListReposWithLastErrorFuncCall
 	mutex       sync.Mutex
 }
 
-// IterateWithNonemptyLastError delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) IterateWithNonemptyLastError(v0 context.Context, v1 func(repo api.RepoName) error) error {
-	r0 := m.IterateWithNonemptyLastErrorFunc.nextHook()(v0, v1)
-	m.IterateWithNonemptyLastErrorFunc.appendCall(GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall{v0, v1, r0})
-	return r0
+// ListReposWithLastError delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) ListReposWithLastError(v0 context.Context) ([]api.RepoName, error) {
+	r0, r1 := m.ListReposWithLastErrorFunc.nextHook()(v0)
+	m.ListReposWithLastErrorFunc.appendCall(GitserverRepoStoreListReposWithLastErrorFuncCall{v0, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// IterateWithNonemptyLastError method of the parent MockGitserverRepoStore
+// ListReposWithLastError method of the parent MockGitserverRepoStore
 // instance is invoked and the hook queue is empty.
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) SetDefaultHook(hook func(context.Context, func(repo api.RepoName) error) error) {
+func (f *GitserverRepoStoreListReposWithLastErrorFunc) SetDefaultHook(hook func(context.Context) ([]api.RepoName, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// IterateWithNonemptyLastError method of the parent MockGitserverRepoStore
+// ListReposWithLastError method of the parent MockGitserverRepoStore
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushHook(hook func(context.Context, func(repo api.RepoName) error) error) {
+func (f *GitserverRepoStoreListReposWithLastErrorFunc) PushHook(hook func(context.Context) ([]api.RepoName, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -25967,20 +25966,20 @@ func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushHook(hook func(
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, func(repo api.RepoName) error) error {
-		return r0
+func (f *GitserverRepoStoreListReposWithLastErrorFunc) SetDefaultReturn(r0 []api.RepoName, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]api.RepoName, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, func(repo api.RepoName) error) error {
-		return r0
+func (f *GitserverRepoStoreListReposWithLastErrorFunc) PushReturn(r0 []api.RepoName, r1 error) {
+	f.PushHook(func(context.Context) ([]api.RepoName, error) {
+		return r0, r1
 	})
 }
 
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) nextHook() func(context.Context, func(repo api.RepoName) error) error {
+func (f *GitserverRepoStoreListReposWithLastErrorFunc) nextHook() func(context.Context) ([]api.RepoName, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -25993,49 +25992,49 @@ func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) nextHook() func(con
 	return hook
 }
 
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) appendCall(r0 GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall) {
+func (f *GitserverRepoStoreListReposWithLastErrorFunc) appendCall(r0 GitserverRepoStoreListReposWithLastErrorFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall objects describing
-// the invocations of this function.
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) History() []GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall {
+// GitserverRepoStoreListReposWithLastErrorFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverRepoStoreListReposWithLastErrorFunc) History() []GitserverRepoStoreListReposWithLastErrorFuncCall {
 	f.mutex.Lock()
-	history := make([]GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall, len(f.history))
+	history := make([]GitserverRepoStoreListReposWithLastErrorFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall is an object that
-// describes an invocation of method IterateWithNonemptyLastError on an
-// instance of MockGitserverRepoStore.
-type GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall struct {
+// GitserverRepoStoreListReposWithLastErrorFuncCall is an object that
+// describes an invocation of method ListReposWithLastError on an instance
+// of MockGitserverRepoStore.
+type GitserverRepoStoreListReposWithLastErrorFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 func(repo api.RepoName) error
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 []api.RepoName
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+func (c GitserverRepoStoreListReposWithLastErrorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+func (c GitserverRepoStoreListReposWithLastErrorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverRepoStoreListReposWithoutSizeFunc describes the behavior when
@@ -36857,6 +36856,9 @@ type MockPermissionStore struct {
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *PermissionStoreGetByIDFunc
+	// GetPermissionForUserFunc is an instance of a mock function object
+	// controlling the behavior of the method GetPermissionForUser.
+	GetPermissionForUserFunc *PermissionStoreGetPermissionForUserFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *PermissionStoreHandleFunc
@@ -36900,6 +36902,11 @@ func NewMockPermissionStore() *MockPermissionStore {
 		},
 		GetByIDFunc: &PermissionStoreGetByIDFunc{
 			defaultHook: func(context.Context, GetPermissionOpts) (r0 *types.Permission, r1 error) {
+				return
+			},
+		},
+		GetPermissionForUserFunc: &PermissionStoreGetPermissionForUserFunc{
+			defaultHook: func(context.Context, GetPermissionForUserOpts) (r0 *types.Permission, r1 error) {
 				return
 			},
 		},
@@ -36955,6 +36962,11 @@ func NewStrictMockPermissionStore() *MockPermissionStore {
 				panic("unexpected invocation of MockPermissionStore.GetByID")
 			},
 		},
+		GetPermissionForUserFunc: &PermissionStoreGetPermissionForUserFunc{
+			defaultHook: func(context.Context, GetPermissionForUserOpts) (*types.Permission, error) {
+				panic("unexpected invocation of MockPermissionStore.GetPermissionForUser")
+			},
+		},
 		HandleFunc: &PermissionStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockPermissionStore.Handle")
@@ -36995,6 +37007,9 @@ func NewMockPermissionStoreFrom(i PermissionStore) *MockPermissionStore {
 		},
 		GetByIDFunc: &PermissionStoreGetByIDFunc{
 			defaultHook: i.GetByID,
+		},
+		GetPermissionForUserFunc: &PermissionStoreGetPermissionForUserFunc{
+			defaultHook: i.GetPermissionForUser,
 		},
 		HandleFunc: &PermissionStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -37647,6 +37662,117 @@ func (c PermissionStoreGetByIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermissionStoreGetByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermissionStoreGetPermissionForUserFunc describes the behavior when the
+// GetPermissionForUser method of the parent MockPermissionStore instance is
+// invoked.
+type PermissionStoreGetPermissionForUserFunc struct {
+	defaultHook func(context.Context, GetPermissionForUserOpts) (*types.Permission, error)
+	hooks       []func(context.Context, GetPermissionForUserOpts) (*types.Permission, error)
+	history     []PermissionStoreGetPermissionForUserFuncCall
+	mutex       sync.Mutex
+}
+
+// GetPermissionForUser delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermissionStore) GetPermissionForUser(v0 context.Context, v1 GetPermissionForUserOpts) (*types.Permission, error) {
+	r0, r1 := m.GetPermissionForUserFunc.nextHook()(v0, v1)
+	m.GetPermissionForUserFunc.appendCall(PermissionStoreGetPermissionForUserFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetPermissionForUser
+// method of the parent MockPermissionStore instance is invoked and the hook
+// queue is empty.
+func (f *PermissionStoreGetPermissionForUserFunc) SetDefaultHook(hook func(context.Context, GetPermissionForUserOpts) (*types.Permission, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetPermissionForUser method of the parent MockPermissionStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermissionStoreGetPermissionForUserFunc) PushHook(hook func(context.Context, GetPermissionForUserOpts) (*types.Permission, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermissionStoreGetPermissionForUserFunc) SetDefaultReturn(r0 *types.Permission, r1 error) {
+	f.SetDefaultHook(func(context.Context, GetPermissionForUserOpts) (*types.Permission, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermissionStoreGetPermissionForUserFunc) PushReturn(r0 *types.Permission, r1 error) {
+	f.PushHook(func(context.Context, GetPermissionForUserOpts) (*types.Permission, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermissionStoreGetPermissionForUserFunc) nextHook() func(context.Context, GetPermissionForUserOpts) (*types.Permission, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermissionStoreGetPermissionForUserFunc) appendCall(r0 PermissionStoreGetPermissionForUserFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermissionStoreGetPermissionForUserFuncCall
+// objects describing the invocations of this function.
+func (f *PermissionStoreGetPermissionForUserFunc) History() []PermissionStoreGetPermissionForUserFuncCall {
+	f.mutex.Lock()
+	history := make([]PermissionStoreGetPermissionForUserFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermissionStoreGetPermissionForUserFuncCall is an object that describes
+// an invocation of method GetPermissionForUser on an instance of
+// MockPermissionStore.
+type PermissionStoreGetPermissionForUserFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 GetPermissionForUserOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Permission
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermissionStoreGetPermissionForUserFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermissionStoreGetPermissionForUserFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

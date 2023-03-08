@@ -577,16 +577,16 @@ export function createUser(username: string, email: string | undefined): Observa
     )
 }
 
-export function deleteOrganization(organization: Scalars['ID'], hard?: boolean): Promise<void> {
+export function deleteOrganization(organization: Scalars['ID']): Promise<void> {
     return requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>(
         gql`
-            mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-                deleteOrganization(organization: $organization, hard: $hard) {
+            mutation DeleteOrganization($organization: ID!) {
+                deleteOrganization(organization: $organization) {
                     alwaysNil
                 }
             }
         `,
-        { organization, hard: hard ?? null }
+        { organization }
     )
         .pipe(
             map(dataOrThrowErrors),

@@ -180,7 +180,7 @@ func newGithubSource(
 
 	for resource, monitor := range map[string]*ratelimit.Monitor{
 		"rest":    v3Client.ExternalRateLimiter(),
-		"graphql": v4Client.RateLimitMonitor(),
+		"graphql": v4Client.ExternalRateLimiter(),
 		"search":  searchClient.ExternalRateLimiter(),
 	} {
 		// Copy the resource or funcs below will use the last one seen while iterating

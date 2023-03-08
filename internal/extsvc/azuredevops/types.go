@@ -149,14 +149,14 @@ type PullRequestCommit struct {
 }
 
 type PullRequestUpdateInput struct {
-	Status                *PullRequestStatus           `json:"status"`
-	Title                 *string                      `json:"title"`
-	Description           *string                      `json:"description"`
-	MergeOptions          *PullRequestMergeOptions     `json:"mergeOptions"`
-	LastMergeSourceCommit *PullRequestCommit           `json:"lastMergeSourceCommit"`
-	TargetRefName         *string                      `json:"targetRefName"`
-	IsDraft               bool                         `json:"isDraft"`
-	CompletionOptions     PullRequestCompletionOptions `json:"completionOptions"`
+	Status                *PullRequestStatus            `json:"status"`
+	Title                 *string                       `json:"title"`
+	Description           *string                       `json:"description"`
+	MergeOptions          *PullRequestMergeOptions      `json:"mergeOptions"`
+	LastMergeSourceCommit *PullRequestCommit            `json:"lastMergeSourceCommit"`
+	TargetRefName         *string                       `json:"targetRefName"`
+	IsDraft               *bool                         `json:"isDraft"`
+	CompletionOptions     *PullRequestCompletionOptions `json:"completionOptions"`
 	// ADO does not seem to support updating Source ref name, only TargetRefName which needs to be explicitly enabled.
 }
 

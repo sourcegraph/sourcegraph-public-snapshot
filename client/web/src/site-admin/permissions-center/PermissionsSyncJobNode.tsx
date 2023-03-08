@@ -38,14 +38,14 @@ const JOB_REASON_TO_READABLE_REASON: Record<PermissionsSyncJobReason, string> = 
     REASON_MANUAL_REPO_SYNC: 'Repository synchronization triggered manually',
     REASON_MANUAL_USER_SYNC: 'User synchronization triggered manually',
     REASON_REPO_NO_PERMS: 'Repository has no permissions',
-    REASON_REPO_OUTDATED_PERMS: 'Repository had outdated permissions',
+    REASON_REPO_OUTDATED_PERMS: 'Regular refresh of repository permissions',
     REASON_REPO_UPDATED_FROM_CODE_HOST: 'Repository has been updated from code host',
     REASON_USER_ACCEPTED_ORG_INVITE: 'User accepted organization invite',
     REASON_USER_ADDED_TO_ORG: 'User added to organization',
     REASON_USER_EMAIL_REMOVED: 'User email removed',
     REASON_USER_EMAIL_VERIFIED: 'User email verified',
     REASON_USER_NO_PERMS: 'User had no permissions',
-    REASON_USER_OUTDATED_PERMS: 'User had outdated permissions',
+    REASON_USER_OUTDATED_PERMS: 'Regular refresh of user permissions',
     REASON_USER_REMOVED_FROM_ORG: 'User removed from organization',
 }
 

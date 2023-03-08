@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 
+import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import {
     ComboboxOptionText,
     Combobox,
@@ -22,7 +23,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { ParentTeamSelectSearchFields } from '../../../graphql-operations'
-import { TeamAvatar } from '../../TeamAvatar'
 
 import { useParentTeamSelectSearch } from './backend'
 
@@ -145,24 +145,26 @@ interface ParentTeamSelectButtonProps extends ButtonHTMLAttributes<HTMLButtonEle
     title: string | undefined
 }
 
-const ParentTeamSelectButton = forwardRef<HTMLButtonElement, ParentTeamSelectButtonProps>((props, ref) => {
-    const { title, className, ...attributes } = props
-    const { isOpen } = usePopoverContext()
+const ParentTeamSelectButton = forwardRef<HTMLButtonElement, ParentTeamSelectButtonProps>(
+    function ParentTeamSelectButton(props, ref) {
+        const { title, className, ...attributes } = props
+        const { isOpen } = usePopoverContext()
 
-    const Icon = isOpen ? ChevronUpIcon : ChevronDownIcon
+        const Icon = isOpen ? ChevronUpIcon : ChevronDownIcon
 
-    return (
-        <Button
-            {...attributes}
-            ref={ref}
-            variant="secondary"
-            outline={true}
-            aria-label="Choose a parent team"
-            className={classNames(className, styles.triggerButton)}
-        >
-            <span className={styles.triggerButtonText}>{title ?? 'No parent team'}</span>
+        return (
+            <Button
+                {...attributes}
+                ref={ref}
+                variant="secondary"
+                outline={true}
+                aria-label="Choose a parent team"
+                className={classNames(className, styles.triggerButton)}
+            >
+                <span className={styles.triggerButtonText}>{title ?? 'No parent team'}</span>
 
-            <Icon className={styles.triggerButtonIcon} />
-        </Button>
-    )
-})
+                <Icon className={styles.triggerButtonIcon} />
+            </Button>
+        )
+    }
+)
