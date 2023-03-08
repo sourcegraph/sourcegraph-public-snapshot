@@ -147,9 +147,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":repos"],
     tags = [
-        # Test requires locally running redis & postgres so don't test on //...
-        # "manual",
-        # Test requires localhost
+        # Test requires localhost database
         "requires-network",
     ],
     deps = [

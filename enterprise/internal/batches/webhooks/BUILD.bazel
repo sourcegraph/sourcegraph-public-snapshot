@@ -34,9 +34,7 @@ go_test(
     ],
     embed = [":webhooks"],
     tags = [
-        # Test requires locally running DB so don't test on //...
-        # "manual",
-        # Test requires localhost
+        # Test requires localhost for database
         "requires-network",
     ],
     deps = [

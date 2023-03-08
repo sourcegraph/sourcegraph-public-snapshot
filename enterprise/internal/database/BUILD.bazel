@@ -84,9 +84,7 @@ go_test(
     ],
     embed = [":database"],
     tags = [
-        # Test requires locally running DB so don't test on //...
-        # "manual",
-        # Test requires localhost
+        # Test requires localhost database
         "requires-network",
     ],
     deps = [

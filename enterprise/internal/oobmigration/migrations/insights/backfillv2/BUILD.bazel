@@ -23,9 +23,7 @@ go_test(
     srcs = ["migrator_test.go"],
     embed = [":backfillv2"],
     tags = [
-        # Test requires locally running DB so don't test on //...
-        # "manual",
-        # Test requires localhost
+        # Test requires localhost database
         "requires-network",
     ],
     deps = [

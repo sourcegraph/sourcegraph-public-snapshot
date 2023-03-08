@@ -45,9 +45,7 @@ go_test(
     ],
     embed = [":repoupdater"],
     tags = [
-        # Test requires locally running DB so don't test on //...
-        # "manual",
-        # Test requires localhost
+        # Test requires localhost database
         "requires-network",
     ],
     deps = [

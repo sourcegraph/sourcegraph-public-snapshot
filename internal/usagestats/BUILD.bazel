@@ -77,9 +77,7 @@ go_test(
     ],
     embed = [":usagestats"],
     tags = [
-        # Test requires locally running redis & postgres so don't test on //...
-        # "manual",
-        # Test requires localhost
+        # Test requires localhost database
         "requires-network",
     ],
     deps = [

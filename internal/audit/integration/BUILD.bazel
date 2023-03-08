@@ -3,12 +3,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 go_test(
     name = "integration_test",
     srcs = ["integration_test.go"],
-    # ==================== Test output for //internal/audit/integration:integration_test:
-    # --- FAIL: TestIntegration (0.00s)
-    #     integration_test.go:24: no log output captured
-    # FAIL
-    # TODO(bazel): fix test
-    # tags = ["manual"],
     deps = [
         "@com_github_sourcegraph_run//:run",
         "@com_github_stretchr_testify//assert",

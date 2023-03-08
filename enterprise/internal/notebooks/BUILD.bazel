@@ -30,9 +30,7 @@ go_test(
     ],
     embed = [":notebooks"],
     tags = [
-        # Test requires locally running DB so don't test on //...
-        # "manual",
-        # Test requires localhost
+        # Test requires localhost for database
         "requires-network",
     ],
     deps = [
