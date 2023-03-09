@@ -18,7 +18,7 @@ Sourcegraph provides a UI and CLI to ingest a `CODEOWNERS` file per-repository, 
 
 Navigating to any repository page, clicking the Ownership button will surface information about any ingested `CODEOWNERS` file, and will allow you to upload or update an existing one.
 
-![img](pending)
+![Codeowners ingestion UI on sourcegraph/sourcegraph](https://storage.googleapis.com/sourcegraph-assets/docs/images/own/codeowners_ingestion_ui.png)
 
 ### Ingesting a file with src-cli
 
