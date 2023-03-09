@@ -35,7 +35,12 @@ go_test(
         "store_test.go",
     ],
     embed = [":store"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
+        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/database",

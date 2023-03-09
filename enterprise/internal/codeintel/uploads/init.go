@@ -5,14 +5,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/derision-test/glock"
-	"google.golang.org/api/option"
-
 	"github.com/sourcegraph/log"
+	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	policiesEnterprise "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
@@ -37,7 +34,7 @@ func NewService(
 	store := uploadsstore.New(scopedContext("uploadsstore", observationCtx), db)
 	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient())
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
-	policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
+	policyMatcher := policies.NewMatcher(gsc, policies.RetentionExtractor, true, false)
 	ciLocker := locker.NewWith(db, "codeintel")
 
 	rankingBucket := func() *storage.BucketHandle {
@@ -126,30 +123,82 @@ func NewCommittedAtBackfillerJob(uploadSvc *Service) []goroutine.BackgroundRouti
 
 func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserverClient GitserverClient) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewJanitor(
+		background.NewDeletedRepositoryJanitor(
 			uploadSvc.store,
-			uploadSvc.lsifstore,
+			ConfigJanitorInst.Interval,
+			observationCtx,
+		),
+
+		background.NewUnknownCommitJanitor(
+			uploadSvc.store,
 			gitserverClient,
 			ConfigJanitorInst.Interval,
-			background.JanitorConfig{
-				UploadTimeout:                  ConfigJanitorInst.UploadTimeout,
-				AuditLogMaxAge:                 ConfigJanitorInst.AuditLogMaxAge,
-				UnreferencedDocumentBatchSize:  ConfigJanitorInst.UnreferencedDocumentBatchSize,
-				UnreferencedDocumentMaxAge:     ConfigJanitorInst.UnreferencedDocumentMaxAge,
-				MinimumTimeSinceLastCheck:      ConfigJanitorInst.MinimumTimeSinceLastCheck,
-				CommitResolverBatchSize:        ConfigJanitorInst.CommitResolverBatchSize,
-				CommitResolverMaximumCommitLag: ConfigJanitorInst.CommitResolverMaximumCommitLag,
-			},
-			glock.NewRealClock(),
-			observationCtx.Logger,
-			background.NewJanitorMetrics(observationCtx),
+			ConfigJanitorInst.CommitResolverBatchSize,
+			ConfigJanitorInst.MinimumTimeSinceLastCheck,
+			ConfigJanitorInst.CommitResolverMaximumCommitLag,
+			observationCtx,
+		),
+
+		background.NewAbandonedUploadJanitor(
+			uploadSvc.store,
+			ConfigJanitorInst.Interval,
+			ConfigJanitorInst.UploadTimeout,
+			observationCtx,
+		),
+
+		background.NewExpiredUploadJanitor(
+			uploadSvc.store,
+			ConfigJanitorInst.Interval,
+			observationCtx,
+		),
+
+		background.NewExpiredUploadTraversalJanitor(
+			uploadSvc.store,
+			ConfigJanitorInst.Interval,
+			observationCtx,
+		),
+
+		background.NewHardDeleter(
+			uploadSvc.store,
+			uploadSvc.lsifstore,
+			ConfigJanitorInst.Interval,
+			observationCtx,
+		),
+
+		background.NewAuditLogJanitor(
+			uploadSvc.store,
+			ConfigJanitorInst.Interval,
+			ConfigJanitorInst.AuditLogMaxAge,
+			observationCtx,
+		),
+
+		background.NewSCIPExpirationTask(
+			uploadSvc.lsifstore,
+			ConfigJanitorInst.Interval,
+			ConfigJanitorInst.UnreferencedDocumentBatchSize,
+			ConfigJanitorInst.UnreferencedDocumentMaxAge,
+			observationCtx,
 		),
 	}
 }
 
 func NewReconciler(observationCtx *observation.Context, uploadSvc *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewReconciler(observationCtx, uploadSvc.store, uploadSvc.lsifstore, ConfigJanitorInst.Interval, ConfigJanitorInst.ReconcilerBatchSize),
+		background.NewFrontendDBReconciler(
+			uploadSvc.store,
+			uploadSvc.lsifstore,
+			ConfigJanitorInst.Interval,
+			ConfigJanitorInst.ReconcilerBatchSize,
+			observationCtx,
+		),
+
+		background.NewCodeIntelDBReconciler(
+			uploadSvc.store,
+			uploadSvc.lsifstore,
+			ConfigJanitorInst.Interval,
+			ConfigJanitorInst.ReconcilerBatchSize,
+			observationCtx,
+		),
 	}
 }
 

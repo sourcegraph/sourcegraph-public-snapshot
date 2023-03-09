@@ -20,12 +20,13 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { singleLine, placeholder as placeholderExtension } from '../codemirror'
 import { filterPlaceholder } from '../codemirror/active-filter'
+import { queryDiagnostic } from '../codemirror/diagnostics'
 import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
 import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 import { tokenInfo } from '../codemirror/token-info'
 import { useUpdateEditorFromQueryState } from '../CodeMirrorQueryInput'
 
-import { filterHighlight } from './codemirror/syntax-highlighting'
+import { filterDecoration } from './codemirror/syntax-highlighting'
 import { modeScope, useInputMode } from './modes'
 import { editorConfigFacet, Source, suggestions, startCompletion } from './suggestionsExtension'
 
@@ -175,7 +176,8 @@ function createStaticExtensions({ popoverID }: { popoverID: string }): Extension
         keymap.of(defaultKeymap),
         codemirrorHistory(),
         filterPlaceholder,
-        Prec.low([querySyntaxHighlighting, modeScope([filterHighlight, tokenInfo()], [null])]),
+        queryDiagnostic(),
+        Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
         EditorView.theme({
             '&': {
                 flex: 1,
@@ -337,9 +339,18 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
         )
     )
 
+    // Position cursor at the end of the input when it is initialized
+    useEffect(() => {
+        if (editorRef.current) {
+            editorRef.current.dispatch({
+                selection: { anchor: editorRef.current.state.doc.length },
+            })
+        }
+    }, [])
+
     const focus = useCallback(() => {
         editorRef.current?.contentDOM.focus()
-    }, [editorRef])
+    }, [])
 
     const toggleHistoryMode = useCallback(() => {
         if (editorRef.current) {
@@ -366,8 +377,8 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
                         </Tooltip>
                         {mode && <span className="ml-1">{mode}:</span>}
                     </div>
-                    <div ref={editorContainerRef} className="d-contents" />
-                    {children}
+                    <div ref={editorContainerRef} className={styles.input} />
+                    {!mode && children}
                 </div>
                 <div ref={setSuggestionsContainer} className={styles.suggestions} />
             </div>

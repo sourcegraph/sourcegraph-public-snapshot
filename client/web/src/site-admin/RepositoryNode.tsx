@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { mdiCog, mdiClose, mdiFileDocumentOutline } from '@mdi/js'
+import { mdiCog, mdiClose, mdiFileDocumentOutline, mdiBrain } from '@mdi/js'
 import classNames from 'classnames'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
@@ -83,6 +83,19 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                             <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                         </Button>
                     )}{' '} */}
+                    {!window.location.pathname.includes('/setup') && (
+                        <Tooltip content="Repository code graph data">
+                            <Button
+                                to={`/${node.name}/-/code-graph`}
+                                variant="secondary"
+                                size="sm"
+                                className="mr-1"
+                                as={Link}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph data
+                            </Button>
+                        </Tooltip>
+                    )}
                     {node.mirrorInfo.cloned && !node.mirrorInfo.lastError && !node.mirrorInfo.cloneInProgress && (
                         <Tooltip content="Repository settings">
                             <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>

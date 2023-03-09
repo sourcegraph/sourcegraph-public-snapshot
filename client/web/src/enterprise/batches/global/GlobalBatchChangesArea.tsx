@@ -45,6 +45,7 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
 interface Props extends TelemetryProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
@@ -53,6 +54,7 @@ interface Props extends TelemetryProps, SettingsCascadeProps {
 export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     isSourcegraphDotCom,
+    isSourcegraphApp,
     ...props
 }) => (
     <div className="w-100">
@@ -65,6 +67,7 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
                         canCreate={Boolean(authenticatedUser) && !isSourcegraphDotCom}
                         authenticatedUser={authenticatedUser}
                         isSourcegraphDotCom={isSourcegraphDotCom}
+                        isSourcegraphApp={isSourcegraphApp}
                         {...props}
                     />
                 }

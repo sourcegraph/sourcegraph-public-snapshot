@@ -19,7 +19,6 @@ type operations struct {
 	getDefinitions         *observation.Operation
 	getRanges              *observation.Operation
 	getStencil             *observation.Operation
-	getDumpsByIDs          *observation.Operation
 	getClosestDumpsForBlob *observation.Operation
 }
 
@@ -51,7 +50,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getDefinitions:         op("getDefinitions"),
 		getRanges:              op("getRanges"),
 		getStencil:             op("getStencil"),
-		getDumpsByIDs:          op("GetDumpsByIDs"),
 		getClosestDumpsForBlob: op("GetClosestDumpsForBlob"),
 	}
 }

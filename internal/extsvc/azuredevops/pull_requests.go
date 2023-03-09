@@ -143,7 +143,7 @@ func (c *client) CompletePullRequest(ctx context.Context, args PullRequestCommon
 	completed := PullRequestStatusCompleted
 	pri := PullRequestUpdateInput{Status: &completed, LastMergeSourceCommit: &PullRequestCommit{CommitID: input.CommitID}}
 	if input.MergeStrategy != nil {
-		pri.CompletionOptions = PullRequestCompletionOptions{
+		pri.CompletionOptions = &PullRequestCompletionOptions{
 			MergeStrategy: *input.MergeStrategy,
 		}
 	}

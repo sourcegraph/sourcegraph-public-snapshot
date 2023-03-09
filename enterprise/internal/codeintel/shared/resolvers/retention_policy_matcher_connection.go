@@ -5,19 +5,20 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type codeIntelligenceRetentionPolicyMatcherConnectionResolver struct {
-	svc        AutoIndexingService
+	repoStore  database.RepoStore
 	policies   []types.RetentionPolicyMatchCandidate
 	totalCount int
 	errTracer  *observation.ErrCollector
 }
 
-func NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(svc AutoIndexingService, policies []types.RetentionPolicyMatchCandidate, totalCount int, errTracer *observation.ErrCollector) *codeIntelligenceRetentionPolicyMatcherConnectionResolver {
+func NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(repoStore database.RepoStore, policies []types.RetentionPolicyMatchCandidate, totalCount int, errTracer *observation.ErrCollector) *codeIntelligenceRetentionPolicyMatcherConnectionResolver {
 	return &codeIntelligenceRetentionPolicyMatcherConnectionResolver{
-		svc:        svc,
+		repoStore:  repoStore,
 		policies:   policies,
 		totalCount: totalCount,
 		errTracer:  errTracer,
@@ -27,7 +28,7 @@ func NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(svc AutoIndexin
 func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver, error) {
 	resolvers := make([]resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver, 0, len(r.policies))
 	for _, policy := range r.policies {
-		resolvers = append(resolvers, NewRetentionPolicyMatcherResolver(r.svc, policy))
+		resolvers = append(resolvers, NewRetentionPolicyMatcherResolver(r.repoStore, policy))
 	}
 
 	return resolvers, nil

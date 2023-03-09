@@ -6,10 +6,12 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -27,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -75,6 +78,11 @@ type UserSession struct {
 	CanSignOut bool `json:"canSignOut"`
 }
 
+type TemporarySettings struct {
+	GraphQLTypename string `json:"__typename"`
+	Contents        string `json:"contents"`
+}
+
 type CurrentUser struct {
 	GraphQLTypename     string     `json:"__typename"`
 	ID                  graphql.ID `json:"id"`
@@ -112,8 +120,9 @@ type JSContext struct {
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
 
-	IsAuthenticatedUser bool         `json:"isAuthenticatedUser"`
-	CurrentUser         *CurrentUser `json:"currentUser"`
+	IsAuthenticatedUser bool               `json:"isAuthenticatedUser"`
+	CurrentUser         *CurrentUser       `json:"currentUser"`
+	TemporarySettings   *TemporarySettings `json:"temporarySettings"`
 
 	SentryDSN     *string               `json:"sentryDSN"`
 	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
@@ -172,6 +181,18 @@ type JSContext struct {
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
 
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey"`
+
+	NeedsRepositoryConfiguration bool `json:"needsRepositoryConfiguration"`
+
+	ExtsvcConfigFileExists bool `json:"extsvcConfigFileExists"`
+
+	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
+
+	RunningOnMacOS bool `json:"runningOnMacOS"`
+
+	LocalFilePickerAvailable bool `json:"localFilePickerAvailable"`
+
+	SrcServeGitUrl string `json:"srcServeGitUrl"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -237,13 +258,27 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	var licenseInfo *hooks.LicenseInfo
 	var user *types.User
+	temporarySettings := "{}"
 	if !a.IsAuthenticated() {
 		licenseInfo = hooks.GetLicenseInfo(false)
 	} else {
 		// Ignore err as we don't care if user does not exist
 		user, _ = a.User(ctx, db.Users())
 		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
+		if settings, err := db.TemporarySettings().GetTemporarySettings(ctx, user.ID); err == nil {
+			temporarySettings = settings.Contents
+		}
 	}
+
+	siteResolver := graphqlbackend.NewSiteResolver(logger.Scoped("jscontext", "constructing jscontext"), db)
+	needsRepositoryConfiguration, err := siteResolver.NeedsRepositoryConfiguration(ctx)
+	if err != nil {
+		needsRepositoryConfiguration = false
+	}
+
+	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
+	runningOnMacOS := runtime.GOOS == "darwin"
+	srcServeGitUrl := envvar.SrcServeGitUrl()
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
@@ -258,6 +293,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		Version:             version.Version(),
 		IsAuthenticatedUser: a.IsAuthenticated(),
 		CurrentUser:         createCurrentUser(ctx, user, db),
+		TemporarySettings:   &TemporarySettings{GraphQLTypename: "TemporarySettings", Contents: temporarySettings},
 
 		SentryDSN:                  sentryDSN,
 		OpenTelemetry:              openTelemetry,
@@ -304,7 +340,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
-		CodeInsightsEnabled: enterprise.IsCodeInsightsEnabled(),
+		CodeInsightsEnabled: graphqlbackend.IsCodeInsightsEnabled(),
 
 		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
 
@@ -317,6 +353,18 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 
 		DisableFeedbackSurvey: conf.Get().DisableFeedbackSurvey,
+
+		NeedsRepositoryConfiguration: needsRepositoryConfiguration,
+
+		ExtsvcConfigFileExists: extsvcConfigFileExists,
+
+		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
+
+		RunningOnMacOS: runningOnMacOS,
+
+		LocalFilePickerAvailable: deploy.IsDeployTypeSingleProgram(deploy.Type()) && filepicker.Available(),
+
+		SrcServeGitUrl: srcServeGitUrl,
 	}
 }
 

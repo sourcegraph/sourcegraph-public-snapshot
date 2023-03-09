@@ -13,9 +13,9 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
-    SearchMatch,
     getMatchUrl,
     getRevision,
+    SearchMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -42,6 +42,7 @@ export interface StreamingSearchResultsListProps
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
+    enableOwnershipSearch: boolean
     results?: AggregateStreamingSearchResults
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -85,6 +86,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     settingsCascade,
     telemetryService,
     isSourcegraphDotCom,
+    enableOwnershipSearch,
     searchContextsEnabled,
     assetsRoot,
     platformContext,
@@ -230,6 +232,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 as="li"
                                 onSelect={() => logSearchResultClicked(index, 'person')}
                                 containerClassName={resultClassName}
+                                telemetryService={telemetryService}
                             />
                         )
                 }
@@ -296,6 +299,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             <NoResultsPage
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                enableOwnershipSearch={enableOwnershipSearch}
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
                                 assetsRoot={assetsRoot}

@@ -44,6 +44,10 @@ go_test(
         "session_test.go",
     ],
     embed = [":bitbucketcloudoauth"],
+    tags = [
+        # allows network requests to localhost (database)
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/auth/providers",

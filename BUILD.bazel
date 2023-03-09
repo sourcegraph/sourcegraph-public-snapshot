@@ -1,7 +1,10 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "nogo")
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
+load("@io_bazel_rules_go//proto:compiler.bzl", "go_proto_compiler")
+load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_APIV2")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 
 # Gazelle config
@@ -14,7 +17,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 # gazelle:js_npm_package_target_name {dirname}_pkg
 
 # Enable: Aspect javascript, standard go
-# gazelle:lang js, go
+# gazelle:lang js,go,protobuf
 
 package(default_visibility = ["//visibility:public"])
 
@@ -36,8 +39,6 @@ ts_config(
         "//:node_modules/@sourcegraph/tsconfig",
     ],
 )
-
-load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
 
 gazelle_binary(
     name = "gazelle-buf",
@@ -83,9 +84,6 @@ gazelle(
     ],
     command = "update-repos",
 )
-
-load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_APIV2")
-load("@io_bazel_rules_go//proto:compiler.bzl", "go_proto_compiler")
 
 # Because the current implementation of rules_go uses the old protoc grpc compiler, we have to declare our own, and declare it manually in the build files.
 # See https://github.com/bazelbuild/rules_go/issues/3022
@@ -192,6 +190,25 @@ js_library(
         "//client/shared/dev:fetch-mock",
         "//client/shared/dev:mocha-reporter",
         "//client/shared/dev:suppress-polly-errors",
+    ],
+)
+
+# Go
+
+# nogo config
+#
+# For nogo to be able to run a linter, it needs to have `var Analyzer analysis.Analyzer` defined in the main package.
+# some of the linters do not have that, so we need to define that ourselves. The linters where we have defined can
+# be found at dev/linters. Finally, the nogo configuration can be found at the root of the repository in `nogo_config.json`
+nogo(
+    name = "sg_nogo",
+    config = ":nogo_config.json",
+    vet = True,
+    visibility = ["//visibility:public"],  # must have public visibility
+    deps = [
+        "//dev/linters/bodyclose",
+        "//dev/linters/forbidigo",
+        "//dev/linters/ineffassign",
     ],
 )
 

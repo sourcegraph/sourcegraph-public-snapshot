@@ -100,7 +100,7 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
              * If there is a focused occurrence set editor's tabindex to -1, so that pressing Shift+Tab moves the focus
              * outside the editor instead of focusing the editor itself.
              *
-             * Explicitly define extension precedence to override the [default tabindex value](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@728ea45d1cc063cd60cbd552e00929c09cb8ced8/-/blob/client/web/src/repo/blob/CodeMirrorBlob.tsx?L47&subtree=true).
+             * Explicitly define extension precedence to override the [default tabindex value](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@728ea45d1cc063cd60cbd552e00929c09cb8ced8/-/blob/client/web/src/repo/blob/CodeMirrorBlob.tsx?L47&).
              */
             Prec.high(
                 EditorView.contentAttributes.compute([field], state => ({
@@ -552,9 +552,11 @@ export function codeIntelTooltipsExtension(): Extension {
 
         ViewPlugin.define(view => ({
             update(update: ViewUpdate) {
-                if (update.viewportChanged) {
+                if (update.selectionSet) {
                     /**
-                     * When the focused occurrence is outside the viewport, it is removed from the DOM and editor loses focus.
+                     * Selection change may result in the focused occurrence being outside the viewport
+                     * (e.g. selecting text from current position to the end of the document).
+                     * When focused occurrence is outside the viewport, it is removed from the DOM and editor loses focus.
                      * Ensure the editor remains focused when this happens for keyboard navigation to work.
                      * Ignore cases when viewport change is caused by navigating to next/previous search result
                      * (e.g., by clicking 'Enter' when the search input field is focused).

@@ -90,6 +90,10 @@ go_test(
         "worker_workspace_execution_test.go",
     ],
     embed = [":store"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/batches/search",
         "//enterprise/internal/batches/testing",

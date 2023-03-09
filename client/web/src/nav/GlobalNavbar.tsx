@@ -3,6 +3,7 @@ import React, { SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, use
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
+import CommentQuoteOutline from 'mdi-react/CommentQuoteOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { RouteObject, useLocation } from 'react-router-dom'
 
@@ -14,7 +15,7 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
+import { addSourcegraphAppOutboundUrlParameters, buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -242,6 +243,30 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavLink>
                         </NavItem>
                     )}
+                    {isSourcegraphApp && (
+                        <NavDropdown
+                            routeMatch="something-that-never-matches"
+                            toggleItem={{
+                                path: '#',
+                                icon: CommentQuoteOutline,
+                                content: 'Feedback',
+                                variant: navLinkVariant,
+                            }}
+                            mobileHomeItem={{ content: 'Feedback' }}
+                            items={[
+                                {
+                                    content: 'Join our Discord',
+                                    path: 'https://about.sourcegraph.com/community',
+                                    target: '_blank',
+                                },
+                                {
+                                    content: 'File an issue',
+                                    path: 'https://github.com/sourcegraph/app',
+                                    target: '_blank',
+                                },
+                            ]}
+                        />
+                    )}
                 </NavGroup>
                 <NavActions>
                     {!props.authenticatedUser && (
@@ -265,7 +290,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <ButtonLink
                             variant="secondary"
                             outline={true}
-                            to={buildCloudTrialURL(props.authenticatedUser)}
+                            to={addSourcegraphAppOutboundUrlParameters(buildCloudTrialURL(props.authenticatedUser))}
                             size="sm"
                             onClick={() =>
                                 eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarSourcegraphApp' })

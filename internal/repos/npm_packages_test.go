@@ -35,13 +35,17 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		deps, _, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+		deps, _, hasMore, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
 			Scheme:        dependencies.NpmPackagesScheme,
 			Name:          reposource.PackageName(testCase.pkgName),
 			ExactNameOnly: true,
 		})
 		if err != nil {
 			t.Fatalf("unexpected error listing package repos: %v", err)
+		}
+
+		if hasMore {
+			t.Error("unexpected more-pages flag set, expected no more pages to follow")
 		}
 
 		depStrs := []string{}
@@ -67,7 +71,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 
 	for _, testCase := range testCases {
 		var depStrs []string
-		deps, _, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+		deps, _, _, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
 			Scheme:        dependencies.NpmPackagesScheme,
 			Name:          reposource.PackageName(testCase.pkgName),
 			ExactNameOnly: true,
@@ -98,7 +102,7 @@ func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos 
 	t.Helper()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	depsSvc := dependencies.TestService(db, nil)
+	depsSvc := dependencies.TestService(db)
 
 	_, _, err := depsSvc.InsertPackageRepoRefs(ctx, dependencyRepos)
 	if err != nil {

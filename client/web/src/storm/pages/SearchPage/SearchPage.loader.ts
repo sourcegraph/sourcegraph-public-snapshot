@@ -15,11 +15,12 @@ import { createPreloadedQuery, QueryReference } from '../../backend/route-loader
  * TODO: We need the `evaluateFeatureFlags` query that can evaluate multiple feature flags.
  */
 const SEARCH_PAGE_QUERY = gql`
-    query SearchPageQuery($flagName: String!) {
+    query SearchPageQuery {
         externalServices {
             totalCount
         }
-        evaluateFeatureFlag(flagName: $flagName)
+        codehostWidgetFlag: evaluateFeatureFlag(flagName: "plg-enable-add-codehost-widget")
+        searchOwnershipFlag: evaluateFeatureFlag(flagName: "search-ownership")
     }
 `
 
@@ -29,5 +30,5 @@ export const { queryLoader, usePreloadedQueryData } = createPreloadedQuery<
 >(SEARCH_PAGE_QUERY)
 
 export function loader(): Promise<Record<string, QueryReference | undefined>> {
-    return queryLoader({ flagName: 'plg-enable-add-codehost-widget' })
+    return queryLoader({})
 }

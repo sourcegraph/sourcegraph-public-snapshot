@@ -12,6 +12,7 @@ type AccountData struct {
 	Username string `json:"username"`
 }
 
+// toAccountData converts the given “SCIM resource attributes” type to an AccountData type.
 func toAccountData(attributes scim.ResourceAttributes) (extsvc.AccountData, error) {
 	serializedAccountData, err := json.Marshal(attributes)
 	if err != nil {
@@ -24,25 +25,8 @@ func toAccountData(attributes scim.ResourceAttributes) (extsvc.AccountData, erro
 	}, nil
 }
 
-func fromAccountData(scimAccountData string) (scim.ResourceAttributes, error) {
-	var attributes scim.ResourceAttributes
-	err := json.Unmarshal([]byte(scimAccountData), &attributes)
-	if err != nil {
-		return scim.ResourceAttributes{}, err
-	}
-
-	// TODO: Need manual processing of this data?
-	//var data scim.ResourceAttributes
-	//data = scim.ResourceAttributes{
-	//	AttrUserName:   accountData.Username,
-	//	AttrName: map[string]interface{}{
-	//		AttrNameGiven:  scim.ResourceAttributes.name.firstName,
-	//		AttrNameMiddle: scim.ResourceAttributes.middleName,
-	//		AttrNameFamily: scim.ResourceAttributes.lastName,
-	//		AttrNameFormatted:  user.DisplayName,
-	//	},
-	//	AttrEmails:      emailMap,
-	//	"active":      true,
-	//}
-	return attributes, err
+// fromAccountData converts the given account data JSON to a “SCIM resource attributes” type.
+func fromAccountData(scimAccountData string) (attributes scim.ResourceAttributes, err error) {
+	err = json.Unmarshal([]byte(scimAccountData), &attributes)
+	return
 }

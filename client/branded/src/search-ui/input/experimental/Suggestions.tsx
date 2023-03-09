@@ -116,31 +116,33 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
                                             <Icon className={styles.icon} svgPath={option.icon} aria-hidden="true" />
                                         </div>
                                     )}
-                                    <div className="d-flex flex-wrap">
-                                        <div role="gridcell" className={styles.label}>
-                                            {option.render ? (
-                                                renderStringOrRenderer(option.render, option)
-                                            ) : option.matches ? (
-                                                <HighlightedLabel label={option.label} matches={option.matches} />
-                                            ) : (
-                                                option.label
+                                    <div className={styles.innerRow}>
+                                        <div className="d-flex flex-wrap">
+                                            <div role="gridcell" className={styles.label}>
+                                                {option.render ? (
+                                                    renderStringOrRenderer(option.render, option)
+                                                ) : option.matches ? (
+                                                    <HighlightedLabel label={option.label} matches={option.matches} />
+                                                ) : (
+                                                    option.label
+                                                )}
+                                            </div>
+                                            {option.description && (
+                                                <div role="gridcell" className={styles.description}>
+                                                    {option.description}
+                                                </div>
                                             )}
                                         </div>
-                                        {option.description && (
-                                            <div role="gridcell" className={styles.description}>
-                                                {option.description}
+                                        <div className={styles.note}>
+                                            <div role="gridcell" data-action="primary">
+                                                {getActionName(option.action)}
                                             </div>
-                                        )}
-                                    </div>
-                                    <div className={styles.note}>
-                                        <div role="gridcell" data-action="primary">
-                                            {getActionName(option.action)}
+                                            {option.alternativeAction && (
+                                                <div role="gridcell" data-action="secondary">
+                                                    {getActionName(option.alternativeAction)}
+                                                </div>
+                                            )}
                                         </div>
-                                        {option.alternativeAction && (
-                                            <div role="gridcell" data-action="secondary">
-                                                {getActionName(option.alternativeAction)}
-                                            </div>
-                                        )}
                                     </div>
                                 </li>
                             ))}
@@ -159,9 +161,9 @@ const Footer: React.FunctionComponent<{ option: Option }> = ({ option }) => (
             {option.info && renderStringOrRenderer(option.info, option)}
             {!option.info && (
                 <>
-                    <ActionInfo action={option.action} shortcut="Return" />{' '}
+                    <ActionInfo action={option.action} shortcut="Enter" />{' '}
                     {option.alternativeAction && (
-                        <ActionInfo action={option.alternativeAction} shortcut="Shift+Return" />
+                        <ActionInfo action={option.alternativeAction} shortcut="Shift+Enter" />
                     )}
                 </>
             )}

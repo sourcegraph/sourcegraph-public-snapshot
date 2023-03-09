@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { mdiClose } from '@mdi/js'
+import classNames from 'classnames'
 
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels, Icon } from '@sourcegraph/wildcard'
@@ -8,6 +9,7 @@ import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels, Icon } from
 import { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { replaceRevisionInURL } from '../../util/url'
+import { isPackageServiceType } from '../packages/isPackageServiceType'
 
 import { ConnectionPopoverTabs } from './components'
 import { RevisionsPopoverCommits } from './RevisionsPopoverCommits'
@@ -18,6 +20,7 @@ import styles from './RevisionsPopover.module.scss'
 export interface RevisionsPopoverProps {
     repoId: Scalars['ID']
     repoName: string
+    repoServiceType: string
     defaultBranch: string
 
     /** The current revision, or undefined for the default branch. */
@@ -56,38 +59,46 @@ interface RevisionsPopoverTab {
 
 const LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
 
-const TABS: RevisionsPopoverTab[] = [
-    {
-        id: 'branches',
-        label: 'Branches',
-        noun: 'branch',
-        pluralNoun: 'branches',
-        type: GitRefType.GIT_BRANCH,
-        description: 'Find a revision from the listed branches',
-    },
-    {
-        id: 'tags',
-        label: 'Tags',
-        noun: 'tag',
-        pluralNoun: 'tags',
-        type: GitRefType.GIT_TAG,
-        description: 'Find a revision from the listed tags',
-    },
-    {
-        id: 'commits',
-        label: 'Commits',
-        noun: 'commit',
-        pluralNoun: 'commits',
-        description: 'Find a revision from the listed commits',
-    },
-]
+const BRANCHES_TAB: RevisionsPopoverTab = {
+    id: 'branches',
+    label: 'Branches',
+    noun: 'branch',
+    pluralNoun: 'branches',
+    type: GitRefType.GIT_BRANCH,
+    description: 'Find a revision from the listed branches',
+}
+const TAGS_TAB: RevisionsPopoverTab = {
+    id: 'tags',
+    label: 'Tags',
+    noun: 'tag',
+    pluralNoun: 'tags',
+    type: GitRefType.GIT_TAG,
+    description: 'Find a revision from the listed tags',
+}
+const COMMITS_TAB: RevisionsPopoverTab = {
+    id: 'commits',
+    label: 'Commits',
+    noun: 'commit',
+    pluralNoun: 'commits',
+    description: 'Find a revision from the listed commits',
+}
+
+// Note: Functionally equivalent to the "Tabs" tab, with different wording for packages.
+const VERSIONS_TAB: RevisionsPopoverTab = {
+    id: 'tags',
+    label: 'Versions',
+    noun: 'version',
+    pluralNoun: 'versions',
+    type: GitRefType.GIT_TAG,
+    description: 'Find a listed version',
+}
 
 /**
  * A popover that displays a searchable list of revisions (grouped by type) for
  * the current repository.
  */
 export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<RevisionsPopoverProps>> = props => {
-    const { getPathFromRevision = replaceRevisionInURL } = props
+    const { getPathFromRevision = replaceRevisionInURL, repoServiceType } = props
 
     useEffect(() => {
         eventLogger.logViewEvent('RevisionsPopover')
@@ -96,11 +107,20 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
+    const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
+    const tabs = useMemo(() => {
+        if (isPackage) {
+            return [VERSIONS_TAB]
+        }
+
+        return [BRANCHES_TAB, TAGS_TAB, COMMITS_TAB]
+    }, [isPackage])
+
     return (
         <ConnectionPopoverTabs
-            className={styles.revisionsPopover}
+            className={classNames(styles.revisionsPopover, isPackage && styles.revisionsPopoverSlim)}
             data-testid="revisions-popover"
-            defaultIndex={tabIndex}
+            defaultIndex={tabs.length === 1 ? 0 : tabIndex}
             onChange={handleTabsChange}
         >
             <TabList
@@ -116,14 +136,14 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
                     </Button>
                 }
             >
-                {TABS.map(({ label, id }) => (
+                {tabs.map(({ label, id }) => (
                     <Tab key={id} data-tab-content={id}>
                         <span className="tablist-wrapper--tab-label">{label}</span>
                     </Tab>
                 ))}
             </TabList>
             <TabPanels>
-                {TABS.map(tab => (
+                {tabs.map(tab => (
                     <TabPanel key={tab.id} tabIndex={-1}>
                         {tab.type ? (
                             <RevisionsPopoverReferences
@@ -139,6 +159,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
                                 showSpeculativeResults={
                                     props.showSpeculativeResults && tab.type === GitRefType.GIT_BRANCH
                                 }
+                                isPackage={isPackage}
                                 tabLabel={tab.description}
                             />
                         ) : (

@@ -55,11 +55,6 @@ func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose boo
 		targets = append(targets, cmd.Target)
 	}
 
-	// First we build everything once, to ensure all binaries are present.
-	if err := BazelBuild(ctx, repoRoot, targets...); err != nil {
-		return err
-	}
-
 	ibazel := newIBazel(repoRoot, targets...)
 
 	p := pool.New().WithContext(ctx).WithCancelOnError()

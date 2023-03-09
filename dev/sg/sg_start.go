@@ -293,7 +293,6 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 	bcmds := make([]run.BazelCommand, 0, len(set.BazelCommands))
 	for _, name := range set.BazelCommands {
 		bcmd, ok := conf.BazelCommands[name]
-		println(bcmd.Name)
 		if !ok {
 			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
 		}
@@ -313,6 +312,11 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 	env := conf.Env
 	for k, v := range set.Env {
 		env[k] = v
+	}
+
+	// First we build everything once, to ensure all binaries are present.
+	if err := run.BazelBuild(ctx, bcmds...); err != nil {
+		return err
 	}
 
 	p := pool.New().WithContext(ctx).WithCancelOnError()

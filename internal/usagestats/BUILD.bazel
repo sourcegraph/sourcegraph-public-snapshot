@@ -67,6 +67,7 @@ go_test(
         "codehost_integration_test.go",
         "event_handlers_test.go",
         "extensions_test.go",
+        "growth_test.go",
         "ide_extensions_test.go",
         "main_test.go",
         "migrated_extensions_test.go",
@@ -75,6 +76,10 @@ go_test(
         "usage_stats_test.go",
     ],
     embed = [":usagestats"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/api",
         "//internal/database",

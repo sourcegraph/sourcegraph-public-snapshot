@@ -3,7 +3,6 @@ import { isMacPlatform, isSafari } from '@sourcegraph/common'
 import { KeyboardShortcut } from '../keyboardShortcuts'
 
 type KEYBOARD_SHORTCUT_IDENTIFIERS =
-    | 'commandPalette'
     | 'switchTheme'
     | 'keyboardShortcutsHelp'
     | 'focusSearch'
@@ -13,14 +12,13 @@ type KEYBOARD_SHORTCUT_IDENTIFIERS =
     | 'fuzzyFinderSymbols'
     | 'fuzzyFinderFiles'
     | 'copyFullQuery'
+    | 'focusCodeEditor'
+    | 'focusFileTree'
+    | 'focusSymbols'
 
 export type KEYBOARD_SHORTCUT_MAPPING = Record<KEYBOARD_SHORTCUT_IDENTIFIERS, KeyboardShortcut>
 
 export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
-    commandPalette: {
-        title: 'Show command palette',
-        keybindings: [{ held: ['Control'], ordered: ['p'] }, { ordered: ['F1'] }, { held: ['Alt'], ordered: ['x'] }],
-    },
     switchTheme: {
         title: 'Switch color theme',
         // use '†' here to make `Alt + t` works on macos
@@ -62,5 +60,20 @@ export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
     copyFullQuery: {
         title: 'Copy full query',
         keybindings: [{ held: ['Mod', 'Shift'], ordered: ['c'] }],
+    },
+    focusCodeEditor: {
+        title: 'Focus editor',
+        keybindings: [{ ordered: ['c'] }],
+        hideInHelp: true,
+    },
+    focusFileTree: {
+        title: 'Focus file tree',
+        keybindings: [{ ordered: ['f'] }],
+        hideInHelp: true,
+    },
+    focusSymbols: {
+        title: 'Focus symbols',
+        keybindings: [{ ordered: ['s'] }],
+        hideInHelp: true,
     },
 }

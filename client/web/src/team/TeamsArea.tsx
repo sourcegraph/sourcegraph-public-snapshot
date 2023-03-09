@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Routes, Route } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
@@ -31,7 +31,14 @@ export interface Props {
  * Renders a layout of a sidebar and a content area to display team-related pages.
  */
 const AuthenticatedTeamsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const [enableTeams] = useFeatureFlag('search-ownership')
+    const [enableTeams, fetchStatus, fetchError] = useFeatureFlag('search-ownership')
+
+    switch (fetchStatus) {
+        case 'initial':
+            return <LoadingSpinner className="m-2" />
+        case 'error':
+            return <ErrorAlert prefix="Failed to load teams feature flag" error={fetchError} />
+    }
 
     // No teams on sourcegraph.com
     if (!enableTeams || props.isSourcegraphDotCom) {

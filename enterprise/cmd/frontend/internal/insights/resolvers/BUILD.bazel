@@ -68,6 +68,10 @@ go_test(
         "resolver_test.go",
     ],
     embed = [":resolvers"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/database",

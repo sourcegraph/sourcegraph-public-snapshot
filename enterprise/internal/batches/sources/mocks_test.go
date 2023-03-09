@@ -5728,6 +5728,10 @@ type MockAzureDevOpsClient struct {
 	// IsAzureDevOpsServicesFunc is an instance of a mock function object
 	// controlling the behavior of the method IsAzureDevOpsServices.
 	IsAzureDevOpsServicesFunc *AzureDevOpsClientIsAzureDevOpsServicesFunc
+	// ListAuthorizedUserOrganizationsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ListAuthorizedUserOrganizations.
+	ListAuthorizedUserOrganizationsFunc *AzureDevOpsClientListAuthorizedUserOrganizationsFunc
 	// ListRepositoriesByProjectOrOrgFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// ListRepositoriesByProjectOrOrg.
@@ -5811,6 +5815,11 @@ func NewMockAzureDevOpsClient() *MockAzureDevOpsClient {
 		},
 		IsAzureDevOpsServicesFunc: &AzureDevOpsClientIsAzureDevOpsServicesFunc{
 			defaultHook: func() (r0 bool) {
+				return
+			},
+		},
+		ListAuthorizedUserOrganizationsFunc: &AzureDevOpsClientListAuthorizedUserOrganizationsFunc{
+			defaultHook: func(context.Context, azuredevops.Profile) (r0 []azuredevops.Org, r1 error) {
 				return
 			},
 		},
@@ -5906,6 +5915,11 @@ func NewStrictMockAzureDevOpsClient() *MockAzureDevOpsClient {
 				panic("unexpected invocation of MockAzureDevOpsClient.IsAzureDevOpsServices")
 			},
 		},
+		ListAuthorizedUserOrganizationsFunc: &AzureDevOpsClientListAuthorizedUserOrganizationsFunc{
+			defaultHook: func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.ListAuthorizedUserOrganizations")
+			},
+		},
 		ListRepositoriesByProjectOrOrgFunc: &AzureDevOpsClientListRepositoriesByProjectOrOrgFunc{
 			defaultHook: func(context.Context, azuredevops.ListRepositoriesByProjectOrOrgArgs) ([]azuredevops.Repository, error) {
 				panic("unexpected invocation of MockAzureDevOpsClient.ListRepositoriesByProjectOrOrg")
@@ -5970,6 +5984,9 @@ func NewMockAzureDevOpsClientFrom(i azuredevops.Client) *MockAzureDevOpsClient {
 		},
 		IsAzureDevOpsServicesFunc: &AzureDevOpsClientIsAzureDevOpsServicesFunc{
 			defaultHook: i.IsAzureDevOpsServices,
+		},
+		ListAuthorizedUserOrganizationsFunc: &AzureDevOpsClientListAuthorizedUserOrganizationsFunc{
+			defaultHook: i.ListAuthorizedUserOrganizations,
 		},
 		ListRepositoriesByProjectOrOrgFunc: &AzureDevOpsClientListRepositoriesByProjectOrOrgFunc{
 			defaultHook: i.ListRepositoriesByProjectOrOrg,
@@ -7520,6 +7537,118 @@ func (c AzureDevOpsClientIsAzureDevOpsServicesFuncCall) Args() []interface{} {
 // invocation.
 func (c AzureDevOpsClientIsAzureDevOpsServicesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// AzureDevOpsClientListAuthorizedUserOrganizationsFunc describes the
+// behavior when the ListAuthorizedUserOrganizations method of the parent
+// MockAzureDevOpsClient instance is invoked.
+type AzureDevOpsClientListAuthorizedUserOrganizationsFunc struct {
+	defaultHook func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error)
+	hooks       []func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error)
+	history     []AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListAuthorizedUserOrganizations delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) ListAuthorizedUserOrganizations(v0 context.Context, v1 azuredevops.Profile) ([]azuredevops.Org, error) {
+	r0, r1 := m.ListAuthorizedUserOrganizationsFunc.nextHook()(v0, v1)
+	m.ListAuthorizedUserOrganizationsFunc.appendCall(AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListAuthorizedUserOrganizations method of the parent
+// MockAzureDevOpsClient instance is invoked and the hook queue is empty.
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) SetDefaultHook(hook func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListAuthorizedUserOrganizations method of the parent
+// MockAzureDevOpsClient instance invokes the hook at the front of the queue
+// and discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) PushHook(hook func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) SetDefaultReturn(r0 []azuredevops.Org, r1 error) {
+	f.SetDefaultHook(func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) PushReturn(r0 []azuredevops.Org, r1 error) {
+	f.PushHook(func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) nextHook() func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) appendCall(r0 AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall objects
+// describing the invocations of this function.
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) History() []AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall is an object
+// that describes an invocation of method ListAuthorizedUserOrganizations on
+// an instance of MockAzureDevOpsClient.
+type AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 azuredevops.Profile
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []azuredevops.Org
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // AzureDevOpsClientListRepositoriesByProjectOrOrgFunc describes the
