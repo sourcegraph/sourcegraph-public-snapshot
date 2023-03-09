@@ -294,7 +294,6 @@ Referenced by:
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_unique_rand_id" UNIQUE, btree (rand_id)
-    "batch_specs_rand_id" btree (rand_id)
 Check constraints:
     "batch_specs_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
@@ -419,7 +418,6 @@ Indexes:
     "changeset_specs_created_at" btree (created_at)
     "changeset_specs_external_id" btree (external_id)
     "changeset_specs_head_ref" btree (head_ref)
-    "changeset_specs_rand_id" btree (rand_id)
     "changeset_specs_title" btree (title)
 Check constraints:
     "changeset_specs_published_valid_values" CHECK (published = 'true'::text OR published = 'false'::text OR published = '"draft"'::text OR published IS NULL)
@@ -1151,7 +1149,6 @@ Indexes:
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
     "event_logs_timestamp_at_utc" btree (date(timezone('UTC'::text, "timestamp")))
-    "event_logs_user_id" btree (user_id)
     "event_logs_user_id_name" btree (user_id, name)
     "event_logs_user_id_timestamp" btree (user_id, "timestamp")
 Check constraints:
@@ -2740,7 +2737,6 @@ Indexes:
     "package_repo_versions_pkey" PRIMARY KEY, btree (id)
     "package_repo_versions_unique_version_per_package" UNIQUE, btree (package_id, version)
     "package_repo_versions_blocked" btree (blocked)
-    "package_repo_versions_fk_idx" btree (package_id)
     "package_repo_versions_last_checked_at" btree (last_checked_at)
 Foreign-key constraints:
     "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
@@ -3582,7 +3578,6 @@ Indexes:
     "user_repo_permissions_source_idx" btree (source)
     "user_repo_permissions_updated_at_idx" btree (updated_at)
     "user_repo_permissions_user_external_account_id_idx" btree (user_external_account_id)
-    "user_repo_permissions_user_id_idx" btree (user_id)
 Foreign-key constraints:
     "user_repo_permissions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "user_repo_permissions_user_external_account_id_fkey" FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE
