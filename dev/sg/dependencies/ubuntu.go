@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func aptGetInstall(pkg string, preinstall ...string) check.FixAction[CheckArgs] {
@@ -81,12 +82,18 @@ var Ubuntu = []category{
 				// Bazelisk replaces the bazel binary in your path
 				Name:  "bazelisk",
 				Check: checkAction(check.Combine(check.InPath("bazel"), check.CommandOutputContains("bazel version", "Bazelisk version"))),
-				Fix:   cmdFix(`sudo curl -L https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -o /usr/local/bin/bazlisk && sudo chmod +x /usr/local/bin/bazel`),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := check.InPath("bazel")(ctx); err == nil {
+						cio.WriteAlertf("There already exists a bazel binary in your path and it is not managed by Bazlisk. Please remove it as Bazelisk replaces the bazel binary")
+						return errors.New("bazel binary already exists - please remove it before trying again")
+					}
+					return cmdFix(`sudo curl -L https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -o /usr/local/bin/bazlisk && sudo chmod +x /usr/local/bin/bazel`)(ctx, cio, args)
+				},
 			},
 			{
 				Name:  "ibazel",
 				Check: checkAction(check.InPath("ibazel")),
-				Fix:   cmdFix(`sudo curl -L https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -o /usr/local/bin/bazlisk && sudo chmod +x /usr/local/bin/bazelisk`),
+				Fix:   cmdFix(`sudo curl -L  https://github.com/bazelbuild/bazel-watcher/releases/download/v0.21.4/ibazel_linux_amd64 -o /usr/local/bin/ibazel && sudo chmod +x /usr/local/bin/ibazel`),
 			},
 			{
 				Name: "asdf",
