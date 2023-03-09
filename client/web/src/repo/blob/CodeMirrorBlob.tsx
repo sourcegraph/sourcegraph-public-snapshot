@@ -7,7 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { isEqual } from 'lodash'
+import { isEqual, noop } from 'lodash'
 import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom'
 
 import {
@@ -437,17 +437,21 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             {overrideBrowserSearchKeybinding && useFileSearch && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
             )}
-            {enableBlobPageSwitchAreasShortcuts &&
-                focusCodeEditorShortcut?.keybindings.map((keybinding, index) => (
-                    <Shortcut
-                        key={index}
-                        {...keybinding}
-                        allowDefault={true}
-                        onMatch={() => {
-                            editorRef.current?.contentDOM.focus()
-                        }}
-                    />
-                ))}
+            {enableBlobPageSwitchAreasShortcuts && focusCodeEditorShortcut && (
+                <>
+                    <Shortcut ordered={['c']} held={['Mod']} allowDefault={true} onMatch={noop} />
+                    {focusCodeEditorShortcut.keybindings.map((keybinding, index) => (
+                        <Shortcut
+                            key={index}
+                            {...keybinding}
+                            allowDefault={containerRef.current?.contains(document.activeElement)}
+                            onMatch={() => {
+                                editorRef.current?.contentDOM.focus()
+                            }}
+                        />
+                    ))}
+                </>
+            )}
         </>
     )
 }
