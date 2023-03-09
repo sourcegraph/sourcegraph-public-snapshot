@@ -37,7 +37,7 @@ https://sourcegraph.company.com/.api/scim/v2/Users
 
 The User endpoint only synchronizes attributes needed to create a Sourcegraph account.
 
-The following attributes are synchronized:
+We sync the following attributes:
 
 - preferred username
 - name
