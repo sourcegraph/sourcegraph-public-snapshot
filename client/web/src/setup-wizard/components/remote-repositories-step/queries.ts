@@ -12,27 +12,6 @@ export const CODE_HOST_FRAGMENT = gql`
     }
 `
 
-export const GET_LOCAL_DIRECTORY_PATH = gql`
-    query GetLocalDirectoryPath {
-        localDirectoryPicker {
-            path
-        }
-    }
-`
-
-export const DISCOVER_LOCAL_REPOSITORIES = gql`
-    query DiscoverLocalRepositories($dir: String!) {
-        localDirectory(dir: $dir) {
-            path
-            repositories {
-                __typename
-                path
-                name
-            }
-        }
-    }
-`
-
 export const GET_CODE_HOSTS = gql`
     query GetCodeHosts {
         externalServices {
@@ -87,16 +66,4 @@ export const DELETE_CODE_HOST = gql`
         }
     }
 `
-export const GET_REPOSITORIES_BY_SERVICE = gql`
-    query Repositories($first: Int, $externalService: ID) {
-        repositories(first: $first, externalService: $externalService) {
-            nodes {
-                __typename
-                id
-                name
-                description
-                url
-            }
-        }
-    }
-`
+
