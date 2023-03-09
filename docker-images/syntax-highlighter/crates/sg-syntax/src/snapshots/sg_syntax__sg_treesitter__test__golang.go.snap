@@ -1,10 +1,11 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
+assertion_line: 460
 expression: "dump_document(&document, &contents)"
 ---
   package main
 //^^^^^^^ Keyword 
-//        ^^^^ IdentifierNamespace 
+//        ^^^^ IdentifierNamespace  local 1
   
   import (
 //^^^^^^ Keyword 
@@ -14,30 +15,30 @@ expression: "dump_document(&document, &contents)"
   
   func main() {
 //^^^^ Keyword 
-//     ^^^^ IdentifierFunction 
+//     ^^^^ IdentifierFunction  local 1
    // Variables
 // ^^^^^^^^^^^^ Comment 
    var x int = 5
 // ^^^ Keyword 
-//     ^ Identifier 
+//     ^ Identifier  local 12
 //       ^^^ IdentifierBuiltinType 
 //           ^ IdentifierOperator 
 //             ^ NumericLiteral 
    y := 10
-// ^ Identifier 
+// ^ Identifier  local 13
 //   ^^ IdentifierOperator 
 //      ^^ NumericLiteral 
    // Constants
 // ^^^^^^^^^^^^ Comment 
    const z = 15
 // ^^^^^ Keyword 
-//       ^ IdentifierConstant 
+//       ^ IdentifierConstant  local 14
 //         ^ IdentifierOperator 
 //           ^^ NumericLiteral 
    // Arrays
 // ^^^^^^^^^ Comment 
    array := [5]int{1, 2, 3, 4, 5}
-// ^^^^^ Identifier 
+// ^^^^^ Identifier  local 15
 //       ^^ IdentifierOperator 
 //           ^ NumericLiteral 
 //             ^^^ IdentifierBuiltinType 
@@ -49,21 +50,21 @@ expression: "dump_document(&document, &contents)"
    // Slices
 // ^^^^^^^^^ Comment 
    slice := array[1:3]
-// ^^^^^ Identifier 
+// ^^^^^ Identifier  local 16
 //       ^^ IdentifierOperator 
-//          ^^^^^ Identifier 
+//          ^^^^^ Identifier  local 15
 //                ^ NumericLiteral 
 //                  ^ NumericLiteral 
    slice = append(slice, 6)
-// ^^^^^ Identifier 
+// ^^^^^ Identifier  local 16
 //       ^ IdentifierOperator 
 //         ^^^^^^ IdentifierBuiltin 
-//                ^^^^^ Identifier 
+//                ^^^^^ Identifier  local 16
 //                       ^ NumericLiteral 
    // Maps
 // ^^^^^^^ Comment 
    m := map[string]int{"foo": 42}
-// ^ Identifier 
+// ^ Identifier  local 17
 //   ^^ IdentifierOperator 
 //      ^^^ Keyword 
 //          ^^^^^^ IdentifierBuiltinType 
@@ -74,7 +75,7 @@ expression: "dump_document(&document, &contents)"
 // ^^^^^^^^^^ Comment 
    type person struct {
 // ^^^^ Keyword 
-//      ^^^^^^ IdentifierType 
+//      ^^^^^^ IdentifierType  local 18
 //             ^^^^^^ Keyword 
     name string
 //  ^^^^ Identifier 
@@ -84,64 +85,64 @@ expression: "dump_document(&document, &contents)"
 //       ^^^ IdentifierBuiltinType 
    }
    p := person{"Bob", 50}
-// ^ Identifier 
+// ^ Identifier  local 19
 //   ^^ IdentifierOperator 
-//      ^^^^^^ IdentifierType 
+//      ^^^^^^ IdentifierType  local 18
 //             ^^^^^ StringLiteral 
 //                    ^^ NumericLiteral 
    // Interfaces
 // ^^^^^^^^^^^^^ Comment 
    var i interface{} = p
 // ^^^ Keyword 
-//     ^ Identifier 
+//     ^ Identifier  local 20
 //       ^^^^^^^^^ Keyword 
 //                   ^ IdentifierOperator 
-//                     ^ Identifier 
+//                     ^ Identifier  local 19
    fmt.Println(i.(person).name)
 // ^^^ Identifier 
 //     ^^^^^^^ IdentifierFunction 
-//             ^ Identifier 
-//                ^^^^^^ IdentifierType 
+//             ^ Identifier  local 20
+//                ^^^^^^ IdentifierType  local 18
 //                        ^^^^ Identifier 
    // Error handling
 // ^^^^^^^^^^^^^^^^^ Comment 
    if err := foo(); err != nil {
 // ^^ Keyword 
-//    ^^^ Identifier 
+//    ^^^ Identifier  local 22
 //        ^^ IdentifierOperator 
-//           ^^^ IdentifierFunction 
-//                  ^^^ Identifier 
+//           ^^^ IdentifierFunction  local 2
+//                  ^^^ Identifier  local 22
 //                      ^^ IdentifierOperator 
 //                         ^^^ IdentifierNull 
     fmt.Println(err)
 //  ^^^ Identifier 
 //      ^^^^^^^ IdentifierFunction 
-//              ^^^ Identifier 
+//              ^^^ Identifier  local 22
    }
    // Functions
 // ^^^^^^^^^^^^ Comment 
    defered()
-// ^^^^^^^ IdentifierFunction 
+// ^^^^^^^ IdentifierFunction  local 3
    go concurrent()
 // ^^ Keyword 
-//    ^^^^^^^^^^ IdentifierFunction 
+//    ^^^^^^^^^^ IdentifierFunction  local 4
    pointers()
-// ^^^^^^^^ IdentifierFunction 
+// ^^^^^^^^ IdentifierFunction  local 5
    // Looping and branching
 // ^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
    for i := 0; i < 10; i++ {
 // ^^^ Keyword 
-//     ^ Identifier 
+//     ^ Identifier  local 23
 //       ^^ IdentifierOperator 
 //          ^ NumericLiteral 
-//             ^ Identifier 
+//             ^ Identifier  local 23
 //               ^ IdentifierOperator 
 //                 ^^ NumericLiteral 
-//                     ^ Identifier 
+//                     ^ Identifier  local 23
 //                      ^^ IdentifierOperator 
     if i%2 == 0 {
 //  ^^ Keyword 
-//     ^ Identifier 
+//     ^ Identifier  local 23
 //      ^ IdentifierOperator 
 //       ^ NumericLiteral 
 //         ^^ IdentifierOperator 
@@ -152,10 +153,10 @@ expression: "dump_document(&document, &contents)"
     fmt.Println(i)
 //  ^^^ Identifier 
 //      ^^^^^^^ IdentifierFunction 
-//              ^ Identifier 
+//              ^ Identifier  local 23
     if i > 5 {
 //  ^^ Keyword 
-//     ^ Identifier 
+//     ^ Identifier  local 23
 //       ^ IdentifierOperator 
 //         ^ NumericLiteral 
      break
@@ -165,10 +166,10 @@ expression: "dump_document(&document, &contents)"
    // Type conversions
 // ^^^^^^^^^^^^^^^^^^^ Comment 
    j := int8(x)
-// ^ Identifier 
+// ^ Identifier  local 21
 //   ^^ IdentifierOperator 
 //      ^^^^ IdentifierFunction 
-//           ^ Identifier 
+//           ^ Identifier  local 12
    // Packages
 // ^^^^^^^^^^^ Comment 
    math.MaxInt32
@@ -190,7 +191,7 @@ expression: "dump_document(&document, &contents)"
   }
   func foo() error {
 //^^^^ Keyword 
-//     ^^^ IdentifierFunction 
+//     ^^^ IdentifierFunction  local 2
 //           ^^^^^ IdentifierBuiltinType 
    return fmt.Errorf("foo error")
 // ^^^^^^ Keyword 
@@ -200,7 +201,7 @@ expression: "dump_document(&document, &contents)"
   }
   func defered() {
 //^^^^ Keyword 
-//     ^^^^^^^ IdentifierFunction 
+//     ^^^^^^^ IdentifierFunction  local 3
    defer fmt.Println("deferred")
 // ^^^^^ Keyword 
 //       ^^^ Identifier 
@@ -209,7 +210,7 @@ expression: "dump_document(&document, &contents)"
   }
   func concurrent() {
 //^^^^ Keyword 
-//     ^^^^^^^^^^ IdentifierFunction 
+//     ^^^^^^^^^^ IdentifierFunction  local 4
    go func() {
 // ^^ Keyword 
 //    ^^^^ Keyword 
@@ -221,22 +222,22 @@ expression: "dump_document(&document, &contents)"
   }
   func pointers() {
 //^^^^ Keyword 
-//     ^^^^^^^^ IdentifierFunction 
+//     ^^^^^^^^ IdentifierFunction  local 5
    x := 5
-// ^ Identifier 
+// ^ Identifier  local 24
 //   ^^ IdentifierOperator 
 //      ^ NumericLiteral 
    fmt.Println(&x) // print memory address
 // ^^^ Identifier 
 //     ^^^^^^^ IdentifierFunction 
 //             ^ IdentifierOperator 
-//              ^ Identifier 
+//              ^ Identifier  local 24
 //                 ^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   }
   
   type Person struct {
 //^^^^ Keyword 
-//     ^^^^^^ IdentifierType 
+//     ^^^^^^ IdentifierType  local 6
 //            ^^^^^^ Keyword 
    Name string
 // ^^^^ Identifier 
@@ -247,7 +248,7 @@ expression: "dump_document(&document, &contents)"
   }
   type Vehicle struct {
 //^^^^ Keyword 
-//     ^^^^^^^ IdentifierType 
+//     ^^^^^^^ IdentifierType  local 7
 //             ^^^^^^ Keyword 
    Wheels int
 // ^^^^^^ Identifier 
@@ -255,11 +256,11 @@ expression: "dump_document(&document, &contents)"
    Owner  *Person
 // ^^^^^ Identifier 
 //        ^ IdentifierOperator 
-//         ^^^^^^ IdentifierType 
+//         ^^^^^^ IdentifierType  local 6
   }
   type Drivable interface {
 //^^^^ Keyword 
-//     ^^^^^^^^ IdentifierType 
+//     ^^^^^^^^ IdentifierType  local 8
 //              ^^^^^^^^^ Keyword 
    Wheels() int
 // ^^^^^^ IdentifierFunction 
@@ -268,36 +269,36 @@ expression: "dump_document(&document, &contents)"
   
   func structExample() {
 //^^^^ Keyword 
-//     ^^^^^^^^^^^^^ IdentifierFunction 
+//     ^^^^^^^^^^^^^ IdentifierFunction  local 9
    p := Person{"Bob", 50}
-// ^ Identifier 
+// ^ Identifier  local 25
 //   ^^ IdentifierOperator 
-//      ^^^^^^ IdentifierType 
+//      ^^^^^^ IdentifierType  local 6
 //             ^^^^^ StringLiteral 
 //                    ^^ NumericLiteral 
    v := Vehicle{Wheels: 4, Owner: &p}
-// ^ Identifier 
+// ^ Identifier  local 26
 //   ^^ IdentifierOperator 
-//      ^^^^^^^ IdentifierType 
+//      ^^^^^^^ IdentifierType  local 7
 //              ^^^^^^ IdentifierAttribute 
 //                      ^ NumericLiteral 
 //                         ^^^^^ IdentifierAttribute 
 //                                ^ IdentifierOperator 
-//                                 ^ Identifier 
+//                                 ^ Identifier  local 25
    var d Drivable = v
 // ^^^ Keyword 
-//     ^ Identifier 
-//       ^^^^^^^^ IdentifierType 
+//     ^ Identifier  local 27
+//       ^^^^^^^^ IdentifierType  local 8
 //                ^ IdentifierOperator 
-//                  ^ Identifier 
+//                  ^ Identifier  local 26
    fmt.Println(d.Wheels()) // 4
 // ^^^ Identifier 
 //     ^^^^^^^ IdentifierFunction 
-//             ^ Identifier 
+//             ^ Identifier  local 27
 //               ^^^^^^ IdentifierFunction 
 //                         ^^^^ Comment 
    v.Owner.Age = 51
-// ^ Identifier 
+// ^ Identifier  local 26
 //   ^^^^^ Identifier 
 //         ^^^ Identifier 
 //             ^ IdentifierOperator 
@@ -305,7 +306,7 @@ expression: "dump_document(&document, &contents)"
    fmt.Println(p.Age) // 51
 // ^^^ Identifier 
 //     ^^^^^^^ IdentifierFunction 
-//             ^ Identifier 
+//             ^ Identifier  local 25
 //               ^^^ Identifier 
 //                    ^^^^^ Comment 
   }
@@ -314,19 +315,19 @@ expression: "dump_document(&document, &contents)"
 //^^^^ Keyword 
 //     ^^^ Identifier 
 //         ^ Identifier 
-//           ^^^^^^^^^^ IdentifierFunction 
-//                       ^ IdentifierParameter 
+//           ^^^^^^^^^^ IdentifierFunction  local 10
+//                       ^ IdentifierParameter  local 28
 //                          ^ IdentifierParameter 
 //                            ^ IdentifierType 
 //                               ^ IdentifierType 
    if a < b {
 // ^^ Keyword 
-//    ^ Identifier 
+//    ^ Identifier  local 28
 //      ^ IdentifierOperator 
 //        ^ Identifier 
     return a
 //  ^^^^^^ Keyword 
-//         ^ Identifier 
+//         ^ Identifier  local 28
    }
    return b
 // ^^^^^^ Keyword 
@@ -335,7 +336,7 @@ expression: "dump_document(&document, &contents)"
   
   func generics() {
 //^^^^ Keyword 
-//     ^^^^^^^^ IdentifierFunction 
+//     ^^^^^^^^ IdentifierFunction  local 11
    fmt.Println(Min[int](5, 10))       // 5
 // ^^^ Identifier 
 //     ^^^^^^^ IdentifierFunction 

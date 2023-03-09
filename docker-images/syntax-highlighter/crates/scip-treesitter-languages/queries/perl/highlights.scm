@@ -1,4 +1,7 @@
 [
+  ; Our keywords
+  "return"
+  ; Existing
   "use" "no"
   "package"
   "sub"
@@ -20,6 +23,13 @@
   "eq" "ne" "cmp" "lt" "le" "ge" "gt"
   "isa"]
 @operator
+
+"=" @operator
+(assignment_expression operator: (_) @operator)
+(binary_expression operator: (_) @operator)
+(equality_expression operator: (_) @operator)
+(relational_expression operator: (_) @operator)
+"=>" @operator
 
 (comment) @comment
 
