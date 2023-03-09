@@ -745,16 +745,14 @@ func check(logger log.Logger, db database.DB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
+	updateBodyFunc := updateBody
+	// In Sourcegraph App mode, use limited pings.
+	if sourcegraphAppMode {
+		updateBodyFunc = limitedUpdateBody
+	}
 	endpoint := updateCheckURL(logger)
 
 	doCheck := func() (updateVersion string, err error) {
-		var updateBodyFunc = updateBody
-
-		// In Sourcegraph App mode, use limited pings.
-		if sourcegraphAppMode {
-			updateBodyFunc = limitedUpdateBody
-		}
-
 		body, err := updateBodyFunc(ctx, logger, db)
 
 		if err != nil {

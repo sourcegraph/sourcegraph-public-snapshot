@@ -179,6 +179,7 @@ type pingRequest struct {
 	ClientSiteID         string `json:"site"`
 	LicenseKey           string
 	DeployType           string          `json:"deployType"`
+	Os                   string          `json:"os,omitEmpty"`
 	ClientVersionString  string          `json:"version"`
 	DependencyVersions   json.RawMessage `json:"dependencyVersions"`
 	AuthProviders        []string        `json:"auth"`
@@ -214,6 +215,7 @@ type pingRequest struct {
 	TosAccepted                   bool            `json:"tosAccepted"`
 	TotalUsers                    int32           `json:"totalUsers"`
 	TotalOrgs                     int32           `json:"totalOrgs"`
+	TotalRepos                    int32           `json:"totalRepos,omitEmpty"`
 	HasRepos                      bool            `json:"repos"`
 	EverSearched                  bool            `json:"searched"`
 	EverFindRefs                  bool            `json:"refs"`
