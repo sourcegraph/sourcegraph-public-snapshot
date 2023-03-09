@@ -159,7 +159,7 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 				continue
 			}
 			if email.VerifiedAt != nil {
-				toReturn = append(toReturn)
+				toReturn = append(toReturn, email)
 			}
 		}
 		return toReturn, nil
