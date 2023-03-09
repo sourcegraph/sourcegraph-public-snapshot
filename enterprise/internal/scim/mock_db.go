@@ -3,15 +3,20 @@ package scim
 import (
 	"context"
 	"encoding/json"
+	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var verifiedDate = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // getMockDB returns a mock database that contains the given users.
 // Note: IDs of users must be ascending.
-func getMockDB(users []*types.UserForSCIM) *database.MockDB {
+func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.UserEmail) *database.MockDB {
 	userStore := database.NewMockUserStore()
 	userStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		for _, user := range users {
@@ -109,16 +114,55 @@ func getMockDB(users []*types.UserForSCIM) *database.MockDB {
 
 	userEmailsStore := database.NewMockUserEmailsStore()
 	userEmailsStore.AddFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string, s2 *string) error {
-		for _, user := range users {
-			if user.ID == userID {
-				user.Emails = append(user.Emails, email)
+		userEmails[userID] = append(userEmails[userID], &database.UserEmail{Email: email})
+		return nil
+	})
+
+	userEmailsStore.RemoveFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string) error {
+		var err error
+		remove := func(currentEmails []*database.UserEmail, toRemove string) ([]*database.UserEmail, error) {
+			for i, email := range currentEmails {
+				if email.Email == toRemove {
+					if email.Primary {
+						return currentEmails, errors.New("cant delete primary email")
+					}
+					return append(currentEmails[:i], currentEmails[i+1:]...), nil
+				}
+			}
+			return currentEmails, err
+		}
+		userEmails[userID], err = remove(userEmails[userID], email)
+		return err
+	})
+
+	userEmailsStore.SetVerifiedFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string, verified bool) error {
+		for _, savedEmail := range userEmails[userID] {
+			if savedEmail.Email == email {
+				savedEmail.VerifiedAt = &verifiedDate
 			}
 		}
 		return nil
 	})
 
-	userEmailsStore.SetVerifiedFunc.SetDefaultHook(func(ctx context.Context, i int32, s string, b bool) error {
+	userEmailsStore.SetPrimaryEmailFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string) error {
+		for _, savedEmail := range userEmails[userID] {
+			savedEmail.Primary = strings.EqualFold(savedEmail.Email, email)
+		}
 		return nil
+	})
+
+	userEmailsStore.ListByUserFunc.SetDefaultHook(func(ctx context.Context, opts database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		toReturn := make([]*database.UserEmail, 0)
+		for _, email := range userEmails[opts.UserID] {
+			if !opts.OnlyVerified {
+				toReturn = append(toReturn, email)
+				continue
+			}
+			if email.VerifiedAt != nil {
+				toReturn = append(toReturn, email)
+			}
+		}
+		return toReturn, nil
 	})
 
 	// Create DB
