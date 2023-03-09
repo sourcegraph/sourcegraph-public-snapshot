@@ -144,7 +144,7 @@ export const OwnerSearchResult: React.FunctionComponent<OwnerSearchResultProps> 
                     <span>Owner match</span>
                     {fileSearchLink && (
                         <Link to={fileSearchLink} className={styles.filesLink}>
-                            Which files?
+                            Show files
                         </Link>
                     )}
                 </small>
