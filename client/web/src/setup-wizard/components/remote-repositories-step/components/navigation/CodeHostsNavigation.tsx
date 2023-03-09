@@ -89,7 +89,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                                 {codeHost.lastSyncAt !== null && <>Synced, {codeHost.repoCount} repositories found</>}
                                 {codeHost.lastSyncAt === null && (
                                     <>
-                                        Syncing{' '}
+                                        Syncing
                                         {codeHost.repoCount > 0 && (
                                             <>
                                                 , so far {codeHost.repoCount}{' '}
