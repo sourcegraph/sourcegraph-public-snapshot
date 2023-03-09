@@ -57,9 +57,9 @@
         "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["pattern"] }],
         "properties": {
           "name": {
-            "description": "The name of an Azure DevOps Services project and repository (\"projectName/repositoryName\") to exclude from mirroring.",
+            "description": "The name of an Azure DevOps Services organization, project, and repository (\"orgName/projectName/repositoryName\") to exclude from mirroring.",
             "type": "string",
-            "pattern": "^~?[\\w.-]+([ ]*[\\w.-]+)*/[\\w.-]+([ ]*[\\w.-]+)*?$"
+            "pattern": "^[\\w.-/ ]*?$"
           },
           "pattern": {
             "description": "Regular expression which matches against the name of an Azure DevOps Services repo.",
@@ -69,8 +69,12 @@
         }
       },
       "examples": [
-        [{ "name": "myproject/myrepo" }],
-        [{ "name": "myproject/myrepo" }, { "name": "myproject/myotherrepo" }, { "pattern": "^topsecretproject/.*" }]
+        [{ "name": "myorg/myproject/myrepo" }],
+        [
+          { "name": "myorg/myproject/myrepo" },
+          { "name": "myorg/myproject/myotherrepo" },
+          { "pattern": "^topsecretproject/.*" }
+        ]
       ]
     }
   }
