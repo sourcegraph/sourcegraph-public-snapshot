@@ -1,8 +1,15 @@
-import { FC } from 'react'
 import styles from './SummaryTable.module.scss'
-import { VulnerabilitiesProps } from '../../graphql/useSentinelQuery'
 interface SummaryTableProps<T> {
     vulnerabilityMatches: T[]
+}
+export interface VulnerabilitiesProps {
+    sourceID: string
+    details: string
+    summary: string
+    published: string
+    modified: string
+    cvssScore: string
+    severity: string
 }
 export function SummaryTable<T>(props: SummaryTableProps<T>) {
     const { vulnerabilityMatches } = props
