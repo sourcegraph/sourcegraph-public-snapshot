@@ -46,7 +46,18 @@ func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVuln
 	ctx, _, endObservation := s.operations.getVulnerabilityMatches.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return scanVulnerabilityMatchesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesQuery, args.Limit, args.Offset)))
+	var conds []*sqlf.Query
+	if args.Language != "" {
+		conds = append(conds, sqlf.Sprintf("vap.language = %s", args.Language))
+	}
+	if args.Severity != "" {
+		conds = append(conds, sqlf.Sprintf("vul.severity = %s", args.Severity))
+	}
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	}
+
+	return scanVulnerabilityMatchesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesQuery, args.Limit, args.Offset, sqlf.Join(conds, " AND "))))
 }
 
 const getVulnerabilityMatchesQuery = `
@@ -66,10 +77,13 @@ SELECT
 	vap.vulnerability_id,
 	` + vulnerabilityAffectedPackageFields + `,
 	` + vulnerabilityAffectedSymbolFields + `,
+	vul.severity,
 	m.count
 FROM limited_matches m
 LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
 LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
+LEFT JOIN vulnerabilities vul ON vap.vulnerability_id = vul.id
+WHERE %s
 ORDER BY m.id, vap.id, vas.id
 `
 
@@ -98,6 +112,7 @@ var scanVulnerabilityMatchesAndCount = func(rows basestore.Rows, queryErr error)
 		var (
 			vap     shared.AffectedPackage
 			vas     shared.AffectedSymbol
+			vul     shared.Vulnerability
 			fixedIn string
 		)
 
@@ -114,6 +129,7 @@ var scanVulnerabilityMatchesAndCount = func(rows basestore.Rows, queryErr error)
 			&dbutil.NullString{S: &fixedIn},
 			&dbutil.NullString{S: &vas.Path},
 			pq.Array(vas.Symbols),
+			&dbutil.NullString{S: &vul.Severity},
 			&count,
 		); err != nil {
 			return shared.VulnerabilityMatch{}, 0, err

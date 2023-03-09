@@ -485,6 +485,15 @@ extend type Query {
         If supplied, indicates which results to skip over during pagination.
         """
         after: String
+
+        """
+        Programming language of the vulnerability.
+        """
+        language: String
+        """
+        Severity of the vulnerability.
+        """
+        severity: String
     ): VulnerabilityMatchConnection!
 }
 

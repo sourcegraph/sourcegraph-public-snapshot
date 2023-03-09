@@ -4,9 +4,8 @@ import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
 import { mdiChevronDoubleUp, mdiChevronDoubleDown } from '@mdi/js'
 
 import { PageHeader, Button, Icon, useWindowSize, VIEWPORT_LG } from '@sourcegraph/wildcard'
-import { useSentinelQuery } from './useSentinelQuery'
+import { useSentinelQuery } from './graphql/useSentinelQuery'
 import styles from './SentinelView.module.scss'
-// import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { SummaryTable } from './components/SummaryTable/SummaryTable'
 import { SentinelBanner } from './components/SentinelBanner/SentinelBanner'
 import { VulnerabilityList } from './components/VulnerabilityList/VulnerabilityList'
@@ -29,7 +28,7 @@ export const SentinelView: FC = () => {
         }
     }, [width])
 
-    const { vulnerabilities, loading, error } = useSentinelQuery()
+    const { vulnerabilities, loading, error, refetch } = useSentinelQuery({ severity: '' })
 
     if (loading) {
         return <div>Loading...</div>
@@ -58,7 +57,10 @@ export const SentinelView: FC = () => {
 
                     <div className={styles.sidebar}>
                         {showMobileFilters && (
-                            <VulnerabilitySidebarView onShowMobileFiltersChanged={onShowMobileFiltersClicked} />
+                            <VulnerabilitySidebarView
+                                onShowMobileFiltersChanged={onShowMobileFiltersClicked}
+                                onFilterChosen={refetch}
+                            />
                         )}
                     </div>
                 </div>

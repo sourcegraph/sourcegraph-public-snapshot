@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import styles from './SummaryTable.module.scss'
-import { VulnerabilitiesProps } from '../../useSentinelQuery'
+import { VulnerabilitiesProps } from '../../graphql/useSentinelQuery'
 interface SummaryTableProps {
     vulnerabilityMatches: VulnerabilitiesProps[]
 }

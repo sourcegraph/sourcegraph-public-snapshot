@@ -243,6 +243,37 @@ exports[`GlobalNavbar default 1`] = `
             </span>
           </a>
         </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/sentinel"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                aria-hidden="true"
+                class="mdi-icon mdi-icon iconInline icon"
+                fill="currentColor"
+                height="24"
+                role="img"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M21,11C21,16.55 17.16,21.74 12,23C6.84,21.74 3,16.55 3,11V5L12,1L21,5V11M12,21C15.75,20 19,15.54 19,11.22V6.3L12,3.18V21Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Sentinel
+              </span>
+            </span>
+          </a>
+        </li>
       </ul>
     </div>
     <ul
