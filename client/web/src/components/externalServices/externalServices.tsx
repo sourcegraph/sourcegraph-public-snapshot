@@ -525,6 +525,18 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     },
 ]
 
+const azureDevOpsEditorActions = (): EditorAction[] => [
+    {
+        id: 'excludeRepo',
+        label: 'Exclude a repository',
+        run: (config: string) => {
+            const value = { name: '<project>/<repository>' }
+            const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
+            return { edits, selectText: '<project>/<repository>' }
+        },
+    },
+]
+
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
     title: 'GitHub',
@@ -1297,7 +1309,9 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
     defaultConfig: `{
   "url": "https://dev.azure.com",
   "username": "<username>",
-  "token": "<token>"
+  "token": "<token>",
+  "orgs": [],
+  "projects": []
 }`,
     instructions: (
         <div>
@@ -1318,10 +1332,14 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
                     </Link>{' '}
                     for instructions on how to create a Personal Access Token.
                 </li>
+                <li>
+                    In the configuration below, set <Field>orgs</Field> and/or <Field>projects</Field> to the
+                    organizations/projects you want to sync repositories from.
+                </li>
             </ol>
         </div>
     ),
-    editorActions: [],
+    editorActions: azureDevOpsEditorActions(),
 }
 
 const NPM_PACKAGES: AddExternalServiceOptions = {
@@ -1496,6 +1514,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     gitolite: GITOLITE,
     git: GENERIC_GIT,
     gerrit: GERRIT,
+    azuredevops: AZUREDEVOPS,
     ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rubyPackages === 'enabled' ? { rubyPackages: RUBY_PACKAGES } : {}),
@@ -1504,7 +1523,6 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-    ...(window.context?.experimentalFeatures?.azureDevOps === 'enabled' ? { azuredevops: AZUREDEVOPS } : {}),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {

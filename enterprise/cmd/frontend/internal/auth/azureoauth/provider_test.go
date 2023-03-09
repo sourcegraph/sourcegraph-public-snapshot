@@ -38,9 +38,7 @@ func TestParseConfig(t *testing.T) {
 		name          string
 		config        conf.Unified
 		wantProviders []Provider
-
-		// TODO: use this
-		wantProblems []string
+		wantProblems  []string
 	}{
 		{
 			name:          "empty config",
@@ -67,7 +65,7 @@ func TestParseConfig(t *testing.T) {
 						ClientSecret: "myclientsecret",
 						DisplayName:  "Azure Dev Ops",
 						Type:         extsvc.TypeAzureDevOps,
-						ApiScope:     "vso.code,vso.identity",
+						ApiScope:     "vso.code,vso.identity,vso.project",
 					},
 					Provider: newOauthProvider(oauth2.Config{
 						ClientID:     "myclientid",
@@ -77,7 +75,7 @@ func TestParseConfig(t *testing.T) {
 							TokenURL:  "https://app.vssps.visualstudio.com/oauth2/token",
 							AuthStyle: oauth2.AuthStyleInParams,
 						},
-						Scopes:      []string{"vso.code", "vso.identity"},
+						Scopes:      []string{"vso.code", "vso.identity", "vso.project"},
 						RedirectURL: "https://example.com/.auth/azuredevops/callback",
 					}),
 				},
@@ -150,7 +148,7 @@ func TestParseConfig(t *testing.T) {
 						ClientSecret: "myclientsecret",
 						DisplayName:  "Azure Dev Ops",
 						Type:         extsvc.TypeAzureDevOps,
-						ApiScope:     "vso.code,vso.identity",
+						ApiScope:     "vso.code,vso.identity,vso.project",
 					},
 					Provider: newOauthProvider(oauth2.Config{
 						ClientID:     "myclientid",
@@ -160,7 +158,7 @@ func TestParseConfig(t *testing.T) {
 							TokenURL:  "https://app.vssps.visualstudio.com/oauth2/token",
 							AuthStyle: oauth2.AuthStyleInParams,
 						},
-						Scopes:      []string{"vso.code", "vso.identity"},
+						Scopes:      []string{"vso.code", "vso.identity", "vso.project"},
 						RedirectURL: "https://example.com/.auth/azuredevops/callback",
 					}),
 				},

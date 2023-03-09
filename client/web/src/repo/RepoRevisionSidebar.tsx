@@ -125,20 +125,10 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                 }
                             >
                                 <Tab data-tab-content="files">
-                                    <span className="tablist-wrapper--tab-label">
-                                        Files
-                                        {enableBlobPageSwitchAreasShortcuts && (
-                                            <span className="d-inline-flex align-items-center text-muted ml-1"> F</span>
-                                        )}
-                                    </span>
+                                    <span className="tablist-wrapper--tab-label">Files</span>
                                 </Tab>
                                 <Tab data-tab-content="symbols">
-                                    <span className="tablist-wrapper--tab-label">
-                                        Symbols
-                                        {enableBlobPageSwitchAreasShortcuts && (
-                                            <span className="d-inline-flex align-items-center text-muted ml-1"> S</span>
-                                        )}
-                                    </span>
+                                    <span className="tablist-wrapper--tab-label">Symbols</span>
                                 </Tab>
                             </TabList>
                             <div

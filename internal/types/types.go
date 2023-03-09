@@ -271,10 +271,9 @@ func (r *Repo) Update(n *Repo) (modified RepoModified) {
 		modified |= RepoModifiedStars
 	}
 
-	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
-		r.Metadata = n.Metadata
-		modified |= RepoModifiedMetadata
-	}
+	// We don't compare the Metadata fields to determine whether or not a repo
+	// has been modified. The reflect.DeepEqual always returns false for
+	// some code hosts (i.e. GitHub).
 
 	for urn, info := range n.Sources {
 		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqual(info, old) {
@@ -1739,8 +1738,8 @@ type OwnershipUsageStatistics struct {
 	// `select:file.owners`.
 	SelectFileOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"select_file_owners_search,omitempty"`
 
-	// Activity of using a `file:has.owners` predicate in search.
-	FileHasOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owners_search,omitempty"`
+	// Activity of using a `file:has.owner` predicate in search.
+	FileHasOwnerSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owner_search,omitempty"`
 
 	// Opening ownership panel.
 	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`

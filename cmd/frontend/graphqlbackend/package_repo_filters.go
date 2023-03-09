@@ -23,13 +23,26 @@ type inputPackageFilter struct {
 	}
 }
 
+type filterMatchingResolver struct {
+	packageResolver *packageRepoReferenceConnectionResolver
+	versionResolver *packageRepoReferenceVersionConnectionResolver
+}
+
+func (r *filterMatchingResolver) ToPackageRepoReferenceConnection() (*packageRepoReferenceConnectionResolver, bool) {
+	return r.packageResolver, r.packageResolver != nil
+}
+
+func (r *filterMatchingResolver) ToPackageRepoReferenceVersionConnection() (*packageRepoReferenceVersionConnectionResolver, bool) {
+	return r.versionResolver, r.versionResolver != nil
+}
+
 func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context, args struct {
 	Kind   string
 	Filter inputPackageFilter
 	graphqlutil.ConnectionArgs
 	After *string
 },
-) (_ *packageRepoReferenceConnectionResolver, err error) {
+) (_ *filterMatchingResolver, err error) {
 	if args.Filter.NameFilter == nil && args.Filter.VersionFilter == nil {
 		return nil, errors.New("must provide either nameFilter or versionFilter")
 	}
@@ -55,15 +68,26 @@ func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context
 		VersionFilter: args.Filter.VersionFilter,
 	}, limit, after)
 
-	return &packageRepoReferenceConnectionResolver{
-		db:    r.db,
-		deps:  matchingPkgs,
-		total: totalCount,
-	}, err
-}
+	if args.Filter.NameFilter != nil {
+		return &filterMatchingResolver{
+			packageResolver: &packageRepoReferenceConnectionResolver{
+				db:    r.db,
+				deps:  matchingPkgs,
+				total: totalCount,
+			},
+		}, err
+	}
 
-type packageRepoFilterResolver struct {
-	filter dependencies.PackageRepoFilter
+	var versions []shared.PackageRepoRefVersion
+	if len(matchingPkgs) == 1 {
+		versions = matchingPkgs[0].Versions
+	}
+	return &filterMatchingResolver{
+		versionResolver: &packageRepoReferenceVersionConnectionResolver{
+			versions: versions,
+			total:    totalCount,
+		},
+	}, err
 }
 
 func (r *schemaResolver) PackageRepoFilters(ctx context.Context, args struct {
@@ -97,6 +121,10 @@ func (r *schemaResolver) PackageRepoFilters(ctx context.Context, args struct {
 	}
 
 	return resolvers, nil
+}
+
+type packageRepoFilterResolver struct {
+	filter dependencies.PackageRepoFilter
 }
 
 func (r *packageRepoFilterResolver) ID() graphql.ID {

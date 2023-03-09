@@ -142,7 +142,6 @@ func Worker() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewCommitGraphProcessorGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexQueueGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexProcessorGroup(containerName),
-			shared.CodeIntelligence.NewJanitorGroup(containerName),
 			shared.CodeIntelligence.NewIndexSchedulerGroup(containerName),
 			shared.CodeIntelligence.NewDBStoreGroup(containerName),
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),

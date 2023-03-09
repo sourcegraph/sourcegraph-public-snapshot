@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, FC } from 'react'
+import React, { FC, useEffect, useMemo } from 'react'
 
 import {
     mdiAccount,
@@ -9,6 +9,7 @@ import {
     mdiSourceBranch,
     mdiSourceRepository,
     mdiTag,
+    mdiPackageVariantClosed,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
@@ -24,19 +25,19 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    useObservable,
-    Link,
-    Icon,
-    ButtonGroup,
     Button,
-    Text,
+    ButtonGroup,
+    Container,
     ErrorAlert,
+    Icon,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Text,
     Tooltip,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
@@ -48,6 +49,7 @@ import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { isPackageServiceType } from '../packages/isPackageServiceType'
 
 import { TreePageContent } from './TreePageContent'
 
@@ -98,6 +100,10 @@ export const TreePage: FC<Props> = ({
     ...props
 }) => {
     const isRoot = filePath === ''
+    const isPackage = useMemo(
+        () => isPackageServiceType(repo?.externalRepository.serviceType),
+        [repo?.externalRepository.serviceType]
+    )
 
     useEffect(() => {
         if (isRoot) {
@@ -199,7 +205,7 @@ export const TreePage: FC<Props> = ({
             <div className={styles.header}>
                 <PageHeader className="mb-3 test-tree-page-title">
                     <PageHeader.Heading as="h2" styleAs="h1">
-                        <PageHeader.Breadcrumb icon={mdiSourceRepository}>
+                        <PageHeader.Breadcrumb icon={isPackage ? mdiPackageVariantClosed : mdiSourceRepository}>
                             {displayRepoName(repo?.name || '')}
                         </PageHeader.Breadcrumb>
                     </PageHeader.Heading>
@@ -208,27 +214,30 @@ export const TreePage: FC<Props> = ({
             </div>
             <div className={styles.menu}>
                 <ButtonGroup>
-                    <Tooltip content="Branches">
+                    {!isPackage && (
+                        <Tooltip content="Branches">
+                            <Button
+                                className="flex-shrink-0"
+                                to={`/${encodeURIPathComponent(repoName)}/-/branches`}
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiSourceBranch} />{' '}
+                                <span className={styles.text}>Branches</span>
+                            </Button>
+                        </Tooltip>
+                    )}
+                    <Tooltip content={isPackage ? 'Versions' : 'Tags'}>
                         <Button
                             className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repoName)}/-/branches`}
+                            to={`/${encodeURIPathComponent(repoName)}/-${isPackage ? '/versions' : '/tags'}`}
                             variant="secondary"
                             outline={true}
                             as={Link}
                         >
-                            <Icon aria-hidden={true} svgPath={mdiSourceBranch} />{' '}
-                            <span className={styles.text}>Branches</span>
-                        </Button>
-                    </Tooltip>
-                    <Tooltip content="Tags">
-                        <Button
-                            className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repoName)}/-/tags`}
-                            variant="secondary"
-                            outline={true}
-                            as={Link}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiTag} /> <span className={styles.text}>Tags</span>
+                            <Icon aria-hidden={true} svgPath={mdiTag} />{' '}
+                            <span className={styles.text}>{isPackage ? 'Versions' : 'Tags'}</span>
                         </Button>
                     </Tooltip>
                     <Tooltip content="Compare">
@@ -263,7 +272,7 @@ export const TreePage: FC<Props> = ({
                             </Button>
                         </Tooltip>
                     )}
-                    {batchChangesEnabled && (
+                    {batchChangesEnabled && !isPackage && (
                         <Tooltip content="Batch changes">
                             <RepoBatchChangesButton
                                 className="flex-shrink-0"
@@ -280,6 +289,7 @@ export const TreePage: FC<Props> = ({
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
+                                onClick={() => props.telemetryService.log('repoPage:ownershipPage:clicked')}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
                                 <span className={styles.text}>Ownership</span>
@@ -343,6 +353,7 @@ export const TreePage: FC<Props> = ({
                             repo={repo}
                             revision={revision}
                             commitID={commitID}
+                            isPackage={isPackage}
                             {...props}
                         />
                     )}

@@ -232,13 +232,14 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 	)
 
 	if filter.NameFilter != nil {
-		lastID := after
-
+		var lastID int
 		for {
 			pkgs, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
 				Scheme: filter.PackageScheme,
-				After:  lastID,
-				Limit:  limit,
+				// doing this so we don't have to load everything in at once
+				Limit:          500,
+				After:          lastID,
+				IncludeBlocked: true,
 			})
 			if err != nil {
 				return nil, 0, errors.Wrap(err, "failed to list package repo references")
@@ -253,6 +254,9 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 			for _, pkg := range pkgs {
 				if matcher.Matches(string(pkg.Name), "") {
 					totalCount++
+					if pkg.ID < after {
+						continue
+					}
 					if len(matchingPkgs) == limit {
 						continue
 					}
@@ -266,7 +270,9 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 			Scheme:        filter.PackageScheme,
 			Name:          reposource.PackageName(nameToMatch),
 			ExactNameOnly: true,
-			Limit:         1,
+			// should only have 1 matching package ref
+			Limit:          1,
+			IncludeBlocked: true,
 		})
 		if err != nil {
 			return nil, 0, errors.Wrap(err, "failed to list package repo references")
@@ -281,6 +287,9 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 		for _, version := range pkg.Versions {
 			if matcher.Matches(string(pkg.Name), version.Version) {
 				totalCount++
+				if version.ID < after {
+					continue
+				}
 				if len(versions) == limit {
 					continue
 				}
