@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -24,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
+	enterprisedb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 )
 
@@ -60,6 +63,26 @@ func (s fakeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeo
 // fakeGitServer is a limited gitserver.Client that returns a file for every Stat call.
 type fakeGitserver struct {
 	gitserver.Client
+	files map[repoPath]string
+}
+
+type repoPath struct {
+	Repo     api.RepoName
+	CommitID api.CommitID
+	Path     string
+}
+
+type repoFiles map[repoPath]string
+
+func (g fakeGitserver) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
+	if g.files == nil {
+		return nil, os.ErrNotExist
+	}
+	content, ok := g.files[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
+	if !ok {
+		return nil, os.ErrNotExist
+	}
+	return []byte(content), nil
 }
 
 // Stat is a fake implementation that returns a FileInfo
@@ -174,6 +197,81 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	})
 }
 
+func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
+	fs := fakedb.New()
+	db := enterprisedb.NewMockEnterpriseDB()
+	db.TeamsFunc.SetDefaultReturn(fs.TeamStore)
+	db.UsersFunc.SetDefaultReturn(fs.UserStore)
+	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
+	git := fakeGitserver{
+		files: map[repoPath]string{
+			{"repo-name", "42", "CODEOWNERS"}: "*.js @fake-team",
+		},
+	}
+	own := own.NewService(git, db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	repos := database.NewMockRepoStore()
+	db.ReposFunc.SetDefaultReturn(repos)
+	repos.GetFunc.SetDefaultReturn(&types.Repo{Name: "repo-name"}, nil)
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		return "42", nil
+	}
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "fake-team", DisplayName: "The Fake Team"}); err != nil {
+		t.Fatalf("failed to create fake team: %s", err)
+	}
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.New(db, git, own)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+				node(id: $repo) {
+					... on Repository {
+						commit(rev: $revision) {
+							blob(path: $currentPath) {
+								ownership {
+									nodes {
+										owner {
+											... on Team {
+												displayName
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}`,
+		ExpectedResult: `{
+			"node": {
+				"commit": {
+					"blob": {
+						"ownership": {
+							"nodes": [
+								{
+									"owner": {
+										"displayName": "The Fake Team"
+									}
+								}
+							]
+						}
+					}
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"repo":        string(relay.MarshalID("Repository", 42)),
+			"revision":    "revision",
+			"currentPath": "foo/bar.js",
+		},
+	})
+}
+
 var paginationQuery = `
 query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!, $after: String!) {
 	node(id: $repo) {
@@ -263,6 +361,7 @@ func TestOwnershipPagination(t *testing.T) {
 			{Handle: "js-owner-5"},
 		},
 	}
+
 	own := fakeOwnService{
 		Ruleset: codeowners.NewRuleset(&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{rule},
