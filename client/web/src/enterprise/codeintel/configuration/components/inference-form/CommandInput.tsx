@@ -10,6 +10,8 @@ import classNames from 'classnames'
 
 import { useCodeMirror, defaultSyntaxHighlighting } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
+import styles from './CommandInput.module.scss'
+
 const shellHighlighting: Extension = [
     syntaxHighlighting(HighlightStyle.define([{ tag: [tags.keyword], class: 'hljs-keyword' }])),
     defaultSyntaxHighlighting,
@@ -82,5 +84,11 @@ export const CommandInput: React.FunctionComponent<CommandInputProps> = React.me
         )
     )
 
-    return <div ref={containerRef} data-editor="codemirror6" className={classNames('form-control', className)} />
+    return (
+        <div
+            ref={containerRef}
+            data-editor="codemirror6"
+            className={classNames('form-control', styles.commandInput, className)}
+        />
+    )
 })
