@@ -59,7 +59,7 @@ const (
 func (b *Build) AddJob(j *Job) error {
 	stepName := j.GetName()
 	if stepName == "" {
-		return fmt.Errorf("job name is empty")
+		return fmt.Errorf("job %q name is empty", j.GetID())
 	}
 	step, ok := b.Steps[stepName]
 	// We don't know about this step, so it must be a new one
