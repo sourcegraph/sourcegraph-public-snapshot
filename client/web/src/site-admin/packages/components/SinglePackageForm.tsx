@@ -83,7 +83,7 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                     versionGlob: versionQuery,
                 },
             },
-            first: 100, // TODO: Limit?
+            first: 1000,
         },
     })
 
