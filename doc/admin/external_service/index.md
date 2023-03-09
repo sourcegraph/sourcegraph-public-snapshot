@@ -201,6 +201,8 @@ knows how many requests to which code host can be sent at a given point of time.
 Current rate limit settings can be viewed by site admins on the following page: `Site Admin -> Instrumentation -> Repo Updater -> Rate Limiter State`.
 This page includes rate limit settings for all external services configured in Sourcegraph. 
 
+> NOTE: The Instrumentation page is only available in kubernetes deployments.
+
 Here is an example of one external service, including information about external service name,  maximum allowed burst of requests,
 maximum allowed requests per second and whether the limiter is infinite (there is no rate limiting):
 ```json
