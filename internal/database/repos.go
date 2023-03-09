@@ -1195,7 +1195,6 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 				// explicitly treat NULLs as false first
 				cond = `NOT COALESCE(` + cond + `, false)`
 			}
-			fmt.Println(cond)
 			ands = append(ands, sqlf.Sprintf(cond, filter.Topic))
 		}
 		where = append(where, sqlf.Join(ands, "AND"))
