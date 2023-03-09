@@ -104,7 +104,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                             }
                         >
                             {/* If no primary email is selected yet, we add an empty option to indicate nothing was selected. */}
-                            {!currentPrimaryEmail && <option key=""></option>}
+                            {!currentPrimaryEmail && <option key="" />}
                             {options.map(email => (
                                 <option key={email} value={email}>
                                     {email}
