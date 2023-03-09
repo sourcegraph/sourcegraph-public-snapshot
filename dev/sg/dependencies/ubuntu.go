@@ -87,13 +87,13 @@ var Ubuntu = []category{
 						cio.WriteAlertf("There already exists a bazel binary in your path and it is not managed by Bazlisk. Please remove it as Bazelisk replaces the bazel binary")
 						return errors.New("bazel binary already exists - please uninstall it with your package manager ex. `apt remove bazel`")
 					}
-					return cmdFix(`sudo curl -L https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -o /usr//bin/bazel && sudo chmod +x /usr/local/bin/bazel`)(ctx, cio, args)
+					return cmdFix(`sudo curl -L https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -o /usr//bin/bazel && sudo chmod +x /usr/bin/bazel`)(ctx, cio, args)
 				},
 			},
 			{
 				Name:  "ibazel",
 				Check: checkAction(check.InPath("ibazel")),
-				Fix:   cmdFix(`sudo curl -L  https://github.com/bazelbuild/bazel-watcher/releases/download/v0.21.4/ibazel_linux_amd64 -o /usr/local/bin/ibazel && sudo chmod +x /usr/local/bin/ibazel`),
+				Fix:   cmdFix(`sudo curl -L  https://github.com/bazelbuild/bazel-watcher/releases/download/v0.21.4/ibazel_linux_amd64 -o /usr/bin/ibazel && sudo chmod +x /usr/bin/ibazel`),
 			},
 			{
 				Name: "asdf",
