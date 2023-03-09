@@ -1180,9 +1180,19 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if len(opt.TopicFilters) > 0 {
 		var ands []*sqlf.Query
 		for _, filter := range opt.TopicFilters {
+			// This condition checks that the requested topics are contained in
+			// the repo's metadata. This is designed to work with the
+			// idx_repo_github_topics index.
+			//
+			// We use the unusual `jsonb_build_array` and `jsonb_build_object`
+			// syntax instead of JSONB literals so that we can use SQL
+			// variables for the user-provided topic names (don't want SQL
+			// injections here).
 			cond := `external_service_type = 'github' AND metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`
 			if filter.Negated {
-				// Use Coalesce in case the topics evaluates to NULL
+				// Use Coalesce in case the JSON access evaluates to NULL.
+				// Since negating a NULL evaluates to NULL, we want to
+				// explicitly treat NULLs as false first
 				cond = `NOT COALESCE(` + cond + `, false)`
 			}
 			fmt.Println(cond)
