@@ -145,7 +145,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	userID := user.ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
 	// to create Batch Changes.
-	assignWritePermissionToUser(ctx, t, db, userID)
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
@@ -350,7 +350,7 @@ func TestCreateBatchSpecFromRaw(t *testing.T) {
 
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
 	// to create Batch Changes.
-	assignWritePermissionToUser(ctx, t, db, userID)
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
@@ -484,7 +484,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
 	// to create Batch Changes.
-	assignWritePermissionToUser(ctx, t, db, userID)
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
@@ -578,7 +578,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
 	// to create Batch Changes.
-	assignWritePermissionToUser(ctx, t, db, userID)
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
@@ -688,7 +688,7 @@ func TestApplyBatchChange(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
 	// to create Batch Changes.
-	assignWritePermissionToUser(ctx, t, db, userID)
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
@@ -877,7 +877,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
 	// to create Batch Changes.
-	assignWritePermissionToUser(ctx, t, db, userID)
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
 	namespaceID := relay.MarshalID("User", userID)
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
@@ -985,7 +985,7 @@ func TestUpsertEmptyBatchChange(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
 	// to create Batch Changes.
-	assignWritePermissionToUser(ctx, t, db, userID)
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
 	namespaceID := relay.MarshalID("User", userID)
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
@@ -1066,7 +1066,7 @@ func TestCreateBatchChange(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
 	// to create Batch Changes.
-	assignWritePermissionToUser(ctx, t, db, userID)
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
@@ -1167,7 +1167,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
 	// to create Batch Changes.
-	assignWritePermissionToUser(ctx, t, db, userID)
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
 
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 	apiUser := &apitest.User{
@@ -1393,7 +1393,7 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
 	// to create Batch Changes.
-	assignWritePermissionToUser(ctx, t, db, userID)
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
