@@ -144,7 +144,10 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 // unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
 // supported.
 func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
-	if _, ok := a.(*auth.BasicAuth); !ok {
+	switch a.(type) {
+	case *auth.BasicAuth, *auth.BasicAuthWithSSH:
+		break
+	default:
 		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
 	}
 
