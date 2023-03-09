@@ -115,6 +115,7 @@ export const useRolesConnection = (): UseShowMorePaginationResult<AllRolesResult
         },
         options: {
             fetchPolicy: 'no-cache',
+            useURL: true,
         },
         getConnection: result => {
             const { roles } = dataOrThrowErrors(result)
