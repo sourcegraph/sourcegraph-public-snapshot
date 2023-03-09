@@ -98,6 +98,7 @@ var baseHighlightConfig = syntaxHighlightConfig{
 	Extensions: map[string]string{
 		"jsx":  "jsx", // default `getLanguage()` helper doesn't handle JSX
 		"tsx":  "tsx", // default `getLanguage()` helper doesn't handle TSX
+		"ncl":  "nickel",
 		"sbt":  "scala",
 		"sc":   "scala",
 		"xlsg": "xlsg",
@@ -140,6 +141,7 @@ var baseEngineConfig = syntaxEngineConfig{
 		"javascript": EngineTreeSitter,
 		"jsonnet":    EngineTreeSitter,
 		"jsx":        EngineTreeSitter,
+		"nickel":     EngineTreeSitter,
 		"rust":       EngineTreeSitter,
 		"scala":      EngineTreeSitter,
 		"tsx":        EngineTreeSitter,

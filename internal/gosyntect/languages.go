@@ -17,6 +17,7 @@ var supportedFiletypes = map[string]struct{}{
 	"javascript": {},
 	"jsonnet":    {},
 	"jsx":        {},
+	"nickel":     {},
 	"perl":       {},
 	"python":     {},
 	"ruby":       {},
