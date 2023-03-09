@@ -612,5 +612,7 @@ del AS (
 	WHERE repository_id IN (SELECT repository_id FROM locked_records)
 	RETURNING 1
 )
-SELECT COUNT(*) FROM del
+SELECT
+	(SELECT COUNT(*) FROM locked_records),
+	(SELECT COUNT(*) FROM del)
 `
