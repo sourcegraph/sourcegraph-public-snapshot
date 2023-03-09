@@ -698,6 +698,10 @@ func (r *Resolver) MoveBatchChange(ctx context.Context, args *graphqlbackend.Mov
 		return nil, err
 	}
 
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+		return nil, err
+	}
+
 	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
 	if err != nil {
 		return nil, err
@@ -739,6 +743,10 @@ func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.D
 		tr.Finish()
 	}()
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1014,6 +1022,10 @@ func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.Cl
 	}()
 
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1709,6 +1721,10 @@ func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.Ex
 		return nil, err
 	}
 
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+		return nil, err
+	}
+
 	batchSpecRandID, err := unmarshalBatchSpecID(args.BatchSpec)
 	if err != nil {
 		return nil, err
@@ -1814,6 +1830,10 @@ func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbacke
 	}()
 
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1952,6 +1972,10 @@ func (r *Resolver) ToggleBatchSpecAutoApply(ctx context.Context, args *graphqlba
 func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.DeleteBatchSpecArgs) (*graphqlbackend.EmptyResponse, error) {
 	// TODO(ssbc): currently admin only.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 	// TODO(ssbc): not implemented

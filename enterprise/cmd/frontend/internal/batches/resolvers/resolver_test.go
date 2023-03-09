@@ -257,7 +257,7 @@ func TestCreateBatchSpec(t *testing.T) {
 					t.Error("unexpected lack of errors")
 				}
 
-				if tc.unauthorized && !errors.Is(errs[0], rbac.ErrNotAuthorized) {
+				if tc.unauthorized && !errors.Is(errs[0], &rbac.ErrNotAuthorized{Permission: br.BatchChangesWritePermission}) {
 					t.Errorf("expected unauthorized error, got %v", errs)
 				}
 			} else {
@@ -1522,6 +1522,11 @@ func TestMoveBatchChange(t *testing.T) {
 
 	user := bt.CreateTestUser(t, db, true)
 	userID := user.ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
+	// to create Batch Changes.
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+
+	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
 	orgName := "move-batch-change-test"
 	orgID := bt.CreateTestOrg(t, db, orgName).ID
@@ -1563,37 +1568,52 @@ func TestMoveBatchChange(t *testing.T) {
 		"newName":     newBatchChagneName,
 	}
 
-	var response struct{ MoveBatchChange apitest.BatchChange }
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveBatchChange)
+	t.Run("unauthorized user", func(t *testing.T) {
+		var response struct{ MoveBatchChange apitest.BatchChange }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMoveBatchChange)
+		if errs == nil {
+			t.Fatal("expected error")
+		}
+		firstErr := errs[0]
+		if !strings.Contains(firstErr.Error(), "not authorized") {
+			t.Fatalf("expected NoSuchKey error, got %+v", err)
+		}
+	})
 
-	haveBatchChange := response.MoveBatchChange
-	if diff := cmp.Diff(input["newName"], haveBatchChange.Name); diff != "" {
-		t.Fatalf("unexpected name (-want +got):\n%s", diff)
-	}
+	t.Run("authorized user", func(t *testing.T) {
+		var response struct{ MoveBatchChange apitest.BatchChange }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveBatchChange)
 
-	wantURL := fmt.Sprintf("/users/%s/batch-changes/%s", user.Username, newBatchChagneName)
-	if diff := cmp.Diff(wantURL, haveBatchChange.URL); diff != "" {
-		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
-	}
+		haveBatchChange := response.MoveBatchChange
+		if diff := cmp.Diff(input["newName"], haveBatchChange.Name); diff != "" {
+			t.Fatalf("unexpected name (-want +got):\n%s", diff)
+		}
 
-	// Move to a new namespace
-	orgAPIID := graphqlbackend.MarshalOrgID(orgID)
-	input = map[string]any{
-		"batchChange":  string(bgql.MarshalBatchChangeID(batchChange.ID)),
-		"newNamespace": orgAPIID,
-	}
+		wantURL := fmt.Sprintf("/users/%s/batch-changes/%s", user.Username, newBatchChagneName)
+		if diff := cmp.Diff(wantURL, haveBatchChange.URL); diff != "" {
+			t.Fatalf("unexpected URL (-want +got):\n%s", diff)
+		}
 
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveBatchChange)
+		// Move to a new namespace
+		orgAPIID := graphqlbackend.MarshalOrgID(orgID)
+		input = map[string]any{
+			"batchChange":  string(bgql.MarshalBatchChangeID(batchChange.ID)),
+			"newNamespace": orgAPIID,
+		}
 
-	haveBatchChange = response.MoveBatchChange
-	if diff := cmp.Diff(string(orgAPIID), haveBatchChange.Namespace.ID); diff != "" {
-		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
-	}
-	wantURL = fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, newBatchChagneName)
-	if diff := cmp.Diff(wantURL, haveBatchChange.URL); diff != "" {
-		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
-	}
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveBatchChange)
+
+		haveBatchChange = response.MoveBatchChange
+		if diff := cmp.Diff(string(orgAPIID), haveBatchChange.Namespace.ID); diff != "" {
+			t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
+		}
+		wantURL = fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, newBatchChagneName)
+		if diff := cmp.Diff(wantURL, haveBatchChange.URL); diff != "" {
+			t.Fatalf("unexpected URL (-want +got):\n%s", diff)
+		}
+	})
 }
 
 const mutationMoveBatchChange = `

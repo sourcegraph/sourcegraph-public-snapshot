@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -10,7 +11,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var ErrNotAuthorized = errors.New("not authorized")
+type ErrNotAuthorized struct {
+	Permission string
+}
+
+func (e *ErrNotAuthorized) Error() string {
+	return fmt.Sprintf("user is missing permission %s", e.Permission)
+}
+
+func (e *ErrNotAuthorized) Unauthorized() bool {
+	return true
+}
+
+// var ErrNotAuthorized = errors.Newf("user is missing permission")
 
 // CheckCurrentUserHasPermission returns an error if the current user doesn't have a permission assigned to them.
 func CheckCurrentUserHasPermission(ctx context.Context, db database.DB, permission string) error {
@@ -42,14 +55,14 @@ func CheckCurrentUserHasPermission(ctx context.Context, db database.DB, permissi
 			Namespace: namespace,
 			Action:    action,
 		}) {
-			return ErrNotAuthorized
+			return &ErrNotAuthorized{Permission: permission}
 		}
 		return err
 	}
 	// if permission is nil, it means the user doesn't have that permission
 	// assigned to any of their assigned roles.
 	if perm == nil {
-		return ErrNotAuthorized
+		return &ErrNotAuthorized{Permission: permission}
 	}
 
 	return nil
