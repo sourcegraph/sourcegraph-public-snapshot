@@ -44,6 +44,10 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":background"],
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/api",
         "//internal/authz",
