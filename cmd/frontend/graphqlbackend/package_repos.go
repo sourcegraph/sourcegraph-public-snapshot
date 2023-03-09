@@ -127,8 +127,37 @@ func (r *packageRepoReferenceConnectionResolver) PageInfo(ctx context.Context) (
 		return graphqlutil.HasNextPage(false), nil
 	}
 
-	next := int32(r.deps[len(r.deps)-1].ID)
-	return graphqlutil.EncodeIntCursor(&next), nil
+	next := r.deps[len(r.deps)-1].ID
+	cursor := string(relay.MarshalID("PackageRepoReference", next))
+	return graphqlutil.EncodeCursor(&cursor), nil
+}
+
+type packageRepoReferenceVersionConnectionResolver struct {
+	versions []dependencies.PackageRepoRefVersion
+	total    int
+}
+
+func (r *packageRepoReferenceVersionConnectionResolver) Nodes(ctx context.Context) (vs []*packageRepoReferenceVersionResolver) {
+	for _, version := range r.versions {
+		vs = append(vs, &packageRepoReferenceVersionResolver{
+			version: version,
+		})
+	}
+	return
+}
+
+func (r *packageRepoReferenceVersionConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return int32(r.total), nil
+}
+
+func (r *packageRepoReferenceVersionConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	if len(r.versions) == 0 {
+		return graphqlutil.HasNextPage(false), nil
+	}
+
+	next := r.versions[len(r.versions)-1].ID
+	cursor := string(relay.MarshalID("PackageRepoReferenceVersion", next))
+	return graphqlutil.EncodeCursor(&cursor), nil
 }
 
 type packageRepoReferenceResolver struct {

@@ -232,13 +232,12 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 	)
 
 	if filter.NameFilter != nil {
-		lastID := after
-
+		var lastID int
 		for {
 			pkgs, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
-				Scheme:         filter.PackageScheme,
+				Scheme: filter.PackageScheme,
+				// doing this so we don't have to load everything in at once
 				After:          lastID,
-				Limit:          limit,
 				IncludeBlocked: true,
 			})
 			if err != nil {
@@ -254,6 +253,9 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 			for _, pkg := range pkgs {
 				if matcher.Matches(string(pkg.Name), "") {
 					totalCount++
+					if pkg.ID < after {
+						continue
+					}
 					if len(matchingPkgs) == limit {
 						continue
 					}
@@ -264,9 +266,10 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 		}
 	} else {
 		pkgs, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
-			Scheme:         filter.PackageScheme,
-			Name:           reposource.PackageName(nameToMatch),
-			ExactNameOnly:  true,
+			Scheme:        filter.PackageScheme,
+			Name:          reposource.PackageName(nameToMatch),
+			ExactNameOnly: true,
+			// should only have 1 matching package ref
 			Limit:          1,
 			IncludeBlocked: true,
 		})
@@ -283,6 +286,9 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 		for _, version := range pkg.Versions {
 			if matcher.Matches(string(pkg.Name), version.Version) {
 				totalCount++
+				if version.ID < after {
+					continue
+				}
 				if len(versions) == limit {
 					continue
 				}
