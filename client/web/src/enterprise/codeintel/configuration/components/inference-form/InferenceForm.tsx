@@ -4,6 +4,7 @@ import { mdiPlus } from '@mdi/js'
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
 import { uniqueId } from 'lodash'
+import { useLocation } from 'react-router-dom'
 
 import { BeforeUnloadPrompt, Button, Container, Form, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -41,6 +42,20 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
     const initialFormData = useRef(autoIndexJobsToFormData({ jobs }))
     const [formData, setFormData] = useState<InferenceFormData>(initialFormData.current)
     const [loading, setLoading] = useState(false)
+    const location = useLocation()
+
+    useEffect(() => {
+        if (!location.hash) {
+            return
+        }
+
+        const id = location.hash.slice(1)
+        if (formData.index_jobs.some(job => job.meta.id === id)) {
+            // eslint-disable-next-line unicorn/prefer-query-selector
+            const element = document.getElementById(id)
+            element?.scrollIntoView()
+        }
+    }, [formData.index_jobs, location.hash])
 
     // Allow the parent to update form data after the first mount
     useEffect(() => {
