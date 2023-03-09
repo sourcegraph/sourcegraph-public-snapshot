@@ -74,10 +74,17 @@ const DEFAULT_FILTERS = {
 }
 const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 5000
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps {
+    minimal?: boolean
+    userID?: string
+    repoID?: string
+}
 
 export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    minimal = false,
+    userID,
+    repoID,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('PermissionsSyncJobsTable')
@@ -95,6 +102,8 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 state: stringToState(filters.state),
                 searchType: stringToSearchType(filters.searchType),
                 query: debouncedQuery,
+                userID,
+                repoID,
             } as PermissionsSyncJobsVariables,
             getConnection: ({ data }) => data?.permissionsSyncJobs || undefined,
             options: { pollInterval: PERMISSIONS_SYNC_JOBS_POLL_INTERVAL },
@@ -177,6 +186,40 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         },
         [cancelSyncJob]
     )
+
+    if (minimal) {
+        return (
+            <>
+                {error && <ConnectionError errors={[error.message]} />}
+                {!connection && <ConnectionLoading />}
+                {notification && (
+                    <Alert
+                        className="mt-2 d-flex justify-content-between align-items-center"
+                        variant={notification.isError ? 'danger' : 'success'}
+                    >
+                        {notification.text}
+                        <Button variant="secondary" outline={true} onClick={dismissNotification}>
+                            <Icon aria-label="Close notification" svgPath={mdiClose} />
+                        </Button>
+                    </Alert>
+                )}
+                {connection?.nodes?.length === 0 && <EmptyList />}
+                {!!connection?.nodes?.length && (
+                    <Table<PermissionsSyncJob>
+                        columns={TableColumns}
+                        getRowId={node => node.id}
+                        data={connection.nodes}
+                    />
+                )}
+                <PageSwitcher
+                    {...paginationProps}
+                    className="mt-4"
+                    totalCount={connection?.totalCount ?? null}
+                    totalLabel="permissions sync jobs"
+                />
+            </>
+        )
+    }
 
     return (
         <div>
