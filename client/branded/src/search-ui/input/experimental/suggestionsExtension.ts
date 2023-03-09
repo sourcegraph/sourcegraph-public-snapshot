@@ -199,19 +199,22 @@ class SuggestionView {
     }
 }
 
+/**
+ * This plugin is responsible for executing async queries.
+ */
 const completionPlugin = ViewPlugin.fromClass(
     class {
-        private next: RegisteredSource | null = null
+        private next: Query | null = null
         private timer: number | null = null
 
         constructor(public readonly view: EditorView) {
-            this.maybeScheduleRun(view.state.field(suggestionsStateField).source)
+            this.maybeScheduleRun(view.state.field(suggestionsStateField).query)
         }
 
         public update(update: ViewUpdate): void {
-            const source = update.state.field(suggestionsStateField).source
+            const source = update.state.field(suggestionsStateField).query
 
-            if (update.view.hasFocus && source !== update.startState.field(suggestionsStateField).source) {
+            if (update.view.hasFocus && source !== update.startState.field(suggestionsStateField).query) {
                 this.maybeScheduleRun(source)
             }
         }
@@ -222,10 +225,10 @@ const completionPlugin = ViewPlugin.fromClass(
          * has arrived in the meantime.
          * If a timer is running we keep track of the next query that should be run.
          */
-        private maybeScheduleRun(source: RegisteredSource): void {
+        private maybeScheduleRun(query: Query): void {
             // If the source is not in a pending state we clear any possibly
             // ongoing request
-            if (source.state !== RegisteredSourceState.Pending) {
+            if (!query.isPending()) {
                 this.next = null
                 if (this.timer !== null) {
                     window.clearTimeout(this.timer)
@@ -237,12 +240,12 @@ const completionPlugin = ViewPlugin.fromClass(
             if (this.timer) {
                 // Request is already in progress, schedule a new one for the
                 // next "tick"
-                this.next = source
+                this.next = query
             } else {
                 this.next = null
-                source
-                    .run()
-                    ?.then(result => this.view.dispatch({ effects: updateResultEffect.of({ source, result }) }))
+                query
+                    .fetch()
+                    .then(result => this.view.dispatch({ effects: updateResultEffect.of({ query, result }) }))
                     .catch(() => {})
                 this.timer = window.setTimeout(() => {
                     this.timer = null
@@ -266,6 +269,10 @@ class Result {
         public valid: (state: EditorState, position: number) => boolean = () => false
     ) {
         this.allOptions = groups.flatMap(group => group.options)
+    }
+
+    public static fromSuggestionResult(result: SuggestionResult): Result {
+        return new Result(result.result, result.valid)
     }
 
     // eslint-disable-next-line id-length
@@ -303,90 +310,89 @@ class Result {
 
 const emptyResult = new Result([])
 
-enum RegisteredSourceState {
+enum QueryState {
     Inactive,
     Pending,
     Complete,
 }
 
 /**
- * Internal wrapper around a provided source. Keeps track of the sources state
- * and results.
+ * Wrapper around the configered sources. Keeps track of the state and results.
  */
-class RegisteredSource {
+class Query {
     constructor(
         public readonly sources: readonly Source[],
-        public readonly state: RegisteredSourceState,
-        public readonly result: Result,
-        private readonly next?: () => Promise<SuggestionResult>
+        public readonly state: QueryState,
+        public readonly result: Result
     ) {}
 
-    public update(transaction: Transaction): RegisteredSource {
+    public update(transaction: Transaction): Query {
         // Aliasing this makes it easier to create new instances based on all
         // changes and effects of the transaction.
         // eslint-disable-next-line @typescript-eslint/no-this-alias, unicorn/no-this-assignment
-        let source: RegisteredSource = this
+        let query: Query = this
 
-        // TODO: We probably don't want to trigger fetches on every doc changed
         if (isUserInput(transaction) || transaction.docChanged || modeChanged(transaction)) {
-            source = source.query(transaction.state)
+            query = query.run(transaction.state)
         } else if (transaction.selection) {
             if (!transaction.selection.main.empty) {
                 // Hide suggestions when the user selects a range in the input
-                source = new RegisteredSource(source.sources, RegisteredSourceState.Inactive, source.result)
-            } else if (!this.result.valid(transaction.state, transaction.newSelection.main.head)) {
-                source = this.query(transaction.state)
+                query = query.updateWithState(QueryState.Inactive)
+            } else if (!query.result.valid(transaction.state, transaction.newSelection.main.head)) {
+                query = query.run(transaction.state)
             }
         }
 
         for (const effect of transaction.effects) {
-            if (
-                effect.is(updateResultEffect) &&
-                effect.value.source === source &&
-                source.state === RegisteredSourceState.Pending
-            ) {
-                const { result } = effect.value
-                source = new RegisteredSource(
-                    source.sources,
-                    result.next ? RegisteredSourceState.Pending : RegisteredSourceState.Complete,
-                    new Result(result.result, result.valid),
-                    result.next
-                )
-            }
-
-            if (effect.is(startCompletionEffect)) {
-                source = source.query(transaction.state)
-            }
-
-            if (effect.is(hideCompletionEffect)) {
-                source = new RegisteredSource(
-                    source.sources,
-                    RegisteredSourceState.Inactive,
-                    source.result,
-                    source.next
-                )
+            // Only "apply" the effect if the results are for the curent query. This prevents
+            // overwriting the results from stale requests.
+            if (effect.is(updateResultEffect) && effect.value.query === query) {
+                query = query.updateWithSuggestionResult(effect.value.result)
+            } else if (effect.is(startCompletionEffect)) {
+                query = query.run(transaction.state)
+            } else if (effect.is(hideCompletionEffect)) {
+                query = query.updateWithState(QueryState.Inactive)
             }
         }
 
-        return source
+        return query
     }
 
-    private query(state: EditorState): RegisteredSource {
+    private run(state: EditorState): Query {
         const selectedMode = getSelectedMode(state)
         const activeSources = this.sources.filter(source => source.mode === selectedMode?.name)
         const result = combineResults(
             activeSources.map(source => source.query(state, state.selection.main.head, selectedMode?.name))
         )
-        const nextState = result.next ? RegisteredSourceState.Pending : RegisteredSourceState.Complete
-        return new RegisteredSource(this.sources, nextState, new Result(result.result, result.valid), result.next)
+        return this.updateWithSuggestionResult(result)
     }
 
-    public run(): Promise<SuggestionResult> | null {
-        return this.next?.() ?? null
+    private updateWithSuggestionResult(result: SuggestionResult): Query {
+        return result.next
+            ? new PendingQuery(this.sources, Result.fromSuggestionResult(result), result.next)
+            : new Query(this.sources, QueryState.Complete, Result.fromSuggestionResult(result))
     }
 
-    public get inactive(): boolean {
-        return this.state === RegisteredSourceState.Inactive
+    private updateWithState(state: QueryState.Inactive | QueryState.Complete): Query {
+        return state !== this.state ? new Query(this.sources, state, this.result) : this
+    }
+
+    public isInactive(): boolean {
+        return this.state === QueryState.Inactive
+    }
+
+    public isPending(): this is PendingQuery {
+        return this.state === QueryState.Pending
+    }
+}
+
+class PendingQuery extends Query {
+    constructor(
+        public readonly sources: readonly Source[],
+        public readonly result: Result,
+        public readonly fetch: () => Promise<SuggestionResult>
+    ) {
+        super(sources, QueryState.Pending, result)
     }
 }
 
@@ -435,11 +441,7 @@ export function combineResults(results: (SuggestionResult | null)[]): Suggestion
  * Main suggestions state. Mangages of data source and selected option.
  */
 class SuggestionsState {
-    constructor(
-        public readonly source: RegisteredSource,
-        public readonly open: boolean,
-        public readonly selectedOption: number
-    ) {}
+    constructor(public readonly query: Query, public readonly open: boolean, public readonly selectedOption: number) {}
 
     public update(transaction: Transaction): SuggestionsState {
         // Aliasing makes it easier to update the state
@@ -447,32 +449,28 @@ class SuggestionsState {
         let state: SuggestionsState = this
 
         const sources = transaction.state.facet(suggestionSources)
-        let registeredSource =
-            sources === state.source.sources
-                ? state.source
-                : new RegisteredSource(sources, RegisteredSourceState.Inactive, emptyResult)
-        registeredSource = registeredSource.update(transaction)
-        if (registeredSource !== state.source) {
+        let query = sources === state.query.sources ? state.query : new Query(sources, QueryState.Inactive, emptyResult)
+        query = query.update(transaction)
+        if (query !== state.query) {
             state = new SuggestionsState(
-                registeredSource,
-                !registeredSource.inactive,
-                state.source.state === RegisteredSourceState.Inactive ||
-                state.source.state === RegisteredSourceState.Complete
-                    ? -1
-                    : state.selectedOption
+                query,
+                !query.isInactive(),
+                // Preserve the currently selected option if the query was pending
+                // (ensures that the selected option doesn't change when new options become available)
+                state.query.isPending() ? state.selectedOption : -1
             )
         }
 
         if (state.selectedOption > -1 && transaction.newDoc.length === 0) {
-            state = new SuggestionsState(state.source, !state.source.inactive, -1)
+            state = new SuggestionsState(state.query, !state.query.isInactive(), -1)
         }
 
         for (const effect of transaction.effects) {
             if (effect.is(setSelectedEffect)) {
-                state = new SuggestionsState(state.source, state.open, effect.value)
+                state = new SuggestionsState(state.query, state.open, effect.value)
             }
             if (effect.is(hideCompletionEffect)) {
-                state = new SuggestionsState(state.source, false, state.selectedOption)
+                state = new SuggestionsState(state.query, false, state.selectedOption)
             }
         }
 
@@ -480,7 +478,7 @@ class SuggestionsState {
     }
 
     public get result(): Result {
-        return this.source.result
+        return this.query.result
     }
 }
 
@@ -506,10 +504,10 @@ const suggestionsConfig = Facet.define<Config, Config>({
 const setSelectedEffect = StateEffect.define<number>()
 const startCompletionEffect = StateEffect.define<void>()
 const hideCompletionEffect = StateEffect.define<void>()
-const updateResultEffect = StateEffect.define<{ source: RegisteredSource; result: SuggestionResult }>()
+const updateResultEffect = StateEffect.define<{ query: Query; result: SuggestionResult }>()
 const suggestionsStateField = StateField.define<SuggestionsState>({
     create() {
-        return new SuggestionsState(new RegisteredSource([], RegisteredSourceState.Inactive, emptyResult), false, -1)
+        return new SuggestionsState(new Query([], QueryState.Inactive, emptyResult), false, -1)
     },
 
     update(state, transaction) {
