@@ -834,7 +834,7 @@ func TestNewPlanJob(t *testing.T) {
 				OnSourcegraphDotCom: true,
 			}
 
-			j, err := NewPlanJob(inputs, plan)
+			j, err := NewPlanJob(inputs, plan, NewUnimplementedEnterpriseJobs())
 			require.NoError(t, err)
 
 			tc.want.Equal(t, "\n"+printer.SexpPretty(j))

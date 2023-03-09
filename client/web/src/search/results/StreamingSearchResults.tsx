@@ -8,14 +8,13 @@ import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@source
 import { asError } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDeepMemo } from '@sourcegraph/wildcard'
@@ -28,7 +27,7 @@ import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
+import { useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
@@ -47,7 +46,6 @@ export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
-        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'>,
         TelemetryProps,
         CodeInsightsProps,
@@ -64,7 +62,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         authenticatedUser,
         telemetryService,
         isSourcegraphDotCom,
-        extensionsController,
         searchAggregationEnabled,
         codeMonitoringEnabled,
     } = props
@@ -76,8 +73,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const prefetchBlobFormat = usePrefetchBlobFormat()
+    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
+
+    const [rankingFeatureEnabled] = useFeatureFlag('search-ranking')
+    // The toggle is only visible when the ranking feature flag is enabled, so we default it to true
+    const [rankingToggleEnabled, setRankingToggleEnabled] = useTemporarySetting('search.ranking.experimental', true)
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -95,12 +97,18 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const [showMobileSidebar, setShowMobileSidebar] = useState(false)
 
     // Derived state
-    const extensionHostAPI =
-        extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
     const featureOverrides = useDeepMemo(
         // Nested use memo here is used for avoiding extra object calculation step on each render
-        useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
+        useMemo(() => {
+            // Only disable ranking if the feature flag is set and toggle is explicitly
+            // disabled. Otherwise, don't touch the search behavior.
+            const disableRanking = rankingFeatureEnabled && rankingToggleEnabled !== undefined && !rankingToggleEnabled
+            if (disableRanking) {
+                return ['-search-ranking', ...new URLSearchParams(location.search).getAll('feat')]
+            }
+            return new URLSearchParams(location.search).getAll('feat')
+        }, [location.search, rankingFeatureEnabled, rankingToggleEnabled])
     )
     const { addRecentSearch } = useRecentSearches()
 
@@ -117,7 +125,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         [caseSensitive, patternType, searchMode, trace, featureOverrides]
     )
 
-    const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, extensionHostAPI, telemetryService)
+    const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
 
     // Log view event on first load
     useEffect(
@@ -410,6 +418,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
                         sidebarCollapsed={!!sidebarCollapsed}
                         setSidebarCollapsed={setSidebarCollapsed}
+                        isRankingEnabled={!!rankingToggleEnabled}
+                        setRankingEnabled={setRankingToggleEnabled}
                         stats={
                             <StreamingProgress
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
@@ -460,6 +470,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
                         <StreamingSearchResultsList
                             {...props}
+                            enableOwnershipSearch={enableOwnershipSearch}
                             results={results}
                             allExpanded={allExpanded}
                             assetsRoot={window.context?.assetsRoot || ''}

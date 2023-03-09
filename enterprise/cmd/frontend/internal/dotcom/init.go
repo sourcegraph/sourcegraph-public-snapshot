@@ -47,7 +47,7 @@ func Init(
 ) error {
 	// Only enabled on Sourcegraph.com.
 	if envvar.SourcegraphDotComMode() {
-		enterpriseServices.DotcomResolver = dotcomRootResolver{
+		enterpriseServices.DotcomRootResolver = dotcomRootResolver{
 			ProductSubscriptionLicensingResolver: productsubscription.ProductSubscriptionLicensingResolver{
 				DB: db,
 			},

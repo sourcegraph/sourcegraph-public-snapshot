@@ -50,20 +50,22 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
+func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
 	return &searchClient{
-		logger:       logger,
-		db:           db,
-		zoekt:        zoektStreamer,
-		searcherURLs: searcherURLs,
+		logger:         logger,
+		db:             db,
+		zoekt:          zoektStreamer,
+		searcherURLs:   searcherURLs,
+		enterpriseJobs: enterpriseJobs,
 	}
 }
 
 type searchClient struct {
-	logger       log.Logger
-	db           database.DB
-	zoekt        zoekt.Streamer
-	searcherURLs *endpoint.Map
+	logger         log.Logger
+	db             database.DB
+	zoekt          zoekt.Streamer
+	searcherURLs   *endpoint.Map
+	enterpriseJobs jobutil.EnterpriseJobs
 }
 
 func (s *searchClient) Plan(
@@ -142,7 +144,7 @@ func (s *searchClient) Execute(
 		tr.Finish()
 	}()
 
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, s.enterpriseJobs)
 	if err != nil {
 		return nil, err
 	}

@@ -7,10 +7,10 @@ import { useNavigate } from 'react-router-dom'
 import { pluralize } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, ErrorAlert, H2, Icon, Modal, Text } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, H2, Modal, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../components/LoaderButton'
-import { getCodeHostIcon } from '../../helpers'
+import { CodeHostIcon } from '../../helpers'
 import { DELETE_CODE_HOST } from '../../queries'
 
 import styles from './CodeHostDeleteModal.module.scss'
@@ -35,7 +35,10 @@ export const CodeHostDeleteModal: FC<CodeHostDeleteModalProps> = props => {
     const [deleteCode, { loading, error }] = useMutation(DELETE_CODE_HOST)
 
     const handleDeleteConfirm = async (): Promise<void> => {
-        await deleteCode({ variables: { id: codeHost.id } })
+        await deleteCode({
+            variables: { id: codeHost.id },
+            refetchQueries: ['RepositoryStats', 'StatusMessages'],
+        })
         navigate('/setup/remote-repositories')
 
         // We have to remove it from the cache after we remove it on the backend
@@ -54,14 +57,14 @@ export const CodeHostDeleteModal: FC<CodeHostDeleteModalProps> = props => {
             onDismiss={onDismiss}
         >
             <H2>
-                Remove connection with <Icon svgPath={getCodeHostIcon(codeHost.kind)} aria-hidden={true} /> '
+                Remove connection with <CodeHostIcon codeHostType={codeHost.kind} aria-hidden={true} /> '
                 {codeHost.displayName}'?
             </H2>
 
             <hr className={styles.seperator} />
 
             <Text>
-                There are{' '}
+                There {pluralize('is', codeHost.repoCount ?? 0, 'are')}{' '}
                 <b>
                     {codeHost.repoCount ?? 0} {pluralize('repository', codeHost.repoCount ?? 0, 'repositories')}
                 </b>{' '}

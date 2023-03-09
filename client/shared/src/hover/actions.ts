@@ -488,47 +488,45 @@ export function registerHoverContributions({
             subscriptions.add(syncRemoteSubscription(referencesContributionPromise))
 
             let implementationsContributionPromise: Promise<unknown> = Promise.resolve()
-            if (window.context?.enableLegacyExtensions === false) {
-                const promise = extensionHostAPI.registerContributions({
-                    actions: [
-                        ...languageSpecs.map(spec => ({
-                            actionItem: { label: 'Find implementations' },
-                            command: 'open',
-                            commandArguments: [
-                                "${get(context, 'implementations_" +
-                                    spec.languageID +
-                                    "') && get(context, 'panel.url') && sub(get(context, 'panel.url'), 'panelID', 'implementations_" +
-                                    spec.languageID +
-                                    "') || 'noop'}",
-                            ],
-                            id: 'findImplementations_' + spec.languageID,
-                            title: 'Find implementations',
-                        })),
-                    ],
-                    menus: {
-                        hover: languageSpecs.map(spec => ({
-                            action: 'findImplementations_' + spec.languageID,
-                            when:
-                                "resource.language == '" +
+            const promise = extensionHostAPI.registerContributions({
+                actions: [
+                    ...languageSpecs.map(spec => ({
+                        actionItem: { label: 'Find implementations' },
+                        command: 'open',
+                        commandArguments: [
+                            "${get(context, 'implementations_" +
                                 spec.languageID +
-                                // eslint-disable-next-line no-template-curly-in-string
-                                "' && get(context, `implementations_${resource.language}`) && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)",
-                        })),
-                    },
-                })
-                implementationsContributionPromise = promise
-                subscriptions.add(syncRemoteSubscription(promise))
-                for (const spec of languageSpecs) {
-                    if (spec.textDocumentImplemenationSupport) {
-                        extensionHostAPI
-                            .updateContext({
-                                [`implementations_${spec.languageID}`]: true,
-                            })
-                            .then(
-                                () => {},
-                                () => {}
-                            )
-                    }
+                                "') && get(context, 'panel.url') && sub(get(context, 'panel.url'), 'panelID', 'implementations_" +
+                                spec.languageID +
+                                "') || 'noop'}",
+                        ],
+                        id: 'findImplementations_' + spec.languageID,
+                        title: 'Find implementations',
+                    })),
+                ],
+                menus: {
+                    hover: languageSpecs.map(spec => ({
+                        action: 'findImplementations_' + spec.languageID,
+                        when:
+                            "resource.language == '" +
+                            spec.languageID +
+                            // eslint-disable-next-line no-template-curly-in-string
+                            "' && get(context, `implementations_${resource.language}`) && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)",
+                    })),
+                },
+            })
+            implementationsContributionPromise = promise
+            subscriptions.add(syncRemoteSubscription(promise))
+            for (const spec of languageSpecs) {
+                if (spec.textDocumentImplemenationSupport) {
+                    extensionHostAPI
+                        .updateContext({
+                            [`implementations_${spec.languageID}`]: true,
+                        })
+                        .then(
+                            () => {},
+                            () => {}
+                        )
                 }
             }
 

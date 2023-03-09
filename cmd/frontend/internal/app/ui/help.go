@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"runtime"
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -20,13 +22,18 @@ import (
 func serveHelp(w http.ResponseWriter, r *http.Request) {
 	page := strings.TrimPrefix(r.URL.Path, "/help")
 	versionStr := version.Version()
+	sourcegraphAppMode := deploy.IsDeployTypeSingleProgram(deploy.Type())
 
-	// For release builds, use the version string. Otherwise, don't use any version string because:
+	// For release builds, use the version string. Otherwise, don't use any
+	// version string because:
 	//
 	// - For unreleased dev builds, we serve the contents from the working tree.
-	// - Sourcegraph.com users probably want the latest docs on the default branch.
+	// - Sourcegraph.com users probably want the latest docs on the default
+	//   branch.
+	// - For Sourcegraph App users we also want to show the latest docs,
+	//   but we add the app version as a query param.
 	var docRevPrefix string
-	if !version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() {
+	if !version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() && !sourcegraphAppMode {
 		v, err := semver.NewVersion(versionStr)
 		if err != nil {
 			// If not a semver, just use the version string and hope for the best
@@ -43,12 +50,31 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 	dest := &url.URL{
 		Path: path.Join("/", docRevPrefix, page),
 	}
-	if version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() {
+	if version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() && !sourcegraphAppMode {
 		dest.Scheme = "http"
 		dest.Host = "localhost:5080" // local documentation server (defined in Procfile) -- CI:LOCALHOST_OK
 	} else {
 		dest.Scheme = "https"
 		dest.Host = "docs.sourcegraph.com"
+	}
+
+	// For App, add UTM parameters to the docs url.
+	if sourcegraphAppMode {
+		q := dest.Query()
+		q.Set("utm_source", "sg_app")
+		q.Set("utm_medium", "referral")
+
+		// App OS and version
+		os := runtime.GOOS
+		if os == "darwin" {
+			// Use a more common name for mac because it'll be used for analytics.
+			os = "mac"
+		}
+
+		q.Set("app_os", os)
+		q.Set("app_version", versionStr)
+
+		dest.RawQuery = q.Encode()
 	}
 
 	// Use temporary, not permanent, redirect, because the destination URL changes (depending on the

@@ -19,17 +19,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewResolver returns a new Resolver that uses the given database
-func NewResolver(logger log.Logger, db edb.EnterpriseDB) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{logger: logger, db: db}
+func NewResolver(logger log.Logger, db edb.EnterpriseDB, enterpriseJobs jobutil.EnterpriseJobs) graphqlbackend.CodeMonitorsResolver {
+	return &Resolver{logger: logger, db: db, enterpriseJobs: enterpriseJobs}
 }
 
 type Resolver struct {
-	logger log.Logger
-	db     edb.EnterpriseDB
+	logger         log.Logger
+	db             edb.EnterpriseDB
+	enterpriseJobs jobutil.EnterpriseJobs
 }
 
 func (r *Resolver) Now() time.Time {
@@ -155,7 +157,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 
 			// Snapshot the state of the searched repos when the monitor is created so that
 			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, tx.db, args.Trigger.Query, m.ID, settings)
+			err = codemonitors.Snapshot(ctx, r.logger, tx.db, r.enterpriseJobs, args.Trigger.Query, m.ID, settings)
 			if err != nil {
 				return err
 			}
@@ -555,7 +557,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 
 			// Snapshot the state of the searched repos when the monitor is created so that
 			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, r.db, args.Trigger.Update.Query, monitorID, settings)
+			err = codemonitors.Snapshot(ctx, r.logger, r.db, r.enterpriseJobs, args.Trigger.Update.Query, monitorID, settings)
 			if err != nil {
 				return nil, err
 			}

@@ -1,16 +1,21 @@
 import { FC } from 'react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
-import { getCodeHostIcon, getCodeHostName, getCodeHostURLParam } from '../../helpers'
+import { CodeHostIcon, getCodeHostName, getCodeHostURLParam } from '../../helpers'
 
 import styles from './CodeHostsPicker.module.scss'
 
 const SUPPORTED_CODE_HOSTS = [
     ExternalServiceKind.GITHUB,
     ExternalServiceKind.GITLAB,
+    ExternalServiceKind.GERRIT,
     ExternalServiceKind.BITBUCKETCLOUD,
+    ExternalServiceKind.BITBUCKETSERVER,
+    ExternalServiceKind.AWSCODECOMMIT,
+    ExternalServiceKind.GITOLITE,
+    ExternalServiceKind.AZUREDEVOPS,
 ]
 
 export const CodeHostsPicker: FC = () => (
@@ -30,7 +35,7 @@ export const CodeHostsPicker: FC = () => (
                         outline={true}
                         className={styles.item}
                     >
-                        <Icon svgPath={getCodeHostIcon(codeHostType)} aria-hidden={true} />
+                        <CodeHostIcon codeHostType={codeHostType} aria-hidden={true} />
                         <span>{getCodeHostName(codeHostType)}</span>
                     </Button>
                 </li>

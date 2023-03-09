@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -28,7 +28,7 @@ import (
 )
 
 // A global limiter on number of concurrent searcher searches.
-var textSearchLimiter = mutablelimiter.New(32)
+var textSearchLimiter = limiter.NewMutable(32)
 
 type TextSearchJob struct {
 	PatternInfo *search.TextPatternInfo

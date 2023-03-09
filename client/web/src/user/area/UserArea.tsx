@@ -1,6 +1,6 @@
 import { FC, useMemo, Suspense } from 'react'
 
-import { useParams, useLocation, Routes, Route } from 'react-router-dom'
+import { useParams, Routes, Route } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -11,7 +11,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { RouteError } from '../../components/ErrorBoundary'
 import { NotFoundPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
@@ -83,6 +83,7 @@ interface UserAreaProps
     authenticatedUser: AuthenticatedUser | null
 
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
@@ -115,13 +116,19 @@ export interface UserAreaRouteContext
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
  * A user's public profile area.
  */
-export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isSourcegraphDotCom, ...props }) => {
-    const location = useLocation()
+export const UserArea: FC<UserAreaProps> = ({
+    useBreadcrumb,
+    userAreaRoutes,
+    isSourcegraphDotCom,
+    isSourcegraphApp,
+    ...props
+}) => {
     const { username } = useParams()
     const userAreaMainUrl = `/users/${username}`
 
@@ -171,45 +178,45 @@ export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isS
         namespace: user,
         ...childBreadcrumbSetters,
         isSourcegraphDotCom,
+        isSourcegraphApp,
     }
 
     return (
-        <ErrorBoundary location={location}>
-            <Suspense
-                fallback={
-                    <div className="w-100 text-center">
-                        <LoadingSpinner className="m-2" />
-                    </div>
-                }
-            >
-                <Routes>
-                    {userAreaRoutes.map(
-                        ({ path, render, condition = () => true, fullPage }) =>
-                            condition(context) && (
-                                <Route
-                                    element={
-                                        fullPage ? (
-                                            render(context)
-                                        ) : (
-                                            <Page>
-                                                <UserAreaHeader
-                                                    {...props}
-                                                    {...context}
-                                                    className="mb-3"
-                                                    navItems={props.userAreaHeaderNavItems}
-                                                />
-                                                <div className="container">{render(context)}</div>
-                                            </Page>
-                                        )
-                                    }
-                                    path={path}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                />
-                            )
-                    )}
-                    <Route element={<NotFoundPage pageType="user" />} />
-                </Routes>
-            </Suspense>
-        </ErrorBoundary>
+        <Suspense
+            fallback={
+                <div className="w-100 text-center">
+                    <LoadingSpinner className="m-2" />
+                </div>
+            }
+        >
+            <Routes>
+                {userAreaRoutes.map(
+                    ({ path, render, condition = () => true, fullPage }) =>
+                        condition(context) && (
+                            <Route
+                                errorElement={<RouteError />}
+                                element={
+                                    fullPage ? (
+                                        render(context)
+                                    ) : (
+                                        <Page>
+                                            <UserAreaHeader
+                                                {...props}
+                                                {...context}
+                                                className="mb-3"
+                                                navItems={props.userAreaHeaderNavItems}
+                                            />
+                                            <div className="container">{render(context)}</div>
+                                        </Page>
+                                    )
+                                }
+                                path={path}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            />
+                        )
+                )}
+                <Route element={<NotFoundPage pageType="user" />} />
+            </Routes>
+        </Suspense>
     )
 }

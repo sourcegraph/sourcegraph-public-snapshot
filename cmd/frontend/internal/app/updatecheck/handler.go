@@ -34,17 +34,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("4.5.0")
+	latestReleaseDockerServerImageBuild = newBuild("4.5.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("4.5.0")
+	latestReleaseKubernetesBuild = newBuild("4.5.1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("4.5.0")
+	latestReleaseDockerComposeOrPureDocker = newBuild("4.5.1")
 )
 
 func getLatestRelease(deployType string) build {
@@ -184,6 +184,7 @@ type pingRequest struct {
 	AuthProviders        []string        `json:"auth"`
 	ExternalServices     []string        `json:"extsvcs"`
 	BuiltinSignupAllowed bool            `json:"signup"`
+	AccessRequestEnabled bool            `json:"accessRequestEnabled"`
 	HasExtURL            bool            `json:"hasExtURL"`
 	UniqueUsers          int32           `json:"u"`
 	Activity             json.RawMessage `json:"act"`
@@ -208,6 +209,7 @@ type pingRequest struct {
 	CodeHostIntegrationUsage      json.RawMessage `json:"codeHostIntegrationUsage"`
 	IDEExtensionsUsage            json.RawMessage `json:"ideExtensionsUsage"`
 	MigratedExtensionsUsage       json.RawMessage `json:"migratedExtensionsUsage"`
+	OwnUsage                      json.RawMessage `json:"ownUsage"`
 	InitialAdminEmail             string          `json:"initAdmin"`
 	TosAccepted                   bool            `json:"tosAccepted"`
 	TotalUsers                    int32           `json:"totalUsers"`
@@ -245,6 +247,7 @@ func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 		AuthProviders:        strings.Split(q.Get("auth"), ","),
 		ExternalServices:     strings.Split(q.Get("extsvcs"), ","),
 		BuiltinSignupAllowed: toBool(q.Get("signup")),
+		AccessRequestEnabled: toBool(q.Get("accessRequestEnabled")),
 		HasExtURL:            toBool(q.Get("hasExtURL")),
 		UniqueUsers:          toInt(q.Get("u")),
 		Activity:             toRawMessage(q.Get("act")),
@@ -321,10 +324,12 @@ type pingPayload struct {
 	CodeHostIntegrationUsage      json.RawMessage `json:"code_host_integration_usage"`
 	IDEExtensionsUsage            json.RawMessage `json:"ide_extensions_usage"`
 	MigratedExtensionsUsage       json.RawMessage `json:"migrated_extensions_usage"`
+	OwnUsage                      json.RawMessage `json:"own_usage"`
 	InstallerEmail                string          `json:"installer_email"`
 	AuthProviders                 string          `json:"auth_providers"`
 	ExtServices                   string          `json:"ext_services"`
 	BuiltinSignupAllowed          string          `json:"builtin_signup_allowed"`
+	AccessRequestEnabled          string          `json:"access_request_enabled"`
 	DeployType                    string          `json:"deploy_type"`
 	TotalUserAccounts             string          `json:"total_user_accounts"`
 	HasExternalURL                string          `json:"has_external_url"`
@@ -411,9 +416,11 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		CodeHostVersions:              pr.CodeHostVersions,
 		CodeHostIntegrationUsage:      pr.CodeHostIntegrationUsage,
 		IDEExtensionsUsage:            pr.IDEExtensionsUsage,
+		OwnUsage:                      pr.OwnUsage,
 		AuthProviders:                 strings.Join(pr.AuthProviders, ","),
 		ExtServices:                   strings.Join(pr.ExternalServices, ","),
 		BuiltinSignupAllowed:          strconv.FormatBool(pr.BuiltinSignupAllowed),
+		AccessRequestEnabled:          strconv.FormatBool(pr.AccessRequestEnabled),
 		DeployType:                    pr.DeployType,
 		TotalUserAccounts:             strconv.FormatInt(int64(pr.TotalUsers), 10),
 		HasExternalURL:                strconv.FormatBool(pr.HasExtURL),

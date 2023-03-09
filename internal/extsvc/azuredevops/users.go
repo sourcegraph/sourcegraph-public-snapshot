@@ -9,17 +9,25 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/oauth2"
 )
 
-const VISUAL_STUDIO_APP_URL = "https://app.vssps.visualstudio.com"
+const VisualStudioAppURL = "https://app.vssps.visualstudio.com/"
+
+var MockVisualStudioAppURL string
 
 // GetAuthorizedProfile is used to return information about the currently authorized user. Should
 // only be used for Azure Services (https://dev.azure.com).
-func (c *Client) GetAuthorizedProfile(ctx context.Context) (Profile, error) {
-	// See this link in the docs where the "/me" is documented in the URI parameters:
-	// https://learn.microsoft.com/en-us/rest/api/azure/devops/profile/profiles/get?source=recommendations&view=azure-devops-rest-7.0&tabs=HTTP#uri-parameters
+// See this link in the docs where the "/me" is documented in the URI parameters:
+// https://learn.microsoft.com/en-us/rest/api/azure/devops/profile/profiles/get?source=recommendations&view=azure-devops-rest-7.0&tabs=HTTP#uri-parameters
+func (c *client) GetAuthorizedProfile(ctx context.Context) (Profile, error) {
 	reqURL := url.URL{Path: "/_apis/profile/profiles/me"}
+
+	apiURL := VisualStudioAppURL
+	if MockVisualStudioAppURL != "" {
+		apiURL = MockVisualStudioAppURL
+	}
 
 	req, err := http.NewRequest("GET", reqURL.String(), nil)
 	if err != nil {
@@ -27,11 +35,40 @@ func (c *Client) GetAuthorizedProfile(ctx context.Context) (Profile, error) {
 	}
 
 	var p Profile
-	if _, err = c.do(ctx, req, VISUAL_STUDIO_APP_URL, &p); err != nil {
+	if _, err = c.do(ctx, req, apiURL, &p); err != nil {
 		return Profile{}, err
 	}
 
 	return p, nil
+}
+
+func (c *client) ListAuthorizedUserOrganizations(ctx context.Context, profile Profile) ([]Org, error) {
+	if MockVisualStudioAppURL == "" && !c.IsAzureDevOpsServices() {
+		return nil, errors.New("ListAuthorizedUserOrganizations can only be used with Azure DevOps Services")
+	}
+
+	reqURL := url.URL{Path: "_apis/accounts"}
+
+	req, err := http.NewRequest("GET", reqURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	queryParams := req.URL.Query()
+	queryParams.Set("memberId", profile.PublicAlias)
+	req.URL.RawQuery = queryParams.Encode()
+
+	apiURL := VisualStudioAppURL
+	if MockVisualStudioAppURL != "" {
+		apiURL = MockVisualStudioAppURL
+	}
+
+	response := ListAuthorizedUserOrgsResponse{}
+	if _, err := c.do(ctx, req, apiURL, &response); err != nil {
+		return nil, err
+	}
+
+	return response.Value, nil
 }
 
 // SetExternalAccountData sets the user and token into the external account data blob.

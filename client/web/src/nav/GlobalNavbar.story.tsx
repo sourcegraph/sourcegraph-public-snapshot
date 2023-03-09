@@ -5,12 +5,10 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { Grid, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
-import { useExperimentalFeatures } from '../stores'
 
 import { GlobalNavbar, GlobalNavbarProps } from './GlobalNavbar'
 
@@ -21,7 +19,6 @@ const defaultProps: GlobalNavbarProps = {
         final: null,
         subjects: null,
     },
-    extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     globbing: false,
     platformContext: {} as any,
@@ -49,7 +46,6 @@ const allNavItemsProps: Partial<GlobalNavbarProps> = {
     batchChangesExecutionEnabled: true,
     batchChangesWebhookLogsEnabled: true,
     codeInsightsEnabled: true,
-    enableLegacyExtensions: true,
 }
 
 const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
@@ -60,19 +56,15 @@ const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
     } as AuthenticatedUser,
 }
 
-const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ codeMonitoring: true })
-
-    return (
-        <WebStory>
-            {() => (
-                <div className="mt-3">
-                    <Story args={defaultProps} />
-                </div>
-            )}
-        </WebStory>
-    )
-}
+const decorator: DecoratorFn = Story => (
+    <WebStory>
+        {() => (
+            <div className="mt-3">
+                <Story args={defaultProps} />
+            </div>
+        )}
+    </WebStory>
+)
 
 const config: Meta = {
     title: 'web/nav/GlobalNav',

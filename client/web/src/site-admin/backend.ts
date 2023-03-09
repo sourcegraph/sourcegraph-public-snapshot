@@ -577,16 +577,16 @@ export function createUser(username: string, email: string | undefined): Observa
     )
 }
 
-export function deleteOrganization(organization: Scalars['ID'], hard?: boolean): Promise<void> {
+export function deleteOrganization(organization: Scalars['ID']): Promise<void> {
     return requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>(
         gql`
-            mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-                deleteOrganization(organization: $organization, hard: $hard) {
+            mutation DeleteOrganization($organization: ID!) {
+                deleteOrganization(organization: $organization) {
                     alwaysNil
                 }
             }
         `,
-        { organization, hard: hard ?? null }
+        { organization }
     )
         .pipe(
             map(dataOrThrowErrors),
@@ -620,6 +620,20 @@ export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']
         map(data => data.site)
     )
 }
+
+export const SITE_UPGRADE_READINESS = gql`
+    query SiteUpgradeReadiness {
+        site {
+            upgradeReadiness {
+                schemaDrift
+                requiredOutOfBandMigrations {
+                    id
+                    description
+                }
+            }
+        }
+    }
+`
 
 /**
  * Fetches all out-of-band migrations.
@@ -907,7 +921,7 @@ const siteAdminPackageFieldsFragment = gql`
     fragment SiteAdminPackageFields on PackageRepoReference {
         id
         name
-        scheme
+        kind
         repository {
             id
             name
@@ -923,8 +937,8 @@ const siteAdminPackageFieldsFragment = gql`
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages($scheme: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
-        packageRepoReferences(scheme: $scheme, name: $name, first: $first, after: $after) {
+    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
+        packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields
             }

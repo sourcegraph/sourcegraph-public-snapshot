@@ -216,6 +216,10 @@ func updateAvailableAlert(args AlertFuncArgs) []*Alert {
 	if !args.ViewerFinalSettings.AlertsShowPatchUpdates && !isMinorUpdateAvailable(version.Version(), globalUpdateStatus.UpdateVersion) {
 		return nil
 	}
+	// for major/minor updates, ensure banner is hidden if they have opted out
+	if !args.ViewerFinalSettings.AlertsShowMajorMinorUpdates && isMinorUpdateAvailable(version.Version(), globalUpdateStatus.UpdateVersion) {
+		return nil
+	}
 	message := fmt.Sprintf("An update is available: [Sourcegraph v%s](https://about.sourcegraph.com/blog) - [changelog](https://about.sourcegraph.com/changelog)", globalUpdateStatus.UpdateVersion)
 
 	// dismission key includes the version so after it is dismissed the alert comes back for the next update.

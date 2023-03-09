@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -276,8 +276,8 @@ var requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since tim
 // configuredLimiter returns a mutable limiter that is
 // configured with the maximum number of concurrent update
 // requests that repo-updater should send to gitserver.
-var configuredLimiter = func() *mutablelimiter.Limiter {
-	limiter := mutablelimiter.New(1)
+var configuredLimiter = func() *limiter.MutableLimiter {
+	limiter := limiter.NewMutable(1)
 	conf.Watch(func() {
 		limiter.SetLimit(conf.GitMaxConcurrentClones())
 	})

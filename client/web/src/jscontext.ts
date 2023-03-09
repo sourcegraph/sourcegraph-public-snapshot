@@ -1,6 +1,8 @@
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 
+import { TemporarySettingsResult } from './graphql-operations'
+
 export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev' | 'helm'
 
 /**
@@ -33,27 +35,39 @@ export interface AuthProvider {
  * It ensures that we don't forget to add new fields the server logic
  * if client side query changes.
  */
-export interface SourcegraphContextCurrentUser
-    extends Pick<
-        AuthenticatedUser,
-        | '__typename'
-        | 'id'
-        | 'databaseID'
-        | 'username'
-        | 'avatarURL'
-        | 'displayName'
-        | 'siteAdmin'
-        | 'tags'
-        | 'url'
-        | 'settingsURL'
-        | 'viewerCanAdminister'
-        | 'tosAccepted'
-        | 'searchable'
-        | 'organizations'
-        | 'session'
-        | 'emails'
-        | 'latestSettings'
-    > {}
+export type SourcegraphContextCurrentUser = Pick<
+    AuthenticatedUser,
+    | '__typename'
+    | 'id'
+    | 'databaseID'
+    | 'username'
+    | 'avatarURL'
+    | 'displayName'
+    | 'siteAdmin'
+    | 'tags'
+    | 'url'
+    | 'settingsURL'
+    | 'viewerCanAdminister'
+    | 'tosAccepted'
+    | 'searchable'
+    | 'organizations'
+    | 'session'
+    | 'emails'
+    | 'latestSettings'
+>
+
+/**
+ * This Typescript type should be in sync with client-side
+ * GraphQL `GetTemporarySettings` query.
+ *
+ * This type is derived from the generated `TemporarySettingsResult` type.
+ * It ensures that we don't forget to add new fields the server logic
+ * if client side query changes.
+ */
+export type SourcegraphContextTemporarySettings = Pick<
+    TemporarySettingsResult['temporarySettings'],
+    '__typename' | 'contents'
+>
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
@@ -63,7 +77,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      * Whether the user is authenticated. Use authenticatedUser in ./auth.ts to obtain information about the user.
      */
     readonly isAuthenticatedUser: boolean
+
+    /**
+     * Data preloaded on the server.
+     */
     readonly currentUser: SourcegraphContextCurrentUser | null
+    readonly temporarySettings: SourcegraphContextTemporarySettings | null
 
     readonly sentryDSN: string | null
 
@@ -73,6 +92,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Externally accessible URL for Sourcegraph (e.g., https://sourcegraph.com or http://localhost:3080). */
     externalURL: string
+
+    /** Whether instance allows to change its settings manually in UI */
+    extsvcConfigAllowEdits: boolean
+
+    /** Whether instance allows is configured by external service configuration file */
+    extsvcConfigFileExists: boolean
 
     /** URL path to image/font/etc. assets on server */
     assetsRoot: string
@@ -101,6 +126,11 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     needsSiteInit: boolean
 
     /**
+     * Whether at least one code host connections needs to be connected.
+     */
+    needsRepositoryConfiguration: boolean
+
+    /**
      * Emails support enabled
      */
     emailEnabled: boolean
@@ -118,6 +148,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the reset-password flow is enabled. */
     resetPasswordEnabled: boolean
+
+    /** Whether the instance is running on macOS. */
+    runningOnMacOS: boolean
 
     /**
      * Likely running within a Docker container under a Mac host OS.
@@ -158,6 +191,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether code insights API is enabled on the site. */
     codeInsightsEnabled: boolean
+
+    /** Whether embeddings are enabled on this site. */
+    embeddingsEnabled: boolean
 
     /** Whether users are allowed to add their own code and at what permission level. */
     externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
@@ -200,9 +236,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the product research sign-up page is enabled on the site. */
     productResearchPageEnabled: boolean
-
-    /** Whether the use of extensions are enabled. (Doesn't affect code intel and git extras.) */
-    enableLegacyExtensions?: boolean
 
     /** Contains information about the product license. */
     licenseInfo?: {

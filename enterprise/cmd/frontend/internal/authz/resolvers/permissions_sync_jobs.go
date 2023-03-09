@@ -12,7 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const permissionsSyncJobIDKind = "PermissionsSyncJob"
 
 func NewPermissionsSyncJobsResolver(db database.DB, args graphqlbackend.ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsSyncJobResolver], error) {
 	store := &permissionsSyncJobConnectionStore{
@@ -28,7 +31,7 @@ type permissionsSyncJobConnectionStore struct {
 }
 
 func (s *permissionsSyncJobConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.db.PermissionSyncJobs().Count(ctx)
+	count, err := s.db.PermissionSyncJobs().Count(ctx, s.getListArgs(nil))
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +40,7 @@ func (s *permissionsSyncJobConnectionStore) ComputeTotal(ctx context.Context) (*
 }
 
 func (s *permissionsSyncJobConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsSyncJobResolver, error) {
-	jobs, err := s.db.PermissionSyncJobs().List(ctx, database.ListPermissionSyncJobOpts{PaginationArgs: args})
+	jobs, err := s.db.PermissionSyncJobs().List(ctx, s.getListArgs(args))
 	if err != nil {
 		return nil, err
 	}
@@ -94,6 +97,28 @@ func (s *permissionsSyncJobConnectionStore) UnmarshalCursor(cursor string, _ dat
 	return &cursor, nil
 }
 
+func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *database.PaginationArgs) database.ListPermissionSyncJobOpts {
+	opts := database.ListPermissionSyncJobOpts{}
+	if pageArgs != nil {
+		opts.PaginationArgs = pageArgs
+	}
+	if s.args.ReasonGroup != nil {
+		opts.ReasonGroup = *s.args.ReasonGroup
+	}
+	if s.args.State != nil {
+		opts.State = *s.args.State
+	}
+	// First, we check for search type, because it can exist without search query,
+	// but not vice versa.
+	if s.args.SearchType != nil {
+		opts.SearchType = *s.args.SearchType
+		if s.args.Query != nil {
+			opts.Query = *s.args.Query
+		}
+	}
+	return opts
+}
+
 type permissionsSyncJobResolver struct {
 	db          database.DB
 	job         *database.PermissionSyncJob
@@ -114,7 +139,7 @@ func (p *permissionsSyncJobResolver) FailureMessage() *string {
 
 func (p *permissionsSyncJobResolver) Reason() graphqlbackend.PermissionsSyncJobReasonResolver {
 	reason := p.job.Reason
-	return permissionSyncJobReasonResolver{group: reason.ResolveGroup(), message: string(reason)}
+	return permissionSyncJobReasonResolver{group: reason.ResolveGroup(), reason: reason}
 }
 
 func (p *permissionsSyncJobResolver) CancellationReason() *string {
@@ -231,15 +256,15 @@ func (c codeHostStateResolver) Message() string {
 }
 
 type permissionSyncJobReasonResolver struct {
-	group   database.PermissionsSyncJobReasonGroup
-	message string
+	group  database.PermissionsSyncJobReasonGroup
+	reason database.PermissionsSyncJobReason
 }
 
 func (p permissionSyncJobReasonResolver) Group() string {
 	return string(p.group)
 }
-func (p permissionSyncJobReasonResolver) Message() string {
-	return p.message
+func (p permissionSyncJobReasonResolver) Reason() string {
+	return string(p.reason)
 }
 
 type subject struct {
@@ -256,10 +281,14 @@ func (s subject) ToUser() (*graphqlbackend.UserResolver, bool) {
 }
 
 func marshalPermissionsSyncJobID(id int) graphql.ID {
-	return relay.MarshalID("PermissionsSyncJob", id)
+	return relay.MarshalID(permissionsSyncJobIDKind, id)
 }
 
 func unmarshalPermissionsSyncJobID(id graphql.ID) (jobID int, err error) {
+	if kind := relay.UnmarshalKind(id); kind != permissionsSyncJobIDKind {
+		err = errors.Errorf("expected graphql ID to have kind %q; got %q", permissionsSyncJobIDKind, kind)
+		return
+	}
 	err = relay.UnmarshalSpec(id, &jobID)
 	return
 }

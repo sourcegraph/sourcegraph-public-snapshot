@@ -4,6 +4,7 @@ import (
 	"flag"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -18,7 +19,7 @@ var update = flag.Bool("update", false, "update testdata")
 
 // NewTestClient returns an azuredevops.Client that records its interactions
 // to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
+func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", normalize(name))
@@ -33,7 +34,15 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	cli, err := NewClient("urn", "https://dev.azure.com", &auth.BasicAuth{Username: "testuser", Password: "testtoken"}, hc)
+	cli, err := NewClient(
+		"urn",
+		AzureDevOpsAPIURL,
+		&auth.BasicAuth{
+			Username: os.Getenv("AZURE_DEV_OPS_USERNAME"),
+			Password: os.Getenv("AZURE_DEV_OPS_TOKEN"),
+		},
+		hc,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

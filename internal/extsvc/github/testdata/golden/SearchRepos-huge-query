@@ -12,8 +12,92 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "READ",
-    "StargazerCount": 326274,
-    "ForkCount": 26133
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "learn-to-code"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "nonprofits"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "programming"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "nodejs"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "react"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "d3"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "careers"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "education"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "teachers"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "certification"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "curriculum"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "math"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "community"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "freecodecamp"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacktoberfest"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 361294,
+    "ForkCount": 31019
    },
    {
     "ID": "MDEwOlJlcG9zaXRvcnkxNzc3MzY1MzM=",
@@ -27,38 +111,9 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "READ",
-    "StargazerCount": 257953,
-    "ForkCount": 21341
-   },
-   {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMzQ5MTg5NQ==",
-    "DatabaseID": 13491895,
-    "NameWithOwner": "EbookFoundation/free-programming-books",
-    "Description": ":books: Freely available programming books",
-    "URL": "https://github.com/EbookFoundation/free-programming-books",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "StargazerCount": 196925,
-    "ForkCount": 43345
-   },
-   {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==",
-    "DatabaseID": 11730342,
-    "NameWithOwner": "vuejs/vue",
-    "Description": "🖖 Vue.js is a progressive, incrementally-adoptable JavaScript framework for building UI on the web.",
-    "URL": "https://github.com/vuejs/vue",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "StargazerCount": 185828,
-    "ForkCount": 29655
+    "RepositoryTopics": {},
+    "StargazerCount": 265043,
+    "ForkCount": 21462
    },
    {
     "ID": "MDEwOlJlcG9zaXRvcnk2MDQ5MzEwMQ==",
@@ -72,10 +127,227 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "READ",
-    "StargazerCount": 184411,
-    "ForkCount": 50216
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "computer-science"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "interview"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "programming-interviews"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "study-plan"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "data-structures"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "algorithms"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "software-engineering"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "algorithm"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "coding-interviews"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "interview-prep"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "coding-interview"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "interview-preparation"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 246973,
+    "ForkCount": 65490
+   },
+   {
+    "ID": "MDEwOlJlcG9zaXRvcnkyMTczNzQ2NQ==",
+    "DatabaseID": 21737465,
+    "NameWithOwner": "sindresorhus/awesome",
+    "Description": "😎 Awesome lists about all kinds of interesting topics",
+    "URL": "https://github.com/sindresorhus/awesome",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "awesome"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "awesome-list"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "unicorns"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "lists"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "resources"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 238837,
+    "ForkCount": 24935
+   },
+   {
+    "ID": "MDEwOlJlcG9zaXRvcnk4NTA3NzU1OA==",
+    "DatabaseID": 85077558,
+    "NameWithOwner": "kamranahmedse/developer-roadmap",
+    "Description": "Interactive roadmaps, guides and other educational content to help developers grow in their careers.",
+    "URL": "https://github.com/kamranahmedse/developer-roadmap",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "computer-science"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "developer-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "frontend-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "devops-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "backend-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "react-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "angular-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "python-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "go-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "java-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dba-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vue-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "blockchain-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "nodejs-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "qa-roadmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "software-architect-roadmap"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 229269,
+    "ForkCount": 32902
    }
   ],
-  "TotalCount": 2284861,
+  "TotalCount": 2848396,
   "EndCursor": "Y3Vyc29yOjU="
  }

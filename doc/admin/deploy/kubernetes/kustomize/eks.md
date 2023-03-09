@@ -35,7 +35,7 @@ $ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/
 Monitor the deployment status to make sure everything is up and running:
 
 ```bash
-kubectl get pods -o wide --watch
+kubectl get pods -n ns-sourcegraph -o wide --watch
 ```
 
 ### Step 2: Access Sourcegraph in Browser
@@ -43,7 +43,7 @@ kubectl get pods -o wide --watch
 To check the status of the load balancer and obtain its IP:
 
 ```bash
-$ kubectl describe ingress sourcegraph-frontend
+$ kubectl describe ingress sourcegraph-frontend -n ns-sourcegraph
 ```
 
 From you output, look for the IP address of the load balancer, which is listed under `Address`.
@@ -64,7 +64,7 @@ It might take about 10 minutes for the load balancer to be fully ready. In the m
 Forward the remote port so that you can access Sourcegraph without network configuration temporarily.
 
 ```bash
-kubectl port-forward svc/sourcegraph-frontend 3080:30080
+kubectl port-forward svc/sourcegraph-frontend 3080:30080 -n ns-sourcegraph
 ```
 
 You should now be able to access your new Sourcegraph instance at http://localhost:3080  🎉
@@ -79,17 +79,17 @@ If you would like to make other configurations to your existing instance, you ca
 # overlays/$INSTANCE_NAME/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: default
+namespace: ns-sourcegraph
 resources:
-# Deploy Sourcegraph main stack
-- ../../base/sourcegraph
-# Deploy Sourcegraph monitoring stack
-- ../../base/monitoring
+  # Deploy Sourcegraph main stack
+  - ../../base/sourcegraph
+  # Deploy Sourcegraph monitoring stack
+  - ../../base/monitoring
 components:
-# Use resources for a size-XS instance
-- ../../components/sizes/xs
-# Apply configurations for AWS EKS storage class and ALB
-- ../../components/clusters/aws/eks-ebs
+  # Use resources for a size-XS instance
+  - ../../components/sizes/xs
+  # Apply configurations for AWS EKS storage class and ALB
+  - ../../components/clusters/aws/eks-ebs
 ```
 
 #### Enable TLS
@@ -107,32 +107,28 @@ In order to use a managed certificate from [AWS Certificate Manager](https://doc
 Step 1: Add the `aws/mange-cert` component to your overlay:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/buildConfig.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: default
+namespace: ns-sourcegraph
 resources:
-# Deploy Sourcegraph main stack
-- ../../base/sourcegraph
-# Deploy Sourcegraph monitoring stack
-- ../../base/monitoring
+  - ../../base/sourcegraph
+  - ../../base/monitoring
 components:
-- ../../components/sizes/xs
-- ../../components/clusters/aws/eks-ebs
-- ../../components/clusters/aws/mange-cert
+  - ../../components/resources/namespace
+  - ../../components/sizes/xs
+  - ../../components/clusters/aws/eks-ebs
+  - ../../components/clusters/aws/managed-cert
 ```
 
 Step 2: Set the `AWS_MANAGED_CERT_ARN` variable with the `ARN of your AWS-managed TLS certificate` under the [BUILD CONFIGURATIONS](index.md#buildconfig-yaml) section:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
-# BUILD CONFIGURATIONS
-configMapGenerator:
-  # Handle updating configs using env vars for kustomize
-  - name: sourcegraph-kustomize-env
-    behavior: merge
-    literals:
-      ...
-      # ARN of the AWS-managed TLS certificate
-      - AWS_MANAGED_CERT_ARN=arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
+# instances/$INSTANCE_NAME/buildConfig.yaml
+kind: SourcegraphBuildConfig
+metadata:
+  name: sourcegraph-kustomize-config
+data:
+  # ARN of the AWS-managed TLS certificate
+  AWS_MANAGED_CERT_ARN: arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
 ```

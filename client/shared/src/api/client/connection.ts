@@ -12,7 +12,7 @@ import { InitData } from '../extension/extensionHost'
 import { registerComlinkTransferHandlers } from '../util'
 
 import { ClientAPI } from './api/api'
-import { ExposedToClient, initMainThreadAPI } from './mainthread-api'
+import { initMainThreadAPI } from './mainthread-api'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -44,19 +44,12 @@ export async function createExtensionHostClientConnection(
     initData: Omit<InitData, 'initialSettings'>,
     platformContext: Pick<
         PlatformContext,
-        | 'settings'
-        | 'updateSettings'
-        | 'getGraphQLClient'
-        | 'requestGraphQL'
-        | 'telemetryService'
-        | 'getScriptURLForExtension'
-        | 'clientApplication'
+        'settings' | 'updateSettings' | 'getGraphQLClient' | 'requestGraphQL' | 'telemetryService' | 'clientApplication'
     >
 ): Promise<{
     subscription: Unsubscribable
     api: comlink.Remote<FlatExtensionHostAPI>
     mainThreadAPI: MainThreadAPI
-    exposedToClient: ExposedToClient
 }> {
     const subscription = new Subscription()
 
@@ -77,7 +70,7 @@ export async function createExtensionHostClientConnection(
         initialSettings: isSettingsValid(initialSettings) ? initialSettings : { final: {}, subjects: [] },
     })
 
-    const { api: newAPI, exposedToClient, subscription: apiSubscriptions } = initMainThreadAPI(proxy, platformContext)
+    const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(proxy, platformContext)
 
     subscription.add(apiSubscriptions)
 
@@ -93,5 +86,5 @@ export async function createExtensionHostClientConnection(
 
     // TODO(tj): return MainThreadAPI and add to Controller interface
     // to allow app to interact with APIs whose state lives in the main thread
-    return { subscription, api: proxy, mainThreadAPI: newAPI, exposedToClient }
+    return { subscription, api: proxy, mainThreadAPI: newAPI }
 }

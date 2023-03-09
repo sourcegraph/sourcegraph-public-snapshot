@@ -1,12 +1,50 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "resolvers",
-    srcs = ["resolvers.go"],
+    srcs = [
+        "codeowners_resolvers.go",
+        "resolvers.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//enterprise/internal/database",
+        "//enterprise/internal/own",
+        "//enterprise/internal/own/codeowners",
+        "//enterprise/internal/own/codeowners/v1:codeowners",
+        "//enterprise/internal/own/types",
+        "//internal/api",
+        "//internal/auth",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/gitserver",
+        "//internal/gqlutil",
+        "//internal/types",
+        "//lib/errors",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
+    ],
+)
+
+go_test(
+    name = "resolvers_test",
+    srcs = ["resolvers_test.go"],
+    deps = [
+        ":resolvers",
+        "//cmd/frontend/backend",
+        "//cmd/frontend/graphqlbackend",
+        "//enterprise/internal/own/codeowners",
+        "//enterprise/internal/own/codeowners/v1:codeowners",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/database",
+        "//internal/database/fakedb",
+        "//internal/gitserver",
+        "//internal/types",
+        "@com_github_graph_gophers_graphql_go//relay",
     ],
 )

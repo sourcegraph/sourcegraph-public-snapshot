@@ -28,19 +28,22 @@ use sg_macros::include_project_file_optional;
 //  unique match groups. For example `@rust-bracket`, or similar. That doesn't need any
 //  particularly new rust code to be written. You can just modify queries for that)
 const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
-    ("attribute",               SyntaxKind::UnspecifiedSyntaxKind),
     ("boolean",                 SyntaxKind::BooleanLiteral),
     ("character",               SyntaxKind::CharacterLiteral),
     ("comment",                 SyntaxKind::Comment),
     ("conditional",             SyntaxKind::IdentifierKeyword),
     ("constant",                SyntaxKind::IdentifierConstant),
+    ("identifier.constant",     SyntaxKind::IdentifierConstant),
     ("constant.builtin",        SyntaxKind::IdentifierBuiltin),
     ("constant.null",           SyntaxKind::IdentifierNull),
     ("float",                   SyntaxKind::NumericLiteral),
-    ("function",                SyntaxKind::IdentifierFunctionDefinition),
+    ("function",                SyntaxKind::IdentifierFunction),
+    ("identifier.function",     SyntaxKind::IdentifierFunction),
     ("function.builtin",        SyntaxKind::IdentifierBuiltin),
+    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
     ("identifier",              SyntaxKind::Identifier),
-    ("identifier.function",     SyntaxKind::IdentifierFunctionDefinition),
+    ("identifier.attribute",    SyntaxKind::IdentifierAttribute),
+    ("tag.attribute",           SyntaxKind::TagAttribute),
     ("include",                 SyntaxKind::IdentifierKeyword),
     ("keyword",                 SyntaxKind::IdentifierKeyword),
     ("keyword.function",        SyntaxKind::IdentifierKeyword),
@@ -48,18 +51,30 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("method",                  SyntaxKind::IdentifierFunction),
     ("number",                  SyntaxKind::NumericLiteral),
     ("operator",                SyntaxKind::IdentifierOperator),
+    ("identifier.operator",     SyntaxKind::IdentifierOperator),
     ("property",                SyntaxKind::Identifier),
     ("punctuation",             SyntaxKind::UnspecifiedSyntaxKind),
     ("punctuation.bracket",     SyntaxKind::UnspecifiedSyntaxKind),
     ("punctuation.delimiter",   SyntaxKind::PunctuationDelimiter),
     ("string",                  SyntaxKind::StringLiteral),
     ("string.special",          SyntaxKind::StringLiteral),
+    ("string.escape",           SyntaxKind::StringLiteralEscape),
     ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
     ("type",                    SyntaxKind::IdentifierType),
-    ("type.builtin",            SyntaxKind::IdentifierType),
+    ("identifier.type",         SyntaxKind::IdentifierType),
+    ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
+    ("regex.delimiter",         SyntaxKind::RegexDelimiter),
+    ("regex.join",              SyntaxKind::RegexJoin),
+    ("regex.escape",            SyntaxKind::RegexEscape),
+    ("regex.repeated",          SyntaxKind::RegexRepeated),
+    ("regex.wildcard",          SyntaxKind::RegexWildcard),
+    ("identifier",              SyntaxKind::Identifier),
     ("variable",                SyntaxKind::Identifier),
-    ("variable.builtin",        SyntaxKind::UnspecifiedSyntaxKind),
+    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
+    ("variable.builtin",        SyntaxKind::IdentifierBuiltin),
+    ("identifier.parameter",    SyntaxKind::IdentifierParameter),
     ("variable.parameter",      SyntaxKind::IdentifierParameter),
+    ("identifier.module",       SyntaxKind::IdentifierModule),
     ("variable.module",         SyntaxKind::IdentifierModule),
 ];
 
@@ -96,13 +111,67 @@ macro_rules! create_configurations {
             }
         )*
 
+        // Manually insert the typescript and tsx languages because the
+        // tree-sitter-typescript crate doesn't have a language() function.
+        {
+            let highlights = vec![
+                include_project_file_optional!("queries/typescript/highlights.scm"),
+                include_project_file_optional!("queries/javascript/highlights.scm"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                paste! { tree_sitter_typescript::language_typescript() },
+                &highlights.join("\n"),
+                include_project_file_optional!("queries/", "typescript", "/injections.scm"),
+                include_project_file_optional!("queries/", "typescript", "/locals.scm"),
+            ).expect("parser for 'typescript' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert("typescript", lang);
+        }
+        {
+            let highlights = vec![
+                include_project_file_optional!("queries/tsx/highlights.scm"),
+                include_project_file_optional!("queries/typescript/highlights.scm"),
+                include_project_file_optional!("queries/javascript/highlights.scm"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                paste! { tree_sitter_typescript::language_tsx() },
+                &highlights.join("\n"),
+                include_project_file_optional!("queries/tsx/injections.scm"),
+                include_project_file_optional!("queries/tsx/locals.scm"),
+            ).expect("parser for 'tsx' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert("tsx", lang);
+        }
+
         m
     }}
 }
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql, c_sharp, jsonnet, scala, xlsg )
+        create_configurations!(
+            c,
+            cpp,
+            c_sharp,
+            go,
+            java,
+            javascript,
+            jsonnet,
+            python,
+            ruby,
+            rust,
+            scala,
+            sql,
+            xlsg
+        )
+    };
+}
+
+// Handle special cases where syntect language names don't match treesitter names.
+pub fn treesitter_language(syntect_language: &str) -> &str {
+    return match syntect_language {
+        "c++" => "cpp",
+        _ => syntect_language,
     };
 }
 
@@ -459,22 +528,6 @@ mod test {
     }
 
     #[test]
-    fn test_highlights_simple_main() -> Result<(), Error> {
-        let src = r#"package main
-import "fmt"
-
-func main() {
-	fmt.Println("Hello, world", 5)
-}
-"#;
-
-        let document = index_language("go", src)?;
-        insta::assert_snapshot!(dump_document(&document, src));
-
-        Ok(())
-    }
-
-    #[test]
     fn test_highlights_a_sql_query_within_go() -> Result<(), Error> {
         let src = r#"package main
 
@@ -500,7 +553,9 @@ SELECT * FROM my_table
 
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
-        let dir = read_dir("./src/snapshots/files/")?;
+        let crate_root: std::path::PathBuf = std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
+        let input_dir = crate_root.join("src").join("snapshots").join("files");
+        let dir = read_dir(&input_dir).unwrap();
         for entry in dir {
             let entry = entry?;
             let filepath = entry.path();
@@ -518,12 +573,14 @@ SELECT * FROM my_table
                 code: contents.clone(),
             });
 
-            let document = index_language(filetype, &contents).unwrap();
+            let indexed = index_language(filetype, &contents);
+            if indexed.is_err() {
+                // assert failure
+                panic!("unknown filetype {:?}", filetype);
+            }
+            let document = indexed.unwrap();
             insta::assert_snapshot!(
-                filepath
-                    .to_str()
-                    .unwrap()
-                    .replace("/src/snapshots/files", ""),
+                filepath.strip_prefix(&input_dir).unwrap().to_str().unwrap(),
                 dump_document(&document, &contents)
             );
         }

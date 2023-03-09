@@ -3,10 +3,10 @@ package own
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -24,7 +24,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	g := gitserver.NewClient()
-	o := backend.NewOwnService(g, db)
-	enterpriseServices.OwnResolver = resolvers.New(db, o)
+	o := own.NewService(g, db)
+	enterpriseServices.OwnResolver = resolvers.New(db, g, o)
 	return nil
 }

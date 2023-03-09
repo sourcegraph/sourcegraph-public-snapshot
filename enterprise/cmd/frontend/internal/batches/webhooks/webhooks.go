@@ -80,6 +80,8 @@ func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService
 		serviceID = c.Url
 	case *schema.BitbucketCloudConnection:
 		serviceID = c.Url
+	case *schema.AzureDevOpsConnection:
+		serviceID = c.Url
 	}
 	if serviceID == "" {
 		return extsvc.CodeHostBaseURL{}, errors.Errorf("could not determine service id for external service %d", extSvc.ID)

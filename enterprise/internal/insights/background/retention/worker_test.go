@@ -5,7 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -210,4 +213,28 @@ func setupSeries(ctx context.Context, tx *store.InsightStore, t *testing.T) {
 	if got.ID != 1 {
 		t.Errorf("expected first series to have id 1")
 	}
+}
+
+func Test_GetSampleSize(t *testing.T) {
+	logger := logtest.Scoped(t)
+
+	t.Run("not configured", func(t *testing.T) {
+		conf.Mock(&conf.Unified{})
+		assert.Equal(t, 30, getMaximumSampleSize(logger))
+	})
+
+	t.Run("exceeds max value", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{InsightsMaximumSampleSize: 100}})
+		assert.Equal(t, 90, getMaximumSampleSize(logger))
+	})
+
+	t.Run("negative value", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{InsightsMaximumSampleSize: -40}})
+		assert.Equal(t, 30, getMaximumSampleSize(logger))
+	})
+
+	t.Run("matches config", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{InsightsMaximumSampleSize: 50}})
+		assert.Equal(t, 50, getMaximumSampleSize(logger))
+	})
 }

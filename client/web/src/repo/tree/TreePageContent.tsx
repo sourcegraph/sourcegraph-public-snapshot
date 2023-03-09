@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { catchError, map, switchMap } from 'rxjs/operators'
 
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
@@ -165,7 +165,8 @@ export const fetchDiffStats = (args: {
                 aggregatedDiffStats[subdirName].deleted += diffStat.deleted
             }
             return Array.from(Object.values(aggregatedDiffStats))
-        })
+        }),
+        catchError(() => []) // ignore errors
     )
 
 interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
@@ -445,7 +446,6 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
     })
 
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
-    const externalURLs = node?.externalURLs
     const connection = node?.commit?.ancestors
 
     return (
@@ -461,7 +461,6 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
                                 className={styles.gitCommitNode}
                                 messageSubjectClassName={styles.gitCommitNodeMessageSubject}
                                 compact={true}
-                                externalURLs={externalURLs}
                             />
                         ))}
                     </tbody>

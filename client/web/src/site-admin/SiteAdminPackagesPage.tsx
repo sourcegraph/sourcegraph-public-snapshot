@@ -87,7 +87,7 @@ interface PackageNodeProps {
 }
 
 const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodeProps>> = ({ node }) => {
-    const PackageIconComponent = externalRepoIcon({ serviceType: node.scheme })
+    const PackageIconComponent = externalRepoIcon({ serviceType: node.kind })
 
     const packageRepository = node.repository
 
@@ -227,7 +227,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
 
         return {
             name: query,
-            scheme: null,
+            kind: null,
             after: null,
             first: DEFAULT_FIRST,
             ...args,

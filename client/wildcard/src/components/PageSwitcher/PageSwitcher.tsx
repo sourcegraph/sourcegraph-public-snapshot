@@ -135,7 +135,7 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
             </ul>
             {totalCount !== null && totalLabel !== undefined ? (
                 <div className={styles.label}>
-                    <Text className="text-muted" size="small">
+                    <Text className="text-muted mb-0" size="small">
                         Total{' '}
                         <Text weight="bold" as="strong">
                             {totalLabel}

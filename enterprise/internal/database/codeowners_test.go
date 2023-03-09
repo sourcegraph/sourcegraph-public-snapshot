@@ -10,10 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
+	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -85,13 +86,13 @@ func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 		if err := store.CreateCodeownersFile(ctx, codeowners); err != nil {
 			t.Fatal(err)
 		}
-		if err := store.DeleteCodeownersForRepo(ctx, repoID); err != nil {
+		if err := store.DeleteCodeownersForRepos(ctx, 5); err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("delete non existent codeowners file", func(t *testing.T) {
-		err := store.DeleteCodeownersForRepo(ctx, api.RepoID(6))
+		err := store.DeleteCodeownersForRepos(ctx, 6)
 		if err == nil {
 			t.Fatal("did not return useful not found information")
 		}
@@ -99,7 +100,7 @@ func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 	})
 }
 
-func TestCodeowners_GetList(t *testing.T) {
+func TestCodeowners_GetListCount(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.NoOp(t)
@@ -109,7 +110,7 @@ func TestCodeowners_GetList(t *testing.T) {
 
 	store := db.Codeowners()
 
-	createFile := func(file *types.CodeownersFile) *types.CodeownersFile {
+	createFile := func(file *owntypes.CodeownersFile) *owntypes.CodeownersFile {
 		if err := store.CreateCodeownersFile(ctx, file); err != nil {
 			t.Fatal(err)
 		}
@@ -158,7 +159,7 @@ func TestCodeowners_GetList(t *testing.T) {
 	})
 
 	t.Run("list", func(t *testing.T) {
-		all := []*types.CodeownersFile{repo1Codeowners, repo2Codeowners}
+		all := []*owntypes.CodeownersFile{repo1Codeowners, repo2Codeowners}
 
 		// List all
 		have, cursor, err := store.ListCodeowners(ctx, ListCodeownersOpts{})
@@ -189,11 +190,19 @@ func TestCodeowners_GetList(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("count", func(t *testing.T) {
+		got, err := store.CountCodeownersFiles(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, int32(2), got)
+	})
 }
 
 // newCodeownersFile returns a simple test Codeowners file with one pattern and one owner.
-func newCodeownersFile(pattern, handle string, repoID api.RepoID) *types.CodeownersFile {
-	return &types.CodeownersFile{
+func newCodeownersFile(pattern, handle string, repoID api.RepoID) *owntypes.CodeownersFile {
+	return &owntypes.CodeownersFile{
 		Contents: fmt.Sprintf("%s @%s", pattern, handle),
 		Proto: &codeownerspb.File{
 			Rule: []*codeownerspb.Rule{

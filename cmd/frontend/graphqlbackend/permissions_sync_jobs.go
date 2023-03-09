@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -41,7 +42,7 @@ type PermissionsSyncJobResolver interface {
 
 type PermissionsSyncJobReasonResolver interface {
 	Group() string
-	Message() string
+	Reason() string
 }
 
 type CodeHostStateResolver interface {
@@ -58,4 +59,8 @@ type PermissionsSyncJobSubject interface {
 
 type ListPermissionsSyncJobsArgs struct {
 	graphqlutil.ConnectionResolverArgs
+	ReasonGroup *database.PermissionsSyncJobReasonGroup
+	State       *database.PermissionsSyncJobState
+	SearchType  *database.PermissionsSyncSearchType
+	Query       *string
 }

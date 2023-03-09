@@ -346,6 +346,7 @@ function mockCommonGraphQLResponses(
                 organizations: { nodes: [] },
                 permissionsInfo: null,
                 tags: [],
+                scimControlled: false,
             },
         }),
         BatchChangeByNamespace: () => ({
@@ -362,6 +363,8 @@ function mockCommonGraphQLResponses(
                     archived: 18,
                     unpublished: 3,
                     draft: 2,
+                    isCompleted: false,
+                    percentComplete: 27,
                 },
                 state: BatchChangeState.OPEN,
                 closedAt: null,

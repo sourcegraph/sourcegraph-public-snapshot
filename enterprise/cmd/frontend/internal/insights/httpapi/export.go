@@ -32,6 +32,8 @@ type ExportHandler struct {
 	searchContextHandler *store.SearchContextHandler
 }
 
+const pingName = "InsightsDataExportRequest"
+
 func NewExportHandler(db database.DB, insightsDB edb.InsightsDB) *ExportHandler {
 	insightPermStore := store.NewInsightPermissionStore(db)
 	seriesStore := store.New(insightsDB, insightPermStore)
@@ -91,6 +93,17 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 	userID, orgIDs, err := h.permStore.GetUserPermissions(ctx)
 	if err != nil {
 		return nil, authenticationError
+	}
+
+	if err := h.primaryDB.EventLogs().Insert(ctx, &database.Event{
+		Name:            pingName,
+		UserID:          uint32(currentActor.UID),
+		AnonymousUserID: "",
+		Argument:        nil,
+		Timestamp:       time.Now(),
+		Source:          "BACKEND",
+	}); err != nil {
+		return nil, err
 	}
 
 	licenseError := licensing.Check(licensing.FeatureCodeInsights)

@@ -35,6 +35,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":store"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database/basestore",
         "//internal/database/dbtest",
@@ -43,7 +47,7 @@ go_test(
         "//internal/database/migration/shared",
         "//internal/observation",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",
         "@org_golang_x_sync//errgroup",

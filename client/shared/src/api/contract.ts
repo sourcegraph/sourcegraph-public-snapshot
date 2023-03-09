@@ -4,25 +4,18 @@ import { DocumentHighlight } from 'sourcegraph'
 
 import { Contributions, Evaluated, Raw, TextDocumentPositionParameters, HoverMerged } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { DeepReplace, ErrorLike } from '@sourcegraph/common'
+import { DeepReplace } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { GraphQLResult } from '@sourcegraph/http-client'
 
-import type { ReferenceContext, InputBoxOptions } from '../codeintel/legacy-extensions/api'
+import type { ReferenceContext } from '../codeintel/legacy-extensions/api'
 import { ConfiguredExtension } from '../extensions/extension'
 import { SettingsCascade } from '../settings/settings'
 
 import { SettingsEdit } from './client/services/settings'
 import { ExecutableExtension } from './extension/activation'
 import { ProxySubscribable } from './extension/api/common'
-import {
-    ViewContexts,
-    PanelViewData,
-    ViewProviderResult,
-    ProgressNotification,
-    PlainNotification,
-    ContributionOptions,
-} from './extension/extensionHostApi'
+import { ViewContexts, PanelViewData, ViewProviderResult, ContributionOptions } from './extension/extensionHostApi'
 import { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
 
 /**
@@ -42,9 +35,6 @@ export interface FlatExtensionHostAPI {
     removeWorkspaceRoot: (uri: string) => void
 
     setSearchContext: (searchContext: string | undefined) => void
-
-    // Search
-    transformSearchQuery: (query: string) => ProxySubscribable<string>
 
     // Languages
     getHover: (parameters: TextDocumentPositionParameters) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
@@ -134,10 +124,6 @@ export interface FlatExtensionHostAPI {
      */
     removeViewer(viewer: ViewerId): void
 
-    // Notifications
-    getPlainNotifications: () => ProxySubscribable<PlainNotification>
-    getProgressNotifications: () => ProxySubscribable<ProgressNotification & ProxyMarked>
-
     // Views
     getPanelViews: () => ProxySubscribable<PanelViewData[]>
 
@@ -191,14 +177,6 @@ export interface MainThreadAPI {
         name: string,
         command: Remote<((...args: any) => any) & ProxyMarked>
     ) => Unsubscribable & ProxyMarked
-
-    // User interaction methods
-    showMessage: (message: string) => Promise<void>
-    showInputBox: (options?: InputBoxOptions) => Promise<string | undefined>
-
-    getScriptURLForExtension: () =>
-        | undefined
-        | (((bundleURLs: string[]) => Promise<(string | ErrorLike)[]>) & ProxyMarked)
 
     getEnabledExtensions: () => ProxySubscribable<(ConfiguredExtension | ExecutableExtension)[]>
 

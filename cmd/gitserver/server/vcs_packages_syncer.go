@@ -62,6 +62,7 @@ type packagesDownloadSource interface {
 type dependenciesService interface {
 	ListPackageRepoRefs(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, error)
 	InsertPackageRepoRefs(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
+	IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error)
 }
 
 func (s *vcsPackagesSyncer) IsCloneable(ctx context.Context, repoUrl *vcs.URL) error {
@@ -146,20 +147,25 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 		// Invalid version. Silently ignore error, see comment above why.
 		return nil
 	}
+
+	if allowed, err := s.svc.IsPackageRepoVersionAllowed(ctx, s.scheme, dep.PackageSyntax(), dep.PackageVersion()); !allowed || err != nil {
+		// if err == nil && !allowed, this will return nil
+		return errors.Wrap(err, "error checking if package repo version is allowed")
+	}
+
 	err = s.gitPushDependencyTag(ctx, string(dir), dep)
 	if err != nil {
 		// Package could not be downloaded. Silently ignore error, see comment above why.
 		return nil
 	}
 
-	_, _, err = s.svc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
+	if _, _, err = s.svc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
 		{
 			Scheme:   dep.Scheme(),
 			Name:     dep.PackageSyntax(),
 			Versions: []string{dep.PackageVersion()},
 		},
-	})
-	if err != nil {
+	}); err != nil {
 		// We don't want to ignore when writing to the database failed, since
 		// we've already downloaded the package successfully.
 		return err
@@ -323,7 +329,7 @@ func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	return nil
 }
 
-func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource.PackageName) ([]string, error) {
+func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource.PackageName) (versions []string, _ error) {
 	var combinedVersions []string
 	for _, d := range s.configDeps {
 		dep, err := s.source.ParseVersionedPackageFromConfiguration(d)
@@ -338,10 +344,10 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource
 	}
 
 	listedPackages, _, err := s.svc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
-		Scheme:              s.scheme,
-		Name:                packageName,
-		ExactNameOnly:       true,
-		MostRecentlyUpdated: true,
+		Scheme:         s.scheme,
+		Name:           packageName,
+		ExactNameOnly:  true,
+		IncludeBlocked: false,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list dependencies from db")

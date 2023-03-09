@@ -11,15 +11,16 @@ import (
 )
 
 type AuthzResolver interface {
-	// Mutations
+	// SetRepositoryPermissionsForUsers and functions below are GraphQL Mutations.
 	SetRepositoryPermissionsForUsers(ctx context.Context, args *RepoPermsArgs) (*EmptyResponse, error)
 	SetRepositoryPermissionsUnrestricted(ctx context.Context, args *RepoUnrestrictedArgs) (*EmptyResponse, error)
 	ScheduleRepositoryPermissionsSync(ctx context.Context, args *RepositoryIDArgs) (*EmptyResponse, error)
 	ScheduleUserPermissionsSync(ctx context.Context, args *UserPermissionsSyncArgs) (*EmptyResponse, error)
 	SetSubRepositoryPermissionsForUsers(ctx context.Context, args *SubRepoPermsArgs) (*EmptyResponse, error)
 	SetRepositoryPermissionsForBitbucketProject(ctx context.Context, args *RepoPermsBitbucketProjectArgs) (*EmptyResponse, error)
+	CancelPermissionsSyncJob(ctx context.Context, args *CancelPermissionsSyncJobArgs) (*EmptyResponse, error)
 
-	// Queries
+	//AuthorizedUserRepositories and functions below are GraphQL Queries.
 	AuthorizedUserRepositories(ctx context.Context, args *AuthorizedRepoArgs) (RepositoryConnectionResolver, error)
 	UsersWithPendingPermissions(ctx context.Context) ([]string, error)
 	AuthorizedUsers(ctx context.Context, args *RepoAuthorizedUserArgs) (UserConnectionResolver, error)
@@ -27,7 +28,7 @@ type AuthzResolver interface {
 	AuthzProviderTypes(ctx context.Context) ([]string, error)
 	PermissionsSyncJobs(ctx context.Context, args ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[PermissionsSyncJobResolver], error)
 
-	// Helpers
+	// RepositoryPermissionsInfo and UserPermissionsInfo are helpers functions.
 	RepositoryPermissionsInfo(ctx context.Context, repoID graphql.ID) (PermissionsInfoResolver, error)
 	UserPermissionsInfo(ctx context.Context, userID graphql.ID) (PermissionsInfoResolver, error)
 }
@@ -81,6 +82,11 @@ type RepoPermsBitbucketProjectArgs struct {
 	Unrestricted    *bool
 }
 
+type CancelPermissionsSyncJobArgs struct {
+	Job    graphql.ID
+	Reason *string
+}
+
 type BitbucketProjectPermissionJobsArgs struct {
 	ProjectKeys *[]string
 	Status      *string
@@ -118,4 +124,17 @@ type PermissionsInfoResolver interface {
 	SyncedAt() *gqlutil.DateTime
 	UpdatedAt() gqlutil.DateTime
 	Unrestricted() bool
+	Repositories(ctx context.Context, args PermissionsInfoRepositoriesArgs) (*graphqlutil.ConnectionResolver[PermissionsInfoRepositoryResolver], error)
+}
+
+type PermissionsInfoRepositoryResolver interface {
+	ID() graphql.ID
+	Repository() *RepositoryResolver
+	Reason() string
+	UpdatedAt() *gqlutil.DateTime
+}
+
+type PermissionsInfoRepositoriesArgs struct {
+	graphqlutil.ConnectionResolverArgs
+	Query *string
 }

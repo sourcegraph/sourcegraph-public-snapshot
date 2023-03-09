@@ -265,14 +265,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
 
 function setDiagnosticsOptions(editor: typeof monaco, jsonSchema: JSONSchema | undefined): void {
     const schema = { ...settingsSchema, properties: { ...settingsSchema.properties } }
-    if (!window.context.enableLegacyExtensions) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- we need to remove this key conditionally, but not from the schema
-        // @ts-ignore
-        delete schema.properties.extensions
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- we need to remove this key conditionally, but not from the schema
-        // @ts-ignore
-        delete schema.properties['extensions.activeLoggers']
-    }
     editor.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
         allowComments: true,

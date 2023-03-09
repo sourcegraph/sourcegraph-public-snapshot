@@ -266,6 +266,39 @@ func CodeIntelAutoIndexingPolicyRepositoryMatchLimit() int {
 	return *val
 }
 
+func CodeIntelRankingDocumentReferenceCountsEnabled() bool {
+	if enabled := Get().CodeIntelRankingDocumentReferenceCountsEnabled; enabled != nil {
+		return *enabled
+	}
+	return false
+}
+
+func CodeIntelRankingDocumentReferenceCountsGraphKey() string {
+	if val := Get().CodeIntelRankingDocumentReferenceCountsGraphKey; val != "" {
+		return val
+	}
+	return "dev"
+}
+
+func CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix() string {
+	if val := Get().CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix; val != "" {
+		return val
+	}
+	return ""
+}
+
+func CodeIntelRankingStaleResultAge() time.Duration {
+	if val := Get().CodeIntelRankingStaleResultsAge; val > 0 {
+		return time.Duration(val) * time.Hour
+	}
+	return 72 * time.Hour
+}
+
+func EmbeddingsEnabled() bool {
+	embeddingsConfig := Get().Embeddings
+	return embeddingsConfig != nil && embeddingsConfig.Enabled
+}
+
 func ProductResearchPageEnabled() bool {
 	if enabled := Get().ProductResearchPageEnabled; enabled != nil {
 		return *enabled
@@ -294,6 +327,12 @@ func IsBuiltinSignupAllowed() bool {
 		}
 	}
 	return false
+}
+
+// IsAccessRequestEnabled returns whether request access experimental feature is enabled or not.
+func IsAccessRequestEnabled() bool {
+	experimentalFeatures := Get().ExperimentalFeatures
+	return experimentalFeatures == nil || experimentalFeatures.AccessRequestEnabled == nil || *experimentalFeatures.AccessRequestEnabled
 }
 
 // SearchSymbolsParallelism returns 20, or the site config

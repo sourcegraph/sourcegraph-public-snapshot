@@ -213,7 +213,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 }
 
 // newPackage constructs a precise.Package from the given shared.Package,
-// applying any normalization or necessary transformations that lsif uploads
+// applying any normalization or necessary transformations that LSIF/SCIP uploads
 // require for internal consistency.
 func newPackage(pkg uploadsshared.Package) (*precise.Package, error) {
 	p := precise.Package{
@@ -227,10 +227,11 @@ func newPackage(pkg uploadsshared.Package) (*precise.Package, error) {
 	case dependencies.JVMPackagesScheme:
 		p.Name = strings.TrimPrefix(p.Name, "maven/")
 		p.Name = strings.ReplaceAll(p.Name, "/", ":")
-	case dependencies.NpmPackagesScheme:
+	case dependencies.NpmPackagesScheme, "scip-typescript":
 		if _, err := reposource.ParseNpmPackageFromPackageSyntax(reposource.PackageName(p.Name)); err != nil {
 			return nil, err
 		}
+		p.Scheme = dependencies.NpmPackagesScheme
 	case "scip-python":
 		// Override scip-python scheme so that we are able to autoindex
 		// index.scip created by scip-python

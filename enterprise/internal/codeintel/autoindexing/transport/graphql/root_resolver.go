@@ -2,6 +2,9 @@ package graphql
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
+	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -14,28 +17,40 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type rootResolver struct {
-	autoindexSvc AutoIndexingService
-	uploadSvc    UploadsService
-	policySvc    PolicyService
-	operations   *operations
+	autoindexSvc            AutoIndexingService
+	uploadSvc               UploadsService
+	policySvc               PolicyService
+	operations              *operations
+	siteAdminChecker        sharedresolvers.SiteAdminChecker
+	repoStore               database.RepoStore
+	prefetcherFactory       *sharedresolvers.PrefetcherFactory
+	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory
 }
 
-func NewRootResolver(observationCtx *observation.Context, autoindexSvc AutoIndexingService, uploadSvc UploadsService, policySvc PolicyService) resolverstubs.AutoindexingServiceResolver {
+func NewRootResolver(observationCtx *observation.Context, autoindexSvc AutoIndexingService, uploadSvc UploadsService, policySvc PolicyService,
+	siteAdminChecker sharedresolvers.SiteAdminChecker,
+	repoStore database.RepoStore,
+	prefetcherFactory *sharedresolvers.PrefetcherFactory,
+	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory,
+) resolverstubs.AutoindexingServiceResolver {
 	return &rootResolver{
-		autoindexSvc: autoindexSvc,
-		uploadSvc:    uploadSvc,
-		policySvc:    policySvc,
-		operations:   newOperations(observationCtx),
+		autoindexSvc:            autoindexSvc,
+		uploadSvc:               uploadSvc,
+		policySvc:               policySvc,
+		operations:              newOperations(observationCtx),
+		siteAdminChecker:        siteAdminChecker,
+		repoStore:               repoStore,
+		prefetcherFactory:       prefetcherFactory,
+		locationResolverFactory: locationResolverFactory,
 	}
 }
 
@@ -60,7 +75,7 @@ func (r *rootResolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_
 		return nil, err
 	}
 
-	return NewIndexConfigurationResolver(r.autoindexSvc, int(repositoryID), traceErrs), nil
+	return NewIndexConfigurationResolver(r.autoindexSvc, r.siteAdminChecker, int(repositoryID), traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence index data
@@ -70,7 +85,7 @@ func (r *rootResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID gra
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -94,7 +109,7 @@ func (r *rootResolver) DeleteLSIFIndexes(ctx context.Context, args *resolverstub
 	ctx, _, endObservation := r.operations.deleteLsifIndexes.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -119,7 +134,7 @@ func (r *rootResolver) ReindexLSIFIndex(ctx context.Context, args *struct{ ID gr
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -143,7 +158,7 @@ func (r *rootResolver) ReindexLSIFIndexes(ctx context.Context, args *resolverstu
 	ctx, _, endObservation := r.operations.reindexLsifIndexes.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -179,16 +194,14 @@ func (r *rootResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ reso
 
 	// Create a new prefetcher here as we only want to cache upload and index records in
 	// the same graphQL request, not across different request.
-	db := r.autoindexSvc.GetUnsafeDB()
-	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
-	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
+	prefetcher := r.prefetcherFactory.Create()
 
 	index, exists, err := prefetcher.GetIndexByID(ctx, int(indexID))
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	return sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, index, prefetcher, locationResolver, traceErrs), nil
+	return sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, r.siteAdminChecker, r.repoStore, index, prefetcher, r.locationResolverFactory.Create(), traceErrs), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexes
@@ -220,15 +233,11 @@ func (r *rootResolver) LSIFIndexesByRepo(ctx context.Context, args *resolverstub
 		return nil, err
 	}
 
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
-
 	// Create a new indexConnectionResolver here as we only want to index records in
 	// the same graphQL request, not across different request.
 	indexConnectionResolver := sharedresolvers.NewIndexesResolver(r.autoindexSvc, opts)
 
-	return sharedresolvers.NewIndexConnectionResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, indexConnectionResolver, prefetcher, traceErrs), nil
+	return sharedresolvers.NewIndexConnectionResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, r.siteAdminChecker, r.repoStore, indexConnectionResolver, r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may infer auto-index jobs
@@ -238,7 +247,7 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -270,51 +279,43 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, nil
 	}
 
-	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
-	for _, indexJob := range config.IndexJobs {
-		var steps []types.DockerStep
-		for _, step := range indexJob.Steps {
-			steps = append(steps, types.DockerStep{
-				Root:     step.Root,
-				Image:    step.Image,
-				Commands: step.Commands,
-			})
-		}
-
-		resolvers = append(resolvers, &autoIndexJobDescriptionResolver{
-			root:    indexJob.Root,
-			indexer: types.NewCodeIntelIndexerResolver(indexJob.Indexer),
-			steps: sharedresolvers.NewIndexStepsResolver(r.autoindexSvc, types.Index{
-				DockerSteps:      steps,
-				LocalSteps:       indexJob.LocalSteps,
-				Root:             indexJob.Root,
-				Indexer:          indexJob.Indexer,
-				IndexerArgs:      indexJob.IndexerArgs,
-				Outfile:          indexJob.Outfile,
-				RequestedEnvVars: indexJob.RequestedEnvVars,
-			}),
-		})
-	}
-
-	return resolvers, nil
+	return newDescriptionResolvers(r.siteAdminChecker, config)
 }
 
 type autoIndexJobDescriptionResolver struct {
-	root    string
-	indexer resolverstubs.CodeIntelIndexerResolver
-	steps   resolverstubs.IndexStepsResolver
+	siteAdminChecker sharedresolvers.SiteAdminChecker
+	indexJob         config.IndexJob
+	steps            []types.DockerStep
 }
 
 func (r *autoIndexJobDescriptionResolver) Root() string {
-	return r.root
+	return r.indexJob.Root
 }
 
 func (r *autoIndexJobDescriptionResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	return r.indexer
+	return types.NewCodeIntelIndexerResolver(r.indexJob.Indexer, r.indexJob.Indexer)
+}
+
+func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
+	return comparisonKey(r.indexJob.Root, r.indexJob.Indexer)
+}
+
+func comparisonKey(root, indexer string) string {
+	hash := sha256.New()
+	_, _ = hash.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
+	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }
 
 func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
-	return r.steps
+	return sharedresolvers.NewIndexStepsResolver(r.siteAdminChecker, types.Index{
+		DockerSteps:      r.steps,
+		LocalSteps:       r.indexJob.LocalSteps,
+		Root:             r.indexJob.Root,
+		Indexer:          r.indexJob.Indexer,
+		IndexerArgs:      r.indexJob.IndexerArgs,
+		Outfile:          r.indexJob.Outfile,
+		RequestedEnvVars: r.indexJob.RequestedEnvVars,
+	})
 }
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
@@ -324,7 +325,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -351,15 +352,9 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, err
 	}
 
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	db := r.autoindexSvc.GetUnsafeDB()
-	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
-	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
-
 	lsifIndexResolvers := make([]resolverstubs.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
-		lsifIndexResolvers = append(lsifIndexResolvers, sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, indexes[i], prefetcher, locationResolver, traceErrs))
+		lsifIndexResolvers = append(lsifIndexResolvers, sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, r.siteAdminChecker, r.repoStore, indexes[i], r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), traceErrs))
 	}
 
 	return lsifIndexResolvers, nil
@@ -372,7 +367,7 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -453,7 +448,7 @@ func (r *rootResolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.Co
 	ctx, _, endObservation := r.operations.summary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	return sharedresolvers.NewSummaryResolver(r.autoindexSvc), nil
+	return sharedresolvers.NewSummaryResolver(r.autoindexSvc, r.locationResolverFactory.Create()), nil
 }
 
 func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
@@ -510,18 +505,18 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 
 		limitErr = errors.Append(limitErr, err)
 	}
-	indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
-	if err != nil {
-		if !errors.As(err, &inference.LimitError{}) {
-			return nil, err
-		}
+	// indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
+	// if err != nil {
+	// 	if !errors.As(err, &inference.LimitError{}) {
+	// 		return nil, err
+	// 	}
 
-		limitErr = errors.Append(limitErr, err)
-	}
+	// 	limitErr = errors.Append(limitErr, err)
+	// }
 
 	inferredAvailableIndexers := map[string]shared.AvailableIndexer{}
 	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
-	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
+	// inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
 	inferredAvailableIndexersResolver := make([]sharedresolvers.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
 	for _, indexer := range inferredAvailableIndexers {
@@ -540,18 +535,17 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 		LastIndexScan:           lastIndexScan,
 	}
 
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
-
 	return sharedresolvers.NewRepositorySummaryResolver(
 		r.autoindexSvc,
 		r.uploadSvc,
 		r.policySvc,
+		r.siteAdminChecker,
+		r.repoStore,
+		r.locationResolverFactory.Create(),
 		summary,
 		inferredAvailableIndexersResolver,
 		limitErr,
-		prefetcher,
+		r.prefetcherFactory.Create(),
 		errTracer,
 	), nil
 }

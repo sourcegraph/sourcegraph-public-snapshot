@@ -102,7 +102,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                             <li>Periodically pulling cloned repositories to ensure search results are current.</li>
                             <li>
                                 Fetching{' '}
-                                <Link to="/help/admin/repo/permissions" target="_blank" rel="noopener noreferrer">
+                                <Link to="/help/admin/permissions" target="_blank" rel="noopener noreferrer">
                                     user repository access permissions
                                 </Link>
                                 , if you have enabled this feature.

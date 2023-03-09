@@ -57,6 +57,7 @@ go_library(
         "//internal/oobmigration",
         "//internal/redispool",
         "//internal/requestclient",
+        "//internal/search/job/jobutil",
         "//internal/service",
         "//internal/symbols",
         "//internal/sysreq",
@@ -88,6 +89,10 @@ go_test(
     name = "cli_test",
     srcs = ["config_test.go"],
     embed = [":cli"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/conf/conftypes",
         "//internal/conf/deploy",

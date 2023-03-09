@@ -3,11 +3,15 @@
 package singleprogram
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
+	"github.com/fatih/color"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -30,7 +34,6 @@ func Init(logger log.Logger) {
 
 	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
 	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")
-	setDefaultEnv(logger, "REPO_UPDATER_URL", "http://127.0.0.1:3182")
 	setDefaultEnv(logger, "BLOBSTORE_URL", "http://127.0.0.1:9000")
 
 	// The syntax-highlighter might not be running, but this is a better default than an internal
@@ -66,7 +69,8 @@ func Init(logger log.Logger) {
 
 	setDefaultEnv(logger, "SRC_REPOS_DIR", filepath.Join(cacheDir, "repos"))
 	setDefaultEnv(logger, "BLOBSTORE_DATA_DIR", filepath.Join(cacheDir, "blobstore"))
-	setDefaultEnv(logger, "CACHE_DIR", filepath.Join(cacheDir, "cache"))
+	setDefaultEnv(logger, "SYMBOLS_CACHE_DIR", filepath.Join(cacheDir, "symbols"))
+	setDefaultEnv(logger, "SEARCHER_CACHE_DIR", filepath.Join(cacheDir, "searcher"))
 
 	configDir, err := os.UserConfigDir()
 	if err == nil {
@@ -134,16 +138,80 @@ func Init(logger log.Logger) {
 
 	setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
 
+	haveDocker := isDockerAvailable()
+	if !haveDocker {
+		printStatusCheckError(
+			"Docker is unavailable",
+			"Sourcegraph is better when Docker is available; some features may not work:",
+			"- Batch changes",
+			"- Symbol search",
+			"- Symbols overview tab (on repository pages)",
+		)
+	}
+
+	if _, err := exec.LookPath("src"); err != nil {
+		printStatusCheckError(
+			"src-cli is unavailable",
+			"Sourcegraph is better when src-cli is available; batch changes may not work.",
+			"Installation: https://github.com/sourcegraph/src-cli",
+		)
+	}
+
 	// generate a shell script to run a ctags Docker image
 	// unless the environment is already set up to find ctags
 	ctagsPath := os.Getenv("CTAGS_COMMAND")
 	if stat, err := os.Stat(ctagsPath); err != nil || stat.IsDir() {
-		// Write script that invokes universal-ctags via Docker.
-		// TODO(sqs): TODO(single-binary): stop relying on a ctags Docker image
-		ctagsPath = filepath.Join(cacheDir, "universal-ctags-dev")
-		writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
-		setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+		// Write script that invokes universal-ctags via Docker, if Docker is available.
+		// TODO(single-binary): stop relying on a ctags Docker image
+		if haveDocker {
+			ctagsPath = filepath.Join(cacheDir, "universal-ctags-dev")
+			writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
+			setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+		}
 	}
+}
+
+func printStatusCheckError(title, description string, details ...string) {
+	pad := func(s string, n int) string {
+		spaces := n - len(s)
+		if spaces < 0 {
+			spaces = 0
+		}
+		return s + strings.Repeat(" ", spaces)
+	}
+
+	newLine := "\033[0m\n"
+	titleRed := color.New(color.FgRed, color.BgYellow, color.Bold)
+	titleRed.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
+	titleRed.Fprintf(os.Stderr, "| %s |"+newLine, pad(title, 76))
+	titleRed.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
+
+	subline := func(s string) string {
+		return color.RedString("%s %s %s"+newLine, titleRed.Sprint("|"), pad(s, 76), titleRed.Sprint("|"))
+	}
+	msg := subline(description)
+	msg += subline("")
+	for _, detail := range details {
+		msg += subline(detail)
+	}
+	msg += subline("")
+	fmt.Fprintf(os.Stderr, "%s", msg)
+	titleRed.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
+}
+
+func isDockerAvailable() bool {
+	if _, err := exec.LookPath("docker"); err != nil {
+		return false
+	}
+
+	cmd := exec.Command("docker", "stats", "--no-stream")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	if err := cmd.Run(); err != nil {
+		return false
+	}
+	return true
 }
 
 // universalCtagsDevScript is copied from cmd/symbols/universal-ctags-dev.
@@ -154,6 +222,7 @@ const universalCtagsDevScript = `#!/usr/bin/env bash
 exec docker run --rm -i \
     -a stdin -a stdout -a stderr \
     --user guest \
+    --platform=linux/amd64 \
     --name=universal-ctags-$$ \
     --entrypoint /usr/local/bin/universal-ctags \
     slimsag/ctags:latest@sha256:dd21503a3ae51524ab96edd5c0d0b8326d4baaf99b4238dfe8ec0232050af3c7 "$@"

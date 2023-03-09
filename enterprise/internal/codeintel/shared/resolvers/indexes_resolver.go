@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
 // IndexesResolver wraps store.GetIndexes so that the underlying function can be
@@ -43,7 +43,7 @@ func (r *IndexesResolver) resolve(ctx context.Context) error {
 	}
 
 	r.Indexes = indexes
-	r.NextOffset = graphqlutil.NextOffset(r.opts.Offset, len(indexes), totalCount)
+	r.NextOffset = resolverstubs.NextOffset(r.opts.Offset, len(indexes), totalCount)
 	r.TotalCount = totalCount
 	return nil
 }

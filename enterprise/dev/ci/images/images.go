@@ -90,6 +90,7 @@ var DeploySourcegraphDockerImages = []string{
 	"executor-vm",
 	"batcheshelper",
 	"opentelemetry-collector",
+	"embeddings",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.

@@ -121,7 +121,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     const location = useLocation()
     const { filePath = '' } = parseBrowserRepoURL(location.pathname)
 
-    const { connection, error, loading, hasNextPage, fetchMore, data } = useShowMorePagination<
+    const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoryGitCommitsResult,
         RepositoryGitCommitsVariables,
         GitCommitFields
@@ -152,8 +152,6 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
             useAlternateAfterCursor: true,
         },
     })
-    const node = data?.node
-    const externalURLs = node && node.__typename === 'Repository' ? node.externalURLs : undefined
 
     useEffect(() => {
         eventLogger.logPageView('RepositoryCommits')
@@ -223,13 +221,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                     {error && <ErrorAlert error={error} className="w-100 mb-0" />}
                     <ConnectionList className="list-group list-group-flush w-100">
                         {connection?.nodes.map(node => (
-                            <GitCommitNode
-                                key={node.id}
-                                className="list-group-item"
-                                wrapperElement="li"
-                                node={node}
-                                externalURLs={externalURLs}
-                            />
+                            <GitCommitNode key={node.id} className="list-group-item" wrapperElement="li" node={node} />
                         ))}
                     </ConnectionList>
                     {loading && <ConnectionLoading />}

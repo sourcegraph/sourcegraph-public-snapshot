@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "bg",
     srcs = [
+        "app_ready.go",
         "check_redis_cache_eviction_policy.go",
         "delete_old_cache_data_in_redis.go",
         "delete_old_event_logs_in_postgres.go",
@@ -12,6 +13,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
+        "//cmd/frontend/globals",
+        "//internal/conf/deploy",
         "//internal/database",
         "//internal/rbac",
         "//internal/rcache",
@@ -20,6 +23,7 @@ go_library(
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",
         "@com_github_inconshreveable_log15//:log15",
+        "@com_github_pkg_browser//:browser",
         "@com_github_sourcegraph_log//:log",
     ],
 )

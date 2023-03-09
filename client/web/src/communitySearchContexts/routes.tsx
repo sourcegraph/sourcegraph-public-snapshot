@@ -1,7 +1,8 @@
+import { RouteObject } from 'react-router-dom'
+
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LegacyRoute } from '../LegacyRouteContext'
-import { LayoutRouteProps } from '../routes'
 
 const KubernetesCommunitySearchContextPage = lazyComponent(
     () => import('./Kubernetes'),
@@ -32,7 +33,7 @@ const BackstageCommunitySearchContextPage = lazyComponent(
 )
 
 // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
-export const communitySearchContextsRoutes: readonly LayoutRouteProps[] = [
+export const communitySearchContextsRoutes: readonly RouteObject[] = [
     {
         path: '/kubernetes',
         element: (

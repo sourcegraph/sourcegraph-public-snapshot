@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -17,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type handler struct {
@@ -52,9 +52,9 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job *types.Outb
 	// the relatively expensive parts of constructing the payload and retrieving
 	// the matching hooks, we're going to just fan these out with a high
 	// concurrency limit.
-	g := group.New().WithContext(ctx).WithMaxConcurrency(100)
+	p := pool.New().WithContext(ctx).WithMaxGoroutines(100)
 	for _, webhook := range webhooks {
-		g.Go(h.buildWebhookSender(
+		p.Go(h.buildWebhookSender(
 			logger.With(log.Int64("webhook.id", webhook.ID)),
 			job, webhook,
 		))
@@ -62,7 +62,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job *types.Outb
 
 	// Errors will have been logged individually, so we can just return the
 	// error back out of the handler.
-	return g.Wait()
+	return p.Wait()
 }
 
 func (h *handler) buildWebhookSender(
