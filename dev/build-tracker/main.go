@@ -219,13 +219,13 @@ func (s *Server) startCleaner(every, window time.Duration) func() {
 // full build which includes all recorded jobs for the build and send a notification.
 // processEvent delegates the decision to actually send a notifcation
 func (s *Server) processEvent(event *build.Event) {
-	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.BuildNumber()), log.String("jobName", event.JobName()))
+	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.GetBuildNumber()), log.String("jobName", event.GetJobName()))
 	s.store.Add(event)
-	b := s.store.GetByBuildNumber(event.BuildNumber())
-	shouldNotify := event.IsBuildFinished() || (b.HasFailed() && event.IsJobFinished())
+	b := s.store.GetByBuildNumber(event.GetBuildNumber())
+	shouldNotify := event.IsBuildFinished() || (b.IsFailed() && event.IsJobFinished())
 	if shouldNotify {
 		if err := s.notifyIfFailed(b); err != nil {
-			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.BuildNumber()), log.Error(err))
+			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
 		}
 	}
 }

@@ -77,7 +77,7 @@ func (b *Build) updateFromEvent(e *Event) {
 	b.Pipeline = e.WrappedPipeline()
 }
 
-func (b *Build) HasFailed() bool {
+func (b *Build) IsFailed() bool {
 	return b.GetState() == "failed"
 }
 
@@ -90,7 +90,7 @@ func (b *Build) IsFinished() bool {
 	}
 }
 
-func (b *Build) authorName() string {
+func (b *Build) GetAuthorName() string {
 	if b.Author == nil {
 		return ""
 	}
@@ -177,11 +177,11 @@ func (b *Event) IsJobFinished() bool {
 	return b.Name == "job.finished"
 }
 
-func (b *Event) JobName() string {
+func (b *Event) GetJobName() string {
 	return util.Strp(b.Job.Name)
 }
 
-func (b *Event) BuildNumber() int {
+func (b *Event) GetBuildNumber() int {
 	return util.Intp(b.Build.Number)
 }
 
@@ -217,11 +217,11 @@ func (s *Store) Add(event *Event) {
 	s.m.Lock()
 	defer s.m.Unlock()
 
-	build, ok := s.builds[event.BuildNumber()]
+	build, ok := s.builds[event.GetBuildNumber()]
 	// if we don't know about this build, convert it and add it to the store
 	if !ok {
 		build = event.WrappedBuild()
-		s.builds[event.BuildNumber()] = build
+		s.builds[event.GetBuildNumber()] = build
 	}
 
 	// Now that we have a build, lets make sure it isn't modified while we look and possibly update it
@@ -237,7 +237,7 @@ func (s *Store) Add(event *Event) {
 		// We update the global count of consecutiveFailures then we set the count on the individual build
 		// if we get a pass, we reset the global count of consecutiveFailures
 		failuresKey := fmt.Sprintf("%s/%s", build.Pipeline.GetName(), build.GetBranch())
-		if build.HasFailed() {
+		if build.IsFailed() {
 			s.consecutiveFailures[failuresKey] += 1
 			build.ConsecutiveFailure = s.consecutiveFailures[failuresKey]
 		} else {
@@ -251,13 +251,13 @@ func (s *Store) Add(event *Event) {
 	err := build.AddJob(newJob)
 	if err != nil {
 		s.logger.Warn("job for step has no name - not added",
-			log.Int("buildNumber", event.BuildNumber()),
+			log.Int("buildNumber", event.GetBuildNumber()),
 			log.Object("job", log.String("name", newJob.GetName()), log.String("id", newJob.GetID())),
 			log.Int("totalSteps", len(build.Steps)),
 		)
 	} else {
 		s.logger.Debug("job added to step",
-			log.Int("buildNumber", event.BuildNumber()),
+			log.Int("buildNumber", event.GetBuildNumber()),
 			log.Object("step", log.String("name", newJob.GetName()),
 				log.Object("job", log.String("state", newJob.state()), log.String("id", newJob.GetID())),
 			),
