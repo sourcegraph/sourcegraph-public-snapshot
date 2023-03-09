@@ -694,6 +694,9 @@ func checkUserRepoPermissions(t *testing.T, s *permsStore, where *sqlf.Query, ex
 	if permissions == nil {
 		permissions = []authz.Permission{}
 	}
+	sort.Slice(permissions, func(i, j int) bool {
+		return permissions[i].UserID <= permissions[j].UserID && permissions[i].ExternalAccountID <= permissions[j].ExternalAccountID && permissions[i].RepoID < permissions[j].RepoID
+	})
 
 	if diff := cmp.Diff(expectedPermissions, permissions, cmpopts.IgnoreFields(authz.Permission{}, "CreatedAt", "UpdatedAt")); diff != "" {
 		t.Fatalf("Expected permissions: %v do not match actual permissions: %v; diff %v", expectedPermissions, permissions, diff)
@@ -2487,10 +2490,11 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 			},
 			grants: []*authz.UserGrantPermissions{
 				{
-					UserID:      1,
-					ServiceType: authz.SourcegraphServiceType,
-					ServiceID:   authz.SourcegraphServiceID,
-					AccountID:   "alice",
+					UserID:                1,
+					UserExternalAccountID: 1,
+					ServiceType:           authz.SourcegraphServiceType,
+					ServiceID:             authz.SourcegraphServiceID,
+					AccountID:             "alice",
 				},
 			},
 			expectUserRepoPerms: func() []authz.Permission {

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/log"
@@ -481,8 +483,28 @@ func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permi
 	return nil
 }
 
+// Returns minimum of 2 numbers
+func min[T constraints.Ordered](a T, b T) T {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// Splits the slice into chunks of size `size`. Returns a slice of slices.
+func splitIntoChunks[T any](slice []T, size int) [][]T {
+	numChunks := int(math.Ceil(float64(len(slice)) / float64(size)))
+	chunks := make([][]T, 0, numChunks)
+	for i := 0; i < numChunks; i++ {
+		maxIndex := min((i+1)*size, len(slice))
+		chunks = append(chunks, slice[i*size:maxIndex])
+	}
+	return chunks
+}
+
 // upsertUserRepoPermissions upserts multiple rows of permissions. It also updates the updated_at and source
-// columns for all the rows that match the permissions input parameter
+// columns for all the rows that match the permissions input parameter.
+// We rely on the caller to call this method in a transaction.
 func (s *permsStore) upsertUserRepoPermissions(ctx context.Context, permissions []authz.Permission, currentTime time.Time, source string) (t []time.Time, err error) {
 	const format = `
 INSERT INTO user_repo_permissions
@@ -496,28 +518,37 @@ DO UPDATE SET
 RETURNING updated_at;
 `
 
-	values := make([]*sqlf.Query, 0, len(permissions))
-	for _, p := range permissions {
-		values = append(values, sqlf.Sprintf("(%s::integer, %s::integer, %s::integer, %s::timestamptz, %s::timestamptz, %s::text)",
-			p.UserID,
-			p.ExternalAccountID,
-			p.RepoID,
-			currentTime,
-			currentTime,
-			source,
-		))
+	if !s.InTransaction() {
+		return nil, errors.New("upsertUserRepoPermissions must be called in a transaction")
 	}
 
-	q := sqlf.Sprintf(format, sqlf.Join(values, ","))
-	ctx, save := s.observe(ctx, "load", "")
-	defer func() {
-		save(&err,
-			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
-			otlog.Object("Query.Args", q.Args()),
-		)
-	}()
+	// we split into chunks, so that we don't exceed the maximum number of parameters
+	// we supply 6 parameters per row, so we can only have 65535/6 = 10922 rows per chunk
+	slicedPermissions := splitIntoChunks(permissions, 65535/6)
 
-	return basestore.ScanTimes(s.Query(ctx, q))
+	output := make([]time.Time, 0, len(permissions))
+	for _, permissionSlice := range slicedPermissions {
+		values := make([]*sqlf.Query, 0, len(permissionSlice))
+		for _, p := range permissionSlice {
+			values = append(values, sqlf.Sprintf("(%s::integer, %s::integer, %s::integer, %s::timestamptz, %s::timestamptz, %s::text)",
+				p.UserID,
+				p.ExternalAccountID,
+				p.RepoID,
+				currentTime,
+				currentTime,
+				source,
+			))
+		}
+
+		q := sqlf.Sprintf(format, sqlf.Join(values, ","))
+
+		userRepoPerms, err := basestore.ScanTimes(s.Query(ctx, q))
+		if err != nil {
+			return nil, err
+		}
+		output = append(output, userRepoPerms...)
+	}
+	return output, nil
 }
 
 // deleteOldUserRepoPermissions deletes multiple rows of permissions. It also updates the updated_at and source
@@ -1221,7 +1252,7 @@ func (s *permsStore) GrantPendingPermissions(ctx context.Context, p *authz.UserG
 	allRepoIDs := maps.Keys(uniqueRepoIDs)
 
 	// Write to the unified user_repo_permissions table.
-	err = s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: p.UserID, ExternalAccountID: p.UserExternalAccountID}, allRepoIDs)
+	err = txs.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: p.UserID, ExternalAccountID: p.UserExternalAccountID}, allRepoIDs)
 	if err != nil {
 		return err
 	}
