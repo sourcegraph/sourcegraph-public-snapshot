@@ -152,7 +152,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
         // we send these modes with SetupWizardConnectRemoteCodeHost event
         if (codeHostKind === ExternalServiceKind.GITHUB) {
             const { isAffiliatedRepositories, isOrgsRepositories, isSetRepositories } = getRepositoriesSettings(
-                input.config
+                values.config
             )
             const eventProperties = {
                 code_host: codeHostKind,
