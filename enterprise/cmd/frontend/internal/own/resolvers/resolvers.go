@@ -222,7 +222,14 @@ func (r *ownerResolver) ToPerson() (*graphqlbackend.PersonResolver, bool) {
 }
 
 func (r *ownerResolver) ToTeam() (*graphqlbackend.TeamResolver, bool) {
-	return nil, false
+	if r.resolvedOwner.Type() != codeowners.OwnerTypeTeam {
+		return nil, false
+	}
+	resolvedTeam, ok := r.resolvedOwner.(*codeowners.Team)
+	if !ok {
+		return nil, false
+	}
+	return graphqlbackend.NewTeamResolver(r.db, resolvedTeam.Team), true
 }
 
 type codeownersFileEntryResolver struct {
