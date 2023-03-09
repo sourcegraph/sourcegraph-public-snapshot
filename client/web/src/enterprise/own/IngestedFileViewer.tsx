@@ -15,9 +15,10 @@ export const IngestedFileViewer: React.FunctionComponent<{ contents: string }> =
 
     const location = useLocation()
 
-    const lineNumber = useMemo(() => {
-        return parseQueryAndHash(location.search, location.hash).line
-    }, [location.search])
+    const lineNumber = useMemo(
+        () => parseQueryAndHash(location.search, location.hash).line,
+        [location.search, location.hash]
+    )
 
     const extensions: Extension[] = useMemo(
         () => [
