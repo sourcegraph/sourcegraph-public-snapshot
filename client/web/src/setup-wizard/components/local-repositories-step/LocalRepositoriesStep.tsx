@@ -1,6 +1,6 @@
 import { FC, HTMLAttributes, useState, useEffect } from 'react'
 
-import {useLazyQuery} from '@apollo/client';
+import { useLazyQuery } from '@apollo/client'
 import { mdiInformationOutline, mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -14,7 +14,10 @@ import {
     RepositoriesResult,
     AddRemoteCodeHostResult,
     AddRemoteCodeHostVariables,
-    CodeHost, GetLocalDirectoryPathResult, DiscoverLocalRepositoriesResult, DiscoverLocalRepositoriesVariables,
+    CodeHost,
+    GetLocalDirectoryPathResult,
+    DiscoverLocalRepositoriesResult,
+    DiscoverLocalRepositoriesVariables,
 } from '../../../graphql-operations'
 import { ProgressBar } from '../ProgressBar'
 // TODO Move these two in shared queries if they are used in different steps UI
@@ -67,7 +70,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
 
     const { data: discoveredRepositories } = useQuery<DiscoverLocalRepositoriesResult>(DISCOVER_LOCAL_REPOSITORIES, {
         skip: !directoryPath,
-        variables: { dir: directoryPath }
+        variables: { dir: directoryPath },
     })
 
     // Updates discovery repo list based off given directory path
@@ -101,9 +104,9 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                     config: `{
                         url: '',
                         repos: [],
-                    }`
-                }
-            }
+                    }`,
+                },
+            },
         })
     }
 
@@ -214,17 +217,17 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
 
     const [queryPath] = useLazyQuery<GetLocalDirectoryPathResult>(GET_LOCAL_DIRECTORY_PATH, {
         fetchPolicy: 'network-only',
-        onCompleted: data => data.localDirectoryPicker?.path && setPath(data.localDirectoryPicker?.path)
+        onCompleted: data => data.localDirectoryPicker?.path && setPath(data.localDirectoryPicker?.path),
     })
 
-    const { data: repositoriesData } = useQuery<
-            DiscoverLocalRepositoriesResult,
-            DiscoverLocalRepositoriesVariables
-        >(DISCOVER_LOCAL_REPOSITORIES, {
+    const { data: repositoriesData } = useQuery<DiscoverLocalRepositoriesResult, DiscoverLocalRepositoriesVariables>(
+        DISCOVER_LOCAL_REPOSITORIES,
+        {
             skip: !path,
             fetchPolicy: 'cache-and-network',
             variables: { dir: path },
-        })
+        }
+    )
 
     const foundRepositories = repositoriesData?.localDirectory?.repositories ?? []
 
@@ -313,7 +316,9 @@ function getLocalService(data?: GetCodeHostsResult): CodeHost | null {
         return null
     }
 
-    return data.externalServices.nodes.find(
-        node => node.kind === ExternalServiceKind.OTHER && node.id !== 'RXh0ZXJuYWxTZXJ2aWNlOjQ5Mzc0'
-    ) ?? null
+    return (
+        data.externalServices.nodes.find(
+            node => node.kind === ExternalServiceKind.OTHER && node.id !== 'RXh0ZXJuYWxTZXJ2aWNlOjQ5Mzc0'
+        ) ?? null
+    )
 }

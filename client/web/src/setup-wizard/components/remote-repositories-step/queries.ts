@@ -66,4 +66,3 @@ export const DELETE_CODE_HOST = gql`
         }
     }
 `
-

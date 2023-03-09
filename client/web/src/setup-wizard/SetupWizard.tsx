@@ -1,4 +1,4 @@
-import { FC, ReactElement, useCallback, useMemo } from 'react'
+import { FC, useCallback, useMemo } from 'react'
 
 import { ApolloClient } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
@@ -115,16 +115,5 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
                 <SetupStepsFooter className={styles.footer} />
             </SetupStepsRoot>
         </div>
-    )
-}
-
-function SyncRepositoriesStep(props: any): ReactElement {
-    return (
-        <section {...props}>
-            <Text>
-                It may take a few moments to clone and index each repository. Repository statuses are displayed below.
-            </Text>
-            <SiteAdminRepositoriesContainer />
-        </section>
     )
 }
