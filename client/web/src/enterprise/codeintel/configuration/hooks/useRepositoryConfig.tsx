@@ -25,10 +25,7 @@ export const useRepositoryConfig = (id: string): UseRepositoryConfigResult => {
                   raw: data.node.indexConfiguration.configuration,
                   parsed: data.node.indexConfiguration.parsedConfiguration ?? [],
               }
-            : {
-                  raw: '',
-                  parsed: [],
-              }
+            : null
 
     return {
         configuration,
