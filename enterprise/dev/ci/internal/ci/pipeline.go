@@ -119,7 +119,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// At this stage, we don't break builds because of a Bazel failure.
 		// TODO(JH) Disabled until we fix database isolation
-		// ops.Merge(BazelOperations(true))
+		ops.Merge(BazelOperations(true))
 
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
