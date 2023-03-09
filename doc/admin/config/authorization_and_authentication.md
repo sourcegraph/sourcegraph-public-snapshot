@@ -161,10 +161,10 @@ Add the following to the `auth.providers` key in the site config:
     {
       "type": "azureDevOps",
       "displayName": "Azure DevOps",
-      "clientID": $APP_ID_FROM_THE_PREVIOUS_STEP,
-      "clientSecret": $CLIENT_SECRET,
+      "clientID": "replace-with-app-id-of-your-oauth-application",
+      "clientSecret": "replace-with-client-secret-of-your-oauth-application",
       "apiScope": "vso.code,vso.identity,vso.project"
-    },
+    }
   ]
 }
 ```
