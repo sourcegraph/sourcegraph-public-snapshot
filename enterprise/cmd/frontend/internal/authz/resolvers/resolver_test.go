@@ -765,7 +765,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 			},
 		)
 
-		require.Equal(t, "Permissions sync job canceled", *result)
+		require.Equal(t, "Permissions sync job canceled.", *result)
 		require.NoError(t, err)
 	})
 }
@@ -801,7 +801,7 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 			`, marshalPermissionsSyncJobID(1)),
 			ExpectedResult: `
 				{
-					"cancelPermissionsSyncJob": "Permissions sync job canceled"
+					"cancelPermissionsSyncJob": "Permissions sync job canceled."
 				}
 			`,
 		})
