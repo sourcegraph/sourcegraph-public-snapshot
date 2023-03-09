@@ -22,7 +22,7 @@ type featureFlagError struct {
 }
 
 func (e *featureFlagError) Error() string {
-	return fmt.Sprintf("`%s` searches are not enabled on this instance. Enable the `search-ownership` flag to access Ownership search.", e.predicate)
+	return fmt.Sprintf("`%s` searches are not enabled on this instance. <a href=\"/help/own\">Learn more about Own.</a>", e.predicate)
 }
 
 func NewFileHasOwnersJob(child job.Job, features *search.Features, includeOwners, excludeOwners []string) job.Job {
