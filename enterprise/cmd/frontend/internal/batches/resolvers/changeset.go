@@ -355,7 +355,7 @@ func (r *changesetResolver) CheckState() *string {
 	return &checkState
 }
 
-// Normally, `FailureMessage` is set by the reconciler worker if it fails when processing
+// Error: `FailureMessage` is set by the reconciler worker if it fails when processing
 // a changeset job. However, for most reconciler operations, we automatically retry the
 // operation a number of times. When the reconciler worker picks up a failed changeset job
 // to restart processing, it clears out the `FailureMessage`, resulting in the error
