@@ -179,7 +179,7 @@ type pingRequest struct {
 	ClientSiteID         string `json:"site"`
 	LicenseKey           string
 	DeployType           string          `json:"deployType"`
-	Os                   string          `json:"os,omitEmpty"`
+	Os                   string          `json:"os,omitempty"` // Only used in Sourcegraph App
 	ClientVersionString  string          `json:"version"`
 	DependencyVersions   json.RawMessage `json:"dependencyVersions"`
 	AuthProviders        []string        `json:"auth"`
@@ -215,10 +215,11 @@ type pingRequest struct {
 	TosAccepted                   bool            `json:"tosAccepted"`
 	TotalUsers                    int32           `json:"totalUsers"`
 	TotalOrgs                     int32           `json:"totalOrgs"`
-	TotalRepos                    int32           `json:"totalRepos,omitEmpty"`
+	TotalRepos                    int32           `json:"totalRepos,omitempty"` // Only used in Sourcegraph App
 	HasRepos                      bool            `json:"repos"`
 	EverSearched                  bool            `json:"searched"`
 	EverFindRefs                  bool            `json:"refs"`
+	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Sourcegraph App
 }
 
 type dependencyVersions struct {
@@ -334,10 +335,13 @@ type pingPayload struct {
 	AccessRequestEnabled          string          `json:"access_request_enabled"`
 	DeployType                    string          `json:"deploy_type"`
 	TotalUserAccounts             string          `json:"total_user_accounts"`
+	TotalRepos                    string          `json:"total_repos"`
 	HasExternalURL                string          `json:"has_external_url"`
 	HasRepos                      string          `json:"has_repos"`
 	EverSearched                  string          `json:"ever_searched"`
 	EverFindRefs                  string          `json:"ever_find_refs"`
+	Os                            string          `json:"os"`
+	ActiveToday                   string          `json:"active_today"`
 	Timestamp                     string          `json:"timestamp"`
 }
 
@@ -396,6 +400,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		RemoteSiteVersion:             pr.ClientVersionString,
 		RemoteSiteID:                  pr.ClientSiteID,
 		LicenseKey:                    pr.LicenseKey,
+		Os:                            pr.Os,
 		HasUpdate:                     strconv.FormatBool(hasUpdate),
 		UniqueUsersToday:              strconv.FormatInt(int64(pr.UniqueUsers), 10),
 		SiteActivity:                  pr.Activity,          // no change in schema
@@ -425,10 +430,12 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		AccessRequestEnabled:          strconv.FormatBool(pr.AccessRequestEnabled),
 		DeployType:                    pr.DeployType,
 		TotalUserAccounts:             strconv.FormatInt(int64(pr.TotalUsers), 10),
+		TotalRepos:                    strconv.FormatInt(int64(pr.TotalRepos), 10),
 		HasExternalURL:                strconv.FormatBool(pr.HasExtURL),
 		HasRepos:                      strconv.FormatBool(pr.HasRepos),
 		EverSearched:                  strconv.FormatBool(pr.EverSearched),
 		EverFindRefs:                  strconv.FormatBool(pr.EverFindRefs),
+		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
 	})
 }

@@ -432,7 +432,11 @@ func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (
 	}
 	r.TotalRepos = int32(totalRepos)
 
-	// TODO Add a DAU-like user activity field.
+	usersActiveTodayCount, err := getUsersActiveTodayCount(ctx, db)
+	if err != nil {
+		logFunc("getUsersActiveTodayCount failed", log.Error(err))
+	}
+	r.ActiveToday = usersActiveTodayCount > 0
 
 	contents, err := json.Marshal(r)
 	if err != nil {
