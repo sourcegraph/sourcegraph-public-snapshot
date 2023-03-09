@@ -47,6 +47,7 @@ type Client interface {
 	GetProject(ctx context.Context, org, project string) (Project, error)
 	GetAuthorizedProfile(ctx context.Context) (Profile, error)
 	ListAuthorizedUserOrganizations(ctx context.Context, profile Profile) ([]Org, error)
+	SetWaitForRateLimit(wait bool)
 }
 
 type client struct {
@@ -134,10 +135,8 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	c.externalRateLimiter.Update(resp.Header)
 
 	numRetries := 0
-	// ADO's retry-after header has a status code of 200 OK, so we cannot check for a 429 Too Many Requests response.
-	// However, if neither retry-after is set, or if there are still enough tokens, WaitForRateLimit will return false
-	// and we won't retry any requests.
-	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries {
+	for c.waitForRateLimit && resp.StatusCode == http.StatusTooManyRequests &&
+		numRetries < c.maxRateLimitRetries {
 		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
 			resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
 			numRetries++
@@ -177,6 +176,10 @@ func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
 	}
 
 	return NewClient(c.urn, c.URL.String(), a, c.httpClient)
+}
+
+func (c *client) SetWaitForRateLimit(wait bool) {
+	c.waitForRateLimit = wait
 }
 
 func (c *client) Authenticator() auth.Authenticator {
