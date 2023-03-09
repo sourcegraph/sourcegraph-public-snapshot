@@ -1,0 +1,92 @@
+.job-anchor {
+    display: block;
+    position: relative;
+    top: -4rem;
+    visibility: hidden;
+}
+
+// IndexJob
+.job {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+.job-content {
+    padding: 0.25rem;
+    margin-bottom: 0;
+    list-style-type: none;
+}
+
+// IndexJobStep
+.job-step-container {
+    padding: 0 1rem;
+    margin-top: 1rem;
+    border: 3px solid var(--subtle-bg);
+}
+.job-step {
+    padding: 1rem 0;
+    border-bottom: 3px solid var(--subtle-bg);
+
+    &:last-of-type {
+        border-bottom: none;
+    }
+}
+.job-step-content {
+    padding: 0;
+    list-style-type: none;
+}
+
+// Misc
+.job-header,
+.job-step-header {
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+
+    margin-top: -0.25rem;
+    margin-left: -0.25rem;
+    margin-bottom: 1rem;
+}
+
+.job-input {
+    grid-area: value;
+    // Ensure consistent height even when no value
+    min-height: 2rem;
+    height: auto;
+    margin-bottom: 0.5rem;
+    overflow: auto;
+
+    input[readonly] {
+        // Override disabled bg-color
+        background-color: var(--input-bg);
+    }
+
+    &:last-of-type {
+        margin-bottom: 0;
+    }
+}
+
+.job-input-action {
+    grid-area: value;
+    min-height: 2rem;
+    margin-bottom: 0.5rem;
+    max-width: 7rem;
+
+    &:last-of-type {
+        margin-bottom: 0;
+    }
+}
+
+.job-command-container {
+    grid-area: value;
+    padding: 1rem;
+    border: 3px solid var(--subtle-bg);
+}
+
+.job-command {
+    display: flex;
+    margin-bottom: 0.5rem;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
