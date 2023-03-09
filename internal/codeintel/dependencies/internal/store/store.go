@@ -71,10 +71,10 @@ const (
 	lr.name,
 	lr.blocked,
 	lr.last_checked_at,
-	array_agg(prv.id) as vid,
-	array_agg(prv.version) as version,
-	array_agg(prv.blocked) as vers_blocked,
-	array_agg(prv.last_checked_at) as vers_last_checked_at
+	array_agg(prv.id ORDER BY prv.id) as vid,
+	array_agg(prv.version ORDER BY prv.id) as version,
+	array_agg(prv.blocked ORDER BY prv.id) as vers_blocked,
+	array_agg(prv.last_checked_at ORDER BY prv.id) as vers_last_checked_at
 `
 	packageReposColumns = "lr.id, lr.scheme, lr.name, lr.blocked, lr.last_checked_at"
 )
