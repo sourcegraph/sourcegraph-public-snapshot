@@ -39,7 +39,7 @@ import (
 func cleanupPermsTables(t *testing.T, s *permsStore) {
 	t.Helper()
 
-	q := `TRUNCATE TABLE perms_sync_jobs_history, user_permissions, repo_permissions, user_pending_permissions, repo_pending_permissions, user_repo_permissions;`
+	q := `TRUNCATE TABLE permission_sync_jobs, user_permissions, repo_permissions, user_pending_permissions, repo_pending_permissions, user_repo_permissions;`
 	execQuery(t, context.Background(), s, sqlf.Sprintf(q))
 }
 
@@ -2956,22 +2956,45 @@ func TestPermsStore_UserIDsWithNoPerms(t *testing.T) {
 		t.Fatal(diff)
 	}
 
-	// mark sync jobs as completed for alice and bob
-	q := sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(user_id, updated_at) VALUES(%d, NOW())`, 1)
-	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(user_id, updated_at) VALUES(%d, NOW())`, 2)
-	execQuery(t, ctx, s, q)
+	t.Run("legacy user_permissions table", func(t *testing.T) {
+		mockUnifiedPermsConfig(false)
 
-	// Only "david" has no permissions at this point
-	ids, err = s.UserIDsWithNoPerms(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+		s.SetUserPermissions(ctx, &authz.UserPermissions{UserID: 1, IDs: map[int32]struct{}{1: {}}})
+		s.SetUserPermissions(ctx, &authz.UserPermissions{UserID: 2, IDs: make(map[int32]struct{})})
 
-	expIDs = []int32{4}
-	if diff := cmp.Diff(expIDs, ids); diff != "" {
-		t.Fatal(diff)
-	}
+		// Only "david" has no permissions at this point
+		ids, err = s.UserIDsWithNoPerms(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expIDs = []int32{4}
+		if diff := cmp.Diff(expIDs, ids); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
+	t.Run("unified user_repo_permissions table", func(t *testing.T) {
+		mockUnifiedPermsConfig(true)
+
+		// mark sync jobs as completed for alice and add permissions for bob
+		q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonUserNoPermissions)
+		execQuery(t, ctx, s, q)
+
+		s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1})
+
+		// Only "david" has no permissions at this point
+		ids, err = s.UserIDsWithNoPerms(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expIDs = []int32{4}
+		if diff := cmp.Diff(expIDs, ids); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
 }
 
 func cleanupReposTable(t *testing.T, s *permsStore) {
@@ -3026,19 +3049,41 @@ func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
 		t.Fatal(diff)
 	}
 
-	// mark sync jobs as completed for "private_repo" and "private_repo_2"
-	q := sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(repo_id) VALUES(%d)`, 1)
-	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(repo_id) VALUES(%d)`, 3)
-	execQuery(t, ctx, s, q)
+	t.Run("legacy user_permissions table", func(t *testing.T) {
+		mockUnifiedPermsConfig(false)
 
-	// No private repositories have any permissions at this point
-	ids, err = s.RepoIDsWithNoPerms(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+		s.SetRepoPermissions(ctx, &authz.RepoPermissions{RepoID: 1, UserIDs: map[int32]struct{}{1: {}}})
+		s.SetRepoPermissions(ctx, &authz.RepoPermissions{RepoID: 3, UserIDs: make(map[int32]struct{})})
 
-	assert.Nil(t, ids)
+		// No private repositories have any permissions at this point
+		ids, err = s.RepoIDsWithNoPerms(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Nil(t, ids)
+	})
+
+	t.Run("unified user_repo_permissions table", func(t *testing.T) {
+		mockUnifiedPermsConfig(true)
+
+		// mark sync jobs as completed for "private_repo" and add permissions for "private_repo_2"
+		q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonRepoNoPermissions)
+		execQuery(t, ctx, s, q)
+
+		err := s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// No private repositories have any permissions at this point
+		ids, err = s.RepoIDsWithNoPerms(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Nil(t, ids)
+	})
 }
 
 func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
@@ -3072,9 +3117,9 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 	// mark sync jobs as completed for users 1 and 2
 	user1UpdatedAt := clock().Add(-15 * time.Minute)
 	user2UpdatedAt := clock().Add(-5 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(user_id, updated_at) VALUES(%d, %s)`, 1, user1UpdatedAt)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, user1UpdatedAt, database.ReasonUserOutdatedPermissions)
 	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(user_id, updated_at) VALUES(%d, %s)`, 2, user2UpdatedAt)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, user2UpdatedAt, database.ReasonUserOutdatedPermissions)
 	execQuery(t, ctx, s, q)
 
 	t.Run("One result when limit is 1", func(t *testing.T) {
@@ -3172,9 +3217,9 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 	// mark sync jobs as completed for private_repo_1 and private_repo_2
 	repo1UpdatedAt := clock().Add(-15 * time.Minute)
 	repo2UpdatedAt := clock().Add(-5 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(repo_id, updated_at) VALUES(%d, %s)`, 1, repo1UpdatedAt)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, repo1UpdatedAt, database.ReasonRepoOutdatedPermissions)
 	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO perms_sync_jobs_history(repo_id, updated_at) VALUES(%d, %s)`, 2, repo2UpdatedAt)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, repo2UpdatedAt, database.ReasonRepoOutdatedPermissions)
 	execQuery(t, ctx, s, q)
 
 	t.Run("One result when limit is 1", func(t *testing.T) {
