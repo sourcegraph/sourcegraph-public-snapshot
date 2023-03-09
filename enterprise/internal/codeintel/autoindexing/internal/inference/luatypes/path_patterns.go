@@ -1,8 +1,6 @@
 package luatypes
 
 import (
-	"strings"
-
 	lua "github.com/yuin/gopher-lua"
 
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
@@ -35,11 +33,6 @@ func NewCombinedPattern(children []*PathPattern) *PathPattern {
 // Specifically: any path matching one of the given patterns is removed
 func NewExcludePattern(children []*PathPattern) *PathPattern {
 	return &PathPattern{children: children, invert: true}
-}
-
-// CombinePatterns joins the given patterns together with a regex OR operator.
-func CombinePatterns(patterns []string) string {
-	return strings.Join(patterns, "|")
 }
 
 // FlattenPatterns returns a concatenation of results from calling the function

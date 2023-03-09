@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react'
 
-import { mdiChevronDoubleUp, mdiChevronDoubleDown } from '@mdi/js'
+import { mdiChevronDoubleDown, mdiChevronDoubleUp } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/shared/src/search'
+import { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -15,11 +15,11 @@ import { AuthenticatedUser } from '../../auth'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
 import {
+    CreateAction,
+    getBatchChangeCreateAction,
     getCodeMonitoringCreateAction,
     getInsightsCreateAction,
     getSearchContextCreateAction,
-    getBatchChangeCreateAction,
-    CreateAction,
 } from './createActions'
 import { SearchActionsMenu } from './SearchActionsMenu'
 
@@ -170,6 +170,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         allExpanded={props.allExpanded}
                         onExpandAllResultsToggle={props.onExpandAllResultsToggle}
                         onSaveQueryClick={props.onSaveQueryClick}
+                        telemetryService={props.telemetryService}
                     />
                 </ul>
 

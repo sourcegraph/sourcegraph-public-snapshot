@@ -123,6 +123,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_lsif_uploads_transition_columns_diff(\n            func_row_to_lsif_uploads_transition_columns(OLD),\n            func_row_to_lsif_uploads_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO lsif_uploads_audit_logs\n            (reason, upload_id, commit, root, repository_id, uploaded_at,\n            indexer, indexer_version, upload_size, associated_index_id,\n            content_type,\n            operation, transition_columns)\n            VALUES (\n                COALESCE(current_setting('codeintel.lsif_uploads_audit.reason', true), ''),\n                NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n                NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n                NEW.content_type,\n                'modify', diff\n            );\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
     },
     {
+      "Name": "func_package_repo_filters_updated_at",
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_package_repo_filters_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    NEW.updated_at = statement_timestamp();\n    RETURN NEW;\nEND $function$\n"
+    },
+    {
       "Name": "func_row_to_configuration_policies_transition_columns",
       "Definition": "CREATE OR REPLACE FUNCTION public.func_row_to_configuration_policies_transition_columns(rec record)\n RETURNS configuration_policies_transition_columns\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        RETURN (\n            rec.name, rec.type, rec.pattern,\n            rec.retention_enabled, rec.retention_duration_hours, rec.retain_intermediate_commits,\n            rec.indexing_enabled, rec.index_commit_max_age_hours, rec.index_intermediate_commits,\n            rec.protected, rec.repository_patterns);\n    END;\n$function$\n"
     },
@@ -877,6 +881,15 @@
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "package_repo_filters_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -3392,16 +3405,6 @@
           "IndexDefinition": "CREATE UNIQUE INDEX batch_specs_unique_rand_id ON batch_specs USING btree (rand_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
-        },
-        {
-          "Name": "batch_specs_rand_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -4375,16 +4378,6 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX changeset_specs_head_ref ON changeset_specs USING btree (head_ref)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "changeset_specs_rand_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX changeset_specs_rand_id ON changeset_specs USING btree (rand_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -7111,12 +7104,22 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "codeintel_path_ranks_updated_at",
+          "Name": "codeintel_path_ranks_graph_key",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id)",
+          "IndexDefinition": "CREATE INDEX codeintel_path_ranks_graph_key ON codeintel_path_ranks USING btree (graph_key, updated_at NULLS FIRST, id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_path_ranks_repository_id_updated_at_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_path_ranks_repository_id_updated_at_id ON codeintel_path_ranks USING btree (repository_id, updated_at NULLS FIRST, id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -7242,22 +7245,12 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "codeintel_ranking_definitions_symbol_name",
+          "Name": "codeintel_ranking_definitions_graph_key_symbol_search",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_definitions_symbol_name ON codeintel_ranking_definitions USING btree (symbol_name)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "codeintel_ranking_definitions_upload_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_definitions_upload_id ON codeintel_ranking_definitions USING btree (upload_id)",
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, upload_id, document_path)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -7463,22 +7456,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "codeintel_ranking_path_counts_inputs_graph_key_and_repository_i",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_and_repository_i ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
           "Name": "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) INCLUDE (document_path) WHERE NOT processed",
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) WHERE NOT processed",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -7566,6 +7549,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_references_pkey ON codeintel_ranking_references USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_ranking_references_graph_key_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_references USING btree (graph_key, id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         },
         {
           "Name": "codeintel_ranking_references_graph_key_last_scanned_at_id",
@@ -9115,16 +9108,6 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX event_logs_timestamp_at_utc ON event_logs USING btree (date(timezone('UTC'::text, \"timestamp\")))",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "event_logs_user_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -13049,11 +13032,37 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "blocked",
+          "Index": 5,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "nextval('lsif_dependency_repos_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_checked_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -13098,6 +13107,26 @@
           "IndexDefinition": "CREATE UNIQUE INDEX lsif_dependency_repos_pkey ON lsif_dependency_repos USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_dependency_repos_blocked",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_dependency_repos_blocked ON lsif_dependency_repos USING btree (blocked)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_dependency_repos_last_checked_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         },
         {
           "Name": "lsif_dependency_repos_name_idx",
@@ -17852,15 +17881,176 @@
       "Triggers": []
     },
     {
+      "Name": "package_repo_filters",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "behaviour",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "deleted_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('package_repo_filters_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "matcher",
+          "Index": 4,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "scheme",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "statement_timestamp()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "package_repo_filters_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX package_repo_filters_pkey ON package_repo_filters USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "package_repo_filters_unique_matcher_per_scheme",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX package_repo_filters_unique_matcher_per_scheme ON package_repo_filters USING btree (scheme, matcher)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "package_repo_filters_behaviour_is_allow_or_block",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (behaviour = ANY ('{BLOCK,ALLOW}'::text[]))"
+        },
+        {
+          "Name": "package_repo_filters_is_pkgrepo_scheme",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (scheme = ANY ('{semanticdb,npm,go,python,rust-analyzer,scip-ruby}'::text[]))"
+        },
+        {
+          "Name": "package_repo_filters_valid_oneof_glob",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (matcher ? 'VersionGlob'::text AND (matcher -\u003e\u003e 'VersionGlob'::text) \u003c\u003e ''::text AND (matcher -\u003e\u003e 'PackageName'::text) \u003c\u003e ''::text AND NOT matcher ? 'PackageGlob'::text OR matcher ? 'PackageGlob'::text AND (matcher -\u003e\u003e 'PackageGlob'::text) \u003c\u003e ''::text AND NOT matcher ? 'VersionGlob'::text)"
+        }
+      ],
+      "Triggers": [
+        {
+          "Name": "trigger_package_repo_filters_updated_at",
+          "Definition": "CREATE TRIGGER trigger_package_repo_filters_updated_at BEFORE UPDATE ON package_repo_filters FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE FUNCTION func_package_repo_filters_updated_at()"
+        }
+      ]
+    },
+    {
       "Name": "package_repo_versions",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "blocked",
+          "Index": 4,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "id",
           "Index": 1,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "nextval('package_repo_versions_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_checked_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -17917,12 +18107,22 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "package_repo_versions_fk_idx",
+          "Name": "package_repo_versions_blocked",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX package_repo_versions_fk_idx ON package_repo_versions USING btree (package_id)",
+          "IndexDefinition": "CREATE INDEX package_repo_versions_blocked ON package_repo_versions USING btree (blocked)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "package_repo_versions_last_checked_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX package_repo_versions_last_checked_at ON package_repo_versions USING btree (last_checked_at)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -22627,6 +22827,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "user_external_accounts_user_id_scim_service_type",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX user_external_accounts_user_id_scim_service_type ON user_external_accounts USING btree (user_id, service_type) WHERE service_type = 'scim'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "user_external_accounts_user_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -23116,16 +23326,6 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX user_repo_permissions_user_external_account_id_idx ON user_repo_permissions USING btree (user_external_account_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "user_repo_permissions_user_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX user_repo_permissions_user_id_idx ON user_repo_permissions USING btree (user_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }

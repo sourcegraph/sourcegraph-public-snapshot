@@ -51,6 +51,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":webhooks"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/webhooks",
         "//enterprise/internal/batches/sources",

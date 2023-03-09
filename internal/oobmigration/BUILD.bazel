@@ -52,6 +52,10 @@ go_test(
         "version_test.go",
     ],
     embed = [":oobmigration"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

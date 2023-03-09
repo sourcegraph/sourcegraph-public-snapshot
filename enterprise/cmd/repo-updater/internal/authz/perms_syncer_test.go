@@ -35,9 +35,10 @@ func init() {
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
-	defer authz.SetProviders(true, nil)
-
-	licensing.MockCheckFeatureError("")
+	t.Cleanup(func() {
+		authz.SetProviders(true, nil)
+	})
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
 	s.ScheduleUsers(context.Background(), authz.FetchPermsOptions{}, 1)
 
@@ -55,9 +56,10 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 
 func TestPermsSyncer_ScheduleRepos(t *testing.T) {
 	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
-	defer authz.SetProviders(true, nil)
-
-	licensing.MockCheckFeatureError("")
+	t.Cleanup(func() {
+		authz.SetProviders(true, nil)
+	})
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
 	s.ScheduleRepos(context.Background(), 1)
 
@@ -112,7 +114,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		serviceID:   "https://gitlab.com/",
 	}
 	authz.SetProviders(false, []authz.Provider{p})
-	defer authz.SetProviders(true, nil)
+	t.Cleanup(func() {
+		authz.SetProviders(true, nil)
+	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -196,7 +200,9 @@ func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
 		serviceID:   "https://gitlab.com/",
 	}
 	authz.SetProviders(false, []authz.Provider{p})
-	defer authz.SetProviders(true, nil)
+	t.Cleanup(func() {
+		authz.SetProviders(true, nil)
+	})
 
 	users := database.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
@@ -267,7 +273,9 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		serviceID:   "https://gitlab.com/",
 	}
 	authz.SetProviders(false, []authz.Provider{p})
-	defer authz.SetProviders(true, nil)
+	t.Cleanup(func() {
+		authz.SetProviders(true, nil)
+	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -353,7 +361,9 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		serviceID:   "https://gitlab.com/",
 	}
 	authz.SetProviders(false, []authz.Provider{p})
-	defer authz.SetProviders(true, nil)
+	t.Cleanup(func() {
+		authz.SetProviders(true, nil)
+	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -437,7 +447,9 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 		serviceID:   "https://github.com/",
 	}
 	authz.SetProviders(false, []authz.Provider{p})
-	defer authz.SetProviders(true, nil)
+	t.Cleanup(func() {
+		authz.SetProviders(true, nil)
+	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -528,7 +540,9 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		serviceID:   "ssl:111.222.333.444:1666",
 	}
 	authz.SetProviders(false, []authz.Provider{p})
-	defer authz.SetProviders(true, nil)
+	t.Cleanup(func() {
+		authz.SetProviders(true, nil)
+	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -597,7 +611,9 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		serviceID:   "ssl:111.222.333.444:1666",
 	}
 	authz.SetProviders(false, []authz.Provider{p})
-	defer authz.SetProviders(true, nil)
+	t.Cleanup(func() {
+		authz.SetProviders(true, nil)
+	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -736,7 +752,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			},
 		}
 		authz.SetProviders(false, []authz.Provider{p1, p2})
-		defer authz.SetProviders(true, nil)
+		t.Cleanup(func() {
+			authz.SetProviders(true, nil)
+		})
 
 		mockRepos.ListFunc.SetDefaultReturn(
 			[]*types.Repo{
@@ -812,7 +830,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		serviceID:   "https://gitlab.com/",
 	}
 	authz.SetProviders(false, []authz.Provider{p})
-	defer authz.SetProviders(true, nil)
+	t.Cleanup(func() {
+		authz.SetProviders(true, nil)
+	})
 
 	mockRepos.ListFunc.SetDefaultReturn(
 		[]*types.Repo{

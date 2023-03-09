@@ -29,5 +29,13 @@
       ".*_pb\\.go$": "ignore protobuff generated code",
       "main.go": "ignore main files"
     }
+  },
+  "ineffassign": {
+    "exclude_files": {
+      "external/*": "no need to vet third party code",
+      ".*_generated\\.go$": "ignore generated code",
+      ".*_pb\\.go$": "ignore protobuff generated code",
+      "dev/buildchecker/slack.go": "ignore false positive"
+    }
   }
 }

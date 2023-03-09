@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"

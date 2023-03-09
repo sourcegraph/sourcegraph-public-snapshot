@@ -159,6 +159,9 @@ type MockStore struct {
 	// MarkQueuedFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkQueued.
 	MarkQueuedFunc *StoreMarkQueuedFunc
+	// ProcessSourcedCommitsFunc is an instance of a mock function object
+	// controlling the behavior of the method ProcessSourcedCommits.
+	ProcessSourcedCommitsFunc *StoreProcessSourcedCommitsFunc
 	// ReconcileCandidatesFunc is an instance of a mock function object
 	// controlling the behavior of the method ReconcileCandidates.
 	ReconcileCandidatesFunc *StoreReconcileCandidatesFunc
@@ -236,7 +239,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		DeleteOldAuditLogsFunc: &StoreDeleteOldAuditLogsFunc{
-			defaultHook: func(context.Context, time.Duration, time.Time) (r0 int, r1 error) {
+			defaultHook: func(context.Context, time.Duration, time.Time) (r0 int, r1 int, r2 error) {
 				return
 			},
 		},
@@ -261,12 +264,12 @@ func NewMockStore() *MockStore {
 			},
 		},
 		DeleteUploadsStuckUploadingFunc: &StoreDeleteUploadsStuckUploadingFunc{
-			defaultHook: func(context.Context, time.Time) (r0 int, r1 error) {
+			defaultHook: func(context.Context, time.Time) (r0 int, r1 int, r2 error) {
 				return
 			},
 		},
 		DeleteUploadsWithoutRepositoryFunc: &StoreDeleteUploadsWithoutRepositoryFunc{
-			defaultHook: func(context.Context, time.Time) (r0 map[int]int, r1 error) {
+			defaultHook: func(context.Context, time.Time) (r0 int, r1 int, r2 error) {
 				return
 			},
 		},
@@ -415,6 +418,11 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		ProcessSourcedCommitsFunc: &StoreProcessSourcedCommitsFunc{
+			defaultHook: func(context.Context, time.Duration, time.Duration, int, func(ctx context.Context, repositoryID int, commit string) (bool, error), time.Time) (r0 int, r1 int, r2 error) {
+				return
+			},
+		},
 		ReconcileCandidatesFunc: &StoreReconcileCandidatesFunc{
 			defaultHook: func(context.Context, int) (r0 []int, r1 error) {
 				return
@@ -461,12 +469,12 @@ func NewMockStore() *MockStore {
 			},
 		},
 		SoftDeleteExpiredUploadsFunc: &StoreSoftDeleteExpiredUploadsFunc{
-			defaultHook: func(context.Context, int) (r0 int, r1 error) {
+			defaultHook: func(context.Context, int) (r0 int, r1 int, r2 error) {
 				return
 			},
 		},
 		SoftDeleteExpiredUploadsViaTraversalFunc: &StoreSoftDeleteExpiredUploadsViaTraversalFunc{
-			defaultHook: func(context.Context, int) (r0 int, r1 error) {
+			defaultHook: func(context.Context, int) (r0 int, r1 int, r2 error) {
 				return
 			},
 		},
@@ -528,7 +536,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		DeleteOldAuditLogsFunc: &StoreDeleteOldAuditLogsFunc{
-			defaultHook: func(context.Context, time.Duration, time.Time) (int, error) {
+			defaultHook: func(context.Context, time.Duration, time.Time) (int, int, error) {
 				panic("unexpected invocation of MockStore.DeleteOldAuditLogs")
 			},
 		},
@@ -553,12 +561,12 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		DeleteUploadsStuckUploadingFunc: &StoreDeleteUploadsStuckUploadingFunc{
-			defaultHook: func(context.Context, time.Time) (int, error) {
+			defaultHook: func(context.Context, time.Time) (int, int, error) {
 				panic("unexpected invocation of MockStore.DeleteUploadsStuckUploading")
 			},
 		},
 		DeleteUploadsWithoutRepositoryFunc: &StoreDeleteUploadsWithoutRepositoryFunc{
-			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
+			defaultHook: func(context.Context, time.Time) (int, int, error) {
 				panic("unexpected invocation of MockStore.DeleteUploadsWithoutRepository")
 			},
 		},
@@ -707,6 +715,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.MarkQueued")
 			},
 		},
+		ProcessSourcedCommitsFunc: &StoreProcessSourcedCommitsFunc{
+			defaultHook: func(context.Context, time.Duration, time.Duration, int, func(ctx context.Context, repositoryID int, commit string) (bool, error), time.Time) (int, int, error) {
+				panic("unexpected invocation of MockStore.ProcessSourcedCommits")
+			},
+		},
 		ReconcileCandidatesFunc: &StoreReconcileCandidatesFunc{
 			defaultHook: func(context.Context, int) ([]int, error) {
 				panic("unexpected invocation of MockStore.ReconcileCandidates")
@@ -753,12 +766,12 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		SoftDeleteExpiredUploadsFunc: &StoreSoftDeleteExpiredUploadsFunc{
-			defaultHook: func(context.Context, int) (int, error) {
+			defaultHook: func(context.Context, int) (int, int, error) {
 				panic("unexpected invocation of MockStore.SoftDeleteExpiredUploads")
 			},
 		},
 		SoftDeleteExpiredUploadsViaTraversalFunc: &StoreSoftDeleteExpiredUploadsViaTraversalFunc{
-			defaultHook: func(context.Context, int) (int, error) {
+			defaultHook: func(context.Context, int) (int, int, error) {
 				panic("unexpected invocation of MockStore.SoftDeleteExpiredUploadsViaTraversal")
 			},
 		},
@@ -924,6 +937,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		MarkQueuedFunc: &StoreMarkQueuedFunc{
 			defaultHook: i.MarkQueued,
+		},
+		ProcessSourcedCommitsFunc: &StoreProcessSourcedCommitsFunc{
+			defaultHook: i.ProcessSourcedCommits,
 		},
 		ReconcileCandidatesFunc: &StoreReconcileCandidatesFunc{
 			defaultHook: i.ReconcileCandidates,
@@ -1098,24 +1114,24 @@ func (c StoreAddUploadPartFuncCall) Results() []interface{} {
 // StoreDeleteOldAuditLogsFunc describes the behavior when the
 // DeleteOldAuditLogs method of the parent MockStore instance is invoked.
 type StoreDeleteOldAuditLogsFunc struct {
-	defaultHook func(context.Context, time.Duration, time.Time) (int, error)
-	hooks       []func(context.Context, time.Duration, time.Time) (int, error)
+	defaultHook func(context.Context, time.Duration, time.Time) (int, int, error)
+	hooks       []func(context.Context, time.Duration, time.Time) (int, int, error)
 	history     []StoreDeleteOldAuditLogsFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteOldAuditLogs delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) DeleteOldAuditLogs(v0 context.Context, v1 time.Duration, v2 time.Time) (int, error) {
-	r0, r1 := m.DeleteOldAuditLogsFunc.nextHook()(v0, v1, v2)
-	m.DeleteOldAuditLogsFunc.appendCall(StoreDeleteOldAuditLogsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
+func (m *MockStore) DeleteOldAuditLogs(v0 context.Context, v1 time.Duration, v2 time.Time) (int, int, error) {
+	r0, r1, r2 := m.DeleteOldAuditLogsFunc.nextHook()(v0, v1, v2)
+	m.DeleteOldAuditLogsFunc.appendCall(StoreDeleteOldAuditLogsFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the DeleteOldAuditLogs
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreDeleteOldAuditLogsFunc) SetDefaultHook(hook func(context.Context, time.Duration, time.Time) (int, error)) {
+func (f *StoreDeleteOldAuditLogsFunc) SetDefaultHook(hook func(context.Context, time.Duration, time.Time) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1123,7 +1139,7 @@ func (f *StoreDeleteOldAuditLogsFunc) SetDefaultHook(hook func(context.Context, 
 // DeleteOldAuditLogs method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreDeleteOldAuditLogsFunc) PushHook(hook func(context.Context, time.Duration, time.Time) (int, error)) {
+func (f *StoreDeleteOldAuditLogsFunc) PushHook(hook func(context.Context, time.Duration, time.Time) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1131,20 +1147,20 @@ func (f *StoreDeleteOldAuditLogsFunc) PushHook(hook func(context.Context, time.D
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreDeleteOldAuditLogsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Duration, time.Time) (int, error) {
-		return r0, r1
+func (f *StoreDeleteOldAuditLogsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreDeleteOldAuditLogsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, time.Duration, time.Time) (int, error) {
-		return r0, r1
+func (f *StoreDeleteOldAuditLogsFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, time.Duration, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreDeleteOldAuditLogsFunc) nextHook() func(context.Context, time.Duration, time.Time) (int, error) {
+func (f *StoreDeleteOldAuditLogsFunc) nextHook() func(context.Context, time.Duration, time.Time) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1191,7 +1207,10 @@ type StoreDeleteOldAuditLogsFuncCall struct {
 	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1203,7 +1222,7 @@ func (c StoreDeleteOldAuditLogsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreDeleteOldAuditLogsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreDeleteOverlappingDumpsFunc describes the behavior when the
@@ -1657,24 +1676,24 @@ func (c StoreDeleteUploadsFuncCall) Results() []interface{} {
 // DeleteUploadsStuckUploading method of the parent MockStore instance is
 // invoked.
 type StoreDeleteUploadsStuckUploadingFunc struct {
-	defaultHook func(context.Context, time.Time) (int, error)
-	hooks       []func(context.Context, time.Time) (int, error)
+	defaultHook func(context.Context, time.Time) (int, int, error)
+	hooks       []func(context.Context, time.Time) (int, int, error)
 	history     []StoreDeleteUploadsStuckUploadingFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteUploadsStuckUploading delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) DeleteUploadsStuckUploading(v0 context.Context, v1 time.Time) (int, error) {
-	r0, r1 := m.DeleteUploadsStuckUploadingFunc.nextHook()(v0, v1)
-	m.DeleteUploadsStuckUploadingFunc.appendCall(StoreDeleteUploadsStuckUploadingFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockStore) DeleteUploadsStuckUploading(v0 context.Context, v1 time.Time) (int, int, error) {
+	r0, r1, r2 := m.DeleteUploadsStuckUploadingFunc.nextHook()(v0, v1)
+	m.DeleteUploadsStuckUploadingFunc.appendCall(StoreDeleteUploadsStuckUploadingFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // DeleteUploadsStuckUploading method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreDeleteUploadsStuckUploadingFunc) SetDefaultHook(hook func(context.Context, time.Time) (int, error)) {
+func (f *StoreDeleteUploadsStuckUploadingFunc) SetDefaultHook(hook func(context.Context, time.Time) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1683,7 +1702,7 @@ func (f *StoreDeleteUploadsStuckUploadingFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreDeleteUploadsStuckUploadingFunc) PushHook(hook func(context.Context, time.Time) (int, error)) {
+func (f *StoreDeleteUploadsStuckUploadingFunc) PushHook(hook func(context.Context, time.Time) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1691,20 +1710,20 @@ func (f *StoreDeleteUploadsStuckUploadingFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreDeleteUploadsStuckUploadingFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) (int, error) {
-		return r0, r1
+func (f *StoreDeleteUploadsStuckUploadingFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreDeleteUploadsStuckUploadingFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, time.Time) (int, error) {
-		return r0, r1
+func (f *StoreDeleteUploadsStuckUploadingFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreDeleteUploadsStuckUploadingFunc) nextHook() func(context.Context, time.Time) (int, error) {
+func (f *StoreDeleteUploadsStuckUploadingFunc) nextHook() func(context.Context, time.Time) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1749,7 +1768,10 @@ type StoreDeleteUploadsStuckUploadingFuncCall struct {
 	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1761,31 +1783,31 @@ func (c StoreDeleteUploadsStuckUploadingFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreDeleteUploadsStuckUploadingFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreDeleteUploadsWithoutRepositoryFunc describes the behavior when the
 // DeleteUploadsWithoutRepository method of the parent MockStore instance is
 // invoked.
 type StoreDeleteUploadsWithoutRepositoryFunc struct {
-	defaultHook func(context.Context, time.Time) (map[int]int, error)
-	hooks       []func(context.Context, time.Time) (map[int]int, error)
+	defaultHook func(context.Context, time.Time) (int, int, error)
+	hooks       []func(context.Context, time.Time) (int, int, error)
 	history     []StoreDeleteUploadsWithoutRepositoryFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteUploadsWithoutRepository delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) DeleteUploadsWithoutRepository(v0 context.Context, v1 time.Time) (map[int]int, error) {
-	r0, r1 := m.DeleteUploadsWithoutRepositoryFunc.nextHook()(v0, v1)
-	m.DeleteUploadsWithoutRepositoryFunc.appendCall(StoreDeleteUploadsWithoutRepositoryFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockStore) DeleteUploadsWithoutRepository(v0 context.Context, v1 time.Time) (int, int, error) {
+	r0, r1, r2 := m.DeleteUploadsWithoutRepositoryFunc.nextHook()(v0, v1)
+	m.DeleteUploadsWithoutRepositoryFunc.appendCall(StoreDeleteUploadsWithoutRepositoryFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // DeleteUploadsWithoutRepository method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreDeleteUploadsWithoutRepositoryFunc) SetDefaultHook(hook func(context.Context, time.Time) (map[int]int, error)) {
+func (f *StoreDeleteUploadsWithoutRepositoryFunc) SetDefaultHook(hook func(context.Context, time.Time) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1794,7 +1816,7 @@ func (f *StoreDeleteUploadsWithoutRepositoryFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreDeleteUploadsWithoutRepositoryFunc) PushHook(hook func(context.Context, time.Time) (map[int]int, error)) {
+func (f *StoreDeleteUploadsWithoutRepositoryFunc) PushHook(hook func(context.Context, time.Time) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1802,20 +1824,20 @@ func (f *StoreDeleteUploadsWithoutRepositoryFunc) PushHook(hook func(context.Con
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreDeleteUploadsWithoutRepositoryFunc) SetDefaultReturn(r0 map[int]int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) (map[int]int, error) {
-		return r0, r1
+func (f *StoreDeleteUploadsWithoutRepositoryFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreDeleteUploadsWithoutRepositoryFunc) PushReturn(r0 map[int]int, r1 error) {
-	f.PushHook(func(context.Context, time.Time) (map[int]int, error) {
-		return r0, r1
+func (f *StoreDeleteUploadsWithoutRepositoryFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreDeleteUploadsWithoutRepositoryFunc) nextHook() func(context.Context, time.Time) (map[int]int, error) {
+func (f *StoreDeleteUploadsWithoutRepositoryFunc) nextHook() func(context.Context, time.Time) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1857,10 +1879,13 @@ type StoreDeleteUploadsWithoutRepositoryFuncCall struct {
 	Arg1 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[int]int
+	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1872,7 +1897,7 @@ func (c StoreDeleteUploadsWithoutRepositoryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreDeleteUploadsWithoutRepositoryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreDoneFunc describes the behavior when the Done method of the parent
@@ -5155,6 +5180,129 @@ func (c StoreMarkQueuedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// StoreProcessSourcedCommitsFunc describes the behavior when the
+// ProcessSourcedCommits method of the parent MockStore instance is invoked.
+type StoreProcessSourcedCommitsFunc struct {
+	defaultHook func(context.Context, time.Duration, time.Duration, int, func(ctx context.Context, repositoryID int, commit string) (bool, error), time.Time) (int, int, error)
+	hooks       []func(context.Context, time.Duration, time.Duration, int, func(ctx context.Context, repositoryID int, commit string) (bool, error), time.Time) (int, int, error)
+	history     []StoreProcessSourcedCommitsFuncCall
+	mutex       sync.Mutex
+}
+
+// ProcessSourcedCommits delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) ProcessSourcedCommits(v0 context.Context, v1 time.Duration, v2 time.Duration, v3 int, v4 func(ctx context.Context, repositoryID int, commit string) (bool, error), v5 time.Time) (int, int, error) {
+	r0, r1, r2 := m.ProcessSourcedCommitsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.ProcessSourcedCommitsFunc.appendCall(StoreProcessSourcedCommitsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// ProcessSourcedCommits method of the parent MockStore instance is invoked
+// and the hook queue is empty.
+func (f *StoreProcessSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, time.Duration, time.Duration, int, func(ctx context.Context, repositoryID int, commit string) (bool, error), time.Time) (int, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ProcessSourcedCommits method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreProcessSourcedCommitsFunc) PushHook(hook func(context.Context, time.Duration, time.Duration, int, func(ctx context.Context, repositoryID int, commit string) (bool, error), time.Time) (int, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreProcessSourcedCommitsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration, time.Duration, int, func(ctx context.Context, repositoryID int, commit string) (bool, error), time.Time) (int, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreProcessSourcedCommitsFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, time.Duration, time.Duration, int, func(ctx context.Context, repositoryID int, commit string) (bool, error), time.Time) (int, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreProcessSourcedCommitsFunc) nextHook() func(context.Context, time.Duration, time.Duration, int, func(ctx context.Context, repositoryID int, commit string) (bool, error), time.Time) (int, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreProcessSourcedCommitsFunc) appendCall(r0 StoreProcessSourcedCommitsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreProcessSourcedCommitsFuncCall objects
+// describing the invocations of this function.
+func (f *StoreProcessSourcedCommitsFunc) History() []StoreProcessSourcedCommitsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreProcessSourcedCommitsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreProcessSourcedCommitsFuncCall is an object that describes an
+// invocation of method ProcessSourcedCommits on an instance of MockStore.
+type StoreProcessSourcedCommitsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Duration
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 func(ctx context.Context, repositoryID int, commit string) (bool, error)
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreProcessSourcedCommitsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreProcessSourcedCommitsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
 // StoreReconcileCandidatesFunc describes the behavior when the
 // ReconcileCandidates method of the parent MockStore instance is invoked.
 type StoreReconcileCandidatesFunc struct {
@@ -6145,24 +6293,24 @@ func (c StoreSetRepositoryAsDirtyFuncCall) Results() []interface{} {
 // SoftDeleteExpiredUploads method of the parent MockStore instance is
 // invoked.
 type StoreSoftDeleteExpiredUploadsFunc struct {
-	defaultHook func(context.Context, int) (int, error)
-	hooks       []func(context.Context, int) (int, error)
+	defaultHook func(context.Context, int) (int, int, error)
+	hooks       []func(context.Context, int) (int, int, error)
 	history     []StoreSoftDeleteExpiredUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // SoftDeleteExpiredUploads delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockStore) SoftDeleteExpiredUploads(v0 context.Context, v1 int) (int, error) {
-	r0, r1 := m.SoftDeleteExpiredUploadsFunc.nextHook()(v0, v1)
-	m.SoftDeleteExpiredUploadsFunc.appendCall(StoreSoftDeleteExpiredUploadsFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockStore) SoftDeleteExpiredUploads(v0 context.Context, v1 int) (int, int, error) {
+	r0, r1, r2 := m.SoftDeleteExpiredUploadsFunc.nextHook()(v0, v1)
+	m.SoftDeleteExpiredUploadsFunc.appendCall(StoreSoftDeleteExpiredUploadsFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // SoftDeleteExpiredUploads method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Context, int) (int, error)) {
+func (f *StoreSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Context, int) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -6170,7 +6318,7 @@ func (f *StoreSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Con
 // SoftDeleteExpiredUploads method of the parent MockStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *StoreSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context, int) (int, error)) {
+func (f *StoreSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context, int) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6178,20 +6326,20 @@ func (f *StoreSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreSoftDeleteExpiredUploadsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (int, error) {
-		return r0, r1
+func (f *StoreSoftDeleteExpiredUploadsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreSoftDeleteExpiredUploadsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, int) (int, error) {
-		return r0, r1
+func (f *StoreSoftDeleteExpiredUploadsFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreSoftDeleteExpiredUploadsFunc) nextHook() func(context.Context, int) (int, error) {
+func (f *StoreSoftDeleteExpiredUploadsFunc) nextHook() func(context.Context, int) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6236,7 +6384,10 @@ type StoreSoftDeleteExpiredUploadsFuncCall struct {
 	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -6248,15 +6399,15 @@ func (c StoreSoftDeleteExpiredUploadsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreSoftDeleteExpiredUploadsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreSoftDeleteExpiredUploadsViaTraversalFunc describes the behavior when
 // the SoftDeleteExpiredUploadsViaTraversal method of the parent MockStore
 // instance is invoked.
 type StoreSoftDeleteExpiredUploadsViaTraversalFunc struct {
-	defaultHook func(context.Context, int) (int, error)
-	hooks       []func(context.Context, int) (int, error)
+	defaultHook func(context.Context, int) (int, int, error)
+	hooks       []func(context.Context, int) (int, int, error)
 	history     []StoreSoftDeleteExpiredUploadsViaTraversalFuncCall
 	mutex       sync.Mutex
 }
@@ -6264,16 +6415,16 @@ type StoreSoftDeleteExpiredUploadsViaTraversalFunc struct {
 // SoftDeleteExpiredUploadsViaTraversal delegates to the next hook function
 // in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockStore) SoftDeleteExpiredUploadsViaTraversal(v0 context.Context, v1 int) (int, error) {
-	r0, r1 := m.SoftDeleteExpiredUploadsViaTraversalFunc.nextHook()(v0, v1)
-	m.SoftDeleteExpiredUploadsViaTraversalFunc.appendCall(StoreSoftDeleteExpiredUploadsViaTraversalFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockStore) SoftDeleteExpiredUploadsViaTraversal(v0 context.Context, v1 int) (int, int, error) {
+	r0, r1, r2 := m.SoftDeleteExpiredUploadsViaTraversalFunc.nextHook()(v0, v1)
+	m.SoftDeleteExpiredUploadsViaTraversalFunc.appendCall(StoreSoftDeleteExpiredUploadsViaTraversalFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // SoftDeleteExpiredUploadsViaTraversal method of the parent MockStore
 // instance is invoked and the hook queue is empty.
-func (f *StoreSoftDeleteExpiredUploadsViaTraversalFunc) SetDefaultHook(hook func(context.Context, int) (int, error)) {
+func (f *StoreSoftDeleteExpiredUploadsViaTraversalFunc) SetDefaultHook(hook func(context.Context, int) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -6282,7 +6433,7 @@ func (f *StoreSoftDeleteExpiredUploadsViaTraversalFunc) SetDefaultHook(hook func
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *StoreSoftDeleteExpiredUploadsViaTraversalFunc) PushHook(hook func(context.Context, int) (int, error)) {
+func (f *StoreSoftDeleteExpiredUploadsViaTraversalFunc) PushHook(hook func(context.Context, int) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6290,20 +6441,20 @@ func (f *StoreSoftDeleteExpiredUploadsViaTraversalFunc) PushHook(hook func(conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreSoftDeleteExpiredUploadsViaTraversalFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (int, error) {
-		return r0, r1
+func (f *StoreSoftDeleteExpiredUploadsViaTraversalFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreSoftDeleteExpiredUploadsViaTraversalFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, int) (int, error) {
-		return r0, r1
+func (f *StoreSoftDeleteExpiredUploadsViaTraversalFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreSoftDeleteExpiredUploadsViaTraversalFunc) nextHook() func(context.Context, int) (int, error) {
+func (f *StoreSoftDeleteExpiredUploadsViaTraversalFunc) nextHook() func(context.Context, int) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6349,7 +6500,10 @@ type StoreSoftDeleteExpiredUploadsViaTraversalFuncCall struct {
 	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -6361,7 +6515,7 @@ func (c StoreSoftDeleteExpiredUploadsViaTraversalFuncCall) Args() []interface{} 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreSoftDeleteExpiredUploadsViaTraversalFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreSourcedCommitsWithoutCommittedAtFunc describes the behavior when the
@@ -7689,7 +7843,7 @@ func NewMockLsifStore() *MockLsifStore {
 			},
 		},
 		DeleteUnreferencedDocumentsFunc: &LsifStoreDeleteUnreferencedDocumentsFunc{
-			defaultHook: func(context.Context, int, time.Duration, time.Time) (r0 int, r1 error) {
+			defaultHook: func(context.Context, int, time.Duration, time.Time) (r0 int, r1 int, r2 error) {
 				return
 			},
 		},
@@ -7751,7 +7905,7 @@ func NewStrictMockLsifStore() *MockLsifStore {
 			},
 		},
 		DeleteUnreferencedDocumentsFunc: &LsifStoreDeleteUnreferencedDocumentsFunc{
-			defaultHook: func(context.Context, int, time.Duration, time.Time) (int, error) {
+			defaultHook: func(context.Context, int, time.Duration, time.Time) (int, int, error) {
 				panic("unexpected invocation of MockLsifStore.DeleteUnreferencedDocuments")
 			},
 		},
@@ -7962,24 +8116,24 @@ func (c LsifStoreDeleteLsifDataByUploadIdsFuncCall) Results() []interface{} {
 // DeleteUnreferencedDocuments method of the parent MockLsifStore instance
 // is invoked.
 type LsifStoreDeleteUnreferencedDocumentsFunc struct {
-	defaultHook func(context.Context, int, time.Duration, time.Time) (int, error)
-	hooks       []func(context.Context, int, time.Duration, time.Time) (int, error)
+	defaultHook func(context.Context, int, time.Duration, time.Time) (int, int, error)
+	hooks       []func(context.Context, int, time.Duration, time.Time) (int, int, error)
 	history     []LsifStoreDeleteUnreferencedDocumentsFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteUnreferencedDocuments delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockLsifStore) DeleteUnreferencedDocuments(v0 context.Context, v1 int, v2 time.Duration, v3 time.Time) (int, error) {
-	r0, r1 := m.DeleteUnreferencedDocumentsFunc.nextHook()(v0, v1, v2, v3)
-	m.DeleteUnreferencedDocumentsFunc.appendCall(LsifStoreDeleteUnreferencedDocumentsFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
+func (m *MockLsifStore) DeleteUnreferencedDocuments(v0 context.Context, v1 int, v2 time.Duration, v3 time.Time) (int, int, error) {
+	r0, r1, r2 := m.DeleteUnreferencedDocumentsFunc.nextHook()(v0, v1, v2, v3)
+	m.DeleteUnreferencedDocumentsFunc.appendCall(LsifStoreDeleteUnreferencedDocumentsFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // DeleteUnreferencedDocuments method of the parent MockLsifStore instance
 // is invoked and the hook queue is empty.
-func (f *LsifStoreDeleteUnreferencedDocumentsFunc) SetDefaultHook(hook func(context.Context, int, time.Duration, time.Time) (int, error)) {
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) SetDefaultHook(hook func(context.Context, int, time.Duration, time.Time) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -7988,7 +8142,7 @@ func (f *LsifStoreDeleteUnreferencedDocumentsFunc) SetDefaultHook(hook func(cont
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LsifStoreDeleteUnreferencedDocumentsFunc) PushHook(hook func(context.Context, int, time.Duration, time.Time) (int, error)) {
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) PushHook(hook func(context.Context, int, time.Duration, time.Time) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -7996,20 +8150,20 @@ func (f *LsifStoreDeleteUnreferencedDocumentsFunc) PushHook(hook func(context.Co
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LsifStoreDeleteUnreferencedDocumentsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, time.Duration, time.Time) (int, error) {
-		return r0, r1
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, time.Duration, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreDeleteUnreferencedDocumentsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, int, time.Duration, time.Time) (int, error) {
-		return r0, r1
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, time.Duration, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *LsifStoreDeleteUnreferencedDocumentsFunc) nextHook() func(context.Context, int, time.Duration, time.Time) (int, error) {
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) nextHook() func(context.Context, int, time.Duration, time.Time) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -8061,7 +8215,10 @@ type LsifStoreDeleteUnreferencedDocumentsFuncCall struct {
 	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -8073,7 +8230,7 @@ func (c LsifStoreDeleteUnreferencedDocumentsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LsifStoreDeleteUnreferencedDocumentsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // LsifStoreDoneFunc describes the behavior when the Done method of the

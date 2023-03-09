@@ -6,9 +6,10 @@ import (
 	"testing"
 
 	"github.com/elimity-com/scim"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestUserResourceHandler_Create(t *testing.T) {
@@ -94,6 +95,10 @@ func createUserResourceAttributes(username string) scim.ResourceAttributes {
 			map[string]interface{}{
 				"value":   "a@b.c",
 				"primary": true,
+			},
+			map[string]interface{}{
+				"value":   "b@b.c",
+				"primary": false,
 			},
 		},
 	}

@@ -35,6 +35,10 @@ go_test(
         "serve_test.go",
     ],
     embed = [":servegit"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",
