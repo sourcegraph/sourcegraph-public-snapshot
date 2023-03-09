@@ -1,4 +1,4 @@
-package jobutil
+package search
 
 import (
 	"context"
@@ -6,34 +6,41 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/graph"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// CodeGraphSearchJob is an experimental search job for querying on code intel data and
-// relationships.
-type CodeGraphSearchJob struct {
-	// SymbolSearch is a search job that should provide symbol results.
-	SymbolSearch job.Job
+// SymbolRelationshipSearchJob is an experimental search job for querying on code intel
+// data and relationships.
+type SymbolRelationshipSearchJob struct {
 	// Relationship is the code intel graph relationship to query on.
 	Relationship query.SymbolRelationship
+	// SymbolSearch is a search job that should provide symbol results.
+	SymbolSearch job.Job
+
+	// store powers code intel data search.
+	service *Service
 }
 
-func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func NewSymbolRelationshipSearchJob(service *Service, relationship query.SymbolRelationship, rawSymbolSearch job.Job) job.Job {
+	return &SymbolRelationshipSearchJob{
+		Relationship: relationship,
+		SymbolSearch: rawSymbolSearch,
+		service:      service,
+	}
+}
+
+func (s *SymbolRelationshipSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
-
-	if _, ok := clients.CodeIntel.(graph.UnimplementedCodeIntelStore); ok {
-		return nil, graph.ErrCodeIntelStoreUnimplemented
-	}
 
 	// pathRange is used as the identifier for deduplicating matches.
 	type pathRange struct {
@@ -66,11 +73,11 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 			}
 			// For each symbol, get results with precise relationships to the
 			// symbol.
-			var locations []types.CodeIntelLocation
+			var locations []types.UploadLocation
 			var err error
 			for _, symbol := range fm.Symbols {
 				// TODO: We should paginate code graph searches
-				req := types.CodeIntelRequestArgs{
+				req := shared.RequestArgs{
 					RepositoryID: int(fm.Repo.ID),
 					Commit:       string(fm.CommitID),
 					Path:         fm.Path,
@@ -86,13 +93,13 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 				// the search to encompass more repositories.
 				switch s.Relationship {
 				case query.SymbolRelationshipDefinitions:
-					locations, err = clients.CodeIntel.GetDefinitions(ctx, fm.Repo, req)
+					locations, err = s.service.GetDefinitions(ctx, fm.Repo, req)
 
 				case query.SymbolRelationshipReferences:
-					locations, err = clients.CodeIntel.GetReferences(ctx, fm.Repo, req)
+					locations, err = s.service.GetReferences(ctx, fm.Repo, req)
 
 				case query.SymbolRelationshipImplements:
-					locations, err = clients.CodeIntel.GetImplementations(ctx, fm.Repo, req)
+					locations, err = s.service.GetImplementations(ctx, fm.Repo, req)
 
 				default:
 					err = errors.Newf("unknown relationship query %q", s.Relationship)
@@ -171,20 +178,20 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 	return nil, nil
 }
 
-func (s *CodeGraphSearchJob) Children() []job.Describer {
+func (s *SymbolRelationshipSearchJob) Children() []job.Describer {
 	return []job.Describer{s.SymbolSearch}
 }
 
-func (s *CodeGraphSearchJob) MapChildren(fn job.MapFunc) job.Job {
+func (s *SymbolRelationshipSearchJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *s
 	cp.SymbolSearch = job.Map(cp.SymbolSearch, fn)
 	return &cp
 }
 
-func (s *CodeGraphSearchJob) Fields(v job.Verbosity) []log.Field {
+func (s *SymbolRelationshipSearchJob) Fields(v job.Verbosity) []log.Field {
 	return []log.Field{
 		log.String("relationship", string(s.Relationship)),
 	}
 }
 
-func (s *CodeGraphSearchJob) Name() string { return "CodeGraphSearchJob" }
+func (s *SymbolRelationshipSearchJob) Name() string { return "SymbolRelationshipSearchJob" }

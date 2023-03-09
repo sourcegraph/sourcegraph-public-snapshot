@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
@@ -13,6 +14,7 @@ import (
 	ossdependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Services struct {
@@ -23,6 +25,7 @@ type Services struct {
 	RankingService      *ranking.Service
 	UploadsService      *uploads.Service
 	SentinelService     *sentinel.Service
+	SearchService       *search.Service
 }
 
 type ServiceDependencies struct {
@@ -44,6 +47,12 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 	rankingSvc := ranking.NewService(deps.ObservationCtx, db, codeIntelDB)
 	sentinelService := sentinel.NewService(deps.ObservationCtx, db)
 
+	searchMaxIndexes := 500 // default value of PRECISE_CODE_INTEL_MAXIMUM_INDEXES_PER_MONIKER_SEARCH
+	searchService, err := search.NewService(deps.ObservationCtx, gitserverClient, codenavSvc, searchMaxIndexes)
+	if err != nil {
+		return Services{}, errors.Wrap(err, "search.NewService")
+	}
+
 	return Services{
 		AutoIndexingService: autoIndexingSvc,
 		CodenavService:      codenavSvc,
@@ -52,6 +61,7 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 		RankingService:      rankingSvc,
 		UploadsService:      uploadsSvc,
 		SentinelService:     sentinelService,
+		SearchService:       searchService,
 	}, nil
 }
 

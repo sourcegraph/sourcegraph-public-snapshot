@@ -41,7 +41,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/graph"
 )
 
 type EnterpriseInitializer = func(context.Context, *observation.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services) error
@@ -88,13 +87,6 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 	if err != nil {
 		logger.Fatal("failed to initialize code intelligence", log.Error(err))
 	}
-
-	// TODO
-	searchGraph, err := newGraphSearchCodeIntelStore(db, codeIntelServices, 500) // default value of PRECISE_CODE_INTEL_MAXIMUM_INDEXES_PER_MONIKER_SEARCH
-	if err != nil {
-		logger.Fatal("failed to initialize code intelligence for graph search", log.Error(err))
-	}
-	graph.RegisterStore(searchGraph)
 
 	// Initialize search first, as we require enterprise search jobs to exist already
 	// when other initializers are called.

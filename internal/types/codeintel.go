@@ -200,30 +200,3 @@ func (s SymbolInfo) String() string {
 	}
 	return fmt.Sprintf("SymbolInfo{Definition: %s %s, Hover: %q}", s.Definition.RepoCommitPath, rnge, hover)
 }
-
-type CodeIntelRequestArgs struct {
-	RepositoryID int
-	Commit       string
-	Path         string
-	Line         int
-	Character    int
-	Limit        int
-	RawCursor    string
-}
-
-type CodeIntelLocation struct {
-	Path         string
-	TargetCommit string
-	TargetRange  CodeIntelRange
-}
-
-type CodeIntelRange struct {
-	Start CodeIntelPosition
-	End   CodeIntelPosition
-}
-
-// Position is a unique position within a file.
-type CodeIntelPosition struct {
-	Line      int
-	Character int
-}

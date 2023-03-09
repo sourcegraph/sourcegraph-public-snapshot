@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -14,6 +15,7 @@ import (
 type EnterpriseJobs interface {
 	FileHasOwnerJob(child job.Job, includeOwners, excludeOwners []string) job.Job
 	SelectFileOwnerJob(child job.Job) job.Job
+	SymbolRelationshipSearchJob(relationship query.SymbolRelationship, rawSymbolSearch job.Job) job.Job
 }
 
 func NewUnimplementedEnterpriseJobs() EnterpriseJobs {
@@ -28,6 +30,10 @@ func (e *enterpriseJobs) FileHasOwnerJob(child job.Job, includeOwners, excludeOw
 
 func (e *enterpriseJobs) SelectFileOwnerJob(child job.Job) job.Job {
 	return NewUnimplementedJob("file:select.owners searches are not available on this instance")
+}
+
+func (e *enterpriseJobs) SymbolRelationshipSearchJob(relationship query.SymbolRelationship, rawSymbolSearch job.Job) job.Job {
+	return NewUnimplementedJob("symbol:$relationship searches are not available on this instance")
 }
 
 func NewUnimplementedJob(msg string) *UnimplementedJob {

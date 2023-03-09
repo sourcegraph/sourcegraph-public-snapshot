@@ -17,10 +17,10 @@ func Init(
 	ctx context.Context,
 	observationCtx *observation.Context,
 	_ database.DB,
-	_ codeintel.Services,
+	codeIntelServices codeintel.Services,
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	enterpriseServices.EnterpriseSearchJobs = enterprisesearch.NewEnterpriseSearchJobs()
+	enterpriseServices.EnterpriseSearchJobs = enterprisesearch.NewEnterpriseSearchJobs(codeIntelServices.SearchService)
 	return nil
 }

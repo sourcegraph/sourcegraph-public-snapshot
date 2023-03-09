@@ -783,7 +783,7 @@ func TestNewPlanJob(t *testing.T) {
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeLiteral,
 			features: search.Features{
-				CodeGraphSearch: true,
+				SymbolRelationshipSearch: true,
 			},
 			want: autogold.Expect(`
 (LOG
@@ -796,25 +796,7 @@ func TestNewPlanJob(t *testing.T) {
       (LIMIT
         (limit . 500)
         (PARALLEL
-          (CODEGRAPHSEARCH
-            (relationship . references)
-            (LOG
-              (ALERT
-                (query . )
-                (originalQuery . )
-                (patternType . literal)
-                (TIMEOUT
-                  (timeout . 20s)
-                  (LIMIT
-                    (limit . 500)
-                    (PARALLEL
-                      (ZOEKTGLOBALSYMBOLSEARCH
-                        (query . (and sym:substr:"FooBar" file_regex:"\\.go(?m:$)"))
-                        (type . symbol)
-                        )
-                      (REPOSCOMPUTEEXCLUDED
-                        )
-                      NoopJob))))))
+          UnimplementedJob
           (REPOSCOMPUTEEXCLUDED
             )
           NoopJob)))))`),

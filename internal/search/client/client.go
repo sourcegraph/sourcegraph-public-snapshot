@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/graph"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -159,7 +158,6 @@ func (s *searchClient) JobClients() job.RuntimeClients {
 		Zoekt:        s.zoekt,
 		SearcherURLs: s.searcherURLs,
 		Gitserver:    gitserver.NewClient(),
-		CodeIntel:    graph.Store(),
 	}
 }
 
@@ -293,12 +291,12 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 	}
 
 	return &search.Features{
-		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
-		CodeOwnershipSearch:     flagSet.GetBoolOr("search-ownership", false),
-		HybridSearch:            flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
-		Ranking:                 flagSet.GetBoolOr("search-ranking", false),
-		Debug:                   flagSet.GetBoolOr("search-debug", false),
-		CodeGraphSearch:         flagSet.GetBoolOr("search-codegraph", false),
+		ContentBasedLangFilters:  flagSet.GetBoolOr("search-content-based-lang-detection", false),
+		CodeOwnershipSearch:      flagSet.GetBoolOr("search-ownership", false),
+		HybridSearch:             flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
+		Ranking:                  flagSet.GetBoolOr("search-ranking", false),
+		Debug:                    flagSet.GetBoolOr("search-debug", false),
+		SymbolRelationshipSearch: flagSet.GetBoolOr("search-symbolrelationship", false),
 	}
 }
 
