@@ -9,10 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestUserResourceHandler_Create(t *testing.T) {
+	txemail.DisableSilently()
 	t.Parallel()
 
 	db := getMockDB([]*types.UserForSCIM{

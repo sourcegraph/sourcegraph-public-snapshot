@@ -87,26 +87,12 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 			})
 		}
 	}
-
 	var now = time.Now()
-
-	// Email sending always happens in the background so the request is fast.
+	// Send a welcome email in the background.
+	url := globals.ExternalURL().String()
 	goroutine.Go(func() {
-		url := globals.ExternalURL().String()
-		if err := txemail.Send(context.Background(), "user_welcome", txemail.Message{
-			To:       []string{"christopher.warwick@sourcegraph.com"},
-			Template: emailTemplateEmailWelcomeSCIM,
-			Data: struct {
-				URL string
-			}{
-				URL: url,
-			},
-		}); err != nil {
-			return
-		}
-		h.observationCtx.Logger.Info("email welcome: welcome email sent")
+		sendWelcomeEmail(primaryEmail, url)
 	})
-
 	return scim.Resource{
 		ID:         strconv.Itoa(int(user.ID)),
 		ExternalID: getOptionalExternalID(attributes),
@@ -186,6 +172,18 @@ func containsErrCannotCreateUserError(err error) (database.ErrCannotCreateUser, 
 	}
 
 	return database.ErrCannotCreateUser{}, false
+}
+
+func sendWelcomeEmail(to, url string) error {
+	return txemail.Send(context.Background(), "user_welcome", txemail.Message{
+		To:       []string{to},
+		Template: emailTemplateEmailWelcomeSCIM,
+		Data: struct {
+			URL string
+		}{
+			URL: url,
+		},
+	})
 }
 
 var emailTemplateEmailWelcomeSCIM = txemail.MustValidate(txtypes.Templates{
