@@ -10,6 +10,10 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies",
     visibility = ["//:__subpackages__"],
+        tags = [
+        # requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/codeintel/dependencies/internal/background",
         "//internal/codeintel/dependencies/internal/store",
