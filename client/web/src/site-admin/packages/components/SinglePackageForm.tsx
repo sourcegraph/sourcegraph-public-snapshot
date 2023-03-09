@@ -190,8 +190,12 @@ const VersionList: React.FunctionComponent<VersionListProps> = ({ node }) => {
     return (
         <div className="mt-2">
             <div className="text-muted">
-                {versionCount === 1 ? <>{versionCount} version matches</> : <>{versionCount} versions match</>} this
-                filter
+                {versionCount === 1 ? (
+                    <>{versionCount} version currently matches</>
+                ) : (
+                    <>{versionCount} versions currently match</>
+                )}{' '}
+                this filter
             </div>
             <ul className={classNames('list-group mt-1', styles.list)}>
                 {node.versions.map(({ id, version }) => (

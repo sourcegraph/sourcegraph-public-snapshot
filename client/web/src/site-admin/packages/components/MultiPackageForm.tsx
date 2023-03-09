@@ -166,11 +166,12 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                                             {data.packageRepoReferencesMatchingFilter.totalCount === 1 ? (
                                                 <>
                                                     {data.packageRepoReferencesMatchingFilter.totalCount} package
-                                                    matches
+                                                    currently matches
                                                 </>
                                             ) : (
                                                 <>
-                                                    {data.packageRepoReferencesMatchingFilter.totalCount} packages match
+                                                    {data.packageRepoReferencesMatchingFilter.totalCount} packages
+                                                    currently match
                                                 </>
                                             )}{' '}
                                             this filter
@@ -228,7 +229,7 @@ const PackageList: React.FunctionComponent<PackageListProps> = ({ nodes }) => {
     if (nodes.length === 0) {
         return (
             <Alert variant="warning" className="mt-1">
-                This filter does not match any package.
+                This filter does not match any current package.
             </Alert>
         )
     }

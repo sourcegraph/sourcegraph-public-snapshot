@@ -118,7 +118,7 @@ const PackageFilterNode: React.FunctionComponent<PackageFilterNodeProps> = ({ no
                         onClick={() => setActiveFilter(node)}
                         variant="icon"
                         aria-label="Edit"
-                        className="text-primary"
+                        className="text-primary mr-3"
                     >
                         <Icon svgPath={mdiPencil} aria-hidden={true} />
                     </Button>

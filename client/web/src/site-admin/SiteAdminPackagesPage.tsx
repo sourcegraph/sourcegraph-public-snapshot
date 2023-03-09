@@ -79,7 +79,12 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
                                 <RepoMirrorInfo mirrorInfo={packageRepository.mirrorInfo} />
                             </>
                         ) : (
-                            <>{node.name}</>
+                            <>
+                                <span>{node.name}</span>
+                                <Text className="mb-0 text-muted">
+                                    <small>This package has not yet been synced.</small>
+                                </Text>
+                            </>
                         )}
                     </div>
                     <div>
