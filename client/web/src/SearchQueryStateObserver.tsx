@@ -1,4 +1,4 @@
-import { FC, useEffect, useRef, useState } from 'react'
+import {FC, useLayoutEffect, useRef, useState } from 'react'
 
 import { Location, useLocation } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
@@ -36,11 +36,11 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
 
     const [locationSubject] = useState(() => new BehaviorSubject<Location>(location))
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         locationSubject.next(location)
     }, [location, locationSubject])
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const subscription = getQueryStateFromLocation({
             location: locationSubject,
             isSearchContextAvailable: (searchContext: string) =>
