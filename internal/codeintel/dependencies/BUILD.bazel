@@ -9,11 +9,11 @@ go_library(
         "service.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies",
-    visibility = ["//:__subpackages__"],
-        tags = [
+    tags = [
         # requires localhost database
         "requires-network",
     ],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codeintel/dependencies/internal/background",
         "//internal/codeintel/dependencies/internal/store",

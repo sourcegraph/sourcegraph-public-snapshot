@@ -46,11 +46,11 @@ go_test(
         "mocks_test.go",
         "service_test.go",
     ],
+    embed = [":autoindexing"],
     tags = [
         # requires localhost database
         "requires-network",
     ],
-    embed = [":autoindexing"],
     deps = [
         "//enterprise/internal/codeintel/autoindexing/internal/jobselector",
         "//enterprise/internal/codeintel/autoindexing/internal/store",
