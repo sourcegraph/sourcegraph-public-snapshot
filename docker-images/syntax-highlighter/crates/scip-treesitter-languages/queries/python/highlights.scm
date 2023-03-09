@@ -21,13 +21,13 @@
 [
   (none)
   (true)
-  (false)
-] @constant.builtin
+  (false)]
+@constant.builtin
 
 [
   (integer)
-  (float)
-] @number
+  (float)]
+@number
 
 (comment) @comment
 (string) @string
@@ -67,8 +67,8 @@
   ">="
   ">>"
   "|"
-  "~"
-] @identifier.operator
+  "~"]
+@identifier.operator
 
 [
   "and"
@@ -106,5 +106,5 @@
   "try"
   "while"
   "with"
-  "yield"
-] @keyword
+  "yield"]
+@keyword

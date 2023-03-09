@@ -31,7 +31,7 @@ func (e EngineType) String() string {
 	case EngineScipSyntax:
 		return gosyntect.SyntaxEngineScipSyntax
 	default:
-		return "invalid"
+		return gosyntect.SyntaxEngineInvalid
 	}
 }
 
@@ -48,7 +48,7 @@ func (e EngineType) isTreesitterBased() bool {
 // highlighting request. Defaults to "syntect".
 func getEngineParameter(engine EngineType) string {
 	if engine == EngineInvalid {
-		return EngineScipSyntax.String()
+		return EngineSyntect.String()
 	}
 
 	return engine.String()

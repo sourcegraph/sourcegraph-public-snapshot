@@ -20,7 +20,7 @@
 
 (call_expression
   function: (selector_expression
-    field: (field_identifier) @identifier.function))
+             field: (field_identifier) @identifier.function))
 
 ; Function definitions
 
@@ -75,8 +75,7 @@
  ">>="
  "|"
  "|="
- "||"
-] @operator
+ "||"] @operator
 
 ; Keywords
 
@@ -96,8 +95,7 @@
  "struct"
  "type"
  "var"
- "fallthrough"
-] @keyword
+ "fallthrough"] @keyword
 
 "func" @keyword.function
 "return" @keyword.return
@@ -106,15 +104,13 @@
 
 [
  "import"
- "package"
-] @include
+ "package"] @include
 
 [
  "else"
  "case"
  "switch"
- "if"
-] @conditional
+ "if"] @conditional
 
 
 

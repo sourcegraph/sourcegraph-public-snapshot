@@ -47,8 +47,8 @@
   (integral_type)
   (floating_point_type)
   (floating_point_type)
-  (void_type)
-] @identifier.builtin
+  (void_type)]
+@identifier.builtin
 
 ; Variables
 
@@ -66,26 +66,26 @@
   (decimal_integer_literal)
   (octal_integer_literal)
   (decimal_floating_point_literal)
-  (hex_floating_point_literal)
-] @number
+  (hex_floating_point_literal)]
+@number
 
 [
   (character_literal)
   (string_literal)
-  (text_block)
-] @string
+  (text_block)]
+@string
 
 [
   (true)
-  (false)
-] @boolean
+  (false)]
+@boolean
 
 (null_literal) @constant.null
 
 [
   (line_comment)
-  (block_comment)
-] @comment
+  (block_comment)]
+@comment
 
 ; Keywords
 
@@ -139,5 +139,5 @@
   "uses"
   "volatile"
   "while"
-  "with"
-] @keyword
+  "with"]
+@keyword

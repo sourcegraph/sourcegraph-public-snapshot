@@ -17,7 +17,7 @@
 
 (assignment_expression
   left: (member_expression
-    property: (property_identifier) @identifier.function)
+         property: (property_identifier) @identifier.function)
   right: [(function) (arrow_function)])
 
 (variable_declarator
@@ -36,7 +36,7 @@
 
 (call_expression
   function: (member_expression
-    property: (property_identifier) @identifier.function))
+             property: (property_identifier) @identifier.function))
 
 ; Variables
 ;----------
@@ -59,15 +59,15 @@
   (true)
   (false)
   (null)
-  (undefined)
-] @constant.builtin
+  (undefined)]
+@constant.builtin
 
 (comment) @comment
 
 [
   (string_fragment)
-  (template_string)
-] @string
+  (template_string)]
+@string
 (string ("\"" @string))
 (string ("'" @string))
 
@@ -122,5 +122,5 @@
   "void"
   "while"
   "with"
-  "yield"
-] @keyword
+  "yield"]
+@keyword

@@ -10,14 +10,14 @@
  (#match? @type "^[A-Z]"))
 ((scoped_identifier
   path: (scoped_identifier
-    name: (identifier) @type))
+         name: (identifier) @type))
  (#match? @type "^[A-Z]"))
 ((scoped_type_identifier
   path: (identifier) @type)
  (#match? @type "^[A-Z]"))
 ((scoped_type_identifier
   path: (scoped_identifier
-    name: (identifier) @type))
+         name: (identifier) @type))
  (#match? @type "^[A-Z]"))
 
 ; Assume other uppercase names are enum constructors
@@ -37,20 +37,20 @@
   function: (identifier) @identifier.function)
 (call_expression
   function: (field_expression
-    field: (field_identifier) @identifier.function))
+             field: (field_identifier) @identifier.function))
 (call_expression
   function: (scoped_identifier
-    "::"
-    name: (identifier) @identifier.function))
+             "::"
+             name: (identifier) @identifier.function))
 
 (generic_function
   function: (identifier) @identifier.function)
 (generic_function
   function: (scoped_identifier
-    name: (identifier) @identifier.function))
+             name: (identifier) @identifier.function))
 (generic_function
   function: (field_expression
-    field: (field_identifier) @identifier.function))
+             field: (field_identifier) @identifier.function))
 
 (metavariable) @identifier.attribute
 (fragment_specifier) @type
@@ -135,8 +135,8 @@
   "unsafe"
   "use"
   "where"
-  "while"
-] @keyword
+  "while"]
+@keyword
 (crate) @keyword
 (mutable_specifier) @keyword
 (use_list (self) @keyword)

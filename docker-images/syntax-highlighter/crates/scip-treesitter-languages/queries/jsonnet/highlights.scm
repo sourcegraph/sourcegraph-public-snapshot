@@ -6,8 +6,8 @@
   "["
   "]"
   "{"
-  "}"
-] @punctuation.bracket
+  "}"]
+@punctuation.bracket
 
 [ "error" "assert" ] @identifier.function
 
@@ -15,8 +15,8 @@
 [
   "if"
   "then"
-  "else"
-] @conditional
+  "else"]
+@conditional
 
 [
   (local)
@@ -25,8 +25,8 @@
   "for"
   "in"
   "import"
-  "importstr"
-] @keyword
+  "importstr"]
+@keyword
 
 ; Language basics
 (comment) @comment
@@ -44,8 +44,8 @@
 
 [
   (string_start)
-  (string_end)
-] @string.special
+  (string_end)]
+@string.special
 
 (string_content) @string
 

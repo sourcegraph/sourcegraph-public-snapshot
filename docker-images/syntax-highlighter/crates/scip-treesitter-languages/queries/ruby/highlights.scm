@@ -27,8 +27,8 @@
   "until"
   "when"
   "while"
-  "yield"
-] @keyword
+  "yield"]
+@keyword
 
 ((identifier) @keyword
  (#match? @keyword "^(private|protected|public)$"))
@@ -65,8 +65,8 @@
 
 [
   (class_variable)
-  (instance_variable)
-] @identifier.attribute
+  (instance_variable)]
+@identifier.attribute
 
 ((identifier) @constant.builtin
  (#match? @constant.builtin "^__(FILE|LINE|ENCODING)__$"))
@@ -76,8 +76,8 @@
 (encoding) @constant.builtin
 
 (hash_splat_nil
-  "**" @operator
-) @constant.builtin
+  "**" @operator)
+@constant.builtin
 
 ((constant) @constant
  (#match? @constant "^[A-Z\\d_]+$"))
@@ -109,9 +109,9 @@
   (bare_string)
   (subshell)
   ; (heredoc_body)
-  (heredoc_content)
+  (heredoc_content)]
   ; (heredoc_beginning)
-] @string
+@string
 (string "\"" @string)
 ; (string "'" @string)
 ; ((string (_) @string .))
@@ -121,21 +121,21 @@
   (simple_symbol)
   (delimited_symbol)
   (hash_key_symbol)
-  (bare_symbol)
-] @character ; TODO: What else?
+  (bare_symbol)]
+@character ; TODO: What else?
 
 (escape_sequence) @string.escape
 (regex) @string ; TODO: Missing regexp literal
 
 [
   (integer)
-  (float)
-] @number
+  (float)]
+@number
 
 [
   (true)
-  (false)
-] @boolean
+  (false)]
+@boolean
 
 (nil) @constant.null
 
@@ -147,8 +147,8 @@
 ; Operators
 
 [
-"="
-"=>"
-"->"
-] @operator
+ "="
+ "=>"
+ "->"]
+@operator
 

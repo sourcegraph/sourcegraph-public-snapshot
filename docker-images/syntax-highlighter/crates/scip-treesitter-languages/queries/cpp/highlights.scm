@@ -32,7 +32,7 @@
   function: (identifier) @identifier.function)
 (call_expression
   function: (field_expression
-    field: (field_identifier) @identifier.function))
+             field: (field_identifier) @identifier.function))
 (function_declarator
   declarator: (identifier) @identifier.function)
 (preproc_function_def
@@ -110,5 +110,4 @@
   "volatile"
   "constexpr"
   "while"
-  (preproc_directive)
-] @keyword
+  (preproc_directive)] @keyword

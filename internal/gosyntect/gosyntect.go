@@ -19,6 +19,8 @@ const (
 	SyntaxEngineSyntect    = "syntect"
 	SyntaxEngineTreesitter = "tree-sitter"
 	SyntaxEngineScipSyntax = "scip-syntax"
+
+	SyntaxEngineInvalid = "invalid"
 )
 
 func isTreesitterBased(engine string) bool {

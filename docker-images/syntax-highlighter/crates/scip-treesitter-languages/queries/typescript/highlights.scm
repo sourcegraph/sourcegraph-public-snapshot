@@ -18,5 +18,4 @@
   "readonly"
   "satisfies"
   "type"
-  "typeof"
-] @keyword
+  "typeof"] @keyword

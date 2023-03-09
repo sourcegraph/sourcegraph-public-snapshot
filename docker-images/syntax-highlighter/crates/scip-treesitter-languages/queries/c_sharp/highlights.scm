@@ -15,8 +15,8 @@
 
 (invocation_expression
   function: (conditional_access_expression
-    (member_binding_expression
-      name: (identifier) @method)))
+             (member_binding_expression
+               name: (identifier) @method)))
 
 (invocation_expression
       (identifier) @method)
@@ -40,8 +40,8 @@
   (nullable_type)
   (pointer_type)
   (function_pointer_type)
-  (predefined_type)
-] @type.builtin
+  (predefined_type)]
+@type.builtin
 
 ;; Enum
 (enum_member_declaration (identifier) @property.definition)
@@ -49,8 +49,8 @@
 ;; Literals
 [
   (real_literal)
-  (integer_literal)
-] @number
+  (integer_literal)]
+@number
 
 [
   (character_literal)
@@ -61,14 +61,12 @@
   "\""
   "$\""
   "@$\""
-  "$@\""
- ] @string
+  "$@\""] @string
 
 [
   (boolean_literal)
   (null_literal)
-  (void_keyword)
-] @constant.builtin
+  (void_keyword)] @constant.builtin
 
 ;; Comments
 (comment) @comment
@@ -77,8 +75,7 @@
 [
   ";"
   "."
-  ","
-] @punctuation.delimiter
+  ","] @punctuation.delimiter
 
 [
   "--"
@@ -107,8 +104,7 @@
   "*"
   "/"
   "%"
-  ":"
-] @operator
+  ":"] @operator
 
 [
   "("
@@ -116,8 +112,7 @@
   "["
   "]"
   "{"
-  "}"
-]  @punctuation.bracket
+  "}"] @punctuation.bracket
 
 ;; Keywords
 (modifier) @keyword
@@ -178,8 +173,7 @@
   "record"
   "init"
   "with"
-  "let"
-] @keyword
+  "let"] @keyword
 
 
 ;; Linq

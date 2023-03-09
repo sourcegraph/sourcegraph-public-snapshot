@@ -3,8 +3,8 @@
 (function_definition name: (identifier) @identifier.function)
 (
     (identifier) @constant.builtin
-    (#eq? @constant.builtin "this")
-)
+    (#eq? @constant.builtin "this"))
+
 (call_expression function: (field_expression field: (identifier) @identifier.function))
 (call_expression function: (identifier) @identifier.function)
 (type_parameters name: (identifier) @identifier.type)
@@ -66,5 +66,5 @@
   "given"
   "end"
   "extension"
-  "with"
-] @keyword
+  "with"]
+@keyword
