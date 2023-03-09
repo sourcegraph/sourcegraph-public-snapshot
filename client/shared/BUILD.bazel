@@ -80,7 +80,6 @@ js_library(
             "src/testing/**/*.*",
             # TODO: Ignore legacy build generated file as it conflicts with the Bazel
             # build. This can be removed after the migration.
-            "src/schema.ts",
             "src/graphql-operations.ts",
             "src/**/*.module.scss.d.ts",
         ],
