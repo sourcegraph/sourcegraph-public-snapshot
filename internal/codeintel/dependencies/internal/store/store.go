@@ -27,12 +27,12 @@ import (
 type Store interface {
 	WithTransact(context.Context, func(Store) error) error
 
-	ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, err error)
+	ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, hasMore bool, err error)
 	InsertPackageRepoRefs(ctx context.Context, deps []shared.MinimalPackageRepoRef) (newDeps []shared.PackageRepoReference, newVersions []shared.PackageRepoRefVersion, err error)
 	DeletePackageRepoRefsByID(ctx context.Context, ids ...int) (err error)
 	DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error)
 
-	ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, error)
+	ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, bool, error)
 	CreatePackageRepoFilter(ctx context.Context, input shared.MinimalPackageFilter) (filter *shared.PackageRepoFilter, err error)
 	UpdatePackageRepoFilter(ctx context.Context, input shared.PackageRepoFilter) (err error)
 	DeletePacakgeRepoFilter(ctx context.Context, id int) (err error)
@@ -90,7 +90,7 @@ type ListDependencyReposOpts struct {
 }
 
 // ListDependencyRepos returns dependency repositories to be synced by gitserver.
-func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, err error) {
+func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, hasMore bool, err error) {
 	ctx, _, endObservation := s.operations.listPackageRepoRefs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("scheme", opts.Scheme),
 	}})
@@ -110,7 +110,12 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 	)
 	dependencyRepos, err = basestore.NewSliceScanner(scanDependencyRepoWithVersions)(s.db.Query(ctx, query))
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "error listing dependency repos")
+		return nil, 0, false, errors.Wrap(err, "error listing dependency repos")
+	}
+
+	if opts.Limit != 0 && len(dependencyRepos) > opts.Limit {
+		dependencyRepos = dependencyRepos[:opts.Limit]
+		hasMore = true
 	}
 
 	query = sqlf.Sprintf(
@@ -123,10 +128,10 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 	)
 	totalCount, _, err := basestore.ScanFirstInt(s.db.Query(ctx, query))
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "error counting dependency repos")
+		return nil, 0, false, errors.Wrap(err, "error counting dependency repos")
 	}
 
-	return dependencyRepos, totalCount, err
+	return dependencyRepos, totalCount, hasMore, err
 }
 
 const listDependencyReposQuery = `
@@ -167,7 +172,8 @@ func makeLimit(limit int) *sqlf.Query {
 	if limit == 0 {
 		return sqlf.Sprintf("LIMIT ALL")
 	}
-	return sqlf.Sprintf("LIMIT %s", limit)
+	// + 1 to check if more pages
+	return sqlf.Sprintf("LIMIT %s", limit+1)
 }
 
 func makeOffset(id int) *sqlf.Query {
@@ -438,7 +444,7 @@ type ListPackageRepoRefFiltersOpts struct {
 	Limit          int
 }
 
-func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageRepoFilter, err error) {
+func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageRepoFilter, hasMore bool, err error) {
 	ctx, _, endObservation := s.operations.listPackageRepoFilters.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numPackageRepoFilterIDs", len(opts.IDs)),
 		log.String("packageScheme", opts.PackageScheme),
@@ -476,7 +482,8 @@ func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageR
 
 	limit := sqlf.Sprintf("")
 	if opts.Limit != 0 {
-		limit = sqlf.Sprintf("LIMIT %s", opts.Limit)
+		// + 1 to check if more pages
+		limit = sqlf.Sprintf("LIMIT %s", opts.Limit+1)
 	}
 
 	filters, err := basestore.NewSliceScanner(scanPackageFilter)(
@@ -487,7 +494,12 @@ func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageR
 		)),
 	)
 
-	return filters, err
+	if opts.Limit != 0 && len(filters) > opts.Limit {
+		filters = filters[:opts.Limit]
+		hasMore = true
+	}
+
+	return filters, hasMore, err
 }
 
 const listPackageRepoRefFiltersQuery = `

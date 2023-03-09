@@ -62,7 +62,7 @@ func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context
 
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
 
-	matchingPkgs, totalCount, err := depsService.PackagesOrVersionsMatchingFilter(ctx, shared.MinimalPackageFilter{
+	matchingPkgs, totalCount, hasMore, err := depsService.PackagesOrVersionsMatchingFilter(ctx, shared.MinimalPackageFilter{
 		PackageScheme: externalServiceToPackageSchemeMap[args.Kind],
 		NameFilter:    args.Filter.NameFilter,
 		VersionFilter: args.Filter.VersionFilter,
@@ -71,9 +71,10 @@ func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context
 	if args.Filter.NameFilter != nil {
 		return &filterMatchingResolver{
 			packageResolver: &packageRepoReferenceConnectionResolver{
-				db:    r.db,
-				deps:  matchingPkgs,
-				total: totalCount,
+				db:      r.db,
+				deps:    matchingPkgs,
+				hasMore: hasMore,
+				total:   totalCount,
 			},
 		}, err
 	}
@@ -85,6 +86,7 @@ func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context
 	return &filterMatchingResolver{
 		versionResolver: &packageRepoReferenceVersionConnectionResolver{
 			versions: versions,
+			hasMore:  hasMore,
 			total:    totalCount,
 		},
 	}, err
@@ -106,7 +108,7 @@ func (r *schemaResolver) PackageRepoFilters(ctx context.Context, args struct {
 	}
 
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
-	filters, err := depsService.ListPackageRepoFilters(ctx, opts)
+	filters, _, err := depsService.ListPackageRepoFilters(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "error listing package repo filters")
 	}

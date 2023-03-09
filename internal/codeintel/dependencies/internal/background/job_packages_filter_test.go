@@ -58,13 +58,17 @@ func TestPackageRepoFilters(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, count, err := s.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{Scheme: "npm"})
+	have, count, hasMore, err := s.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{Scheme: "npm"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if count != 1 {
 		t.Errorf("unexpected total count of package repos: want=%d got=%d", 1, count)
+	}
+
+	if hasMore {
+		t.Error("unexpected more-pages flag set, expected no more pages to follow")
 	}
 
 	for i, ref := range have {
