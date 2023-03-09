@@ -1534,8 +1534,6 @@ ts_project(
         ":node_modules/@sourcegraph/observability-client",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",
-        ":node_modules/@sourcegraph/client-api",  #keep
-        "//:node_modules/@storybook/client-api", #keep
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/commands",
         "//:node_modules/@codemirror/lang-json",
