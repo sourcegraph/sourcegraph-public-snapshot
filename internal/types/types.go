@@ -271,11 +271,6 @@ func (r *Repo) Update(n *Repo) (modified RepoModified) {
 		modified |= RepoModifiedStars
 	}
 
-	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
-		r.Metadata = n.Metadata
-		modified |= RepoModifiedMetadata
-	}
-
 	for urn, info := range n.Sources {
 		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqual(info, old) {
 			r.Sources[urn] = info
