@@ -113,6 +113,7 @@ func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, na
 		org, err := repo.GetOrganization()
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
+			continue
 		}
 		if s.exclude(fmt.Sprintf("%s/%s/%s", org, repo.Project.Name, repo.Name)) {
 			continue
