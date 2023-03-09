@@ -64,6 +64,7 @@ export async function getActiveRelease(config: ReleaseConfig): Promise<ActiveRel
         ...(def as ReleaseDates),
         ...(def as ReleaseCaptainInformation),
         branch: `${version.major}.${version.minor}`,
+        srcCliVersion: config.in_progress.srcCliVersion ? new SemVer(config.in_progress.srcCliVersion) : undefined,
     }
 }
 
@@ -82,7 +83,7 @@ export function newRelease(
     captainSlack: string
 ): ScheduledReleaseDefinition {
     return {
-        ...releaseDates(releaseDate),
+        ...releaseDates(releaseDate, version.patch === 0),
         current: version.version,
         captainGitHubUsername: captainGithub,
         captainSlackUsername: captainSlack,
@@ -123,13 +124,26 @@ export async function newReleaseFromInput(versionOverride?: SemVer): Promise<Sch
     return rel
 }
 
-function releaseDates(releaseDate: DateTime): ReleaseDates {
+function releaseDates(releaseDate: DateTime, includePatches?: boolean): ReleaseDates {
     releaseDate = releaseDate.set({ hour: 10 })
     return {
         codeFreezeDate: releaseDate.plus({ days: -7 }).toString(),
         securityApprovalDate: releaseDate.plus({ days: -7 }).toString(),
         releaseDate: releaseDate.toString(),
+        patches: includePatches
+            ? generatePatchDates(releaseDate, releaseDate.plus({ months: 3 }), 2).map(rdate => rdate.toString())
+            : undefined,
     }
+}
+
+function generatePatchDates(start: DateTime, end: DateTime, intervalWeeks: number): DateTime[] {
+    const patches = []
+    let current: DateTime = start.plus({ weeks: intervalWeeks })
+    while (current < end.minus({ weeks: 1 })) {
+        patches.push(current)
+        current = current.plus({ weeks: intervalWeeks })
+    }
+    return patches
 }
 
 export function addScheduledRelease(config: ReleaseConfig, release: ScheduledReleaseDefinition): ReleaseConfig {
@@ -146,12 +160,14 @@ export interface ReleaseDates {
     releaseDate: string
     codeFreezeDate: string
     securityApprovalDate: string
+    patches?: string[]
 }
 
 export interface ActiveRelease extends ReleaseCaptainInformation, ReleaseDates {
     version: SemVer
     previous: SemVer
     branch: string
+    srcCliVersion?: SemVer
 }
 
 export interface ActiveReleaseDefinition {
@@ -166,6 +182,7 @@ export interface ReleaseCaptainInformation {
 
 export interface InProgress extends ReleaseCaptainInformation {
     releases: ActiveReleaseDefinition[]
+    srcCliVersion?: string
 }
 
 export interface ReleaseConfig {
@@ -250,4 +267,11 @@ async function getScheduledReleaseWithInput(
         saveReleaseConfig(config)
     }
     return scheduled
+}
+
+export function setSrcCliVersion(config: ReleaseConfig, version: string): void {
+    if (config.in_progress) {
+        config.in_progress.srcCliVersion = version
+    }
+    saveReleaseConfig(config)
 }

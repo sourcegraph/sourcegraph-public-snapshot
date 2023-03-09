@@ -32,7 +32,8 @@
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": ""
+    "ViewerPermission": "",
+    "RepositoryTopics": {}
    }
   },
   {
@@ -68,7 +69,8 @@
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": ""
+    "ViewerPermission": "",
+    "RepositoryTopics": {}
    }
   }
  ]

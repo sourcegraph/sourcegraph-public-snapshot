@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -13,8 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 )
@@ -27,6 +25,7 @@ type Services struct {
 	BatchesGitLabWebhook            webhooks.RegistererHandler
 	BatchesBitbucketServerWebhook   webhooks.RegistererHandler
 	BatchesBitbucketCloudWebhook    webhooks.RegistererHandler
+	BatchesAzureDevOpsWebhook       webhooks.Registerer
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
@@ -45,28 +44,14 @@ type Services struct {
 	// Handler for completions stream.
 	NewCompletionsStreamHandler NewCompletionsStreamHandler
 
-	PermissionsGitHubWebhook    webhooks.Registerer
-	NewCodeIntelUploadHandler   NewCodeIntelUploadHandler
-	RankingService              RankingService
-	NewExecutorProxyHandler     NewExecutorProxyHandler
-	NewGitHubAppSetupHandler    NewGitHubAppSetupHandler
-	NewComputeStreamHandler     NewComputeStreamHandler
-	EnterpriseSearchJobs        jobutil.EnterpriseJobs
-	AuthzResolver               graphqlbackend.AuthzResolver
-	BatchChangesResolver        graphqlbackend.BatchChangesResolver
-	CodeIntelResolver           graphqlbackend.CodeIntelResolver
-	InsightsResolver            graphqlbackend.InsightsResolver
-	CodeMonitorsResolver        graphqlbackend.CodeMonitorsResolver
-	LicenseResolver             graphqlbackend.LicenseResolver
-	DotcomResolver              graphqlbackend.DotcomRootResolver
-	SearchContextsResolver      graphqlbackend.SearchContextsResolver
-	NotebooksResolver           graphqlbackend.NotebooksResolver
-	ComputeResolver             graphqlbackend.ComputeResolver
-	InsightsAggregationResolver graphqlbackend.InsightsAggregationResolver
-	WebhooksResolver            graphqlbackend.WebhooksResolver
-	EmbeddingsResolver          graphqlbackend.EmbeddingsResolver
-	RBACResolver                graphqlbackend.RBACResolver
-	OwnResolver                 graphqlbackend.OwnResolver
+	PermissionsGitHubWebhook  webhooks.Registerer
+	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
+	RankingService            RankingService
+	NewExecutorProxyHandler   NewExecutorProxyHandler
+	NewGitHubAppSetupHandler  NewGitHubAppSetupHandler
+	NewComputeStreamHandler   NewComputeStreamHandler
+	EnterpriseSearchJobs      jobutil.EnterpriseJobs
+	graphqlbackend.OptionalResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
@@ -77,7 +62,7 @@ type NewCodeIntelUploadHandler func(internal bool) http.Handler
 type RankingService interface {
 	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
 	GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error)
-	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error)
+	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ types.RepoPathRanks, err error)
 }
 
 // NewExecutorProxyHandler creates a new proxy handler for routes accessible to the
@@ -107,6 +92,7 @@ func DefaultServices() Services {
 		BatchesGitLabWebhook:            &emptyWebhookHandler{name: "batches gitlab webhook"},
 		BatchesBitbucketServerWebhook:   &emptyWebhookHandler{name: "batches bitbucket server webhook"},
 		BatchesBitbucketCloudWebhook:    &emptyWebhookHandler{name: "batches bitbucket cloud webhook"},
+		BatchesAzureDevOpsWebhook:       &emptyWebhookHandler{name: "batches azure devops webhook"},
 		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
 		BatchesChangesFileExistsHandler: makeNotFoundHandler("batches file exists handler"),
 		BatchesChangesFileUploadHandler: makeNotFoundHandler("batches file upload handler"),
@@ -186,31 +172,6 @@ func BatchChangesEnabledForUser(ctx context.Context, db database.DB) error {
 	return nil
 }
 
-// IsCodeInsightsEnabled tells if code insights are enabled or not.
-func IsCodeInsightsEnabled() bool {
-	if envvar.SourcegraphDotComMode() {
-		return false
-	}
-	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
-		// Code insights can always be disabled. This can be a helpful escape hatch if e.g. there
-		// are issues with (or connecting to) the codeinsights-db deployment and it is preventing
-		// the Sourcegraph frontend or repo-updater from starting.
-		//
-		// It is also useful in dev environments if you do not wish to spend resources running Code
-		// Insights.
-		return false
-	}
-	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
-		// Code insights is not supported in single-container Docker demo deployments unless
-		// explicity allowed, (for example by backend integration tests.)
-		if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
-			return true
-		}
-		return false
-	}
-	return true
-}
-
 type stubRankingService struct{}
 
 func (s stubRankingService) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
@@ -221,6 +182,6 @@ func (s stubRankingService) GetRepoRank(ctx context.Context, repoName api.RepoNa
 	return nil, nil
 }
 
-func (s stubRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
-	return nil, nil
+func (s stubRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ types.RepoPathRanks, err error) {
+	return types.RepoPathRanks{}, nil
 }

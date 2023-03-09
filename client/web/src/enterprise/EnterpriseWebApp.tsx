@@ -2,6 +2,8 @@ import { FC } from 'react'
 
 import '../SourcegraphWebApp.scss'
 
+import { logger } from '@sourcegraph/common'
+
 import { LegacySourcegraphWebApp } from '../LegacySourcegraphWebApp'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import {
@@ -10,6 +12,7 @@ import {
     StaticInjectedAppConfig,
     windowContextConfig,
 } from '../staticAppConfig'
+import { AppShellInit } from '../storm/app-shell-init'
 import { routes } from '../storm/routes'
 
 import { CodeIntelligenceBadgeContent } from './codeintel/badge/components/CodeIntelligenceBadgeContent'
@@ -78,12 +81,20 @@ const staticAppConfig = {
     ...hardcodedConfig,
 } satisfies StaticAppConfig
 
-export const EnterpriseWebApp: FC = () => {
+export const EnterpriseWebApp: FC<AppShellInit> = props => {
     if (window.context.experimentalFeatures.enableStorm) {
-        // eslint-disable-next-line no-console
-        console.log('Storm 🌪️ is enabled for this page load.')
+        const { graphqlClient, temporarySettingsStorage } = props
 
-        return <SourcegraphWebApp {...staticAppConfig} routes={routes} />
+        logger.log('Storm 🌪️ is enabled for this page load.')
+
+        return (
+            <SourcegraphWebApp
+                {...staticAppConfig}
+                routes={routes}
+                graphqlClient={graphqlClient}
+                temporarySettingsStorage={temporarySettingsStorage}
+            />
+        )
     }
 
     return <LegacySourcegraphWebApp {...staticAppConfig} />

@@ -67,13 +67,13 @@ func TestRoleConnectionResolver(t *testing.T) {
 	t.Run("as site-administrator", func(t *testing.T) {
 		want := []apitest.Role{
 			{
-				ID: string(marshalRoleID(r.ID)),
+				ID: string(marshalRoleID(userRole.ID)),
 			},
 			{
 				ID: string(marshalRoleID(siteAdminRole.ID)),
 			},
 			{
-				ID: string(marshalRoleID(userRole.ID)),
+				ID: string(marshalRoleID(r.ID)),
 			},
 		}
 

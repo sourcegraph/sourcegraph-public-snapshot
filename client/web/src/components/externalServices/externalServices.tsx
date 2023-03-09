@@ -1303,15 +1303,16 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
         <div>
             <ol>
                 <li>
-                    In the configuration below, set <Field>url</Field> to the URL of Azure DevOps Services/Server.
+                    In the configuration below, set <Field>url</Field> to the URL of Azure DevOps Services:{' '}
+                    <Link to="https://dev.azure.com">https://dev.azure.com</Link>.
                 </li>
                 <li>
-                    In the configuration below, set <Field>username</Field> to the authenticated username for the Azure
-                    DevOps Services/Server instance.
+                    In the configuration below, set <Field>username</Field> to the authenticated username for Azure
+                    DevOps Services.
                 </li>
                 <li>
-                    In the configuration below, set <Field>token</Field> to the authenticated token for the Azure DevOps
-                    Services/Server instance. See the{' '}
+                    In the configuration below, set <Field>token</Field> to the authenticated token for Azure DevOps
+                    Services. See the{' '}
                     <Link to="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows#create-a-pat">
                         Azure DevOps documentation
                     </Link>{' '}
@@ -1495,6 +1496,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     gitolite: GITOLITE,
     git: GENERIC_GIT,
     gerrit: GERRIT,
+    azuredevops: AZUREDEVOPS,
     ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rubyPackages === 'enabled' ? { rubyPackages: RUBY_PACKAGES } : {}),
@@ -1503,7 +1505,6 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-    ...(window.context?.experimentalFeatures?.azureDevOps === 'enabled' ? { azuredevops: AZUREDEVOPS } : {}),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {

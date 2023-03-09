@@ -3,6 +3,8 @@ package database
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -21,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -85,7 +88,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := authzQuery(false, true, int32(0), authz.Read)
+		want := authzQuery(false, true, int32(0))
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
@@ -102,14 +105,14 @@ func TestAuthzQueryConds(t *testing.T) {
 			setup: func(t *testing.T) (context.Context, DB) {
 				return actor.WithInternalActor(context.Background()), db
 			},
-			wantQuery: authzQuery(true, false, int32(0), authz.Read),
+			wantQuery: authzQuery(true, false, int32(0)),
 		},
 		{
 			name: "no authz provider and not allow by default",
 			setup: func(t *testing.T) (context.Context, DB) {
 				return context.Background(), db
 			},
-			wantQuery: authzQuery(false, false, int32(0), authz.Read),
+			wantQuery: authzQuery(false, false, int32(0)),
 		},
 		{
 			name: "no authz provider but allow by default",
@@ -117,7 +120,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				return context.Background(), db
 			},
 			authzAllowByDefault: true,
-			wantQuery:           authzQuery(true, false, int32(0), authz.Read),
+			wantQuery:           authzQuery(true, false, int32(0)),
 		},
 		{
 			name: "authenticated user is a site admin",
@@ -128,7 +131,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				mockDB.UsersFunc.SetDefaultReturn(users)
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
-			wantQuery: authzQuery(true, false, int32(1), authz.Read),
+			wantQuery: authzQuery(true, false, int32(1)),
 		},
 		{
 			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
@@ -143,7 +146,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
-			wantQuery: authzQuery(false, false, int32(1), authz.Read),
+			wantQuery: authzQuery(false, false, int32(1)),
 		},
 		{
 			name: "authenticated user is not a site admin",
@@ -154,7 +157,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				mockDB.UsersFunc.SetDefaultReturn(users)
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
-			wantQuery: authzQuery(false, false, int32(1), authz.Read),
+			wantQuery: authzQuery(false, false, int32(1)),
 		},
 	}
 
@@ -273,6 +276,15 @@ VALUES (NULL, %s);
 	return alice, unrestrictedRepo
 }
 
+func mockUnifiedPermsConfig() {
+	cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{
+			UnifiedPermissions: true,
+		},
+	}}
+	conf.Mock(cfg)
+}
+
 func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -300,15 +312,9 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 	})
 
 	t.Run("Unified perms: Alice cannot see private repo, but can see unrestricted repo", func(t *testing.T) {
-		cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-			UnifiedPermissions: true,
-		}}}
-		conf.Mock(cfg)
-
+		mockUnifiedPermsConfig()
 		// Always reset the configuration so that it doesn't interfere with other tests
-		defer func() {
-			conf.Mock(nil)
-		}()
+		defer conf.Mock(nil)
 
 		aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
 		repos, err := db.Repos().List(aliceCtx, ReposListOptions{})
@@ -538,32 +544,9 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 	})
 
 	t.Run("Unified permissions table should be respected if feature flag is on", func(t *testing.T) {
-		cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-			UnifiedPermissions: true,
-		}}}
-		conf.Mock(cfg)
-
+		mockUnifiedPermsConfig()
 		// Always reset the configuration so that it doesn't interfere with other tests
-		defer func() {
-			conf.Mock(nil)
-		}()
-
-		runTests(t)
-	})
-
-	t.Run("Unified permissions table should be respected if feature flag is on and legacy permissions are deleted", func(t *testing.T) {
-		execQuery(t, ctx, db, sqlf.Sprintf("TRUNCATE user_permissions"))
-		execQuery(t, ctx, db, sqlf.Sprintf("TRUNCATE repo_permissions"))
-
-		cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-			UnifiedPermissions: true,
-		}}}
-		conf.Mock(cfg)
-
-		// Always reset the configuration so that it doesn't interfere with other tests
-		defer func() {
-			conf.Mock(nil)
-		}()
+		defer conf.Mock(nil)
 
 		runTests(t)
 	})
@@ -786,4 +769,152 @@ VALUES
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func benchmarkAuthzQuery(b *testing.B, numRepos, numUsers, reposPerUser int) {
+	// disable security access logs, which pollute the output of benchmark
+	os.Setenv("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS", "true")
+
+	logger := logtest.Scoped(b)
+	db := NewDB(logger, dbtest.NewDB(logger, b))
+	ctx := context.Background()
+
+	b.Logf("Creating %d repositories...", numRepos)
+
+	repoInserter := batch.NewInserter(ctx, db.Handle(), "repo", batch.MaxNumPostgresParameters, "name", "private")
+	repoPermissionsInserter := batch.NewInserter(ctx, db.Handle(), "repo_permissions", batch.MaxNumPostgresParameters, "repo_id", "permission", "updated_at", "synced_at", "unrestricted")
+	for i := 1; i <= numRepos; i++ {
+		if err := repoInserter.Insert(ctx, fmt.Sprintf("repo-%d", i), true); err != nil {
+			b.Fatal(err)
+		}
+		if err := repoPermissionsInserter.Insert(ctx, i, "read", "now()", "now()", false); err != nil {
+			b.Fatal(err)
+		}
+	}
+	if err := repoInserter.Flush(ctx); err != nil {
+		b.Fatal(err)
+	}
+	if err := repoPermissionsInserter.Flush(ctx); err != nil {
+		b.Fatal(err)
+	}
+
+	b.Logf("Done creating %d repositories.", numRepos)
+
+	b.Logf("Creating %d users...", numRepos)
+
+	userInserter := batch.NewInserter(ctx, db.Handle(), "users", batch.MaxNumPostgresParameters, "username")
+	for i := 1; i <= numUsers; i++ {
+		if err := userInserter.Insert(ctx, fmt.Sprintf("user-%d", i)); err != nil {
+			b.Fatal(err)
+		}
+	}
+	if err := userInserter.Flush(ctx); err != nil {
+		b.Fatal(err)
+	}
+
+	b.Logf("Done creating %d users.", numUsers)
+
+	b.Logf("Creating %d external accounts...", numUsers)
+
+	externalAccountInserter := batch.NewInserter(ctx, db.Handle(), "user_external_accounts", batch.MaxNumPostgresParameters, "user_id", "account_id", "service_type", "service_id", "client_id")
+	for i := 1; i <= numUsers; i++ {
+		if err := externalAccountInserter.Insert(ctx, i, fmt.Sprintf("test-account-%d", i), "test", "test", "test"); err != nil {
+			b.Fatal(err)
+		}
+	}
+	if err := externalAccountInserter.Flush(ctx); err != nil {
+		b.Fatal(err)
+	}
+
+	b.Logf("Done creating %d external accounts.", numUsers)
+
+	b.Logf("Creating %d permissions...", numUsers*reposPerUser)
+
+	userPermissionsInserter := batch.NewInserter(ctx, db.Handle(), "user_permissions", batch.MaxNumPostgresParameters, "user_id", "object_ids_ints", "permission", "object_type", "updated_at", "synced_at")
+	userRepoPermissionsInserter := batch.NewInserter(ctx, db.Handle(), "user_repo_permissions", batch.MaxNumPostgresParameters, "user_id", "user_external_account_id", "repo_id", "source")
+	for i := 1; i <= numUsers; i++ {
+		objectIDs := make(map[int]struct{})
+		// Assign a random set of repos to the user
+		for j := 0; j < reposPerUser; j++ {
+			repoID := rand.Intn(numRepos) + 1
+			objectIDs[repoID] = struct{}{}
+		}
+
+		if err := userPermissionsInserter.Insert(ctx, i, maps.Keys(objectIDs), "read", "repos", "now()", "now()"); err != nil {
+			b.Fatal(err)
+		}
+
+		for repoID := range objectIDs {
+			if err := userRepoPermissionsInserter.Insert(ctx, i, i, repoID, "test"); err != nil {
+				b.Fatal(err)
+			}
+		}
+	}
+	if err := userPermissionsInserter.Flush(ctx); err != nil {
+		b.Fatal(err)
+	}
+	if err := userRepoPermissionsInserter.Flush(ctx); err != nil {
+		b.Fatal(err)
+	}
+
+	b.Logf("Done creating %d permissions.", numUsers*reposPerUser)
+
+	fetchMinRepos := func() {
+		randomUserID := int32(rand.Intn(numUsers)) + 1
+		ctx := actor.WithActor(ctx, &actor.Actor{UID: randomUserID})
+		if _, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{}); err != nil {
+			b.Fatalf("unexpected error: %s", err)
+		}
+	}
+
+	b.ResetTimer()
+
+	b.Run("list repos, using unified user_repo_permissions table", func(b *testing.B) {
+		mockUnifiedPermsConfig()
+		defer conf.Mock(nil)
+
+		for i := 0; i < b.N; i++ {
+			fetchMinRepos()
+		}
+	})
+
+	b.Run("list repos, using legacy user_permissions table", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			fetchMinRepos()
+		}
+	})
+}
+
+// 2022-03-02 - MacBook Pro M1 Max
+//
+// φ go test -v -timeout=900s -run=XXX -benchtime=10s -bench BenchmarkAuthzQuery ./internal/database
+// goos: darwin
+// goarch: arm64
+// pkg: github.com/sourcegraph/sourcegraph/internal/database
+// BenchmarkAuthzQuery_ListMinimalRepos_1000repos_1000users_50reposPerUser/list_repos,_using_unified_user_repo_permissions_table-10                   23928            495697 ns/op
+// BenchmarkAuthzQuery_ListMinimalRepos_1000repos_1000users_50reposPerUser/list_repos,_using_legacy_user_permissions_table-10                         24399            486467 ns/op
+
+// BenchmarkAuthzQuery_ListMinimalRepos_10krepos_10kusers_150reposPerUser/list_repos,_using_unified_user_repo_permissions_table-10                     3180           4023709 ns/op
+// BenchmarkAuthzQuery_ListMinimalRepos_10krepos_10kusers_150reposPerUser/list_repos,_using_legacy_user_permissions_table-10                           2911           4020591 ns/op
+
+// BenchmarkAuthzQuery_ListMinimalRepos_10krepos_10kusers_500reposPerUser/list_repos,_using_unified_user_repo_permissions_table-10                     3201           4101237 ns/op
+// BenchmarkAuthzQuery_ListMinimalRepos_10krepos_10kusers_500reposPerUser/list_repos,_using_legacy_user_permissions_table-10                           2944           4144971 ns/op
+
+// BenchmarkAuthzQuery_ListMinimalRepos_500krepos_40kusers_500reposPerUser/list_repos,_using_unified_user_repo_permissions_table-10                      63         186395579 ns/op
+// BenchmarkAuthzQuery_ListMinimalRepos_500krepos_40kusers_500reposPerUser/list_repos,_using_legacy_user_permissions_table-10                            62         190570966 ns/op
+
+func BenchmarkAuthzQuery_ListMinimalRepos_1000repos_1000users_50reposPerUser(b *testing.B) {
+	benchmarkAuthzQuery(b, 1_000, 1_000, 50)
+}
+
+func BenchmarkAuthzQuery_ListMinimalRepos_10krepos_10kusers_150reposPerUser(b *testing.B) {
+	benchmarkAuthzQuery(b, 10_000, 10_000, 150)
+}
+
+func BenchmarkAuthzQuery_ListMinimalRepos_10krepos_10kusers_500reposPerUser(b *testing.B) {
+	benchmarkAuthzQuery(b, 10_000, 10_000, 500)
+}
+
+func BenchmarkAuthzQuery_ListMinimalRepos_500krepos_40kusers_500reposPerUser(b *testing.B) {
+	benchmarkAuthzQuery(b, 500_000, 40_000, 500)
 }

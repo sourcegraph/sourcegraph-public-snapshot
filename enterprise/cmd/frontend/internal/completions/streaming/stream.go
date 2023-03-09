@@ -29,10 +29,10 @@ type streamHandler struct {
 	logger log.Logger
 }
 
-func getCompletionStreamClient(provider string, accessToken string) (types.CompletionStreamClient, error) {
+func getCompletionStreamClient(provider string, accessToken string, model string) (types.CompletionStreamClient, error) {
 	switch provider {
 	case "anthropic":
-		return anthropic.NewAnthropicCompletionStreamClient(httpcli.ExternalDoer, accessToken), nil
+		return anthropic.NewAnthropicCompletionStreamClient(httpcli.ExternalDoer, accessToken, model), nil
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}
@@ -66,7 +66,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		tr.Finish()
 	}()
 
-	completionStreamClient, err := getCompletionStreamClient(completionsConfig.Provider, completionsConfig.AccessToken)
+	completionStreamClient, err := getCompletionStreamClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

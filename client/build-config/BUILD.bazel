@@ -32,11 +32,16 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@statoscope/webpack-plugin",
+        ":node_modules/buffer",  #keep
+        ":node_modules/css-loader",  #keep
         ":node_modules/monaco-editor-webpack-plugin",
+        ":node_modules/process",  #keep
+        ":node_modules/style-loader",  #keep
         ":node_modules/terser-webpack-plugin",
         ":node_modules/webpack",
         "//:node_modules/@types/node",
         "//:node_modules/monaco-editor",  #keep
+        "//:node_modules/monaco-yaml",  #keep
         "//client/build-config/src/esbuild",
     ],
 )

@@ -34,7 +34,7 @@ import styles from './NotebookComponent.module.scss'
 export interface NotebookComponentProps
     extends SearchStreamingProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery'> {
+        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery' | 'enableOwnershipSearch'> {
     globbing: boolean
     isReadOnly?: boolean
     blocks: BlockInit[]

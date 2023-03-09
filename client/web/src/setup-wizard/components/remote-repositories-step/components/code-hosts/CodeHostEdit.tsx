@@ -10,7 +10,6 @@ import { Alert, Button, ErrorAlert, H4, Link, LoadingSpinner } from '@sourcegrap
 import { defaultExternalServices } from '../../../../../components/externalServices/externalServices'
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import {
-    AddExternalServiceInput,
     GetExternalServiceByIdResult,
     GetExternalServiceByIdVariables,
     UpdateRemoteCodeHostResult,
@@ -52,7 +51,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
     const { data, loading, error, refetch } = useQuery<GetExternalServiceByIdResult, GetExternalServiceByIdVariables>(
         GET_CODE_HOST_BY_ID,
         {
-            fetchPolicy: 'network-only',
+            fetchPolicy: 'cache-and-network',
             variables: { id: codehostId! },
         }
     )
@@ -139,9 +138,9 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
         UPDATE_CODE_HOST
     )
 
-    const handleSubmit = async (input: AddExternalServiceInput): Promise<void> => {
+    const handleSubmit = async (values: CodeHostConnectFormFields): Promise<void> => {
         await updateRemoteCodeHost({
-            variables: { input: { id: codeHostId, ...input } },
+            variables: { input: { id: codeHostId, ...values } },
             refetchQueries: ['RepositoryStats', 'StatusMessages'],
         })
 

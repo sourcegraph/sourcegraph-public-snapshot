@@ -43,6 +43,10 @@ go_test(
         "sourcegraph_operator_cleaner_test.go",
     ],
     embed = [":auth"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/cmd/frontend/internal/auth/sourcegraphoperator",
         "//enterprise/internal/cloud",

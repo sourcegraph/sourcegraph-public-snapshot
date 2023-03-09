@@ -10,7 +10,7 @@ import {
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
     repositoriesGroup as ossRepositoriesGroup,
-    usersGroup,
+    usersGroup as ossUsersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
@@ -47,6 +47,7 @@ const executorsGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/executors',
             label: 'Instances',
+            exact: true,
         },
         {
             to: '/site-admin/executors/secrets',
@@ -109,6 +110,10 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     header: { label: 'Code graph', icon: BrainIcon },
     items: [
         {
+            to: '/site-admin/code-graph/dashboard',
+            label: 'Dashboard',
+        },
+        {
             to: '/site-admin/code-graph/indexes',
             label: 'Precise indexes',
         },
@@ -143,6 +148,21 @@ export const codyGroup: SiteAdminSideBarGroup = {
         },
     ],
     condition: () => window.context?.embeddingsEnabled,
+}
+
+const usersGroup: SiteAdminSideBarGroup = {
+    ...ossUsersGroup,
+    items: [
+        ...ossUsersGroup.items,
+        {
+            label: 'Roles',
+            to: '/site-admin/roles',
+        },
+        {
+            label: 'Permissions',
+            to: '/site-admin/permissions-syncs',
+        },
+    ],
 }
 
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [

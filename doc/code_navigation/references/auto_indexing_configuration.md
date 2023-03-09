@@ -10,46 +10,11 @@ This document details the expected contents of [explicit index job configuration
 
 ## Keys
 
-The root of the configuration has two top-level keys, `index_jobs` and `shared_steps`, documented below.
+The root of the configuration has one top-level key, `index_jobs`, documented below.
 
 ### [`index_jobs`](#index-jobs)
 
 The index jobs field defines a set of [index job objects](#index-job-object) describing the actions to perform to successfully index a fresh clone of a repository. Each index job is executed independently (and possibly in parallel) by an executor.
-
-### [`shared_steps`](#shared-steps)
-
-The shared steps field defines an ordered sequence of pre-indexing actions (formatted as a [Docker step object](#docker-step-object)). Each step is executed before each index job is executed. Shared steps are executed individually once _per indexing job_ and are designed to be used as a way of sharing code and common configuration for projects within a repository (but are not designed as a way to share compute resources).
-
-## Examples
-
-In the following example, we have a repository configured to index three different projects: `cmd/foo`, `cmd/bar`, and `cmd/baz`. These projects are executed concurrently by available executor processes. Each index job shares an initial step that runs a `setup.sh` script in the root of the repository and installs Go dependencies. The index job for `cmd/bar` additionally requires a code generation step, which is performed after the shared step but before the indexer invocation.
-
-```yaml
-shared_steps:
-  image: sourcegraph/lsif-go
-  commands:
-    - ./setup.sh      # Run a custom setup script
-    - go mod download # Download dependencies
-
-index_jobs:
-  # Index cmd/foo
-  - indexer: sourcegraph/lsif-go
-    root: cmd/foo
-
-  # Index cmd/bar
-  # Requires an additional codegen step
-  - indexer: sourcegraph/lsif-go
-    steps:
-      - image: sourcegraph/lsif-go
-        commands:
-          - go generate ./...
-        root: cmd/bar
-    root: cmd/bar
-  
-  # Index cmd/baz
-  - indexer: sourcegraph/lsif-go
-    root: cmd/baz
-```
 
 ## Index job object
 
@@ -72,7 +37,7 @@ Each indexing job object can be configured with the following keys.
 
 #### [`steps`](#index-job-steps)
 
-The steps field defines an ordered sequence of pre-indexing actions (formatted as a [Docker step object](#docker-step-object)). If `shared_steps` are defined in the top level of the configuration, those steps are **prepended** to this sequence. Each step is executed before the indexer itself is invoked.
+The steps field defines an ordered sequence of pre-indexing actions (formatted as a [Docker step object](#docker-step-object)). Each step is executed before the indexer itself is invoked.
 
 #### [`indexer`](#index-job-indexer)
 

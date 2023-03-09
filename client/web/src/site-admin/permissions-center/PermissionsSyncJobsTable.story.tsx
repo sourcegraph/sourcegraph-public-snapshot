@@ -1,6 +1,6 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes, formatRFC3339, subMinutes } from 'date-fns'
-import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
+import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import {
@@ -29,6 +29,20 @@ const config: Meta = {
 export default config
 
 const TIMESTAMP_MOCK = subMinutes(Date.now(), 5)
+const JOBS_MOCK_DATA = getSyncJobs()
+const MANUAL_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.reason.group === PermissionsSyncJobReasonGroup.MANUAL)
+const SCHEDULE_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(
+    job => job.reason.group === PermissionsSyncJobReasonGroup.SCHEDULE
+)
+const SG_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.reason.group === PermissionsSyncJobReasonGroup.SOURCEGRAPH)
+const WEBHOOK_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.reason.group === PermissionsSyncJobReasonGroup.WEBHOOK)
+
+const CANCELED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.CANCELED)
+const COMPLETED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.COMPLETED)
+const ERRORED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.ERRORED)
+const FAILED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.FAILED)
+const PROCESSING_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.PROCESSING)
+const QUEUED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.QUEUED)
 
 export const SixSyncJobsFound: Story = () => (
     <WebStory>
@@ -36,112 +50,17 @@ export const SixSyncJobsFound: Story = () => (
             <MockedTestProvider
                 link={
                     new WildcardMockLink([
-                        {
-                            request: {
-                                query: getDocumentNode(PERMISSIONS_SYNC_JOBS_QUERY),
-                                variables: MATCH_ANY_PARAMETERS,
-                            },
-                            result: {
-                                data: {
-                                    permissionsSyncJobs: {
-                                        nodes: [
-                                            createSyncJobMock(
-                                                '1',
-                                                PermissionsSyncJobState.COMPLETED,
-                                                {
-                                                    __typename: 'Repository',
-                                                    name: 'sourcegraph/sourcegraph',
-                                                    externalRepository: {
-                                                        serviceType: ExternalServiceKind.GITHUB,
-                                                    },
-                                                },
-                                                {
-                                                    group: PermissionsSyncJobReasonGroup.WEBHOOK,
-                                                    reason: PermissionsSyncJobReason.REASON_GITHUB_REPO_EVENT,
-                                                }
-                                            ),
-                                            createSyncJobMock(
-                                                '2',
-                                                PermissionsSyncJobState.ERRORED,
-                                                {
-                                                    __typename: 'User',
-                                                    username: 'abdul',
-                                                },
-                                                {
-                                                    group: PermissionsSyncJobReasonGroup.SOURCEGRAPH,
-                                                    reason: PermissionsSyncJobReason.REASON_USER_EMAIL_VERIFIED,
-                                                }
-                                            ),
-                                            createSyncJobMock(
-                                                '3',
-                                                PermissionsSyncJobState.FAILED,
-                                                {
-                                                    __typename: 'Repository',
-                                                    name: 'sourcegraph/hoursegraph',
-                                                    externalRepository: {
-                                                        serviceType: ExternalServiceKind.BITBUCKETSERVER,
-                                                    },
-                                                },
-                                                {
-                                                    group: PermissionsSyncJobReasonGroup.SCHEDULE,
-                                                    reason: PermissionsSyncJobReason.REASON_REPO_OUTDATED_PERMS,
-                                                }
-                                            ),
-                                            createSyncJobMock(
-                                                '4',
-                                                PermissionsSyncJobState.PROCESSING,
-                                                {
-                                                    __typename: 'User',
-                                                    username: 'omar',
-                                                },
-                                                {
-                                                    group: PermissionsSyncJobReasonGroup.MANUAL,
-                                                    reason: PermissionsSyncJobReason.REASON_MANUAL_USER_SYNC,
-                                                }
-                                            ),
-                                            createSyncJobMock(
-                                                '5',
-                                                PermissionsSyncJobState.QUEUED,
-                                                {
-                                                    __typename: 'Repository',
-                                                    name: 'sourcegraph/stillfunny',
-                                                    externalRepository: {
-                                                        serviceType: ExternalServiceKind.GITLAB,
-                                                    },
-                                                },
-                                                {
-                                                    group: PermissionsSyncJobReasonGroup.MANUAL,
-                                                    reason: PermissionsSyncJobReason.REASON_MANUAL_REPO_SYNC,
-                                                }
-                                            ),
-                                            createSyncJobMock(
-                                                '6',
-                                                PermissionsSyncJobState.CANCELED,
-                                                {
-                                                    __typename: 'Repository',
-                                                    name: 'sourcegraph/dont-sync-me',
-                                                    externalRepository: {
-                                                        serviceType: ExternalServiceKind.AWSCODECOMMIT,
-                                                    },
-                                                },
-                                                {
-                                                    group: PermissionsSyncJobReasonGroup.SCHEDULE,
-                                                    reason: PermissionsSyncJobReason.REASON_REPO_OUTDATED_PERMS,
-                                                }
-                                            ),
-                                        ],
-                                        totalCount: 6,
-                                        pageInfo: {
-                                            hasNextPage: true,
-                                            hasPreviousPage: false,
-                                            startCursor: null,
-                                            endCursor: null,
-                                        },
-                                    },
-                                },
-                            },
-                            nMatches: Number.POSITIVE_INFINITY,
-                        },
+                        generateResponse(null, null, JOBS_MOCK_DATA, 20),
+                        generateResponse(null, PermissionsSyncJobReasonGroup.MANUAL, MANUAL_JOBS_MOCK_DATA, 6),
+                        generateResponse(null, PermissionsSyncJobReasonGroup.SCHEDULE, SCHEDULE_JOBS_MOCK_DATA, 6),
+                        generateResponse(null, PermissionsSyncJobReasonGroup.SOURCEGRAPH, SG_JOBS_MOCK_DATA, 3),
+                        generateResponse(null, PermissionsSyncJobReasonGroup.WEBHOOK, WEBHOOK_JOBS_MOCK_DATA, 8),
+                        generateResponse(PermissionsSyncJobState.CANCELED, null, CANCELED_JOBS_MOCK_DATA, 4),
+                        generateResponse(PermissionsSyncJobState.COMPLETED, null, COMPLETED_JOBS_MOCK_DATA, 4),
+                        generateResponse(PermissionsSyncJobState.ERRORED, null, ERRORED_JOBS_MOCK_DATA, 3),
+                        generateResponse(PermissionsSyncJobState.FAILED, null, FAILED_JOBS_MOCK_DATA, 3),
+                        generateResponse(PermissionsSyncJobState.PROCESSING, null, PROCESSING_JOBS_MOCK_DATA, 3),
+                        generateResponse(PermissionsSyncJobState.QUEUED, null, QUEUED_JOBS_MOCK_DATA, 3),
                     ])
                 }
             >
@@ -155,6 +74,7 @@ SixSyncJobsFound.storyName = 'Six sync jobs'
 
 interface repo {
     __typename: 'Repository'
+    id: string
     name: string
     externalRepository: {
         serviceType: ExternalServiceKind
@@ -163,6 +83,7 @@ interface repo {
 
 interface user {
     __typename: 'User'
+    id: string
     username: string
 }
 
@@ -172,6 +93,115 @@ interface reason {
     __typename?: 'PermissionsSyncJobReasonWithGroup'
     group: PermissionsSyncJobReasonGroup
     reason: PermissionsSyncJobReason
+}
+
+function getSyncJobs(): PermissionsSyncJob[] {
+    const jobs: PermissionsSyncJob[] = []
+
+    for (let index = 0; index < 20; index++) {
+        let state: PermissionsSyncJobState
+        let reason: reason
+        switch (index % 6) {
+            case 0:
+                state = PermissionsSyncJobState.CANCELED
+                reason = {
+                    group: PermissionsSyncJobReasonGroup.WEBHOOK,
+                    reason: PermissionsSyncJobReason.REASON_GITHUB_REPO_EVENT,
+                }
+                break
+            case 1:
+                state = PermissionsSyncJobState.COMPLETED
+                reason = {
+                    group: PermissionsSyncJobReasonGroup.WEBHOOK,
+                    reason: PermissionsSyncJobReason.REASON_GITHUB_REPO_EVENT,
+                }
+                break
+            case 2:
+                state = PermissionsSyncJobState.ERRORED
+                reason = {
+                    group: PermissionsSyncJobReasonGroup.MANUAL,
+                    reason: PermissionsSyncJobReason.REASON_MANUAL_REPO_SYNC,
+                }
+                break
+            case 3:
+                state = PermissionsSyncJobState.FAILED
+                reason = {
+                    group: PermissionsSyncJobReasonGroup.MANUAL,
+                    reason: PermissionsSyncJobReason.REASON_MANUAL_USER_SYNC,
+                }
+                break
+            case 4:
+                state = PermissionsSyncJobState.PROCESSING
+                reason = {
+                    group: PermissionsSyncJobReasonGroup.SCHEDULE,
+                    reason: PermissionsSyncJobReason.REASON_REPO_OUTDATED_PERMS,
+                }
+                break
+            case 5:
+            default:
+                state = PermissionsSyncJobState.QUEUED
+                reason = {
+                    group: PermissionsSyncJobReasonGroup.SOURCEGRAPH,
+                    reason: PermissionsSyncJobReason.REASON_USER_EMAIL_VERIFIED,
+                }
+                break
+        }
+
+        const subject: subject =
+            index % 2 === 0
+                ? {
+                      __typename: 'Repository',
+                      id: index.toString(),
+                      name: `sourcegraph/repo-${index}`,
+                      externalRepository: {
+                          serviceType: index % 3 === 0 ? ExternalServiceKind.GITHUB : ExternalServiceKind.GITLAB,
+                      },
+                  }
+                : {
+                      __typename: 'User',
+                      id: index.toString(),
+                      username: `username-${index}`,
+                  }
+
+        jobs.push(createSyncJobMock(index.toString(), state, subject, reason))
+    }
+    return jobs
+}
+
+function generateResponse(
+    state: PermissionsSyncJobState | null,
+    reasonGroup: PermissionsSyncJobReasonGroup | null,
+    jobs: PermissionsSyncJob[],
+    count: number
+) {
+    return {
+        request: {
+            query: getDocumentNode(PERMISSIONS_SYNC_JOBS_QUERY),
+            variables: {
+                first: 20,
+                last: null,
+                after: null,
+                before: null,
+                reasonGroup: reasonGroup ?? null,
+                state: state ?? null,
+            },
+        },
+        result: {
+            data: {
+                permissionsSyncJobs: {
+                    nodes: jobs,
+                    totalCount: count,
+                    pageInfo: {
+                        hasNextPage: true,
+                        hasPreviousPage: false,
+                        startCursor: null,
+                        endCursor: null,
+                    },
+                },
+            },
+        },
+        nMatches: Number.POSITIVE_INFINITY,
+    }
 }
 
 function createSyncJobMock(

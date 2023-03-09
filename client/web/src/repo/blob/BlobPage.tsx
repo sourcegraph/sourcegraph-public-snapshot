@@ -385,7 +385,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
                 {context => (
-                    <ToggleHistoryPanel {...context} key="toggle-blob-panel" location={location} navigate={navigate} />
+                    <ToggleHistoryPanel
+                        {...context}
+                        key="toggle-blob-panel"
+                        location={location}
+                        navigate={navigate}
+                        isPackage={isPackage}
+                    />
                 )}
             </RepoHeaderContributionPortal>
             {renderMode === 'code' && (
@@ -500,7 +506,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     return (
         <div className={className}>
             {alwaysRender}
-            {repoID && commitID && <BlobPanel {...props} repoID={repoID} commitID={commitID} />}
+            {repoID && commitID && <BlobPanel {...props} repoID={repoID} commitID={commitID} isPackage={isPackage} />}
             {blobInfoOrError.richHTML && (
                 <RepoHeaderContributionPortal
                     position="right"

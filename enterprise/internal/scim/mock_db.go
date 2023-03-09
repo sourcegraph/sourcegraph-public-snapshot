@@ -2,20 +2,16 @@ package scim
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func getMockDB() *database.MockDB {
-	users := []*types.UserForSCIM{
-		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
-		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}, Emails: []string{"b@example.com"}},
-		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}, SCIMExternalID: "id3"},
-		{User: types.User{ID: 4, Username: "user4"}, SCIMAccountData: "{\"externalUsername\":\"user4@company.com\"}", SCIMExternalID: "id4"},
-	}
-
+// getMockDB returns a mock database that contains the given users.
+// Note: IDs of users must be ascending.
+func getMockDB(users []*types.UserForSCIM) *database.MockDB {
 	userStore := database.NewMockUserStore()
 	userStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		for _, user := range users {
@@ -43,11 +39,6 @@ func getMockDB() *database.MockDB {
 		return applyLimitOffset(users, opt.LimitOffset)
 	})
 	userStore.CountFunc.SetDefaultReturn(4, nil)
-	userStore.CreateFunc.SetDefaultHook(func(ctx context.Context, user database.NewUser) (*types.User, error) {
-		newUser := types.UserForSCIM{User: types.User{ID: 5, Username: user.Username, DisplayName: user.DisplayName}}
-		users = append(users, &newUser)
-		return &newUser.User, nil
-	})
 	userStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*types.User, error) {
 		for _, user := range users {
 			if user.Username == username {
@@ -86,25 +77,48 @@ func getMockDB() *database.MockDB {
 
 	userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
 	userExternalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (*types.User, error) {
-		userToCreate := types.UserForSCIM{User: types.User{ID: 5, Username: newUser.Username, DisplayName: newUser.DisplayName}}
+		nextID := 1
+		if len(users) > 0 {
+			nextID = int(users[len(users)-1].ID) + 1
+		}
+		userToCreate := types.UserForSCIM{User: types.User{ID: int32(nextID), Username: newUser.Username, DisplayName: newUser.DisplayName}}
 		users = append(users, &userToCreate)
 		return &userToCreate.User, nil
 	})
-	userExternalAccountsStore.LookupUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (int32, error) {
+	userExternalAccountsStore.UpsertSCIMDataFunc.SetDefaultHook(func(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error) {
 		for _, user := range users {
-			if user.SCIMExternalID == spec.AccountID {
-				decrypted, err := data.Data.Decrypt(ctx)
+			if user.ID == userID {
+				var decrypted interface{}
+				decrypted, err = data.Data.Decrypt(ctx)
 				if err != nil {
-					return 0, err
+					return
 				}
-				userName := decrypted.(map[string]interface{})[AttrUserName]
-				if userName != nil {
-					user.SCIMExternalID = userName.(string)
+
+				var serialized []byte
+				serialized, err = json.Marshal(decrypted)
+				if err != nil {
+					return
 				}
-				return user.ID, nil
+				user.SCIMExternalID = accountID
+				user.SCIMAccountData = string(serialized)
+				break
 			}
 		}
-		return 0, nil
+		return
+	})
+
+	userEmailsStore := database.NewMockUserEmailsStore()
+	userEmailsStore.AddFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string, s2 *string) error {
+		for _, user := range users {
+			if user.ID == userID {
+				user.Emails = append(user.Emails, email)
+			}
+		}
+		return nil
+	})
+
+	userEmailsStore.SetVerifiedFunc.SetDefaultHook(func(ctx context.Context, i int32, s string, b bool) error {
+		return nil
 	})
 
 	// Create DB
@@ -114,6 +128,7 @@ func getMockDB() *database.MockDB {
 	})
 	db.UsersFunc.SetDefaultReturn(userStore)
 	db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
+	db.UserEmailsFunc.SetDefaultReturn(userEmailsStore)
 	return db
 }
 

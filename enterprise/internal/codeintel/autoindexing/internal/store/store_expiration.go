@@ -6,6 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -15,11 +16,24 @@ import (
 //   - The time between the job finishing and the current timestamp exceeds the given max age
 //   - It is not the most recent-to-finish failure for the same repo, root, and indexer values
 //     **unless** there is a more recent success.
-func (s *store) ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) (err error) {
+func (s *store) ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) (_, _ int, err error) {
 	ctx, _, endObservation := s.operations.expireFailedRecords.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.db.Exec(ctx, sqlf.Sprintf(expireFailedRecordsQuery, now, int(failedIndexMaxAge/time.Second), batchSize))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(expireFailedRecordsQuery, now, int(failedIndexMaxAge/time.Second), batchSize))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var c1, c2 int
+	for rows.Next() {
+		if err := rows.Scan(&c1, &c2); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return c1, c2, nil
 }
 
 const expireFailedRecordsQuery = `
@@ -66,7 +80,13 @@ locked_indexes AS (
 	ORDER BY i.id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %d
+),
+del AS (
+	DELETE FROM lsif_indexes
+	WHERE id IN (SELECT id FROM locked_indexes)
+	RETURNING 1
 )
-DELETE FROM lsif_indexes
-WHERE id IN (SELECT id FROM locked_indexes)
+SELECT
+	(SELECT COUNT(*) FROM ranked_indexes),
+	(SELECT COUNT(*) FROM del)
 `
