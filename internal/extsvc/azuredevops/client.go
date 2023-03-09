@@ -56,10 +56,15 @@ type client struct {
 	// URL is the base URL of AzureDevOps.
 	URL *url.URL
 
+	urn string
+
 	// RateLimit is the self-imposed rate limiter (since AzureDevOps does not have a concept
 	// of rate limiting in HTTP response headers).
-	rateLimit *ratelimit.InstrumentedLimiter
-	auth      auth.Authenticator
+	rateLimiter         *ratelimit.InstrumentedLimiter
+	externalRateLimiter *ratelimit.Monitor
+	auth                auth.Authenticator
+	waitForRateLimit    bool
+	maxRateLimitRetries int
 }
 
 // NewClient returns an authenticated AzureDevOps API client with
@@ -76,10 +81,14 @@ func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpc
 	}
 
 	return &client{
-		httpClient: httpClient,
-		URL:        u,
-		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
-		auth:       auth,
+		httpClient:          httpClient,
+		URL:                 u,
+		rateLimiter:         ratelimit.DefaultRegistry.Get(urn),
+		externalRateLimiter: ratelimit.DefaultMonitorRegistry.GetOrSet(url, auth.Hash(), "rest", &ratelimit.Monitor{HeaderPrefix: "X-"}),
+		auth:                auth,
+		urn:                 urn,
+		waitForRateLimit:    true,
+		maxRateLimitRetries: 2,
 	}, nil
 }
 
@@ -108,14 +117,33 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 		return "", err
 	}
 
-	if err := c.rateLimit.Wait(ctx); err != nil {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
 		return "", err
+	}
+
+	if c.waitForRateLimit {
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
 	}
 
 	logger := log.Scoped("azuredevops.Client", "azuredevops Client logger")
 	resp, err := oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
 	if err != nil {
 		return "", err
+	}
+
+	c.externalRateLimiter.Update(resp.Header)
+
+	numRetries := 0
+	// ADO's retry-after header has a status code of 200 OK, so we cannot check for a 429 Too Many Requests response.
+	// However, if neither retry-after is set, or if there are still enough tokens, WaitForRateLimit will return false
+	// and we won't retry any requests.
+	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries {
+		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
+			resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
+			numRetries++
+		} else {
+			break
+		}
 	}
 
 	defer resp.Body.Close()
@@ -148,12 +176,7 @@ func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
 		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
 	}
 
-	return &client{
-		httpClient: c.httpClient,
-		URL:        c.URL,
-		auth:       a,
-		rateLimit:  c.rateLimit,
-	}, nil
+	return NewClient(c.urn, c.URL.String(), a, c.httpClient)
 }
 
 func (c *client) Authenticator() auth.Authenticator {
