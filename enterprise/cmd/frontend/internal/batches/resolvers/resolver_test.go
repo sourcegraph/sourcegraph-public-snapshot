@@ -408,8 +408,8 @@ func TestCreateBatchSpecFromRaw(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), "not authorized") {
-			t.Fatalf("expected NoSuchKey error, got %+v", err)
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
 
@@ -515,8 +515,8 @@ func TestCreateChangesetSpec(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), "not authorized") {
-			t.Fatalf("expected NoSuchKey error, got %+v", err)
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
 
@@ -613,8 +613,8 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), "not authorized") {
-			t.Fatalf("expected NoSuchKey error, got %+v", err)
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
 
@@ -756,8 +756,8 @@ func TestApplyBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), "not authorized") {
-			t.Fatalf("expected NoSuchKey error, got %+v", err)
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
 
@@ -895,8 +895,8 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), "not authorized") {
-			t.Fatalf("expected NoSuchKey error, got %+v", err)
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
 
@@ -1003,8 +1003,8 @@ func TestUpsertEmptyBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), "not authorized") {
-			t.Fatalf("expected NoSuchKey error, got %+v", err)
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
 
@@ -1103,8 +1103,8 @@ func TestCreateBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), "not authorized") {
-			t.Fatalf("expected NoSuchKey error, got %+v", err)
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
 
@@ -1268,8 +1268,8 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected error")
 			}
-			if !strings.Contains(err.Error(), "not authorized") {
-				t.Fatalf("expected NoSuchKey error, got %+v", err)
+			if !strings.Contains(err.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+				t.Fatalf("expected unauthorized error, got %+v", err)
 			}
 		})
 
@@ -1495,8 +1495,8 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 					t.Fatal("expected error")
 				}
 				firstErr := errs[0]
-				if !strings.Contains(firstErr.Error(), "not authorized") {
-					t.Fatalf("expected NoSuchKey error, got %+v", err)
+				if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+					t.Fatalf("expected unauthorized error, got %+v", err)
 				}
 				return
 			}
@@ -1576,8 +1576,8 @@ func TestMoveBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), "not authorized") {
-			t.Fatalf("expected NoSuchKey error, got %+v", err)
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
 
