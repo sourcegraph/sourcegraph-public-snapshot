@@ -2650,19 +2650,14 @@ func TestPermsStore_DeleteAllUserPermissions(t *testing.T) {
 	}
 
 	// Set permissions for user 1 and 2
-	if _, err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
-		RepoID:  1,
-		Perm:    authz.Read,
-		UserIDs: toMapset(1, 2),
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
-		RepoID:  2,
-		Perm:    authz.Read,
-		UserIDs: toMapset(1, 2),
-	}); err != nil {
-		t.Fatal(err)
+	for _, repoID := range []int32{1, 2} {
+		if _, err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+			RepoID:  repoID,
+			Perm:    authz.Read,
+			UserIDs: toMapset(1, 2),
+		}); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// Set unified permissions for user 1 and 2

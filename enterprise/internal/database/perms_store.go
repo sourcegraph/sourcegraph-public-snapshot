@@ -1424,15 +1424,27 @@ AND service_id = %s
 
 func (s *permsStore) DeleteAllUserPermissions(ctx context.Context, userID int32) (err error) {
 	ctx, save := s.observe(ctx, "DeleteAllUserPermissions", "")
+
+	var txs *permsStore
+	if s.InTransaction() {
+		txs = s
+	} else {
+		txs, err = s.transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = txs.Done(err) }()
+	}
+
 	defer func() { save(&err, otlog.Int32("userID", userID)) }()
 
 	// first delete from the unified table
-	if err = s.execute(ctx, sqlf.Sprintf(`DELETE FROM user_repo_permissions WHERE user_id = %d`, userID)); err != nil {
+	if err = txs.execute(ctx, sqlf.Sprintf(`DELETE FROM user_repo_permissions WHERE user_id = %d`, userID)); err != nil {
 		return errors.Wrap(err, "execute delete user repo permissions query")
 	}
 	// NOTE: Practically, we don't need to clean up "repo_permissions" table because the value of "id" column
 	// that is associated with this user will be invalidated automatically by deleting this row.
-	if err = s.execute(ctx, sqlf.Sprintf(`DELETE FROM user_permissions WHERE user_id = %s`, userID)); err != nil {
+	if err = txs.execute(ctx, sqlf.Sprintf(`DELETE FROM user_permissions WHERE user_id = %s`, userID)); err != nil {
 		return errors.Wrap(err, "execute delete user permissions query")
 	}
 
