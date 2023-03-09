@@ -19,6 +19,7 @@ import {
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 
+import { ExternalServiceEditingAppLimitInPlaceAlert } from './ExternalServiceEditingAppLimitInPlaceAlert'
 import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { AddExternalServiceOptions } from './externalServices'
@@ -37,6 +38,8 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
     autoFocus?: boolean
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isAppLocalFileService: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
@@ -59,6 +62,8 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
     autoFocus = true,
+    isSourcegraphApp,
+    isAppLocalFileService,
 }) => {
     const isLightTheme = useIsLightTheme()
     const onDisplayNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
@@ -87,6 +92,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
             )}
 
             {disabled && <ExternalServiceEditingDisabledAlert />}
+            {isSourcegraphApp && !isAppLocalFileService && <ExternalServiceEditingAppLimitInPlaceAlert />}
             {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
 
             {hideDisplayNameField || (

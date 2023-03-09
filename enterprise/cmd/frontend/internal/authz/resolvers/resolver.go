@@ -371,7 +371,7 @@ func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlba
 		}
 		return nil, err
 	}
-	return strPtr("Permissions sync job canceled"), nil
+	return strPtr("Permissions sync job canceled."), nil
 }
 
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {

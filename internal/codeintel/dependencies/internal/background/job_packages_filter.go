@@ -42,7 +42,7 @@ func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {
 		return errors.Wrap(err, "failed to check whether package repo filters need applying to anything")
 	}
 
-	filters, err := j.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{})
+	filters, _, err := j.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{})
 	if err != nil {
 		return errors.Wrap(err, "failed to list package repo filters")
 	}
@@ -59,7 +59,7 @@ func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {
 	)
 
 	for lastID := 0; ; {
-		pkgs, _, err := j.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
+		pkgs, _, _, err := j.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
 			After:          lastID,
 			Limit:          1000,
 			IncludeBlocked: true,

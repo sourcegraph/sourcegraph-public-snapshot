@@ -92,6 +92,18 @@ var Mac = []category{
 				Fix:         cmdFix(`brew install nss`),
 			},
 			{
+				// Bazelisk is a wrapper for Bazel written in Go. It automatically picks a good version of Bazel given your current working directory
+				// Bazelisk replaces the bazel binary in your path
+				Name:  "bazelisk (bazel)",
+				Check: checkAction(check.Combine(check.InPath("bazel"), check.CommandOutputContains("bazel version", "Bazelisk version"))),
+				Fix:   cmdFix(`brew install bazelisk`),
+			},
+			{
+				Name:  "ibazel",
+				Check: checkAction(check.InPath("ibazel")),
+				Fix:   cmdFix(`brew install ibazel`),
+			},
+			{
 				Name:  "asdf",
 				Check: checkAction(check.CommandOutputContains("asdf", "version")),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
