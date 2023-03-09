@@ -18,10 +18,11 @@ import {
 import { PageTitle } from '../PageTitle'
 
 import { useExternalServicesConnection } from './backend'
-import { ExternalServiceEditingAppLimitReachedAlert } from './ExternalServiceEditingAppLimitReachedAlert'
+import { ExternalServiceEditingAppLimitAlert } from './ExternalServiceEditingAppLimitReachedAlert'
 import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
-import { ExternalServiceNode, isAppLocalFileService } from './ExternalServiceNode'
+import { ExternalServiceNode } from './ExternalServiceNode.tsx'
+import { isAppLocalFileService } from './isAppLocalFileService'
 
 interface Props extends TelemetryProps {
     externalServicesFromFile: boolean
@@ -76,7 +77,7 @@ export const ExternalServicesPage: FC<Props> = ({
             />
 
             {editingDisabled && <ExternalServiceEditingDisabledAlert />}
-            {appLimitReached && <ExternalServiceEditingAppLimitReachedAlert />}
+            {isSourcegraphApp && <ExternalServiceEditingAppLimitAlert />}
             {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
 
             <Container className="mb-3">

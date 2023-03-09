@@ -23,7 +23,6 @@ import { ExternalServiceEditingAppLimitInPlaceAlert } from './ExternalServiceEdi
 import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { AddExternalServiceOptions } from './externalServices'
-import { isAppLocalFileService } from './ExternalServiceNode'
 
 interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, TelemetryProps {
     input: AddExternalServiceInput
@@ -39,6 +38,7 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
     autoFocus?: boolean
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isAppLocalFileService: boolean
     isSourcegraphApp: boolean
 }
 
@@ -63,6 +63,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
     allowEditExternalServicesWithFile,
     autoFocus = true,
     isSourcegraphApp,
+    isAppLocalFileService,
 }) => {
     const isLightTheme = useIsLightTheme()
     const onDisplayNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
@@ -79,9 +80,6 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
         [input, onChange]
     )
     const disabled = externalServicesFromFile && !allowEditExternalServicesWithFile
-    const appLimit = isSourcegraphApp && !isAppLocalFileService(input)
-
-    console.log(input)
 
     return (
         <Form className="external-service-form" onSubmit={onSubmit}>
@@ -94,7 +92,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
             )}
 
             {disabled && <ExternalServiceEditingDisabledAlert />}
-            {appLimit && <ExternalServiceEditingAppLimitInPlaceAlert />}
+            {isSourcegraphApp && !isAppLocalFileService && <ExternalServiceEditingAppLimitInPlaceAlert />}
             {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
 
             {hideDisplayNameField || (

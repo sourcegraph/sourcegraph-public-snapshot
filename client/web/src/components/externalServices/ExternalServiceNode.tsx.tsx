@@ -8,11 +8,12 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { Button, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { AddExternalServiceInput, ExternalServiceKind, ListExternalServiceFields } from '../../graphql-operations'
+import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 
 import { deleteExternalService } from './backend'
 import { defaultExternalServices, EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES } from './externalServices'
+import { isAppLocalFileService } from './isAppLocalFileService'
 
 import styles from './ExternalServiceNode.module.scss'
 
@@ -141,9 +142,4 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
             {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
         </li>
     )
-}
-
-export function isAppLocalFileService(node: ListExternalServiceFields | AddExternalServiceInput): boolean {
-    // TODO: Find a better way to reliably detect the auto-generated local file service
-    return node.createdAt === '0001-01-01T00:00:00Z'
 }
