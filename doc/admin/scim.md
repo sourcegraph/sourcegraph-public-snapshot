@@ -35,7 +35,7 @@ https://sourcegraph.company.com/.api/scim/v2/Users
 
 ### User attributes
 
-Our endpoint only synchronizes user attributes we need to give customers actual value. Sourcegraph doesn’t sync any data that SCIM supports but that we don’t use, such as phone numbers and postal addresses.
+The User endpoint only synchronizes attributes needed to create a Sourcegraph account.
 
 As of now, we only sync:
 
