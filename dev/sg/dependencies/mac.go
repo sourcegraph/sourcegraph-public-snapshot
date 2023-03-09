@@ -92,6 +92,17 @@ var Mac = []category{
 				Fix:         cmdFix(`brew install nss`),
 			},
 			{
+				// bazelisk manages different bazel versions
+				Name:  "bazelisk",
+				Check: checkAction(check.InPath("bazelisk")),
+				Fix:   cmdFix(`brew install bazelisk`),
+			},
+			{
+				Name:  "ibazel",
+				Check: checkAction(check.InPath("ibazel")),
+				Fix:   cmdFix(`brew install ibazel`),
+			},
+			{
 				Name:  "asdf",
 				Check: checkAction(check.CommandOutputContains("asdf", "version")),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
