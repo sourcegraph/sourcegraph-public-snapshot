@@ -3,7 +3,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@rules_buf//buf:defs.bzl", "buf_lint_test")
 
 proto_library(
-    #keep
     name = "proto_proto",
     srcs = ["gitserver.proto"],
     strip_import_prefix = "/internal",
@@ -12,7 +11,6 @@ proto_library(
 )
 
 go_library(
-    #keep
     name = "gitserver",
     srcs = [
         "gitserver.pb.go",
@@ -31,7 +29,6 @@ go_library(
 )
 
 buf_lint_test(
-    # keep
     name = "v1_proto_lint",
     config = "//internal:buf.yaml",
     targets = [":proto_proto"],

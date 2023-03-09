@@ -3845,7 +3845,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		DeleteIndexesWithoutRepositoryFunc: &StoreDeleteIndexesWithoutRepositoryFunc{
-			defaultHook: func(context.Context, time.Time) (r0 map[int]int, r1 error) {
+			defaultHook: func(context.Context, time.Time) (r0 int, r1 int, r2 error) {
 				return
 			},
 		},
@@ -3855,7 +3855,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		ExpireFailedRecordsFunc: &StoreExpireFailedRecordsFunc{
-			defaultHook: func(context.Context, int, time.Duration, time.Time) (r0 error) {
+			defaultHook: func(context.Context, int, time.Duration, time.Time) (r0 int, r1 int, r2 error) {
 				return
 			},
 		},
@@ -3945,7 +3945,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		ProcessStaleSourcedCommitsFunc: &StoreProcessStaleSourcedCommitsFunc{
-			defaultHook: func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (r0 int, r1 error) {
+			defaultHook: func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (r0 int, r1 int, r2 error) {
 				return
 			},
 		},
@@ -4027,7 +4027,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		DeleteIndexesWithoutRepositoryFunc: &StoreDeleteIndexesWithoutRepositoryFunc{
-			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
+			defaultHook: func(context.Context, time.Time) (int, int, error) {
 				panic("unexpected invocation of MockStore.DeleteIndexesWithoutRepository")
 			},
 		},
@@ -4037,7 +4037,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		ExpireFailedRecordsFunc: &StoreExpireFailedRecordsFunc{
-			defaultHook: func(context.Context, int, time.Duration, time.Time) error {
+			defaultHook: func(context.Context, int, time.Duration, time.Time) (int, int, error) {
 				panic("unexpected invocation of MockStore.ExpireFailedRecords")
 			},
 		},
@@ -4127,7 +4127,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		ProcessStaleSourcedCommitsFunc: &StoreProcessStaleSourcedCommitsFunc{
-			defaultHook: func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, error) {
+			defaultHook: func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, int, error) {
 				panic("unexpected invocation of MockStore.ProcessStaleSourcedCommits")
 			},
 		},
@@ -4522,24 +4522,24 @@ func (c StoreDeleteIndexesFuncCall) Results() []interface{} {
 // DeleteIndexesWithoutRepository method of the parent MockStore instance is
 // invoked.
 type StoreDeleteIndexesWithoutRepositoryFunc struct {
-	defaultHook func(context.Context, time.Time) (map[int]int, error)
-	hooks       []func(context.Context, time.Time) (map[int]int, error)
+	defaultHook func(context.Context, time.Time) (int, int, error)
+	hooks       []func(context.Context, time.Time) (int, int, error)
 	history     []StoreDeleteIndexesWithoutRepositoryFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteIndexesWithoutRepository delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) DeleteIndexesWithoutRepository(v0 context.Context, v1 time.Time) (map[int]int, error) {
-	r0, r1 := m.DeleteIndexesWithoutRepositoryFunc.nextHook()(v0, v1)
-	m.DeleteIndexesWithoutRepositoryFunc.appendCall(StoreDeleteIndexesWithoutRepositoryFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockStore) DeleteIndexesWithoutRepository(v0 context.Context, v1 time.Time) (int, int, error) {
+	r0, r1, r2 := m.DeleteIndexesWithoutRepositoryFunc.nextHook()(v0, v1)
+	m.DeleteIndexesWithoutRepositoryFunc.appendCall(StoreDeleteIndexesWithoutRepositoryFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // DeleteIndexesWithoutRepository method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreDeleteIndexesWithoutRepositoryFunc) SetDefaultHook(hook func(context.Context, time.Time) (map[int]int, error)) {
+func (f *StoreDeleteIndexesWithoutRepositoryFunc) SetDefaultHook(hook func(context.Context, time.Time) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -4548,7 +4548,7 @@ func (f *StoreDeleteIndexesWithoutRepositoryFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreDeleteIndexesWithoutRepositoryFunc) PushHook(hook func(context.Context, time.Time) (map[int]int, error)) {
+func (f *StoreDeleteIndexesWithoutRepositoryFunc) PushHook(hook func(context.Context, time.Time) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4556,20 +4556,20 @@ func (f *StoreDeleteIndexesWithoutRepositoryFunc) PushHook(hook func(context.Con
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreDeleteIndexesWithoutRepositoryFunc) SetDefaultReturn(r0 map[int]int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) (map[int]int, error) {
-		return r0, r1
+func (f *StoreDeleteIndexesWithoutRepositoryFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreDeleteIndexesWithoutRepositoryFunc) PushReturn(r0 map[int]int, r1 error) {
-	f.PushHook(func(context.Context, time.Time) (map[int]int, error) {
-		return r0, r1
+func (f *StoreDeleteIndexesWithoutRepositoryFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreDeleteIndexesWithoutRepositoryFunc) nextHook() func(context.Context, time.Time) (map[int]int, error) {
+func (f *StoreDeleteIndexesWithoutRepositoryFunc) nextHook() func(context.Context, time.Time) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4611,10 +4611,13 @@ type StoreDeleteIndexesWithoutRepositoryFuncCall struct {
 	Arg1 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[int]int
+	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -4626,7 +4629,7 @@ func (c StoreDeleteIndexesWithoutRepositoryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreDeleteIndexesWithoutRepositoryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreDoneFunc describes the behavior when the Done method of the parent
@@ -4733,24 +4736,24 @@ func (c StoreDoneFuncCall) Results() []interface{} {
 // StoreExpireFailedRecordsFunc describes the behavior when the
 // ExpireFailedRecords method of the parent MockStore instance is invoked.
 type StoreExpireFailedRecordsFunc struct {
-	defaultHook func(context.Context, int, time.Duration, time.Time) error
-	hooks       []func(context.Context, int, time.Duration, time.Time) error
+	defaultHook func(context.Context, int, time.Duration, time.Time) (int, int, error)
+	hooks       []func(context.Context, int, time.Duration, time.Time) (int, int, error)
 	history     []StoreExpireFailedRecordsFuncCall
 	mutex       sync.Mutex
 }
 
 // ExpireFailedRecords delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) ExpireFailedRecords(v0 context.Context, v1 int, v2 time.Duration, v3 time.Time) error {
-	r0 := m.ExpireFailedRecordsFunc.nextHook()(v0, v1, v2, v3)
-	m.ExpireFailedRecordsFunc.appendCall(StoreExpireFailedRecordsFuncCall{v0, v1, v2, v3, r0})
-	return r0
+func (m *MockStore) ExpireFailedRecords(v0 context.Context, v1 int, v2 time.Duration, v3 time.Time) (int, int, error) {
+	r0, r1, r2 := m.ExpireFailedRecordsFunc.nextHook()(v0, v1, v2, v3)
+	m.ExpireFailedRecordsFunc.appendCall(StoreExpireFailedRecordsFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the ExpireFailedRecords
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreExpireFailedRecordsFunc) SetDefaultHook(hook func(context.Context, int, time.Duration, time.Time) error) {
+func (f *StoreExpireFailedRecordsFunc) SetDefaultHook(hook func(context.Context, int, time.Duration, time.Time) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -4758,7 +4761,7 @@ func (f *StoreExpireFailedRecordsFunc) SetDefaultHook(hook func(context.Context,
 // ExpireFailedRecords method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreExpireFailedRecordsFunc) PushHook(hook func(context.Context, int, time.Duration, time.Time) error) {
+func (f *StoreExpireFailedRecordsFunc) PushHook(hook func(context.Context, int, time.Duration, time.Time) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4766,20 +4769,20 @@ func (f *StoreExpireFailedRecordsFunc) PushHook(hook func(context.Context, int, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreExpireFailedRecordsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, time.Duration, time.Time) error {
-		return r0
+func (f *StoreExpireFailedRecordsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, time.Duration, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreExpireFailedRecordsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, time.Duration, time.Time) error {
-		return r0
+func (f *StoreExpireFailedRecordsFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, time.Duration, time.Time) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreExpireFailedRecordsFunc) nextHook() func(context.Context, int, time.Duration, time.Time) error {
+func (f *StoreExpireFailedRecordsFunc) nextHook() func(context.Context, int, time.Duration, time.Time) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4826,7 +4829,13 @@ type StoreExpireFailedRecordsFuncCall struct {
 	Arg3 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -4838,7 +4847,7 @@ func (c StoreExpireFailedRecordsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreExpireFailedRecordsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreGetIndexByIDFunc describes the behavior when the GetIndexByID method
@@ -6710,24 +6719,24 @@ func (c StoreNumRepositoriesWithCodeIntelligenceFuncCall) Results() []interface{
 // ProcessStaleSourcedCommits method of the parent MockStore instance is
 // invoked.
 type StoreProcessStaleSourcedCommitsFunc struct {
-	defaultHook func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, error)
-	hooks       []func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, error)
+	defaultHook func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, int, error)
+	hooks       []func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, int, error)
 	history     []StoreProcessStaleSourcedCommitsFuncCall
 	mutex       sync.Mutex
 }
 
 // ProcessStaleSourcedCommits delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) ProcessStaleSourcedCommits(v0 context.Context, v1 time.Duration, v2 int, v3 time.Duration, v4 func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, error) {
-	r0, r1 := m.ProcessStaleSourcedCommitsFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.ProcessStaleSourcedCommitsFunc.appendCall(StoreProcessStaleSourcedCommitsFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
+func (m *MockStore) ProcessStaleSourcedCommits(v0 context.Context, v1 time.Duration, v2 int, v3 time.Duration, v4 func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, int, error) {
+	r0, r1, r2 := m.ProcessStaleSourcedCommitsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.ProcessStaleSourcedCommitsFunc.appendCall(StoreProcessStaleSourcedCommitsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // ProcessStaleSourcedCommits method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreProcessStaleSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, error)) {
+func (f *StoreProcessStaleSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -6736,7 +6745,7 @@ func (f *StoreProcessStaleSourcedCommitsFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreProcessStaleSourcedCommitsFunc) PushHook(hook func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, error)) {
+func (f *StoreProcessStaleSourcedCommitsFunc) PushHook(hook func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6744,20 +6753,20 @@ func (f *StoreProcessStaleSourcedCommitsFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreProcessStaleSourcedCommitsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, error) {
-		return r0, r1
+func (f *StoreProcessStaleSourcedCommitsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreProcessStaleSourcedCommitsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, error) {
-		return r0, r1
+func (f *StoreProcessStaleSourcedCommitsFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreProcessStaleSourcedCommitsFunc) nextHook() func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, error) {
+func (f *StoreProcessStaleSourcedCommitsFunc) nextHook() func(context.Context, time.Duration, int, time.Duration, func(ctx context.Context, repositoryID int, commit string) (bool, error)) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6811,7 +6820,10 @@ type StoreProcessStaleSourcedCommitsFuncCall struct {
 	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -6823,7 +6835,7 @@ func (c StoreProcessStaleSourcedCommitsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreProcessStaleSourcedCommitsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreQueueRepoRevFunc describes the behavior when the QueueRepoRev method

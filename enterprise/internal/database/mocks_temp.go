@@ -14215,6 +14215,9 @@ type MockPermsStore struct {
 	// ListPendingUsersFunc is an instance of a mock function object
 	// controlling the behavior of the method ListPendingUsers.
 	ListPendingUsersFunc *PermsStoreListPendingUsersFunc
+	// ListRepoPermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListRepoPermissions.
+	ListRepoPermissionsFunc *PermsStoreListRepoPermissionsFunc
 	// ListUserPermissionsFunc is an instance of a mock function object
 	// controlling the behavior of the method ListUserPermissions.
 	ListUserPermissionsFunc *PermsStoreListUserPermissionsFunc
@@ -14327,6 +14330,11 @@ func NewMockPermsStore() *MockPermsStore {
 		},
 		ListPendingUsersFunc: &PermsStoreListPendingUsersFunc{
 			defaultHook: func(context.Context, string, string) (r0 []string, r1 error) {
+				return
+			},
+		},
+		ListRepoPermissionsFunc: &PermsStoreListRepoPermissionsFunc{
+			defaultHook: func(context.Context, api.RepoID, *ListRepoPermissionsArgs) (r0 []*RepoPermission, r1 error) {
 				return
 			},
 		},
@@ -14482,6 +14490,11 @@ func NewStrictMockPermsStore() *MockPermsStore {
 				panic("unexpected invocation of MockPermsStore.ListPendingUsers")
 			},
 		},
+		ListRepoPermissionsFunc: &PermsStoreListRepoPermissionsFunc{
+			defaultHook: func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
+				panic("unexpected invocation of MockPermsStore.ListRepoPermissions")
+			},
+		},
 		ListUserPermissionsFunc: &PermsStoreListUserPermissionsFunc{
 			defaultHook: func(context.Context, int32, *ListUserPermissionsArgs) ([]*UserPermission, error) {
 				panic("unexpected invocation of MockPermsStore.ListUserPermissions")
@@ -14615,6 +14628,9 @@ func NewMockPermsStoreFrom(i PermsStore) *MockPermsStore {
 		},
 		ListPendingUsersFunc: &PermsStoreListPendingUsersFunc{
 			defaultHook: i.ListPendingUsers,
+		},
+		ListRepoPermissionsFunc: &PermsStoreListRepoPermissionsFunc{
+			defaultHook: i.ListRepoPermissions,
 		},
 		ListUserPermissionsFunc: &PermsStoreListUserPermissionsFunc{
 			defaultHook: i.ListUserPermissions,
@@ -15656,6 +15672,119 @@ func (c PermsStoreListPendingUsersFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermsStoreListPendingUsersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreListRepoPermissionsFunc describes the behavior when the
+// ListRepoPermissions method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreListRepoPermissionsFunc struct {
+	defaultHook func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error)
+	hooks       []func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error)
+	history     []PermsStoreListRepoPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListRepoPermissions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermsStore) ListRepoPermissions(v0 context.Context, v1 api.RepoID, v2 *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
+	r0, r1 := m.ListRepoPermissionsFunc.nextHook()(v0, v1, v2)
+	m.ListRepoPermissionsFunc.appendCall(PermsStoreListRepoPermissionsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListRepoPermissions
+// method of the parent MockPermsStore instance is invoked and the hook
+// queue is empty.
+func (f *PermsStoreListRepoPermissionsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListRepoPermissions method of the parent MockPermsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PermsStoreListRepoPermissionsFunc) PushHook(hook func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreListRepoPermissionsFunc) SetDefaultReturn(r0 []*RepoPermission, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreListRepoPermissionsFunc) PushReturn(r0 []*RepoPermission, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreListRepoPermissionsFunc) nextHook() func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreListRepoPermissionsFunc) appendCall(r0 PermsStoreListRepoPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreListRepoPermissionsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreListRepoPermissionsFunc) History() []PermsStoreListRepoPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreListRepoPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreListRepoPermissionsFuncCall is an object that describes an
+// invocation of method ListRepoPermissions on an instance of
+// MockPermsStore.
+type PermsStoreListRepoPermissionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *ListRepoPermissionsArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*RepoPermission
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreListRepoPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreListRepoPermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

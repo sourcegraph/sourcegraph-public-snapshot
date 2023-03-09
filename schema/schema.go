@@ -203,7 +203,7 @@ type AzureDevOpsAuthProvider struct {
 type AzureDevOpsConnection struct {
 	// EnforcePermissions description: A flag to enforce Azure DevOps repository access permissions
 	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
-	// Exclude description: A list of repositories to never mirror from this Azure DevOps Services/Server instance.
+	// Exclude description: A list of repositories to never mirror from Azure DevOps Services.
 	Exclude []*ExcludedAzureDevOpsServerRepo `json:"exclude,omitempty"`
 	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
@@ -211,7 +211,7 @@ type AzureDevOpsConnection struct {
 	Projects []string `json:"projects,omitempty"`
 	// Token description: The Personal Access Token associated with the Azure DevOps username used for authentication.
 	Token string `json:"token"`
-	// Url description: URL of a Azure DevOps Services/Server instance, such as https://dev.azure.com.
+	// Url description: URL for Azure DevOps Services, set to https://dev.azure.com.
 	Url string `json:"url"`
 	// Username description: A username for authentication with the Azure DevOps code host.
 	Username string `json:"username"`
@@ -669,9 +669,9 @@ type ExcludedAWSCodeCommitRepo struct {
 	Name string `json:"name,omitempty"`
 }
 type ExcludedAzureDevOpsServerRepo struct {
-	// Name description: The name of an Azure DevOps Services/Server project and repository ("projectName/repositoryName") to exclude from mirroring.
+	// Name description: The name of an Azure DevOps Services project and repository ("projectName/repositoryName") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
-	// Pattern description: Regular expression which matches against the name of an Azure DevOps Services/Server repo.
+	// Pattern description: Regular expression which matches against the name of an Azure DevOps Services repo.
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedBitbucketCloudRepo struct {
@@ -741,8 +741,6 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// AccessRequestEnabled description: Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.
 	AccessRequestEnabled *bool `json:"accessRequest.enabled,omitempty"`
-	// AzureDevOps description: Allow adding Azure DevOps code host connections
-	AzureDevOps string `json:"azureDevOps,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
@@ -838,7 +836,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "accessRequest.enabled")
-	delete(m, "azureDevOps")
 	delete(m, "bitbucketServerFastPerm")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
@@ -1624,9 +1621,11 @@ type OtherExternalServiceConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	//
-	// Note: These patterns are ignored if using src-expose / src-serve.
+	// Note: These patterns are ignored if using src-expose / src-serve / src-serve-local.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	Url                   string `json:"url,omitempty"`
+	// Root description: The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Sourcegraph App and define the repos configuration property such as ["src-serve-local"].
+	Root string `json:"root,omitempty"`
+	Url  string `json:"url,omitempty"`
 }
 type OutputVariable struct {
 	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.

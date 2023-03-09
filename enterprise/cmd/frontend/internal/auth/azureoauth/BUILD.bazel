@@ -38,6 +38,10 @@ go_test(
         "session_test.go",
     ],
     embed = [":azureoauth"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/cmd/frontend/internal/auth/oauth",
         "//internal/conf",

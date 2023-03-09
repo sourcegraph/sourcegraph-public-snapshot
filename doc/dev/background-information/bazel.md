@@ -238,6 +238,62 @@ To retrieve these values:
 bazel run //.aspect/bazelrc:update_aspect_bazelrc_presets
 ```
 
+### Rust
+
+#### I'm getting `Error in path: Not a regular file: docker-images/syntax-highlighter/Cargo.Bazel.lock` when I try to build `syntax-highlighter`
+
+Below is a full example of this error:
+```
+ERROR: An error occurred during the fetch of repository 'crate_index':
+   Traceback (most recent call last):
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/crates_repository.bzl", line 34, column 30, in _crates_repository_impl
+                lockfiles = get_lockfiles(repository_ctx)
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/generate_utils.bzl", line 311, column 36, in get_lockfiles
+                bazel = repository_ctx.path(repository_ctx.attr.lockfile) if repository_ctx.attr.lockfile else None,
+Error in path: Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/Cargo.Bazel.lock
+ERROR: /Users/william/code/sourcegraph/WORKSPACE:197:18: fetching crates_repository rule //external:crate_index: Traceback (most recent call last):
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/crates_repository.bzl", line 34, column 30, in _crates_repository_impl
+                lockfiles = get_lockfiles(repository_ctx)
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/generate_utils.bzl", line 311, column 36, in get_lockfiles
+                bazel = repository_ctx.path(repository_ctx.attr.lockfile) if repository_ctx.attr.lockfile else None,
+Error in path: Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/fake.lock
+ERROR: Error computing the main repository mapping: no such package '@crate_index//': Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/Cargo.Bazel.lock
+```
+The error happens when the file specified in the lockfiles attribute of `crates_repository` (see WORKSPACE file for the definition) does not exist on disk. Currently this rule does not generate the file, instead it just generates the _content_ of the file. So to get passed this error you should create the file `touch docker-images/syntax-highlighter/Cargo.Bazel.lock`. With the file create it we can now populate `Cargo.Bazel.lock` with content using bazel by running `CARGO_BAZEL_REPIN=1 bazel sync --only=crates_index`.
+
+### When I build `syntax-highlighter` it complains that the current `lockfile` is out of date
+The error will look like this:
+```
+INFO: Repository crate_index instantiated at:
+  /Users/william/code/sourcegraph/WORKSPACE:197:18: in <toplevel>
+Repository rule crates_repository defined at:
+  /private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/crates_repository.bzl:106:36: in <toplevel>
+INFO: repository @crate_index' used the following cache hits instead of downloading the corresponding file.
+ * Hash 'dc2d47b42cbe92ebdb144555603dad08eae505fc459bae5e2503647919067ac8' for https://github.com/bazelbuild/rules_rust/releases/download/0.16.1/cargo-bazel-aarch64-apple-darwin
+If the definition of 'repository @crate_index' was updated, verify that the hashes were also updated.
+ERROR: An error occurred during the fetch of repository 'crate_index':
+   Traceback (most recent call last):
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/crates_repository.bzl", line 45, column 28, in _crates_repository_impl
+                repin = determine_repin(
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/generate_utils.bzl", line 374, column 13, in determine_repin
+                fail(("\n".join([
+Error in fail: Digests do not match: Digest("3e9e0f927c955efa39a58c472a2eac60e3f89a7f3eafc7452e9acf23adf8ce5a") != Digest("ef858ae49063d5c22e0ee0b7632a8ced4994315395b17fb3c61f3e6bfb6deb27")
+
+The current `lockfile` is out of date for 'crate_index'. Please re-run bazel using `CARGO_BAZEL_REPIN=true` if this is expected and the lockfile should be updated.
+ERROR: /Users/william/code/sourcegraph/WORKSPACE:197:18: fetching crates_repository rule //external:crate_index: Traceback (most recent call last):
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/crates_repository.bzl", line 45, column 28, in _crates_repository_impl
+                repin = determine_repin(
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/generate_utils.bzl", line 374, column 13, in determine_repin
+                fail(("\n".join([
+Error in fail: Digests do not match: Digest("3e9e0f927c955efa39a58c472a2eac60e3f89a7f3eafc7452e9acf23adf8ce5a") != Digest("ef858ae49063d5c22e0ee0b7632a8ced4994315395b17fb3c61f3e6bfb6deb27")
+
+The current `lockfile` is out of date for 'crate_index'. Please re-run bazel using `CARGO_BAZEL_REPIN=true` if this is expected and the lockfile should be updated.
+ERROR: Error computing the main repository mapping: no such package '@crate_index//': Digests do not match: Digest("3e9e0f927c955efa39a58c472a2eac60e3f89a7f3eafc7452e9acf23adf8ce5a") != Digest("ef858ae49063d5c22e0ee0b7632a8ced4994315395b17fb3c61f3e6bfb6deb27")
+
+The current `lockfile` is out of date for 'crate_index'. Please re-run bazel using `CARGO_BAZEL_REPIN=true` if this is expected and the lockfile should be updated.
+```
+Bazel uses a separate lock file to keep track of the dependencies and needs to be updated. To update the `lockfile` run `CARGO_BAZEL_REPIN=1 bazel sync --only=crates_index`. This command takes a while to execute as it fetches all the dependencies specified in `Cargo.lock` and populates `Cargo.Bazel.lock`.
+
 ## Resources
 
 - [Core Bazel (book)](https://www.amazon.com/Core-Bazel-Fast-Builds-People/dp/B08DVDM7BZ):

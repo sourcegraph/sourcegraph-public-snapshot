@@ -377,7 +377,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
                         </Tooltip>
                         {mode && <span className="ml-1">{mode}:</span>}
                     </div>
-                    <div ref={editorContainerRef} className="d-contents" />
+                    <div ref={editorContainerRef} className={styles.input} />
                     {!mode && children}
                 </div>
                 <div ref={setSuggestionsContainer} className={styles.suggestions} />

@@ -290,10 +290,11 @@ replace (
 	// that they always use the current version of go-grpc-middleware that they're developing). Until this issue is fixed,
 	// we'll need to ensure that we explicitly depend on the latest version of go-grpc-middleware (v2.0.0-rc.3) as of this writing.
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 => github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
+
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20230303172250-3b0248719b12
+	github.com/sourcegraph/zoekt v0.0.0-20230308131753-939eb52f3486
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 

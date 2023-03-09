@@ -527,13 +527,13 @@ const DeletedRepositoryGracePeriod = time.Minute * 30
 // DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
 // that were removed for that repository.
-func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_, _ int, err error) {
 	ctx, trace, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return 0, 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -541,9 +541,9 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 	defer unset(ctx)
 
 	query := sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)
-	repositories, err := scanCounts(tx.Query(ctx, query))
+	totalCount, repositories, err := scanCountsWithTotalCount(tx.Query(ctx, query))
 	if err != nil {
-		return nil, err
+		return 0, 0, err
 	}
 
 	count := 0
@@ -554,7 +554,7 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 		attribute.Int("count", count),
 		attribute.Int("numRepositories", len(repositories)))
 
-	return repositories, nil
+	return totalCount, count, nil
 }
 
 const deleteUploadsWithoutRepositoryQuery = `
@@ -581,11 +581,11 @@ deleted AS (
 	WHERE u.id IN (SELECT id FROM candidates)
 	RETURNING u.id, u.repository_id
 )
-SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
+SELECT (SELECT COUNT(*) FROM candidates), d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
 `
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
-func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
+func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_, _ int, err error) {
 	ctx, trace, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("uploadedBefore", uploadedBefore.Format(time.RFC3339)), // TODO - should be a duration
 	}})
@@ -597,11 +597,11 @@ func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore 
 	query := sqlf.Sprintf(deleteUploadsStuckUploadingQuery, uploadedBefore)
 	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, query))
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	trace.AddEvent("TODO Domain Owner", attribute.Int("count", count))
 
-	return count, nil
+	return count, count, nil
 }
 
 const deleteUploadsStuckUploadingQuery = `
@@ -627,29 +627,30 @@ SELECT COUNT(*) FROM deleted
 // SoftDeleteExpiredUploads marks upload records that are both expired and have no references
 // as deleted. The associated repositories will be marked as dirty so that their commit graphs
 // are updated in the near future.
-func (s *store) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (count int, err error) {
+func (s *store) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (_, _ int, err error) {
 	ctx, trace, endObservation := s.operations.softDeleteExpiredUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	// Just in case
 	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_SOFT_DELETE_BAIL_OUT") != "" {
 		s.logger.Warn("Soft deletion is currently disabled")
-		return 0, nil
+		return 0, 0, nil
 	}
 
 	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
 	defer unset(ctx)
-	repositories, err := scanCounts(tx.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery, batchSize)))
+	scannedCount, repositories, err := scanCountsWithTotalCount(tx.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery, batchSize)))
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
+	count := 0
 	for _, numUpdated := range repositories {
 		count += numUpdated
 	}
@@ -659,11 +660,11 @@ func (s *store) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (co
 
 	for repositoryID := range repositories {
 		if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx); err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 	}
 
-	return count, nil
+	return scannedCount, count, nil
 }
 
 const softDeleteExpiredUploadsQuery = `
@@ -788,7 +789,7 @@ updated AS (
 )
 
 -- Return the repositories which were affected so we can recalculate the commit graph
-SELECT u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP BY u.repository_id
+SELECT (SELECT COUNT(*) FROM expired_uploads), u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP BY u.repository_id
 `
 
 // SoftDeleteExpiredUploadsViaTraversal selects an expired upload and uses that as the starting
@@ -797,27 +798,28 @@ SELECT u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP
 // found during the traversal are accessible by some "live" upload and must be retained.
 //
 // We set a last-checked timestamp to attempt to round-robin this graph traversal.
-func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traversalLimit int) (count int, err error) {
+func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traversalLimit int) (_, _ int, err error) {
 	ctx, trace, endObservation := s.operations.softDeleteExpiredUploadsViaTraversal.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
 	defer unset(ctx)
-	repositories, err := scanCounts(tx.Query(ctx, sqlf.Sprintf(
+	scannedCount, repositories, err := scanCountsWithTotalCount(tx.Query(ctx, sqlf.Sprintf(
 		softDeleteExpiredUploadsViaTraversalQuery,
 		traversalLimit,
 		traversalLimit,
 	)))
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
+	count := 0
 	for _, numUpdated := range repositories {
 		count += numUpdated
 	}
@@ -827,11 +829,11 @@ func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traver
 
 	for repositoryID := range repositories {
 		if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx); err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 	}
 
-	return count, nil
+	return scannedCount, count, nil
 }
 
 const softDeleteExpiredUploadsViaTraversalQuery = `
@@ -960,7 +962,7 @@ updated AS (
 )
 
 -- Return the repositories which were affected so we can recalculate the commit graph
-SELECT u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP BY u.repository_id
+SELECT (SELECT COUNT(*) FROM candidates), u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP BY u.repository_id
 `
 
 // HardDeleteUploadsByIDs deletes the upload record with the given identifier.

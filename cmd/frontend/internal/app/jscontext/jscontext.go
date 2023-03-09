@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -188,6 +189,10 @@ type JSContext struct {
 	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
 
 	RunningOnMacOS bool `json:"runningOnMacOS"`
+
+	LocalFilePickerAvailable bool `json:"localFilePickerAvailable"`
+
+	SrcServeGitUrl string `json:"srcServeGitUrl"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -273,6 +278,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
 	runningOnMacOS := runtime.GOOS == "darwin"
+	srcServeGitUrl := envvar.SrcServeGitUrl()
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
@@ -355,6 +361,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
 
 		RunningOnMacOS: runningOnMacOS,
+
+		LocalFilePickerAvailable: deploy.IsDeployTypeSingleProgram(deploy.Type()) && filepicker.Available(),
+
+		SrcServeGitUrl: srcServeGitUrl,
 	}
 }
 

@@ -162,28 +162,30 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) (timeRemaining time.D
 	return timeRemaining * time.Duration(cost) / time.Duration(limitRemaining)
 }
 
-func (c *Monitor) calcRateLimitWaitTime() time.Duration {
+func (c *Monitor) calcRateLimitWaitTime(cost int) time.Duration {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if !c.retry.IsZero() {
-		if remaining := c.retry.Sub(c.now()); remaining > 0 {
+		if timeRemaining := c.retry.Sub(c.now()); timeRemaining > 0 {
 			// Unlock before sleeping
-			return remaining
+			return timeRemaining
 		}
 	}
 
-	// If the external rate limit is unknown, or if there are still remaining tokens,
+	// If the external rate limit is unknown,
+	// or if there are still enough remaining tokens,
+	// or if the cost is greater than the actual rate limit (in which case there will never be enough tokens),
 	// we don't wait.
-	if !c.known || c.remaining > 0 {
+	if !c.known || c.remaining >= cost || cost > c.limit {
 		return time.Duration(0)
 	}
 
 	// If the rate limit reset is still in the future, we wait until the limit is reset.
 	// If it is in the past, the rate limit is outdated and we don't need to wait.
-	if remaining := c.reset.Sub(c.now()); remaining > 0 {
+	if timeRemaining := c.reset.Sub(c.now()); timeRemaining > 0 {
 		// Unlock before sleeping
-		return remaining
+		return timeRemaining
 	}
 
 	return time.Duration(0)
@@ -193,8 +195,13 @@ func (c *Monitor) calcRateLimitWaitTime() time.Duration {
 // and sleeps an amount of time recommended by the external rate limiter.
 // It returns true if rate limiting was applying, and false if not.
 // This can be used to determine whether or not a request should be retried.
-func (c *Monitor) WaitForRateLimit(ctx context.Context) bool {
-	sleepDuration := c.calcRateLimitWaitTime()
+//
+// The cost parameter can be used to check for a minimum number of available rate limit tokens.
+// For normal REST requests, this can usually be set to 1. For GraphQL requests, rate limit costs
+// can be more expensive and a different cost can be used. If there aren't enough rate limit
+// tokens available, then the function will sleep until the tokens reset.
+func (c *Monitor) WaitForRateLimit(ctx context.Context, cost int) bool {
+	sleepDuration := c.calcRateLimitWaitTime(cost)
 
 	if sleepDuration == 0 {
 		return false

@@ -58,10 +58,9 @@ var scanUploadComplete = basestore.NewSliceScanner(scanCompleteUpload)
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanCompleteUpload)
 
-// scanCounts scans pairs of id/counts from the return value of `*Store.query`.
-func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
+func scanCountsWithTotalCount(rows *sql.Rows, queryErr error) (totalCount int, _ map[int]int, err error) {
 	if queryErr != nil {
-		return nil, queryErr
+		return 0, nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
@@ -69,14 +68,14 @@ func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	for rows.Next() {
 		var id int
 		var count int
-		if err := rows.Scan(&id, &count); err != nil {
-			return nil, err
+		if err := rows.Scan(&totalCount, &id, &count); err != nil {
+			return 0, nil, err
 		}
 
 		visibilities[id] = count
 	}
 
-	return visibilities, nil
+	return totalCount, visibilities, nil
 }
 
 // scanDumps scans a slice of dumps from the return value of `*Store.query`.

@@ -115,7 +115,7 @@ func updateUser(ctx context.Context, tx database.DB, oldUser *types.UserForSCIM,
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 	}
-	err = tx.UserExternalAccounts().UpdateSCIMData(ctx, oldUser.ID, getUniqueExternalID(attributes), accountData)
+	err = tx.UserExternalAccounts().UpsertSCIMData(ctx, oldUser.ID, getUniqueExternalID(attributes), accountData)
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
 	}

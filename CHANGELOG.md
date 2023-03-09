@@ -22,12 +22,16 @@ All notable changes to Sourcegraph are documented in this file.
 - Kubernetes Deployments: The new Kustomize deployment ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)) introduces a new base cluster that runs all Sourcegraph services as non-root users with limited privileges and eliminates the need to create RBAC resources. [#4213](https://github.com/sourcegraph/deploy-sourcegraph/pull/4213)
 - Added the `other.exclude` setting to [Other external service config](https://docs.sourcegraph.com/admin/external_service/other#configuration). It can be configured to exclude mirroring of repositories matching a pattern similar to other external services. This is useful when you want to exclude repositories discovered via `src serve-git`. [#48168](https://github.com/sourcegraph/sourcegraph/pull/48168)
 - The **Site admin > Updates** page displays the upgrade readiness information about schema drift and out-of-band migrations. [#48046](https://github.com/sourcegraph/sourcegraph/pull/48046)
+- Pings now contain ownership search and file-view activity counts. [#47062](https://github.com/sourcegraph/sourcegraph/47062)
 - Greatly improves keyboard handling and accessibility of the files and symbol tree on the repository pages. [#12916](https://github.com/sourcegraph/sourcegraph/issues/12916)
 - The file tree on the repository page now automatically expands into single-child directories. [#47117](https://github.com/sourcegraph/sourcegraph/pull/47117)
 - When encountering GitHub rate limits, Sourcegraph will now wait the recommended amount of time and retry the request. This prevents sync jobs from failing prematurely due to external rate limits. [#48423](https://github.com/sourcegraph/sourcegraph/pull/48423)
 - Added a dashboard with information about user and repository background permissions sync jobs. [#46317](https://github.com/sourcegraph/sourcegraph/issues/46317)
 - When encountering GitHub or GitLab rate limits, Sourcegraph will now wait the recommended amount of time and retry the request. This prevents sync jobs from failing prematurely due to external rate limits. [#48423](https://github.com/sourcegraph/sourcegraph/pull/48423), [#48616](https://github.com/sourcegraph/sourcegraph/pull/48616)
+- Switching between code editor, files and symbols trees using keyboard shortcuts (currently under the experimental feature flag: `blob-page-switch-areas-shortcuts`). [#46829](https://github.com/sourcegraph/sourcegraph/pull/46829).
 - Added "SCIM" badges for SCIM-controlled users on the User admin page. [#48727](https://github.com/sourcegraph/sourcegraph/pull/48727)
+- Added Azure DevOps Services as a Tier 1 Code Host, including: repository syncing, permissions syncing, and Batch Changes support. [#46265](https://github.com/sourcegraph/sourcegraph/issues/46265)
+- Added feature to disable some fields on user profiles for SCIM-controlled users. [#48816](https://github.com/sourcegraph/sourcegraph/pull/48816)
 
 ### Changed
 
@@ -107,6 +111,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a bug where the `repo:has.description()` parameter now correctly shows description of a repository synced from a Bitbucket server code host connection, while previously it used to show the repository name instead [#46752](https://github.com/sourcegraph/sourcegraph/pull/46752)
 - Fixed a bug where permissions syncs consumed more rate limit tokens than required. This should lead to speed-ups in permission syncs, as well as other possible cases where a process runs in repo-updater. [#47374](https://github.com/sourcegraph/sourcegraph/pull/47374)
 - Fixes UI bug where folders with single child were appearing as child folders themselves. [#46628](https://github.com/sourcegraph/sourcegraph/pull/46628)
+- Performance issue with the Outbound requests page. [#47544](https://github.com/sourcegraph/sourcegraph/pull/47544)
 
 ### Removed
 

@@ -29,8 +29,17 @@ func CrateSyncerJob(
 	dependenciesSvc background.DependenciesService,
 	gitserverClient background.GitserverClient,
 	extSvcStore background.ExternalServiceStore,
-) []goroutine.BackgroundRoutine {
+) goroutine.CombinedRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewCrateSyncer(observationCtx, autoindexingSvc, dependenciesSvc, gitserverClient, extSvcStore),
+	}
+}
+
+func PackageFiltersJob(
+	obsctx *observation.Context,
+	db database.DB,
+) goroutine.CombinedRoutine {
+	return []goroutine.BackgroundRoutine{
+		background.NewPackagesFilterApplicator(obsctx, db),
 	}
 }

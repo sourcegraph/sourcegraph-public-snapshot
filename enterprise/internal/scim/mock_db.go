@@ -90,7 +90,7 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 		users = append(users, &userToCreate)
 		return &userToCreate.User, nil
 	})
-	userExternalAccountsStore.UpdateSCIMDataFunc.SetDefaultHook(func(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error) {
+	userExternalAccountsStore.UpsertSCIMDataFunc.SetDefaultHook(func(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error) {
 		for _, user := range users {
 			if user.ID == userID {
 				var decrypted interface{}

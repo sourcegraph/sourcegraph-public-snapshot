@@ -27,6 +27,10 @@ set -ex
 mkdir origin
 cd origin
 git init
+
+# needed in CI, sandbox is really strict
+git config user.email test@sourcegraph.com
+
 echo "foobar" > README.md
 git add README.md
 git commit -m "initial commit"
@@ -40,6 +44,9 @@ cd ..
 mkdir -p "$DIR"
 cd "$DIR"
 git init --bare .
+
+# needed in CI, sandbox is really strict
+git config user.email test@sourcegraph.com
 
 git remote add --no-tags sourcegraph "$repo"
 git config --replace-all remote.origin.fetch '+HEAD:refs/remotes/sourcegraph/master'
