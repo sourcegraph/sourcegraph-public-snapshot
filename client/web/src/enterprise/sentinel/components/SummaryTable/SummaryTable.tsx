@@ -6,21 +6,7 @@ interface SummaryTableProps {
 }
 export const SummaryTable: FC<SummaryTableProps> = ({ vulnerabilityMatches = [] }) => {
     const totalVulnerabilities = vulnerabilityMatches.length
-    const severity = vulnerabilityMatches.reduce(
-        (acc, curr) => {
-            if (curr.severity === 'CRITICAL') {
-                acc.critical += 1
-            }
-            if (curr.severity === 'HIGH') {
-                acc.high += 1
-            }
-            if (curr.severity === 'MEDIUM') {
-                acc.medium += 1
-            }
-            return acc
-        },
-        { critical: 0, high: 0, medium: 0 }
-    )
+    const severity = getVulnerabilitySeverity(vulnerabilityMatches)
     const tableData = [
         {
             title: 'Total Vulnerabilities',
@@ -55,5 +41,23 @@ export const SummaryTable: FC<SummaryTableProps> = ({ vulnerabilityMatches = [] 
                 ))}
             </div>
         </div>
+    )
+}
+
+function getVulnerabilitySeverity(vulnerabilities: VulnerabilitiesProps[]) {
+    return vulnerabilities.reduce(
+        (acc, curr) => {
+            if (curr.severity === 'CRITICAL') {
+                acc.critical += 1
+            }
+            if (curr.severity === 'HIGH') {
+                acc.high += 1
+            }
+            if (curr.severity === 'MEDIUM') {
+                acc.medium += 1
+            }
+            return acc
+        },
+        { critical: 0, high: 0, medium: 0 }
     )
 }
