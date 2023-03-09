@@ -1,0 +1,40 @@
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "scip-syntax",
+    srcs = glob(["src/*.rs"]),
+    compile_data = glob(["queries/**"], allow_empty=False),
+    aliases = aliases(),
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/scip-treesitter:scip-treesitter",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages:scip-treesitter-languages",
+    ],
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/scip-macros:scip-macros",
+    ],
+    visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
+)
+
+rust_test(
+    name = "unit_test",
+    crate = ":scip-treesitter",
+    aliases = aliases(
+        normal_dev = True,
+        proc_macro_dev = True,
+    ),
+    deps = all_crate_deps(
+        normal_dev = True,
+    ),
+    proc_macro_deps = all_crate_deps(
+        proc_macro_dev = True,
+    ),
+    size = "small",
+    env = {
+        "RUST_BACKTRACE": "1",
+    },
+)
