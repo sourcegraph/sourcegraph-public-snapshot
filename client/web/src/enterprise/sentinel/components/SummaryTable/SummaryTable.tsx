@@ -4,7 +4,6 @@ import { VulnerabilitiesProps } from '../../graphql/useSentinelQuery'
 interface SummaryTableProps {
     vulnerabilityMatches: VulnerabilitiesProps[]
 }
-// ! TODO: DRY it up
 export const SummaryTable: FC<SummaryTableProps> = ({ vulnerabilityMatches = [] }) => {
     const totalVulnerabilities = vulnerabilityMatches.length
     const severity = vulnerabilityMatches.reduce(
@@ -22,36 +21,38 @@ export const SummaryTable: FC<SummaryTableProps> = ({ vulnerabilityMatches = [] 
         },
         { critical: 0, high: 0, medium: 0 }
     )
+    const tableData = [
+        {
+            title: 'Total Vulnerabilities',
+            amount: totalVulnerabilities,
+        },
+        {
+            title: 'Critical Severity',
+            amount: severity.critical ? `${severity.critical}/${totalVulnerabilities}` : '0',
+        },
+        {
+            title: 'High Severity',
+            amount: severity.high ? `${severity.high}/${totalVulnerabilities}` : '0',
+        },
+        {
+            title: 'Medium Severity',
+            amount: severity.medium ? `${severity.medium}/${totalVulnerabilities}` : '0',
+        },
+        {
+            title: 'Repos with Vulnerabilities',
+            amount: totalVulnerabilities,
+        },
+    ]
 
     return (
         <div className={styles.bar}>
             <div className={styles.container}>
-                <div className={styles.item}>
-                    <div className={styles.amount}>{totalVulnerabilities}</div>
-                    <div className={styles.subtitle}>Total Vulnerabilities</div>
-                </div>
-                <div className={styles.item}>
-                    <div className={styles.amount}>
-                        {severity.critical ? `${severity.critical}/${totalVulnerabilities}` : '0'}
+                {tableData.map((data, idx) => (
+                    <div key={idx} className={styles.item}>
+                        <div className={styles.amount}>{data.amount}</div>
+                        <div className={styles.subtitle}>{data.title}</div>
                     </div>
-                    <div className={styles.subtitle}>Critical Severity</div>
-                </div>
-                <div className={styles.item}>
-                    <div className={styles.amount}>
-                        {severity.high ? `${severity.high}/${totalVulnerabilities}` : '0'}
-                    </div>
-                    <div className={styles.subtitle}>High Severity</div>
-                </div>
-                <div className={styles.item}>
-                    <div className={styles.amount}>
-                        {severity.medium ? `${severity.medium}/${totalVulnerabilities}` : '0'}
-                    </div>
-                    <div className={styles.subtitle}>Medium Severity</div>
-                </div>
-                <div className={styles.item}>
-                    <div className={styles.amount}>{totalVulnerabilities}</div>
-                    <div className={styles.subtitle}>Repos with Vulnerabilities</div>
-                </div>
+                ))}
             </div>
         </div>
     )
