@@ -193,6 +193,14 @@ extend type Query {
         Term used to search for permissions sync jobs.
         """
         query: String
+        """
+        Optional filter to find permissions sync jobs for a user.
+        """
+        userID: ID
+        """
+        Optional filter to find permissions sync jobs for a repository.
+        """
+        repoID: ID
     ): PermissionsSyncJobsConnection!
 
     """
