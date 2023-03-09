@@ -207,7 +207,7 @@ type AzureDevOpsConnection struct {
 	Exclude []*ExcludedAzureDevOpsServerRepo `json:"exclude,omitempty"`
 	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
-	// Projects description: An array of projects "org/project" strings specifying which Azure DevOps whose repositories should be mirrored on Sourcegraph.
+	// Projects description: An array of projects "org/project" strings specifying which Azure DevOps projects' repositories should be mirrored on Sourcegraph.
 	Projects []string `json:"projects,omitempty"`
 	// Token description: The Personal Access Token associated with the Azure DevOps username used for authentication.
 	Token string `json:"token"`
@@ -669,7 +669,7 @@ type ExcludedAWSCodeCommitRepo struct {
 	Name string `json:"name,omitempty"`
 }
 type ExcludedAzureDevOpsServerRepo struct {
-	// Name description: The name of an Azure DevOps Services project and repository ("projectName/repositoryName") to exclude from mirroring.
+	// Name description: The name of an Azure DevOps Services organization, project, and repository ("orgName/projectName/repositoryName") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
 	// Pattern description: Regular expression which matches against the name of an Azure DevOps Services repo.
 	Pattern string `json:"pattern,omitempty"`
@@ -741,8 +741,6 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// AccessRequestEnabled description: Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.
 	AccessRequestEnabled *bool `json:"accessRequest.enabled,omitempty"`
-	// AzureDevOps description: Allow adding Azure DevOps code host connections
-	AzureDevOps string `json:"azureDevOps,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
@@ -838,7 +836,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "accessRequest.enabled")
-	delete(m, "azureDevOps")
 	delete(m, "bitbucketServerFastPerm")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")

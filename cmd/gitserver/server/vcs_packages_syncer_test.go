@@ -250,8 +250,8 @@ func (s *fakeDepsService) IsPackageRepoVersionAllowed(ctx context.Context, schem
 	return true, nil
 }
 
-func (s *fakeDepsService) ListPackageRepoRefs(ctx context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, error) {
-	return []dependencies.PackageRepoReference{s.deps[opts.Name]}, 1, nil
+func (s *fakeDepsService) ListPackageRepoRefs(ctx context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, bool, error) {
+	return []dependencies.PackageRepoReference{s.deps[opts.Name]}, 1, false, nil
 }
 
 func (s *fakeDepsService) Add(deps ...string) {

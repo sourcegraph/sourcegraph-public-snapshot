@@ -10,12 +10,12 @@ import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/compon
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import { BuildSearchQueryURLParameters, QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
-    SearchMatch,
     getMatchUrl,
     getRevision,
+    SearchMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -69,11 +69,15 @@ export interface StreamingSearchResultsListProps
 
     showQueryExamplesOnNoResultsPage?: boolean
 
-    /*
-     * For updating the query from the QueryExamples on NoResultsPage. Only
-     * needed if showQueryExamplesOnNoResultsPage is true.
+    /**
+     * The query state to be used for the query examples and owner search.
+     * If not provided, the query examples and owner search will not
+     * allow modifying the query.
      */
-    setQueryState?: (query: QueryState) => void
+    queryState?: QueryState
+    setQueryState?: (queryState: QueryState) => void
+    buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
+
     selectedSearchContextSpec?: string
 }
 
@@ -97,7 +101,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     prefetchFileEnabled,
     enableKeyboardNavigation,
     showQueryExamplesOnNoResultsPage,
+    queryState,
     setQueryState,
+    buildSearchURLQueryFromQueryState,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -232,6 +238,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 as="li"
                                 onSelect={() => logSearchResultClicked(index, 'person')}
                                 containerClassName={resultClassName}
+                                telemetryService={telemetryService}
+                                queryState={queryState}
+                                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             />
                         )
                 }
@@ -260,6 +269,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             openMatchesInNewTab,
             resultClassName,
             platformContext,
+            queryState,
+            buildSearchURLQueryFromQueryState,
             logSearchResultClicked,
         ]
     )

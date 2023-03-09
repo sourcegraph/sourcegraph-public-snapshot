@@ -346,7 +346,7 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 }
 
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
+	pipeline.AddStep(":java: Build (client/jetbrains)",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),

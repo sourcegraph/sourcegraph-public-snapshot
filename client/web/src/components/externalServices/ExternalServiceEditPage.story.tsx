@@ -74,6 +74,7 @@ export const ViewConfig: Story<WebStoryChildrenProps> = props => (
             autoFocusForm={false}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
+            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )
@@ -87,6 +88,7 @@ export const ConfigWithInvalidUrl: Story<WebStoryChildrenProps> = props => (
             autoFocusForm={false}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
+            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )
@@ -100,6 +102,7 @@ export const ConfigWithWarning: Story<WebStoryChildrenProps> = props => (
             autoFocusForm={false}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
+            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )
@@ -113,6 +116,7 @@ export const EditingDisabled: Story<WebStoryChildrenProps> = props => (
             autoFocusForm={false}
             externalServicesFromFile={true}
             allowEditExternalServicesWithFile={false}
+            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )

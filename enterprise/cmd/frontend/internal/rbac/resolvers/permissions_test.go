@@ -283,7 +283,7 @@ func TestSetPermissions(t *testing.T) {
 
 	t.Run("as non-site-admin", func(t *testing.T) {
 		input := map[string]any{"role": marshalRoleID(roleWithoutPermissions.ID), "permissions": []int32{}}
-		var response struct{ Permissions apitest.EmptyResponse }
+		var response struct{ SetPermissions apitest.EmptyResponse }
 		errs := apitest.Exec(userCtx, t, s, input, &response, setPermissionsQuery)
 
 		require.Len(t, errs, 1)
@@ -295,7 +295,7 @@ func TestSetPermissions(t *testing.T) {
 		// Passing an array of permissions will assign the permissions to the role.
 		t.Run("assign permissions", func(t *testing.T) {
 			input := map[string]any{"role": marshalRoleID(roleWithoutPermissions.ID), "permissions": permissionIDs}
-			var response struct{ Permissions apitest.EmptyResponse }
+			var response struct{ SetPermissions apitest.EmptyResponse }
 			apitest.MustExec(adminCtx, t, s, input, &response, setPermissionsQuery)
 
 			rps := getPermissionsAssignedToRole(ctx, t, db, roleWithoutPermissions.ID)
@@ -312,7 +312,7 @@ func TestSetPermissions(t *testing.T) {
 
 		t.Run("revoke permissions", func(t *testing.T) {
 			input := map[string]any{"role": marshalRoleID(roleWithAllPermissions.ID), "permissions": []graphql.ID{}}
-			var response struct{ Permissions apitest.EmptyResponse }
+			var response struct{ SetPermissions apitest.EmptyResponse }
 			apitest.MustExec(adminCtx, t, s, input, &response, setPermissionsQuery)
 
 			rps := getPermissionsAssignedToRole(ctx, t, db, roleWithAllPermissions.ID)
@@ -322,7 +322,7 @@ func TestSetPermissions(t *testing.T) {
 		t.Run("assign and revoke permissions", func(t *testing.T) {
 			// omitting the first permissions (which is already assigned to the role) will revoke it for the role.
 			input := map[string]any{"role": marshalRoleID(roleWithOnePermission.ID), "permissions": permissionIDs[1:]}
-			var response struct{ Permissions apitest.EmptyResponse }
+			var response struct{ SetPermissions apitest.EmptyResponse }
 			apitest.MustExec(adminCtx, t, s, input, &response, setPermissionsQuery)
 
 			// Since this role has the first permission assigned to it, since we
@@ -340,7 +340,7 @@ func TestSetPermissions(t *testing.T) {
 
 		t.Run("no change", func(t *testing.T) {
 			input := map[string]any{"role": marshalRoleID(roleWithAllPermissions2.ID), "permissions": permissionIDs}
-			var response struct{ Permissions apitest.EmptyResponse }
+			var response struct{ SetPermissions apitest.EmptyResponse }
 			apitest.MustExec(adminCtx, t, s, input, &response, setPermissionsQuery)
 
 			rps := getPermissionsAssignedToRole(ctx, t, db, roleWithAllPermissions2.ID)
