@@ -59,9 +59,7 @@ type client struct {
 
 	urn string
 
-	// RateLimit is the self-imposed rate limiter (since AzureDevOps does not have a concept
-	// of rate limiting in HTTP response headers).
-	rateLimiter         *ratelimit.InstrumentedLimiter
+	internalRateLimiter *ratelimit.InstrumentedLimiter
 	externalRateLimiter *ratelimit.Monitor
 	auth                auth.Authenticator
 	waitForRateLimit    bool
@@ -84,7 +82,7 @@ func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpc
 	return &client{
 		httpClient:          httpClient,
 		URL:                 u,
-		rateLimiter:         ratelimit.DefaultRegistry.Get(urn),
+		internalRateLimiter: ratelimit.DefaultRegistry.Get(urn),
 		externalRateLimiter: ratelimit.DefaultMonitorRegistry.GetOrSet(url, auth.Hash(), "rest", &ratelimit.Monitor{HeaderPrefix: "X-"}),
 		auth:                auth,
 		urn:                 urn,
@@ -118,7 +116,7 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 		return "", err
 	}
 
-	if err := c.rateLimiter.Wait(ctx); err != nil {
+	if err := c.internalRateLimiter.Wait(ctx); err != nil {
 		return "", err
 	}
 
