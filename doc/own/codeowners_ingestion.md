@@ -14,6 +14,9 @@ However, it might be you do not want to have a `CODEOWNERS` file committed to yo
 
 Sourcegraph provides a UI and CLI to ingest a `CODEOWNERS` file per-repository, that overrides any existing committed file.
 
+You can ingest one `CODEOWNERS` file per repository. 
+At this time the same ingested `CODEOWNERS` file applies to all revisions.
+
 ### Ingesting a file through the UI
 
 Navigating to any repository page, clicking the Ownership button will surface information about any ingested `CODEOWNERS` file, and will allow you to upload or update an existing one.
