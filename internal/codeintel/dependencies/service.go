@@ -237,6 +237,7 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 			pkgs, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
 				Scheme: filter.PackageScheme,
 				// doing this so we don't have to load everything in at once
+				Limit:          500,
 				After:          lastID,
 				IncludeBlocked: true,
 			})
