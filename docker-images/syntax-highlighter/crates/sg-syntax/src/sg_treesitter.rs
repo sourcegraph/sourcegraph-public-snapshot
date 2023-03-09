@@ -7,7 +7,6 @@ use scip::types::{Document, Occurrence, SyntaxKind};
 use scip_treesitter_languages::highlights::{
     get_highlighting_configuration, get_syntax_kind_for_hl,
 };
-use tree_sitter::Parser;
 use tree_sitter_highlight::{
     Error, Highlight, HighlightConfiguration, HighlightEvent, Highlighter as TSHighlighter,
 };
@@ -60,7 +59,7 @@ pub fn index_language_with_config(
     filetype: &str,
     code: &str,
     lang_config: &HighlightConfiguration,
-    mut include_locals: bool,
+    include_locals: bool,
 ) -> Result<Document, Error> {
     // Normalize string to be always only \n endings.
     //  We don't care that the byte offsets are "incorrect" now for this
@@ -82,7 +81,6 @@ pub fn index_language_with_config(
     doc.occurrences.sort_by_key(|a| (a.range[0], a.range[1]));
 
     // TODO: Don't let this happen in the final build haha
-    include_locals = true;
     if include_locals {
         let parser = scip_treesitter_languages::parsers::BundledParser::get_parser(filetype);
         if let Some(parser) = parser {

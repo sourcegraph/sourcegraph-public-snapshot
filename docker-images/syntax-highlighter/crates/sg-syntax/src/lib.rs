@@ -79,7 +79,7 @@ pub enum SyntaxEngine {
     #[serde(rename = "tree-sitter")]
     TreeSitter,
 
-    #[serde(rename = "tree-sitter-syntax")]
+    #[serde(rename = "scip-syntax")]
     TreeSitterSyntax,
 }
 

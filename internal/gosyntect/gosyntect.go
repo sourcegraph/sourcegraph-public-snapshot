@@ -21,6 +21,15 @@ const (
 	SyntaxEngineScipSyntax = "scip-syntax"
 )
 
+func isTreesitterBased(engine string) bool {
+	switch engine {
+	case SyntaxEngineTreesitter, SyntaxEngineScipSyntax:
+		return true
+	default:
+		return false
+	}
+}
+
 type HighlightResponseType string
 
 // The different response formats supported by the syntax highlighter.
@@ -158,7 +167,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 	// Normalize filetype
 	q.Filetype = normalizeFiletype(q.Filetype)
 
-	if q.Engine == SyntaxEngineTreesitter && !IsTreesitterSupported(q.Filetype) {
+	if isTreesitterBased(q.Engine) && !IsTreesitterSupported(q.Filetype) {
 		return nil, errors.New("Not a valid treesitter filetype")
 	}
 
@@ -171,7 +180,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 	var url string
 	if format == FormatJSONSCIP {
 		url = "/scip"
-	} else if q.Engine == SyntaxEngineTreesitter {
+	} else if isTreesitterBased(q.Engine) {
 		// "Legacy SCIP mode" for the HTML blob view and languages configured to
 		// be processed with tree sitter.
 		url = "/lsif"
