@@ -13,20 +13,6 @@ import { VulnerabilitySidebarView } from './components/VulnerabilitySidebar/Vuln
 
 export const SentinelView: FC = () => {
     const [showMobileFilters, setShowMobileFilters] = useState(true)
-    const [isDesktopView, setIsDesktopView] = useState(true)
-    const onShowMobileFiltersClicked = (): void => {
-        const newShowFilters = !showMobileFilters
-        setShowMobileFilters(newShowFilters)
-    }
-    const { width } = useWindowSize()
-    useLayoutEffect(() => {
-        if (width > VIEWPORT_LG) {
-            setShowMobileFilters(true)
-            setIsDesktopView(true)
-        } else {
-            setIsDesktopView(false)
-        }
-    }, [width])
 
     const { vulnerabilities, loading, error, refetch } = useSentinelQuery({ severity: '' })
 
@@ -43,12 +29,7 @@ export const SentinelView: FC = () => {
             <SentinelBanner />
             <div className={styles.pageContainer}>
                 <PageHeader path={[{ icon: ShieldHalfFullIcon, text: 'Sentinel' }]} className={styles.header} />
-                {((isDesktopView && !showMobileFilters) || !isDesktopView) && (
-                    <FilterButton
-                        showMobileFilters={showMobileFilters}
-                        onShowMobileFiltersClicked={onShowMobileFiltersClicked}
-                    />
-                )}
+                <FilterButton showMobileFilters={showMobileFilters} onShowMobileFiltersClicked={setShowMobileFilters} />
                 <div className={classNames(styles.container, { [styles.full]: !showMobileFilters })}>
                     <div className={styles.main}>
                         <SummaryTable vulnerabilityMatches={vulnerabilities} />
@@ -58,7 +39,7 @@ export const SentinelView: FC = () => {
                     <div className={styles.sidebar}>
                         {showMobileFilters && (
                             <VulnerabilitySidebarView
-                                onShowMobileFiltersChanged={onShowMobileFiltersClicked}
+                                onShowMobileFiltersChanged={setShowMobileFilters}
                                 onFilterChosen={refetch}
                             />
                         )}
@@ -71,25 +52,43 @@ export const SentinelView: FC = () => {
 
 interface FilterButtonProps {
     showMobileFilters: boolean
-    onShowMobileFiltersClicked: () => void
+    onShowMobileFiltersClicked: React.Dispatch<React.SetStateAction<boolean>>
 }
-const FilterButton: FC<FilterButtonProps> = ({ showMobileFilters, onShowMobileFiltersClicked }) => (
-    <div className={styles.filterContainer}>
-        <Button
-            className={classNames(styles.filtersButton, showMobileFilters && 'active')}
-            aria-pressed={showMobileFilters}
-            onClick={onShowMobileFiltersClicked}
-            outline={true}
-            variant="secondary"
-            size="sm"
-            aria-label={`${showMobileFilters ? 'Hide' : 'Show'} filters`}
-        >
-            Filters
-            <Icon
-                aria-hidden={true}
-                className="ml-2"
-                svgPath={showMobileFilters ? mdiChevronDoubleUp : mdiChevronDoubleDown}
-            />
-        </Button>
-    </div>
-)
+const FilterButton: FC<FilterButtonProps> = ({ showMobileFilters, onShowMobileFiltersClicked }) => {
+    const [isDesktopView, setIsDesktopView] = useState(true)
+
+    const { width } = useWindowSize()
+    useLayoutEffect(() => {
+        if (width > VIEWPORT_LG) {
+            onShowMobileFiltersClicked(true)
+            setIsDesktopView(true)
+        } else {
+            setIsDesktopView(false)
+        }
+    }, [width])
+    const toggleMobileFiltersClicked = (): void => {
+        const newShowFilters = !showMobileFilters
+        onShowMobileFiltersClicked(newShowFilters)
+    }
+
+    return (isDesktopView && !showMobileFilters) || !isDesktopView ? (
+        <div className={styles.filterContainer}>
+            <Button
+                className={classNames(styles.filtersButton, showMobileFilters && 'active')}
+                aria-pressed={showMobileFilters}
+                onClick={toggleMobileFiltersClicked}
+                outline={true}
+                variant="secondary"
+                size="sm"
+                aria-label={`${showMobileFilters ? 'Hide' : 'Show'} filters`}
+            >
+                Filters
+                <Icon
+                    aria-hidden={true}
+                    className="ml-2"
+                    svgPath={showMobileFilters ? mdiChevronDoubleUp : mdiChevronDoubleDown}
+                />
+            </Button>
+        </div>
+    ) : null
+}
