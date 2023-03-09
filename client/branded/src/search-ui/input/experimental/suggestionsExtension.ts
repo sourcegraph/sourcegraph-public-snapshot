@@ -19,6 +19,8 @@ import { compatNavigate, HistoryOrNavigate } from '@sourcegraph/common'
 import { getSelectedMode, modeChanged, modesFacet, setModeEffect } from './modes'
 import { Suggestions } from './Suggestions'
 
+const ASYNC_THROTTLE_TIME = 300
+
 // Temporary solution to make some editor settings available to other extensions
 interface EditorConfig {
     onSubmit: () => void
@@ -199,46 +201,59 @@ class SuggestionView {
 
 const completionPlugin = ViewPlugin.fromClass(
     class {
-        private running: RunningQuery | null = null
+        private next: RegisteredSource | null = null
+        private timer: number | null = null
 
         constructor(public readonly view: EditorView) {
-            this.startQuery(view.state.field(suggestionsStateField).source)
+            this.maybeScheduleRun(view.state.field(suggestionsStateField).source)
         }
 
         public update(update: ViewUpdate): void {
-            if (update.view.hasFocus) {
-                this.startQuery(update.state.field(suggestionsStateField).source)
+            const source = update.state.field(suggestionsStateField).source
+
+            if (update.view.hasFocus && source !== update.startState.field(suggestionsStateField).source) {
+                this.maybeScheduleRun(source)
             }
         }
 
-        private startQuery(source: RegisteredSource): void {
-            if (
-                source.state === RegisteredSourceState.Pending &&
-                (!this.running || this.running.timestamp !== source.timestamp)
-            ) {
-                const query = (this.running = new RunningQuery(source))
-                query.source
+        /**
+         * Implements a throttle mechanism. If no timer is running we execute the query
+         * immediately and start a timer. When the timer expires we run the last query that
+         * has arrived in the meantime.
+         * If a timer is running we keep track of the next query that should be run.
+         */
+        private maybeScheduleRun(source: RegisteredSource): void {
+            // If the source is not in a pending state we clear any possibly
+            // ongoing request
+            if (source.state !== RegisteredSourceState.Pending) {
+                this.next = null
+                if (this.timer !== null) {
+                    window.clearTimeout(this.timer)
+                }
+                this.timer = null
+                return
+            }
+
+            if (this.timer) {
+                // Request is already in progress, schedule a new one for the
+                // next "tick"
+                this.next = source
+            } else {
+                this.next = null
+                source
                     .run()
-                    ?.then(result => {
-                        if (this.running === query) {
-                            this.view.dispatch({ effects: updateResultEffect.of({ source, result }) })
-                        }
-                    })
+                    ?.then(result => this.view.dispatch({ effects: updateResultEffect.of({ source, result }) }))
                     .catch(() => {})
-            } else if (source.state === RegisteredSourceState.Inactive) {
-                this.running = null
+                this.timer = window.setTimeout(() => {
+                    this.timer = null
+                    if (this.next) {
+                        this.maybeScheduleRun(this.next)
+                    }
+                }, ASYNC_THROTTLE_TIME)
             }
         }
     }
 )
-
-class RunningQuery {
-    constructor(public readonly source: RegisteredSource) {}
-
-    public get timestamp(): number {
-        return this.source.timestamp
-    }
-}
 
 /**
  * Wrapper class to make operating on groups of options easier.
@@ -299,22 +314,12 @@ enum RegisteredSourceState {
  * and results.
  */
 class RegisteredSource {
-    public timestamp: number
-
     constructor(
         public readonly sources: readonly Source[],
         public readonly state: RegisteredSourceState,
         public readonly result: Result,
         private readonly next?: () => Promise<SuggestionResult>
-    ) {
-        switch (state) {
-            case RegisteredSourceState.Pending:
-                this.timestamp = Date.now()
-                break
-            default:
-                this.timestamp = -1
-        }
-    }
+    ) {}
 
     public update(transaction: Transaction): RegisteredSource {
         // Aliasing this makes it easier to create new instances based on all
@@ -337,7 +342,7 @@ class RegisteredSource {
         for (const effect of transaction.effects) {
             if (
                 effect.is(updateResultEffect) &&
-                effect.value.source.sources === source.sources &&
+                effect.value.source === source &&
                 source.state === RegisteredSourceState.Pending
             ) {
                 const { result } = effect.value
@@ -351,6 +356,15 @@ class RegisteredSource {
 
             if (effect.is(startCompletionEffect)) {
                 source = source.query(transaction.state)
+            }
+
+            if (effect.is(hideCompletionEffect)) {
+                source = new RegisteredSource(
+                    source.sources,
+                    RegisteredSourceState.Inactive,
+                    source.result,
+                    source.next
+                )
             }
         }
 
