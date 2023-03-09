@@ -57,7 +57,7 @@ type BulkUserRoleOperationOpts struct {
 
 type (
 	BulkAssignRolesToUserOpts  BulkUserRoleOperationOpts
-	SyncRolesForUserOpts       BulkUserRoleOperationOpts
+	SetRolesForUserOpts        BulkUserRoleOperationOpts
 	BulkRevokeRolesForUserOpts BulkUserRoleOperationOpts
 )
 
@@ -86,9 +86,9 @@ type UserRoleStore interface {
 	Revoke(ctx context.Context, opts RevokeUserRoleOpts) error
 	// RevokeSystemRole revokes a system role that has previously being assigned to a user.
 	RevokeSystemRole(ctx context.Context, opts RevokeSystemRoleOpts) error
-	// SyncRolesForUser is used to sync the roles assigned to a role. It removes any role that isn't
+	// SetRolesForUser is used to sync the roles assigned to a role. It removes any role that isn't
 	// included in the `opts` and assigns roles that aren't yet assigned in the database but in `opts`.
-	SyncRolesForUser(ctx context.Context, opts SyncRolesForUserOpts) error
+	SetRolesForUser(ctx context.Context, opts SetRolesForUserOpts) error
 	// Transact creates a transaction for the UserRoleStore.
 	WithTransact(context.Context, func(UserRoleStore) error) error
 	// With is used to merge the store with another to pull data via other stores.
@@ -431,7 +431,7 @@ func (r *userRoleStore) get(ctx context.Context, cond *sqlf.Query) ([]*types.Use
 	return scanUserRoles(r.Query(ctx, q))
 }
 
-func (r *userRoleStore) SyncRolesForUser(ctx context.Context, opts SyncRolesForUserOpts) error {
+func (r *userRoleStore) SetRolesForUser(ctx context.Context, opts SetRolesForUserOpts) error {
 	if opts.UserID == 0 {
 		return errors.New("missing user id")
 	}

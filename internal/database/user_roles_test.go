@@ -408,7 +408,7 @@ func TestUserRoleGetByRoleIDAndUserID(t *testing.T) {
 	})
 }
 
-func TestSyncRolesForUser(t *testing.T) {
+func TestSetRolesForUser(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -438,12 +438,12 @@ func TestSyncRolesForUser(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("without user id", func(t *testing.T) {
-		err := store.SyncRolesForUser(ctx, SyncRolesForUserOpts{})
+		err := store.SetRolesForUser(ctx, SetRolesForUserOpts{})
 		require.ErrorContains(t, err, "missing user id")
 	})
 
 	t.Run("revoke only", func(t *testing.T) {
-		err := store.SyncRolesForUser(ctx, SyncRolesForUserOpts{
+		err := store.SetRolesForUser(ctx, SetRolesForUserOpts{
 			Roles:  []int32{},
 			UserID: u1.ID,
 		})
@@ -457,7 +457,7 @@ func TestSyncRolesForUser(t *testing.T) {
 	t.Run("assign and revoke", func(t *testing.T) {
 		// u2 is already assigned the role `r1`, however because it's not included
 		// in `opts`, it'll be revoked for `u2` and `r2` will be assigned to the user.
-		err := store.SyncRolesForUser(ctx, SyncRolesForUserOpts{
+		err := store.SetRolesForUser(ctx, SetRolesForUserOpts{
 			UserID: u2.ID,
 			Roles:  []int32{r2.ID},
 		})
@@ -474,7 +474,7 @@ func TestSyncRolesForUser(t *testing.T) {
 		roles := []int32{r1.ID, r2.ID, r3.ID, r4.ID}
 		// `u3` doesn't have any role assigned to them. We'll assign them the
 		// 4 roles defined above.
-		err := store.SyncRolesForUser(ctx, SyncRolesForUserOpts{
+		err := store.SetRolesForUser(ctx, SetRolesForUserOpts{
 			UserID: u3.ID,
 			Roles:  roles,
 		})

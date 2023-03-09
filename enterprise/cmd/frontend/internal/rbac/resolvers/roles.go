@@ -162,7 +162,7 @@ func (r *Resolver) SetRoles(ctx context.Context, args *gql.SetRolesArgs) (*gql.E
 		return nil, errors.New("cannot assign role to self")
 	}
 
-	opts := database.SyncRolesForUserOpts{UserID: userID}
+	opts := database.SetRolesForUserOpts{UserID: userID}
 
 	for _, r := range args.Roles {
 		rID, err := unmarshalPermissionID(r)
@@ -172,7 +172,7 @@ func (r *Resolver) SetRoles(ctx context.Context, args *gql.SetRolesArgs) (*gql.E
 		opts.Roles = append(opts.Roles, rID)
 	}
 
-	if err = r.db.UserRoles().SyncRolesForUser(ctx, opts); err != nil {
+	if err = r.db.UserRoles().SetRolesForUser(ctx, opts); err != nil {
 		return nil, err
 	}
 
