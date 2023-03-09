@@ -18,6 +18,11 @@ type Users struct {
 	list       []types.User
 }
 
+type userNotFoundErr struct{}
+
+func (err userNotFoundErr) Error() string  { return "user not found" }
+func (err userNotFoundErr) NotFound() bool { return true }
+
 // AddUser creates new user in the fake user storage.
 // This method is tailored for data setup in tests - it does not fail,
 // and conveniently returns ID of newly created user.
@@ -35,7 +40,16 @@ func (users *Users) GetByID(_ context.Context, id int32) (*types.User, error) {
 			return &u, nil
 		}
 	}
-	return nil, nil
+	return nil, userNotFoundErr{}
+}
+
+func (users *Users) GetByUsername(_ context.Context, username string) (*types.User, error) {
+	for _, u := range users.list {
+		if u.Username == username {
+			return &u, nil
+		}
+	}
+	return nil, userNotFoundErr{}
 }
 
 func (users *Users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
@@ -60,4 +74,8 @@ func (users *Users) List(ctx context.Context, opts *database.UsersListOptions) (
 		}
 	}
 	return ret, nil
+}
+
+func (users *Users) GetByVerifiedEmail(_ context.Context, email string) (*types.User, error) {
+	return nil, nil
 }

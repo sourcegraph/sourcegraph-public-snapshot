@@ -125,7 +125,12 @@ matchesLoop:
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
-		owners := file.FindOwners(mm.File.Path)
+		rule := file.Match(mm.File.Path)
+		var owners []*codeownerspb.Owner
+		// If match.
+		if rule != nil {
+			owners = rule.GetOwner()
+		}
 		for _, owner := range includeOwners {
 			if !containsOwner(owners, owner) {
 				continue matchesLoop

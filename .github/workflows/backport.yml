@@ -21,6 +21,6 @@ jobs:
         )
       )
     steps:
-      - uses: sourcegraph/backport@v2.0.3
+      - uses: sourcegraph/backport@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
