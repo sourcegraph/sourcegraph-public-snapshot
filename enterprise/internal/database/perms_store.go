@@ -494,10 +494,9 @@ DO UPDATE SET
 	source = excluded.source
 RETURNING updated_at;
 `
-
 	values := make([]*sqlf.Query, 0, len(permissions))
 	for _, p := range permissions {
-		values = append(values, sqlf.Sprintf("(%s::integer, %s::integer, %s::integer, %s::timestamptz, %s::timestamptz, %s::text)",
+		values = append(values, sqlf.Sprintf("(NULLIF(%s::integer, 0), NULLIF(%s::integer, 0), %s::integer, %s::timestamptz, %s::timestamptz, %s::text)",
 			p.UserID,
 			p.ExternalAccountID,
 			p.RepoID,
@@ -780,7 +779,7 @@ DO UPDATE SET
 	), nil
 }
 
-func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error {
+func (s *permsStore) legacySetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -799,6 +798,46 @@ DO UPDATE SET
 	q := sqlf.Sprintf(format, pq.Array(ids), unrestricted, unrestricted)
 
 	return errors.Wrap(s.Exec(ctx, q), "setting unrestricted flag")
+}
+
+func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error {
+	var txs *permsStore
+	var err error
+	if s.InTransaction() {
+		txs = s
+	} else {
+		txs, err = s.transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = txs.Done(err) }()
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	err = txs.legacySetRepoPermissionsUnrestricted(ctx, ids, unrestricted)
+	if err != nil {
+		return err
+	}
+
+	values := make([]*sqlf.Query, 0, len(ids))
+	for _, repoID := range ids {
+		values = append(values, sqlf.Sprintf("(NULL, %d)", repoID))
+	}
+
+	q := sqlf.Sprintf(`
+INSERT INTO user_repo_permissions (user_id, repo_id)
+VALUES %s
+ON CONFLICT DO NOTHING`,
+		sqlf.Join(values, ","),
+	)
+	if !unrestricted {
+		q = sqlf.Sprintf(`DELETE FROM user_repo_permissions WHERE repo_id = ANY(%s)`, pq.Array(ids))
+	}
+
+	return errors.Wrapf(txs.Exec(ctx, q), "setting repositories as unrestricted %v %v", ids, unrestricted)
 }
 
 // upsertRepoPermissionsQuery upserts single row of repository permissions.
