@@ -44,6 +44,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":codeintel"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/codeintel/shared",
         "//internal/database",
@@ -52,6 +56,7 @@ go_test(
         "//internal/database/dbutil",
         "@com_github_google_go_cmp//cmp",
         "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
     ],
 )

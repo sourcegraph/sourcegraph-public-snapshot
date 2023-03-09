@@ -33,6 +33,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("comment",                 SyntaxKind::Comment),
     ("conditional",             SyntaxKind::IdentifierKeyword),
     ("constant",                SyntaxKind::IdentifierConstant),
+    ("identifier.constant",     SyntaxKind::IdentifierConstant),
     ("constant.builtin",        SyntaxKind::IdentifierBuiltin),
     ("constant.null",           SyntaxKind::IdentifierNull),
     ("float",                   SyntaxKind::NumericLiteral),
@@ -150,11 +151,14 @@ lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
         create_configurations!(
             c,
+            cpp,
             c_sharp,
             go,
             java,
             javascript,
             jsonnet,
+            python,
+            ruby,
             rust,
             scala,
             sql,
@@ -524,22 +528,6 @@ mod test {
     }
 
     #[test]
-    fn test_highlights_simple_main() -> Result<(), Error> {
-        let src = r#"package main
-import "fmt"
-
-func main() {
-	fmt.Println("Hello, world", 5)
-}
-"#;
-
-        let document = index_language("go", src)?;
-        insta::assert_snapshot!(dump_document(&document, src));
-
-        Ok(())
-    }
-
-    #[test]
     fn test_highlights_a_sql_query_within_go() -> Result<(), Error> {
         let src = r#"package main
 
@@ -565,7 +553,9 @@ SELECT * FROM my_table
 
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
-        let dir = read_dir("./src/snapshots/files/")?;
+        let crate_root: std::path::PathBuf = std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
+        let input_dir = crate_root.join("src").join("snapshots").join("files");
+        let dir = read_dir(&input_dir).unwrap();
         for entry in dir {
             let entry = entry?;
             let filepath = entry.path();
@@ -590,10 +580,7 @@ SELECT * FROM my_table
             }
             let document = indexed.unwrap();
             insta::assert_snapshot!(
-                filepath
-                    .to_str()
-                    .unwrap()
-                    .replace("/src/snapshots/files", ""),
+                filepath.strip_prefix(&input_dir).unwrap().to_str().unwrap(),
                 dump_document(&document, &contents)
             );
         }

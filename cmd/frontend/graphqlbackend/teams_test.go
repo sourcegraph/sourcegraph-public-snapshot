@@ -29,10 +29,10 @@ func TestTeamNode(t *testing.T) {
 	fs := fakedb.New()
 	db := database.NewMockDB()
 	fs.Wire(db)
-	userID := fs.AddUser(types.User{SiteAdmin: false})
+	userID := fs.AddUser(types.User{Username: "bob", SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team", CreatorID: userID}); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -47,13 +47,19 @@ func TestTeamNode(t *testing.T) {
 				__typename
 				... on Team {
 				  name
+				  creator {
+					username
+				  }
 				}
 			}
 		}`,
 		ExpectedResult: `{
 			"node": {
 				"__typename": "Team",
-				"name": "team"
+				"name": "team",
+				"creator": {
+					"username": "bob"
+				}
 			}
 		}`,
 		Variables: map[string]any{
@@ -174,6 +180,43 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 			})
 		})
 	}
+
+	t.Run("Non-site admin is not member but creator", func(t *testing.T) {
+		fs := fakedb.New()
+		db := database.NewMockDB()
+		fs.Wire(db)
+		userID := fs.AddUser(types.User{SiteAdmin: false})
+		ctx := userCtx(userID)
+		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team", CreatorID: userID}); err != nil {
+			t.Fatalf("failed to create fake team: %s", err)
+		}
+		team, err := fs.TeamStore.GetTeamByName(ctx, "team")
+		if err != nil {
+			t.Fatalf("failed to get fake team: %s", err)
+		}
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `query TeamByID($id: ID!){
+				node(id: $id) {
+					__typename
+					... on Team {
+						viewerCanAdminister
+					}
+				}
+			}`,
+			ExpectedResult: fmt.Sprintf(`{
+				"node": {
+					"__typename": "Team",
+					"viewerCanAdminister": true
+				}
+			}`),
+			Variables: map[string]any{
+				"id": string(relay.MarshalID("Team", team.ID)),
+			},
+		})
+	})
 }
 
 func TestCreateTeamBare(t *testing.T) {

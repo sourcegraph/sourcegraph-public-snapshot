@@ -21,9 +21,9 @@ import (
 
 type PackageRepoReferenceConnectionArgs struct {
 	graphqlutil.ConnectionArgs
-	After  *string
-	Scheme *string
-	Name   *string
+	After *string
+	Kind  *string
+	Name  *string
 }
 
 var externalServiceToPackageSchemeMap = map[string]string{
@@ -47,12 +47,14 @@ var packageSchemeToExternalServiceMap = map[string]string{
 func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *PackageRepoReferenceConnectionArgs) (_ *packageRepoReferenceConnectionResolver, err error) {
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
 
-	var opts dependencies.ListDependencyReposOpts
+	opts := dependencies.ListDependencyReposOpts{
+		IncludeBlocked: true,
+	}
 
-	if args.Scheme != nil {
-		packageScheme, ok := externalServiceToPackageSchemeMap[*args.Scheme]
+	if args.Kind != nil {
+		packageScheme, ok := externalServiceToPackageSchemeMap[*args.Kind]
 		if !ok {
-			return nil, errors.Errorf("unknown package scheme %q", *args.Scheme)
+			return nil, errors.Errorf("unknown package scheme %q", *args.Kind)
 		}
 		opts.Scheme = packageScheme
 	}
@@ -61,9 +63,7 @@ func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *Packag
 		opts.Name = reposource.PackageName(*args.Name)
 	}
 
-	if args.First != nil {
-		opts.Limit = int(*args.First)
-	}
+	opts.Limit = int(args.GetFirst())
 
 	if args.After != nil {
 		if opts.After, err = graphqlutil.DecodeIntCursor(args.After); err != nil {
@@ -71,18 +71,19 @@ func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *Packag
 		}
 	}
 
-	deps, total, err := depsService.ListPackageRepoRefs(ctx, opts)
+	deps, total, hasMore, err := depsService.ListPackageRepoRefs(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return &packageRepoReferenceConnectionResolver{r.db, deps, total}, err
+	return &packageRepoReferenceConnectionResolver{r.db, deps, hasMore, total}, err
 }
 
 type packageRepoReferenceConnectionResolver struct {
-	db    database.DB
-	deps  []dependencies.PackageRepoReference
-	total int
+	db      database.DB
+	deps    []dependencies.PackageRepoReference
+	hasMore bool
+	total   int
 }
 
 func (r *packageRepoReferenceConnectionResolver) Nodes(ctx context.Context) ([]*packageRepoReferenceResolver, error) {
@@ -123,12 +124,42 @@ func (r *packageRepoReferenceConnectionResolver) TotalCount(ctx context.Context)
 }
 
 func (r *packageRepoReferenceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if len(r.deps) == 0 {
+	if len(r.deps) == 0 || !r.hasMore {
 		return graphqlutil.HasNextPage(false), nil
 	}
 
-	next := int32(r.deps[len(r.deps)-1].ID)
-	return graphqlutil.EncodeIntCursor(&next), nil
+	next := r.deps[len(r.deps)-1].ID
+	cursor := string(relay.MarshalID("PackageRepoReference", next))
+	return graphqlutil.EncodeCursor(&cursor), nil
+}
+
+type packageRepoReferenceVersionConnectionResolver struct {
+	versions []dependencies.PackageRepoRefVersion
+	hasMore  bool
+	total    int
+}
+
+func (r *packageRepoReferenceVersionConnectionResolver) Nodes(ctx context.Context) (vs []*packageRepoReferenceVersionResolver) {
+	for _, version := range r.versions {
+		vs = append(vs, &packageRepoReferenceVersionResolver{
+			version: version,
+		})
+	}
+	return
+}
+
+func (r *packageRepoReferenceVersionConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return int32(r.total), nil
+}
+
+func (r *packageRepoReferenceVersionConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	if len(r.versions) == 0 || !r.hasMore {
+		return graphqlutil.HasNextPage(false), nil
+	}
+
+	next := r.versions[len(r.versions)-1].ID
+	cursor := string(relay.MarshalID("PackageRepoReferenceVersion", next))
+	return graphqlutil.EncodeCursor(&cursor), nil
 }
 
 type packageRepoReferenceResolver struct {
@@ -141,7 +172,7 @@ func (r *packageRepoReferenceResolver) ID() graphql.ID {
 	return relay.MarshalID("PackageRepoReference", r.dep.ID)
 }
 
-func (r *packageRepoReferenceResolver) Scheme() string {
+func (r *packageRepoReferenceResolver) Kind() string {
 	return packageSchemeToExternalServiceMap[r.dep.Scheme]
 }
 
@@ -155,6 +186,10 @@ func (r *packageRepoReferenceResolver) Versions() []*packageRepoReferenceVersion
 		versions = append(versions, &packageRepoReferenceVersionResolver{version})
 	}
 	return versions
+}
+
+func (r *packageRepoReferenceResolver) Blocked() bool {
+	return r.dep.Blocked
 }
 
 func (r *packageRepoReferenceResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {

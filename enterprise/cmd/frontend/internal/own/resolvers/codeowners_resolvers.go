@@ -31,6 +31,9 @@ var (
 )
 
 func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
 	if err := r.viewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
@@ -61,6 +64,9 @@ func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbacken
 }
 
 func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
 	if err := r.viewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
@@ -114,12 +120,15 @@ func (r *ownResolver) getRepo(ctx context.Context, input graphqlbackend.Codeowne
 	}
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(*input.RepoID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not unmarshal repository id")
 	}
 	return r.db.Repos().Get(ctx, repoID)
 }
 
 func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlbackend.DeleteCodeownersFileArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
 	if err := r.viewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
@@ -143,6 +152,9 @@ func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlba
 }
 
 func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphqlbackend.CodeownersIngestedFilesArgs) (graphqlbackend.CodeownersIngestedFileConnectionResolver, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
 	if err := r.viewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
@@ -168,6 +180,9 @@ func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphql
 func (r *ownResolver) RepoIngestedCodeowners(ctx context.Context, repoID api.RepoID) (graphqlbackend.CodeownersIngestedFileResolver, error) {
 	// This endpoint is open to anyone.
 	// The repository store makes sure the viewer has access to the repository.
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
 	repo, err := r.db.Repos().Get(ctx, repoID)
 	if err != nil {
 		return nil, err

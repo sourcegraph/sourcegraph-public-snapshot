@@ -7,6 +7,7 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         subject {
             ... on Repository {
                 __typename
+                id
                 name
                 externalRepository {
                     serviceType
@@ -14,6 +15,7 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
             }
             ... on User {
                 __typename
+                id
                 username
             }
         }
@@ -54,6 +56,8 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         $before: String
         $reasonGroup: PermissionsSyncJobReasonGroup
         $state: PermissionsSyncJobState
+        $searchType: PermissionsSyncJobsSearchType
+        $query: String
     ) {
         permissionsSyncJobs(
             first: $first
@@ -62,6 +66,8 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
             before: $before
             reasonGroup: $reasonGroup
             state: $state
+            searchType: $searchType
+            query: $query
         ) {
             totalCount
             pageInfo {
@@ -74,5 +80,27 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
                 ...PermissionsSyncJob
             }
         }
+    }
+`
+
+export const TRIGGER_USER_SYNC = gql`
+    mutation ScheduleUserPermissionsSync($user: ID!) {
+        scheduleUserPermissionsSync(user: $user) {
+            alwaysNil
+        }
+    }
+`
+
+export const TRIGGER_REPO_SYNC = gql`
+    mutation ScheduleRepoPermissionsSync($repo: ID!) {
+        scheduleRepositoryPermissionsSync(repository: $repo) {
+            alwaysNil
+        }
+    }
+`
+
+export const CANCEL_PERMISSIONS_SYNC_JOB = gql`
+    mutation CancelPermissionsSyncJob($job: ID!) {
+        cancelPermissionsSyncJob(job: $job)
     }
 `

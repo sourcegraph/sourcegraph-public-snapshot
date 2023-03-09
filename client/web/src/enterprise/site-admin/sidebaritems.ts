@@ -47,6 +47,7 @@ const executorsGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/executors',
             label: 'Instances',
+            exact: true,
         },
         {
             to: '/site-admin/executors/secrets',
@@ -156,6 +157,10 @@ const usersGroup: SiteAdminSideBarGroup = {
         {
             label: 'Roles',
             to: '/site-admin/roles',
+        },
+        {
+            label: 'Permissions',
+            to: '/site-admin/permissions-syncs',
         },
     ],
 }

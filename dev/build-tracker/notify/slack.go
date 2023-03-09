@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/team"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const StepShowLimit = 5
@@ -140,7 +141,7 @@ func (c *Client) GetNotification(buildNumber int) *SlackNotification {
 
 func (c *Client) sendUpdatedMessage(info *BuildNotification, previous *SlackNotification) (*SlackNotification, error) {
 	if previous == nil {
-		return nil, fmt.Errorf("cannot update message with nil notification")
+		return nil, errors.New("cannot update message with nil notification")
 	}
 	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("channel", c.channel))
 	logger.Debug("creating slack json")

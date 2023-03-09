@@ -9,7 +9,7 @@
   "required": ["url", "username", "token"],
   "properties": {
     "url": {
-      "description": "URL of a Azure DevOps Services/Server instance, such as https://dev.azure.com.",
+      "description": "URL for Azure DevOps Services, set to https://dev.azure.com.",
       "type": "string",
       "pattern": "^https?://",
       "not": {
@@ -35,7 +35,7 @@
       "minLength": 1
     },
     "projects": {
-      "description": "An array of projects \"org/project\" strings specifying which Azure DevOps whose repositories should be mirrored on Sourcegraph.",
+      "description": "An array of projects \"org/project\" strings specifying which Azure DevOps projects' repositories should be mirrored on Sourcegraph.",
       "type": "array",
       "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+([ ]*[\\w.-]+)*$" },
       "examples": [["org/project"]]
@@ -47,7 +47,7 @@
       "examples": [["name"], ["kubernetes", "golang", "facebook"]]
     },
     "exclude": {
-      "description": "A list of repositories to never mirror from this Azure DevOps Services/Server instance.",
+      "description": "A list of repositories to never mirror from Azure DevOps Services.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -57,20 +57,24 @@
         "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["pattern"] }],
         "properties": {
           "name": {
-            "description": "The name of an Azure DevOps Services/Server project and repository (\"projectName/repositoryName\") to exclude from mirroring.",
+            "description": "The name of an Azure DevOps Services organization, project, and repository (\"orgName/projectName/repositoryName\") to exclude from mirroring.",
             "type": "string",
-            "pattern": "^~?[\\w.-]+([ ]*[\\w.-]+)*/[\\w.-]+([ ]*[\\w.-]+)*?$"
+            "pattern": "^[\\w.-/ ]*?$"
           },
           "pattern": {
-            "description": "Regular expression which matches against the name of an Azure DevOps Services/Server repo.",
+            "description": "Regular expression which matches against the name of an Azure DevOps Services repo.",
             "type": "string",
             "format": "regex"
           }
         }
       },
       "examples": [
-        [{ "name": "myproject/myrepo" }],
-        [{ "name": "myproject/myrepo" }, { "name": "myproject/myotherrepo" }, { "pattern": "^topsecretproject/.*" }]
+        [{ "name": "myorg/myproject/myrepo" }],
+        [
+          { "name": "myorg/myproject/myrepo" },
+          { "name": "myorg/myproject/myotherrepo" },
+          { "pattern": "^topsecretproject/.*" }
+        ]
       ]
     }
   }

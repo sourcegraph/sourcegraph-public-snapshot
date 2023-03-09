@@ -32,8 +32,7 @@ import { setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } fro
 import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary, RouteError } from './components/ErrorBoundary'
-import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
-import { Layout } from './Layout'
+import { FeatureFlagsLocalOverrideAgent } from './featureFlags/FeatureFlagsProvider'
 import { LegacyRoute, LegacyRouteContextProvider } from './LegacyRouteContext'
 import { PageError } from './PageError'
 import { createPlatformContext } from './platform/context'
@@ -43,6 +42,8 @@ import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import { StaticAppConfig } from './staticAppConfig'
 import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { AppShellInit } from './storm/app-shell-init'
+import { Layout } from './storm/pages/LayoutPage/LayoutPage'
+import { loader } from './storm/pages/LayoutPage/LayoutPage.loader'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
@@ -260,6 +261,8 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
         () =>
             createBrowserRouter([
                 {
+                    // The layout page is needed for every route so we do not need to lazy-load it.
+                    loader,
                     element: <LegacyRoute render={props => <Layout {...props} />} />,
                     children: props.routes,
                     errorElement: <RouteError />,
@@ -283,7 +286,7 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
                 <SettingsProvider settingsCascade={settingsCascade} />,
                 <ErrorBoundary location={null} />,
                 <TraceSpanProvider name={SharedSpanName.AppMount} />,
-                <FeatureFlagsProvider />,
+                <FeatureFlagsLocalOverrideAgent />,
                 <ShortcutProvider />,
                 <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
                 <SearchResultsCacheProvider />,

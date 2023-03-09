@@ -42,6 +42,7 @@ export interface SiteAdminAreaRouteContext
     site: Pick<SiteSettingFields, '__typename' | 'id'>
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
@@ -55,6 +56,7 @@ interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps,
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
@@ -70,6 +72,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         platformContext: props.platformContext,
         settingsCascade: props.settingsCascade,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
+        isSourcegraphApp: props.isSourcegraphApp,
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
         batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
@@ -90,6 +93,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
                     groups={props.sideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    isSourcegraphApp={props.isSourcegraphApp}
                     batchChangesEnabled={props.batchChangesEnabled}
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}

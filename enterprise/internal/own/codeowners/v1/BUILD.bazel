@@ -7,7 +7,7 @@ exports_files(["buf.gen.yaml"])
 proto_library(
     name = "v1_proto",
     srcs = ["codeowners.proto"],
-    strip_import_prefix = "/internal",
+    strip_import_prefix = "/enterprise/internal",
     visibility = ["//:__subpackages__"],
 )
 
@@ -24,6 +24,5 @@ go_library(
 
 buf_lint_test(
     name = "v1_proto_lint",
-    config = "//internal:buf.yaml",
     targets = [":v1_proto"],
 )

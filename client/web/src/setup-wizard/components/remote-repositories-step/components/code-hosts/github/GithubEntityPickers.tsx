@@ -52,6 +52,11 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
         }
     )
 
+    const handleSelectedItemsChange = (orginaziations: string[]): void => {
+        setSearchTerm('')
+        onChange(orginaziations)
+    }
+
     const suggestions = (data?.externalServiceNamespaces?.nodes ?? []).map(item => item.name)
 
     // Render only non-selected organizations and orgs that match search term value
@@ -64,7 +69,7 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
             selectedItems={organizations}
             getItemKey={identity}
             getItemName={identity}
-            onSelectedItemsChange={onChange}
+            onSelectedItemsChange={handleSelectedItemsChange}
         >
             <MultiComboboxInput
                 value={searchTerm}
@@ -73,7 +78,7 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
                 status={loading ? 'loading' : 'initial'}
                 onChange={event => setSearchTerm(event.target.value)}
             />
-            <small className="text-muted pl-2">
+            <small className="d-block text-muted pl-2 mt-2">
                 Pick at least one organization and we clone all repositories that this organization has
             </small>
 
@@ -146,6 +151,11 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
         },
     })
 
+    const handleSelectedItemsChange = (repositories: string[]): void => {
+        setSearchTerm('')
+        onChange(repositories)
+    }
+
     const data = currentData ?? previousData
     const suggestions = (data?.externalServiceRepositories?.nodes ?? []).map(item => formatRepositoryName(item.name))
 
@@ -159,7 +169,7 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
             selectedItems={repositories}
             getItemKey={identity}
             getItemName={identity}
-            onSelectedItemsChange={onChange}
+            onSelectedItemsChange={handleSelectedItemsChange}
         >
             <MultiComboboxInput
                 value={searchTerm}
@@ -168,7 +178,7 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
                 status={loading ? 'loading' : 'initial'}
                 onChange={event => setSearchTerm(event.target.value)}
             />
-            <small className="text-muted pl-2">Pick at least one repository</small>
+            <small className="d-block text-muted pl-2 mt-2">Pick at least one repository</small>
 
             <MultiComboboxList items={filteredSuggestions} className="mt-2">
                 {items =>

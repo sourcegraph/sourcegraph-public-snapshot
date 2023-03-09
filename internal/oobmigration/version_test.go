@@ -18,9 +18,10 @@ func TestNewVersionFromString(t *testing.T) {
 		{"v3.50", NewVersion(3, 50), 0, true},
 		{"3.50.3", NewVersion(3, 50), 3, true},
 		{"3.50.3+dev", newDevVersion(3, 50), 3, true},
-		{"202659_2023-03-01_4.5-dc2f6ca215c3", newDevVersion(4, 5), 0, true},
 		{"350", Version{}, 0, false},
 		{"350+dev", Version{}, 0, false},
+		{"2023.03.23+204874.db2922", NewVersion(2023, 03), 23, true},          // Sourcegraph App
+		{"2023.03.23-insiders+204874.db2922", NewVersion(2023, 03), 23, true}, // Sourcegraph App
 	}
 
 	for _, testCase := range testCases {

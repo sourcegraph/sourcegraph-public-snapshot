@@ -105,7 +105,7 @@ describe('ReferencesPanel', () => {
 
         // Assert the current URL points at the reference panel
         expect(createPath(locationRef.current!)).toBe(
-            '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2&subtree=true#tab=references'
+            '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2#tab=references'
         )
         // Click on reference the second time promotes the active location to the URL (and main blob view)
         fireEvent.click(referenceButton)

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/jsonx"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -14,14 +15,6 @@ func MarshalJSON(config IndexConfiguration) ([]byte, error) {
 	nonNil := config
 	if nonNil.IndexJobs == nil {
 		nonNil.IndexJobs = []IndexJob{}
-	}
-	if nonNil.SharedSteps == nil {
-		nonNil.SharedSteps = []DockerStep{}
-	}
-	for idx := range nonNil.SharedSteps {
-		if nonNil.SharedSteps[idx].Commands == nil {
-			nonNil.SharedSteps[idx].Commands = []string{}
-		}
 	}
 	for idx := range nonNil.IndexJobs {
 		if nonNil.IndexJobs[idx].IndexerArgs == nil {

@@ -134,6 +134,7 @@ function useBlobPanelViews({
                                       repoID={repoID}
                                       revision={revision}
                                       filePath={filePath}
+                                      telemetryService={telemetryService}
                                   />
                               </PanelContent>
                           ),

@@ -32,6 +32,10 @@ go_test(
         "store_test.go",
     ],
     embed = [":basestore"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database/dbtest",
         "//internal/database/dbutil",
