@@ -103,7 +103,7 @@ func (r *Resolver) SetPermissions(ctx context.Context, args gql.SetPermissionsAr
 		return nil, err
 	}
 
-	opts := database.SyncPermissionsToRoleOpts{
+	opts := database.SetPermissionsForRoleOpts{
 		RoleID: roleID,
 	}
 
@@ -115,7 +115,7 @@ func (r *Resolver) SetPermissions(ctx context.Context, args gql.SetPermissionsAr
 		opts.Permissions = append(opts.Permissions, pID)
 	}
 
-	if err = r.db.RolePermissions().SyncPermissionsToRole(ctx, opts); err != nil {
+	if err = r.db.RolePermissions().SetPermissionsForRole(ctx, opts); err != nil {
 		return nil, err
 	}
 

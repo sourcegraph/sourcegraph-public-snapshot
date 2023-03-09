@@ -455,7 +455,7 @@ func TestBulkRevokePermissionsForRole(t *testing.T) {
 	})
 }
 
-func TestSyncPermissionsToRole(t *testing.T) {
+func TestSetPermissionsForRole(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -483,12 +483,12 @@ func TestSyncPermissionsToRole(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("without role id", func(t *testing.T) {
-		err := store.SyncPermissionsToRole(ctx, SyncPermissionsToRoleOpts{})
+		err := store.SetPermissionsForRole(ctx, SetPermissionsForRoleOpts{})
 		require.ErrorContains(t, err, "missing role id")
 	})
 
 	t.Run("revoke only", func(t *testing.T) {
-		err := store.SyncPermissionsToRole(ctx, SyncPermissionsToRoleOpts{
+		err := store.SetPermissionsForRole(ctx, SetPermissionsForRoleOpts{
 			RoleID:      role.ID,
 			Permissions: []int32{},
 		})
@@ -500,7 +500,7 @@ func TestSyncPermissionsToRole(t *testing.T) {
 	})
 
 	t.Run("assign and revoke", func(t *testing.T) {
-		err := store.SyncPermissionsToRole(ctx, SyncPermissionsToRoleOpts{
+		err := store.SetPermissionsForRole(ctx, SetPermissionsForRoleOpts{
 			RoleID:      role2.ID,
 			Permissions: []int32{permissionTwo.ID},
 		})
@@ -515,7 +515,7 @@ func TestSyncPermissionsToRole(t *testing.T) {
 
 	t.Run("assign only", func(t *testing.T) {
 		permissions := []int32{permissionOne.ID, permissionTwo.ID}
-		err := store.SyncPermissionsToRole(ctx, SyncPermissionsToRoleOpts{
+		err := store.SetPermissionsForRole(ctx, SetPermissionsForRoleOpts{
 			RoleID:      role3.ID,
 			Permissions: permissions,
 		})
