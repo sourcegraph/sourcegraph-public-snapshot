@@ -799,11 +799,23 @@ DO UPDATE SET
 }
 
 func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error {
+	var txs *permsStore
+	var err error
+	if s.InTransaction() {
+		txs = s
+	} else {
+		txs, err = s.transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = txs.Done(err) }()
+	}
+
 	if len(ids) == 0 {
 		return nil
 	}
 
-	err := s.legacySetRepoPermissionsUnrestricted(ctx, ids, unrestricted)
+	err = txs.legacySetRepoPermissionsUnrestricted(ctx, ids, unrestricted)
 	if err != nil {
 		return err
 	}
@@ -823,7 +835,7 @@ ON CONFLICT DO NOTHING`,
 		q = sqlf.Sprintf(`DELETE FROM user_repo_permissions WHERE repo_id = ANY(%s)`, pq.Array(ids))
 	}
 
-	return errors.Wrapf(s.Exec(ctx, q), "setting repositories as unrestricted %v %v", ids, unrestricted)
+	return errors.Wrapf(txs.Exec(ctx, q), "setting repositories as unrestricted %v %v", ids, unrestricted)
 }
 
 // upsertRepoPermissionsQuery upserts single row of repository permissions.
