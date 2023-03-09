@@ -115,8 +115,6 @@ pub fn index_language_with_config(
                 // Update occurrence with new information from locals
                 occ.symbol = local.symbol;
                 occ.symbol_roles = local.symbol_roles;
-
-                dbg!(&occ);
             }
         }
     }

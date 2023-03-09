@@ -2010,7 +2010,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-perl"
 version = "0.0.1"
-source = "git+https://github.com/sourcegraph/tree-sitter-perl#b6ed20b50b8008c4d5151c7fcc0930de6c92955c"
+source = "git+https://github.com/sourcegraph/tree-sitter-perl#c84af351f507c4a18ed7406f352dc175e88c3d1e"
 dependencies = [
  "cc",
  "tree-sitter",
