@@ -85,9 +85,9 @@ var Ubuntu = []category{
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					if err := check.InPath("bazel")(ctx); err == nil {
 						cio.WriteAlertf("There already exists a bazel binary in your path and it is not managed by Bazlisk. Please remove it as Bazelisk replaces the bazel binary")
-						return errors.New("bazel binary already exists - please remove it before trying again")
+						return errors.New("bazel binary already exists - please uninstall it with your package manager ex. `apt remove bazel`")
 					}
-					return cmdFix(`sudo curl -L https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -o /usr/local/bin/bazlisk && sudo chmod +x /usr/local/bin/bazel`)(ctx, cio, args)
+					return cmdFix(`sudo curl -L https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -o /usr//bin/bazel && sudo chmod +x /usr/local/bin/bazel`)(ctx, cio, args)
 				},
 			},
 			{
