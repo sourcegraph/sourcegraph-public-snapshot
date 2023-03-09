@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
+	enterprisedb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 )
 
@@ -62,6 +65,26 @@ func (s fakeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeo
 // fakeGitServer is a limited gitserver.Client that returns a file for every Stat call.
 type fakeGitserver struct {
 	gitserver.Client
+	files map[repoPath]string
+}
+
+type repoPath struct {
+	Repo     api.RepoName
+	CommitID api.CommitID
+	Path     string
+}
+
+type repoFiles map[repoPath]string
+
+func (g fakeGitserver) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
+	if g.files == nil {
+		return nil, os.ErrNotExist
+	}
+	content, ok := g.files[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
+	if !ok {
+		return nil, os.ErrNotExist
+	}
+	return []byte(content), nil
 }
 
 // Stat is a fake implementation that returns a FileInfo
@@ -177,6 +200,89 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	})
 }
 
+func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
+	logger := logtest.Scoped(t)
+	repo := &types.Repo{Name: "repo-name", ID: 42}
+	team := &types.Team{Name: "fake-team", DisplayName: "The Fake Team"}
+	var parameterRevision = "revision-parameter"
+	var resolvedRevision api.CommitID = "revision-resolved"
+	git := fakeGitserver{
+		files: map[repoPath]string{
+			{repo.Name, resolvedRevision, "CODEOWNERS"}: "*.js @fake-team",
+		},
+	}
+	fs := fakedb.New()
+	db := enterprisedb.NewMockEnterpriseDB()
+	db.TeamsFunc.SetDefaultReturn(fs.TeamStore)
+	db.UsersFunc.SetDefaultReturn(fs.UserStore)
+	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
+	own := own.NewService(git, db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	repos := database.NewMockRepoStore()
+	db.ReposFunc.SetDefaultReturn(repos)
+	repos.GetFunc.SetDefaultReturn(repo, nil)
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		if rev != parameterRevision {
+			return "", errors.Newf("ResolveRev, got %q want %q", rev, parameterRevision)
+		}
+		return resolvedRevision, nil
+	}
+	if err := fs.TeamStore.CreateTeam(ctx, team); err != nil {
+		t.Fatalf("failed to create fake team: %s", err)
+	}
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.New(db, git, own, logger)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+				node(id: $repo) {
+					... on Repository {
+						commit(rev: $revision) {
+							blob(path: $currentPath) {
+								ownership {
+									nodes {
+										owner {
+											... on Team {
+												displayName
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}`,
+		ExpectedResult: `{
+			"node": {
+				"commit": {
+					"blob": {
+						"ownership": {
+							"nodes": [
+								{
+									"owner": {
+										"displayName": "The Fake Team"
+									}
+								}
+							]
+						}
+					}
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"repo":        string(relay.MarshalID("Repository", int(repo.ID))),
+			"revision":    parameterRevision,
+			"currentPath": "foo/bar.js",
+		},
+	})
+}
+
 var paginationQuery = `
 query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!, $after: String!) {
 	node(id: $repo) {
@@ -267,6 +373,7 @@ func TestOwnershipPagination(t *testing.T) {
 			{Handle: "js-owner-5"},
 		},
 	}
+
 	own := fakeOwnService{
 		Ruleset: codeowners.NewRuleset(&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{rule},
