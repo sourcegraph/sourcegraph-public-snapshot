@@ -1526,6 +1526,7 @@ ts_project(
         ":graphql_operations",
         ":module_style_typings",
         ":node_modules/@sourcegraph/branded",
+        ":node_modules/@sourcegraph/client-api",  #keep
         ":node_modules/@sourcegraph/codeintellify",
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/extension-api-types",  #keep
@@ -1561,6 +1562,7 @@ ts_project(
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@sentry/browser",  #keep
         "//:node_modules/@sourcegraph/extension-api-classes",
+        "//:node_modules/@storybook/client-api",  #keep
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",
@@ -1907,6 +1909,6 @@ build_test(
     name = "webpack_test",
     targets = [
         ":bundle",
-        ":bundle-dev",
+        ":bundle-enterprise",
     ],
 )
