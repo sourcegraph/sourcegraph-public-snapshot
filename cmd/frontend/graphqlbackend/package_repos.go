@@ -71,18 +71,19 @@ func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *Packag
 		}
 	}
 
-	deps, total, err := depsService.ListPackageRepoRefs(ctx, opts)
+	deps, total, hasMore, err := depsService.ListPackageRepoRefs(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return &packageRepoReferenceConnectionResolver{r.db, deps, total}, err
+	return &packageRepoReferenceConnectionResolver{r.db, deps, hasMore, total}, err
 }
 
 type packageRepoReferenceConnectionResolver struct {
-	db    database.DB
-	deps  []dependencies.PackageRepoReference
-	total int
+	db      database.DB
+	deps    []dependencies.PackageRepoReference
+	hasMore bool
+	total   int
 }
 
 func (r *packageRepoReferenceConnectionResolver) Nodes(ctx context.Context) ([]*packageRepoReferenceResolver, error) {
@@ -123,7 +124,7 @@ func (r *packageRepoReferenceConnectionResolver) TotalCount(ctx context.Context)
 }
 
 func (r *packageRepoReferenceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if len(r.deps) == 0 {
+	if len(r.deps) == 0 || !r.hasMore {
 		return graphqlutil.HasNextPage(false), nil
 	}
 
@@ -134,6 +135,7 @@ func (r *packageRepoReferenceConnectionResolver) PageInfo(ctx context.Context) (
 
 type packageRepoReferenceVersionConnectionResolver struct {
 	versions []dependencies.PackageRepoRefVersion
+	hasMore  bool
 	total    int
 }
 
@@ -151,7 +153,7 @@ func (r *packageRepoReferenceVersionConnectionResolver) TotalCount(ctx context.C
 }
 
 func (r *packageRepoReferenceVersionConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if len(r.versions) == 0 {
+	if len(r.versions) == 0 || !r.hasMore {
 		return graphqlutil.HasNextPage(false), nil
 	}
 
