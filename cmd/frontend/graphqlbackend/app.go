@@ -2,10 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
-	"github.com/graph-gophers/graphql-go"
-
 	"path/filepath"
 	"time"
+
+	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/log"
 
