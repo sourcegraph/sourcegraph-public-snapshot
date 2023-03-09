@@ -922,10 +922,6 @@ const siteAdminPackageFieldsFragment = gql`
         id
         name
         kind
-        versions {
-            id
-            version
-        }
         repository {
             id
             name
