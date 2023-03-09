@@ -40,19 +40,12 @@ const mockUser: UserAreaUserFields = {
     roles: {
         __typename: 'RoleConnection',
         totalCount: 1,
-        nodes: [
-            { name: 'User' },
-            { name: 'Operator' },
-        ],
+        nodes: [{ name: 'User' }, { name: 'Operator' }],
         pageInfo: {
             __typename: 'ConnectionPageInfo',
             hasNextPage: false,
-        }
-    }
+        },
+    },
 }
 
-export const Profile: Story = () => (
-    <WebStory>
-        {() => <UserProfile user={mockUser} />}
-    </WebStory>
-)
+export const Profile: Story = () => <WebStory>{() => <UserProfile user={mockUser} />}</WebStory>

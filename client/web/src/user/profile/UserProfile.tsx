@@ -4,17 +4,19 @@ import { formatDistanceToNowStrict } from 'date-fns'
 
 import { UserAreaRouteContext } from '../area/UserArea'
 
-type userData = {
-    name: string
-    value: string
-    visible: boolean
-    isList: false
-} | {
-    name: string
-    value: string[]
-    visible: boolean
-    isList: true
-}
+type userData =
+    | {
+          name: string
+          value: string
+          visible: boolean
+          isList: false
+      }
+    | {
+          name: string
+          value: string[]
+          visible: boolean
+          isList: true
+      }
 
 export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) => {
     const primaryEmail = user.emails?.find(email => email.isPrimary)?.email
@@ -50,7 +52,7 @@ export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) =>
             value: roles,
             visible: true,
             isList: true,
-        }
+        },
     ]
 
     return (
@@ -62,9 +64,13 @@ export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) =>
                         <dd>
                             {data.isList ? (
                                 <ul>
-                                    {data.value.map((value, index) => <li key={index}>{value}</li>)}
+                                    {data.value.map((value, index) => (
+                                        <li key={index}>{value}</li>
+                                    ))}
                                 </ul>
-                            ) : <>{data.value}</>}
+                            ) : (
+                                <>{data.value}</>
+                            )}
                         </dd>
                     </Fragment>
                 ) : null
