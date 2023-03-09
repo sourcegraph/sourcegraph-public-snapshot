@@ -198,26 +198,33 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 }
 
 func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
+	repo := &types.Repo{Name: "repo-name", ID: 42}
+	team := &types.Team{Name: "fake-team", DisplayName: "The Fake Team"}
+	var parameterRevision = "revision-parameter"
+	var resolvedRevision api.CommitID = "revision-resolved"
+	git := fakeGitserver{
+		files: map[repoPath]string{
+			{repo.Name, resolvedRevision, "CODEOWNERS"}: "*.js @fake-team",
+		},
+	}
 	fs := fakedb.New()
 	db := enterprisedb.NewMockEnterpriseDB()
 	db.TeamsFunc.SetDefaultReturn(fs.TeamStore)
 	db.UsersFunc.SetDefaultReturn(fs.UserStore)
 	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
-	git := fakeGitserver{
-		files: map[repoPath]string{
-			{"repo-name", "42", "CODEOWNERS"}: "*.js @fake-team",
-		},
-	}
 	own := own.NewService(git, db)
 	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
-	repos.GetFunc.SetDefaultReturn(&types.Repo{Name: "repo-name"}, nil)
+	repos.GetFunc.SetDefaultReturn(repo, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return "42", nil
+		if rev != parameterRevision {
+			return "", errors.Newf("ResolveRev, got %q want %q", rev, parameterRevision)
+		}
+		return resolvedRevision, nil
 	}
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "fake-team", DisplayName: "The Fake Team"}); err != nil {
+	if err := fs.TeamStore.CreateTeam(ctx, team); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
 	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.New(db, git, own)})
@@ -265,8 +272,8 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 			}
 		}`,
 		Variables: map[string]any{
-			"repo":        string(relay.MarshalID("Repository", 42)),
-			"revision":    "revision",
+			"repo":        string(relay.MarshalID("Repository", int(repo.ID))),
+			"revision":    parameterRevision,
 			"currentPath": "foo/bar.js",
 		},
 	})
