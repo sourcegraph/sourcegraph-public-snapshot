@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers"
@@ -72,6 +74,7 @@ func (g fakeGitserver) Stat(ctx context.Context, checker authz.SubRepoPermission
 // query, where the owner is unresolved. In that case if we have a handle, we only return
 // it as `displayName`.
 func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
+	logger := logtest.Scoped(t)
 	fs := fakedb.New()
 	db := database.NewMockDB()
 	fs.Wire(db)
@@ -96,7 +99,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 		return "42", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.New(db, git, own)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.New(db, git, own, logger)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,6 +253,7 @@ func (r paginationResponse) ownerNames() []string {
 // *  all results are eventually returned, in the expected order;
 // *  each request returns correct pageInfo and totalCount;
 func TestOwnershipPagination(t *testing.T) {
+	logger := logtest.Scoped(t)
 	fs := fakedb.New()
 	db := database.NewMockDB()
 	fs.Wire(db)
@@ -277,7 +281,7 @@ func TestOwnershipPagination(t *testing.T) {
 		return "42", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.New(db, git, own)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.New(db, git, own, logger)})
 	if err != nil {
 		t.Fatal(err)
 	}
