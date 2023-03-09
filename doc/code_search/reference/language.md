@@ -628,7 +628,7 @@ ComplexDiagram(
 
 Search only inside repositories that have the given GitHub topic.
 
-**Example:** [`repo:has.topic(go)` ↗](https://sourcegraph.com/search?q=context:global+repo:has.topic%28go%29&patternType=standard&sm=0&groupBy=repo)
+**Example:** [`repo:has.topic(code-search)` ↗](https://sourcegraph.com/search?q=context%3Aglobal+repo%3Ahas.topic%28code-search%29&patternType=standard&sm=1&groupBy=repo)
 
 _Note:_ topic search is currently only supported for GitHub repos.
 
