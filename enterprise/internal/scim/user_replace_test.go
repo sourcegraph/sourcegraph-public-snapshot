@@ -41,6 +41,12 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 			userId: "1",
 			attrs: scim.ResourceAttributes{
 				AttrUserName: "user6",
+				AttrEmails: []interface{}{
+					map[string]interface{}{
+						"value":   "a@example.com",
+						"primary": true,
+					},
+				},
 			},
 			testFunc: func(userRes scim.Resource, err error) {
 				assert.NoError(t, err)
@@ -50,7 +56,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 				user, _ := db.Users().GetByID(context.Background(), int32(userID))
 				assert.Equal(t, "user6", user.Username)
 				userEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
-				assert.Len(t, userEmails, 0)
+				assert.Len(t, userEmails, 1)
 			},
 		},
 		{

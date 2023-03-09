@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var verifiedDate = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -118,16 +119,20 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 	})
 
 	userEmailsStore.RemoveFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string) error {
-		remove := func(currentEmails []*database.UserEmail, toRemove string) []*database.UserEmail {
+		var err error
+		remove := func(currentEmails []*database.UserEmail, toRemove string) ([]*database.UserEmail, error) {
 			for i, email := range currentEmails {
 				if email.Email == toRemove {
-					return append(currentEmails[:i], currentEmails[i+1:]...)
+					if email.Primary {
+						return currentEmails, errors.New("cant delete primary email")
+					}
+					return append(currentEmails[:i], currentEmails[i+1:]...), nil
 				}
 			}
-			return currentEmails
+			return currentEmails, err
 		}
-		userEmails[userID] = remove(userEmails[userID], email)
-		return nil
+		userEmails[userID], err = remove(userEmails[userID], email)
+		return err
 	})
 
 	userEmailsStore.SetVerifiedFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string, verified bool) error {

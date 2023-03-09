@@ -156,9 +156,12 @@ func updateUser(ctx context.Context, tx database.DB, oldUser *types.UserForSCIM,
 			}
 		}
 
-		// Finally remove any email address no need to error or fail the tx here
+		// Finally remove any email addresses
 		for _, newEmail := range updates.toRemove {
-			tx.UserEmails().Remove(ctx, oldUser.ID, newEmail)
+			err = tx.UserEmails().Remove(ctx, oldUser.ID, newEmail)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
