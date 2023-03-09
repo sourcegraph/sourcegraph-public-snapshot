@@ -272,7 +272,7 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 }
 
 func outOfDateAlert(args AlertFuncArgs) []*Alert {
-	// TODO: App Update Messaging
+	// TODO(app): App Update Messaging
 	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
 	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
 		return nil
