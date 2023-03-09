@@ -1792,6 +1792,14 @@ func (s *permsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, erro
 	return scanRepoIDs(s.Query(ctx, sqlf.Sprintf(query)))
 }
 
+func (s *permsStore) getCutoffClause(age time.Duration) *sqlf.Query {
+	if age == 0 {
+		return sqlf.Sprintf("TRUE")
+	}
+	cutoff := s.clock().Add(-1 * age)
+	return sqlf.Sprintf("finished_at < %s", cutoff)
+}
+
 const usersWithOldestPermsQuery = `
 WITH us AS (
 	SELECT DISTINCT ON(user_id) user_id, finished_at FROM permission_sync_jobs
@@ -1802,14 +1810,6 @@ SELECT user_id, finished_at FROM us
 WHERE %s
 LIMIT %d;
 `
-
-func (s *permsStore) getCutoffClause(age time.Duration) *sqlf.Query {
-	if age == 0 {
-		return sqlf.Sprintf("TRUE")
-	}
-	cutoff := s.clock().Add(-1 * age)
-	return sqlf.Sprintf("finished_at < %s", cutoff)
-}
 
 // UserIDsWithOldestPerms lists the users with the oldest synced perms, limited
 // to limit. If age is non-zero, users that have synced within "age" since now
