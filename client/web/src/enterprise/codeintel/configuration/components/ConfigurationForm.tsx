@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -9,7 +9,8 @@ import { useRepositoryConfig } from '../hooks/useRepositoryConfig'
 import { useUpdateConfigurationForRepository } from '../hooks/useUpdateConfigurationForRepository'
 
 import { InferenceForm } from './inference-form/InferenceForm'
-import { SchemaCompatibleInferenceFormData } from './inference-form/types'
+import { InferenceFormData, SchemaCompatibleInferenceFormData } from './inference-form/types'
+import { autoIndexJobsToFormData } from './inference-form/auto-index-to-form-job'
 
 interface ConfigurationFormProps extends TelemetryProps {
     repoId: string
@@ -37,14 +38,23 @@ export const ConfigurationForm: React.FunctionComponent<ConfigurationFormProps> 
         [updateConfigForRepository, repoId]
     )
 
-    // Show any set configuration if available, otherwise show the inferred configuration
     const preferredConfiguration = useMemo(() => {
+        if (forceInfer) {
+            return inferredConfiguration
+        }
+
         if (configuration !== null) {
             return configuration
         }
 
         return inferredConfiguration
-    }, [configuration, inferredConfiguration])
+    }, [configuration, forceInfer, inferredConfiguration])
+
+    // Show any set configuration if available, otherwise show the inferred configuration
+    const preferredFormData = useMemo(
+        (): InferenceFormData => autoIndexJobsToFormData({ jobs: preferredConfiguration.parsed, dirty: forceInfer }),
+        [forceInfer, preferredConfiguration.parsed]
+    )
 
     if (inferredError || repositoryError) {
         return <ErrorAlert prefix="Error fetching index configuration" error={inferredError || repositoryError} />
@@ -57,7 +67,8 @@ export const ConfigurationForm: React.FunctionComponent<ConfigurationFormProps> 
     return (
         <div className="py-2">
             <InferenceForm
-                jobs={forceInfer ? inferredConfiguration.parsed : preferredConfiguration.parsed}
+                key={preferredConfiguration.raw}
+                initialFormData={preferredFormData}
                 readOnly={!authenticatedUser?.siteAdmin}
                 onSubmit={data => save(data)}
                 showInferButton={showInferButton}

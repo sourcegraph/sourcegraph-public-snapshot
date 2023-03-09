@@ -20,9 +20,9 @@ import {
     InferAutoIndexJobsForRepoVariables,
 } from '../../../../../graphql-operations'
 import { RepositoryField } from '../../../../insights/components'
-import { InferenceForm } from '../inference-form/InferenceForm'
-
 import { GET_REPO_ID, INFER_JOBS_SCRIPT } from '../../backend'
+import { autoIndexJobsToFormData } from '../inference-form/auto-index-to-form-job'
+import { InferenceForm } from '../inference-form/InferenceForm'
 
 import styles from './InferenceScriptPreview.module.scss'
 
@@ -87,7 +87,10 @@ export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPrev
             ) : error ? (
                 <ErrorAlert error={error} />
             ) : data ? (
-                <InferenceForm jobs={data.inferAutoIndexJobsForRepo} readOnly={true} />
+                <InferenceForm
+                    initialFormData={autoIndexJobsToFormData({ jobs: data.inferAutoIndexJobsForRepo })}
+                    readOnly={true}
+                />
             ) : (
                 <></>
             )}

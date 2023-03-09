@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react'
+import React, { useMemo } from 'react'
 
 import { defaultKeymap, history } from '@codemirror/commands'
 import { StreamLanguage, syntaxHighlighting, HighlightStyle } from '@codemirror/language'
@@ -8,7 +8,7 @@ import { EditorView, keymap } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 import classNames from 'classnames'
 
-import { useCodeMirror, defaultSyntaxHighlighting } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { defaultSyntaxHighlighting, CodeMirrorEditor } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 import styles from './CommandInput.module.scss'
 
@@ -63,31 +63,23 @@ export const CommandInput: React.FunctionComponent<CommandInputProps> = React.me
     readOnly,
     onChange = () => {},
 }) {
-    const containerRef = useRef<HTMLDivElement | null>(null)
-    const editorRef = useRef<EditorView | null>(null)
-
-    useCodeMirror(
-        editorRef,
-        containerRef,
-        value,
-        useMemo(
-            () => [
-                staticExtensions,
-                EditorState.readOnly.of(readOnly),
-                EditorView.updateListener.of(update => {
-                    if (update.docChanged) {
-                        onChange(update.state.sliceDoc())
-                    }
-                }),
-            ],
-            [onChange, readOnly]
-        )
+    const extensions = useMemo(
+        () => [
+            staticExtensions,
+            EditorState.readOnly.of(readOnly),
+            EditorView.updateListener.of(update => {
+                if (update.docChanged) {
+                    onChange(update.state.sliceDoc())
+                }
+            }),
+        ],
+        [onChange, readOnly]
     )
 
     return (
-        <div
-            ref={containerRef}
-            data-editor="codemirror6"
+        <CodeMirrorEditor
+            value={value}
+            extensions={extensions}
             className={classNames('form-control', styles.commandInput, className)}
         />
     )
