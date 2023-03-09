@@ -102,13 +102,17 @@ matchesLoop:
 		if !ok {
 			continue
 		}
-		file, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
+		rs, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
-		owners := file.FindOwners(mm.File.Path)
-		resolvedOwners, err := rules.ownService.ResolveOwnersWithType(ctx, owners)
+		rule := rs.Match(mm.File.Path)
+		// No match.
+		if rule == nil {
+			continue matchesLoop
+		}
+		resolvedOwners, err := rules.ownService.ResolveOwnersWithType(ctx, rule.GetOwner())
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop
