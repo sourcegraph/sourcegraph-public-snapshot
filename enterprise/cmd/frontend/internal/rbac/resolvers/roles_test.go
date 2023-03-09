@@ -504,7 +504,7 @@ func TestSetRoles(t *testing.T) {
 			require.Len(t, urs, 0)
 		})
 
-		t.Run("assign and revoke permissions", func(t *testing.T) {
+		t.Run("assign and revoke roles", func(t *testing.T) {
 			// omitting the first role (which is already assigned to the user) will revoke it for the user.
 			input := map[string]any{"roles": marshalledRoles[1:], "user": gql.MarshalUserID(userWithOneRole.ID)}
 			var response struct{ SetRoles apitest.EmptyResponse }
