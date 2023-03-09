@@ -35,7 +35,10 @@ func (c *Client) Get(ctx context.Context, url string) (io.ReadCloser, error) {
 	}
 	req.Header.Add("User-Agent", "sourcegraph-crates-syncer (sourcegraph.com)")
 
-	b, err := c.do(req)
+	// WARN: The default external doer caches responses, meaning we will store
+	// entire package contents in redis! We switch to the UncachedExternalDoer for
+	// this specific method.
+	b, err := c.withDoer(httpcli.UncachedExternalDoer).do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -73,4 +76,10 @@ func (c *Client) do(req *http.Request) (io.ReadCloser, error) {
 	}
 
 	return resp.Body, nil
+}
+
+func (client *Client) withDoer(cli httpcli.Doer) *Client {
+	c := *client
+	c.cli = cli
+	return &c
 }

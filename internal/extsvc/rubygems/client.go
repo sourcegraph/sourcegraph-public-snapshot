@@ -43,7 +43,10 @@ func (c *Client) GetPackageContents(ctx context.Context, dep reposource.Versione
 	}
 	req.Header.Add("User-Agent", "sourcegraph-rubygems-syncer (sourcegraph.com)")
 
-	body, err = c.do(req)
+	// WARN: The default external doer caches responses, meaning we will store
+	// entire package contents in redis! We switch to the UncachedExternalDoer for
+	// this specific method.
+	body, err = c.withDoer(httpcli.UncachedExternalDoer).do(req)
 	if err != nil {
 		return nil, url, err
 	}
@@ -77,4 +80,10 @@ func (c *Client) do(req *http.Request) (io.ReadCloser, error) {
 		return nil, &Error{path: req.URL.Path, code: resp.StatusCode, message: string(bs)}
 	}
 	return resp.Body, nil
+}
+
+func (client *Client) withDoer(cli httpcli.Doer) *Client {
+	c := *client
+	c.cli = cli
+	return &c
 }

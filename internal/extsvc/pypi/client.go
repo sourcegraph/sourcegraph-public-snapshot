@@ -275,7 +275,10 @@ func (c *Client) Download(ctx context.Context, url string) (io.ReadCloser, error
 		return nil, err
 	}
 
-	b, err := c.do(req)
+	// WARN: The default external doer caches responses, meaning we will store
+	// entire package contents in redis! We switch to the UncachedExternalDoer for
+	// this specific method.
+	b, err := c.withDoer(httpcli.UncachedExternalDoer).do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "PyPI")
 	}
@@ -476,4 +479,10 @@ var normalizer = lazyregexp.New("[-_.]+")
 
 func normalize(path string) string {
 	return strings.ToLower(normalizer.ReplaceAllLiteralString(path, "-"))
+}
+
+func (client *Client) withDoer(cli httpcli.Doer) *Client {
+	c := *client
+	c.cli = cli
+	return &c
 }

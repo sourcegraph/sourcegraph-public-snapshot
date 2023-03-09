@@ -9,8 +9,9 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"golang.org/x/mod/module"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -68,7 +69,10 @@ func (c *Client) GetZip(ctx context.Context, mod reposource.PackageName, version
 		return nil, errors.Wrap(err, "failed to escape version")
 	}
 
-	zipBytes, err := c.get(ctx, mod, "@v", escapedVersion+".zip")
+	// WARN: The default external doer caches responses, meaning we will store
+	// entire package contents in redis! We switch to the UncachedExternalDoer for
+	// this specific method.
+	zipBytes, err := c.withDoer(httpcli.UncachedExternalDoer).get(ctx, mod, "@v", escapedVersion+".zip")
 	if err != nil {
 		return nil, err
 	}
@@ -152,4 +156,10 @@ func (e *Error) Error() string {
 
 func (e *Error) NotFound() bool {
 	return e.Code == http.StatusNotFound || e.Code == http.StatusGone
+}
+
+func (c *Client) withDoer(cli httpcli.Doer) *Client {
+	cpy := *c
+	cpy.cli = cli
+	return &cpy
 }
