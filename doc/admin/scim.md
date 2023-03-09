@@ -15,21 +15,21 @@ To configure:
 1. Generate a random alphanumeric bearer token of maximum 255 characters
 2. Add the following line to your [site configuration](config/site_config.md):
 
-```
-"scim.authToken": "{your token}"
-```
+   ```
+   "scim.authToken": "{your token}"
+   ```
 
 3. Set up your IdP to use our SCIM API. The API is at
 
-```
-https://sourcegraph.company.com/.api/scim/v2`
-```
+   ```
+   https://sourcegraph.company.com/.api/scim/v2`
+   ```
 
-so the “Users” endpoint is at
+   so the "Users" endpoint is at
 
-```
-https://sourcegraph.company.com/.api/scim/v2/Users
-```
+   ```
+   https://sourcegraph.company.com/.api/scim/v2/Users
+   ```
 
 ## Features and limitations
 
