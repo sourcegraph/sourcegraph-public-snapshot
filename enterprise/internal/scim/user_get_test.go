@@ -8,9 +8,11 @@ import (
 
 	"github.com/elimity-com/scim"
 	"github.com/scim2/filter-parser/v2"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestUserResourceHandler_Get(t *testing.T) {
@@ -19,7 +21,8 @@ func TestUserResourceHandler_Get(t *testing.T) {
 	db := getMockDB([]*types.UserForSCIM{
 		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
 		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}, Emails: []string{"b@example.com"}},
-	})
+	},
+		map[int32][]*database.UserEmail{})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	user1, err := userResourceHandler.Get(&http.Request{}, "1")
 	if err != nil {
@@ -53,7 +56,8 @@ func TestUserResourceHandler_GetAll(t *testing.T) {
 		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}},
 		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}},
 		{User: types.User{ID: 4, Username: "user4"}},
-	})
+	},
+		map[int32][]*database.UserEmail{})
 
 	cases := []struct {
 		name             string

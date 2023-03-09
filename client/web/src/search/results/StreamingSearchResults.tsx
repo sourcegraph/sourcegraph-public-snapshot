@@ -27,7 +27,7 @@ import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { useNavbarQueryState, useNotepad } from '../../stores'
+import { buildSearchURLQueryFromQueryState, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
@@ -73,7 +73,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const prefetchBlobFormat = usePrefetchBlobFormat()
-    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
+    const [enableOwnershipSearch] = useFeatureFlag('search-ownership', false)
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
@@ -87,6 +87,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const searchMode = useNavbarQueryState(state => state.searchMode)
     const liveQuery = useNavbarQueryState(state => state.queryState.query)
     const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
+    const queryState = useNavbarQueryState(state => state.queryState)
     const setQueryState = useNavbarQueryState(state => state.setQueryState)
     const submitQuerySearch = useNavbarQueryState(state => state.submitSearch)
     const [aggregationUIMode] = useAggregationUIMode()
@@ -491,7 +492,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             prefetchFile={prefetchFile}
                             enableKeyboardNavigation={enableSearchResultsKeyboardNavigation}
                             showQueryExamplesOnNoResultsPage={true}
+                            queryState={queryState}
                             setQueryState={setQueryState}
+                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             logSearchResultClicked={logSearchResultClicked}
                         />

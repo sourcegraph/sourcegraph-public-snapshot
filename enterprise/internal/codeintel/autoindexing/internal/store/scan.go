@@ -98,6 +98,26 @@ func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	return visibilities, nil
 }
 
+func scanCountsAndTotalCount(rows *sql.Rows, queryErr error) (totalCount int, _ map[int]int, err error) {
+	if queryErr != nil {
+		return 0, nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	visibilities := map[int]int{}
+	for rows.Next() {
+		var id int
+		var count int
+		if err := rows.Scan(&totalCount, &id, &count); err != nil {
+			return 0, nil, err
+		}
+
+		visibilities[id] = count
+	}
+
+	return totalCount, visibilities, nil
+}
+
 // scanSourcedCommits scans triples of repository ids/repository names/commits from the
 // return value of `*Store.query`. The output of this function is ordered by repository
 // identifier, then by commit.

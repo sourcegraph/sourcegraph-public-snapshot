@@ -1,7 +1,7 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from 'react'
 
 import { ApolloError } from '@apollo/client/errors'
-import { mdiClose, mdiMapSearch, mdiReload } from '@mdi/js'
+import { mdiCancel, mdiClose, mdiMapSearch, mdiReload } from '@mdi/js'
 import { noop } from 'lodash'
 
 import { useMutation } from '@sourcegraph/http-client'
@@ -23,6 +23,8 @@ import { usePageSwitcherPagination } from '../../components/FilteredConnection/h
 import { ConnectionError, ConnectionLoading } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
 import {
+    CancelPermissionsSyncJobResult,
+    CancelPermissionsSyncJobVariables,
     PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
     PermissionsSyncJobsResult,
@@ -37,7 +39,12 @@ import {
 import { useURLSyncedState } from '../../hooks'
 import { IColumn, Table } from '../UserManagement/components/Table'
 
-import { PERMISSIONS_SYNC_JOBS_QUERY, TRIGGER_REPO_SYNC, TRIGGER_USER_SYNC } from './backend'
+import {
+    CANCEL_PERMISSIONS_SYNC_JOB,
+    PERMISSIONS_SYNC_JOBS_QUERY,
+    TRIGGER_REPO_SYNC,
+    TRIGGER_USER_SYNC,
+} from './backend'
 import {
     PermissionsSyncJobNumbers,
     PermissionsSyncJobReasonByline,
@@ -125,10 +132,14 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     const [triggerRepoSync] = useMutation<ScheduleRepoPermissionsSyncResult, ScheduleRepoPermissionsSyncVariables>(
         TRIGGER_REPO_SYNC
     )
+    const [cancelSyncJob] = useMutation<CancelPermissionsSyncJobResult, CancelPermissionsSyncJobVariables>(
+        CANCEL_PERMISSIONS_SYNC_JOB
+    )
 
-    const triggerPermsSync = useCallback(
+    const onError = (error: ApolloError): void => setNotification({ text: error.message, isError: true })
+
+    const handleTriggerPermsSync = useCallback(
         ([job]: PermissionsSyncJob[]) => {
-            const onError = (error: ApolloError): void => setNotification({ text: error.message, isError: true })
             if (job.subject.__typename === 'Repository') {
                 triggerRepoSync({
                     variables: { repo: job.subject.id },
@@ -150,6 +161,21 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
             }
         },
         [triggerUserSync, triggerRepoSync]
+    )
+
+    const handleCancelSyncJob = useCallback(
+        ([syncJob]: PermissionsSyncJob[]) => {
+            cancelSyncJob({
+                variables: { job: syncJob.id },
+                onCompleted: ({ cancelPermissionsSyncJob }) =>
+                    setNotification({ text: prettyPrintCancelSyncJobMessage(cancelPermissionsSyncJob || undefined) }),
+                onError,
+            }).catch(
+                // noop here is used because an error is handled in `onError` option of `useMutation` above.
+                noop
+            )
+        },
+        [cancelSyncJob]
     )
 
     return (
@@ -183,7 +209,6 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                         <PermissionsSyncJobSearchPane filters={filters} setFilters={setFilters} />
                     </div>
                 )}
-                {connection?.nodes?.length === 0 && <EmptyList />}
                 {notification && (
                     <Alert
                         className="mt-2 d-flex justify-content-between align-items-center"
@@ -195,6 +220,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                         </Button>
                     </Alert>
                 )}
+                {connection?.nodes?.length === 0 && <EmptyList />}
                 {!!connection?.nodes?.length && (
                     <Table<PermissionsSyncJob>
                         columns={TableColumns}
@@ -205,8 +231,15 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                                 key: 'Re-trigger job',
                                 label: 'Re-trigger job',
                                 icon: mdiReload,
-                                onClick: triggerPermsSync,
+                                onClick: handleTriggerPermsSync,
                                 condition: ([node]) => finalState(node.state),
+                            },
+                            {
+                                key: 'Cancel job',
+                                label: 'Cancel job',
+                                icon: mdiCancel,
+                                onClick: handleCancelSyncJob,
+                                condition: ([node]) => node.state === PermissionsSyncJobState.QUEUED,
                             },
                         ]}
                     />
@@ -382,3 +415,8 @@ const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
 
 const finalState = (state: PermissionsSyncJobState): boolean =>
     state !== PermissionsSyncJobState.QUEUED && state !== PermissionsSyncJobState.PROCESSING
+
+const prettyPrintCancelSyncJobMessage = (message: string = 'Permissions sync job canceled.'): string =>
+    message === 'No job that can be canceled found.'
+        ? 'Permissions sync job is already dequeued and cannot be canceled.'
+        : message

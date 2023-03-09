@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -228,9 +230,27 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		return err
 	}
 
-	resp, err := oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
-	if err != nil {
-		return err
+	// Because we have no external rate limiting data for Bitbucket Cloud, we do an exponential
+	// back-off and retry for requests where we recieve a 429 Too Many Requests.
+	// If we still don't succeed after waiting a total of 5 min, we give up.
+	var resp *http.Response
+	var err error
+	sleepTime := 10 * time.Second
+	for {
+		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != http.StatusTooManyRequests {
+			break
+		}
+
+		timeutil.SleepWithContext(ctx, sleepTime)
+		sleepTime = sleepTime * 2
+		if sleepTime.Seconds() > 160 {
+			break
+		}
 	}
 
 	defer resp.Body.Close()

@@ -15,7 +15,7 @@ GitHub | 🟢 | 🟢 | 🟢
 GitLab | 🟢 | 🟢 | 🔴
 Bitbucket Server / Datacenter | 🟢 | 🟢 | 🔴
 Bitbucket Cloud | 🟢 | 🟢 | 🔴
-Azure DevOps | 🔴 | 🟢 | 🔴
+Azure DevOps | 🟢 | 🔴 | 🔴
 
 To receive webhooks both Sourcegraph and the code host need to be configured. To configure Sourcegraph, [add an incoming webhook](#adding-an-incoming-webhook). Then [configure webhooks on your code host](#configuring-webhooks-on-the-code-host)
 

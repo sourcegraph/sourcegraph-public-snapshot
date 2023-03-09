@@ -105,7 +105,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 // if they are not set in the config.
 func setProviderDefaults(p *schema.AzureDevOpsAuthProvider) {
 	if p.ApiScope == "" {
-		p.ApiScope = "vso.code,vso.identity"
+		p.ApiScope = "vso.code,vso.identity,vso.project"
 	}
 }
 

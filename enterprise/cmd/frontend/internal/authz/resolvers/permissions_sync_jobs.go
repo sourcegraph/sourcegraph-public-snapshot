@@ -22,6 +22,11 @@ func NewPermissionsSyncJobsResolver(db database.DB, args graphqlbackend.ListPerm
 		db:   db,
 		args: args,
 	}
+
+	if args.UserID != nil && args.RepoID != nil {
+		return nil, errors.New("please provide either userID or repoID, but not both.")
+	}
+
 	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsSyncJobResolver](store, &args.ConnectionResolverArgs, nil)
 }
 
@@ -107,6 +112,16 @@ func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *database.Pagin
 	}
 	if s.args.State != nil {
 		opts.State = *s.args.State
+	}
+	if s.args.UserID != nil {
+		if userID, err := graphqlbackend.UnmarshalUserID(*s.args.UserID); err == nil {
+			opts.UserID = int(userID)
+		}
+	}
+	if s.args.RepoID != nil {
+		if repoID, err := graphqlbackend.UnmarshalRepositoryID(*s.args.RepoID); err == nil {
+			opts.RepoID = int(repoID)
+		}
 	}
 	// First, we check for search type, because it can exist without search query,
 	// but not vice versa.

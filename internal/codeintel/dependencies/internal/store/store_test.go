@@ -69,11 +69,15 @@ func TestUpsertDependencyRepo(t *testing.T) {
 		t.Fatalf("mismatch (-want, +got): %s", diff)
 	}
 
-	have, _, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
+	have, _, hasMore, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
 		Scheme: shared.NpmPackagesScheme,
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if hasMore {
+		t.Error("unexpected more-pages flag set in non-limited listing, expected no more pages to follow")
 	}
 
 	want[0].Versions = []shared.PackageRepoRefVersion{{ID: 1, PackageRefID: 1, Version: "2.0.0"}, {ID: 2, PackageRefID: 1, Version: "3.0.0"}}
@@ -119,17 +123,25 @@ func TestListPackageRepoRefs(t *testing.T) {
 	}
 
 	var lastID int
-	for _, test := range [][]shared.PackageRepoReference{
+	for i, test := range [][]shared.PackageRepoReference{
 		{{Scheme: "npm", Name: "bar"}, {Scheme: "npm", Name: "foo"}, {Scheme: "npm", Name: "banana"}},
 		{{Scheme: "npm", Name: "turtle"}, {Scheme: "npm", Name: "applesauce"}, {Scheme: "somethingelse", Name: "banana"}},
 	} {
-		depRepos, total, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
+		depRepos, total, hasMore, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
 			Scheme: "",
 			After:  lastID,
 			Limit:  3,
 		})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if i == 1 && hasMore {
+			t.Error("unexpected more-pages flag set, expected no more pages to follow")
+		}
+
+		if i == 0 && !hasMore {
+			t.Error("unexpected more-pages flag not set, expected more pages to follow")
 		}
 
 		if total != 6 {
@@ -179,11 +191,15 @@ func TestDeletePackageRepoRefsByID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, _, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
+	have, _, hasMore, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
 		Scheme: shared.NpmPackagesScheme,
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if hasMore {
+		t.Error("unexpected more-pages flag set, expected no more pages to follow")
 	}
 
 	want := []shared.PackageRepoReference{
