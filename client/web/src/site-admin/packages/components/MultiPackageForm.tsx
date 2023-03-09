@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import {
     Button,
@@ -19,47 +19,52 @@ import {
     Form,
 } from '@sourcegraph/wildcard'
 
-import { FilteredConnectionFilterValue } from '../../components/FilteredConnection'
+import { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
 import {
     SiteAdminPackageFields,
     PackageRepoReferenceKind,
     PackageRepoReferencesMatchingFilterResult,
     PackageRepoReferencesMatchingFilterVariables,
-    PackageMatchBehaviour,
-    AddPackageRepoFilterResult,
-    AddPackageRepoFilterVariables,
     PackageRepoMatchFields,
-} from '../../graphql-operations'
-import { prettyBytesBigint } from '../../util/prettyBytesBigint'
+} from '../../../graphql-operations'
+import { prettyBytesBigint } from '../../../util/prettyBytesBigint'
+import { packageRepoFilterQuery } from '../backend'
+import { BlockType } from '../modal-content/AddPackageFilterModalContent'
 
-import { addPackageRepoFilterMutation, packageRepoFilterQuery } from './backend'
-import { BlockPackageActions } from './BlockPackageActions'
-import { BlockType } from './BlockPackageModal'
+import { FilterPackagesActions } from './FilterPackagesActions'
 
-import styles from './BlockPackageModal.module.scss'
+import styles from '../modal-content/AddPackageFilterModalContent.module.scss'
 
-interface MultiPackageState {
+export interface MultiPackageState {
     nameFilter: string
     ecosystem: PackageRepoReferenceKind
 }
 
-interface MultiPackageFormProps {
-    node: SiteAdminPackageFields
+interface BaseMultiPackageFormProps {
     filters: FilteredConnectionFilterValue[]
     setType: (type: BlockType) => void
     onDismiss: () => void
+    onSave: (state: MultiPackageState) => Promise<unknown>
 }
 
-export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = ({
-    node,
-    filters,
-    setType,
-    onDismiss,
-}) => {
+interface AddMultiPackageFormProps extends BaseMultiPackageFormProps {
+    node: SiteAdminPackageFields
+}
+
+interface EditMultiPackageFormProps extends BaseMultiPackageFormProps {
+    initialState: MultiPackageState
+}
+
+type MultiPackageFormProps = AddMultiPackageFormProps | EditMultiPackageFormProps
+
+export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = props => {
+    const defaultNameFilter = 'initialState' in props ? props.initialState.nameFilter : '*'
+    const defaultEcosystem = 'initialState' in props ? props.initialState.ecosystem : props.node.kind
     const [blockState, setBlockState] = useState<MultiPackageState>({
-        nameFilter: '*',
-        ecosystem: node.kind,
+        nameFilter: defaultNameFilter,
+        ecosystem: defaultEcosystem,
     })
+
     const [packageFetchLimit, setPackageFetchLimit] = useState(15)
     const query = useDebounce(blockState.nameFilter, 200)
 
@@ -78,11 +83,6 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
         },
     })
 
-    const [submitPackageFilter, submitPackageFilterResponse] = useMutation<
-        AddPackageRepoFilterResult,
-        AddPackageRepoFilterVariables
-    >(addPackageRepoFilterMutation, {})
-
     const packageCount = data?.packageRepoReferencesMatchingFilter.totalCount ?? 0
 
     // Limit fetching more than 1000 packages
@@ -97,41 +97,17 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
     }, [packageCount])
 
     const handleSubmit = useCallback(
-        (event: React.FormEvent<HTMLFormElement>): void => {
+        (event: React.FormEvent<HTMLFormElement>): Promise<unknown> => {
             event.preventDefault()
 
             if (!isValid()) {
-                return
+                return Promise.resolve()
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            submitPackageFilter({
-                variables: {
-                    kind: blockState.ecosystem,
-                    behaviour: PackageMatchBehaviour.BLOCK,
-                    filter: {
-                        nameFilter: {
-                            packageGlob: blockState.nameFilter,
-                        },
-                    },
-                },
-            })
+            return props.onSave(blockState)
         },
-        [blockState, isValid, submitPackageFilter]
+        [blockState, isValid, props]
     )
-
-    const getSubmitText = useCallback((): string => {
-        if (packageCount === 1) {
-            const packageNode = data?.packageRepoReferencesMatchingFilter.nodes[0]
-            return `Block ${packageNode?.name}`
-        }
-
-        if (packageCount > 1) {
-            return `Block ${packageCount} packages`
-        }
-
-        return 'Block packages'
-    }, [data?.packageRepoReferencesMatchingFilter.nodes, packageCount])
 
     return (
         <>
@@ -142,7 +118,7 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                     </Label>
                     <div className={styles.inputRow}>
                         <Select
-                            className={classNames('mr-1 mb-0', styles.select)}
+                            className={classNames('mr-1 mb-0', styles.ecosystemSelect)}
                             value={blockState.ecosystem}
                             onChange={event =>
                                 setBlockState({
@@ -154,7 +130,7 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                             isCustomStyle={true}
                             aria-label="Ecosystem"
                         >
-                            {filters.map(({ label, value }) => (
+                            {props.filters.map(({ label, value }) => (
                                 <option value={value} key={label}>
                                     {label}
                                 </option>
@@ -171,7 +147,7 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                             <Button
                                 className={classNames('text-danger', styles.inputRowButton)}
                                 variant="icon"
-                                onClick={() => setType('single')}
+                                onClick={() => props.setType('single')}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiClose} />
                             </Button>
@@ -179,11 +155,11 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                     </div>
                     <div className={styles.listContainer}>
                         <>
-                            {loading || !data ? (
+                            {loading ? (
                                 <LoadingSpinner className="d-block mx-auto mt-3" />
                             ) : error ? (
                                 <ErrorAlert error={error} className="mt-2" />
-                            ) : (
+                            ) : data ? (
                                 <div className="mt-2">
                                     <div className="d-flex justify-content-between text-muted">
                                         <span>
@@ -227,6 +203,8 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                                     </div>
                                     <PackageList nodes={data.packageRepoReferencesMatchingFilter.nodes} />
                                 </div>
+                            ) : (
+                                <></>
                             )}
                         </>
                     </div>
@@ -237,13 +215,7 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                         All versions of all matching packages are blocked when using a name filter.
                     </Alert>
                 </div>
-                <BlockPackageActions
-                    submitText={getSubmitText()}
-                    valid={isValid()}
-                    error={submitPackageFilterResponse.error}
-                    loading={submitPackageFilterResponse.loading}
-                    onDismiss={onDismiss}
-                />
+                <FilterPackagesActions valid={isValid()} onDismiss={props.onDismiss} />
             </Form>
         </>
     )

@@ -1,8 +1,3 @@
-.modal {
-    width: 100%;
-    max-width: 50rem;
-}
-
 .header {
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 1rem;
@@ -12,18 +7,6 @@
 
 .content {
     min-height: 5rem;
-}
-
-.actions-container {
-    border-top: 1px solid var(--border-color);
-    padding-top: 1rem;
-    margin-top: 1rem;
-}
-
-.actions {
-    padding: 1rem 0.5rem 0;
-    display: flex;
-    justify-content: flex-end;
 }
 
 .input-row {
@@ -45,6 +28,6 @@
     min-height: 3rem;
 }
 
-.select {
+.ecosystem-select {
     max-width: 6rem;
 }

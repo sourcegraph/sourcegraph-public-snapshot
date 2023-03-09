@@ -36,6 +36,31 @@ export const packageRepoFilterQuery = gql`
     ${packageRepoMatchFragment}
 `
 
+const packageRepoFilterFragment = gql`
+    fragment PackageRepoFilterFields on PackageFilter {
+        id
+        behaviour
+        kind
+        nameFilter {
+            packageGlob
+        }
+        versionFilter {
+            packageName
+            versionGlob
+        }
+    }
+`
+
+export const packageRepoFiltersQuery = gql`
+    query PackageRepoFilters {
+        packageRepoFilters {
+            ...PackageRepoFilterFields
+        }
+    }
+
+    ${packageRepoFilterFragment}
+`
+
 export const addPackageRepoFilterMutation = gql`
     mutation AddPackageRepoFilter(
         $kind: PackageRepoReferenceKind!
@@ -43,7 +68,7 @@ export const addPackageRepoFilterMutation = gql`
         $behaviour: PackageMatchBehaviour!
     ) {
         addPackageRepoFilter(kind: $kind, filter: $filter, behaviour: $behaviour) {
-            alwaysNil
+            id
         }
     }
 `

@@ -45,61 +45,24 @@ import {
     SiteAdminPackageFields,
     ExternalServiceKindsVariables,
     ExternalServiceKindsResult,
-    ExternalServiceKind,
-    PackageRepoReferenceKind,
 } from '../graphql-operations'
 
 import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from './backend'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
-import { BlockPackagesModal } from './packages/BlockPackageModal'
+import { ExternalServicePackageMap } from './packages/constants'
+import { PackagesModal } from './packages/PackagesModal'
 
 import styles from './SiteAdminPackagesPage.module.scss'
 
-const ExternalServicePackageMap: Partial<
-    Record<
-        ExternalServiceKind,
-        {
-            label: string
-            value: PackageRepoReferenceKind
-        }
-    >
-> = {
-    [ExternalServiceKind.NPMPACKAGES]: {
-        label: 'npm',
-        value: PackageRepoReferenceKind.NPMPACKAGES,
-    },
-    [ExternalServiceKind.GOMODULES]: {
-        label: 'Go',
-        value: PackageRepoReferenceKind.GOMODULES,
-    },
-    [ExternalServiceKind.JVMPACKAGES]: {
-        label: 'JVM',
-        value: PackageRepoReferenceKind.JVMPACKAGES,
-    },
-    [ExternalServiceKind.RUBYPACKAGES]: {
-        label: 'Ruby',
-        value: PackageRepoReferenceKind.RUBYPACKAGES,
-    },
-    [ExternalServiceKind.PYTHONPACKAGES]: {
-        label: 'Python',
-        value: PackageRepoReferenceKind.PYTHONPACKAGES,
-    },
-    [ExternalServiceKind.RUSTPACKAGES]: {
-        label: 'Rust',
-        value: PackageRepoReferenceKind.RUSTPACKAGES,
-    },
-}
-
 interface PackageNodeProps {
     node: SiteAdminPackageFields
-    setSelectedPackage: (node: SiteAdminPackageFields) => void
+    setFilterPackage: (node: SiteAdminPackageFields) => void
 }
 
 const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodeProps>> = ({
     node,
-    setSelectedPackage,
+    setFilterPackage,
 }) => {
-    console.log(node)
     const PackageIconComponent = externalRepoIcon({ serviceType: node.kind })
 
     const packageRepository = node.repository
@@ -137,14 +100,9 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
                                             Settings
                                         </MenuLink>
                                     )}
-                                <MenuItem
-                                    as={Button}
-                                    variant="danger"
-                                    onSelect={() => setSelectedPackage(node)}
-                                    className="p-2"
-                                >
+                                <MenuItem as={Button} onSelect={() => setFilterPackage(node)} className="p-2">
                                     <Icon aria-hidden={true} svgPath={mdiBlockHelper} className="mr-1" />
-                                    Block
+                                    Add filter
                                 </MenuItem>
                             </MenuList>
                         </Menu>
@@ -188,7 +146,8 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
 }) => {
     const location = useLocation()
     const navigate = useNavigate()
-    const [selectedPackage, setSelectedPackage] = useState<SiteAdminPackageFields | null>(null)
+    const [filterPackage, setFilterPackage] = useState<SiteAdminPackageFields | null>(null)
+    const [manageFilters, setManageFilters] = useState(false)
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminPackages')
@@ -310,11 +269,19 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
 
     return (
         <>
-            {selectedPackage && (
-                <BlockPackagesModal
-                    node={selectedPackage}
+            {filterPackage && (
+                <PackagesModal
+                    type="add"
+                    node={filterPackage}
                     filters={ecosystemFilterValues}
-                    onDismiss={() => setSelectedPackage(null)}
+                    onDismiss={() => setFilterPackage(null)}
+                />
+            )}
+            {manageFilters && (
+                <PackagesModal
+                    type="manage"
+                    filters={ecosystemFilterValues}
+                    onDismiss={() => setManageFilters(false)}
                 />
             )}
             <div>
@@ -329,7 +296,11 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                         </>
                     }
                     className="mb-3"
-                    actions={<Button variant="secondary">Manage package filters</Button>}
+                    actions={
+                        <Button variant="secondary" onClick={() => setManageFilters(true)}>
+                            Manage package filters
+                        </Button>
+                    }
                 />
 
                 <Container className="mb-3">
@@ -376,7 +347,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                     {connection?.nodes && connection.nodes.length > 0 && (
                         <ul className="list-group list-group-flush mt-2">
                             {(connection?.nodes || []).map(node => (
-                                <PackageNode node={node} key={node.id} setSelectedPackage={setSelectedPackage} />
+                                <PackageNode node={node} key={node.id} setFilterPackage={setFilterPackage} />
                             ))}
                         </ul>
                     )}
