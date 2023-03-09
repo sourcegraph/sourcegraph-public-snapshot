@@ -89,3 +89,49 @@ export const isAnyConnectedCodeHosts = (data?: GetCodeHostsResult): boolean => {
 
     return data.externalServices.nodes.length > 0
 }
+
+export const getNextButtonLabel = (data?: GetCodeHostsResult): string => {
+    // Fallback for the state when we have no data,
+    // While we are loading data the next button is disabled
+    if (!data) {
+        return 'Loading'
+    }
+
+    const otherKindExternalServices = data.externalServices.nodes.filter(
+        service => service.kind === ExternalServiceKind.OTHER
+    )
+
+    const nonOtherExternalServices = data.externalServices.nodes.filter(
+        service => service.kind !== ExternalServiceKind.OTHER
+    )
+
+    // This means that we got some "Other" externals services (which are used for
+    // local repositories' setup) and have no common external services, meaning that we
+    // have no connected code host on remote code host step but got some repositories
+    // from local repositories step so next button should have "Skip" label
+    if (otherKindExternalServices.length > 0 && nonOtherExternalServices.length === 0) {
+        return 'Skip'
+    }
+
+    return 'Next'
+}
+
+export const getNextButtonLogEvent = (data?: GetCodeHostsResult): string | null => {
+    if (!data) {
+        return null
+    }
+
+    const otherKindExternalServices = data.externalServices.nodes.filter(
+        service => service.kind === ExternalServiceKind.OTHER
+    )
+
+    const nonOtherExternalServices = data.externalServices.nodes.filter(
+        service => service.kind !== ExternalServiceKind.OTHER
+    )
+
+    if (otherKindExternalServices.length > 0 && nonOtherExternalServices.length === 0) {
+        return 'SetupWizardSkippedAddRemoteCode'
+    }
+
+    return null
+}

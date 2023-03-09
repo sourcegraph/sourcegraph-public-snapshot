@@ -12,6 +12,7 @@ import {
     MultiComboboxList,
     MultiComboboxOption,
     MultiComboboxOptionText,
+    useDebounce,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -134,6 +135,7 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
     const { token, disabled, repositories, externalServiceId, onChange } = props
 
     const [searchTerm, setSearchTerm] = useState('')
+
     const {
         data: currentData,
         previousData,
@@ -145,7 +147,7 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
         variables: {
             token,
             first: 10,
-            query: searchTerm,
+            query: useDebounce(searchTerm, 500),
             id: externalServiceId ?? null,
             excludeRepositories: repositories,
         },

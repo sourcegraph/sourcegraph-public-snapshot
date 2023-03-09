@@ -18,9 +18,11 @@ import {
 import { PageTitle } from '../PageTitle'
 
 import { useExternalServicesConnection } from './backend'
+import { ExternalServiceEditingAppLimitAlert } from './ExternalServiceEditingAppLimitReachedAlert'
 import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
-import { ExternalServiceNode } from './ExternalServiceNode'
+import { ExternalServiceNode } from './ExternalServiceNode.tsx'
+import { isAppLocalFileService } from './isAppLocalFileService'
 
 interface Props extends TelemetryProps {
     externalServicesFromFile: boolean
@@ -48,6 +50,9 @@ export const ExternalServicesPage: FC<Props> = ({
 
     const editingDisabled = externalServicesFromFile && !allowEditExternalServicesWithFile
 
+    const externalServices = connection?.nodes ? connection?.nodes?.filter(node => !isAppLocalFileService(node)) : []
+    const appLimitReached = isSourcegraphApp && externalServices.length >= 1
+
     return !loading && (connection?.nodes?.length ?? 0) === 0 ? (
         <Navigate to="/site-admin/external-services/new" replace={true} />
     ) : (
@@ -69,7 +74,7 @@ export const ExternalServicesPage: FC<Props> = ({
                             to="/site-admin/external-services/new"
                             variant="primary"
                             as={Link}
-                            disabled={editingDisabled}
+                            disabled={editingDisabled || appLimitReached}
                         >
                             <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
                         </ButtonLink>
@@ -79,6 +84,7 @@ export const ExternalServicesPage: FC<Props> = ({
             />
 
             {editingDisabled && <ExternalServiceEditingDisabledAlert />}
+            {isSourcegraphApp && <ExternalServiceEditingAppLimitAlert />}
             {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
 
             <Container className="mb-3">
@@ -87,7 +93,12 @@ export const ExternalServicesPage: FC<Props> = ({
                     {loading && !connection && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="CodeHosts">
                         {connection?.nodes?.map(node => (
-                            <ExternalServiceNode key={node.id} node={node} editingDisabled={editingDisabled} />
+                            <ExternalServiceNode
+                                key={node.id}
+                                node={node}
+                                editingDisabled={editingDisabled}
+                                isSourcegraphApp={isSourcegraphApp}
+                            />
                         ))}
                     </ConnectionList>
                     {connection && (
