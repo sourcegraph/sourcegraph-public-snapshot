@@ -79,7 +79,7 @@ export interface StreamingSearchResultsListProps
 
     selectedSearchContextSpec?: string
 
-    /*
+    /**
      * An optional callback invoked whenever a search result is clicked.
      * It's passed the index of the result in the list and the result type.
      */
