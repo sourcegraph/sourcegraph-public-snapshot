@@ -77,6 +77,18 @@ var Ubuntu = []category{
 				Fix:   aptGetInstall("bash"),
 			},
 			{
+				// Bazelisk is a wrapper for Bazel written in Go. It automatically picks a good version of Bazel given your current working directory
+				// Bazelisk replaces the bazel binary in your path
+				Name:  "bazelisk",
+				Check: checkAction(check.Combine(check.InPath("bazel"), check.CommandOutputContains("bazel version", "Bazelisk version"))),
+				Fix:   cmdFix(`sudo curl -L https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -o /usr/local/bin/bazlisk && sudo chmod +x /usr/local/bin/bazel`),
+			},
+			{
+				Name:  "ibazel",
+				Check: checkAction(check.InPath("ibazel")),
+				Fix:   cmdFix(`sudo curl -L https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -o /usr/local/bin/bazlisk && sudo chmod +x /usr/local/bin/bazelisk`),
+			},
+			{
 				Name: "asdf",
 				// TODO add the if Keegan check
 				Check: checkAction(check.CommandOutputContains("asdf", "version")),
