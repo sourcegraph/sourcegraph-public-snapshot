@@ -1,4 +1,4 @@
-import {FC, useLayoutEffect, useRef, useState } from 'react'
+import { FC, useLayoutEffect, useRef, useState } from 'react'
 
 import { Location, useLocation } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
