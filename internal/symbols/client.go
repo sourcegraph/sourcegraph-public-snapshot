@@ -7,7 +7,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
+	"sync"
+	"sync/atomic"
+	"testing"
 	"time"
 
 	"github.com/gobwas/glob"
@@ -15,14 +19,17 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -37,15 +44,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func defaultEndpoints() *endpoint.Map {
-	return endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
-		return conns.Symbols
-	})
-}
-
 func LoadConfig() {
 	DefaultClient = &Client{
-		Endpoints:           defaultEndpoints(),
+		ConnectionSource:    &connectionSourceFromSiteConfig{},
 		HTTPClient:          defaultDoer,
 		HTTPLimiter:         limiter.New(500),
 		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
@@ -66,8 +67,8 @@ var defaultDoer = func() httpcli.Doer {
 
 // Client is a symbols service client.
 type Client struct {
-	// Endpoints to symbols service.
-	Endpoints *endpoint.Map
+	// ConnectionSource provides the connection to use for the symbols service for a given repository.
+	ConnectionSource ConnectionSource
 
 	// HTTP client to use
 	HTTPClient httpcli.Doer
@@ -82,13 +83,6 @@ type Client struct {
 
 	langMappingOnce  resetonce.Once
 	langMappingCache map[string][]glob.Glob
-}
-
-func (c *Client) url(repo api.RepoName) (string, error) {
-	if c.Endpoints == nil {
-		return "", errors.New("a symbols service has not been configured")
-	}
-	return c.Endpoints.Get(string(repo))
 }
 
 func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_ map[string][]glob.Glob, err error) {
@@ -128,15 +122,12 @@ func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_
 }
 
 func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.RepoName) (map[string][]string, error) {
-	// TODO@ggilmore: This endpoint doesn't need the repository name for anything order than dialing
+	// TODO@ggilmore: This address doesn't need the repository name for anything order than dialing
 	// an arbitrary symbols host. We should remove this requirement from this method.
-
-	conn, err := c.dialGRPC(ctx, repository)
+	conn, err := c.ConnectionSource.GetConn(string(repository))
 	if err != nil {
-		return nil, errors.Wrap(err, "dialing symbols service")
+		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
 	}
-
-	defer conn.Close()
 
 	client := proto.NewSymbolsServiceClient(conn)
 	resp, err := client.ListLanguages(ctx, &proto.ListLanguagesRequest{})
@@ -153,7 +144,7 @@ func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.Re
 }
 
 func (c *Client) listLanguageMappingsJSON(ctx context.Context, repository api.RepoName) (map[string][]string, error) {
-	// TODO@ggilmore: This endpoint doesn't need the repository name for anything order than dialing
+	// TODO@ggilmore: This address doesn't need the repository name for anything order than dialing
 	// an arbitrary symbols host. We should remove this requirement from this method.
 
 	var resp *http.Response
@@ -238,12 +229,10 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 }
 
 func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {
-	conn, err := c.dialGRPC(ctx, args.Repo)
+	conn, err := c.ConnectionSource.GetConn(string(args.Repo))
 	if err != nil {
-		return search.SymbolsResponse{}, errors.Wrap(err, "dialing GRPC service")
+		return search.SymbolsResponse{}, errors.Wrap(err, "getting gRPC connection to symbols server")
 	}
-
-	defer conn.Close()
 
 	grpcClient := proto.NewSymbolsServiceClient(conn)
 
@@ -308,12 +297,10 @@ func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) 
 }
 
 func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
-	conn, err := c.dialGRPC(ctx, api.RepoName(path.Repo))
+	conn, err := c.ConnectionSource.GetConn(path.Repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "dialing GRPC symbols server endpoint")
+		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
 	}
-
-	defer conn.Close()
 
 	grpcClient := proto.NewSymbolsServiceClient(conn)
 
@@ -411,12 +398,10 @@ func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint)
 }
 
 func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
-	conn, err := c.dialGRPC(ctx, api.RepoName(args.Repo))
+	conn, err := c.ConnectionSource.GetConn(args.Repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "dialing GRPC symbols server endpoint")
+		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
 	}
-
-	defer conn.Close()
 
 	client := proto.NewSymbolsServiceClient(conn)
 
@@ -485,7 +470,7 @@ func (c *Client) httpPost(
 		span.Finish()
 	}()
 
-	repoUrl, err := c.url(repo)
+	symbolsURL, err := c.ConnectionSource.GetAddress(string(repo))
 	if err != nil {
 		return nil, err
 	}
@@ -495,10 +480,10 @@ func (c *Client) httpPost(
 		return nil, err
 	}
 
-	if !strings.HasSuffix(repoUrl, "/") {
-		repoUrl += "/"
+	if !strings.HasSuffix(symbolsURL, "/") {
+		symbolsURL += "/"
 	}
-	req, err := http.NewRequest("POST", repoUrl+method, bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", symbolsURL+method, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
@@ -519,23 +504,182 @@ func (c *Client) httpPost(
 	return c.HTTPClient.Do(req)
 }
 
-// dialGRPC establishes a GRPC connection with the symbols server instance that handles
-// the named repository.
-func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.ClientConn, error) {
-	rawURL, err := c.url(repository)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting symbols service URL")
-	}
+// ConnectionSource is an interface for getting the address of the symbols service that handles a
+// given repository.
+type ConnectionSource interface {
+	// GetAddress returns the address of the symbols service that handles the named repository.
+	GetAddress(key string) (string, error)
 
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing symbols service URL")
-	}
-
-	conn, err := defaults.DialContext(ctx, u.Host)
-	if err != nil {
-		return nil, errors.Wrap(err, "dialing symbols GRPC service")
-	}
-
-	return conn, nil
+	// GetConn returns a gRPC connection to the symbols service that handles the named repository.
+	GetConn(key string) (*grpc.ClientConn, error)
 }
+
+// connectionSourceFromSiteConfig is a ConnectionSource that gets its configuration from the site
+// configuration.
+//
+// connectionsSourceFromSiteConfig manages the lifecycle of gRPC connections to symbols servers.
+// Whenever the set of symbols servers changes, it handles the transition gracefully by dialing new
+// gRPC connections to the new servers and closing old connections to the old servers.
+//
+// This implementation is thread-safe. However, it is possible that the set of symbols servers will change
+// between the time that an address or connection is retrieved and the time that it is used. Callers
+// should be prepared to handle this common case.
+type connectionSourceFromSiteConfig struct {
+	initializeOnce sync.Once
+	connections    atomic.Pointer[connectionsAndEndpoints]
+}
+
+func (s *connectionSourceFromSiteConfig) GetAddress(key string) (string, error) {
+	s.ensureInitialized()
+
+	connections := s.connections.Load()
+	return connections.Get(key)
+}
+
+func (s *connectionSourceFromSiteConfig) GetConn(key string) (conn *grpc.ClientConn, err error) {
+	s.ensureInitialized()
+
+	connections := s.connections.Load()
+	return connections.GetConn(key)
+}
+
+func (s *connectionSourceFromSiteConfig) ensureInitialized() {
+	s.initializeOnce.Do(func() {
+		// This ensures that the zero value of connectionSourceFromSiteConfig
+		// is always valid.
+		s.connections.Store(&connectionsAndEndpoints{})
+
+		conf.Watch(func() {
+			configuration := conf.Get()
+			if configuration == nil {
+				return
+			}
+
+			nextAddresses := configuration.ServiceConnectionConfig.Symbols
+			s.update(nextAddresses)
+		})
+	})
+}
+
+func (s *connectionSourceFromSiteConfig) update(newAddresses []string) {
+	oldConnections := s.connections.Load()
+	if oldConnections == nil {
+		oldConnections = &connectionsAndEndpoints{}
+	}
+
+	oldAddresses := maps.Keys(oldConnections.conns)
+
+	sort.Strings(oldAddresses)
+	sort.Strings(newAddresses)
+
+	if slices.Equal(oldAddresses, newAddresses) {
+		// The addresses are the same, so we don't need
+		// to do any work.
+		return
+	}
+
+	// The addresses are different, so we need to dial new
+	// gRPC connections and close the old ones.
+
+	newEndpointMap := endpoint.Static(newAddresses...)
+	newGRPCConnections := make(map[string]connAndErr, len(newAddresses))
+
+	for _, address := range newAddresses {
+		u, err := url.Parse(address)
+		if err != nil {
+			newGRPCConnections[address] = connAndErr{dialErr: errors.Wrapf(err, "parsing address %q", address)}
+			continue
+		}
+
+		conn, err := defaults.Dial(u.Host)
+		newGRPCConnections[address] = connAndErr{conn: conn, dialErr: err}
+	}
+
+	s.connections.Store(&connectionsAndEndpoints{
+		Map:   newEndpointMap,
+		conns: newGRPCConnections,
+	})
+
+	for _, ce := range oldConnections.conns {
+		if ce.dialErr != nil {
+			_ = ce.conn.Close()
+		}
+	}
+}
+
+type connectionsAndEndpoints struct {
+	*endpoint.Map
+
+	// conns is a map from addresses to their associated gRPC connection
+	// and error. The error is non-nil if the connection failed to
+	// be established.
+	conns map[string]connAndErr
+}
+
+func (s *connectionsAndEndpoints) GetConn(key string) (conn *grpc.ClientConn, err error) {
+	address, err := s.Map.Get(key)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to lookup address for key %q", key)
+	}
+
+	ce, ok := s.conns[address]
+	if !ok {
+		return nil, errors.Errorf("no GRPC connection entry for address %q", address)
+	}
+
+	return ce.conn, ce.dialErr
+}
+
+// connAndErr is a gRPC connection and its associated error. The error is
+// non-nil if the connection failed to be established.
+type connAndErr struct {
+	// conn is the gRPC connection.
+	conn *grpc.ClientConn
+
+	// dialErr is the error returned by grpc.Dial when establishing the
+	// connection.
+	dialErr error
+}
+
+type testConnectionSource struct {
+	address  string
+	grpcConn *grpc.ClientConn
+}
+
+// NewTestConnectionSource returns a ConnectionSource that always returns the given address
+// - suitable for use in tests.
+func NewTestConnectionSource(t *testing.T, address string) ConnectionSource {
+	t.Helper()
+
+	u, err := url.Parse(address)
+	if err != nil {
+		t.Fatalf("parsing address %q: %v", address, err)
+	}
+
+	conn, err := grpc.Dial(u.Host, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("dialing gRPC connection to %q: %v", u.Host, err)
+	}
+
+	t.Cleanup(func() {
+		_ = conn.Close()
+	})
+
+	return &testConnectionSource{
+		address:  address,
+		grpcConn: conn,
+	}
+}
+
+func (t testConnectionSource) GetAddress(_ string) (string, error) {
+	return t.address, nil
+}
+
+func (t testConnectionSource) GetConn(_ string) (*grpc.ClientConn, error) {
+	return t.grpcConn, nil
+}
+
+var (
+	_ ConnectionSource = &connectionSourceFromSiteConfig{}
+	_                  = &testConnectionSource{}
+)

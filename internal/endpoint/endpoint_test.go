@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,7 +32,7 @@ func TestStatic_empty(t *testing.T) {
 	m := Static()
 	expectEndpoints(t, m)
 
-	// Empty maps should fail on Get but not on Endpoints
+	// Empty maps should fail on Get but not on ConnectionSource
 	_, err := m.Get("foo")
 	if _, ok := err.(*EmptyError); !ok {
 		t.Fatal("Get should return EmptyError")
@@ -49,10 +50,10 @@ func TestStatic_empty(t *testing.T) {
 
 	eps, err := m.Endpoints()
 	if err != nil {
-		t.Fatal("Endpoints should not return an error")
+		t.Fatal("ConnectionSource should not return an error")
 	}
 	if len(eps) != 0 {
-		t.Fatal("Endpoints should be empty")
+		t.Fatal("ConnectionSource should be empty")
 	}
 }
 
@@ -128,7 +129,7 @@ func TestEndpoints(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("m.Endpoints() unexpected return:\ngot:  %v\nwant: %v", got, want)
+		t.Fatalf("m.ConnectionSource() unexpected return:\ngot:  %v\nwant: %v", got, want)
 	}
 }
 

@@ -9,6 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/go-ctags"
+	"golang.org/x/sync/semaphore"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	symbolsdatabase "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
@@ -16,14 +18,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/sync/semaphore"
 )
 
 func init() {
@@ -72,8 +72,8 @@ func TestHandler(t *testing.T) {
 	defer server.Close()
 
 	client := symbolsclient.Client{
-		Endpoints:  endpoint.Static(server.URL),
-		HTTPClient: httpcli.InternalDoer,
+		ConnectionSource: symbolsclient.NewTestConnectionSource(t, server.URL),
+		HTTPClient:       httpcli.InternalDoer,
 	}
 
 	x := result.Symbol{Name: "x", Path: "a.js", Line: 0, Character: 4}
