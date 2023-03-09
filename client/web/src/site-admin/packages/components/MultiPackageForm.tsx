@@ -89,12 +89,12 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
     const nextFetchLimit = Math.min(packageCount, 1000)
 
     const isValid = useCallback((): boolean => {
-        if (packageCount === 0) {
+        if (blockState.nameFilter === '') {
             return false
         }
 
         return true
-    }, [packageCount])
+    }, [blockState])
 
     const handleSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>): Promise<unknown> => {

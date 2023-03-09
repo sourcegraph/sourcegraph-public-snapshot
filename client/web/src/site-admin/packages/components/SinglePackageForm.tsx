@@ -18,6 +18,7 @@ import {
     Badge,
     useDebounce,
     Form,
+    Alert,
 } from '@sourcegraph/wildcard'
 
 import { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
@@ -86,16 +87,13 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
         },
     })
 
-    const versionNode = versionFilterResponse.data?.packageRepoReferencesMatchingFilter?.nodes?.[0]
-    const versionCount = versionNode?.versions?.length || 0
-
     const isValid = useCallback((): boolean => {
-        if (versionCount === 0) {
+        if (blockState.versionFilter === '') {
             return false
         }
 
         return true
-    }, [versionCount])
+    }, [blockState])
 
     const handleSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>): Promise<unknown> => {
@@ -169,12 +167,14 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                     />
                 </div>
             </div>
-            {versionFilterResponse.loading || !versionFilterResponse.data ? (
+            {versionFilterResponse.loading ? (
                 <LoadingSpinner className="d-block mx-auto mt-3" />
             ) : versionFilterResponse.error ? (
-                <ErrorAlert error={versionFilterResponse.error} />
-            ) : (
+                <ErrorAlert error={versionFilterResponse.error} className="mt-2" />
+            ) : versionFilterResponse.data ? (
                 <VersionList node={versionFilterResponse.data.packageRepoReferencesMatchingFilter.nodes[0]} />
+            ) : (
+                <></>
             )}
             <FilterPackagesActions valid={isValid()} onDismiss={props.onDismiss} />
         </Form>
@@ -186,6 +186,14 @@ interface VersionListProps {
 }
 const VersionList: React.FunctionComponent<VersionListProps> = ({ node }) => {
     const versionCount = node.versions.length
+
+    if (versionCount === 0) {
+        return (
+            <Alert variant="warning" className="mt-1">
+                This filter does not match any current version.
+            </Alert>
+        )
+    }
 
     return (
         <div className="mt-2">
