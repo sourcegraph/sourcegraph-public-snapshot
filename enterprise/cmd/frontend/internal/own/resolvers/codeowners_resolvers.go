@@ -58,21 +58,7 @@ func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbacken
 	if err := r.db.Codeowners().CreateCodeownersFile(ctx, codeownersFile); err != nil {
 		return nil, errors.Wrap(err, "could not ingest codeowners file")
 	}
-	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() && !a.IsMockUser() {
-		if err := usagestats.LogBackendEvent(
-			r.db,
-			a.UID,
-			deviceid.FromContext(ctx),
-			"own:ingestedCodeownersFile:added",
-			nil,
-			nil,
-			featureflag.GetEvaluatedFlagSet(ctx),
-			nil,
-		); err != nil {
-			r.logger.Warn("Could not log own:ingestedCodeownersFile:added")
-		}
-	}
+	r.logBackendEvent(ctx, "own:ingestedCodeownersFile:added")
 	return &codeownersIngestedFileResolver{
 		codeownersFile: codeownersFile,
 		repository:     repo,
@@ -104,21 +90,7 @@ func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbac
 	if err := r.db.Codeowners().UpdateCodeownersFile(ctx, codeownersFile); err != nil {
 		return nil, errors.Wrap(err, "could not update codeowners file")
 	}
-	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() && !a.IsMockUser() {
-		if err := usagestats.LogBackendEvent(
-			r.db,
-			a.UID,
-			deviceid.FromContext(ctx),
-			"own:ingestedCodeownersFile:updated",
-			nil,
-			nil,
-			featureflag.GetEvaluatedFlagSet(ctx),
-			nil,
-		); err != nil {
-			r.logger.Warn("Could not log own:ingestedCodeownersFile:updated")
-		}
-	}
+	r.logBackendEvent(ctx, "own:ingestedCodeownersFile:updated")
 	return &codeownersIngestedFileResolver{
 		codeownersFile: codeownersFile,
 		repository:     repo,
@@ -180,22 +152,26 @@ func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlba
 	if err := r.db.Codeowners().DeleteCodeownersForRepos(ctx, repoIDs...); err != nil {
 		return nil, errors.Wrapf(err, "could not delete codeowners file for repos")
 	}
+	r.logBackendEvent(ctx, "own:ingestedCodeownersFile:deleted")
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *ownResolver) logBackendEvent(ctx context.Context, eventName string) {
 	a := actor.FromContext(ctx)
 	if a.IsAuthenticated() && !a.IsMockUser() {
 		if err := usagestats.LogBackendEvent(
 			r.db,
 			a.UID,
 			deviceid.FromContext(ctx),
-			"own:ingestedCodeownersFile:deleted",
+			eventName,
 			nil,
 			nil,
 			featureflag.GetEvaluatedFlagSet(ctx),
 			nil,
 		); err != nil {
-			r.logger.Warn("Could not log own:ingestedCodeownersFile:deleted")
+			r.logger.Warn("Could not log " + eventName)
 		}
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphqlbackend.CodeownersIngestedFilesArgs) (graphqlbackend.CodeownersIngestedFileConnectionResolver, error) {
