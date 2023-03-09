@@ -1774,9 +1774,23 @@ func UnifiedPermsEnabled() bool {
 	return conf.ExperimentalFeatures().UnifiedPermissions
 }
 
-const usersWithNoPermsQuery = `
+const legacyUsersWithNoPermsQuery = `
+SELECT users.id
+FROM users
+LEFT OUTER JOIN user_permissions AS rp ON rp.user_id = users.id
+WHERE
+	users.deleted_at IS NULL
+AND %s
+AND rp.user_id IS NULL
+`
+
+const unifiedUsersWithNoPermsQuery = `
 WITH rp AS (
-	SELECT user_id FROM perms_sync_jobs_history WHERE user_id IS NOT NULL
+	-- Filter out users with permissions
+	SELECT DISTINCT user_id FROM user_repo_permissions
+	UNION
+	-- Filter out users with completed sync jobs
+	SELECT DISTINCT user_id FROM permission_sync_jobs WHERE user_id IS NOT NULL
 )
 SELECT users.id
 FROM users
@@ -1795,15 +1809,37 @@ func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 		filterSiteAdmins = sqlf.Sprintf("TRUE")
 	}
 
-	q := sqlf.Sprintf(usersWithNoPermsQuery, filterSiteAdmins)
+	query := unifiedUsersWithNoPermsQuery
+	if !UnifiedPermsEnabled() {
+		query = legacyUsersWithNoPermsQuery
+	}
+
+	q := sqlf.Sprintf(query, filterSiteAdmins)
 	return basestore.ScanInt32s(s.Query(ctx, q))
 }
 
-const repoIDsWithNoPermsQuery = `
+const legacyRepoIDsWithNoPermsQuery = `
 WITH rp AS (
+	SELECT perms.repo_id FROM repo_permissions AS perms
+	UNION
+	SELECT pending.repo_id FROM repo_pending_permissions AS pending
+)
+SELECT r.id
+FROM repo AS r
+LEFT OUTER JOIN rp ON rp.repo_id = r.id
+WHERE r.deleted_at IS NULL
+AND r.private = TRUE
+AND rp.repo_id IS NULL
+`
+
+const unifiedRepoIDsWithNoPermsQuery = `
+WITH rp AS (
+	-- Filter out repos with permissions
+	SELECT DISTINCT perms.repo_id FROM user_repo_permissions AS perms
+	UNION
 	-- Filter out repos with sync jobs
-	SELECT syncs.repo_id FROM perms_sync_jobs_history AS syncs
-		WHERE syncs.repo_id IS NOT NULL
+	SELECT DISTINCT syncs.repository_id AS repo_id FROM permission_sync_jobs AS syncs
+		WHERE syncs.repository_id IS NOT NULL
 )
 SELECT r.id
 FROM repo AS r
@@ -1814,16 +1850,24 @@ AND rp.repo_id IS NULL
 `
 
 func (s *permsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
-	q := sqlf.Sprintf(repoIDsWithNoPermsQuery)
-	return scanRepoIDs(s.Query(ctx, q))
+	query := unifiedRepoIDsWithNoPermsQuery
+	// check if we should read from legacy permissions table or not
+	if !UnifiedPermsEnabled() {
+		query = legacyRepoIDsWithNoPermsQuery
+	}
+
+	return scanRepoIDs(s.Query(ctx, sqlf.Sprintf(query)))
 }
 
 const usersWithOldestPermsQuery = `
-SELECT user_id, updated_at FROM perms_sync_jobs_history
-WHERE user_id IS NOT NULL
-	AND %s
-ORDER BY updated_at ASC
-LIMIT %s;
+WITH us AS (
+	SELECT DISTINCT ON(user_id) user_id, finished_at FROM permission_sync_jobs
+		WHERE user_id IS NOT NULL
+	ORDER BY user_id ASC, finished_at DESC
+)
+SELECT user_id, finished_at FROM us
+WHERE %s
+LIMIT %d;
 `
 
 func (s *permsStore) getCutoffClause(age time.Duration) *sqlf.Query {
@@ -1831,29 +1875,30 @@ func (s *permsStore) getCutoffClause(age time.Duration) *sqlf.Query {
 		return sqlf.Sprintf("TRUE")
 	}
 	cutoff := s.clock().Add(-1 * age)
-	return sqlf.Sprintf("updated_at < %s", cutoff)
+	return sqlf.Sprintf("finished_at < %s", cutoff)
 }
 
 // UserIDsWithOldestPerms lists the users with the oldest synced perms, limited
 // to limit. If age is non-zero, users that have synced within "age" since now
 // will be filtered out.
 func (s *permsStore) UserIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[int32]time.Time, error) {
-	cutoffClause := s.getCutoffClause(age)
-	q := sqlf.Sprintf(usersWithOldestPermsQuery, cutoffClause, limit)
+	q := sqlf.Sprintf(usersWithOldestPermsQuery, s.getCutoffClause(age), limit)
 	return s.loadIDsWithTime(ctx, q)
 }
 
 const reposWithOldestPermsQuery = `
-SELECT repo_id, updated_at FROM perms_sync_jobs_history
-WHERE repo_id IS NOT NULL
-	AND %s
-ORDER BY updated_at ASC
-LIMIT %s;
+WITH us AS (
+	SELECT DISTINCT ON(repository_id) repository_id, finished_at FROM permission_sync_jobs
+		WHERE repository_id IS NOT NULL
+	ORDER BY repository_id ASC, finished_at DESC
+)
+SELECT repository_id, finished_at FROM us
+WHERE %s
+LIMIT %d;
 `
 
 func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[api.RepoID]time.Time, error) {
-	cutoffClause := s.getCutoffClause(age)
-	q := sqlf.Sprintf(reposWithOldestPermsQuery, cutoffClause, limit)
+	q := sqlf.Sprintf(reposWithOldestPermsQuery, s.getCutoffClause(age), limit)
 
 	pairs, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
