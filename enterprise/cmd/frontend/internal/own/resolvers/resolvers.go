@@ -213,11 +213,11 @@ func (r *codeownersFileEntryResolver) ToCodeownersFileEntry() (graphqlbackend.Co
 }
 
 func (r *codeownersFileEntryResolver) Title(_ context.Context) (string, error) {
-	return "CodeOwners", nil
+	return "CODEOWNERS", nil
 }
 
 func (r *codeownersFileEntryResolver) Description(_ context.Context) (string, error) {
-	return "Owner is associated with a rule in code owners file.", nil
+	return "Owner is associated with a rule in a CODEOWNERS file.", nil
 }
 
 func (r *codeownersFileEntryResolver) CodeownersFile(_ context.Context) (graphqlbackend.FileResolver, error) {
