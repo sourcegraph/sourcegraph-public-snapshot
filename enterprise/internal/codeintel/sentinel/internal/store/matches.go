@@ -57,7 +57,7 @@ func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVuln
 		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
 
-	return scanVulnerabilityMatchesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesQuery, args.Limit, args.Offset, sqlf.Join(conds, " AND "))))
+	return scanVulnerabilityMatchesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesQuery, sqlf.Join(conds, " AND "), args.Limit, args.Offset)))
 }
 
 const getVulnerabilityMatchesQuery = `
@@ -65,11 +65,9 @@ WITH limited_matches AS (
 	SELECT
 		m.id,
 		m.upload_id,
-		m.vulnerability_affected_package_id,
-		COUNT(*) OVER() AS count
+		m.vulnerability_affected_package_id
 	FROM vulnerability_matches m
 	ORDER BY id
-	LIMIT %s OFFSET %s
 )
 SELECT
 	m.id,
@@ -78,13 +76,14 @@ SELECT
 	` + vulnerabilityAffectedPackageFields + `,
 	` + vulnerabilityAffectedSymbolFields + `,
 	vul.severity,
-	m.count
+	COUNT(*) OVER() AS count
 FROM limited_matches m
 LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
 LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
 LEFT JOIN vulnerabilities vul ON vap.vulnerability_id = vul.id
 WHERE %s
 ORDER BY m.id, vap.id, vas.id
+LIMIT %s OFFSET %s
 `
 
 var flattenMatches = func(ms []shared.VulnerabilityMatch) []shared.VulnerabilityMatch {
