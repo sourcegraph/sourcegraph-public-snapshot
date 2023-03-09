@@ -4,7 +4,7 @@ import { editor } from 'monaco-editor'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, screenReaderAnnounce, ErrorAlert, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../components/SaveToolbar'
@@ -43,10 +43,11 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
         [updateConfigForRepository, repoId]
     )
 
-    const [dirty, setDirty] = useState<boolean>()
+    const [dirty, setDirty] = useState<boolean>(false)
     const [editor, setEditor] = useState<editor.ICodeEditor>()
     const infer = useCallback(() => editor?.setValue(inferredConfiguration.raw), [editor, inferredConfiguration])
-    const showInferButton = Boolean(inferredConfiguration.raw) && configuration?.raw !== inferredConfiguration.raw
+    const showInferButton =
+        Boolean(inferredConfiguration.raw) && configuration !== null && configuration.raw !== inferredConfiguration.raw
 
     const customToolbar = useMemo<{
         saveToolbar: FunctionComponent<SaveToolbarProps & IndexConfigurationSaveToolbarProps>
@@ -70,6 +71,15 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
         [infer, inferredConfiguration, showInferButton, dirty]
     )
 
+    // Show any set configuration if available, otherwise show the inferred configuration
+    const preferredConfiguration = useMemo(() => {
+        if (configuration !== null) {
+            return configuration
+        }
+
+        return inferredConfiguration
+    }, [configuration, inferredConfiguration])
+
     if (inferredError || repositoryError) {
         return <ErrorAlert prefix="Error fetching index configuration" error={inferredError || repositoryError} />
     }
@@ -81,20 +91,23 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
             {loadingInferred || loadingRepository ? (
                 <LoadingSpinner />
             ) : (
-                <DynamicallyImportedMonacoSettingsEditor
-                    value={configuration.raw || inferredConfiguration.raw}
-                    jsonSchema={allConfigSchema}
-                    canEdit={authenticatedUser?.siteAdmin}
-                    readOnly={!authenticatedUser?.siteAdmin}
-                    onSave={save}
-                    saving={isUpdating}
-                    height={600}
-                    isLightTheme={isLightTheme}
-                    telemetryService={telemetryService}
-                    customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
-                    onDirtyChange={setDirty}
-                    onEditor={setEditor}
-                />
+                <>
+                    <BeforeUnloadPrompt when={dirty} message="Discard changes?" />
+                    <DynamicallyImportedMonacoSettingsEditor
+                        value={preferredConfiguration.raw}
+                        jsonSchema={allConfigSchema}
+                        canEdit={authenticatedUser?.siteAdmin}
+                        readOnly={!authenticatedUser?.siteAdmin}
+                        onSave={save}
+                        saving={isUpdating}
+                        height={600}
+                        isLightTheme={isLightTheme}
+                        telemetryService={telemetryService}
+                        customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
+                        onDirtyChange={setDirty}
+                        onEditor={setEditor}
+                    />
+                </>
             )}
         </>
     )

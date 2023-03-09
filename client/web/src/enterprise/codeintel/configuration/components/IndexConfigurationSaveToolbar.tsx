@@ -1,8 +1,9 @@
 import React from 'react'
 
-import { Button, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbar, SaveToolbarProps } from '../../../../components/SaveToolbar'
+
 import { ConfigurationInferButton } from './ConfigurationInferButton'
 
 export interface IndexConfigurationSaveToolbarProps {

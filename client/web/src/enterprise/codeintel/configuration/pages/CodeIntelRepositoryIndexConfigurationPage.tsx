@@ -1,4 +1,6 @@
-import { FunctionComponent, useCallback, useEffect, useState } from 'react'
+import { FunctionComponent, useEffect, useState } from 'react'
+
+import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link, Tabs, TabList, Tab, TabPanels, TabPanel } from '@sourcegraph/wildcard'
@@ -18,11 +20,18 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
     CodeIntelRepositoryIndexConfigurationPageProps
 > = ({ repo, authenticatedUser, telemetryService, ...props }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelRepositoryIndexConfiguration'), [telemetryService])
+    const location = useLocation()
 
     const [activeTabIndex, setActiveTabIndex] = useState<number>(0)
-    const setTab = useCallback((index: number) => {
-        setActiveTabIndex(index)
-    }, [])
+
+    useEffect(() => {
+        const tab = new URLSearchParams(location.search).get('tab')
+        if (tab === 'form') {
+            setActiveTabIndex(0)
+        } else if (tab === 'raw') {
+            setActiveTabIndex(1)
+        }
+    }, [location.search])
 
     return (
         <>
@@ -48,12 +57,16 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
                     className="mb-3"
                 />
             </CodeIntelConfigurationPageHeader>
-            <Tabs size="large" index={activeTabIndex} onChange={setTab} lazy={true}>
+            <Tabs size="large" index={activeTabIndex} lazy={true}>
                 <TabList>
-                    <Tab key="form">Form</Tab>
-                    <Tab key="raw">Raw</Tab>
+                    <Tab as={Link} to="?tab=form" key="form" className="text-decoration-none">
+                        Form
+                    </Tab>
+                    <Tab as={Link} to="?tab=raw" key="raw" className="text-decoration-none">
+                        Raw
+                    </Tab>
                 </TabList>
-                <TabPanels>
+                <TabPanels className="mb-3">
                     <TabPanel>
                         <ConfigurationForm
                             repoId={repo.id}

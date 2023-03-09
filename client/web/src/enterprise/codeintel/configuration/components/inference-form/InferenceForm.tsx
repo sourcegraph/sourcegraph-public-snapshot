@@ -5,7 +5,7 @@ import AJV from 'ajv'
 import addFormats from 'ajv-formats'
 import { uniqueId } from 'lodash'
 
-import { Button, Container, Form, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
+import { BeforeUnloadPrompt, Button, Container, Form, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AutoIndexJobDescriptionFields } from '../../../../../graphql-operations'
 import schema from '../../schema.json'
@@ -121,65 +121,68 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
     )
 
     return (
-        <Form onSubmit={handleSubmit}>
-            <>
-                {formData.index_jobs.map((job, index) => (
-                    <Container id={job.meta.id} key={job.meta.id} className={styles.job}>
-                        <IndexJobNode
-                            job={job}
-                            jobNumber={index + 1}
-                            readOnly={readOnly}
-                            onChange={getChangeHandler(job.meta.id)}
-                            onRemove={getRemoveHandler(job.meta.id)}
-                        />
-                        {!readOnly && (
-                            <Button
-                                variant="secondary"
-                                className="d-block mt-3 ml-auto"
-                                onClick={() => {
-                                    setFormData(previous => ({
-                                        dirty: true,
-                                        index_jobs: [
-                                            ...previous.index_jobs,
-                                            {
-                                                root: '',
-                                                indexer: '',
-                                                indexer_args: [],
-                                                requestedEnvVars: [],
-                                                local_steps: [],
-                                                outfile: '',
-                                                steps: [],
-                                                meta: {
-                                                    id: uniqueId(),
+        <>
+            <BeforeUnloadPrompt when={isDirty} message="Discard changes?" />
+            <Form onSubmit={handleSubmit}>
+                <>
+                    {formData.index_jobs.map((job, index) => (
+                        <Container id={job.meta.id} key={job.meta.id} className={styles.job}>
+                            <IndexJobNode
+                                job={job}
+                                jobNumber={index + 1}
+                                readOnly={readOnly}
+                                onChange={getChangeHandler(job.meta.id)}
+                                onRemove={getRemoveHandler(job.meta.id)}
+                            />
+                            {!readOnly && (
+                                <Button
+                                    variant="secondary"
+                                    className="d-block mt-3 ml-auto"
+                                    onClick={() => {
+                                        setFormData(previous => ({
+                                            dirty: true,
+                                            index_jobs: [
+                                                ...previous.index_jobs,
+                                                {
+                                                    root: '',
+                                                    indexer: '',
+                                                    indexer_args: [],
+                                                    requestedEnvVars: [],
+                                                    local_steps: [],
+                                                    outfile: '',
+                                                    steps: [],
+                                                    meta: {
+                                                        id: uniqueId(),
+                                                    },
                                                 },
-                                            },
-                                        ],
-                                    }))
-                                }}
-                            >
-                                <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
-                                Add job
-                            </Button>
-                        )}
-                    </Container>
-                ))}
-            </>
-            {!readOnly && (
-                <div className="d-flex align-items-center">
-                    <Button type="submit" variant="primary" disabled={!isDirty} className="mr-2">
-                        Save
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        disabled={!isDirty}
-                        onClick={() => setFormData(initialFormData.current)}
-                    >
-                        Discard changes
-                    </Button>
-                    {showInferButton && <ConfigurationInferButton onClick={onInfer} />}
-                    {loading && <LoadingSpinner className="ml-2" />}
-                </div>
-            )}
-        </Form>
+                                            ],
+                                        }))
+                                    }}
+                                >
+                                    <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
+                                    Add job
+                                </Button>
+                            )}
+                        </Container>
+                    ))}
+                </>
+                {!readOnly && (
+                    <div className="d-flex align-items-center">
+                        <Button type="submit" variant="primary" disabled={!isDirty} className="mr-2">
+                            Save
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            disabled={!isDirty}
+                            onClick={() => setFormData(initialFormData.current)}
+                        >
+                            Discard changes
+                        </Button>
+                        {showInferButton && <ConfigurationInferButton onClick={onInfer} />}
+                        {loading && <LoadingSpinner className="ml-2" />}
+                    </div>
+                )}
+            </Form>
+        </>
     )
 }

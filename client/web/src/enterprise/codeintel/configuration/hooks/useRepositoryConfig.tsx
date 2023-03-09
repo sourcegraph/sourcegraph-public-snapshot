@@ -9,7 +9,7 @@ interface UseRepositoryConfigResult {
     configuration: {
         raw: string
         parsed: AutoIndexJobDescriptionFields[]
-    }
+    } | null
     loadingRepository: boolean
     repositoryError: ApolloError | undefined
 }

@@ -23,7 +23,8 @@ export const ConfigurationForm: React.FunctionComponent<ConfigurationFormProps> 
     const { inferredConfiguration, loadingInferred, inferredError } = useInferredConfig(repoId)
     const { configuration, loadingRepository, repositoryError } = useRepositoryConfig(repoId)
 
-    const showInferButton = Boolean(inferredConfiguration.raw) && configuration.raw !== inferredConfiguration.raw
+    const showInferButton =
+        Boolean(inferredConfiguration.raw) && configuration !== null && configuration.raw !== inferredConfiguration.raw
 
     const save = useCallback(
         async (data: SchemaCompatibleInferenceFormData) =>
@@ -38,7 +39,7 @@ export const ConfigurationForm: React.FunctionComponent<ConfigurationFormProps> 
 
     // Show any set configuration if available, otherwise show the inferred configuration
     const preferredConfiguration = useMemo(() => {
-        if (configuration.parsed.length > 0) {
+        if (configuration !== null) {
             return configuration
         }
 
@@ -59,7 +60,7 @@ export const ConfigurationForm: React.FunctionComponent<ConfigurationFormProps> 
                 jobs={forceInfer ? inferredConfiguration.parsed : preferredConfiguration.parsed}
                 readOnly={!authenticatedUser?.siteAdmin}
                 onSubmit={data => save(data)}
-                showInferButton={!forceInfer && showInferButton}
+                showInferButton={showInferButton}
                 onInfer={() => setForceInfer(true)}
             />
             {updatingError && <ErrorAlert error={updatingError} />}
