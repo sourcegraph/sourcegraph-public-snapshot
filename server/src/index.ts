@@ -187,6 +187,7 @@ async function postAction(user: User | null, data: any): Promise<void> {
 			name: user?.name || '',
 			email: user?.email || '',
 			event: JSON.stringify(data),
+			timestamp: new Date().toISOString(),
 			telemetryVersion,
 		})
 	} catch (error) {

@@ -154,6 +154,7 @@ export function feedbackToSheetRow({ user, sentiment, displayMessages, transcrip
 		sentiment,
 		displayMessages: JSON.stringify(displayMessages),
 		transcript: JSON.stringify(transcript),
+		timestamp: new Date().toISOString(),
 		feedbackVersion,
 	}
 }
