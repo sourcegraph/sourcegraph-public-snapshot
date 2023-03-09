@@ -143,18 +143,38 @@ export interface Feedback {
 	sentiment: 'good' | 'bad'
 	displayMessages: Message[]
 	transcript: TranscriptChunk[]
+	didTruncateTranscript?: boolean
 	feedbackVersion: string
 }
 
 export function feedbackToSheetRow({ user, sentiment, displayMessages, transcript, feedbackVersion }: Feedback): {
 	[header: string]: string | boolean | number
 } {
+	const googleSheetMaxBytes = 50000 // 50k is max cell byte limit for Google sheets
+	const transcriptStr = JSON.stringify(transcript)
+	let didTruncateTranscript = false
+	if (transcriptStr.length > googleSheetMaxBytes) {
+		const truncatedTranscript: TranscriptChunk[] = []
+		let numBytes = 0
+		for (let i = transcript.length - 1; i >= 0; i--) {
+			let newNumBytes = numBytes + JSON.stringify(transcript[i]).length + 1
+			if (newNumBytes > googleSheetMaxBytes) {
+				break
+			}
+			truncatedTranscript.push(transcript[i])
+			numBytes = newNumBytes
+		}
+		transcript = truncatedTranscript.reverse()
+		didTruncateTranscript = true
+	}
+
 	return {
 		user,
 		sentiment,
 		displayMessages: JSON.stringify(displayMessages),
 		transcript: JSON.stringify(transcript),
 		timestamp: new Date().toISOString(),
+		didTruncateTranscript,
 		feedbackVersion,
 	}
 }

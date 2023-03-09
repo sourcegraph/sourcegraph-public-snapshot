@@ -97,7 +97,7 @@ const shortAnswerBackend = new ClaudeBackend(
 )
 
 const app = express()
-app.use(bodyParser.json())
+app.use(bodyParser.json({ limit: '50mb' }))
 
 const httpServer = createServer(app)
 
