@@ -55,7 +55,7 @@ func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context
 
 	var after int
 	if args.After != nil {
-		if after, err = graphqlutil.DecodeIntCursor(args.After); err != nil {
+		if err = relay.UnmarshalSpec(graphql.ID(*args.After), &after); err != nil {
 			return nil, err
 		}
 	}
