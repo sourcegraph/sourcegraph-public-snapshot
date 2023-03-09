@@ -23,6 +23,7 @@ tree-sitter-go = "0.19.1"
 tree-sitter-java = "0.20.0"
 tree-sitter-javascript = "0.20.0"
 tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet" }
+tree-sitter-nickel = { git = "https://github.com/nickel-lang/tree-sitter-nickel" }
 tree-sitter-python = "0.20.2"
 tree-sitter-perl = { git = "https://github.com/sourcegraph/tree-sitter-perl" }
 tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod" }

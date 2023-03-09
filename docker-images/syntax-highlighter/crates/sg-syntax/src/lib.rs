@@ -109,6 +109,14 @@ pub fn determine_filetype(q: &SourcegraphQuery) -> String {
         Err(_) => "".to_owned(),
     });
 
+    if filetype.is_empty() || filetype.to_lowercase() == "plain text" {
+        #[allow(clippy::single_match)]
+        match q.extension.as_str() {
+            "ncl" => return "nickel".to_string(),
+            _ => {}
+        };
+    }
+
     // Normalize all the filenames here
     match filetype.as_str() {
         "Rust Enhanced" => "rust",

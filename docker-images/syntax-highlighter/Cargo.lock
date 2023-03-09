@@ -1392,6 +1392,7 @@ dependencies = [
  "tree-sitter-java",
  "tree-sitter-javascript",
  "tree-sitter-jsonnet",
+ "tree-sitter-nickel",
  "tree-sitter-perl",
  "tree-sitter-pod",
  "tree-sitter-python",
@@ -2002,6 +2003,15 @@ dependencies = [
 name = "tree-sitter-jsonnet"
 version = "0.0.1"
 source = "git+https://github.com/sourcegraph/tree-sitter-jsonnet#009e6f06266f46ae07077dd6c8026ded56ab7dd8"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-nickel"
+version = "0.0.1"
+source = "git+https://github.com/nickel-lang/tree-sitter-nickel#d6c7eeb751038f934b5b1aa7ff236376d0235c56"
 dependencies = [
  "cc",
  "tree-sitter",
