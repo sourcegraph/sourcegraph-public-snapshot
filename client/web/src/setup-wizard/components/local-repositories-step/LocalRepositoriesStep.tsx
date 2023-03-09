@@ -23,7 +23,9 @@ import {
     UpdateRemoteCodeHostVariables,
 } from '../../../graphql-operations'
 // TODO Move these two in shared queries if they are used in different steps UI
+import { ProgressBar } from '../ProgressBar'
 import { ADD_CODE_HOST, GET_CODE_HOSTS, UPDATE_CODE_HOST } from '../remote-repositories-step/queries'
+import { CustomNextButton, FooterWidget } from '../setup-steps'
 
 import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_DIRECTORY_PATH } from './queries'
 
@@ -72,7 +74,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
             const newConfig = modify(localService.config, ['root'], directoryPath)
             // We do have local service already so run update mutation
             updateLocalCodeHost({
-                refetchQueries: ['GetCodeHosts'],
+                refetchQueries: ['GetCodeHosts', 'RepositoryStats', 'StatusMessages'],
                 variables: {
                     input: {
                         id: localService.id,
@@ -84,7 +86,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         } else {
             // We don't have any local external service yet, so call create mutation
             addLocalCodeHost({
-                refetchQueries: ['GetCodeHosts'],
+                refetchQueries: ['GetCodeHosts', 'RepositoryStats', 'StatusMessages'],
                 variables: {
                     input: {
                         displayName: 'Local repositories service',
@@ -110,6 +112,15 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                     />
                 )}
             </Container>
+
+            <FooterWidget>
+                <ProgressBar />
+            </FooterWidget>
+
+            <CustomNextButton
+                label={directoryPath ? 'Next' : 'Skip'}
+                tooltip={!directoryPath ? 'You can get back to this step later' : ''}
+            />
         </div>
     )
 }
