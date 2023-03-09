@@ -13,6 +13,10 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome & Firefox 23.3.8.2218, Safari 1.22
+
+- Fix code intelligence popup actions.
+
 ## Chrome 23.3.1.1624, Firefox 23.3.1.1623, Safari 1.21
 
 - Remove deprecated code-intel endpoints usage.
