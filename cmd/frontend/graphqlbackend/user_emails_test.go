@@ -2,10 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log"
@@ -13,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -258,6 +262,98 @@ func TestSetUserEmailVerified(t *testing.T) {
 				mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
 			} else {
 				mockrequire.NotCalled(t, authz.GrantPendingPermissionsFunc)
+			}
+		})
+	}
+}
+
+func TestPrimaryEmail(t *testing.T) {
+	var primaryEmailQuery = `query hasPrimaryEmail($id: ID!){
+		node(id: $id) {
+			... on User {
+				primaryEmail {
+					email
+				}
+			}
+		}
+	}`
+	type primaryEmail struct {
+		Email string
+	}
+	type node struct {
+		PrimaryEmail *primaryEmail
+	}
+	type primaryEmailResponse struct {
+		Node node
+	}
+
+	for name, testCase := range map[string]struct {
+		emails []*database.UserEmail
+		want   primaryEmailResponse
+	}{
+		"no emails": {
+			want: primaryEmailResponse{
+				Node: node{
+					PrimaryEmail: nil,
+				},
+			},
+		},
+		"has primary email": {
+			emails: []*database.UserEmail{
+				{Email: "primary@example.com", Primary: true},
+				{Email: "secondary@example.com"},
+			},
+			want: primaryEmailResponse{
+				Node: node{
+					PrimaryEmail: &primaryEmail{
+						Email: "primary@example.com",
+					},
+				},
+			},
+		},
+		"no primary email": {
+			emails: []*database.UserEmail{
+				{Email: "not-primary@example.com"},
+				{Email: "not-primary-either@example.com"},
+			},
+			want: primaryEmailResponse{
+				Node: node{
+					PrimaryEmail: nil,
+				},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			fs := fakedb.New()
+			db := database.NewMockDB()
+			emails := database.NewMockUserEmailsStore()
+			emails.ListByUserFunc.SetDefaultHook(func(_ context.Context, ops database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+				var emails []*database.UserEmail
+				for _, m := range testCase.emails {
+					copy := *m
+					copy.UserID = ops.UserID
+					emails = append(emails, &copy)
+				}
+				return emails, nil
+			})
+			db.UserEmailsFunc.SetDefaultReturn(emails)
+			fs.Wire(db)
+			ctx := actor.WithActor(context.Background(), actor.FromUser(fs.AddUser(types.User{SiteAdmin: true})))
+			userID := fs.AddUser(types.User{
+				Username: "horse",
+			})
+			result := mustParseGraphQLSchema(t, db).Exec(ctx, primaryEmailQuery, "", map[string]any{
+				"id": string(relay.MarshalID("User", userID)),
+			})
+			if len(result.Errors) != 0 {
+				t.Fatal(result.Errors)
+			}
+			var resultData primaryEmailResponse
+			if err := json.Unmarshal(result.Data, &resultData); err != nil {
+				t.Fatalf("cannot unmarshal result data: %s", err)
+			}
+			if diff := cmp.Diff(testCase.want, resultData); diff != "" {
+				t.Errorf("result data, -want+got: %s", diff)
 			}
 		})
 	}
