@@ -36,6 +36,10 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
         render: context => <RepositoryReleasesArea {...context} />,
     },
     {
+        path: '/-/versions',
+        render: context => <RepositoryReleasesArea {...context} />,
+    },
+    {
         path: compareSpecPath,
         render: context => (
             <RepoRevisionWrapper>
