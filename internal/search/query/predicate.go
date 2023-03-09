@@ -48,6 +48,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
 	},
 	FieldSymbol: {
+		"defines":    func() Predicate { return &SymbolDefinesPredicate{} },
 		"references": func() Predicate { return &SymbolReferencesPredicate{} },
 		"implements": func() Predicate { return &SymbolImplementsPredicate{} },
 	},
@@ -505,26 +506,50 @@ func (f *FileHasOwnerPredicate) Unmarshal(params string, negated bool) error {
 func (f FileHasOwnerPredicate) Field() string { return FieldFile }
 func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }
 
-type SymbolReferencesPredicate struct {
-	SymbolSearch string
+// SymbolRelationshipPredicate is the base predicate implementation for the
+// various symbol relationship search predicates (defines, implements, references).
+type SymbolRelationshipPredicate struct {
+	RawSymbolSearch Plan
 }
+
+func (s SymbolRelationshipPredicate) Field() string { return FieldSymbol }
+
+func (s *SymbolRelationshipPredicate) Unmarshal(params string, _ bool) error {
+	// TODO: can we reduce the accepted complexity here, e.g. by requiring
+	// this be a single-node 'type:symbol' search? For now, we hope that
+	// the provided query returns a reasonable set of symbol matches.
+	// Eventually we'll want to support (or only support) globally unique
+	// symbol names, when those become available.
+	nodes, err := Parse(params, SearchTypeLiteral)
+	if err != nil {
+		return err
+	}
+	s.RawSymbolSearch = BuildPlan(nodes)
+	return nil
+}
+
+type SymbolDefinesPredicate struct{ SymbolRelationshipPredicate }
+
+func (s SymbolDefinesPredicate) Name() string { return "defines" }
+
+type SymbolReferencesPredicate struct{ SymbolRelationshipPredicate }
 
 func (s *SymbolReferencesPredicate) Unmarshal(params string, _ bool) error {
-	s.SymbolSearch = params
+	// TODO: can we reduce the accepted complexity here, e.g. by requiring
+	// this be a single-node 'type:symbol' search? For now, we hope that
+	// the provided query returns a reasonable set of symbol matches.
+	// Eventually we'll want to support (or only support) globally unique
+	// symbol names, when those become available.
+	nodes, err := Parse(params, SearchTypeLiteral)
+	if err != nil {
+		return err
+	}
+	s.RawSymbolSearch = BuildPlan(nodes)
 	return nil
 }
 
-func (s SymbolReferencesPredicate) Field() string { return FieldSymbol }
-func (s SymbolReferencesPredicate) Name() string  { return "references" }
+func (s SymbolReferencesPredicate) Name() string { return "references" }
 
-type SymbolImplementsPredicate struct {
-	SymbolSearch string
-}
+type SymbolImplementsPredicate struct{ SymbolRelationshipPredicate }
 
-func (s *SymbolImplementsPredicate) Unmarshal(params string, _ bool) error {
-	s.SymbolSearch = params
-	return nil
-}
-
-func (s SymbolImplementsPredicate) Field() string { return FieldSymbol }
-func (s SymbolImplementsPredicate) Name() string  { return "implements" }
+func (s SymbolImplementsPredicate) Name() string { return "implements" }

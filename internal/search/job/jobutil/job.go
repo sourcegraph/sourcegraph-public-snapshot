@@ -163,17 +163,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 		// Create code-intel search jobs
 		if preds := b.Parameters.SymbolRelationshipSearches(); len(preds) > 0 && inputs.Features.CodeGraphSearch {
 			for _, ss := range preds {
-				// TODO: can we reduce the accepted complexity here, e.g. by requiring
-				// this be a single-node 'type:symbol' search? For now, we hope that
-				// the provided query returns a reasonable set of symbol matches.
-				// Eventually we'll want to support (or only support) globally unique
-				// symbol names, when those become available.
-				nodes, err := query.Parse(ss.RawSymbolSearch, query.SearchTypeLiteral)
-				if err != nil {
-					return nil, err
-				}
-				plan := query.BuildPlan(nodes)
-				job, err := NewPlanJob(inputs, plan)
+				job, err := NewPlanJob(inputs, ss.RawSymbolSearch, enterpriseJobs)
 				if err != nil {
 					return nil, err
 				}

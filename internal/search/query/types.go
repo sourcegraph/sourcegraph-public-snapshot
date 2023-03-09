@@ -608,7 +608,7 @@ func (p Parameters) Visibility() RepoVisibility {
 type SymbolRelationship string
 
 const (
-	SymbolRelationshipDefinitions = "definitions"
+	SymbolRelationshipDefinitions = "defines"
 	SymbolRelationshipReferences  = "references"
 	SymbolRelationshipImplements  = "implements"
 )
@@ -619,19 +619,25 @@ type SymbolRelationshipSearch struct {
 	// RawSymbolSearch is the raw query for a search that should return symbol matches
 	// that should then be used to query for a corresponding precise code intel symbol
 	// from which to execute a search for Relationship.
-	RawSymbolSearch string
+	RawSymbolSearch Plan
 }
 
 func (p Parameters) SymbolRelationshipSearches() (symbolSearches []SymbolRelationshipSearch) {
+	VisitTypedPredicate(toNodes(p), func(pred *SymbolDefinesPredicate) {
+		symbolSearches = append(symbolSearches, SymbolRelationshipSearch{
+			RawSymbolSearch: pred.RawSymbolSearch,
+			Relationship:    SymbolRelationshipImplements,
+		})
+	})
 	VisitTypedPredicate(toNodes(p), func(pred *SymbolReferencesPredicate) {
 		symbolSearches = append(symbolSearches, SymbolRelationshipSearch{
-			RawSymbolSearch: pred.SymbolSearch,
+			RawSymbolSearch: pred.RawSymbolSearch,
 			Relationship:    SymbolRelationshipReferences,
 		})
 	})
 	VisitTypedPredicate(toNodes(p), func(pred *SymbolImplementsPredicate) {
 		symbolSearches = append(symbolSearches, SymbolRelationshipSearch{
-			RawSymbolSearch: pred.SymbolSearch,
+			RawSymbolSearch: pred.RawSymbolSearch,
 			Relationship:    SymbolRelationshipImplements,
 		})
 	})

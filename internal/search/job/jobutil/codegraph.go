@@ -32,8 +32,7 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 	defer func() { finish(alert, err) }()
 
 	if _, ok := clients.CodeIntel.(graph.UnimplementedCodeIntelStore); ok {
-		err = graph.ErrCodeIntelStoreUnimplemented
-		return nil, err
+		return nil, graph.ErrCodeIntelStoreUnimplemented
 	}
 
 	// pathRange is used as the identifier for deduplicating matches.
@@ -52,10 +51,7 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 
 	alert, err = s.SymbolSearch.Run(ctx, clients, streaming.StreamFunc(func(se streaming.SearchEvent) {
 		if se.Results.Len() == 0 {
-			stream.Send(streaming.SearchEvent{
-				Results: nil,
-				Stats:   se.Stats,
-			})
+			stream.Send(se)
 			return
 		}
 
@@ -185,7 +181,7 @@ func (s *CodeGraphSearchJob) MapChildren(fn job.MapFunc) job.Job {
 	return &cp
 }
 
-func (s *CodeGraphSearchJob) Fields(v job.Verbosity) (res []log.Field) {
+func (s *CodeGraphSearchJob) Fields(v job.Verbosity) []log.Field {
 	return []log.Field{
 		log.String("relationship", string(s.Relationship)),
 	}
