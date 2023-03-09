@@ -1,15 +1,50 @@
-import React, { FC, useEffect, useMemo } from 'react'
+import React, { FC, useEffect, useState, useCallback } from 'react'
+
+import { mdiChevronDown } from '@mdi/js'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Container, PageHeader, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import {
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    Text,
+    Alert,
+    Button,
+    Link,
+    Input,
+    Badge,
+    BadgeProps,
+    useDebounce,
+    PageSwitcher,
+    Icon,
+    PopoverTrigger,
+    PopoverContent,
+    Popover,
+    Position,
+    PopoverOpenEvent,
+} from '@sourcegraph/wildcard'
 
+import { usePageSwitcherPagination } from '../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../../../components/PageTitle'
-import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
+import {
+    SettingsAreaRepositoryFields,
+    RepoPermissionsInfoResult,
+    RepoPermissionsInfoVariables,
+    PermissionsInfoUserFields as INode,
+    RepoPermissionsInfoRepoNode as IRepo,
+} from '../../../graphql-operations'
+import { useURLSyncedState } from '../../../hooks'
 import { ActionContainer } from '../../../repo/settings/components/ActionContainer'
 import { scheduleRepositoryPermissionsSync } from '../../../site-admin/backend'
+import { Table, IColumn } from '../../../site-admin/UserManagement/components/Table'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-import { repoPermissionsInfo } from './backend'
+import { RepoPermissionsInfoQuery } from './backend'
+
+import styles from './RepoSettingsPermissionsPage.module.scss'
+
+type IUser = INode['user']
 
 export interface RepoSettingsPermissionsPageProps {
     repo: SettingsAreaRepositoryFields
@@ -20,9 +55,34 @@ export interface RepoSettingsPermissionsPageProps {
  */
 export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> = ({ repo }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsPermissions'))
-    const permissionsInfo = useObservable(useMemo(() => repoPermissionsInfo(repo.id), [repo.id]))
 
-    if (permissionsInfo === undefined) {
+    const [{ query }, setSearchQuery] = useURLSyncedState({ query: '' })
+    const debouncedQuery = useDebounce(query, 300)
+
+    const { connection, data, loading, error, refetch, variables, ...paginationProps } = usePageSwitcherPagination<
+        RepoPermissionsInfoResult,
+        RepoPermissionsInfoVariables,
+        INode
+    >({
+        query: RepoPermissionsInfoQuery,
+        variables: {
+            repoID: repo.id,
+            query: debouncedQuery,
+        },
+        getConnection: ({ data }) => {
+            if (data?.node?.__typename === 'Repository') {
+                const node = data.node as IRepo
+
+                return node.permissionsInfo?.users || undefined
+            }
+
+            return undefined
+        },
+    })
+
+    const permissionsInfo = data?.node?.__typename === 'Repository' ? (data.node as IRepo).permissionsInfo : undefined
+
+    if (!permissionsInfo || !connection) {
         return <LoadingSpinner inline={false} />
     }
 
@@ -81,8 +141,94 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                     </div>
                 )}
             </Container>
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Users' }]}
+                description="List of users who have access to the repository."
+                className="my-3 pt-3"
+            />
+            <Container className="mb-3">
+                <div className="d-flex">
+                    <Input
+                        type="search"
+                        placeholder="Search users..."
+                        name="query"
+                        value={query}
+                        onChange={event => setSearchQuery({ query: event.currentTarget.value })}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        aria-label="Search users..."
+                        variant="regular"
+                    />
+                    <div className="flex-1" />
+                </div>
+                <Table<INode> columns={TableColumns} getRowId={node => node.id} data={connection.nodes} />
+                <PageSwitcher {...paginationProps} totalCount={null} className="mt-4" />
+            </Container>
         </>
     )
+}
+
+const TableColumns: IColumn<INode>[] = [
+    {
+        key: 'user',
+        header: 'User',
+        render: ({ user }: INode) => user && <RenderUsernameAndEmail key={user.id} user={user} />,
+    },
+    {
+        key: 'reason',
+        header: 'Reason',
+        render: ({ reason }: INode) => <Badge {...(PermissionReasonBadgeProps[reason] || {})}>{reason}</Badge>,
+    },
+    {
+        key: 'updatedAt',
+        header: 'Updated At',
+        render: ({ updatedAt }: INode) => (
+            <div className={styles.updatedAtCell}>{updatedAt ? <Timestamp date={updatedAt} /> : '-'}</div>
+        ),
+    },
+]
+
+export const RenderUsernameAndEmail: FC<{ user: IUser }> = ({ user }) => {
+    const [isOpen, setIsOpen] = useState<boolean>(false)
+    const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
+        setIsOpen(event.isOpen)
+    }, [])
+
+    if (!user) {
+        return null
+    }
+
+    return (
+        <div className="d-flex p-2 align-items-center">
+            <UserAvatar inline={true} user={user} />
+            <Link to={`/users/${user.username}`} className="text-truncate ml-2">
+                @{user.username}
+            </Link>
+            <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
+                <PopoverTrigger as={Button} className="ml-1 border-0 p-1" variant="secondary" outline={true}>
+                    <Icon aria-label="Show details" svgPath={mdiChevronDown} />
+                </PopoverTrigger>
+                <PopoverContent position={Position.bottom} focusLocked={false}>
+                    <div className="p-2">
+                        <Text className="mb-0">{user.displayName}</Text>
+                        <Text className="mb-0">{user.email}</Text>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        </div>
+    )
+}
+
+const PermissionReasonBadgeProps: { [reason: string]: BadgeProps } = {
+    'Permissions Sync': {
+        variant: 'success',
+        tooltip: 'The repository is accessible to the user due to permissions syncing from code host.',
+    },
+    Unrestricted: { variant: 'primary', tooltip: 'The repository is accessible to all the users. ' },
+    'Site Admin': { variant: 'secondary', tooltip: 'The user is site admin and has access to all the repositories.' },
 }
 
 interface ScheduleRepositoryPermissionsSyncActionContainerProps {

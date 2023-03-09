@@ -10,6 +10,7 @@ import fetch from 'node-fetch'
 import * as semver from 'semver'
 import { SemVer } from 'semver'
 
+import { ReleaseConfig } from './config'
 import { getPreviousVersionSrcCli } from './git'
 import { cloneRepo, EditFunc, getAuthenticatedGitHubClient, listIssues } from './github'
 import * as update from './update'
@@ -323,19 +324,25 @@ export async function validateNoReleaseBlockers(octokit: Octokit): Promise<void>
     }
 }
 
-export async function nextSrcCliVersionInputWithAutodetect(repoPath?: string): Promise<SemVer> {
-    if (!repoPath) {
-        const client = await getAuthenticatedGitHubClient()
-        const { workdir } = await cloneRepo(client, 'sourcegraph', 'src-cli', {
-            revision: 'main',
-            revisionMustExist: true,
-        })
-        repoPath = workdir
+export async function nextSrcCliVersionInputWithAutodetect(config: ReleaseConfig, repoPath?: string): Promise<SemVer> {
+    let next: SemVer
+    if (!config.in_progress?.srcCliVersion) {
+        if (!repoPath) {
+            const client = await getAuthenticatedGitHubClient()
+            const { workdir } = await cloneRepo(client, 'sourcegraph', 'src-cli', {
+                revision: 'main',
+                revisionMustExist: true,
+            })
+            repoPath = workdir
+        }
+        console.log('Attempting to detect previous src-cli version...')
+        const previous = getPreviousVersionSrcCli(repoPath)
+        console.log(chalk.blue(`Detected previous src-cli version: ${previous.version}`))
+        next = previous.inc('minor')
+    } else {
+        next = new SemVer(config.in_progress.srcCliVersion)
     }
-    console.log('Attempting to detect previous src-cli version...')
-    const previous = getPreviousVersionSrcCli(repoPath)
-    console.log(chalk.blue(`Detected previous src-cli version: ${previous.version}`))
-    const next = previous.inc('minor')
+
     if (!(await softVerifyWithInput(`Confirm next version of src-cli should be: ${next.version}`))) {
         return new SemVer(
             await retryInput(

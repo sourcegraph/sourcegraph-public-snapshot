@@ -58,6 +58,12 @@
         background-color: var(--secondary-2);
     }
 
+    &--title {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
     &--creation {
         display: flex;
         justify-content: flex-start;

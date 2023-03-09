@@ -140,3 +140,41 @@ func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gq
 		role: role,
 	}, nil
 }
+
+func (r *Resolver) SetRoles(ctx context.Context, args *gql.SetRolesArgs) (*gql.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site administrators can assign roles to a user.
+	// We need to get the current user any
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	userID, err := gql.UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := auth.CurrentUser(ctx, r.db)
+	if err != nil {
+		return nil, err
+	}
+
+	if user.ID == userID {
+		return nil, errors.New("cannot assign role to self")
+	}
+
+	opts := database.SetRolesForUserOpts{UserID: userID}
+
+	for _, r := range args.Roles {
+		rID, err := unmarshalPermissionID(r)
+		if err != nil {
+			return nil, err
+		}
+		opts.Roles = append(opts.Roles, rID)
+	}
+
+	if err = r.db.UserRoles().SetRolesForUser(ctx, opts); err != nil {
+		return nil, err
+	}
+
+	return &gql.EmptyResponse{}, nil
+}

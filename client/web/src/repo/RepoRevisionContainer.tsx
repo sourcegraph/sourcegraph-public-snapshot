@@ -149,6 +149,7 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
                     <RevisionsPopover
                         repoId={repo?.id}
                         repoName={repoName}
+                        repoServiceType={repo?.externalRepository?.serviceType}
                         defaultBranch={resolvedRevision?.defaultBranch}
                         currentRev={revision}
                         currentCommitID={resolvedRevision?.commitID}
