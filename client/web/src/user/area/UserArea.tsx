@@ -32,12 +32,6 @@ import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
  * UserSettingsArea.
  */
 export const UserAreaGQLFragment = gql`
-    fragment UserRoleFields on Role {
-        id
-        name
-        system
-    }
-
     fragment UserAreaUserFields on User {
         __typename
         id
@@ -53,9 +47,9 @@ export const UserAreaGQLFragment = gql`
             email
             isPrimary
         }
-        roles(first: 20) {
+        roles {
             nodes {
-                ...UserRoleFields
+                name
             }
             totalCount
             pageInfo {

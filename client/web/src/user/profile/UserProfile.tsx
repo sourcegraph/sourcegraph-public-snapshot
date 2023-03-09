@@ -1,34 +1,26 @@
-import { Fragment, FC, useState, useMemo } from 'react'
+import { Fragment, FC } from 'react'
 
 import { formatDistanceToNowStrict } from 'date-fns'
 
-import { Button } from '@sourcegraph/wildcard'
-
 import { UserAreaRouteContext } from '../area/UserArea'
 
-type userData<T> = {
+type userData = {
     name: string
-    value: T
+    value: string
     visible: boolean
     isList: false
 } | {
     name: string
-    value: T[]
+    value: string[]
     visible: boolean
     isList: true
 }
 
 export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) => {
-    // const [roles, setRoles] = useState(user.roles.nodes)
     const primaryEmail = user.emails?.find(email => email.isPrimary)?.email
-    const roles = useMemo(() => {
-        const roleNames = user.roles.nodes.map(role => role.name)
-        return roleNames
-    }, [user.roles])
+    const roles = user.roles.nodes.map(role => role.name)
 
-
-
-    const userData: userData<string>[] = [
+    const userData: userData[] = [
         {
             name: 'Username',
             value: user.username,
@@ -53,7 +45,6 @@ export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) =>
             visible: !!primaryEmail,
             isList: false,
         },
-        // probably skip pagination for starship: add a todo!
         {
             name: 'Roles',
             value: roles,
@@ -72,7 +63,6 @@ export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) =>
                             {data.isList ? (
                                 <ul>
                                     {data.value.map((value, index) => <li key={index}>{value}</li>)}
-                                    {user.roles.pageInfo.hasNextPage && <Button variant='link'>Show More</Button>}
                                 </ul>
                             ) : <>{data.value}</>}
                         </dd>
