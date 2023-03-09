@@ -193,7 +193,7 @@ describe('StreamingSearchResults', () => {
             index: 0,
             type: 'fileMatch',
             ranked: false,
-            resultsNumber: 3,
+            resultsLength: 3,
         })
 
         userEvent.click(screen.getAllByTestId('result-container')[2])
@@ -202,7 +202,7 @@ describe('StreamingSearchResults', () => {
             index: 2,
             type: 'fileMatch',
             ranked: false,
-            resultsNumber: 3,
+            resultsLength: 3,
         })
     })
 
