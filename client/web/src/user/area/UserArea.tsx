@@ -32,6 +32,12 @@ import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
  * UserSettingsArea.
  */
 export const UserAreaGQLFragment = gql`
+    fragment UserRoleFields on Role {
+        id
+        name
+        system
+    }
+
     fragment UserAreaUserFields on User {
         __typename
         id
@@ -46,6 +52,15 @@ export const UserAreaGQLFragment = gql`
         emails @skip(if: $isSourcegraphDotCom) {
             email
             isPrimary
+        }
+        roles(first: 20) {
+            nodes {
+                ...UserRoleFields
+            }
+            totalCount
+            pageInfo {
+                hasNextPage
+            }
         }
     }
 `
