@@ -2,24 +2,24 @@ local patterns = require "internal_patterns"
 
 local M = {}
 
-local new_pattern = function(prefix, pattern, suffix)
-    return patterns.backdoor(prefix .. pattern .. suffix)
+local new_pattern = function(glob, pathspec)
+    return patterns.backdoor(glob, pathspec)
 end
 
 M.new_path_literal = function(pattern)
-    return new_pattern("/", pattern, "")
+    return new_pattern("/" .. pattern, pattern)
 end
 
 M.new_path_segment = function(pattern)
-    return new_pattern("", pattern, "/")
+    return new_pattern(pattern .. "/", "**/" .. pattern .. "/**")
 end
 
 M.new_path_basename = function(pattern)
-    return new_pattern("", pattern, "")
+    return new_pattern(pattern, "**/" .. pattern)
 end
 
 M.new_path_extension = function(pattern)
-    return new_pattern("*.", pattern, "")
+    return new_pattern("*." .. pattern, "**/*." .. pattern)
 end
 
 M.new_path_combine = function(pattern)
