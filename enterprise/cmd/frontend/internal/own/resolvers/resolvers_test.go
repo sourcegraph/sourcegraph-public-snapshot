@@ -201,6 +201,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 }
 
 func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
+	logger := logtest.Scoped(t)
 	repo := &types.Repo{Name: "repo-name", ID: 42}
 	team := &types.Team{Name: "fake-team", DisplayName: "The Fake Team"}
 	var parameterRevision = "revision-parameter"
@@ -230,7 +231,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	if err := fs.TeamStore.CreateTeam(ctx, team); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.New(db, git, own)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.New(db, git, own, logger)})
 	if err != nil {
 		t.Fatal(err)
 	}
