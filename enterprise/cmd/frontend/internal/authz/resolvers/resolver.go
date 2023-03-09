@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -368,11 +367,11 @@ func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlba
 	// by ID (might already be cleaned up).
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return pointer.String("Permissions sync job is already dequeued and cannot be canceled."), nil
+			return strPtr("No job that can be canceled found."), nil
 		}
 		return nil, err
 	}
-	return pointer.String("Permissions sync job canceled"), nil
+	return strPtr("Permissions sync job canceled"), nil
 }
 
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
@@ -630,3 +629,5 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.
 
 	return NewPermissionsSyncJobsResolver(r.db, args)
 }
+
+func strPtr(s string) *string { return &s }

@@ -715,7 +715,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		)
 
 		require.NoError(t, err)
-		require.Equal(t, "Permissions sync job is already dequeued and cannot be canceled.", *result)
+		require.Equal(t, "No job that can be canceled found.", *result)
 	})
 
 	t.Run("SQL error", func(t *testing.T) {
@@ -820,7 +820,7 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 			`, marshalPermissionsSyncJobID(42)),
 			ExpectedResult: `
 				{
-					"cancelPermissionsSyncJob": "Permissions sync job is already dequeued and cannot be canceled."
+					"cancelPermissionsSyncJob": "No job that can be canceled found."
 				}
 			`,
 		})
