@@ -4,6 +4,7 @@ const vulnerabilitiesFields = gql`
     fragment VulnerabilitiesFields on VulnerabilityMatch {
         __typename
         vulnerability {
+            id
             sourceID
             details
             summary
@@ -21,10 +22,16 @@ const vulnerabilitiesFields = gql`
 `
 
 export const RESOLVE_SECURITY_VULNERABILITIES_QUERY = gql`
-    query VulnerabilityMatches($severity: String, $language: String) {
-        vulnerabilityMatches(severity: $severity, language: $language) {
+    query VulnerabilityMatches($first: Int, $after: String, $severity: String, $language: String) {
+        vulnerabilityMatches(first: $first, after: $after, severity: $severity, language: $language) {
             nodes {
+                id
                 ...VulnerabilitiesFields
+            }
+            totalCount
+            pageInfo {
+                hasNextPage
+                endCursor
             }
         }
     }

@@ -4,27 +4,18 @@ import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
 import { mdiChevronDoubleUp, mdiChevronDoubleDown } from '@mdi/js'
 
 import { PageHeader, Button, Icon, useWindowSize, VIEWPORT_LG } from '@sourcegraph/wildcard'
+import { ConnectionError, ConnectionLoading } from '../../components/FilteredConnection/ui'
 import { useSentinelQuery } from './graphql/useSentinelQuery'
-import styles from './SentinelView.module.scss'
 import { SummaryTable } from './components/SummaryTable/SummaryTable'
 import { SentinelBanner } from './components/SentinelBanner/SentinelBanner'
 import { VulnerabilityList } from './components/VulnerabilityList/VulnerabilityList'
 import { VulnerabilitySidebarView } from './components/VulnerabilitySidebar/VulnerabilitySidebar'
+import styles from './SentinelView.module.scss'
 
 export const SentinelView: FC = () => {
     const [showMobileFilters, setShowMobileFilters] = useState(true)
-    // const { vulnerabilities, loading, error, refetch } = useSentinelQuery({ severity: '', language: '' })
-
-    // if (loading) {
-    //     return <div>Loading...</div>
-    // }
-
-    // if (error) {
-    //     return <div>"Ruh roh"</div>
-    // }
     const [filter, setFilter] = useState({ severity: '', language: '' })
     const { loading, hasNextPage, fetchMore, connection, error } = useSentinelQuery(filter)
-    console.log('🚀 ~ file: SentinelView.tsx:26 ~ connection:', connection)
 
     return (
         <section className="w-100">
@@ -34,10 +25,20 @@ export const SentinelView: FC = () => {
                 <FilterButton showMobileFilters={showMobileFilters} onShowMobileFiltersClicked={setShowMobileFilters} />
                 <div className={classNames(styles.container, { [styles.full]: !showMobileFilters })}>
                     <div className={styles.main}>
-                        <SummaryTable vulnerabilityMatches={connection?.nodes ?? []} />
-                        <VulnerabilityList vulnerabilityMatches={connection?.nodes ?? []} />
+                        {error && <ConnectionError errors={[error.message]} />}
+                        {loading && !connection && <ConnectionLoading />}
+                        {connection && (
+                            <>
+                                <SummaryTable vulnerabilityMatches={connection?.nodes ?? []} />
+                                <VulnerabilityList vulnerabilityMatches={connection?.nodes ?? []} />
+                                {hasNextPage && (
+                                    <Button size="sm" variant="secondary" outline={true} onClick={fetchMore}>
+                                        Load more vulnerabilities
+                                    </Button>
+                                )}
+                            </>
+                        )}
                     </div>
-
                     <div className={styles.sidebar}>
                         {showMobileFilters && (
                             <VulnerabilitySidebarView
