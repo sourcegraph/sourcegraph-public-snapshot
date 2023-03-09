@@ -141,8 +141,8 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 // the given authenticator instance.
 //
 // Note that using an unsupported Authenticator implementation may result in
-// unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
-// supported.
+// unexpected behaviour, or (more likely) errors. At present, only BasicAuth and
+// BasicAuthWithSSH are supported.
 func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
 	switch a.(type) {
 	case *auth.BasicAuth, *auth.BasicAuthWithSSH:
