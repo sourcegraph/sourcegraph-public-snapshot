@@ -2775,7 +2775,7 @@ query($includeLocallyExecutedSpecs: Boolean!) {
 
 func stringPtr(s string) *string { return &s }
 
-func assignWritePermissionToUser(ctx context.Context, t *testing.T, db database.DB, userID int32) (*types.Role, *types.Permission) {
+func assignBatchChangesWritePermissionToUser(ctx context.Context, t *testing.T, db database.DB, userID int32) (*types.Role, *types.Permission) {
 	role := bt.CreateTestRole(ctx, t, db, "TEST-ROLE-1")
 	bt.AssignRoleToUser(ctx, t, db, userID, role.ID)
 
