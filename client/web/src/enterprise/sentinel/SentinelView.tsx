@@ -13,8 +13,7 @@ import { VulnerabilitySidebarView } from './components/VulnerabilitySidebar/Vuln
 
 export const SentinelView: FC = () => {
     const [showMobileFilters, setShowMobileFilters] = useState(true)
-
-    const { vulnerabilities, loading, error, refetch } = useSentinelQuery({ severity: '' })
+    const { vulnerabilities, loading, error, refetch } = useSentinelQuery({ severity: '', language: '' })
 
     if (loading) {
         return <div>Loading...</div>

@@ -66,6 +66,7 @@ interface UseSentinelResult {
 
 interface UseSentinelProps {
     severity: string
+    language: string
 }
 
 export const useSentinelQuery = (args: UseSentinelProps): UseSentinelResult => {
@@ -74,6 +75,7 @@ export const useSentinelQuery = (args: UseSentinelProps): UseSentinelResult => {
         {
             variables: {
                 severity: args.severity,
+                language: args.language,
             },
             notifyOnNetworkStatusChange: false,
             fetchPolicy: 'no-cache',
