@@ -986,11 +986,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	if s, ok := result.(*[]byte); ok {
 		*s = bs
 	} else if result != nil {
-		err := json.Unmarshal(bs, result)
-		if err != nil {
-			return resp, errors.Wrap(err, "failed to unmarshal response to JSON")
-		}
-		return resp, nil
+		return resp, errors.Wrap(json.Unmarshal(bs, result), "failed to unmarshal response to JSON")
 	}
 
 	return resp, nil
