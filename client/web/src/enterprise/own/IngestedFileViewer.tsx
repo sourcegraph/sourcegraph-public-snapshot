@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom'
 
 import { CodeMirrorEditor, defaultEditorTheme } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { selectableLineNumbers } from '../../repo/blob/codemirror/linenumbers'
 
@@ -15,9 +16,7 @@ export const IngestedFileViewer: React.FunctionComponent<{ contents: string }> =
     const location = useLocation()
 
     const lineNumber = useMemo(() => {
-        const params = new URLSearchParams(location.search)
-        const line = params.get('L')
-        return line ? parseInt(line, 10) : undefined
+        return parseQueryAndHash(location.search, location.hash).line
     }, [location.search])
 
     const extensions: Extension[] = useMemo(
