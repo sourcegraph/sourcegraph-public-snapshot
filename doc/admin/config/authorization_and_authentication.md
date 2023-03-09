@@ -145,7 +145,7 @@ We support authentication through OAuth for [Azure DevOps Services (dev.azure.co
 
 #### Configuring Sourcegraph auth.providers
 
-Before you add the configuration please ensuyre that:
+Before you add the configuration please ensure that:
 
 1. The value of `App ID` from your OAuth application is set as the value of the `clientID` field in the config
 2. The value of `Client Secret` (and not the `App secret`) from your OAuth application is set as the value of the `clientSecret` field

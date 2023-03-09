@@ -30,9 +30,7 @@ Additionally, under the `Organization` menu, select `All accessible organization
 
 Currently, all repositories belonging to the configured organizations/projects will be synced.
 
-In addition, there is one more field for configuring which repositories are mirrored:
-
-- [`exclude`](azuredevops.md#configuration)<br>A list of repositories to exclude.
+In addition, you may exclude one or more repositories by setting the [`exclude`](azuredevops.md#configuration) field in the code host connection.
 
 ### HTTPS cloning
 
