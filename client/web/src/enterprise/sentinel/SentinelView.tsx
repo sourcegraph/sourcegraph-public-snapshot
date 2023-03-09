@@ -13,15 +13,18 @@ import { VulnerabilitySidebarView } from './components/VulnerabilitySidebar/Vuln
 
 export const SentinelView: FC = () => {
     const [showMobileFilters, setShowMobileFilters] = useState(true)
-    const { vulnerabilities, loading, error, refetch } = useSentinelQuery({ severity: '', language: '' })
+    // const { vulnerabilities, loading, error, refetch } = useSentinelQuery({ severity: '', language: '' })
 
-    if (loading) {
-        return <div>Loading...</div>
-    }
+    // if (loading) {
+    //     return <div>Loading...</div>
+    // }
 
-    if (error) {
-        return <div>"Ruh roh"</div>
-    }
+    // if (error) {
+    //     return <div>"Ruh roh"</div>
+    // }
+    const [filter, setFilter] = useState({ severity: '', language: '' })
+    const { loading, hasNextPage, fetchMore, connection, error } = useSentinelQuery(filter)
+    console.log('🚀 ~ file: SentinelView.tsx:26 ~ connection:', connection)
 
     return (
         <section className="w-100">
@@ -31,15 +34,15 @@ export const SentinelView: FC = () => {
                 <FilterButton showMobileFilters={showMobileFilters} onShowMobileFiltersClicked={setShowMobileFilters} />
                 <div className={classNames(styles.container, { [styles.full]: !showMobileFilters })}>
                     <div className={styles.main}>
-                        <SummaryTable vulnerabilityMatches={vulnerabilities} />
-                        <VulnerabilityList vulnerabilityMatches={vulnerabilities} />
+                        <SummaryTable vulnerabilityMatches={connection?.nodes ?? []} />
+                        <VulnerabilityList vulnerabilityMatches={connection?.nodes ?? []} />
                     </div>
 
                     <div className={styles.sidebar}>
                         {showMobileFilters && (
                             <VulnerabilitySidebarView
                                 onShowMobileFiltersChanged={setShowMobileFilters}
-                                onFilterChosen={refetch}
+                                onFilterChosen={setFilter}
                             />
                         )}
                     </div>

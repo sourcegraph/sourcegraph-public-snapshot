@@ -1,12 +1,13 @@
 import { FC } from 'react'
 import styles from './SummaryTable.module.scss'
 import { VulnerabilitiesProps } from '../../graphql/useSentinelQuery'
-interface SummaryTableProps {
-    vulnerabilityMatches: VulnerabilitiesProps[]
+interface SummaryTableProps<T> {
+    vulnerabilityMatches: T[]
 }
-export const SummaryTable: FC<SummaryTableProps> = ({ vulnerabilityMatches = [] }) => {
+export function SummaryTable<T>(props: SummaryTableProps<T>) {
+    const { vulnerabilityMatches } = props
     const totalVulnerabilities = vulnerabilityMatches.length
-    const severity = getVulnerabilitySeverity(vulnerabilityMatches)
+    const severity = getVulnerabilitySeverity(vulnerabilityMatches as VulnerabilitiesProps[])
     const tableData = [
         {
             title: 'Total Vulnerabilities',
