@@ -758,8 +758,6 @@ func updateCheckURL(logger log.Logger) string {
 
 var telemetryHTTPProxy = env.Get("TELEMETRY_HTTP_PROXY", "", "if set, HTTP proxy URL for telemetry and update checks")
 
-var sourcegraphAppMode = deploy.IsDeployTypeSingleProgram(deploy.Type())
-
 // check performs an update check and updates the global state.
 func check(logger log.Logger, db database.DB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
@@ -767,7 +765,8 @@ func check(logger log.Logger, db database.DB) {
 
 	updateBodyFunc := updateBody
 	// In Sourcegraph App mode, use limited pings.
-	if sourcegraphAppMode {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
 		updateBodyFunc = limitedUpdateBody
 	}
 	endpoint := updateCheckURL(logger)
