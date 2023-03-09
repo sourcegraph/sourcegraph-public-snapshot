@@ -342,7 +342,7 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlbackend.CancelPermissionsSyncJobArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlbackend.CancelPermissionsSyncJobArgs) (*string, error) {
 	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
@@ -365,10 +365,13 @@ func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlba
 	err = r.db.PermissionSyncJobs().CancelQueuedJob(ctx, reason, syncJobID)
 	// We shouldn't return an error when the job is already processing or not found
 	// by ID (might already be cleaned up).
-	if err != nil && !errcode.IsNotFound(err) {
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return strPtr("No job that can be canceled found."), nil
+		}
 		return nil, err
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return strPtr("Permissions sync job canceled."), nil
 }
 
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
@@ -626,3 +629,5 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.
 
 	return NewPermissionsSyncJobsResolver(r.db, args)
 }
+
+func strPtr(s string) *string { return &s }

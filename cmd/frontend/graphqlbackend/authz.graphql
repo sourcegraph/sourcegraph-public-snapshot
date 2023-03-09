@@ -108,7 +108,7 @@ extend type Mutation {
         Optional cancellation reason.
         """
         reason: String
-    ): EmptyResponse!
+    ): String
 }
 
 extend type Query {

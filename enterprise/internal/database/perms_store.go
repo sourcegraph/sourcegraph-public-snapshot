@@ -494,10 +494,9 @@ DO UPDATE SET
 	source = excluded.source
 RETURNING updated_at;
 `
-
 	values := make([]*sqlf.Query, 0, len(permissions))
 	for _, p := range permissions {
-		values = append(values, sqlf.Sprintf("(%s::integer, %s::integer, %s::integer, %s::timestamptz, %s::timestamptz, %s::text)",
+		values = append(values, sqlf.Sprintf("(NULLIF(%s::integer, 0), NULLIF(%s::integer, 0), %s::integer, %s::timestamptz, %s::timestamptz, %s::text)",
 			p.UserID,
 			p.ExternalAccountID,
 			p.RepoID,
@@ -780,7 +779,7 @@ DO UPDATE SET
 	), nil
 }
 
-func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error {
+func (s *permsStore) legacySetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -799,6 +798,46 @@ DO UPDATE SET
 	q := sqlf.Sprintf(format, pq.Array(ids), unrestricted, unrestricted)
 
 	return errors.Wrap(s.Exec(ctx, q), "setting unrestricted flag")
+}
+
+func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error {
+	var txs *permsStore
+	var err error
+	if s.InTransaction() {
+		txs = s
+	} else {
+		txs, err = s.transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = txs.Done(err) }()
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	err = txs.legacySetRepoPermissionsUnrestricted(ctx, ids, unrestricted)
+	if err != nil {
+		return err
+	}
+
+	values := make([]*sqlf.Query, 0, len(ids))
+	for _, repoID := range ids {
+		values = append(values, sqlf.Sprintf("(NULL, %d)", repoID))
+	}
+
+	q := sqlf.Sprintf(`
+INSERT INTO user_repo_permissions (user_id, repo_id)
+VALUES %s
+ON CONFLICT DO NOTHING`,
+		sqlf.Join(values, ","),
+	)
+	if !unrestricted {
+		q = sqlf.Sprintf(`DELETE FROM user_repo_permissions WHERE repo_id = ANY(%s)`, pq.Array(ids))
+	}
+
+	return errors.Wrapf(txs.Exec(ctx, q), "setting repositories as unrestricted %v %v", ids, unrestricted)
 }
 
 // upsertRepoPermissionsQuery upserts single row of repository permissions.
@@ -1426,11 +1465,27 @@ AND service_id = %s
 
 func (s *permsStore) DeleteAllUserPermissions(ctx context.Context, userID int32) (err error) {
 	ctx, save := s.observe(ctx, "DeleteAllUserPermissions", "")
+
+	var txs *permsStore
+	if s.InTransaction() {
+		txs = s
+	} else {
+		txs, err = s.transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = txs.Done(err) }()
+	}
+
 	defer func() { save(&err, otlog.Int32("userID", userID)) }()
 
+	// first delete from the unified table
+	if err = txs.execute(ctx, sqlf.Sprintf(`DELETE FROM user_repo_permissions WHERE user_id = %d`, userID)); err != nil {
+		return errors.Wrap(err, "execute delete user repo permissions query")
+	}
 	// NOTE: Practically, we don't need to clean up "repo_permissions" table because the value of "id" column
 	// that is associated with this user will be invalidated automatically by deleting this row.
-	if err = s.execute(ctx, sqlf.Sprintf(`DELETE FROM user_permissions WHERE user_id = %s`, userID)); err != nil {
+	if err = txs.execute(ctx, sqlf.Sprintf(`DELETE FROM user_permissions WHERE user_id = %s`, userID)); err != nil {
 		return errors.Wrap(err, "execute delete user permissions query")
 	}
 
@@ -2369,20 +2424,20 @@ func (s *permsStore) scanUsersPermissionsInfo(rows dbutil.Scanner) (*types.User,
 }
 
 const usersPermissionsInfoQueryFmt = `
-SELECT 
-	users.id, 
-	users.username, 
-	users.display_name, 
-	users.avatar_url, 
-	users.created_at, 
-	users.updated_at, 
-	users.site_admin, 
-	users.passwd IS NOT NULL, 
-	users.tags, 
-	users.invalidated_sessions_at, 
-	users.tos_accepted, 
+SELECT
+	users.id,
+	users.username,
+	users.display_name,
+	users.avatar_url,
+	users.created_at,
+	users.updated_at,
+	users.site_admin,
+	users.passwd IS NOT NULL,
+	users.tags,
+	users.invalidated_sessions_at,
+	users.tos_accepted,
 	users.searchable,
-	CASE 
+	CASE
 		WHEN user_permissions.object_ids_ints @> INTSET(repo.id) THEN user_permissions.updated_at
 		ELSE NULL
 	END AS permissions_updated_at
@@ -2422,7 +2477,7 @@ func (s *permsStore) isRepoUnrestricted(ctx context.Context, repoID api.RepoID, 
 }
 
 const isRepoUnrestrictedQueryFmt = `
-SELECT 
+SELECT
 	(%s) AS unrestricted
 FROM repo
 WHERE

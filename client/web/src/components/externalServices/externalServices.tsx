@@ -525,6 +525,18 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     },
 ]
 
+const azureDevOpsEditorActions = (): EditorAction[] => [
+    {
+        id: 'excludeRepo',
+        label: 'Exclude a repository',
+        run: (config: string) => {
+            const value = { name: '<project>/<repository>' }
+            const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
+            return { edits, selectText: '<project>/<repository>' }
+        },
+    },
+]
+
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
     title: 'GitHub',
@@ -1297,7 +1309,9 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
     defaultConfig: `{
   "url": "https://dev.azure.com",
   "username": "<username>",
-  "token": "<token>"
+  "token": "<token>",
+  "orgs": [],
+  "projects": []
 }`,
     instructions: (
         <div>
@@ -1318,10 +1332,14 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
                     </Link>{' '}
                     for instructions on how to create a Personal Access Token.
                 </li>
+                <li>
+                    In the configuration below, set <Field>orgs</Field> and/or <Field>projects</Field> to the
+                    organizations/projects you want to sync repositories from.
+                </li>
             </ol>
         </div>
     ),
-    editorActions: [],
+    editorActions: azureDevOpsEditorActions(),
 }
 
 const NPM_PACKAGES: AddExternalServiceOptions = {

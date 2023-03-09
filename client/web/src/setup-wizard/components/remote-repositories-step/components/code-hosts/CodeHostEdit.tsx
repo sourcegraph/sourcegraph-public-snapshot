@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, ErrorAlert, H4, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../../../components/externalServices/externalServices'
@@ -36,7 +37,7 @@ interface EditableCodeHost {
     config: string
 }
 
-interface CodeHostEditProps {
+interface CodeHostEditProps extends TelemetryProps {
     onCodeHostDelete: (codeHost: EditableCodeHost) => void
 }
 
@@ -45,7 +46,7 @@ interface CodeHostEditProps {
  * Also performs edit, delete actions over opened code host connection
  */
 export const CodeHostEdit: FC<CodeHostEditProps> = props => {
-    const { onCodeHostDelete } = props
+    const { onCodeHostDelete, telemetryService } = props
     const { codehostId } = useParams()
 
     const { data, loading, error, refetch } = useQuery<GetExternalServiceByIdResult, GetExternalServiceByIdVariables>(
@@ -91,6 +92,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
             codeHostKind={data.node.kind}
             displayName={data.node.displayName}
             configuration={data.node.config}
+            telemetryService={telemetryService}
         >
             {state => (
                 <footer className={styles.footer}>
@@ -122,7 +124,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
     )
 }
 
-interface CodeHostEditViewProps {
+interface CodeHostEditViewProps extends TelemetryProps {
     codeHostId: string
     codeHostKind: ExternalServiceKind
     displayName: string
@@ -131,7 +133,7 @@ interface CodeHostEditViewProps {
 }
 
 const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
-    const { codeHostId, codeHostKind, displayName, configuration, children } = props
+    const { codeHostId, codeHostKind, displayName, configuration, telemetryService, children } = props
 
     const navigate = useNavigate()
     const [updateRemoteCodeHost] = useMutation<UpdateRemoteCodeHostResult, UpdateRemoteCodeHostVariables>(
@@ -155,7 +157,12 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
 
     if (codeHostKind === ExternalServiceKind.GITHUB) {
         return (
-            <GithubConnectView initialValues={initialValues} externalServiceId={codeHostId} onSubmit={handleSubmit}>
+            <GithubConnectView
+                initialValues={initialValues}
+                externalServiceId={codeHostId}
+                telemetryService={telemetryService}
+                onSubmit={handleSubmit}
+            >
                 {children}
             </GithubConnectView>
         )

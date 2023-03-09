@@ -12,7 +12,9 @@ import { UserSettingsCreateAccessTokenCallbackPage } from './UserSettingsCreateA
 import { UserSettingsCreateAccessTokenPage } from './UserSettingsCreateAccessTokenPage'
 import { UserSettingsTokensPage } from './UserSettingsTokensPage'
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'user' | 'authenticatedUser'>, TelemetryProps {}
+interface Props extends Pick<UserSettingsAreaRouteContext, 'user' | 'authenticatedUser'>, TelemetryProps {
+    isSourcegraphDotCom: boolean
+}
 
 export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [newToken, setNewToken] = useState<CreateAccessTokenResult['createAccessToken'] | undefined>()
