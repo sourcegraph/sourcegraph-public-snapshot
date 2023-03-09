@@ -90,7 +90,7 @@ var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", 
 
 func init() {
 	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
+		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsDeployTypeSingleProgram(deploy.Type()) {
 			return nil
 		}
 		if c.SiteConfig().ExternalURL == "" {
