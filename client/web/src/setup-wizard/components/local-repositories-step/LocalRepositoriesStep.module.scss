@@ -1,11 +1,45 @@
-.list {
-    list-style: none;
-    padding: 0;
-    margin: 0.25rem 0 0 0;
+.content {
+    min-height: 30rem;
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
-    max-width: 35rem;
+}
+
+.file-picker {
+    width: 65%;
+}
+
+.input-root {
+    display: flex;
+    width: 100%;
+}
+
+.input {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.pick-path {
+    flex-shrink: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.reset-path {
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0;
+    margin: 1rem 0 0 0.5rem;
+    list-style: none;
+
+    &:empty {
+        display: none;
+    }
 }
 
 .item {

@@ -1,157 +1,193 @@
-import { FC, HTMLAttributes, useState, useEffect } from 'react'
+import { FC, forwardRef, HTMLAttributes, InputHTMLAttributes, useEffect, useState } from 'react'
 
 import { useLazyQuery } from '@apollo/client'
-import { mdiInformationOutline, mdiGit } from '@mdi/js'
+import { mdiGit, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
+import { parse as parseJSONC } from 'jsonc-parser'
 
-import { useQuery, useMutation } from '@sourcegraph/http-client'
-import { Button, Container, Icon, Input, Text } from '@sourcegraph/wildcard'
+import { ErrorLike, modify } from '@sourcegraph/common'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Container, ErrorAlert, Icon, Input, Text } from '@sourcegraph/wildcard'
 
-import { LoaderButton } from '../../../components/LoaderButton'
 import {
-    GetCodeHostsResult,
-    ExternalServiceKind,
-    RepositoriesResult,
     AddRemoteCodeHostResult,
     AddRemoteCodeHostVariables,
     CodeHost,
-    GetLocalDirectoryPathResult,
     DiscoverLocalRepositoriesResult,
     DiscoverLocalRepositoriesVariables,
+    ExternalServiceKind,
+    GetCodeHostsResult,
+    GetLocalDirectoryPathResult,
+    UpdateRemoteCodeHostResult,
+    UpdateRemoteCodeHostVariables,
 } from '../../../graphql-operations'
-import { ProgressBar } from '../ProgressBar'
 // TODO Move these two in shared queries if they are used in different steps UI
-import { GET_CODE_HOSTS, ADD_CODE_HOST } from '../remote-repositories-step/queries'
-import { FooterWidget, CustomNextButton } from '../setup-steps'
+import { ADD_CODE_HOST, GET_CODE_HOSTS, UPDATE_CODE_HOST } from '../remote-repositories-step/queries'
 
-import { GET_LOCAL_DIRECTORY_PATH, DISCOVER_LOCAL_REPOSITORIES, GET_REPOSITORIES_BY_SERVICE } from './queries'
+import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_DIRECTORY_PATH } from './queries'
 
 import styles from './LocalRepositoriesStep.module.scss'
 
-interface LocalRepositoriesStepProps extends HTMLAttributes<HTMLDivElement> {}
+interface LocalRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTMLDivElement> {}
 
 export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
-    const { className, ...attributes } = props
+    const { telemetryService, ...attributes } = props
 
-    // TODO Move this to the props
-    const filePickerAvailable = !!window.context.localFilePickerAvailable
-
-    /** Parse out non-hard-coded local services connected based off GET_CODE_HOSTS + GET_REPOSITORIES_BY_SERVICE */
-    const [foundRepositories, setFoundRepositories] = useState<any[]>()
-    const [directoryPicker, setDirectoryPicker] = useState<boolean>(false)
     const [directoryPath, setDirectoryPath] = useState<string>('')
+    const [error, setError] = useState<ErrorLike | undefined>()
 
-    const [addRemoteCodeHost] = useMutation<AddRemoteCodeHostResult, AddRemoteCodeHostVariables>(ADD_CODE_HOST)
-
-    // TODO: Trade out for getLocalServices() or extended externalServices(kind: "OTHER") if/when available to simplify this block
-    const { data } = useQuery<GetCodeHostsResult>(GET_CODE_HOSTS, { fetchPolicy: 'cache-and-network' })
-
-    // Filter out common services and get only non-generated local "Other" service
-    const localService = getLocalService(data)
-
-    const { data: repoData } = useQuery<RepositoriesResult>(GET_REPOSITORIES_BY_SERVICE, {
-        skip: !localService,
+    // TODO: Trade out for getLocalServices() or extended externalServices(kind: "OTHER")
+    // if/when available to simplify this block
+    const { data, loading } = useQuery<GetCodeHostsResult>(GET_CODE_HOSTS, {
         fetchPolicy: 'cache-and-network',
-        variables: {
-            first: 25,
-            externalService: localService?.id ?? '',
-        },
+        // Sync local state and local external service path
+        onCompleted: data => setDirectoryPath(getLocalServicePath(data)),
+        onError: setError,
     })
+    const [addLocalCodeHost] = useMutation<AddRemoteCodeHostResult, AddRemoteCodeHostVariables>(ADD_CODE_HOST)
+    const [updateLocalCodeHost] = useMutation<UpdateRemoteCodeHostResult, UpdateRemoteCodeHostVariables>(
+        UPDATE_CODE_HOST
+    )
 
-    // Updates with any previously synced non-automated local services
+    // Automatically create or update (if local service already exists) a local
+    // external service as user changes the absolute path for local repositories
     useEffect(() => {
-        setFoundRepositories(repoData?.repositories?.nodes)
-    }, [repoData])
-
-    // TODO: Fix bug, dir picker fires on initial load
-    const { data: localDirectoryPath } = useQuery<GetLocalDirectoryPathResult>(GET_LOCAL_DIRECTORY_PATH, {
-        skip: !directoryPicker,
-    })
-
-    const { data: discoveredRepositories } = useQuery<DiscoverLocalRepositoriesResult>(DISCOVER_LOCAL_REPOSITORIES, {
-        skip: !directoryPath,
-        variables: { dir: directoryPath },
-    })
-
-    // Updates discovery repo list based off given directory path
-    useEffect(() => {
-        setFoundRepositories(discoveredRepositories?.localDirectory?.repositories)
-    }, [discoveredRepositories])
-
-    useEffect(() => {
-        setDirectoryPath(localDirectoryPath?.localDirectoryPicker?.path ?? '')
-
-        if (directoryPath) {
-            setDirectoryPicker(false)
+        if (loading) {
+            return
         }
-    }, [directoryPath, localDirectoryPath])
 
-    const handleRepoPicker = (): void => {
-        if (filePickerAvailable) {
-            setDirectoryPicker(true)
+        setError(undefined)
+
+        const localService = getLocalService(data)
+        const localServicePath = getLocalServicePath(data)
+        const hasPathChanged = localServicePath !== directoryPath
+
+        // Do nothing if path hasn't changed
+        if (!hasPathChanged) {
+            return
+        }
+
+        if (localService) {
+            const newConfig = modify(localService.config, ['root'], directoryPath)
+            // We do have local service already so run update mutation
+            updateLocalCodeHost({
+                refetchQueries: ['GetCodeHosts'],
+                variables: {
+                    input: {
+                        id: localService.id,
+                        config: newConfig,
+                        displayName: localService.displayName,
+                    },
+                },
+            }).catch(setError)
         } else {
-            // TODO: Fallback for non-Mac users, discover repos with simple input
+            // We don't have any local external service yet, so call create mutation
+            addLocalCodeHost({
+                refetchQueries: ['GetCodeHosts'],
+                variables: {
+                    input: {
+                        displayName: 'Local repositories service',
+                        config: createDefaultLocalServiceConfig(directoryPath),
+                        kind: ExternalServiceKind.OTHER,
+                    },
+                },
+            }).catch(setError)
         }
+    }, [directoryPath, data, loading, addLocalCodeHost, updateLocalCodeHost])
+
+    return (
+        <div {...attributes}>
+            <Text className="mb-2">Add your local repositories from your disk.</Text>
+
+            <Container className={styles.content}>
+                {!loading && (
+                    <LocalRepositoriesForm
+                        isFilePickerAvailable={window.context.localFilePickerAvailable}
+                        error={error}
+                        directoryPath={directoryPath}
+                        onDirectoryPathChange={setDirectoryPath}
+                    />
+                )}
+            </Container>
+        </div>
+    )
+}
+
+function getLocalServicePath(data?: GetCodeHostsResult): string {
+    const localCodeHost = getLocalService(data)
+
+    if (!localCodeHost) {
+        return ''
     }
 
-    const onConnect = async (): Promise<void> => {
-        await addRemoteCodeHost({
-            variables: {
-                input: {
-                    kind: ExternalServiceKind.OTHER,
-                    // TODO: setup config & jsonify
-                    displayName: '',
-                    config: `{
-                        url: '',
-                        repos: [],
-                    }`,
-                },
-            },
-        })
+    const config = parseJSONC(localCodeHost.config) as Record<string, string>
+    return config.root ?? ''
+}
+
+function getLocalService(data?: GetCodeHostsResult): CodeHost | null {
+    if (!data) {
+        return null
     }
 
     return (
-        <div {...attributes} className={classNames(className)}>
-            <Text className="mb-2">Add your local repositories.</Text>
+        data.externalServices.nodes.find(
+            node => node.kind === ExternalServiceKind.OTHER && node.id !== 'RXh0ZXJuYWxTZXJ2aWNlOjQ5Mzc0'
+        ) ?? null
+    )
+}
 
-            <Container>
-                <div className="d-flex w-100">
-                    <Input
-                        placeholder="Users/user-name/Projects/"
-                        disabled={filePickerAvailable}
-                        value={directoryPath || ''}
-                        className="mb-0 pl-0 pr-1 col-6"
-                    />
+function createDefaultLocalServiceConfig(path: string): string {
+    return `{ "url":"${window.context.srcServeGitUrl}", "root": "${path}", "repos": ["src-serve-local"] }`
+}
 
-                    <LoaderButton
-                        type="submit"
-                        variant="primary"
-                        size="sm"
-                        label="Pick a path"
-                        onClick={() => handleRepoPicker()}
-                        alwaysShowLabel={true}
-                        loading={false}
-                        disabled={false}
-                    />
+interface LocalRepositoriesFormProps {
+    isFilePickerAvailable: boolean
+    error: ErrorLike | undefined
+    directoryPath: string
+    onDirectoryPathChange: (path: string) => void
+}
 
-                    {/* TODO: Only show cancel if no local repos are saved. Enabled cancel action */}
-                    {foundRepositories?.length && (
-                        <Button size="sm" variant="secondary" className="ml-2">
-                            Cancel
-                        </Button>
-                    )}
-                </div>
+const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
+    const { isFilePickerAvailable, error, directoryPath, onDirectoryPathChange } = props
 
+    const [queryPath] = useLazyQuery<GetLocalDirectoryPathResult>(GET_LOCAL_DIRECTORY_PATH, {
+        fetchPolicy: 'network-only',
+        onCompleted: data => data.localDirectoryPicker?.path && onDirectoryPathChange(data.localDirectoryPicker?.path),
+    })
+
+    const { data: repositoriesData } = useQuery<DiscoverLocalRepositoriesResult, DiscoverLocalRepositoriesVariables>(
+        DISCOVER_LOCAL_REPOSITORIES,
+        {
+            skip: !directoryPath || !!error,
+            fetchPolicy: 'cache-and-network',
+            variables: { dir: directoryPath },
+        }
+    )
+
+    const foundRepositories = repositoriesData?.localDirectory?.repositories ?? []
+
+    return (
+        <>
+            <header>
+                <Input
+                    as={InputWitActions}
+                    value={directoryPath}
+                    label="Directory path"
+                    disabled={isFilePickerAvailable}
+                    placeholder="Users/user-name/Projects/"
+                    message="You can pick git directory or folder that contains multiple git folders"
+                    className={styles.filePicker}
+                    onPickPath={() => queryPath()}
+                    onPathReset={() => onDirectoryPathChange('')}
+                />
+            </header>
+
+            {error && <ErrorAlert error={error} className="mt-3" />}
+            {!error && (
                 <ul className={styles.list}>
-                    {/* TODO: Add loading & error state for discovery */}
-                    {foundRepositories?.map((codeHost, index) => (
-                        <li
-                            key={codeHost.path}
-                            className={classNames(
-                                'p-2 d-flex',
-                                index + 1 !== foundRepositories?.length && styles.itemBorder
-                            )}
-                        >
+                    {foundRepositories.map(codeHost => (
+                        <li key={codeHost.path} className={classNames('d-flex')}>
                             <Icon svgPath={mdiGit} aria-hidden={true} className="mt-1 mr-3" />
                             <div className="d-flex flex-column">
                                 <Text weight="medium" className="mb-0">
@@ -164,138 +200,10 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                         </li>
                     ))}
                 </ul>
+            )}
 
-                {foundRepositories?.length ? (
-                    // TODO: Add loading & error state for adding local service call
-                    // TODO: If this service is already saved, `CONNECT` changes to `UPDATE` with a sibling `DELETE` btn/action
-                    <LoaderButton
-                        type="submit"
-                        variant="primary"
-                        className="ml-auto mr-2"
-                        size="sm"
-                        label="Connect"
-                        onClick={onConnect}
-                        alwaysShowLabel={true}
-                        loading={false}
-                        disabled={false}
-                    />
-                ) : (
-                    <Text weight="bold" className="d-flex align-items-center mb-0 mt-3 font-weight-bold text-muted">
-                        <Icon
-                            svgPath={mdiInformationOutline}
-                            className="mr-2 mx-1"
-                            inline={false}
-                            aria-hidden={true}
-                            height={22}
-                            width={22}
-                        />
-                        Pick a path to see a list of local repositories that you want to have in the Sourcegraph App.
-                    </Text>
-                )}
-            </Container>
-
-            <FooterWidget>
-                <ProgressBar />
-            </FooterWidget>
-
-            {/* TODO: Skip button logic */}
-            <CustomNextButton label="Skip" disabled={false} />
-        </div>
-    )
-}
-
-interface LocalRepositoriesFormProps {
-    isFilePickerAvailable: boolean
-    directoryPath?: string
-    onSubmit: (path: string) => void
-}
-
-const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
-    const { isFilePickerAvailable, directoryPath = '', onSubmit } = props
-
-    const [path, setPath] = useState<string>(directoryPath)
-
-    const [queryPath] = useLazyQuery<GetLocalDirectoryPathResult>(GET_LOCAL_DIRECTORY_PATH, {
-        fetchPolicy: 'network-only',
-        onCompleted: data => data.localDirectoryPicker?.path && setPath(data.localDirectoryPicker?.path),
-    })
-
-    const { data: repositoriesData } = useQuery<DiscoverLocalRepositoriesResult, DiscoverLocalRepositoriesVariables>(
-        DISCOVER_LOCAL_REPOSITORIES,
-        {
-            skip: !path,
-            fetchPolicy: 'cache-and-network',
-            variables: { dir: path },
-        }
-    )
-
-    const foundRepositories = repositoriesData?.localDirectory?.repositories ?? []
-
-    return (
-        <section>
-            <div className="d-flex w-100">
-                <Input
-                    value={path}
-                    disabled={isFilePickerAvailable}
-                    placeholder="Users/user-name/Projects/"
-                    className="mb-0 pl-0 pr-1 col-6"
-                />
-
-                <LoaderButton
-                    size="sm"
-                    type="button"
-                    variant="primary"
-                    label="Pick a path"
-                    loading={false}
-                    disabled={false}
-                    alwaysShowLabel={true}
-                    onClick={() => queryPath()}
-                />
-
-                {path.length > 0 && (
-                    <Button size="sm" variant="secondary" className="ml-2">
-                        Reset path
-                    </Button>
-                )}
-            </div>
-
-            <ul className={styles.list}>
-                {/* TODO: Add loading & error state for discovery */}
-                {foundRepositories?.map((codeHost, index) => (
-                    <li
-                        key={codeHost.path}
-                        className={classNames(
-                            'p-2 d-flex',
-                            index + 1 !== foundRepositories?.length && styles.itemBorder
-                        )}
-                    >
-                        <Icon svgPath={mdiGit} aria-hidden={true} className="mt-1 mr-3" />
-                        <div className="d-flex flex-column">
-                            <Text weight="medium" className="mb-0">
-                                {codeHost.name}
-                            </Text>
-                            <Text size="small" className="text-muted mb-0">
-                                {codeHost.path}
-                            </Text>
-                        </div>
-                    </li>
-                ))}
-            </ul>
-
-            {foundRepositories?.length ? (
-                // TODO: Add loading & error state for adding local service call
-                // TODO: If this service is already saved, `CONNECT` changes to `UPDATE` with a sibling `DELETE` btn/action
-                <LoaderButton
-                    type="submit"
-                    variant="primary"
-                    className="ml-auto mr-2"
-                    size="sm"
-                    label="Connect"
-                    alwaysShowLabel={true}
-                    onClick={() => onSubmit(path)}
-                />
-            ) : (
-                <Text weight="bold" className="d-flex align-items-center mb-0 mt-3 font-weight-bold text-muted">
+            {foundRepositories.length === 0 && !error && (
+                <Text className="d-flex align-items-center mb-0 mt-3 text-muted">
                     <Icon
                         svgPath={mdiInformationOutline}
                         className="mr-2 mx-1"
@@ -307,18 +215,29 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                     Pick a path to see a list of local repositories that you want to have in the Sourcegraph App.
                 </Text>
             )}
-        </section>
+        </>
     )
 }
 
-function getLocalService(data?: GetCodeHostsResult): CodeHost | null {
-    if (!data?.externalServices.nodes) {
-        return null
-    }
+interface InputWitActionsProps extends InputHTMLAttributes<HTMLInputElement> {
+    onPickPath: () => void
+    onPathReset: () => void
+}
+
+const InputWitActions = forwardRef<HTMLInputElement, InputWitActionsProps>((props, ref) => {
+    const { className, onPickPath, onPathReset, ...attributes } = props
 
     return (
-        data.externalServices.nodes.find(
-            node => node.kind === ExternalServiceKind.OTHER && node.id !== 'RXh0ZXJuYWxTZXJ2aWNlOjQ5Mzc0'
-        ) ?? null
+        <div className={styles.inputRoot}>
+            {/* eslint-disable-next-line react/forbid-elements */}
+            <input ref={ref} {...attributes} className={classNames(className, styles.input)} />
+            <Button size="sm" type="button" variant="primary" className={styles.pickPath} onClick={onPickPath}>
+                Pick a path
+            </Button>
+
+            <Button size="sm" variant="secondary" className={styles.resetPath} onClick={onPathReset}>
+                Reset path
+            </Button>
+        </div>
     )
-}
+})
