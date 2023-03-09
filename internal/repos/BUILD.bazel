@@ -83,6 +83,7 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//internal/ratelimit",
+        "//internal/repoupdater",
         "//internal/repoupdater/protocol",
         "//internal/timeutil",
         "//internal/trace",

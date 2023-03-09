@@ -4,7 +4,6 @@ go_library(
     name = "codeowners",
     srcs = [
         "file.go",
-        "find_owners.go",
         "owner_types.go",
         "parse.go",
         "repr.go",
@@ -13,10 +12,10 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//enterprise/internal/own/codeowners/v1:codeowners",
+        "//enterprise/internal/paths",
         "//internal/lazyregexp",
         "//internal/types",
         "//lib/errors",
-        "@com_github_becheran_wildmatch_go//:wildmatch-go",
     ],
 )
 
