@@ -8,12 +8,6 @@ load("@aspect_rules_jest//jest:defs.bzl", _jest_test = "jest_test")
 load(":sass.bzl", _sass = "sass")
 load(":babel.bzl", _babel = "babel")
 
-# Experiment using raw babel instead of tsc.
-# TODO(bazel): ts_project(tsc=babel) currently still runs tsc to carry
-# .d.ts when going into an npm_package().
-# For now use raw babel without any type-checking
-USE_RAW_BABEL = True
-
 sass = _sass
 
 def ts_project(name, deps = [], **kwargs):
@@ -40,37 +34,13 @@ def ts_project(name, deps = [], **kwargs):
             "//:node_modules/@types/testing-library__jest-dom",
         ] if not d in deps]
 
-    if USE_RAW_BABEL:
-        _ts_project_babel_impl(name, deps = deps, visibility = visibility, **kwargs)
-    else:
-        _ts_project_tsc_impl(name, deps = deps, visibility = visibility, **kwargs)
-
-# ts_project() as an alias to babel with no type-checking or dts
-def _ts_project_babel_impl(name, **kwargs):
-    # no tsconfig with babel
-    kwargs.pop("tsconfig", None)
-    kwargs.pop("allow_js", None)
-    kwargs.pop("incremental", None)
-    kwargs.pop("composite", None)
-    kwargs.pop("declaration_map", None)
-    kwargs.pop("emit_declaration_only", None)
-
-    _babel(
-        name = name,
-        **kwargs
-    )
-
-# ts_project() with full type-checking etc
-def _ts_project_tsc_impl(name, visibility, **kwargs):
-    tsconfig = kwargs.pop("tsconfig", "//:tsconfig")
-
     # Default arguments for ts_project.
     _ts_project(
         name = name,
-        deps = kwargs.pop("deps", []),
+        deps = deps,
 
         # tsconfig options, default to the root
-        tsconfig = tsconfig,
+        tsconfig = kwargs.pop("tsconfig", "//:tsconfig"),
         composite = kwargs.pop("composite", True),
         declaration = kwargs.pop("declaration", True),
         declaration_map = kwargs.pop("declaration_map", True),

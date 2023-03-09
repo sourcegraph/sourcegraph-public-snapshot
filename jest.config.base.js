@@ -74,8 +74,6 @@ const config = {
   // Include the pnpm-style rules_js.
   // See pnpm notes at https://jestjs.io/docs/configuration#transformignorepatterns-arraystring
   transformIgnorePatterns: [
-    // TODO(bazel): remove when @sourcegraph/shared is no longer compiled as commonjs. See client/common/BUILD.bazel
-    '@sourcegraph/shared',
     // packages within the root pnpm/rules_js package store
     `<rootDir>/node_modules/.(aspect_rules_js|pnpm)/(?!(${ESM_NPM_DEPS.replace('/', '\\+')})@)`,
     // files under a subdir: eg. '/packages/lib-a/'

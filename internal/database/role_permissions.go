@@ -53,7 +53,7 @@ type BulkOperationOpts struct {
 type (
 	BulkAssignPermissionsToRoleOpts  BulkOperationOpts
 	BulkRevokePermissionsForRoleOpts BulkOperationOpts
-	SyncPermissionsToRoleOpts        BulkOperationOpts
+	SetPermissionsForRoleOpts        BulkOperationOpts
 )
 
 type RolePermissionStore interface {
@@ -77,9 +77,9 @@ type RolePermissionStore interface {
 	GetByPermissionID(ctx context.Context, opts GetRolePermissionOpts) ([]*types.RolePermission, error)
 	// Revoke deletes the permission and role relationship from the database.
 	Revoke(ctx context.Context, opts RevokeRolePermissionOpts) error
-	// SyncPermissionsToRole is used to sync all permissions assigned to a role. It removes any permission not
+	// SetPermissionsForRole is used to sync all permissions assigned to a role. It removes any permission not
 	// included in the options and assigns permissions that aren't yet assigned in the database.
-	SyncPermissionsToRole(ctx context.Context, opts SyncPermissionsToRoleOpts) error
+	SetPermissionsForRole(ctx context.Context, opts SetPermissionsForRoleOpts) error
 	// WithTransact creates a transaction for the RolePermissionStore.
 	WithTransact(context.Context, func(RolePermissionStore) error) error
 	// With is used to merge the store with another to pull data via other stores.
@@ -278,7 +278,7 @@ func (rp *rolePermissionStore) Assign(ctx context.Context, opts AssignRolePermis
 	return nil
 }
 
-func (rp *rolePermissionStore) SyncPermissionsToRole(ctx context.Context, opts SyncPermissionsToRoleOpts) error {
+func (rp *rolePermissionStore) SetPermissionsForRole(ctx context.Context, opts SetPermissionsForRoleOpts) error {
 	if opts.RoleID == 0 {
 		return errors.New("missing role id")
 	}

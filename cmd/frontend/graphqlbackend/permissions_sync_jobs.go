@@ -63,4 +63,6 @@ type ListPermissionsSyncJobsArgs struct {
 	State       *database.PermissionsSyncJobState
 	SearchType  *database.PermissionsSyncSearchType
 	Query       *string
+	UserID      *graphql.ID
+	RepoID      *graphql.ID
 }

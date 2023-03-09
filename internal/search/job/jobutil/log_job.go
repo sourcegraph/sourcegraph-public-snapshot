@@ -145,7 +145,7 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 				clients.Logger.Warn("Could not log search latency", log.Error(err))
 			}
 
-			if _, _, ok := isOwnershipSearch(q, l.inputs.Features); ok {
+			if _, _, ok := isOwnershipSearch(q); ok && l.inputs.Features.CodeOwnershipSearch {
 				err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), "FileHasOwnerSearch", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil)
 				if err != nil {
 					clients.Logger.Warn("Could not log use of file:has.owners", log.Error(err))
@@ -153,7 +153,7 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 			}
 
 			if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
-				if sp, err := filter.SelectPathFromString(v); err == nil && isSelectOwnersSearch(sp, l.inputs.Features) {
+				if sp, err := filter.SelectPathFromString(v); err == nil && isSelectOwnersSearch(sp) && l.inputs.Features.CodeOwnershipSearch {
 					err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), "SelectFileOwnersSearch", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil)
 					if err != nil {
 						clients.Logger.Warn("Could not log use of select:file.owners", log.Error(err))

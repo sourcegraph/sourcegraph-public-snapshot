@@ -42,8 +42,8 @@ var checks = map[string]check.CheckFunc{
 		check.Combine(check.InPath("docker"), check.CommandExitCode("docker info", 0)),
 		"Docker needs to be running",
 	),
-	"bazel":  check.WrapErrMessage(check.InPath("bazel"), "brew install bazel"),
-	"ibazel": check.WrapErrMessage(check.InPath("ibazel"), "brew install ibazel"),
+	"ibazel":   check.WrapErrMessage(check.InPath("ibazel"), "brew install ibazel"),
+	"bazelisk": check.WrapErrMessage(check.InPath("bazelisk"), "brew install bazelisk"),
 }
 
 func runChecksWithName(ctx context.Context, names []string) error {
