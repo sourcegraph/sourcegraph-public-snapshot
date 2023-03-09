@@ -232,6 +232,8 @@ type PermsStore interface {
 	ListUserPermissions(ctx context.Context, userID int32, args *ListUserPermissionsArgs) (perms []*UserPermission, err error)
 	// ListRepoPermissions returns list of users the repo is accessible to.
 	ListRepoPermissions(ctx context.Context, repoID api.RepoID, args *ListRepoPermissionsArgs) (perms []*RepoPermission, err error)
+	// IsRepoUnrestructed returns if the repo is unrestricted.
+	IsRepoUnrestricted(ctx context.Context, repoID api.RepoID) (unrestricted bool, err error)
 }
 
 // It is concurrency-safe and maintains data consistency over the 'user_permissions',
@@ -2393,6 +2395,15 @@ WHERE
 	AND repo.id = %d
 	AND %s
 `
+
+func (s *permsStore) IsRepoUnrestricted(ctx context.Context, repoID api.RepoID) (bool, error) {
+	authzParams, err := database.GetAuthzQueryParameters(context.Background(), s.ossDB)
+	if err != nil {
+		return false, err
+	}
+
+	return s.isRepoUnrestricted(ctx, repoID, authzParams)
+}
 
 func (s *permsStore) isRepoUnrestricted(ctx context.Context, repoID api.RepoID, authzParams *database.AuthzQueryParameters) (bool, error) {
 	conditions := []*sqlf.Query{database.GetUnrestrictedReposCond(authzParams.UnifiedPermsEnabled)}

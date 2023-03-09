@@ -108,8 +108,10 @@ func newDB(logger log.Logger, t testing.TB, name string, schemas ...*schemas.Sch
 	return newFromDSN(logger, t, name)
 }
 
-var onceByNameMap = map[string]*sync.Once{}
-var onceByNameMutex sync.Mutex
+var (
+	onceByNameMap   = map[string]*sync.Once{}
+	onceByNameMutex sync.Mutex
+)
 
 func onceByName(name string) *sync.Once {
 	onceByNameMutex.Lock()

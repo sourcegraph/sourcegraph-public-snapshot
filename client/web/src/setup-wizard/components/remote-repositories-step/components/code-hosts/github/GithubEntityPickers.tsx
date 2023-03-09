@@ -73,7 +73,7 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
                 status={loading ? 'loading' : 'initial'}
                 onChange={event => setSearchTerm(event.target.value)}
             />
-            <small className="text-muted pl-2">
+            <small className="d-block text-muted pl-2 mt-2">
                 Pick at least one organization and we clone all repositories that this organization has
             </small>
 
@@ -168,7 +168,7 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
                 status={loading ? 'loading' : 'initial'}
                 onChange={event => setSearchTerm(event.target.value)}
             />
-            <small className="text-muted pl-2">Pick at least one repository</small>
+            <small className="d-block text-muted pl-2 mt-2">Pick at least one repository</small>
 
             <MultiComboboxList items={filteredSuggestions} className="mt-2">
                 {items =>

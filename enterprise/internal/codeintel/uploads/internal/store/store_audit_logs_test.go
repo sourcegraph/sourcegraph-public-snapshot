@@ -54,7 +54,7 @@ func TestDeleteOldAuditLogs(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	// Sanity check for syntax only
-	if _, err := store.DeleteOldAuditLogs(context.Background(), time.Second, time.Now()); err != nil {
+	if _, _, err := store.DeleteOldAuditLogs(context.Background(), time.Second, time.Now()); err != nil {
 		t.Fatalf("unexpected error deleting old audit logs: %s", err)
 	}
 }

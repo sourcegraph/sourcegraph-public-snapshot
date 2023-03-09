@@ -88,6 +88,20 @@ func TestFileOwnersMatch(t *testing.T) {
 				"/main/src/foo/bar/README.md",
 			},
 		},
+		// Literal absolute match.
+		{
+			pattern: "/main/src/README.md",
+			paths: []string{
+				"/main/src/README.md",
+			},
+		},
+		// Without a leading `/` still matches correctly.
+		{
+			pattern: "/main/src/README.md",
+			paths: []string{
+				"main/src/README.md",
+			},
+		},
 	}
 	for _, c := range cases {
 		for _, path := range c.paths {

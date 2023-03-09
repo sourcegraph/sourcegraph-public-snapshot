@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react'
 
-import classNames from 'classnames'
-
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import {
@@ -122,7 +120,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<
                 description="List of repositories which are accessible to the user."
                 className="my-3 pt-3"
             />
-            <Container>
+            <Container className="mb-3">
                 <div className="d-flex">
                     <Input
                         type="search"
@@ -165,22 +163,14 @@ const TableColumns: IColumn<INode>[] = [
     },
     {
         key: 'reason',
-        header: { label: 'Reason', align: 'center' },
-        align: 'center',
-        render: ({ reason }: INode) => (
-            <div className="d-flex justify-content-center">
-                <Badge {...(PermissionReasonBadgeProps[reason] || {})}>{reason}</Badge>
-            </div>
-        ),
+        header: 'Reason',
+        render: ({ reason }: INode) => <Badge {...(PermissionReasonBadgeProps[reason] || {})}>{reason}</Badge>,
     },
     {
         key: 'updatedAt',
-        header: { label: 'Updated At', align: 'center' },
-        align: 'center',
+        header: 'Updated At',
         render: ({ updatedAt }: INode) => (
-            <div className={classNames('d-flex justify-content-center', styles.updatedAtCell)}>
-                {updatedAt ? <Timestamp date={updatedAt} /> : '-'}
-            </div>
+            <div className={styles.updatedAtCell}>{updatedAt ? <Timestamp date={updatedAt} /> : '-'}</div>
         ),
     },
 ]
@@ -190,7 +180,7 @@ const PermissionReasonBadgeProps: { [reason: string]: BadgeProps } = {
         variant: 'success',
         tooltip: 'The repository is accessible to the user due to permissions syncing from code host.',
     },
-    Unrestricted: { variant: 'primary', tooltip: 'The repository is unrestricted and accessible to all the users. ' },
+    Unrestricted: { variant: 'primary', tooltip: 'The repository is accessible to all the users. ' },
     'Site Admin': { variant: 'secondary', tooltip: 'The user is site admin and has access to all the repositories.' },
 }
 
