@@ -22,7 +22,7 @@ import {
 import { RepositoryField } from '../../../../insights/components'
 import { InferenceForm } from '../inference-form/InferenceForm'
 
-import { GET_REPO_ID, INFER_JOBS_SCRIPT } from './backend'
+import { GET_REPO_ID, INFER_JOBS_SCRIPT } from '../../backend'
 
 import styles from './InferenceScriptPreview.module.scss'
 

@@ -43,9 +43,10 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
         [updateConfigForRepository, repoId]
     )
 
+    const primaryConfiguration = configuration?.raw ?? inferredConfiguration.raw
     const [dirty, setDirty] = useState<boolean>()
     const [editor, setEditor] = useState<editor.ICodeEditor>()
-    const infer = useCallback(() => editor?.setValue(inferredConfiguration), [editor, inferredConfiguration])
+    const infer = useCallback(() => editor?.setValue(inferredConfiguration.raw), [editor, inferredConfiguration])
 
     const customToolbar = useMemo<{
         saveToolbar: FunctionComponent<SaveToolbarProps & IndexConfigurationSaveToolbarProps>
@@ -58,7 +59,8 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
                     ...props,
                     onInfer: infer,
                     loading: inferredConfiguration === undefined,
-                    inferEnabled: !!inferredConfiguration && configuration !== inferredConfiguration,
+                    inferEnabled:
+                        Boolean(inferredConfiguration.raw) && configuration?.raw !== inferredConfiguration.raw,
                 }
                 mergedProps.willShowError = () => !mergedProps.saving
                 mergedProps.saveDiscardDisabled = () => mergedProps.saving || !dirty
@@ -81,7 +83,7 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
                 <LoadingSpinner />
             ) : (
                 <DynamicallyImportedMonacoSettingsEditor
-                    value={configuration}
+                    value={primaryConfiguration}
                     jsonSchema={allConfigSchema}
                     canEdit={authenticatedUser?.siteAdmin}
                     readOnly={!authenticatedUser?.siteAdmin}

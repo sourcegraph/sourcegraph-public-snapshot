@@ -1,12 +1,13 @@
-import { FunctionComponent, useEffect } from 'react'
+import { FunctionComponent, useCallback, useEffect, useState } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Link } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Tabs, TabList, Tab, TabPanels, TabPanel } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelConfigurationPageHeader } from '../components/CodeIntelConfigurationPageHeader'
 import { ConfigurationEditor } from '../components/ConfigurationEditor'
+import { ConfigurationForm } from '../components/ConfigurationForm'
 
 export interface CodeIntelRepositoryIndexConfigurationPageProps extends TelemetryProps {
     repo: { id: string }
@@ -17,6 +18,11 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
     CodeIntelRepositoryIndexConfigurationPageProps
 > = ({ repo, authenticatedUser, telemetryService, ...props }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelRepositoryIndexConfiguration'), [telemetryService])
+
+    const [activeTabIndex, setActiveTabIndex] = useState<number>(0)
+    const setTab = useCallback((index: number) => {
+        setActiveTabIndex(index)
+    }, [])
 
     return (
         <>
@@ -42,13 +48,29 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
                     className="mb-3"
                 />
             </CodeIntelConfigurationPageHeader>
-
-            <ConfigurationEditor
-                repoId={repo.id}
-                authenticatedUser={authenticatedUser}
-                telemetryService={telemetryService}
-                {...props}
-            />
+            <Tabs size="large" index={activeTabIndex} onChange={setTab} lazy={true}>
+                <TabList>
+                    <Tab key="form">Form</Tab>
+                    <Tab key="raw">Raw</Tab>
+                </TabList>
+                <TabPanels>
+                    <TabPanel>
+                        <ConfigurationForm
+                            repoId={repo.id}
+                            authenticatedUser={authenticatedUser}
+                            telemetryService={telemetryService}
+                        />
+                    </TabPanel>
+                    <TabPanel>
+                        <ConfigurationEditor
+                            repoId={repo.id}
+                            authenticatedUser={authenticatedUser}
+                            telemetryService={telemetryService}
+                            {...props}
+                        />
+                    </TabPanel>
+                </TabPanels>
+            </Tabs>
         </>
     )
 }

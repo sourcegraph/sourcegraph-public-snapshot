@@ -43,6 +43,7 @@ const autoIndexJobToFormJob = (job: AutoIndexJobDescriptionFields): InferenceFor
     steps: job.steps.preIndex.map(autoIndexStepToFormStep),
     meta: {
         id: job.comparisonKey,
+        dirty: false,
     },
 })
 

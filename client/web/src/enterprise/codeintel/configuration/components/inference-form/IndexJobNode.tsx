@@ -25,124 +25,120 @@ export const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({
     readOnly,
     onChange,
     onRemove,
-}) => {
-    const comparisonKey = job.meta.id
-
-    return (
-        <Container id={comparisonKey} className={styles.job}>
-            <div className={styles.jobHeader}>
-                <H3 className="mb-0">Job #{jobNumber}</H3>
-                {!readOnly && (
-                    <Button variant="icon" className="ml-2 text-danger" aria-label="Remove" onClick={onRemove}>
-                        <Icon svgPath={mdiClose} aria-hidden={true} />
-                    </Button>
-                )}
-            </div>
-            <ul className={styles.jobContent}>
-                <IndexJobLabel label="Root">
-                    <Input
-                        value={job.root}
-                        onChange={event => onChange('root', event.target.value)}
-                        readOnly={readOnly}
-                        className={styles.jobInput}
-                    />
-                </IndexJobLabel>
-                <IndexJobLabel label="Indexer">
-                    <CommandInput
-                        value={job.indexer}
-                        onChange={value => onChange('indexer', value)}
-                        readOnly={readOnly}
-                        className={styles.jobInput}
-                    />
-                </IndexJobLabel>
-                <IndexJobLabel label="Indexer args">
-                    <IndexCommandNode
-                        commands={job.indexer_args}
-                        name="indexer_args"
-                        addLabel="arg"
-                        readOnly={readOnly}
-                        onChange={onChange}
-                    />
-                </IndexJobLabel>
-                <IndexJobLabel label="Requested env vars">
-                    <IndexCommandNode
-                        commands={job.requestedEnvVars ?? []}
-                        name="requestedEnvVars"
-                        addLabel="env var"
-                        readOnly={readOnly}
-                        onChange={onChange}
-                    />
-                </IndexJobLabel>
-                <IndexJobLabel label="Local steps">
-                    <IndexCommandNode
-                        commands={job.local_steps}
-                        name="local_steps"
-                        addLabel="local step"
-                        readOnly={readOnly}
-                        onChange={onChange}
-                    />
-                </IndexJobLabel>
-                <IndexJobLabel label="Outfile">
-                    <Input
-                        value={job.outfile}
-                        onChange={event => onChange('outfile', event.target.value)}
-                        readOnly={readOnly}
-                        className={styles.jobInput}
-                    />
-                </IndexJobLabel>
-                {job.steps.length > 0 && (
-                    <Container className={styles.jobStepContainer} as="li">
-                        {job.steps.map((step, index) => (
-                            <div className={styles.jobStep} key={step.meta.id}>
-                                <div className={styles.jobStepHeader}>
-                                    <H4 className="mb-0">Step #{index + 1}</H4>
-                                    {!readOnly && (
-                                        <Button
-                                            variant="icon"
-                                            className="ml-2 text-danger"
-                                            aria-label="Remove"
-                                            onClick={() => {
-                                                const steps = [...job.steps]
-                                                steps.splice(index, 1)
-                                                onChange('steps', steps)
-                                            }}
-                                        >
-                                            <Icon svgPath={mdiClose} aria-hidden={true} />
-                                        </Button>
-                                    )}
-                                </div>
-                                <IndexStepNode
-                                    step={step}
-                                    readOnly={readOnly}
-                                    onChange={(name, value) => {
-                                        const steps = [...job.steps]
-                                        steps[index] = { ...steps[index], [name]: value }
-                                        onChange('steps', steps)
-                                    }}
-                                />
+}) => (
+    <>
+        <div className={styles.jobHeader}>
+            <H3 className="mb-0">Job #{jobNumber}</H3>
+            {!readOnly && (
+                <Button variant="icon" className="ml-2 text-danger" aria-label="Remove" onClick={onRemove}>
+                    <Icon svgPath={mdiClose} aria-hidden={true} />
+                </Button>
+            )}
+        </div>
+        <ul className={styles.jobContent}>
+            <IndexJobLabel label="Root">
+                <Input
+                    value={job.root}
+                    onChange={event => onChange('root', event.target.value)}
+                    readOnly={readOnly}
+                    className={styles.jobInput}
+                />
+            </IndexJobLabel>
+            <IndexJobLabel label="Indexer">
+                <CommandInput
+                    value={job.indexer}
+                    onChange={value => onChange('indexer', value)}
+                    readOnly={readOnly}
+                    className={styles.jobInput}
+                />
+            </IndexJobLabel>
+            <IndexJobLabel label="Indexer args">
+                <IndexCommandNode
+                    commands={job.indexer_args}
+                    name="indexer_args"
+                    addLabel="arg"
+                    readOnly={readOnly}
+                    onChange={onChange}
+                />
+            </IndexJobLabel>
+            <IndexJobLabel label="Requested env vars">
+                <IndexCommandNode
+                    commands={job.requestedEnvVars ?? []}
+                    name="requestedEnvVars"
+                    addLabel="env var"
+                    readOnly={readOnly}
+                    onChange={onChange}
+                />
+            </IndexJobLabel>
+            <IndexJobLabel label="Local steps">
+                <IndexCommandNode
+                    commands={job.local_steps}
+                    name="local_steps"
+                    addLabel="local step"
+                    readOnly={readOnly}
+                    onChange={onChange}
+                />
+            </IndexJobLabel>
+            <IndexJobLabel label="Outfile">
+                <Input
+                    value={job.outfile}
+                    onChange={event => onChange('outfile', event.target.value)}
+                    readOnly={readOnly}
+                    className={styles.jobInput}
+                />
+            </IndexJobLabel>
+            {job.steps.length > 0 && (
+                <Container className={styles.jobStepContainer} as="li">
+                    {job.steps.map((step, index) => (
+                        <div className={styles.jobStep} key={step.meta.id}>
+                            <div className={styles.jobStepHeader}>
+                                <H4 className="mb-0">Step #{index + 1}</H4>
+                                {!readOnly && (
+                                    <Button
+                                        variant="icon"
+                                        className="ml-2 text-danger"
+                                        aria-label="Remove"
+                                        onClick={() => {
+                                            const steps = [...job.steps]
+                                            steps.splice(index, 1)
+                                            onChange('steps', steps)
+                                        }}
+                                    >
+                                        <Icon svgPath={mdiClose} aria-hidden={true} />
+                                    </Button>
+                                )}
                             </div>
-                        ))}
-                    </Container>
-                )}
-                {!readOnly && (
-                    <Button
-                        variant="secondary"
-                        className="d-block mt-2 ml-auto"
-                        onClick={() => {
-                            onChange('steps', [
-                                ...job.steps,
-                                { root: '', image: '', commands: [], meta: { id: uniqueId() } },
-                            ])
-                        }}
-                    >
-                        <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
-                        Add step
-                    </Button>
-                )}
-            </ul>
-        </Container>
-    )
-}
+                            <IndexStepNode
+                                step={step}
+                                readOnly={readOnly}
+                                onChange={(name, value) => {
+                                    const steps = [...job.steps]
+                                    steps[index] = { ...steps[index], [name]: value }
+                                    onChange('steps', steps)
+                                }}
+                            />
+                        </div>
+                    ))}
+                    {!readOnly && (
+                        <Button
+                            variant="secondary"
+                            className="d-block mb-3 ml-auto"
+                            onClick={() => {
+                                onChange('steps', [
+                                    ...job.steps,
+                                    { root: '', image: '', commands: [], meta: { id: uniqueId() } },
+                                ])
+                            }}
+                        >
+                            <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
+                            Add step
+                        </Button>
+                    )}
+                </Container>
+            )}
+        </ul>
+    </>
+)
 
 interface IndexStepNodeProps {
     step: InferenceFormJobStep
