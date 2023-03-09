@@ -14,7 +14,7 @@ import (
 // Parse parses CODEOWNERS file given as a Reader and returns the proto
 // representation of all rules within. The rules are in the same order
 // as in the file, since this matters for evaluation.
-func Parse(codeownersFile io.Reader) (*Ruleset, error) {
+func Parse(codeownersFile io.Reader) (*codeownerspb.File, error) {
 	scanner := bufio.NewScanner(codeownersFile)
 	var rs []*codeownerspb.Rule
 	p := new(parsing)
@@ -35,7 +35,8 @@ func Parse(codeownersFile io.Reader) (*Ruleset, error) {
 		// Need to handle this error once, codeownerspb.File supports
 		// error metadata.
 		r := codeownerspb.Rule{
-			Pattern:     unescape(pattern),
+			Pattern: unescape(pattern),
+			// Section names are case-insensitive, so we lowercase it.
 			SectionName: strings.TrimSpace(strings.ToLower(p.section)),
 			LineNumber:  lineNumber,
 		}
@@ -48,7 +49,7 @@ func Parse(codeownersFile io.Reader) (*Ruleset, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
-	return NewRuleset(&codeownerspb.File{Rule: rs}), nil
+	return &codeownerspb.File{Rule: rs}, nil
 }
 
 func ParseOwner(ownerText string) *codeownerspb.Owner {
@@ -112,9 +113,11 @@ func (p *parsing) matchRule() (string, []string, bool) {
 	return filePattern, owners, true
 }
 
-var sectionPattern = lazyregexp.New(`^\s*\[([^\]]+)\]\s*$`)
+var sectionPattern = lazyregexp.New(`^\s*\^?\s*\[([^\]]+)\]\s*(?:\[[0-9]+\])?\s*$`)
 
 // matchSection tries to extract a section which looks like `[section name]`.
+// A section can also be defined as `^[Section]`, meaning it is optional for approval.
+// It can also be `[Section][2]`, meaning two approvals are required.
 func (p *parsing) matchSection() bool {
 	match := sectionPattern.FindStringSubmatch(p.lineWithoutComments())
 	if len(match) != 2 {

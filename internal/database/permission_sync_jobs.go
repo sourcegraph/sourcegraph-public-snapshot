@@ -579,6 +579,7 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 const countPermissionSyncJobsQuery = `
 SELECT COUNT(*)
 FROM permission_sync_jobs
+%s -- optional join with repo/user tables for search
 %s -- whereClause
 `
 
@@ -590,7 +591,17 @@ func (s *permissionSyncJobStore) Count(ctx context.Context, opts ListPermissionS
 		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
 	}
 
-	q := sqlf.Sprintf(countPermissionSyncJobsQuery, whereClause)
+	joinClause := sqlf.Sprintf("")
+	if opts.Query != "" {
+		switch opts.SearchType {
+		case PermissionsSyncSearchTypeRepo:
+			joinClause = sqlf.Sprintf("JOIN repo ON permission_sync_jobs.repository_id = repo.id")
+		case PermissionsSyncSearchTypeUser:
+			joinClause = sqlf.Sprintf("JOIN users ON permission_sync_jobs.user_id = users.id")
+		}
+	}
+
+	q := sqlf.Sprintf(countPermissionSyncJobsQuery, joinClause, whereClause)
 	var count int
 	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err

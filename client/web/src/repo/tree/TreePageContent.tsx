@@ -175,10 +175,11 @@ interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps
     repo: TreePageRepositoryFields
     commitID: string
     revision: string
+    isPackage: boolean
 }
 
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
-    const { filePath, tree, repo, revision } = props
+    const { filePath, tree, repo, revision, isPackage } = props
 
     const readmeEntry = useMemo(() => {
         for (const entry of tree.entries) {
@@ -209,15 +210,19 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
 
-                <Card className={styles.commits}>
-                    <CardHeader className={panelStyles.cardColHeaderWrapper}>Commits</CardHeader>
-                    <Commits {...props} />
-                </Card>
+                {!isPackage && (
+                    <Card className={styles.commits}>
+                        <CardHeader className={panelStyles.cardColHeaderWrapper}>Commits</CardHeader>
+                        <Commits {...props} />
+                    </Card>
+                )}
 
-                <Card className={styles.contributors}>
-                    <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
-                    <Contributors {...props} />
-                </Card>
+                {!isPackage && (
+                    <Card className={styles.contributors}>
+                        <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
+                        <Contributors {...props} />
+                    </Card>
+                )}
             </section>
         </>
     )

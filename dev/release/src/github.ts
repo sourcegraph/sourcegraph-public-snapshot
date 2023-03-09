@@ -3,12 +3,13 @@ import * as os from 'os'
 import * as path from 'path'
 import { promisify } from 'util'
 
-import Octokit from '@octokit/rest'
+import Octokit, { IssuesAddLabelsParams } from '@octokit/rest'
 import commandExists from 'command-exists'
 import execa from 'execa'
 import fetch from 'node-fetch'
 import * as semver from 'semver'
 
+import { ActiveRelease } from './config'
 import { cacheFolder, changelogURL, formatDate, getContainerRegistryCredential, readLine, timezoneLink } from './util'
 
 const mkdtemp = promisify(original_mkdtemp)
@@ -417,7 +418,7 @@ export interface CreateBranchWithChangesOptions {
 
 export interface ChangesetsOptions {
     requiredCommands: string[]
-    changes: (Octokit.PullsCreateParams & CreateBranchWithChangesOptions)[]
+    changes: (Octokit.PullsCreateParams & CreateBranchWithChangesOptions & { labels?: string[] })[]
     dryRun?: boolean
 }
 
@@ -470,6 +471,14 @@ Body: ${change.body || 'none'}`)
         try {
             if (!options.dryRun) {
                 pullRequest = await createPR(octokit, change)
+                if (change.labels) {
+                    await octokit.issues.addLabels({
+                        issue_number: pullRequest.number,
+                        repo: change.repo,
+                        owner: change.owner,
+                        labels: change.labels,
+                    } as IssuesAddLabelsParams)
+                }
             }
 
             results.push({
@@ -712,4 +721,10 @@ export async function closeTrackingIssue(version: semver.SemVer): Promise<void> 
         console.log(`Closing #${previousIssue.number} '${previousIssue.title} with ${comment}`)
         await closeIssue(octokit, previousIssue)
     }
+}
+
+export const releaseBlockerLabel = 'release-blocker'
+
+export function getBackportLabelForRelease(release: ActiveRelease): string {
+    return `backport ${release.branch}`
 }

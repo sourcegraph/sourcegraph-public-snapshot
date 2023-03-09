@@ -46,6 +46,7 @@ type Client interface {
 	GetRepositoryBranch(ctx context.Context, args OrgProjectRepoArgs, branchName string) (Ref, error)
 	GetProject(ctx context.Context, org, project string) (Project, error)
 	GetAuthorizedProfile(ctx context.Context) (Profile, error)
+	ListAuthorizedUserOrganizations(ctx context.Context, profile Profile) ([]Org, error)
 }
 
 type client struct {
@@ -140,10 +141,13 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 // the given authenticator instance.
 //
 // Note that using an unsupported Authenticator implementation may result in
-// unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
-// supported.
+// unexpected behaviour, or (more likely) errors. At present, only BasicAuth and
+// BasicAuthWithSSH are supported.
 func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
-	if _, ok := a.(*auth.BasicAuth); !ok {
+	switch a.(type) {
+	case *auth.BasicAuth, *auth.BasicAuthWithSSH:
+		break
+	default:
 		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
 	}
 

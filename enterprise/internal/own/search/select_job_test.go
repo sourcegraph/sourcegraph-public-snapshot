@@ -8,16 +8,46 @@ import (
 
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+func TestFeatureFlaggedSelectOwnerJob(t *testing.T) {
+	// We can run a quick exit check on the job runner since we don't need to use any clients or sender.
+	t.Run("does not run if no features attached to job", func(t *testing.T) {
+		selectJob := NewSelectOwnersJob(nil, nil)
+		alert, err := selectJob.Run(context.Background(), job.RuntimeClients{}, nil)
+		require.Nil(t, alert)
+		var expectedErr *featureFlagError
+		assert.ErrorAs(t, err, &expectedErr)
+	})
+	t.Run("does not run if own feature is false", func(t *testing.T) {
+		selectJob := NewSelectOwnersJob(nil, &search.Features{CodeOwnershipSearch: false})
+		alert, err := selectJob.Run(context.Background(), job.RuntimeClients{}, nil)
+		require.Nil(t, alert)
+		var expectedErr *featureFlagError
+		assert.ErrorAs(t, err, &expectedErr)
+	})
+}
+
 func TestGetCodeOwnersFromMatches(t *testing.T) {
+	setupDB := func() *edb.MockEnterpriseDB {
+		codeownersStore := edb.NewMockCodeownersStore()
+		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
+		db := edb.NewMockEnterpriseDB()
+		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+		return db
+	}
+
 	t.Run("no results for no codeowners file", func(t *testing.T) {
 		ctx := context.Background()
 
@@ -25,8 +55,8 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
 			return nil, fs.ErrNotExist
 		})
-		db := database.NewMockDB()
-		rules := NewRulesCache(gitserverClient, db)
+
+		rules := NewRulesCache(gitserverClient, setupDB())
 
 		matches, err := getCodeOwnersFromMatches(ctx, &rules, []result.Match{
 			&result.FileMatch{
@@ -49,8 +79,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			// return a codeowner path for no which doesn't match the path of the match below.
 			return []byte("NO.md @test\n"), nil
 		})
-		db := database.NewMockDB()
-		rules := NewRulesCache(gitserverClient, db)
+		rules := NewRulesCache(gitserverClient, setupDB())
 
 		matches, err := getCodeOwnersFromMatches(ctx, &rules, []result.Match{
 			&result.FileMatch{
@@ -76,7 +105,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		})
 		mockUserStore := database.NewMockUserStore()
 		mockTeamStore := database.NewMockTeamStore()
-		db := database.NewMockDB()
+		db := setupDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
 

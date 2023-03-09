@@ -93,7 +93,7 @@ IMAGE=sourcegraph/prometheus:server CACHE=true docker-images/prometheus/build.sh
 echo "--- grafana"
 cp -r docker-images/grafana/config "$OUTPUT/sg_config_grafana"
 cp -r dev/grafana/linux "$OUTPUT/sg_config_grafana/provisioning/datasources"
-IMAGE=sourcegraph/grafana:server CACHE=true docker-images/grafana/build.sh
+IMAGE=sourcegraph/grafana:server CACHE=true docker-images/grafana/build-alpine.sh
 
 echo "--- postgres exporter"
 IMAGE=sourcegraph/postgres_exporter:server CACHE=true docker-images/postgres_exporter/build.sh

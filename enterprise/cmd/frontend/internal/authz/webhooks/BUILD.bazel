@@ -22,6 +22,10 @@ go_test(
     name = "webhooks_test",
     srcs = ["github_test.go"],
     embed = [":webhooks"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/webhooks",
         "//internal/api",

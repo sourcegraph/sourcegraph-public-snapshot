@@ -14,17 +14,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewSelectOwnersJob(child job.Job) job.Job {
+func NewSelectOwnersJob(child job.Job, features *search.Features) job.Job {
 	return &selectOwnersJob{
-		child: child,
+		child:    child,
+		features: features,
 	}
 }
 
 type selectOwnersJob struct {
 	child job.Job
+
+	features *search.Features
 }
 
 func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	if s.features == nil || !s.features.CodeOwnershipSearch {
+		return nil, &featureFlagError{predicate: "select:file.owners"}
+	}
+
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)
 
@@ -110,28 +117,24 @@ func getCodeOwnersFromMatches(
 		if !ok {
 			continue
 		}
-		rs, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.CommitID)
+		rs, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
+		if err != nil {
+			errs = errors.Append(errs, err)
+			continue
+		}
+		rule := rs.Match(mm.File.Path)
+		// No match.
+		if rule == nil || len(rule.GetOwner()) == 0 {
+			hasResultWithNoOwners = true
+			continue
+		}
+
+		resolvedOwners, err := rules.ownService.ResolveOwnersWithType(ctx, rule.GetOwner())
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue
 		}
 
-		// No codeowners data.
-		if len(rs.GetFile().GetRule()) == 0 {
-			hasResultWithNoOwners = true
-			continue
-		}
-
-		owners := rs.FindOwners(mm.File.Path)
-		resolvedOwners, err := rules.ownService.ResolveOwnersWithType(ctx, owners)
-		if err != nil {
-			errs = errors.Append(errs, err)
-			continue
-		}
-		if len(resolvedOwners) == 0 {
-			hasResultWithNoOwners = true
-			continue
-		}
 		for _, o := range resolvedOwners {
 			ownerMatch := &result.OwnerMatch{
 				ResolvedOwner: ownerToResult(o),

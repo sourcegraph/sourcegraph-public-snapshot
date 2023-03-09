@@ -136,3 +136,19 @@
   is_enterprise: true
   introduced_version_major: 4
   introduced_version_minor: 5
+- id: 22
+  team: iam
+  component: frontend-db.user_repo_permissions
+  description: Migrate data from user_permissions table to unified user_repo_permissions.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 5
+  introduced_version_minor: 0
+- id: 23
+  team: batch-changes
+  component: frontend-db.batch_specs
+  description: Re-ID empty batch specs belonging to draft batch changes.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 5
+  introduced_version_minor: 0

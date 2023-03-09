@@ -500,7 +500,7 @@ func getVCSSyncer(
 			return nil, err
 		}
 		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalDoer)
-		return server.NewPythonPackagesSyncer(&c, depsSvc, cli), nil
+		return server.NewPythonPackagesSyncer(&c, depsSvc, cli, reposDir), nil
 	case extsvc.TypeRustPackages:
 		var c schema.RustPackagesConnection
 		urn, err := extractOptions(&c)

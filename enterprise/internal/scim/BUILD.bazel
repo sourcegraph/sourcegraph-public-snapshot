@@ -35,7 +35,6 @@ go_library(
         "@com_github_elimity_com_scim//optional",
         "@com_github_elimity_com_scim//schema",
         "@com_github_scim2_filter_parser_v2//:filter-parser",
-        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -50,6 +49,7 @@ go_test(
     embed = [":scim"],
     deps = [
         "//internal/observation",
+        "//internal/types",
         "@com_github_elimity_com_scim//:scim",
         "@com_github_scim2_filter_parser_v2//:filter-parser",
         "@com_github_stretchr_testify//assert",

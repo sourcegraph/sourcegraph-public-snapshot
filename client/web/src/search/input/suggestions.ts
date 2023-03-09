@@ -22,7 +22,7 @@ import { gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
-import { FILTERS, FilterType, ResolvedFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { FILTERS, FilterType, isNegatableFilter, ResolvedFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
 import { predicateCompletion } from '@sourcegraph/shared/src/search/query/predicates'
 import { selectorHasFields } from '@sourcegraph/shared/src/search/query/selectFilter'
@@ -167,11 +167,6 @@ interface CodeSymbol {
  */
 function toRepoSuggestion(result: FzfResultItem<Repo>, from: number, to?: number): Option {
     const option = toRepoCompletion(result, from, to, 'repo:')
-    option.action.name = 'Add'
-    option.alternativeAction = {
-        type: 'goto',
-        url: `/${result.item.name}`,
-    }
     option.render = filterValueRenderer
     return option
 }
@@ -194,6 +189,10 @@ function toRepoCompletion(
             insertValue: valuePrefix + regexInsertText(item.name, { globbing: false }) + ' ',
             from,
             to,
+        },
+        alternativeAction: {
+            type: 'goto',
+            url: `/${item.name}`,
         },
     }
 }
@@ -228,18 +227,15 @@ function toContextCompletion({ item, positions }: FzfResultItem<Context>, from: 
 /**
  * Converts a filter to a completion suggestion.
  */
-function toFilterCompletion(filter: FilterType, from: number, to?: number): Option {
-    const definition = FILTERS[filter]
-    const description =
-        typeof definition.description === 'function' ? definition.description(false) : definition.description
+function toFilterCompletion(label: string, description: string | undefined, from: number, to?: number): Option {
     return {
-        label: filter,
+        label,
         icon: mdiFilterOutline,
         render: filterRenderer,
         description,
         action: {
             type: 'completion',
-            insertValue: filter + ':',
+            insertValue: label + ':',
             from,
             to,
         },
@@ -266,6 +262,10 @@ function toFileCompletion(
             from,
             to,
         },
+        alternativeAction: {
+            type: 'goto',
+            url: item.url,
+        },
     }
 }
 
@@ -274,11 +274,6 @@ function toFileCompletion(
  */
 function toFileSuggestion(result: FzfResultItem<File>, from: number, to?: number): Option {
     const option = toFileCompletion(result, from, to, 'file:')
-    option.action.name = 'Add'
-    option.alternativeAction = {
-        type: 'goto',
-        url: result.item.url,
-    }
     option.render = filterValueRenderer
     return option
 }
@@ -305,7 +300,11 @@ function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from
     }
 }
 
-const FILTER_SUGGESTIONS = new Fzf(Object.keys(FILTERS) as FilterType[], { match: extendedMatch })
+const FILTER_MATCHER = new Fzf(Object.keys(FILTERS) as FilterType[], { match: extendedMatch })
+const NEGATEABLE_FILTER_MATCHER = new Fzf(
+    Object.keys(FILTERS).filter(filterType => isNegatableFilter(filterType as FilterType)),
+    { match: extendedMatch }
+)
 // These are the filters shown when the query input is empty or the cursor is at
 // at whitespace token.
 const DEFAULT_FILTERS: FilterType[] = [FilterType.repo, FilterType.context, FilterType.lang, FilterType.type]
@@ -345,13 +344,52 @@ const filterSuggestions: InternalSource = ({ tokens, token, position }) => {
             // Remove existing filters
             .filter(filterType => !tokens.some(token => token.type === 'filter' && isFilterOfType(token, filterType)))
 
-        options = filters.map(filter => toFilterCompletion(filter, position))
+        options = filters.map(filter =>
+            toFilterCompletion(filter, getFilterDescription(resolveFilterMemoized(filter)), position)
+        )
     } else if (token?.type === 'pattern') {
-        // ^ triggers a prefix match
-        options = FILTER_SUGGESTIONS.find('^' + token.value).map(entry => ({
-            ...toFilterCompletion(entry.item, token.range.start, token.range.end),
-            matches: entry.positions,
-        }))
+        if (token.value.startsWith('-')) {
+            options = NEGATEABLE_FILTER_MATCHER.find('^' + token.value.slice(1)).map(entry => {
+                const resolvedFilter = resolveFilterMemoized(entry.item)
+                return {
+                    ...toFilterCompletion(
+                        '-' + entry.item,
+                        getFilterDescription(resolvedFilter, true),
+                        token.range.start,
+                        token.range.end
+                    ),
+                    matches: shiftPositions(entry.positions, 1),
+                }
+            })
+        } else {
+            // ^ triggers a prefix match
+            options = FILTER_MATCHER.find('^' + token.value).flatMap(entry => {
+                const resolvedFilter = resolveFilterMemoized(entry.item)
+                const options = [
+                    {
+                        ...toFilterCompletion(
+                            entry.item,
+                            getFilterDescription(resolvedFilter),
+                            token.range.start,
+                            token.range.end
+                        ),
+                        matches: entry.positions,
+                    },
+                ]
+                if (resolvedFilter && isNegatableFilter(resolvedFilter?.type)) {
+                    options.push({
+                        ...toFilterCompletion(
+                            '-' + entry.item,
+                            getFilterDescription(resolvedFilter, true),
+                            token.range.start,
+                            token.range.end
+                        ),
+                        matches: shiftPositions(entry.positions, 1),
+                    })
+                }
+                return options
+            })
+        }
     }
 
     return options.length > 0 ? { result: [{ title: 'Narrow your search', options }] } : null
@@ -407,7 +445,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                                             ? ALL_FILTER_VALUE_LIST_SIZE
                                             : MULTIPLE_FILTER_VALUE_LIST_SIZE
                                     )
-                                    .map(item => toRepoSuggestion(item, from, to)),
+                                    .map(item => toRepoCompletion(item, from, to)),
                             },
                         ]
 
@@ -434,7 +472,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                             {
                                 title: 'Files',
                                 options: entries
-                                    .map(item => toFileSuggestion(item, from, to))
+                                    .map(item => toFileCompletion(item, from, to))
                                     .slice(
                                         0,
                                         predicates.length === 0
@@ -1256,4 +1294,17 @@ function containsFilterType(filterTypes: Set<FilterType>, filterType: string): b
 
 function byStartDesc(itemA: FzfResultItem<unknown>, itemB: FzfResultItem<unknown>): number {
     return itemB.start - itemA.start
+}
+
+function shiftPositions(positions: Set<number>, amount: number): Set<number> {
+    return new Set(Array.from(positions, position => position + amount))
+}
+
+function getFilterDescription(filter: ResolvedFilter, negated = false): string | undefined {
+    if (!filter) {
+        return undefined
+    }
+    return typeof filter.definition.description === 'function'
+        ? filter.definition.description(negated)
+        : filter.definition.description
 }

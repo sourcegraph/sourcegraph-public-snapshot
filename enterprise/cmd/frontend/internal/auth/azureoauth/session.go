@@ -11,24 +11,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/oauth2"
 )
 
-const stateCookie = "azure-state-cookie"
+const (
+	stateCookie         = "azure-state-cookie"
+	urnAzureDevOpsOAuth = "AzureDevOpsOAuth"
+)
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
 	db          database.DB
 	clientID    string
+	allowOrgs   map[string]struct{}
 	allowSignup *bool
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, _, _, _ string) (actr *actor.Actor, safeErrMsg string, err error) {
 	user, err := userFromContext(ctx)
 	if err != nil {
 		return nil, "failed to read Azure DevOps Profile from oauth2 callback request", errors.Wrap(err, "azureoauth.GetOrCreateUser: failed to read user from context of callback request")
+	}
+
+	if allow, err := s.verifyAllowOrgs(ctx, user, token); err != nil {
+		return nil, "error in verifying authorized user organizations", err
+	} else if !allow {
+		msg := "User does not belong to any org from the allowed list of organizations. Please contact your site admin."
+		return nil, msg, errors.Newf("%s Must be in one of %v", msg, s.allowOrgs)
 	}
 
 	// allowSignup is true by default in the config schema. If it's not set in the provider config,
@@ -50,9 +62,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
-			Username: username,
-			Email:    email,
-			// TODO: Verify if we can assume this.
+			Username:        username,
+			Email:           email,
 			EmailIsVerified: email != "",
 			DisplayName:     user.DisplayName,
 		},
@@ -95,6 +106,37 @@ func (s *sessionIssuerHelper) AuthSucceededEventName() database.SecurityEventNam
 
 func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 	return database.SecurityEventAzureDevOpsAuthFailed
+}
+
+func (s *sessionIssuerHelper) verifyAllowOrgs(ctx context.Context, profile *azuredevops.Profile, token *oauth2.Token) (bool, error) {
+	if len(s.allowOrgs) == 0 {
+		return true, nil
+	}
+
+	client, err := azuredevops.NewClient(
+		urnAzureDevOpsOAuth,
+		azuredevops.AzureDevOpsAPIURL,
+		&extsvcauth.OAuthBearerToken{
+			Token: token.AccessToken,
+		},
+		nil,
+	)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create client for listing organizations of user")
+	}
+
+	authorizedOrgs, err := client.ListAuthorizedUserOrganizations(ctx, *profile)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to list organizations of user")
+	}
+
+	for _, org := range authorizedOrgs {
+		if _, ok := s.allowOrgs[org.Name]; ok {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 type key int

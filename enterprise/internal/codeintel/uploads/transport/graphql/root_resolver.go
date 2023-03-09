@@ -7,25 +7,32 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type rootResolver struct {
-	uploadSvc    UploadService
-	autoindexSvc AutoIndexingService
-	policySvc    PolicyService
-	operations   *operations
+	uploadSvc               UploadService
+	autoindexSvc            AutoIndexingService
+	policySvc               PolicyService
+	operations              *operations
+	siteAdminChecker        sharedresolvers.SiteAdminChecker
+	repoStore               database.RepoStore
+	prefetcherFactory       *sharedresolvers.PrefetcherFactory
+	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory
 }
 
-func NewRootResolver(observationCtx *observation.Context, uploadSvc UploadService, autoindexSvc AutoIndexingService, policySvc PolicyService) resolverstubs.UploadsServiceResolver {
+func NewRootResolver(observationCtx *observation.Context, uploadSvc UploadService, autoindexSvc AutoIndexingService, policySvc PolicyService, siteAdminChecker sharedresolvers.SiteAdminChecker, repoStore database.RepoStore, prefetcherFactory *sharedresolvers.PrefetcherFactory, locationResolverFactory *sharedresolvers.CachedLocationResolverFactory) resolverstubs.UploadsServiceResolver {
 	return &rootResolver{
-		uploadSvc:    uploadSvc,
-		autoindexSvc: autoindexSvc,
-		policySvc:    policySvc,
-		operations:   newOperations(observationCtx),
+		uploadSvc:               uploadSvc,
+		autoindexSvc:            autoindexSvc,
+		policySvc:               policySvc,
+		operations:              newOperations(observationCtx),
+		siteAdminChecker:        siteAdminChecker,
+		repoStore:               repoStore,
+		prefetcherFactory:       prefetcherFactory,
+		locationResolverFactory: locationResolverFactory,
 	}
 }
 
@@ -63,16 +70,14 @@ func (r *rootResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ res
 
 	// Create a new prefetcher here as we only want to cache upload and index records in
 	// the same graphQL request, not across different request.
-	db := r.autoindexSvc.GetUnsafeDB()
-	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
-	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
+	prefetcher := r.prefetcherFactory.Create()
 
 	upload, exists, err := prefetcher.GetUploadByID(ctx, int(uploadID))
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	return sharedresolvers.NewUploadResolver(r.uploadSvc, r.autoindexSvc, r.policySvc, upload, prefetcher, locationResolver, traceErrs), nil
+	return sharedresolvers.NewUploadResolver(r.uploadSvc, r.autoindexSvc, r.policySvc, r.siteAdminChecker, r.repoStore, upload, prefetcher, r.locationResolverFactory.Create(), traceErrs), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploads
@@ -94,12 +99,9 @@ func (r *rootResolver) LSIFUploadsByRepo(ctx context.Context, args *resolverstub
 		return nil, err
 	}
 
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
 	uploadsResolver := sharedresolvers.NewUploadsResolver(r.uploadSvc, opts)
 
-	return sharedresolvers.NewUploadConnectionResolver(r.uploadSvc, r.autoindexSvc, r.policySvc, uploadsResolver, prefetcher, traceErrs), nil
+	return sharedresolvers.NewUploadConnectionResolver(r.uploadSvc, r.autoindexSvc, r.policySvc, r.siteAdminChecker, r.repoStore, uploadsResolver, r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
@@ -109,7 +111,7 @@ func (r *rootResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID gr
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -130,7 +132,7 @@ func (r *rootResolver) DeleteLSIFUploads(ctx context.Context, args *resolverstub
 	ctx, _, endObservation := r.operations.deleteLsifUploads.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 

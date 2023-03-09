@@ -140,7 +140,8 @@ func (s AzureDevOpsSource) createChangeset(ctx context.Context, cs *Changeset, i
 // UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
 func (s AzureDevOpsSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
 	input := s.changesetToUpdatePullRequestInput(cs, false)
-	input.IsDraft = false
+	isDraft := false
+	input.IsDraft = &isDraft
 	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
 	args, err := s.createCommonPullRequestArgs(*repo, *cs)
 	if err != nil {

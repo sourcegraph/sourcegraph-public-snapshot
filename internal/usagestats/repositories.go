@@ -2,9 +2,13 @@ package usagestats
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
@@ -58,4 +62,77 @@ func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error)
 	total.OtherBranchesNewLinesCount = repos.Stats.OtherBranchesNewLinesCount
 
 	return &total, nil
+}
+
+func GetRepositorySizeHistorgram(ctx context.Context, db database.DB) ([]RepoSizeBucket, error) {
+	kb := int64(1000)
+	mb := kb * kb
+	gb := kb * mb
+
+	var sizes []int64
+	sizes = append(sizes, 0)
+	sizes = append(sizes, kb)
+	sizes = append(sizes, mb)
+	sizes = append(sizes, gb)
+	sizes = append(sizes, 5*gb)
+	sizes = append(sizes, 15*gb)
+	sizes = append(sizes, 25*gb)
+	sizes = append(sizes, 50*gb)
+	sizes = append(sizes, 100*gb)
+
+	var results []RepoSizeBucket
+
+	baseQuery := "select coalesce(count(repo_size_bytes), 0) from gitserver_repos"
+	baseStore := basestore.NewWithHandle(db.Handle())
+
+	getCount := func(start int64, end *int64) (int64, bool, error) {
+		upperBound := sqlf.Sprintf("and true")
+		if end != nil {
+			upperBound = sqlf.Sprintf("and repo_size_bytes < %s", *end)
+		}
+		return basestore.ScanFirstInt64(baseStore.Query(ctx, sqlf.Sprintf("%s where repo_size_bytes >= %s %s", sqlf.Sprintf(baseQuery), start, upperBound)))
+	}
+
+	for i := 1; i < len(sizes); i++ {
+		start := sizes[i-1]
+		end := sizes[i]
+		count, got, err := getCount(start, &end)
+		if err != nil {
+			return nil, err
+		} else if !got {
+			continue
+		}
+		results = append(results, RepoSizeBucket{
+			Lt:    &end,
+			Gte:   start,
+			Count: count,
+		})
+	}
+
+	// get the infinite value (everything greater than the last bucket)
+	last := sizes[len(sizes)-1]
+	inf, got, err := getCount(last, nil)
+	if err != nil {
+		return nil, err
+	}
+	if got {
+		results = append(results, RepoSizeBucket{
+			Gte:   last,
+			Count: inf,
+		})
+	}
+	return results, nil
+}
+
+type RepoSizeBucket struct {
+	Lt    *int64 `json:"lt,omitempty"`
+	Gte   int64  `json:"gte,omitempty"`
+	Count int64  `json:"count"`
+}
+
+func (r RepoSizeBucket) String() string {
+	if r.Lt != nil {
+		return fmt.Sprintf("Gte: %d, Lt: %d, Count: %d", r.Gte, *r.Lt, r.Count)
+	}
+	return fmt.Sprintf("Gte: %d, Count: %d", r.Gte, r.Count)
 }

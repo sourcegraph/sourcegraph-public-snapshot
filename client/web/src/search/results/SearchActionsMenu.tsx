@@ -6,16 +6,17 @@ import classNames from 'classnames'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    Position,
-    Menu,
-    MenuButton,
-    MenuList,
-    MenuLink,
     Icon,
     Link,
+    Menu,
+    MenuButton,
     MenuHeader,
     MenuItem,
+    MenuLink,
+    MenuList,
+    Position,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
@@ -26,7 +27,10 @@ import { downloadSearchResults } from './searchResultsExport'
 
 import navStyles from './SearchResultsInfoBar.module.scss'
 
-interface SearchActionsMenuProps extends SearchPatternTypeProps, Pick<PlatformContext, 'sourcegraphURL'> {
+interface SearchActionsMenuProps
+    extends SearchPatternTypeProps,
+        Pick<PlatformContext, 'sourcegraphURL'>,
+        TelemetryProps {
     query?: string
     results?: AggregateStreamingSearchResults
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
@@ -49,12 +53,15 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
     allExpanded,
     onExpandAllResultsToggle,
     onSaveQueryClick,
+    telemetryService,
 }) => {
     const resultsFound = results ? results.results.length > 0 : false
-    const downloadResults = useCallback(
-        () => (results ? downloadSearchResults(results, sourcegraphURL, query) : undefined),
-        [results, sourcegraphURL, query]
-    )
+    const downloadResults = useCallback(() => {
+        if (query.includes('select:file.owners')) {
+            telemetryService.log('searchResults:ownershipCsv:exported')
+        }
+        return results ? downloadSearchResults(results, sourcegraphURL, query) : undefined
+    }, [results, sourcegraphURL, query, telemetryService])
 
     return (
         <Menu>

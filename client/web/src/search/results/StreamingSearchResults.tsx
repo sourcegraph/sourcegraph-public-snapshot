@@ -27,7 +27,7 @@ import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { useNavbarQueryState, useNotepad } from '../../stores'
+import { buildSearchURLQueryFromQueryState, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
@@ -73,8 +73,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const prefetchBlobFormat = usePrefetchBlobFormat()
+    const [enableOwnershipSearch] = useFeatureFlag('search-ownership', false)
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
+
+    const [rankingFeatureEnabled] = useFeatureFlag('search-ranking')
+    // The toggle is only visible when the ranking feature flag is enabled, so we default it to true
+    const [rankingToggleEnabled, setRankingToggleEnabled] = useTemporarySetting('search.ranking.experimental', true)
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -82,6 +87,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const searchMode = useNavbarQueryState(state => state.searchMode)
     const liveQuery = useNavbarQueryState(state => state.queryState.query)
     const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
+    const queryState = useNavbarQueryState(state => state.queryState)
     const setQueryState = useNavbarQueryState(state => state.setQueryState)
     const submitQuerySearch = useNavbarQueryState(state => state.submitSearch)
     const [aggregationUIMode] = useAggregationUIMode()
@@ -95,7 +101,15 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
     const featureOverrides = useDeepMemo(
         // Nested use memo here is used for avoiding extra object calculation step on each render
-        useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
+        useMemo(() => {
+            // Only disable ranking if the feature flag is set and toggle is explicitly
+            // disabled. Otherwise, don't touch the search behavior.
+            const disableRanking = rankingFeatureEnabled && rankingToggleEnabled !== undefined && !rankingToggleEnabled
+            if (disableRanking) {
+                return ['-search-ranking', ...new URLSearchParams(location.search).getAll('feat')]
+            }
+            return new URLSearchParams(location.search).getAll('feat')
+        }, [location.search, rankingFeatureEnabled, rankingToggleEnabled])
     )
     const { addRecentSearch } = useRecentSearches()
 
@@ -405,6 +419,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
                         sidebarCollapsed={!!sidebarCollapsed}
                         setSidebarCollapsed={setSidebarCollapsed}
+                        isRankingEnabled={!!rankingToggleEnabled}
+                        setRankingEnabled={setRankingToggleEnabled}
                         stats={
                             <StreamingProgress
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
@@ -455,6 +471,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
                         <StreamingSearchResultsList
                             {...props}
+                            enableOwnershipSearch={enableOwnershipSearch}
                             results={results}
                             allExpanded={allExpanded}
                             assetsRoot={window.context?.assetsRoot || ''}
@@ -463,7 +480,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             prefetchFile={prefetchFile}
                             enableKeyboardNavigation={enableSearchResultsKeyboardNavigation}
                             showQueryExamplesOnNoResultsPage={true}
+                            queryState={queryState}
                             setQueryState={setQueryState}
+                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                         />
                     </div>

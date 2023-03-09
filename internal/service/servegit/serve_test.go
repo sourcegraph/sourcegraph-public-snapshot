@@ -1,6 +1,7 @@
 package servegit
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -19,10 +20,39 @@ import (
 
 const testAddress = "test.local:3939"
 
+func testRepoWithPaths(fixedEndpoint string, root string, pathWithName string) Repo {
+	var sb strings.Builder
+	delimiter := "/"
+
+	for _, str := range []string{fixedEndpoint, root, pathWithName} {
+		sb.WriteString(delimiter)
+		sb.WriteString(strings.Trim(str, delimiter))
+	}
+
+	uri := sb.String()
+
+	clonePath := uri
+
+	if !strings.HasSuffix(pathWithName, ".bare") {
+		sb.WriteString(delimiter)
+		sb.WriteString(".git")
+		clonePath = sb.String()
+	}
+
+	return Repo{
+		Name:        pathWithName,
+		URI:         uri,
+		ClonePath:   clonePath,
+		AbsFilePath: filepath.Join(root, filepath.FromSlash(pathWithName)),
+	}
+}
+
 func TestReposHandler(t *testing.T) {
 	cases := []struct {
 		name  string
+		root  string
 		repos []string
+		want  []Repo
 	}{{
 		name: "empty",
 	}, {
@@ -31,36 +61,40 @@ func TestReposHandler(t *testing.T) {
 	}, {
 		name:  "nested",
 		repos: []string{"project1", "project2", "dir/project3", "dir/project4.bare"},
+	}, {
+		name:  "root-is-repo",
+		root:  "parent",
+		repos: []string{"parent"},
 	}}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			var err error
 			root := gitInitRepos(t, tc.repos...)
+			if tc.repos != nil {
+				root, err = filepath.EvalSymlinks(root)
+				if err != nil {
+					t.Fatalf("Error returned from filepath.EvalSymlinks(): %v", err)
+				}
+			}
+
+			var want []Repo
+			for _, path := range tc.repos {
+				want = append(want, testRepoWithPaths("repos", root, path))
+			}
 
 			h := (&Serve{
 				Logger: logtest.Scoped(t),
-				Config: Config{
+				ServeConfig: ServeConfig{
 					Addr: testAddress,
-					Root: root,
 				},
 			}).handler()
 
-			var want []Repo
-			for _, name := range tc.repos {
-				isBare := strings.HasSuffix(name, ".bare")
-				uri := path.Join("/repos", name)
-				clonePath := uri
-				if !isBare {
-					clonePath += "/.git"
-				}
-				want = append(want, Repo{Name: name, URI: uri, ClonePath: clonePath})
-
-			}
-			testReposHandler(t, h, want)
+			testReposHandler(t, h, want, root)
 		})
 	}
 }
 
-func testReposHandler(t *testing.T, h http.Handler, repos []Repo) {
+func testReposHandler(t *testing.T, h http.Handler, repos []Repo, root string) {
 	ts := httptest.NewServer(h)
 	t.Cleanup(ts.Close)
 
@@ -77,9 +111,22 @@ func testReposHandler(t *testing.T, h http.Handler, repos []Repo) {
 		return string(b)
 	}
 
+	post := func(path string, body []byte) string {
+		res, err := http.Post(ts.URL+path, "application/json", bytes.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, err := io.ReadAll(res.Body)
+		res.Body.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(b)
+	}
+
 	// Check we have some known strings on the index page
 	index := get("/")
-	for _, sub := range []string{"http://" + testAddress, "/v1/list-repos", "/repos/"} {
+	for _, sub := range []string{"http://" + testAddress, "/v1/list-repos-for-path", "/repos/"} {
 		if !strings.Contains(index, sub) {
 			t.Errorf("index page does not contain substring %q", sub)
 		}
@@ -100,7 +147,11 @@ func testReposHandler(t *testing.T, h http.Handler, repos []Repo) {
 	type Response struct{ Items []Repo }
 	var want, got Response
 	want.Items = repos
-	if err := json.Unmarshal([]byte(get("/v1/list-repos")), &got); err != nil {
+	reqBody, err := json.Marshal(ListReposRequest{Root: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal([]byte(post("/v1/list-repos-for-path", reqBody)), &got); err != nil {
 		t.Fatal(err)
 	}
 	opts := []cmp.Option{
@@ -159,10 +210,7 @@ func TestIgnoreGitSubmodules(t *testing.T) {
 
 	repos, err := (&Serve{
 		Logger: logtest.Scoped(t),
-		Config: Config{
-			Root: root,
-		},
-	}).Repos()
+	}).Repos(root)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,7 +6,7 @@ import (
 
 	"github.com/grafana/regexp"
 
-	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -69,9 +69,6 @@ type GitserverClient interface {
 }
 
 type UploadService interface {
-	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)                // upload service
-	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)                    // upload service
-	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []codeinteltypes.Upload, err error) // upload service
 	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
 	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
