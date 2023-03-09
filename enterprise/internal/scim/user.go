@@ -47,7 +47,7 @@ func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Con
 		observationCtx:   observationCtx,
 		db:               db,
 		coreSchema:       createCoreSchema(),
-		schemaExtensions: createSchemaExtensions(),
+		schemaExtensions: []scim.SchemaExtension{},
 	}
 }
 
