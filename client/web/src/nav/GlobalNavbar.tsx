@@ -44,6 +44,7 @@ import { UserNavItem } from './UserNavItem'
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
+import { OwnConfigProps } from '../own/OwnConfigProps'
 
 export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,
@@ -53,7 +54,8 @@ export interface GlobalNavbarProps
         CodeInsightsProps,
         BatchChangesProps,
         NotebookProps,
-        CodeMonitoringProps {
+        CodeMonitoringProps,
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
@@ -128,6 +130,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     searchContextsEnabled,
     codeMonitoringEnabled,
     notebooksEnabled,
+    ownEnabled,
     showFeedbackModal,
     ...props
 }) => {
@@ -166,9 +169,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
+            ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [showSearchContext])
+    }, [ownEnabled, showSearchContext])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 

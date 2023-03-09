@@ -37,6 +37,7 @@ const defaultProps: GlobalNavbarProps = {
     setFuzzyFinderIsVisible: () => {},
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
+    ownEnabled: true,
     showFeedbackModal: () => undefined,
 }
 
