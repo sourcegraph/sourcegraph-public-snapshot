@@ -22,6 +22,11 @@ func NewPermissionsSyncJobsResolver(db database.DB, args graphqlbackend.ListPerm
 		db:   db,
 		args: args,
 	}
+
+	if args.UserID != nil && args.RepoID != nil {
+		return nil, errors.New("please provide either userID or repoID, but not both.")
+	}
+
 	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsSyncJobResolver](store, &args.ConnectionResolverArgs, nil)
 }
 
