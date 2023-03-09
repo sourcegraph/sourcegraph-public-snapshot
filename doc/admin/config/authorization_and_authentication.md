@@ -11,8 +11,10 @@ We suggest configuring both when using Sourcegraph Enterprise. If you do not con
 
 Sourcegraph supports username/password auth by default and SAML, OAuth, HTTP Proxy auth, and OpenID Connect if configured. Changing a username in Sourcegraph will allow the user to escalate permissions, so if you are syncing permissions, you will need to add the following to your site config at `https://sourcegraph.yourdomain.com/siteadmin/configuration` ([Learn more about viewing and editing your site configuration.](./site_config.md#view-and-edit-site-configuration))
 
-```
-auth.enableUsernameChanges: false
+```json
+{
+  "auth.enableUsernameChanges": false
+}
 ```
 
 For users using any of the other authentication mechanisms, removing `builtin` as an authentication mechanism is best practice. (Customers in a managed instance environment will need to leave `builtin` enabled for Sourcegraph employee access. Consult with your Customer Engineer for more info.)
@@ -21,11 +23,12 @@ For users using any of the other authentication mechanisms, removing `builtin` a
 
 ## Authorization in Sourcegraph
 
-If you use GitHub, GitLab, or Bitbucket Server / Bitbucket Data Center, you can sync access permissions directly from the code host:
+If you use GitHub, GitLab, Bitbucket Server / Bitbucket Data Center or Azure DevOps Services you can sync access permissions directly from the code host:
 
 - [GitHub](#github-enterprise-or-github-cloud-authentication-and-authorization)
 - [GitLab](#gitlab-enterprise-or-gilab-cloud-authentication-and-authorization)
 - [Bitbucket Server / Bitbucket Data Center](#bitbucket-server-authorization)
+- [Azure DevOps Services](#azure-devops-services)
 
 If you do not use one of those listed code hosts, you will need to control access using our [explicit permissions API](#explicit-permissions-api-authorization).
 
@@ -41,7 +44,7 @@ We recommend that you start at the instructions for your code host, if listed, f
 
 Built-in username/password authentication is Sourcegraph’s default authentication option. To enable it, add the following to your site config:
 
-```
+```json
 {
   // Other config settings go here
   "auth.providers": [
@@ -90,14 +93,14 @@ To configure SAML auth with GitLab permissions, you will need to first [configur
 For example, if the GitLab API returns:
 
 ```json
-"identities": [
-   {"provider": "saml", "extern_uid": "email@domain.com"}
-]
+{
+  "identities": [{ "provider": "saml", "extern_uid": "email@domain.com" }]
+}
 ```
 
 Then you will need to configure permission in Sourcegraph as:
 
-```
+```json
 {
   "url": "https://gitlab.com",
   "token": "$PERSONAL_ACCESS_TOKEN",
@@ -142,6 +145,13 @@ We support authentication through OAuth for [Azure DevOps Services (dev.azure.co
 
 #### Configuring Sourcegraph auth.providers
 
+Before you add the configuration please ensuyre that:
+
+1. The value of `App ID` from your OAuth application is set as the value of the `clientID` field in the config
+2. The value of `Client Secret` (and not the `App secret`) from your OAuth application is set as the value of the `clientSecret` field
+3. The value of `apiScope` string is a comma separated string and reflects the scopes from your OAuth application accurately
+4. The `type` field has no typos and is **exactly** the same as the example below
+
 Add the following to the `auth.providers` key in the site config:
 
 ```json
@@ -159,23 +169,20 @@ Add the following to the `auth.providers` key in the site config:
 }
 ```
 
-It is **important** to ensure that:
-
-1. The value of `App ID` from your OAuth application is set as the value of the `clientID` field
-2. The value of `Client Secret` (and not the `App secret`) from your OAuth application is set as the value of the `clientSecret` field
-3. The value of `apiScope` string is a comma separated string and reflects the scopes from your OAuth application accurately
-4. The `type` field has no typos and is **exactly** the same as the example above
-
 Optionally, you may want to restrict the sign up to only users who belong to a specific list of organizations. To do this add the following to the `auth.providers` configuration above:
 
 ```json
-      "allowOrgs": ["your-org-1", "your-org-2"],
+{
+  "allowOrgs": ["your-org-1", "your-org-2"]
+}
 ```
 
 Finally, if you want to prevent new users from signing up to your Sourcegraph instance, set the following (default to `true`) in the `auth.providers` configuration above:
 
 ```json
-      "allowSignup": false
+{
+  "allowSignup": false
+}
 ```
 
 The final and complete `auth.providers` configuration may look like this:

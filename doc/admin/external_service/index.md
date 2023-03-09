@@ -107,7 +107,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
         <td class="indexer-implemented-y">✗</td> <!-- Batch Changes -->
       </tr>
       <tr>
-        <td>Azure DevOps <span class="badge badge-beta">Beta</span></td>
+        <td>Azure DevOps</td>
         <td>Tier 1</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->

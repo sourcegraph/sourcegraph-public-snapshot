@@ -48,11 +48,14 @@ Please consult [this page](../config/webhooks.md) in order to configure webhooks
 
 1. Configure Azure DevOps as an OAuth provider by consulting [this page](../config/authorization_and_authentication.md#azure-devops-services)
 2. Next verify that users can now sign up / login to your Sourcegraph instance with your Azure DevOps OAuth provider
-3. Set the following to your Azure DevOps code host configuration:
+3. Set the following in your Azure DevOps code host connection:
 
-```json
-  "enforcePermissions": true
-```
+   ```json
+   {
+     // ...
+     "enforcePermissions": true
+   }
+   ```
 
 4. For each Azure DevOps organization that is part of the `orgs` or `projects` list in the code host configuration, enable `Third-party application access via OAuth` from `Organization settings` -> `Security` -> `Policies`
 
