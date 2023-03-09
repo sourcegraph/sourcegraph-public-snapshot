@@ -271,6 +271,10 @@ func (r *Repo) Update(n *Repo) (modified RepoModified) {
 		modified |= RepoModifiedStars
 	}
 
+	// We don't compare the Metadata fields to determine whether or not a repo
+	// has been modified. The reflect.DeepEqual always returns false for
+	// some code hosts (i.e. GitHub).
+
 	for urn, info := range n.Sources {
 		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqual(info, old) {
 			r.Sources[urn] = info
