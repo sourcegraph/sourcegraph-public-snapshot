@@ -56,7 +56,7 @@ We support REST API calls for:
 
 ### Feature support
 
-We support some SCIM 2.0 features:
+We support the following SCIM 2.0 features:
 
 - ✅ Updating users (PATCH)
 - ✅ Pagination for listing users
