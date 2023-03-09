@@ -110,8 +110,8 @@ export const EmailAction: React.FunctionComponent<React.PropsWithChildren<Action
         )
     ) : !userPrimaryEmail?.verified ? (
         <>
-            Please <Link to={`${authenticatedUser.settingsURL!}/settings/emails`}>verify your email</Link> to enable
-            this feature.
+            Please <Link to={`${authenticatedUser.settingsURL!}/emails`}>verify your email</Link> to enable this
+            feature.
         </>
     ) : undefined
 
