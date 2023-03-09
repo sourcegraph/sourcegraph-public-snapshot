@@ -10,10 +10,10 @@ import fetch from 'node-fetch'
 import * as semver from 'semver'
 import { SemVer } from 'semver'
 
+import { ReleaseConfig } from './config'
 import { getPreviousVersionSrcCli } from './git'
 import { cloneRepo, EditFunc, getAuthenticatedGitHubClient, listIssues } from './github'
 import * as update from './update'
-import { ReleaseConfig } from './config'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
 
