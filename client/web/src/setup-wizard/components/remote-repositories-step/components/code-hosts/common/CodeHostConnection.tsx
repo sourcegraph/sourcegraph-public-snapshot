@@ -1,4 +1,4 @@
-import { FC, ReactElement, ReactNode, useState, useMemo } from 'react'
+import { FC, ReactElement, ReactNode, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
@@ -12,7 +12,6 @@ import {
     Icon,
     Input,
     Text,
-    useLocalStorage,
     FormGroup,
     getDefaultInputProps,
     SubmissionErrors,
@@ -21,10 +20,10 @@ import {
     useForm,
     ErrorAlert,
     FORM_ERROR,
+    FormChangeEvent,
 } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceOptions } from '../../../../../../components/externalServices/externalServices'
-import { AddExternalServiceInput } from '../../../../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 import styles from './CodeHostConnection.module.scss'
@@ -40,33 +39,17 @@ export interface CodeHostJSONFormState {
 }
 
 interface CodeHostJSONFormProps {
-    externalServiceOptions: AddExternalServiceOptions
-    initialValues?: CodeHostConnectFormFields
+    initialValues: CodeHostConnectFormFields
     children: (state: CodeHostJSONFormState) => ReactNode
-    onSubmit: (values: AddExternalServiceInput) => Promise<void>
+    externalServiceOptions: AddExternalServiceOptions
+    onSubmit: (values: CodeHostConnectFormFields) => Promise<void>
+    onChange?: (event: FormChangeEvent<CodeHostConnectFormFields>) => void
 }
 
 export function CodeHostJSONForm(props: CodeHostJSONFormProps): ReactElement {
-    const { externalServiceOptions, initialValues, onSubmit, children } = props
+    const { initialValues, children, externalServiceOptions, onSubmit, onChange } = props
 
-    const initialValue = useMemo(
-        () => ({
-            displayName: externalServiceOptions.defaultDisplayName,
-            config: externalServiceOptions.defaultConfig,
-        }),
-        [externalServiceOptions.defaultConfig, externalServiceOptions.defaultDisplayName]
-    )
-
-    const [localValues, setLocalValues] = useLocalStorage<CodeHostConnectFormFields>(
-        `${externalServiceOptions.kind}-connect-form`,
-        initialValue
-    )
-
-    const form = useForm<CodeHostConnectFormFields>({
-        initialValues: initialValues ?? localValues,
-        onSubmit: values => onSubmit({ ...values, kind: externalServiceOptions.kind }),
-        onChange: event => setLocalValues(event.values),
-    })
+    const form = useForm<CodeHostConnectFormFields>({ initialValues, onChange, onSubmit })
 
     const displayName = useField({
         formApi: form.formAPI,
@@ -128,6 +111,7 @@ export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): Re
                     actions={externalServiceOptions.editorActions}
                     jsonSchema={externalServiceOptions.jsonSchema}
                     canEdit={false}
+                    controlled={true}
                     loading={true}
                     height={400}
                     readOnly={false}

@@ -45,7 +45,7 @@ func TestExpireFailedRecords(t *testing.T) {
 		types.Index{ID: 12, RepositoryID: 52, Commit: makeCommit(12), FinishedAt: timePtr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
 	)
 
-	if err := store.ExpireFailedRecords(ctx, 100, time.Hour, now); err != nil {
+	if _, _, err := store.ExpireFailedRecords(ctx, 100, time.Hour, now); err != nil {
 		t.Fatalf("unexpected error expiring failed records: %s", err)
 	}
 

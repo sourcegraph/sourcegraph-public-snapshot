@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -30,6 +31,7 @@ func TestFeatureFlagStore(t *testing.T) {
 	t.Run("AnonymousUserFlags", testAnonymousUserFlags)
 	t.Run("UserlessFeatureFlags", testUserlessFeatureFlags)
 	t.Run("OrganizationFeatureFlag", testOrgFeatureFlag)
+	t.Run("GetFeatureFlag", testGetFeatureFlag)
 }
 
 func errorContains(s string) require.ErrorAssertionFunc {
@@ -716,5 +718,34 @@ func testOrgFeatureFlag(t *testing.T) {
 		got, err := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f1")
 		require.NoError(t, err)
 		require.Equal(t, false, got)
+	})
+}
+
+func testGetFeatureFlag(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	flagStore := db.FeatureFlags()
+	t.Run("no value", func(t *testing.T) {
+		ctx := context.Background()
+		ff, err := flagStore.GetFeatureFlag(ctx, "does-not-exist")
+		require.Equal(t, err, sql.ErrNoRows)
+		require.Nil(t, ff)
+	})
+	t.Run("true value", func(t *testing.T) {
+		ctx := context.Background()
+		_, err := flagStore.CreateBool(ctx, "is-true", true)
+		require.NoError(t, err)
+		ff, err := flagStore.GetFeatureFlag(ctx, "is-true")
+		require.NoError(t, err)
+		require.True(t, ff.Bool.Value)
+	})
+	t.Run("false value", func(t *testing.T) {
+		ctx := context.Background()
+		_, err := flagStore.CreateBool(ctx, "is-false", true)
+		require.NoError(t, err)
+		ff, err := flagStore.GetFeatureFlag(ctx, "is-false")
+		require.NoError(t, err)
+		require.True(t, ff.Bool.Value)
 	})
 }

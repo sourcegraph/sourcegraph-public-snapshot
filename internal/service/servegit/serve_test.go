@@ -40,9 +40,10 @@ func testRepoWithPaths(fixedEndpoint string, root string, pathWithName string) R
 	}
 
 	return Repo{
-		Name:      pathWithName,
-		URI:       uri,
-		ClonePath: clonePath,
+		Name:        pathWithName,
+		URI:         uri,
+		ClonePath:   clonePath,
+		AbsFilePath: filepath.Join(root, filepath.FromSlash(pathWithName)),
 	}
 }
 

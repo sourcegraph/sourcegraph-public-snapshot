@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, FC } from 'react'
+import React, { FC, useEffect, useMemo } from 'react'
 
 import {
     mdiAccount,
@@ -24,19 +24,19 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    useObservable,
-    Link,
-    Icon,
-    ButtonGroup,
     Button,
-    Text,
+    ButtonGroup,
+    Container,
     ErrorAlert,
+    Icon,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Text,
     Tooltip,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
@@ -280,6 +280,7 @@ export const TreePage: FC<Props> = ({
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
+                                onClick={() => props.telemetryService.log('repoPage:ownershipPage:clicked')}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
                                 <span className={styles.text}>Ownership</span>
