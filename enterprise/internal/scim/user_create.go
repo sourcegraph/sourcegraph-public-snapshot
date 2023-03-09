@@ -1,6 +1,7 @@
 package scim
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"time"
@@ -8,8 +9,12 @@ import (
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -84,6 +89,23 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	}
 
 	var now = time.Now()
+
+	// Email sending always happens in the background so the request is fast.
+	goroutine.Go(func() {
+		url := globals.ExternalURL().String()
+		if err := txemail.Send(context.Background(), "user_welcome", txemail.Message{
+			To:       []string{"christopher.warwick@sourcegraph.com"},
+			Template: emailTemplateEmailWelcomeSCIM,
+			Data: struct {
+				URL string
+			}{
+				URL: url,
+			},
+		}); err != nil {
+			return
+		}
+		h.observationCtx.Logger.Info("email welcome: welcome email sent")
+	})
 
 	return scim.Resource{
 		ID:         strconv.Itoa(int(user.ID)),
@@ -165,3 +187,42 @@ func containsErrCannotCreateUserError(err error) (database.ErrCannotCreateUser, 
 
 	return database.ErrCannotCreateUser{}, false
 }
+
+var emailTemplateEmailWelcomeSCIM = txemail.MustValidate(txtypes.Templates{
+	Subject: `Welcome to Sourcegraph`,
+	Text: `
+Sourcegraph enables you to quickly understand, fix, and automate changes to your code.
+
+You can use Sourcegraph to:
+  - Search and navigate multiple repositories with cross-repository dependency navigation
+  - Share links directly to lines of code to work more collaboratively together
+  - Automate large-scale code changes with Batch Changes
+  - Create code monitors to alert you about changes in code
+
+Come experience the power of great code search.
+
+
+{{.URL}}
+
+Learn more about Sourcegraph:
+
+https://about.sourcegraph.com
+`,
+	HTML: `
+<p>Sourcegraph enables you to quickly understand, fix, and automate changes to your code.</p>
+
+<p>
+	You can use Sourcegraph to:<br/>
+	<ul>
+		<li>Search and navigate multiple repositories with cross-repository dependency navigation</li>
+		<li>Share links directly to lines of code to work more collaboratively together</li>
+		<li>Automate large-scale code changes with Batch Changes</li>
+		<li>Create code monitors to alert you about changes in code</li>
+	</ul>
+</p>
+
+<p><strong><a href="{{.URL}}">Come experience the power of great code search</a></strong></p>
+
+<p><a href="https://about.sourcegraph.com">Learn more about Sourcegraph</a></p>
+`,
+})
