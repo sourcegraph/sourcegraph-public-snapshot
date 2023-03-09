@@ -98,3 +98,9 @@ export const TRIGGER_REPO_SYNC = gql`
         }
     }
 `
+
+export const CANCEL_PERMISSIONS_SYNC_JOB = gql`
+    mutation CancelPermissionsSyncJob($job: ID!) {
+        cancelPermissionsSyncJob(job: $job)
+    }
+`
