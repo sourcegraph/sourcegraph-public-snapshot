@@ -87,12 +87,12 @@ func createUserResourceType(userResourceHandler *UserResourceHandler) scim.Resou
 }
 
 // updateUser updates a user in the database. This is meant to be used in a transaction.
-func updateUser(ctx context.Context, tx database.DB, oldUser *types.UserForSCIM, attributes scim.ResourceAttributes, emailsModified bool) (err error) {
+func updateUser(ctx context.Context, tx database.DB, oldUser *types.UserForSCIM, updatedUserSCIMAttributes scim.ResourceAttributes, emailsModified bool) (err error) {
 	usernameUpdate := ""
-	// Get a copy of how the user started before the update so we can diff them if needed
-	startingUserSCIMResource := convertUserToSCIMResource(oldUser)
+	// Get a copy of the user SCIM resources before updates were applied so we can diff them if needed
+	beforeUpdateUserSCIMResources := convertUserToSCIMResource(oldUser)
 
-	requestedUsername := extractStringAttribute(attributes, AttrUserName)
+	requestedUsername := extractStringAttribute(updatedUserSCIMAttributes, AttrUserName)
 	if requestedUsername != oldUser.Username {
 		usernameUpdate, err = getUniqueUsername(ctx, tx.Users(), requestedUsername)
 		if err != nil {
@@ -111,11 +111,11 @@ func updateUser(ctx context.Context, tx database.DB, oldUser *types.UserForSCIM,
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
 	}
 
-	accountData, err := toAccountData(attributes)
+	accountData, err := toAccountData(updatedUserSCIMAttributes)
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 	}
-	err = tx.UserExternalAccounts().UpsertSCIMData(ctx, oldUser.ID, getUniqueExternalID(attributes), accountData)
+	err = tx.UserExternalAccounts().UpsertSCIMData(ctx, oldUser.ID, getUniqueExternalID(updatedUserSCIMAttributes), accountData)
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
 	}
@@ -125,9 +125,9 @@ func updateUser(ctx context.Context, tx database.DB, oldUser *types.UserForSCIM,
 		if err != nil {
 			return err
 		}
-		updates := generateEmailUpdates(startingUserSCIMResource.Attributes, attributes, currentEmails)
+		diffs := diffEmails(beforeUpdateUserSCIMResources.Attributes, updatedUserSCIMAttributes, currentEmails)
 		// First add any new email address
-		for _, newEmail := range updates.toAdd {
+		for _, newEmail := range diffs.toAdd {
 			err = tx.UserEmails().Add(ctx, oldUser.ID, newEmail, nil)
 			if err != nil {
 				return err
@@ -138,27 +138,25 @@ func updateUser(ctx context.Context, tx database.DB, oldUser *types.UserForSCIM,
 			}
 		}
 
-		// Now verify any addresses that already existed and weren't verified
-		for _, verifyEmail := range updates.toVerify {
-			err = tx.UserEmails().SetVerified(ctx, oldUser.ID, verifyEmail, true)
+		// Now verify any addresses that already existed but weren't verified
+		for _, email := range diffs.toVerify {
+			err = tx.UserEmails().SetVerified(ctx, oldUser.ID, email, true)
 			if err != nil {
 				return err
 			}
 		}
 
-		// Now that all the new emails are added and verified set the primary email
-		// The primary would be included in the tx because it either already existed
-		// or we required the add to succeed in the prior steps
-		if updates.resetPrimaryTo != nil {
-			err = tx.UserEmails().SetPrimaryEmail(ctx, oldUser.ID, *updates.resetPrimaryTo)
+		// Now that all the new emails are added and verified set the primary email if it changed
+		if diffs.setPrimaryEmailTo != nil {
+			err = tx.UserEmails().SetPrimaryEmail(ctx, oldUser.ID, *diffs.setPrimaryEmailTo)
 			if err != nil {
 				return err
 			}
 		}
 
-		// Finally remove any email addresses
-		for _, newEmail := range updates.toRemove {
-			err = tx.UserEmails().Remove(ctx, oldUser.ID, newEmail)
+		// Finally remove any email addresses that no longer are needed
+		for _, email := range diffs.toRemove {
+			err = tx.UserEmails().Remove(ctx, oldUser.ID, email)
 			if err != nil {
 				return err
 			}
@@ -168,27 +166,43 @@ func updateUser(ctx context.Context, tx database.DB, oldUser *types.UserForSCIM,
 	return
 }
 
-type emailUpdates struct {
-	toRemove       []string
-	toAdd          []string
-	toVerify       []string
-	resetPrimaryTo *string
+type emailDiffs struct {
+	toRemove          []string
+	toAdd             []string
+	toVerify          []string
+	setPrimaryEmailTo *string
 }
 
-func generateEmailUpdates(startingUserData, endingUserData scim.ResourceAttributes, currentEmails []*database.UserEmail) emailUpdates {
-	startingPrimary, startingOther := extractPrimaryEmail(startingUserData)
-	endingPrimary, endingOther := extractPrimaryEmail(endingUserData)
-	result := emailUpdates{}
+//	diffEmails compares the email addresses from the user_emails table to their SCIM data before and after the current update
+//	and determines what changes need to be made. It takes into account the current email addresses and verification status from the database
+//
+// (emailsInDB) to determine if emails need to be added, verified or removed, and if the primary email needs to be changed.
+//
+//		Parameters:
+//		    beforeUpdateUserData - The SCIM resource attributes containing the user's email addresses prior to the update.
+//		    afterUpdateUserData - The SCIM resource attributes containing the user's email addresses after the update.
+//		    emailsInDB - The current email addresses and verification status for the user from the database.
+//
+//		Returns:
+//		    emailDiffs - A struct containing the email changes that need to be made:
+//		     toRemove - Email addresses that need to be removed.
+//		     toAdd - Email addresses that need to be added.
+//		     toVerify - Existing email addresses that should be marked as verified.
+//	         setPrimaryEmailTo - The new primary email address if it changed, otherwise nil.
+func diffEmails(beforeUpdateUserData, afterUpdateUserData scim.ResourceAttributes, emailsInDB []*database.UserEmail) emailDiffs {
+	beforePrimary, beforeOthers := extractPrimaryEmail(beforeUpdateUserData)
+	afterPrimary, afterOthers := extractPrimaryEmail(afterUpdateUserData)
+	result := emailDiffs{}
 
 	// Make a map of existing emails and verification status that we can use for lookup
 	currentEmailVerificationStatus := map[string]bool{}
-	for _, email := range currentEmails {
+	for _, email := range emailsInDB {
 		currentEmailVerificationStatus[email.Email] = email.VerifiedAt != nil
 	}
 
 	// Check if primary changed
-	if !strings.EqualFold(startingPrimary, endingPrimary) && endingPrimary != "" {
-		result.resetPrimaryTo = &endingPrimary
+	if !strings.EqualFold(beforePrimary, afterPrimary) && afterPrimary != "" {
+		result.setPrimaryEmailTo = &afterPrimary
 	}
 
 	toMap := func(s string, others []string) map[string]bool {
@@ -212,8 +226,8 @@ func generateEmailUpdates(startingUserData, endingUserData scim.ResourceAttribut
 	}
 
 	// Put the original and ending lists of emails into maps to easier comparison
-	startingEmails := toMap(startingPrimary, startingOther)
-	endingEmails := toMap(endingPrimary, endingOther)
+	startingEmails := toMap(beforePrimary, beforeOthers)
+	endingEmails := toMap(afterPrimary, afterOthers)
 
 	// Identify emails that were removed
 	result.toRemove = difference(startingEmails, endingEmails)
