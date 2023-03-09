@@ -291,12 +291,12 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 	}
 
 	return &search.Features{
-		ContentBasedLangFilters:  flagSet.GetBoolOr("search-content-based-lang-detection", false),
-		CodeOwnershipSearch:      flagSet.GetBoolOr("search-ownership", false),
-		HybridSearch:             flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
-		Ranking:                  flagSet.GetBoolOr("search-ranking", false),
-		Debug:                    flagSet.GetBoolOr("search-debug", false),
-		SymbolRelationshipSearch: flagSet.GetBoolOr("search-symbolrelationship", false),
+		ContentBasedLangFilters:   flagSet.GetBoolOr("search-content-based-lang-detection", false),
+		CodeOwnershipSearch:       flagSet.GetBoolOr("search-ownership", false),
+		HybridSearch:              flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
+		Ranking:                   flagSet.GetBoolOr("search-ranking", false),
+		Debug:                     flagSet.GetBoolOr("search-debug", false),
+		SymbolRelationshipsSearch: flagSet.GetBoolOr("search-symbolrelationships", false),
 	}
 }
 

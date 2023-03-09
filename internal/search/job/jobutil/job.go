@@ -161,7 +161,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 		}
 
 		// Create code-intel search jobs
-		if preds := b.Parameters.SymbolRelationshipSearches(); len(preds) > 0 && inputs.Features.SymbolRelationshipSearch {
+		if preds := b.Parameters.SymbolRelationshipSearches(); len(preds) > 0 && inputs.Features.SymbolRelationshipsSearch {
 			for _, ss := range preds {
 				rawSymbolSearchJob, err := NewPlanJob(inputs, ss.RawSymbolSearch, enterpriseJobs)
 				if err != nil {

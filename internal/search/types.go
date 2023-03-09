@@ -351,9 +351,9 @@ type Features struct {
 	// using `file:has.owner({owner})` and `select:file.owners` filters.
 	CodeOwnershipSearch bool `json:"codeownership"`
 
-	// SymbolRelationshipSearch when true will enable searching through code intel graph
+	// SymbolRelationshipsSearch when true will enable searching through code intel graph
 	// relationships with `symbol:references(...)` and `symbol:implements(...)`
-	SymbolRelationshipSearch bool `json:"symbolrelationship"`
+	SymbolRelationshipsSearch bool `json:"symbolrelationships"`
 }
 
 func (f *Features) String() string {

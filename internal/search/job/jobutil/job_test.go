@@ -783,7 +783,7 @@ func TestNewPlanJob(t *testing.T) {
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeLiteral,
 			features: search.Features{
-				SymbolRelationshipSearch: true,
+				SymbolRelationshipsSearch: true,
 			},
 			want: autogold.Expect(`
 (LOG
