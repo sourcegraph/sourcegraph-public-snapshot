@@ -230,6 +230,9 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		return err
 	}
 
+	// Because we have no external rate limiting data for Bitbucket Cloud, we do an exponential
+	// back-off and retry for requests where we recieve a 429 Too Many Requests.
+	// If we still don't succeed after waiting a total of 5 min, we give up.
 	var resp *http.Response
 	var err error
 	sleepTime := 10 * time.Second
