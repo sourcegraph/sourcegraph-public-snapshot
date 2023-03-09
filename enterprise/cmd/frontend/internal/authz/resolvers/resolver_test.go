@@ -714,8 +714,34 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 			},
 		)
 
-		require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
 		require.NoError(t, err)
+		require.Equal(t, "Permissions sync job is already dequeued and cannot be canceled.", *result)
+	})
+
+	t.Run("SQL error", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+		const errorText = "oops"
+		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(errors.New(errorText))
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+		r := &Resolver{db: db, logger: logger}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		result, err := r.CancelPermissionsSyncJob(ctx,
+			&graphqlbackend.CancelPermissionsSyncJobArgs{
+				Job: marshalPermissionsSyncJobID(1337),
+			},
+		)
+
+		require.EqualError(t, err, errorText)
+		require.Nil(t, result)
 	})
 
 	t.Run("sync job successfully cancelled", func(t *testing.T) {
@@ -739,7 +765,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 			},
 		)
 
-		require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
+		require.Equal(t, "Permissions sync job canceled", *result)
 		require.NoError(t, err)
 	})
 }
@@ -755,7 +781,7 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 		if jobID == 1 && reason == "because" {
 			return nil
 		}
-		return errors.New("Oh no, something's wrong.")
+		return database.MockPermissionsSyncJobNotFoundErr
 	})
 
 	db := edb.NewStrictMockEnterpriseDB()
@@ -770,16 +796,31 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 					cancelPermissionsSyncJob(
 						job: "%s",
 						reason: "because"
-					) {
-						alwaysNil
-					}
+					)
 				}
 			`, marshalPermissionsSyncJobID(1)),
 			ExpectedResult: `
 				{
-					"cancelPermissionsSyncJob": {
-						"alwaysNil": null
-					}
+					"cancelPermissionsSyncJob": "Permissions sync job canceled"
+				}
+			`,
+		})
+	})
+
+	t.Run("sync job is already dequeued", func(t *testing.T) {
+		graphqlbackend.RunTest(t, &graphqlbackend.Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: fmt.Sprintf(`
+				mutation {
+					cancelPermissionsSyncJob(
+						job: "%s",
+						reason: "cause"
+					)
+				}
+			`, marshalPermissionsSyncJobID(42)),
+			ExpectedResult: `
+				{
+					"cancelPermissionsSyncJob": "Permissions sync job is already dequeued and cannot be canceled."
 				}
 			`,
 		})

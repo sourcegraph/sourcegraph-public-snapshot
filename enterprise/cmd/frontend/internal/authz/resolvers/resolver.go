@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -342,7 +343,7 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlbackend.CancelPermissionsSyncJobArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlbackend.CancelPermissionsSyncJobArgs) (*string, error) {
 	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
@@ -365,10 +366,13 @@ func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlba
 	err = r.db.PermissionSyncJobs().CancelQueuedJob(ctx, reason, syncJobID)
 	// We shouldn't return an error when the job is already processing or not found
 	// by ID (might already be cleaned up).
-	if err != nil && !errcode.IsNotFound(err) {
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return pointer.String("Permissions sync job is already dequeued and cannot be canceled."), nil
+		}
 		return nil, err
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return pointer.String("Permissions sync job canceled"), nil
 }
 
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
