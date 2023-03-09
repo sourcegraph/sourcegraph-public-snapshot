@@ -182,7 +182,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		// Update user
 		var now = time.Now()
 		userRes.Meta.LastModified = &now
-		return updateUser(r.Context(), makeGetDB(tx, h.db), user, userRes.Attributes, emailsModified)
+		return updateUser(r.Context(), tx, user, userRes.Attributes, emailsModified)
 	})
 	if err != nil {
 		return scim.Resource{}, err

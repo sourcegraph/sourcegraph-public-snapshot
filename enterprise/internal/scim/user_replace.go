@@ -48,7 +48,7 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 		}
 
 		// Save user
-		return updateUser(r.Context(), makeGetDB(tx, h.db), user, userRes.Attributes, true)
+		return updateUser(r.Context(), tx, user, userRes.Attributes, true)
 	})
 	if err != nil {
 		return scim.Resource{}, err
