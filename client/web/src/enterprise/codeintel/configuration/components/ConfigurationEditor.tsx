@@ -43,10 +43,10 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
         [updateConfigForRepository, repoId]
     )
 
-    const primaryConfiguration = configuration?.raw ?? inferredConfiguration.raw
     const [dirty, setDirty] = useState<boolean>()
     const [editor, setEditor] = useState<editor.ICodeEditor>()
     const infer = useCallback(() => editor?.setValue(inferredConfiguration.raw), [editor, inferredConfiguration])
+    const showInferButton = Boolean(inferredConfiguration.raw) && configuration?.raw !== inferredConfiguration.raw
 
     const customToolbar = useMemo<{
         saveToolbar: FunctionComponent<SaveToolbarProps & IndexConfigurationSaveToolbarProps>
@@ -59,8 +59,7 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
                     ...props,
                     onInfer: infer,
                     loading: inferredConfiguration === undefined,
-                    inferEnabled:
-                        Boolean(inferredConfiguration.raw) && configuration?.raw !== inferredConfiguration.raw,
+                    inferEnabled: showInferButton,
                 }
                 mergedProps.willShowError = () => !mergedProps.saving
                 mergedProps.saveDiscardDisabled = () => mergedProps.saving || !dirty
@@ -68,7 +67,7 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
                 return mergedProps
             },
         }),
-        [dirty, configuration, inferredConfiguration, infer]
+        [infer, inferredConfiguration, showInferButton, dirty]
     )
 
     if (inferredError || repositoryError) {
@@ -83,7 +82,7 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
                 <LoadingSpinner />
             ) : (
                 <DynamicallyImportedMonacoSettingsEditor
-                    value={primaryConfiguration}
+                    value={configuration.raw || inferredConfiguration.raw}
                     jsonSchema={allConfigSchema}
                     canEdit={authenticatedUser?.siteAdmin}
                     readOnly={!authenticatedUser?.siteAdmin}

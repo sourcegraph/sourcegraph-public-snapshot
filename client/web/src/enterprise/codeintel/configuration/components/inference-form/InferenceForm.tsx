@@ -1,14 +1,15 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
 import { uniqueId } from 'lodash'
 
-import { Button, Container, Form, Icon } from '@sourcegraph/wildcard'
+import { Button, Container, Form, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AutoIndexJobDescriptionFields } from '../../../../../graphql-operations'
 import schema from '../../schema.json'
+import { ConfigurationInferButton } from '../ConfigurationInferButton'
 
 import { autoIndexJobsToFormData } from './auto-index-to-form-job'
 import { formDataToSchema } from './form-data-to-schema'
@@ -24,13 +25,34 @@ interface InferenceFormProps {
     readOnly: boolean
     jobs: AutoIndexJobDescriptionFields[]
     onSubmit?: (data: SchemaCompatibleInferenceFormData) => Promise<void>
+
+    showInferButton?: boolean
+    onInfer?: () => void
 }
 
-export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({ jobs, readOnly, onSubmit }) => {
-    const initialFormData = useMemo(() => autoIndexJobsToFormData(jobs), [jobs])
-    const [formData, setFormData] = useState<InferenceFormData>(initialFormData)
+export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
+    jobs,
+    readOnly,
+    onSubmit,
+    showInferButton,
+    onInfer,
+}) => {
+    const firstRender = useRef(true)
+    const initialFormData = useRef(autoIndexJobsToFormData({ jobs }))
+    const [formData, setFormData] = useState<InferenceFormData>(initialFormData.current)
+    const [loading, setLoading] = useState(false)
 
-    const isDirty = useMemo(() => formData.index_jobs.some(job => job.meta.dirty), [formData])
+    // Allow the parent to update form data after the first mount
+    useEffect(() => {
+        if (firstRender.current) {
+            firstRender.current = false
+            return
+        }
+
+        setFormData(autoIndexJobsToFormData({ jobs, dirty: true }))
+    }, [jobs])
+
+    const isDirty = useMemo(() => formData.dirty, [formData])
 
     const handleSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>) => {
@@ -40,6 +62,8 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({ job
                 return
             }
 
+            setLoading(true)
+
             const schemaCompatibleFormData = formDataToSchema(formData)
 
             // Validate form data against JSONSchema
@@ -48,15 +72,11 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({ job
             if (isValid) {
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 onSubmit(schemaCompatibleFormData).then(() => {
+                    setLoading(false)
                     // Reset dirty state
                     setFormData(previous => ({
-                        index_jobs: previous.index_jobs.map(job => ({
-                            ...job,
-                            meta: {
-                                ...job.meta,
-                                dirty: false,
-                            },
-                        })),
+                        ...previous,
+                        dirty: false,
                     }))
                 })
             }
@@ -71,15 +91,12 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({ job
                 const job = previous.index_jobs[index]
 
                 return {
+                    dirty: true,
                     index_jobs: [
                         ...previous.index_jobs.slice(0, index),
                         {
                             ...job,
                             [name]: value,
-                            meta: {
-                                ...job.meta,
-                                dirty: true,
-                            },
                         },
                         ...previous.index_jobs.slice(index + 1),
                     ],
@@ -96,6 +113,7 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({ job
             }
 
             setFormData(previous => ({
+                dirty: true,
                 index_jobs: previous.index_jobs.filter(job => job.meta.id !== id),
             }))
         },
@@ -120,6 +138,7 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({ job
                                 className="d-block mt-3 ml-auto"
                                 onClick={() => {
                                     setFormData(previous => ({
+                                        dirty: true,
                                         index_jobs: [
                                             ...previous.index_jobs,
                                             {
@@ -132,7 +151,6 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({ job
                                                 steps: [],
                                                 meta: {
                                                     id: uniqueId(),
-                                                    dirty: true,
                                                 },
                                             },
                                         ],
@@ -147,14 +165,20 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({ job
                 ))}
             </>
             {!readOnly && (
-                <>
+                <div className="d-flex align-items-center">
                     <Button type="submit" variant="primary" disabled={!isDirty} className="mr-2">
                         Save
                     </Button>
-                    <Button variant="secondary" disabled={!isDirty} onClick={() => setFormData(initialFormData)}>
+                    <Button
+                        variant="secondary"
+                        disabled={!isDirty}
+                        onClick={() => setFormData(initialFormData.current)}
+                    >
                         Discard changes
                     </Button>
-                </>
+                    {showInferButton && <ConfigurationInferButton onClick={onInfer} />}
+                    {loading && <LoadingSpinner className="ml-2" />}
+                </div>
             )}
         </Form>
     )

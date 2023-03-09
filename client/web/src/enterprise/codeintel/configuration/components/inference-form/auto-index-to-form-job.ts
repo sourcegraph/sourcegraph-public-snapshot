@@ -43,10 +43,14 @@ const autoIndexJobToFormJob = (job: AutoIndexJobDescriptionFields): InferenceFor
     steps: job.steps.preIndex.map(autoIndexStepToFormStep),
     meta: {
         id: job.comparisonKey,
-        dirty: false,
     },
 })
 
-export const autoIndexJobsToFormData = (jobs: AutoIndexJobDescriptionFields[]): InferenceFormData => ({
+interface AutoIndexJobsToFormDataParams {
+    jobs: AutoIndexJobDescriptionFields[]
+    dirty?: boolean
+}
+export const autoIndexJobsToFormData = ({ jobs, dirty = false }: AutoIndexJobsToFormDataParams): InferenceFormData => ({
     index_jobs: jobs.map(autoIndexJobToFormJob),
+    dirty,
 })

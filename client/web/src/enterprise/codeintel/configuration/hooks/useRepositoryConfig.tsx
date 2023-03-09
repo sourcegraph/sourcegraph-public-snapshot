@@ -9,7 +9,7 @@ interface UseRepositoryConfigResult {
     configuration: {
         raw: string
         parsed: AutoIndexJobDescriptionFields[]
-    } | null
+    }
     loadingRepository: boolean
     repositoryError: ApolloError | undefined
 }
@@ -25,7 +25,10 @@ export const useRepositoryConfig = (id: string): UseRepositoryConfigResult => {
                   raw: data.node.indexConfiguration.configuration,
                   parsed: data.node.indexConfiguration.parsedConfiguration ?? [],
               }
-            : null
+            : {
+                  raw: '',
+                  parsed: [],
+              }
 
     return {
         configuration,
