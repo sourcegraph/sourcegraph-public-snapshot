@@ -20699,8 +20699,8 @@
         },
         {
           "Name": "name",
-          "Index": 2,
-          "TypeName": "text",
+          "Index": 6,
+          "TypeName": "citext",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -20708,7 +20708,7 @@
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": "The uniquely identifying name of the role."
+          "Comment": ""
         },
         {
           "Name": "system",
@@ -20726,16 +20726,6 @@
       ],
       "Indexes": [
         {
-          "Name": "roles_name",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX roles_name ON roles USING btree (name)",
-          "ConstraintType": "u",
-          "ConstraintDefinition": "UNIQUE (name)"
-        },
-        {
           "Name": "roles_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,
@@ -20744,17 +20734,19 @@
           "IndexDefinition": "CREATE UNIQUE INDEX roles_pkey ON roles USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
-        }
-      ],
-      "Constraints": [
+        },
         {
-          "Name": "name_not_blank",
-          "ConstraintType": "c",
-          "RefTableName": "",
+          "Name": "unique_role_name",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
           "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (name \u003c\u003e ''::text)"
+          "IndexDefinition": "CREATE UNIQUE INDEX unique_role_name ON roles USING btree (name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
+      "Constraints": null,
       "Triggers": []
     },
     {
