@@ -49,6 +49,7 @@ The input file can be written inline or passed in.
 
 ### Limitations 
 
+- Uploaded `CODEOWNERS` files must use either Sourcegraph usernames or email addresses for correct user matching to occur. `CODEOWNERS` files committed to the repo should use either usernames of the codehost the repo is on (e.g. GitHub) or email addresses.
 - The file should respect `CODEOWNERS` formatting for Sourcegraph Own to surface useful information. No formatting validation is done at upload time.
 - Only site admins can add, update or delete a `CODEOWNERS` file through the ingestion API.
 - Ingested `CODEOWNERS` files are limited to a size of 10Mb if uploaded through the client.
