@@ -90,7 +90,7 @@ func Test_SplitIntoChunks(t *testing.T) {
 	t.Run("Works with empty slice", func(t *testing.T) {
 		got, err := SplitIntoChunks([]int{}, 4)
 		require.NoError(t, err)
-		want := [][]int{}
+		want := make([][]int, 0)
 		if cmp.Diff(got, want) != "" {
 			t.Errorf("got %v, want %v", got, want)
 		}
