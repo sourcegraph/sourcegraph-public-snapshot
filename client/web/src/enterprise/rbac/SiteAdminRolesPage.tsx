@@ -95,7 +95,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                     <RoleNode
                         key={node.id}
                         node={node}
-                        refetchAll={refetch}
+                        refetch={refetch}
                         allPermissions={permissions}
                     />
                 ))}

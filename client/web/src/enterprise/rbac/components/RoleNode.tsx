@@ -31,7 +31,7 @@ import styles from './RoleNode.module.scss'
 
 interface RoleNodeProps {
     node: RoleFields
-    refetchAll: () => void
+    refetch: () => void
     allPermissions: PermissionsMap
 }
 
@@ -39,7 +39,7 @@ interface RoleNodePermissionsFormValues {
     permissions: string[]
 }
 
-export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetchAll, allPermissions }) => {
+export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch, allPermissions }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState<boolean>(false)
     const [showAlert, setShowAlert] = useState<boolean>(false)
@@ -57,7 +57,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
 
     const [deleteRole, { loading: deleteRoleLoading, error: deleteRoleError }] = useDeleteRole(() => {
         closeModal()
-        refetchAll()
+        refetch()
     }, closeModal)
 
     const roleName = useMemo(() => {
@@ -77,7 +77,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
     const rolePermissionIDs = useMemo(() => permissionNodes.map(permission => permission.id), [permissionNodes])
 
     const [setPermissions, { loading: setPermissionsLoading, error: setPermissionsError }] = useSetPermissions(() => {
-        refetchAll()
+        refetch()
         setShowAlert(true)
     })
 
