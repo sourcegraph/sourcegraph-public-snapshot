@@ -8,7 +8,18 @@ import { parse as parseJSONC } from 'jsonc-parser'
 import { ErrorLike, modify } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, ErrorAlert, Icon, Input, Text, useDebounce } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    Button,
+    Container,
+    ErrorAlert,
+    H4,
+    Icon,
+    Input,
+    LoaderInput,
+    Text,
+    useDebounce,
+} from '@sourcegraph/wildcard'
 
 import {
     AddRemoteCodeHostResult,
@@ -168,14 +179,14 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
         onCompleted: data => data.localDirectoryPicker?.path && onDirectoryPathChange(data.localDirectoryPicker?.path),
     })
 
-    const { data: repositoriesData } = useQuery<DiscoverLocalRepositoriesResult, DiscoverLocalRepositoriesVariables>(
-        DISCOVER_LOCAL_REPOSITORIES,
-        {
-            skip: !directoryPath || !!error,
-            fetchPolicy: 'cache-and-network',
-            variables: { dir: directoryPath },
-        }
-    )
+    const { data: repositoriesData, loading } = useQuery<
+        DiscoverLocalRepositoriesResult,
+        DiscoverLocalRepositoriesVariables
+    >(DISCOVER_LOCAL_REPOSITORIES, {
+        skip: !directoryPath || !!error,
+        fetchPolicy: 'cache-and-network',
+        variables: { dir: directoryPath },
+    })
 
     // By default, input is disabled so this callback won't be fired
     // but in case if backend-based file picker isn't supported in OS
@@ -192,6 +203,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
         onDirectoryPathChange(debouncedInternalPath)
     }, [debouncedInternalPath, onDirectoryPathChange])
 
+    const path = isFilePickerAvailable ? directoryPath : internalPath
     const foundRepositories = repositoriesData?.localDirectory?.repositories ?? []
 
     return (
@@ -199,11 +211,12 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
             <header>
                 <Input
                     as={InputWitActions}
-                    value={isFilePickerAvailable ? directoryPath : internalPath}
+                    value={path}
                     label="Directory path"
                     disabled={isFilePickerAvailable}
                     placeholder="Users/user-name/Projects/"
                     message="You can pick git directory or folder that contains multiple git folders"
+                    isProcessing={loading}
                     className={styles.filePicker}
                     onPickPath={() => queryPath()}
                     onPathReset={() => onDirectoryPathChange('')}
@@ -230,7 +243,13 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                 </ul>
             )}
 
-            {foundRepositories.length === 0 && !error && (
+            {path && !error && repositoriesData && repositoriesData.localDirectory.repositories.length === 0 && (
+                <Alert variant="primary" className="mt-3 ">
+                    <H4>We couldn't resolve any git repositories by the current path</H4>
+                    Try to use different path that contains .git repositories
+                </Alert>
+            )}
+            {!repositoriesData && !error && !loading && (
                 <Text className="d-flex align-items-center mb-0 mt-3 text-muted">
                     <Icon
                         svgPath={mdiInformationOutline}
@@ -248,22 +267,25 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
 }
 
 interface InputWitActionsProps extends InputHTMLAttributes<HTMLInputElement> {
+    isProcessing: boolean
     onPickPath: () => void
     onPathReset: () => void
 }
 
 const InputWitActions = forwardRef<HTMLInputElement, InputWitActionsProps>((props, ref) => {
-    const { className, onPickPath, onPathReset, disabled, ...attributes } = props
+    const { isProcessing, onPickPath, onPathReset, className, disabled, ...attributes } = props
 
     return (
         <div className={styles.inputRoot}>
-            {/* eslint-disable-next-line react/forbid-elements */}
-            <input
-                {...attributes}
-                ref={ref}
-                disabled={disabled}
-                className={classNames(className, { [styles.inputWithAction]: disabled })}
-            />
+            <LoaderInput loading={isProcessing} className="flex-grow-1">
+                {/* eslint-disable-next-line react/forbid-elements */}
+                <input
+                    {...attributes}
+                    ref={ref}
+                    disabled={disabled}
+                    className={classNames(className, styles.input, { [styles.inputWithAction]: disabled })}
+                />
+            </LoaderInput>
 
             {disabled && (
                 <Button size="sm" type="button" variant="primary" className={styles.pickPath} onClick={onPickPath}>

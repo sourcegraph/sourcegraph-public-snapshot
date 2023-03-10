@@ -14,6 +14,9 @@
 }
 
 .input {
+    // Reserve place for input loader
+    padding-right: 2rem;
+
     &--with-action {
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
