@@ -22,7 +22,7 @@ export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) =>
     const primaryEmail = user.emails?.find(email => email.isPrimary)?.email
     const roles = user.roles.nodes.map(role => role.name)
 
-    const userData: userData[] = [
+    const userData: UserData[] = [
         {
             name: 'Username',
             value: user.username,
