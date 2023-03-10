@@ -124,8 +124,8 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                 path={[{ text: 'Permissions Sync Jobs' }]}
                 description={
                     <>
-                        List of permissions sync jobs. A permission sync job fetches the newest permissions for the given
-                        user.
+                        List of permissions sync jobs. A permission sync job fetches the newest permissions for the
+                        given user.
                     </>
                 }
                 className="my-3 pt-3"

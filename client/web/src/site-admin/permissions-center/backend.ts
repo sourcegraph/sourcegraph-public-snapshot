@@ -9,14 +9,18 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
                 __typename
                 id
                 name
+                url
                 externalRepository {
                     serviceType
+                    serviceID
                 }
             }
             ... on User {
                 __typename
                 id
                 username
+                displayName
+                email
             }
         }
         triggeredByUser {

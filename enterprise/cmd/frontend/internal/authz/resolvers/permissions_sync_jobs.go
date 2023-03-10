@@ -54,7 +54,10 @@ func (s *permissionsSyncJobConnectionStore) ComputeNodes(ctx context.Context, ar
 	for _, job := range jobs {
 		syncSubject, err := s.resolveSubject(ctx, job)
 		if err != nil {
-			return nil, err
+			// NOTE(naman): async cleaning of repos might make repo record unavailable.
+			// That which will break the api as subject will not be resolved. In this case
+			// it is better to not bubble up the error but return the remaining nodes.
+			continue
 		}
 		resolvers = append(resolvers, &permissionsSyncJobResolver{
 			db:          s.db,
