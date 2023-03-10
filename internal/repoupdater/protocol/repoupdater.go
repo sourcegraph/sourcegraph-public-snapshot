@@ -463,6 +463,14 @@ func (e *ExternalServiceNamespacesArgs) ToProto() *proto.ExternalServiceNamespac
 	}
 }
 
+func ExternalServiceNamespacesArgsFromProto(p *proto.ExternalServiceNamespacesRequest) *ExternalServiceNamespacesArgs {
+	return &ExternalServiceNamespacesArgs{
+		ExternalServiceID: p.ExternalServiceId,
+		Kind:              p.GetKind(),
+		Config:            p.GetConfig(),
+	}
+}
+
 type ExternalServiceNamespacesResult struct {
 	Namespaces []*types.ExternalServiceNamespace
 	Error      string
@@ -499,6 +507,17 @@ func (a *ExternalServiceRepositoriesArgs) ToProto() *proto.ExternalServiceReposi
 		Config:            a.Config,
 		First:             a.First,
 		ExcludeRepos:      a.ExcludeRepos,
+	}
+}
+
+func ExternalServiceRepositoriesArgsFromProto(p *proto.ExternalServiceRepositoriesRequest) *ExternalServiceRepositoriesArgs {
+	return &ExternalServiceRepositoriesArgs{
+		ExternalServiceID: p.ExternalServiceId,
+		Kind:              p.Kind,
+		Query:             p.Query,
+		Config:            p.Config,
+		First:             p.First,
+		ExcludeRepos:      p.ExcludeRepos,
 	}
 }
 
