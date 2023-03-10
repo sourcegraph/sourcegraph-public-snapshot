@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"math"
 	"sort"
 	"strings"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/log"
@@ -19,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -483,25 +482,6 @@ func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permi
 	return nil
 }
 
-// Returns minimum of 2 numbers
-func min[T constraints.Ordered](a T, b T) T {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-// Splits the slice into chunks of size `size`. Returns a slice of slices.
-func splitIntoChunks[T any](slice []T, size int) [][]T {
-	numChunks := int(math.Ceil(float64(len(slice)) / float64(size)))
-	chunks := make([][]T, 0, numChunks)
-	for i := 0; i < numChunks; i++ {
-		maxIndex := min((i+1)*size, len(slice))
-		chunks = append(chunks, slice[i*size:maxIndex])
-	}
-	return chunks
-}
-
 // upsertUserRepoPermissions upserts multiple rows of permissions. It also updates the updated_at and source
 // columns for all the rows that match the permissions input parameter.
 // We rely on the caller to call this method in a transaction.
@@ -524,7 +504,10 @@ RETURNING updated_at;
 
 	// we split into chunks, so that we don't exceed the maximum number of parameters
 	// we supply 6 parameters per row, so we can only have 65535/6 = 10922 rows per chunk
-	slicedPermissions := splitIntoChunks(permissions, 65535/6)
+	slicedPermissions, err := collections.SplitIntoChunks(permissions, 65535/6)
+	if err != nil {
+		return nil, err
+	}
 
 	output := make([]time.Time, 0, len(permissions))
 	for _, permissionSlice := range slicedPermissions {
