@@ -3,10 +3,12 @@ import { MutationTuple, QueryResult } from '@apollo/client'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 
 import {
-    TeamResult,
-    TeamVariables,
     ChangeTeamDisplayNameResult,
     ChangeTeamDisplayNameVariables,
+    ChangeTeamParentResult,
+    ChangeTeamParentVariables,
+    TeamResult,
+    TeamVariables,
 } from '../../graphql-operations'
 
 export function useTeam(name: string): QueryResult<TeamResult, TeamVariables> {
@@ -58,6 +60,18 @@ export function useChangeTeamDisplayName(): MutationTuple<ChangeTeamDisplayNameR
         gql`
             mutation ChangeTeamDisplayName($id: ID!, $displayName: String) {
                 updateTeam(id: $id, displayName: $displayName) {
+                    id
+                }
+            }
+        `
+    )
+}
+
+export function useChangeTeamParent(): MutationTuple<ChangeTeamParentResult, ChangeTeamParentVariables> {
+    return useMutation<ChangeTeamParentResult, ChangeTeamParentVariables>(
+        gql`
+            mutation ChangeTeamParent($id: ID!, $parentId: ID) {
+                updateTeam(id: $id, parentTeam: $parentId) {
                     id
                 }
             }
