@@ -6404,6 +6404,11 @@ type User implements Node & SettingsSubject & Namespace {
     """
     emails: [UserEmail!]!
     """
+    The user's verified primary email address (if any).
+    On dotcom only the user and site admins can access this field.
+    """
+    primaryEmail: UserEmail
+    """
     The user's access tokens (which grant to the holder the privileges of the user). This consists
     of all access tokens whose subject is this user.
     Only the user and site admins can access this field.

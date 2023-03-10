@@ -21,7 +21,7 @@ func TestEnsureExtSVC(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = store.GetByID(context.Background(), extSVCID)
+	_, err = store.GetByID(context.Background(), ExtSVCID)
 	if err != nil {
 		t.Fatal(err)
 	}

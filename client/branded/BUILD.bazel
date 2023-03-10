@@ -109,6 +109,7 @@ ts_project(
         "src/search-ui/input/experimental/Suggestions.tsx",
         "src/search-ui/input/experimental/SyntaxHighlightedSearchQuery.tsx",
         "src/search-ui/input/experimental/codemirror/history.ts",
+        "src/search-ui/input/experimental/codemirror/searchcontext.ts",
         "src/search-ui/input/experimental/codemirror/syntax-highlighting.ts",
         "src/search-ui/input/experimental/filters.ts",
         "src/search-ui/input/experimental/index.ts",

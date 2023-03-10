@@ -61,6 +61,7 @@ export const Default: Story = () => (
                 showMenu={false}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
+                ownEnabled={true}
                 globbing={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
@@ -85,6 +86,7 @@ export const Selected: Story = () => (
                 isReadOnly={false}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
+                ownEnabled={true}
                 globbing={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
@@ -110,6 +112,7 @@ export const ReadOnlySelected: Story = () => (
                 showMenu={false}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
+                ownEnabled={true}
                 globbing={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}

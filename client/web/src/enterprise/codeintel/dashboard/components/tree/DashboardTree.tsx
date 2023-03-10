@@ -16,6 +16,7 @@ import styles from './DashboardTree.module.scss'
 
 export interface SuggestedIndexWithRoot extends CodeIntelIndexerFields {
     root: string
+    comparisonKey: string
 }
 
 interface DashboardTreeProps {
@@ -174,7 +175,7 @@ const TreeNode: React.FunctionComponent<TreeNodeProps> = ({
             {availableIndexersForRoot.map(indexer => (
                 <Badge
                     as={Link}
-                    to="../index-configuration"
+                    to={`../index-configuration?tab=form#${indexer.comparisonKey}`}
                     variant="outlineSecondary"
                     key={indexer.key}
                     className={classNames('text-muted', styles.badge)}

@@ -765,8 +765,7 @@ func check(logger log.Logger, db database.DB) {
 
 	updateBodyFunc := updateBody
 	// In Sourcegraph App mode, use limited pings.
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
+	if deploy.IsApp() {
 		updateBodyFunc = limitedUpdateBody
 	}
 	endpoint := updateCheckURL(logger)

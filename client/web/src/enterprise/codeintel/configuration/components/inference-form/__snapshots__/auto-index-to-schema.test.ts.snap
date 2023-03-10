@@ -2,6 +2,7 @@
 
 exports[`autoIndexToAutoIndexSchema should build form data as expected 1`] = `
 Object {
+  "dirty": false,
   "index_jobs": Array [
     Object {
       "indexer": "indexer-1@123",

@@ -46,6 +46,7 @@ const (
 	routeRepoTags                = "repo-tags"
 	routeRepoCompare             = "repo-compare"
 	routeRepoStats               = "repo-stats"
+	routeRepoOwn                 = "repo-own"
 	routeInsights                = "insights"
 	routeSetup                   = "setup"
 	routeBatchChanges            = "batch-changes"
@@ -80,6 +81,7 @@ const (
 	routeDevToolTime             = "devtooltime"
 	routeEmbed                   = "embed"
 	routeCody                    = "cody"
+	routeOwn                     = "own"
 
 	routeSearchStream  = "search.stream"
 	routeSearchConsole = "search.console"
@@ -175,6 +177,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
 	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
 	r.PathPrefix("/cody").Methods("GET").Name(routeCody)
+	r.PathPrefix("/own").Methods("GET").Name(routeOwn)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
@@ -218,6 +221,7 @@ func newRouter() *mux.Router {
 	repo.PathPrefix("/tags").Methods("GET").Name(routeRepoTags)
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
 	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
+	repo.PathPrefix("/own").Methods("GET").Name(routeRepoOwn)
 
 	// legacy redirects
 	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
@@ -273,6 +277,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	router.Get(routeRepoTags).Handler(brandedNoIndex("Tags"))
 	router.Get(routeRepoCompare).Handler(brandedNoIndex("Compare"))
 	router.Get(routeRepoStats).Handler(brandedNoIndex("Stats"))
+	router.Get(routeRepoOwn).Handler(brandedNoIndex("Ownership"))
 	router.Get(routeSurvey).Handler(brandedNoIndex("Survey"))
 	router.Get(routeSurveyScore).Handler(brandedNoIndex("Survey"))
 	router.Get(routeRegistry).Handler(brandedNoIndex("Registry"))
@@ -286,6 +291,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	router.Get(routeSubscriptions).Handler(brandedNoIndex("Subscriptions"))
 	router.Get(routeViews).Handler(brandedNoIndex("View"))
 	router.Get(routeCody).Handler(brandedNoIndex("Cody"))
+	router.Get(routeOwn).Handler(brandedNoIndex("Own"))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
