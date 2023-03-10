@@ -34,6 +34,7 @@ import {
     UpdateRemoteCodeHostVariables,
 } from '../../../graphql-operations'
 // TODO Move these two in shared queries if they are used in different steps UI
+import { CodeHostExternalServiceAlert } from '../CodeHostExternalServiceAlert'
 import { ProgressBar } from '../ProgressBar'
 import { ADD_CODE_HOST, GET_CODE_HOSTS, UPDATE_CODE_HOST } from '../remote-repositories-step/queries'
 import { CustomNextButton, FooterWidget } from '../setup-steps'
@@ -122,6 +123,8 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     return (
         <div {...attributes}>
             <Text className="mb-2">Add your local repositories from your disk.</Text>
+
+            <CodeHostExternalServiceAlert />
 
             <Container className={styles.content}>
                 {!loading && (
