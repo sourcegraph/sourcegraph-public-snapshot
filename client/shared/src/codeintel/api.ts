@@ -304,10 +304,7 @@ export function injectNewCodeintel(
 
 export function localReferences(params: ScipParameters): Occurrence[] {
     if (params.referenceOccurrence.symbol?.startsWith('local ')) {
-        return params.documentOccurrences.filter(
-            occurrence =>
-                occurrence.symbol === params.referenceOccurrence.symbol && occurrence !== params.referenceOccurrence
-        )
+        return params.documentOccurrences.filter(occurrence => occurrence.symbol === params.referenceOccurrence.symbol)
     }
     return []
 }

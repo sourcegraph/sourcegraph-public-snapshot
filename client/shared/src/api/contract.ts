@@ -9,6 +9,7 @@ import * as clientType from '@sourcegraph/extension-api-types'
 import { GraphQLResult } from '@sourcegraph/http-client'
 
 import type { ReferenceContext } from '../codeintel/legacy-extensions/api'
+import { Occurrence } from '../codeintel/scip'
 import { ConfiguredExtension } from '../extensions/extension'
 import { SettingsCascade } from '../settings/settings'
 
@@ -17,7 +18,6 @@ import { ExecutableExtension } from './extension/activation'
 import { ProxySubscribable } from './extension/api/common'
 import { ViewContexts, PanelViewData, ViewProviderResult, ContributionOptions } from './extension/extensionHostApi'
 import { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
-import { Occurrence } from '../codeintel/scip'
 
 export interface ScipParameters {
     referenceOccurrence: Occurrence

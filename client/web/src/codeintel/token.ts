@@ -2,9 +2,10 @@
 import { flatten } from 'lodash'
 
 import { BlockCommentStyle } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
-import { getBlobEditView } from '../repo/blob/use-blob-store'
-import { syntaxHighlight } from '../repo/blob/codemirror/highlight'
 import { Position, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+
+import { syntaxHighlight } from '../repo/blob/codemirror/highlight'
+import { getBlobEditView } from '../repo/blob/use-blob-store'
 
 /**
  * The default regex for characters allowed in an identifier. It works well for
