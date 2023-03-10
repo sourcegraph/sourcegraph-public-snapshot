@@ -1759,6 +1759,9 @@ ts_project(
         "src/util/prettyBytesBigint.test.ts",
         "src/util/time.test.ts",
         "src/util/url.test.ts",
+
+        # TODO(bazel): should not be here. Caused by the issue in `rules_js`.
+        "src/enterprise/codeintel/configuration/schema.json", #keep
     ],
     tsconfig = ":tsconfig",
     # TODO(bazel): type-only #keep imports
