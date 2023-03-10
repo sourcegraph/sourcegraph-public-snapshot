@@ -196,6 +196,11 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
         setInternalPath(event.target.value)
     }
 
+    const handlePathReset = (): void => {
+        setInternalPath('')
+        onDirectoryPathChange('')
+    }
+
     const debouncedInternalPath = useDebounce(internalPath, 1000)
 
     // Sync internal state with parent logic
@@ -219,7 +224,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                     isProcessing={loading}
                     className={styles.filePicker}
                     onPickPath={() => queryPath()}
-                    onPathReset={() => onDirectoryPathChange('')}
+                    onPathReset={handlePathReset}
                     onChange={handleInputChange}
                 />
             </header>
