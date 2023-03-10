@@ -1,6 +1,3 @@
-import React from 'react'
-
-import { Args, useMemo } from '@storybook/addons'
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'

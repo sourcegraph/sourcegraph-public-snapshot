@@ -21,6 +21,7 @@ import {
     ChangesetStatusMerged,
 } from '../detail/changesets/ChangesetStatusCell'
 import { NewBatchChangeButton } from '../list/NewBatchChangeButton'
+import { canWriteBatchChanges } from '../utils'
 
 import {
     queryRepoBatchChanges as _queryRepoBatchChanges,
@@ -42,8 +43,10 @@ interface BatchChangeRepoPageProps {
 
 export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
     repo,
+    isSourcegraphDotCom,
+    authenticatedUser,
     queryRepoBatchChangeStats = _queryRepoBatchChangeStats,
-    ...context
+    ...props
 }) => {
     const repoDisplayName = displayRepoName(repo.name)
 
@@ -52,13 +55,18 @@ export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
     )
     const hasChangesets = stats?.changesetsStats.total
 
+    const canCreate = useMemo(
+        () => !isSourcegraphDotCom && canWriteBatchChanges(authenticatedUser),
+        [isSourcegraphDotCom, authenticatedUser]
+    )
+
     return (
         <Page>
             <PageTitle title="Batch Changes" />
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 headingElement="h1"
-                actions={hasChangesets ? undefined : <NewBatchChangeButton to="/batch-changes/create" />}
+                actions={hasChangesets || !canCreate ? undefined : <NewBatchChangeButton to="/batch-changes/create" />}
                 description={
                     hasChangesets
                         ? undefined
@@ -79,7 +87,13 @@ export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
             ) : (
                 <div className="mb-3" />
             )}
-            <RepoBatchChanges viewerCanAdminister={true} repo={repo} {...context} />
+            <RepoBatchChanges
+                isSourcegraphDotCom={isSourcegraphDotCom}
+                viewerCanAdminister={true}
+                repo={repo}
+                canCreate={canCreate}
+                {...props}
+            />
         </Page>
     )
 }

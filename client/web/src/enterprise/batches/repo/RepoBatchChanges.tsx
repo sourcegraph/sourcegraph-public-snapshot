@@ -1,15 +1,13 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 
 import { map } from 'rxjs/operators'
 
 import { Container, H3, H5 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 import { GettingStarted } from '../list/GettingStarted'
-import { canWriteBatchChanges } from '../utils'
 
 import { queryRepoBatchChanges as _queryRepoBatchChanges } from './backend'
 import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
@@ -18,7 +16,7 @@ import styles from './RepoBatchChanges.module.scss'
 
 interface Props {
     viewerCanAdminister: boolean
-    authenticatedUser: AuthenticatedUser | null
+    canCreate: boolean
     repo: RepositoryFields
     isSourcegraphDotCom: boolean
     onlyArchived?: boolean
@@ -34,7 +32,7 @@ interface Props {
  */
 export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     viewerCanAdminister,
-    authenticatedUser,
+    canCreate,
     repo,
     isSourcegraphDotCom,
     queryRepoBatchChanges = _queryRepoBatchChanges,
@@ -51,11 +49,6 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
             return queryRepoBatchChanges(passedArguments).pipe(map(data => data.batchChanges))
         },
         [queryRepoBatchChanges, repo.id, repo.name]
-    )
-
-    const canCreate = useMemo(
-        () => !isSourcegraphDotCom && canWriteBatchChanges(authenticatedUser),
-        [isSourcegraphDotCom, authenticatedUser]
     )
 
     return (
