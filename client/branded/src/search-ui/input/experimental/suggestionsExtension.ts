@@ -571,8 +571,8 @@ function applyAction(view: EditorView, action: Action, option: Option, source: S
                         ...changeSet,
                         effects: changeSet.effects.concat(setModeEffect.of(null)),
                     })
-                    notifySelectionListeners(view.state, option, action, source)
                 }
+                notifySelectionListeners(view.state, option, action, source)
             }
             break
         case 'command':
