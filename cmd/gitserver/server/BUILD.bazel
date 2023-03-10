@@ -123,6 +123,9 @@ go_test(
         # Test requires localhost database
         "requires-network",
     ],
+    # This test loads coursier as a side effect, so we ensure the
+    # path is sandboxed properly.
+    env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
         "//internal/actor",
         "//internal/api",

@@ -62,15 +62,15 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
             "MOCHA_FILE": "$$XML_OUTPUT_FILE",
 
             # TODO(bazel): e2e test environment
-            "TEST_USER_EMAIL": "test@sourcegraph.com"
-            "TEST_USER_PASSWORD": "supersecurepassword"
-            "SOURCEGRAPH_BASE_URL": "https://sourcegraph.test:3443"
+            "TEST_USER_EMAIL": "test@sourcegraph.com",
+            "TEST_USER_PASSWORD": "supersecurepassword",
+            "SOURCEGRAPH_BASE_URL": "https://sourcegraph.test:3443",
             "GH_TOKEN": "fake-gh-token",
             "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
             "NO_CLEANUP": "true",
             "KEEP_BROWSER": "true",
             "DEVTOOLS": "true",
-            "BROWSER": "chrome"
+            "BROWSER": "chrome",
         }),
         tags = ["manual"],
         **kwargs
