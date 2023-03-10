@@ -98,104 +98,51 @@ func (codeIntelligence) NewRankingLSIFStoreGroup(containerName string) monitorin
 	})
 }
 
-// src_codeintel_ranking_num_definitions_inserted_total
-// src_codeintel_ranking_num_references_inserted_total
-// src_codeintel_ranking_reference_records_processed_total
-// src_codeintel_ranking_inputs_inserted_total
-// src_codeintel_ranking_path_count_inputs_rows_processed_total
-// src_codeintel_ranking_path_ranks_inserted_total
-// src_codeintel_ranking_num_stale_definition_records_deleted_total
-// src_codeintel_ranking_num_stale_reference_records_deleted_total
-// src_codeintel_ranking_num_metadata_records_deleted_total
-// src_codeintel_ranking_num_input_records_deleted_total
-// src_codeintel_ranking_num_rank_records_deleted_total
-func (codeIntelligence) NewRankingGroup(containerName string) monitoring.Group {
-	return monitoring.Group{
-		Title:  "Codeintel: Ranking",
-		Hidden: false,
-		Rows: []monitoring.Row{
-			{
-				Standard.Count("inserted")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_ranking_num_definitions_inserted",
-					MetricDescriptionRoot: "definition rows",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of definition rows inserted into Postgres.
-				`).Observable(),
-
-				Standard.Count("inserted")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_ranking_num_references_inserted",
-					MetricDescriptionRoot: "reference rows",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of reference rows inserted into Postgres.
-				`).Observable(),
-
-				Standard.Count("removed")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_ranking_num_stale_definition_records_deleted",
-					MetricDescriptionRoot: "definition records",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of stale definition records removed from Postgres.
-				`).Observable(),
-
-				Standard.Count("removed")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_ranking_num_stale_reference_records_deleted",
-					MetricDescriptionRoot: "reference records",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of stale reference records removed from Postgres.
-				`).Observable(),
-			},
-
-			{
-				Standard.Count("processed")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_ranking_reference_records_processed",
-					MetricDescriptionRoot: "reference rows",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of reference rows processed.
-				`).Observable(),
-
-				Standard.Count("inserted")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_ranking_inputs_inserted",
-					MetricDescriptionRoot: "input rows",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of input rows inserted.
-				`).Observable(),
-
-				Standard.Count("processed")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_ranking_path_count_inputs_rows_processed",
-					MetricDescriptionRoot: "input rows",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of input rows processed.
-				`).Observable(),
-
-				Standard.Count("updated")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_ranking_path_ranks_inserted",
-					MetricDescriptionRoot: "path ranks",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of path ranks inserted.
-				`).Observable(),
-			},
-
-			{
-				Standard.Count("removed")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_ranking_num_metadata_records_deleted",
-					MetricDescriptionRoot: "metadata records",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of stale metadata records removed from Postgres.
-				`).Observable(),
-
-				Standard.Count("removed")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_ranking_num_input_records_deleted",
-					MetricDescriptionRoot: "input records",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of stale input records removed from Postgres.
-				`).Observable(),
-
-				Standard.Count("removed")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_ranking_num_rank_records_deleted",
-					MetricDescriptionRoot: "rank records",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					The number of stale rank records removed from Postgres.
-				`).Observable(),
-			},
+// Tasks:
+//   - codeintel_ranking_symbol_exporter
+//   - codeintel_ranking_file_reference_count_mapper
+//   - codeintel_ranking_file_reference_count_reducer
+//
+// Suffixes:
+//   - _total
+//   - _duration_seconds_bucket
+//   - _errors_total
+//   - _records_processed_total
+//   - _records_altered_total
+func (codeIntelligence) NewRankingPipelineTaskGroups(containerName string) []monitoring.Group {
+	return CodeIntelligence.newPipelineGroups(
+		"Uploads > Pipeline task",
+		containerName,
+		[]string{
+			"codeintel_ranking_symbol_exporter",
+			"codeintel_ranking_file_reference_count_mapper",
+			"codeintel_ranking_file_reference_count_reducer",
 		},
-	}
+	)
+}
+
+// Tasks:
+//   - codeintel_ranking_symbol_exporter
+//   - codeintel_ranking_symbol_janitor
+//   - codeintel_ranking_rank_counts_janitor
+//   - codeintel_ranking_rank_janitor
+//   - codeintel_ranking_file_reference_count_mapper
+//   - codeintel_ranking_file_reference_count_reducer
+//
+// Suffixes:
+//   - _total
+//   - _duration_seconds_bucket
+//   - _errors_total
+//   - _records_scanned_total
+//   - _records_altered_total
+func (codeIntelligence) NewRankingJanitorTaskGroups(containerName string) []monitoring.Group {
+	return CodeIntelligence.newJanitorGroups(
+		"Uploads > Janitor task",
+		containerName,
+		[]string{
+			"codeintel_ranking_symbol_janitor",
+			"codeintel_ranking_rank_counts_janitor",
+			"codeintel_ranking_rank_janitor",
+		},
+	)
 }

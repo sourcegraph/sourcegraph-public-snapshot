@@ -40,14 +40,17 @@ func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker
 }
 
 func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
-	codeownersText := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{
-				Pattern: "README.md",
-				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+	codeownersText := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{
+					Pattern: "README.md",
+					Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+				},
 			},
 		},
-	}).Repr()
+	).Repr()
 	for name, repo := range map[string]repoFiles{
 		"top-level": {{"repo", "SHA", "CODEOWNERS"}: codeownersText},
 		".github":   {{"repo", "SHA", ".github/CODEOWNERS"}: codeownersText},
@@ -70,14 +73,17 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 }
 
 func TestOwnersCannotFindFile(t *testing.T) {
-	codeownersFile := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{
-				Pattern: "README.md",
-				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+	codeownersFile := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{
+					Pattern: "README.md",
+					Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+				},
 			},
 		},
-	})
+	)
 	repo := repoFiles{
 		{"repo", "SHA", "notCODEOWNERS"}: codeownersFile.Repr(),
 	}
@@ -104,7 +110,7 @@ func TestOwnersServesIngestedFile(t *testing.T) {
 				},
 			},
 		}
-		codeownersText := codeowners.NewRuleset(codeownersProto).Repr()
+		codeownersText := codeowners.NewRuleset(codeowners.IngestedRulesetSource{}, codeownersProto).Repr()
 
 		git := gitserver.NewMockClient()
 

@@ -46,9 +46,7 @@ func (r *permissionsInfoResolver) UpdatedAt() gqlutil.DateTime {
 }
 
 func (r *permissionsInfoResolver) Unrestricted(ctx context.Context) bool {
-	unrestricted, _ := r.db.Perms().IsRepoUnrestricted(ctx, r.repoID)
-
-	return unrestricted
+	return r.unrestricted
 }
 
 var permissionsInfoRepositoryConnectionMaxPageSize = 100

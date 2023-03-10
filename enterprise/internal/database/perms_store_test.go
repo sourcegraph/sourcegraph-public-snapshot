@@ -919,78 +919,123 @@ func testPermsStore_FetchReposByExternalAccount(db database.DB) func(*testing.T)
 	}
 }
 
-func testPermsStore_SetRepoPermissionsUnrestricted(db database.DB) func(*testing.T) {
-	return func(t *testing.T) {
-		assertUnrestricted := func(ctx context.Context, t *testing.T, s *permsStore, id int32, want bool) {
-			t.Helper()
-			p := &authz.RepoPermissions{
-				RepoID: id,
-				Perm:   authz.Read,
-			}
-			if err := s.LoadRepoPermissions(ctx, p); err != nil {
-				t.Fatalf("loading permissions for %d: %v", id, err)
-			}
-			if p.Unrestricted != want {
-				t.Fatalf("Want %v, got %v for %d", want, p.Unrestricted, id)
-			}
+func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+
+	ctx := context.Background()
+	s := setupTestPerms(t, db, clock)
+
+	legacyUnrestricted := func(t *testing.T, id int32, want bool) {
+		t.Helper()
+		p := &authz.RepoPermissions{
+			RepoID: id,
+			Perm:   authz.Read,
+		}
+		if err := s.LoadRepoPermissions(ctx, p); err != nil {
+			t.Fatalf("loading permissions for %d: %v", id, err)
+		}
+		if p.Unrestricted != want {
+			t.Fatalf("Want %v, got %v for %d", want, p.Unrestricted, id)
+		}
+	}
+
+	assertUnrestricted := func(t *testing.T, id int32, want bool) {
+		t.Helper()
+		legacyUnrestricted(t, id, want)
+
+		q := sqlf.Sprintf("SELECT repo_id FROM user_repo_permissions WHERE repo_id = %d AND user_id IS NULL", id)
+		results, err := basestore.ScanInt32s(s.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+		if err != nil {
+			t.Fatalf("loading user repo permissions for %d: %v", id, err)
+		}
+		if want && len(results) == 0 {
+			t.Fatalf("Want unrestricted, but found no results for %d", id)
+		}
+		if !want && len(results) > 0 {
+			t.Fatalf("Want restricted, but found results for %d: %v", id, results)
+		}
+	}
+
+	createRepo := func(t *testing.T, id int) {
+		t.Helper()
+		execQuery(t, ctx, s, sqlf.Sprintf(`
+		INSERT INTO repo (id, name, private)
+		VALUES (%d, %s, TRUE)`, id, fmt.Sprintf("repo-%d", id)))
+	}
+
+	// Add a couple of repos and a user
+	execQuery(t, ctx, s, sqlf.Sprintf(`INSERT INTO users (username) VALUES ('alice')`))
+	execQuery(t, ctx, s, sqlf.Sprintf(`INSERT INTO users (username) VALUES ('bob')`))
+	for i := 0; i < 2; i++ {
+		createRepo(t, i+1)
+		rp := &authz.RepoPermissions{
+			RepoID:  int32(i + 1),
+			Perm:    authz.Read,
+			UserIDs: toMapset(2),
+		}
+		if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.SetRepoPerms(context.Background(), int32(i+1), []authz.UserIDWithExternalAccountID{{UserID: 2}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	t.Run("Both repos are restricted by default", func(t *testing.T) {
+		assertUnrestricted(t, 1, false)
+		assertUnrestricted(t, 2, false)
+	})
+
+	t.Run("Set both repos to unrestricted", func(t *testing.T) {
+		if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{1, 2}, true); err != nil {
+			t.Fatal(err)
+		}
+		assertUnrestricted(t, 1, true)
+		assertUnrestricted(t, 2, true)
+	})
+
+	t.Run("Set unrestricted on a repo not in permissions table", func(t *testing.T) {
+		createRepo(t, 3)
+		if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{3}, true); err != nil {
+			t.Fatal(err)
 		}
 
-		t.Run("test simple set", func(t *testing.T) {
-			ctx := context.Background()
-			s := setupTestPerms(t, db, clock)
+		assertUnrestricted(t, 1, true)
+		assertUnrestricted(t, 2, true)
+		assertUnrestricted(t, 3, true)
+	})
 
-			// Add a couple of repos
-			for i := 0; i < 2; i++ {
-				rp := &authz.RepoPermissions{
-					RepoID:  int32(i + 1),
-					Perm:    authz.Read,
-					UserIDs: toMapset(2),
-				}
-				if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-					t.Fatal(err)
-				}
-			}
-			assertUnrestricted(ctx, t, s, 1, false)
-			assertUnrestricted(ctx, t, s, 2, false)
+	t.Run("Unset restricted on a repo in and not in permissions table", func(t *testing.T) {
+		createRepo(t, 4)
+		if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{2, 3, 4}, false); err != nil {
+			t.Fatal(err)
+		}
+		assertUnrestricted(t, 1, true)
+		assertUnrestricted(t, 2, false)
+		assertUnrestricted(t, 3, false)
+		assertUnrestricted(t, 4, false)
+	})
 
-			// Set them both to unrestricted
-			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{1, 2}, true); err != nil {
-				t.Fatal(err)
-			}
-			assertUnrestricted(ctx, t, s, 1, true)
-			assertUnrestricted(ctx, t, s, 2, true)
-
-			// Set unrestricted on a repo missing from repo_permissions.
-			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{3}, true); err != nil {
-				t.Fatal(err)
-			}
-			assertUnrestricted(ctx, t, s, 1, true)
-			assertUnrestricted(ctx, t, s, 2, true)
-			assertUnrestricted(ctx, t, s, 3, true)
-
-			// Unset restricted on a present and missing repo from repo_permissions.
-			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{2, 3, 4}, false); err != nil {
-				t.Fatal(err)
-			}
-			assertUnrestricted(ctx, t, s, 1, true)
-			assertUnrestricted(ctx, t, s, 2, false)
-			assertUnrestricted(ctx, t, s, 3, false)
-			assertUnrestricted(ctx, t, s, 4, false)
-
-			// Set them back to false again, also checking that more than 65535 IDs
-			// can be processed without an error
-			var ids [66000]int32
-			for i := range ids {
-				ids[i] = int32(i + 1)
-			}
-			if err := s.SetRepoPermissionsUnrestricted(ctx, ids[:], false); err != nil {
-				t.Fatal(err)
-			}
-			assertUnrestricted(ctx, t, s, 1, false)
-			assertUnrestricted(ctx, t, s, 500, false)
-			assertUnrestricted(ctx, t, s, 66000, false)
-		})
-	}
+	t.Run("Set repos back to restricted again", func(t *testing.T) {
+		// Also checking that more than 65535 IDs can be processed without an error
+		var ids [66000]int32
+		for i := range ids {
+			ids[i] = int32(i + 1)
+		}
+		if err := s.SetRepoPermissionsUnrestricted(ctx, ids[:], false); err != nil {
+			t.Fatal(err)
+		}
+		assertUnrestricted(t, 1, false)
+		assertUnrestricted(t, 500, false)
+		assertUnrestricted(t, 66000, false)
+	})
 }
 
 func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
@@ -2696,59 +2741,106 @@ func testPermsStore_SetPendingPermissionsAfterGrant(db database.DB) func(*testin
 	}
 }
 
-func testPermsStore_DeleteAllUserPermissions(db database.DB) func(*testing.T) {
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
-		})
-
-		ctx := context.Background()
-
-		// Set permissions for user 1 and 2
-		if _, err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
-			RepoID:  1,
-			Perm:    authz.Read,
-			UserIDs: toMapset(1, 2),
-		}); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
-			RepoID:  2,
-			Perm:    authz.Read,
-			UserIDs: toMapset(1, 2),
-		}); err != nil {
-			t.Fatal(err)
-		}
-
-		// Remove all permissions for the user=1
-		if err := s.DeleteAllUserPermissions(ctx, 1); err != nil {
-			t.Fatal(err)
-		}
-
-		// Check user=1 should not have any permissions now
-		err := s.LoadUserPermissions(ctx, &authz.UserPermissions{
-			UserID: 1,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-		})
-		if err != authz.ErrPermsNotFound {
-			t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
-		}
-
-		// Check user=2 shoud not be affected
-		p := &authz.UserPermissions{
-			UserID: 2,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-		}
-		err = s.LoadUserPermissions(ctx, p)
-		if err != nil {
-			t.Fatal(err)
-		}
-		equal(t, "p.IDs", []int{1, 2}, mapsetToArray(p.IDs))
+func TestPermsStore_DeleteAllUserPermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
+
+	logger := logtest.Scoped(t)
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+	s := perms(logger, db, clock)
+	t.Cleanup(func() {
+		cleanupPermsTables(t, s)
+		cleanupUsersTable(t, s)
+		cleanupReposTable(t, s)
+	})
+
+	ctx := context.Background()
+
+	// Create 2 users and their external accounts and repos
+	// Set up test users and external accounts
+	extSQL := `
+	INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at, expired_at)
+		VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)
+	`
+	qs := []*sqlf.Query{
+		sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
+		sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
+
+		sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
+		sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil, nil),          // ID=2
+		sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock(), nil, nil),     // ID=3
+
+		sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_1', TRUE)`), // ID=1
+		sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_2', TRUE)`), // ID=2
+	}
+	for _, q := range qs {
+		execQuery(t, ctx, s, q)
+	}
+
+	// Set permissions for user 1 and 2
+	for _, repoID := range []int32{1, 2} {
+		if _, err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+			RepoID:  repoID,
+			Perm:    authz.Read,
+			UserIDs: toMapset(1, 2),
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Set unified permissions for user 1 and 2
+	for _, userID := range []int32{1, 2} {
+		for _, repoID := range []int32{1, 2} {
+			if err := s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: userID, ExternalAccountID: repoID}, []int32{repoID}); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	// Remove all permissions for the user=1
+	if err := s.DeleteAllUserPermissions(ctx, 1); err != nil {
+		t.Fatal(err)
+	}
+
+	// Check user=1 should not have any legacy permissions now
+	err := s.LoadUserPermissions(ctx, &authz.UserPermissions{
+		UserID: 1,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+	})
+	if err != authz.ErrPermsNotFound {
+		t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
+	}
+
+	getUserRepoPermissions := func(userID int) ([]int32, error) {
+		unifiedQuery := `SELECT repo_id FROM user_repo_permissions WHERE user_id = %d`
+		q := sqlf.Sprintf(unifiedQuery, userID)
+		return basestore.ScanInt32s(db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+	}
+
+	// Check user=1 should not have any permissions now
+	results, err := getUserRepoPermissions(1)
+	assert.NoError(t, err)
+	assert.Nil(t, results)
+
+	// Check user=2 shoud still have legacy permissions
+	p := &authz.UserPermissions{
+		UserID: 2,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+	}
+	err = s.LoadUserPermissions(ctx, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	equal(t, "legacy IDs", []int{1, 2}, mapsetToArray(p.IDs))
+
+	// Check user=2 should still have permissions
+	results, err = getUserRepoPermissions(2)
+	assert.NoError(t, err)
+	equal(t, "unified IDs", []int32{1, 2}, results)
 }
 
 func testPermsStore_DeleteAllUserPendingPermissions(db database.DB) func(*testing.T) {

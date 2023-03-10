@@ -1,7 +1,6 @@
 package scim
 
 import (
-	"github.com/elimity-com/scim"
 	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
 )
@@ -75,26 +74,4 @@ func createCoreSchema() schema.Schema {
 			}),
 		},
 	}
-}
-
-// createSchemaExtensions creates a SCIM schema extension for users.
-func createSchemaExtensions() []scim.SchemaExtension {
-	extensionUserSchema := schema.Schema{
-		ID:          "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
-		Name:        optional.NewString("EnterpriseUser"),
-		Description: optional.NewString("Enterprise User"),
-		Attributes: []schema.CoreAttribute{
-			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
-				Name: "employeeNumber",
-			})),
-			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
-				Name: "organization",
-			})),
-		},
-	}
-
-	schemaExtensions := []scim.SchemaExtension{
-		{Schema: extensionUserSchema},
-	}
-	return schemaExtensions
 }

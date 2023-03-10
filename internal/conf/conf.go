@@ -68,8 +68,7 @@ func getMode() configurationMode {
 
 func getModeUncached() configurationMode {
 	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
-		// Single-program always uses the server mode because everything is running in the same
-		// process.
+		// App always uses the server mode because everything is running in the same process.
 		return modeServer
 	}
 

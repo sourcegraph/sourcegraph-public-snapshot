@@ -108,7 +108,7 @@ extend type Mutation {
         Optional cancellation reason.
         """
         reason: String
-    ): EmptyResponse!
+    ): String
 }
 
 extend type Query {
@@ -193,6 +193,14 @@ extend type Query {
         Term used to search for permissions sync jobs.
         """
         query: String
+        """
+        Optional filter to find permissions sync jobs for a user.
+        """
+        userID: ID
+        """
+        Optional filter to find permissions sync jobs for a repository.
+        """
+        repoID: ID
     ): PermissionsSyncJobsConnection!
 
     """

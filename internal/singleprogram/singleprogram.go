@@ -1,4 +1,4 @@
-// Package singleprogram contains runtime utilities for the single-program (Go static binary)
+// Package singleprogram contains runtime utilities for the single-binary
 // distribution of Sourcegraph.
 package singleprogram
 
@@ -102,7 +102,7 @@ func Init(logger log.Logger) {
 	siteConfigPath := filepath.Join(configDir, "site-config.json")
 	setDefaultEnv(logger, "SITE_CONFIG_FILE", siteConfigPath)
 	setDefaultEnv(logger, "SITE_CONFIG_ALLOW_EDITS", "true")
-	writeFileIfNotExists(siteConfigPath, []byte(confdefaults.SingleProgram.Site))
+	writeFileIfNotExists(siteConfigPath, []byte(confdefaults.App.Site))
 
 	globalSettingsPath := filepath.Join(configDir, "global-settings.json")
 	setDefaultEnv(logger, "GLOBAL_SETTINGS_FILE", globalSettingsPath)
@@ -115,7 +115,7 @@ func Init(logger log.Logger) {
 	// We disable the use of executors passwords, because executors only listen on `localhost` this
 	// is safe to do.
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_URL", "http://localhost:3080")
-	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", confdefaults.SingleProgramInMemoryExecutorPassword)
+	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", confdefaults.AppInMemoryExecutorPassword)
 
 	// TODO(single-binary): HACK: This is a hack to workaround the fact that the 2nd time you run `sourcegraph`
 	// OOB migration validation fails:
@@ -125,7 +125,7 @@ func Init(logger log.Logger) {
 	setDefaultEnv(logger, "SRC_DISABLE_OOBMIGRATION_VALIDATION", "1")
 
 	setDefaultEnv(logger, "EXECUTOR_USE_FIRECRACKER", "false")
-	// TODO(sqs): TODO(single-binary): Make it so we can run multiple executors in single-program mode. Right now, you
+	// TODO(sqs): TODO(single-binary): Make it so we can run multiple executors in app mode. Right now, you
 	// need to change this to "batches" to use batch changes executors.
 	setDefaultEnv(logger, "EXECUTOR_QUEUE_NAME", "codeintel")
 

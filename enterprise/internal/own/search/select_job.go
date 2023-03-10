@@ -14,17 +14,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewSelectOwnersJob(child job.Job) job.Job {
+func NewSelectOwnersJob(child job.Job, features *search.Features) job.Job {
 	return &selectOwnersJob{
-		child: child,
+		child:    child,
+		features: features,
 	}
 }
 
 type selectOwnersJob struct {
 	child job.Job
+
+	features *search.Features
 }
 
 func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	if s.features == nil || !s.features.CodeOwnershipSearch {
+		return nil, &featureFlagError{predicate: "select:file.owners"}
+	}
+
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)
 
@@ -95,13 +102,17 @@ matchesLoop:
 		if !ok {
 			continue
 		}
-		file, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
+		rs, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
-		owners := file.FindOwners(mm.File.Path)
-		resolvedOwners, err := rules.ownService.ResolveOwnersWithType(ctx, owners)
+		rule := rs.Match(mm.File.Path)
+		// No match.
+		if rule == nil {
+			continue matchesLoop
+		}
+		resolvedOwners, err := rules.ownService.ResolveOwnersWithType(ctx, rule.GetOwner())
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop

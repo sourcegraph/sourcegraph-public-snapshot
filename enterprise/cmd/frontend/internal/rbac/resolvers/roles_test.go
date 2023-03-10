@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -403,3 +404,172 @@ mutation CreateRole($name: String!, $permissions: [ID!]!) {
 	}
 }
 `
+
+func TestSetRoles(t *testing.T) {
+	logger := logtest.Scoped(t)
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	uID := createTestUser(t, db, false).ID
+	userID := gql.MarshalUserID(uID)
+	userCtx := actor.WithActor(ctx, actor.FromUser(uID))
+
+	aID := createTestUser(t, db, true).ID
+	adminID := gql.MarshalUserID(aID)
+	adminCtx := actor.WithActor(ctx, actor.FromUser(aID))
+
+	s, err := newSchema(db, &Resolver{logger: logger, db: db})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r1, err := db.Roles().Create(ctx, "TEST-ROLE-1", false)
+	require.NoError(t, err)
+
+	r2, err := db.Roles().Create(ctx, "TEST-ROLE-2", false)
+	require.NoError(t, err)
+
+	r3, err := db.Roles().Create(ctx, "TEST-ROLE-3", false)
+	require.NoError(t, err)
+
+	var marshalledRoles = []graphql.ID{
+		marshalRoleID(r1.ID),
+		marshalRoleID(r2.ID),
+		marshalRoleID(r3.ID),
+	}
+
+	var roles = []*types.Role{r1, r2, r3}
+
+	userWithoutARole := createUserWithRoles(ctx, t, db)
+	userWithAllRoles := createUserWithRoles(ctx, t, db, roles...)
+	userWithAllRoles2 := createUserWithRoles(ctx, t, db, roles...)
+	userWithOneRole := createUserWithRoles(ctx, t, db, roles[0])
+
+	t.Run("as non site-admin", func(t *testing.T) {
+		input := map[string]any{"user": userID, "roles": marshalledRoles}
+		var response struct{ Se apitest.EmptyResponse }
+		errs := apitest.Exec(userCtx, t, s, input, &response, setRolesQuery)
+
+		require.Len(t, errs, 1)
+		require.ErrorContains(t, errs[0], "must be site admin")
+	})
+
+	t.Run("as self", func(t *testing.T) {
+		input := map[string]any{"user": adminID, "roles": marshalledRoles}
+		var response struct{ AssignRolesToUser apitest.EmptyResponse }
+		errs := apitest.Exec(adminCtx, t, s, input, &response, setRolesQuery)
+
+		require.Len(t, errs, 1)
+		require.ErrorContains(t, errs[0], "cannot assign role to self")
+	})
+
+	t.Run("as site-admin", func(t *testing.T) {
+		// There are no permissions assigned to `userWithoutARole`, so we asssign all roles to that user.
+		// Passing a slice of roles will assign the roles to the user.
+		t.Run("assign roles", func(t *testing.T) {
+			input := map[string]any{"user": gql.MarshalUserID(userWithoutARole.ID), "roles": marshalledRoles}
+			var response struct{ SetRoles apitest.EmptyResponse }
+
+			apitest.MustExec(adminCtx, t, s, input, &response, setRolesQuery)
+
+			urs, err := db.UserRoles().GetByUserID(ctx, database.GetUserRoleOpts{
+				UserID: userWithoutARole.ID,
+			})
+			require.NoError(t, err)
+
+			sort.Slice(urs, func(i, j int) bool {
+				return urs[i].RoleID < urs[j].RoleID
+			})
+			for index, ur := range urs {
+				require.Equal(t, ur.RoleID, roles[index].ID)
+				require.Equal(t, ur.UserID, userWithoutARole.ID)
+			}
+		})
+
+		// We pass an empty role slice to revoke all roles assigned to the user.
+		t.Run("revoke roles", func(t *testing.T) {
+			input := map[string]any{"user": gql.MarshalUserID(userWithAllRoles.ID), "roles": []graphql.ID{}}
+			var response struct{ SetRoles apitest.EmptyResponse }
+
+			apitest.MustExec(adminCtx, t, s, input, &response, setRolesQuery)
+
+			urs, err := db.UserRoles().GetByUserID(ctx, database.GetUserRoleOpts{
+				UserID: userWithAllRoles.ID,
+			})
+			require.NoError(t, err)
+			require.Len(t, urs, 0)
+		})
+
+		t.Run("assign and revoke roles", func(t *testing.T) {
+			// omitting the first role (which is already assigned to the user) will revoke it for the user.
+			input := map[string]any{"roles": marshalledRoles[1:], "user": gql.MarshalUserID(userWithOneRole.ID)}
+			var response struct{ SetRoles apitest.EmptyResponse }
+			apitest.MustExec(adminCtx, t, s, input, &response, setRolesQuery)
+
+			urs, err := db.UserRoles().GetByUserID(ctx, database.GetUserRoleOpts{
+				UserID: userWithOneRole.ID,
+			})
+			require.NoError(t, err)
+			require.Len(t, urs, len(roles)-1)
+
+			sort.Slice(urs, func(i, j int) bool {
+				return urs[i].RoleID < urs[j].RoleID
+			})
+			for index, ur := range urs {
+				require.Equal(t, ur.RoleID, roles[index+1].ID)
+				require.Equal(t, ur.UserID, userWithOneRole.ID)
+			}
+		})
+
+		t.Run("no change", func(t *testing.T) {
+			input := map[string]any{"user": gql.MarshalUserID(userWithAllRoles2.ID), "roles": marshalledRoles}
+			var response struct{ SetRoles apitest.EmptyResponse }
+
+			apitest.MustExec(adminCtx, t, s, input, &response, setRolesQuery)
+
+			urs, err := db.UserRoles().GetByUserID(ctx, database.GetUserRoleOpts{
+				UserID: userWithAllRoles2.ID,
+			})
+			require.NoError(t, err)
+			require.Len(t, urs, len(roles))
+
+			sort.Slice(urs, func(i, j int) bool {
+				return urs[i].RoleID < urs[j].RoleID
+			})
+			for index, ur := range urs {
+				require.Equal(t, ur.RoleID, roles[index].ID)
+				require.Equal(t, ur.UserID, userWithAllRoles2.ID)
+			}
+		})
+	})
+}
+
+const setRolesQuery = `
+mutation SetRoles($roles: [ID!]!, $user: ID!) {
+	setRoles(roles: $roles, user: $user) {
+		alwaysNil
+	}
+}
+`
+
+func createUserWithRoles(ctx context.Context, t *testing.T, db database.DB, roles ...*types.Role) *types.User {
+	t.Helper()
+
+	user := createTestUser(t, db, false)
+
+	if len(roles) > 0 {
+		var opts = database.BulkAssignRolesToUserOpts{UserID: user.ID}
+		for _, role := range roles {
+			opts.Roles = append(opts.Roles, role.ID)
+		}
+
+		err := db.UserRoles().BulkAssignRolesToUser(ctx, opts)
+		require.NoError(t, err)
+	}
+
+	return user
+}
