@@ -37,3 +37,28 @@ export const RESOLVE_SECURITY_VULNERABILITIES_QUERY = gql`
     }
     ${vulnerabilitiesFields}
 `
+
+const vulnerabilityMatchesGroupedByRepositoryFields = gql`
+    fragment VulnerabilityMatchesGroupedByRepositoryFields on VulnerabilityMatchGroupByRepository {
+        __typename
+        repositoryName
+        matchCount
+    }
+`
+
+export const VULNERABILITY_MATCHES_GROUPED_BY_REPOSITORY = gql`
+    query VulnerabilityMatchesGroupedByRepository($first: Int, $after: String, $repositoryName: String) {
+        vulnerabilityMatchesGroupByRepository(first: $first, after: $after, repositoryName: $repositoryName) {
+            nodes {
+                id
+                ...VulnerabilityMatchesGroupedByRepositoryFields
+            }
+            totalCount
+            pageInfo {
+                hasNextPage
+                endCursor
+            }
+        }
+    }
+    ${vulnerabilityMatchesGroupedByRepositoryFields}
+`
