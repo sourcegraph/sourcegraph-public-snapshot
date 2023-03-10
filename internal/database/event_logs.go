@@ -408,11 +408,12 @@ func (l *eventLogStore) maxTimestampBySQL(ctx context.Context, querySuffix *sqlf
 	return &t, err
 }
 
-// SiteUsageValues is a set of UsageValues representing usage on daily, weekly, and monthly bases.
+// SiteUsageValues is a set of UsageValues representing usage on daily, weekly, monthly, and rolling monthly bases.
 type SiteUsageValues struct {
-	DAUs []UsageValue
-	WAUs []UsageValue
-	MAUs []UsageValue
+	DAUs  []UsageValue
+	WAUs  []UsageValue
+	MAUs  []UsageValue
+	WMAUs []UsageValue
 }
 
 // UsageValue is a single count of usage for a time period starting on a given date.
@@ -433,6 +434,8 @@ const (
 	Weekly PeriodType = "weekly"
 	// Monthly is used to get a count of events or unique users within a month.
 	Monthly PeriodType = "monthly"
+	// Rolling monthly is used to get a count of events or unique users within a rolling 30 days.
+	RollingMonthly PeriodType = "rollingmonthly"
 )
 
 var ErrInvalidPeriodType = errors.New("invalid period type")
@@ -450,6 +453,8 @@ func calcStartDate(now time.Time, periodType PeriodType, periods int) (time.Time
 		return timeutil.StartOfWeek(now, periodsAgo), nil
 	case Monthly:
 		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -periodsAgo, 0), nil
+	case RollingMonthly:
+		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, 0, -periodsAgo*30), nil
 	}
 	return time.Time{}, errors.Wrapf(ErrInvalidPeriodType, "%q is not a valid PeriodType", periodType)
 }
@@ -466,6 +471,8 @@ func calcEndDate(startDate time.Time, periodType PeriodType, periods int) (time.
 		return startDate.AddDate(0, 0, 7*periodsAgo), nil
 	case Monthly:
 		return startDate.AddDate(0, periodsAgo, 0), nil
+	case RollingMonthly:
+		return startDate.AddDate(0, 0, 0), nil //rolling monthly end date is always current date
 	}
 	return time.Time{}, errors.Wrapf(ErrInvalidPeriodType, "%q is not a valid PeriodType", periodType)
 }
@@ -613,7 +620,7 @@ OR NOT(
 	return conds
 }
 
-func (l *eventLogStore) SiteUsageMultiplePeriods(ctx context.Context, now time.Time, dayPeriods int, weekPeriods int, monthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
+func (l *eventLogStore) SiteUsageMultiplePeriods(ctx context.Context, now time.Time, dayPeriods int, weekPeriods int, monthPeriods int, rollingMonthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
 	startDateDays, err := calcStartDate(now, Daily, dayPeriods)
 	if err != nil {
 		return nil, err
@@ -638,14 +645,22 @@ func (l *eventLogStore) SiteUsageMultiplePeriods(ctx context.Context, now time.T
 	if err != nil {
 		return nil, err
 	}
+	startDateRollingMonths, err := calcStartDate(now, Monthly, rollingMonthPeriods)
+	if err != nil {
+		return nil, err
+	}
+	endDateRollingMonths, err := calcEndDate(now, Monthly, rollingMonthPeriods)
+	if err != nil {
+		return nil, err
+	}
 
 	conds := buildCountUniqueUserConds(opt)
 
-	return l.siteUsageMultiplePeriodsBySQL(ctx, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths, conds)
+	return l.siteUsageMultiplePeriodsBySQL(ctx, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths, startDateRollingMonths, endDateRollingMonths, conds)
 }
 
-func (l *eventLogStore) siteUsageMultiplePeriodsBySQL(ctx context.Context, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths time.Time, conds []*sqlf.Query) (*types.SiteUsageStatistics, error) {
-	q := sqlf.Sprintf(siteUsageMultiplePeriodsQuery, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths, sqlf.Join(conds, ") AND ("))
+func (l *eventLogStore) siteUsageMultiplePeriodsBySQL(ctx context.Context, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths, startDateRollingMonths, endDateRollingMonths time.Time, conds []*sqlf.Query) (*types.SiteUsageStatistics, error) {
+	q := sqlf.Sprintf(siteUsageMultiplePeriodsQuery, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths, startDateRollingMonths, endDateRollingMonths, sqlf.Join(conds, ") AND ("))
 
 	rows, err := l.Query(ctx, q)
 	if err != nil {
@@ -653,9 +668,10 @@ func (l *eventLogStore) siteUsageMultiplePeriodsBySQL(ctx context.Context, start
 	}
 	defer rows.Close()
 
-	dauCounts := []*types.SiteActivityPeriod{}
-	wauCounts := []*types.SiteActivityPeriod{}
-	mauCounts := []*types.SiteActivityPeriod{}
+	dauCounts  := []*types.SiteActivityPeriod{}
+	wauCounts  := []*types.SiteActivityPeriod{}
+	mauCounts  := []*types.SiteActivityPeriod{}
+	rmauCounts := []*types.SiteActivityPeriod{}
 	for rows.Next() {
 		var v UsageValue
 		err := rows.Scan(&v.Start, &v.Type, &v.Count, &v.CountRegistered)
@@ -693,6 +709,16 @@ func (l *eventLogStore) siteUsageMultiplePeriodsBySQL(ctx context.Context, start
 				IntegrationUserCount: 0,
 			})
 		}
+		if v.Type == "rolling month" {
+			rmauCounts = append(rmauCounts, &types.SiteActivityPeriod{
+				StartTime:           v.Start,
+				UserCount:           int32(v.Count),
+				RegisteredUserCount: int32(v.CountRegistered),
+				AnonymousUserCount:  int32(v.Count - v.CountRegistered),
+				// No longer used in site admin usage stats views. Use GetSiteUsageStats if you need this instead.
+				IntegrationUserCount: 0,
+			})
+		}
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
@@ -701,6 +727,7 @@ func (l *eventLogStore) siteUsageMultiplePeriodsBySQL(ctx context.Context, start
 		DAUs: dauCounts,
 		WAUs: wauCounts,
 		MAUs: mauCounts,
+		RMAUs: rmauCounts,
 	}, nil
 }
 
@@ -711,17 +738,20 @@ WITH all_periods AS (
   SELECT generate_series((%s)::timestamp, (%s)::timestamp, ('1 week')::interval) AS period, 'week' AS type
   UNION ALL
   SELECT generate_series((%s)::timestamp, (%s)::timestamp, ('1 month')::interval) AS period, 'month' AS type),
+  UNION ALL
+  SELECT generate_series((%s)::timestamp, (%s)::timestamp, ('30 day')::interval) AS period, 'rolling_month' AS type),
 unique_users_by_dwm AS (
   SELECT
     ` + makeDateTruncExpression("day", "timestamp") + ` AS day_period,
 	` + makeDateTruncExpression("week", "timestamp") + ` AS week_period,
 	` + makeDateTruncExpression("month", "timestamp") + ` AS month_period,
+	(` + makeDateTruncExpression("day", "timestamp") + ` - INTERVAL '30 days') AS rolling_month_period,
 	event_logs.user_id > 0 AS registered,
 	` + aggregatedUserIDQueryFragment + ` as aggregated_user_id
   FROM event_logs
   LEFT OUTER JOIN users ON users.id = event_logs.user_id
   WHERE (%s)
-  GROUP BY day_period, week_period, month_period, aggregated_user_id, registered
+  GROUP BY day_period, week_period, month_period, rolling_month_period, aggregated_user_id, registered
 ),
 unique_users_by_day AS (
   SELECT
@@ -746,6 +776,14 @@ unique_users_by_month AS (
     COUNT(DISTINCT aggregated_user_id) FILTER (WHERE registered) as count_registered
   FROM unique_users_by_dwm
   GROUP BY month_period
+),
+unique_users_by_rolling_month as (
+  SELECT
+    rolling_month_period,
+    COUNT(DISTINCT aggregated_user_id) as count,
+    COUNT(DISTINCT aggregated_user_id) FILTER (WHERE registered) as count_registered
+  FROM unique_users_by_dwm
+  GROUP BY rolling_month_period
 )
 SELECT
   all_periods.period,
@@ -754,20 +792,25 @@ SELECT
     THEN unique_users_by_day.count
 	ELSE CASE WHEN all_periods.type = 'week'
       THEN unique_users_by_week.count
-      ELSE unique_users_by_month.count
+    ELSE CASE WHEN all_periods.type = 'month'
+      THEN unique_users_by_month.count
+      ELSE unique_users_by_rolling_month.count
     END
   END, 0) count,
   COALESCE(CASE WHEN all_periods.type = 'day'
     THEN unique_users_by_day.count_registered
     ELSE CASE WHEN all_periods.type = 'week'
       THEN unique_users_by_week.count_registered
-      ELSE unique_users_by_month.count_registered
+    ELSE CASE WHEN all_periods.type = 'month'
+      THEN unique_users_by_month.count_registered
+      ELSE unique_users_by_rolling_month.count_registered
 	END
   END, 0) count_registered
 FROM all_periods
 LEFT OUTER JOIN unique_users_by_day ON all_periods.type = 'day' AND all_periods.period = (unique_users_by_day.day_period)::timestamp
 LEFT OUTER JOIN unique_users_by_week ON all_periods.type = 'week' AND all_periods.period = (unique_users_by_week.week_period)::timestamp
 LEFT OUTER JOIN unique_users_by_month ON all_periods.type = 'month' AND all_periods.period = (unique_users_by_month.month_period)::timestamp
+LEFT OUTER JOIN unique_users_by_rolling_month ON all_periods.type = 'rolling_month' AND all_periods.period = (unique_users_by_rolling_month.rolling_month_period)::timestamp
 ORDER BY period DESC
 `
 
@@ -1514,9 +1557,9 @@ CASE WHEN user_id = 0
 END
 `
 
-// makeDateTruncExpression returns an expresson that converts the given
+// makeDateTruncExpression returns an expression that converts the given
 // SQL expression into the start of the containing date container specified
-// by the unit parameter (e.g. day, week, month, or).
+// by the unit parameter (e.g. day, week, or month).
 func makeDateTruncExpression(unit, expr string) string {
 	if unit == "week" {
 		return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval`, unit, expr)
