@@ -103,8 +103,8 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latestReleaseBuild := getLatestRelease(pr.DeployType)
-	hasUpdate, err := canUpdate(pr.ClientVersionString, latestReleaseBuild, pr.DeployType)
+	pingResponse := getLatestRelease(pr.DeployType)
+	hasUpdate, err := canUpdate(pr.ClientVersionString, pingResponse, pr.DeployType)
 
 	// Always log, even on malformed version strings
 	logPing(logger, r, pr, hasUpdate)
@@ -121,7 +121,7 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("content-type", "application/json; charset=utf-8")
-	body, err := json.Marshal(latestReleaseBuild)
+	body, err := json.Marshal(pingResponse)
 	if err != nil {
 		logger.Error("error preparing update check response", log.Error(err))
 		http.Error(w, "", http.StatusInternalServerError)
