@@ -1,10 +1,7 @@
 import React, { ChangeEvent, FocusEventHandler } from 'react'
 
-import { mdiMapSearch } from '@mdi/js'
+import { Text, Checkbox, Grid } from '@sourcegraph/wildcard'
 
-import { Icon, Text, Checkbox, Grid, Form } from '@sourcegraph/wildcard'
-
-import { PermissionFields } from '../../../graphql-operations'
 import { PermissionsMap, allNamespaces } from '../backend'
 
 interface PermissionListProps {

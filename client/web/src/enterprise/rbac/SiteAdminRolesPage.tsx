@@ -92,24 +92,31 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
-                <ConnectionList as="ul" className="list-group" aria-label="Roles">
-                    {connection?.nodes?.map(node => (
-                        <RoleNode key={node.id} node={node} refetchAll={refetchAll} allPermissions={permissions} />
-                    ))}
-                </ConnectionList>
                 {connection && (
-                    <SummaryContainer className="mt-2">
-                        <ConnectionSummary
-                            noSummaryIfAllNodesVisible={true}
-                            first={DEFAULT_PAGE_LIMIT}
-                            centered={true}
-                            connection={connection}
-                            noun="role"
-                            pluralNoun="roles"
-                            hasNextPage={hasNextPage}
-                        />
-                        {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
-                    </SummaryContainer>
+                    <>
+                        <ConnectionList as="ul" className="list-group" aria-label="Roles">
+                            {connection.nodes?.map(node => (
+                                <RoleNode
+                                    key={node.id}
+                                    node={node}
+                                    refetchAll={refetchAll}
+                                    allPermissions={permissions}
+                                />
+                            ))}
+                        </ConnectionList>
+                        <SummaryContainer className="mt-2">
+                            <ConnectionSummary
+                                noSummaryIfAllNodesVisible={true}
+                                first={DEFAULT_PAGE_LIMIT}
+                                centered={true}
+                                connection={connection}
+                                noun="role"
+                                pluralNoun="roles"
+                                hasNextPage={hasNextPage}
+                            />
+                            {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
+                        </SummaryContainer>
+                    </>
                 )}
             </ConnectionContainer>
         </div>

@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronUp, mdiChevronDown, mdiDelete } from '@mdi/js'
-import { startCase } from 'lodash'
+import { startCase, isEqual } from 'lodash'
 
 import {
     Button,
@@ -17,6 +17,7 @@ import {
     useForm,
     Form,
     SubmissionResult,
+    Alert,
 } from '@sourcegraph/wildcard'
 
 import { RoleFields } from '../../../graphql-operations'
@@ -41,6 +42,7 @@ interface RoleNodePermissionsFormValues {
 export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetchAll, allPermissions }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState<boolean>(false)
+    const [showAlert, setShowAlert] = useState<boolean>(false)
 
     const handleOpenChange = (isOpen: boolean): void => {
         setIsExpanded(isOpen)
@@ -75,7 +77,10 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
     const rolePermissionIDs = useMemo(() => permissionNodes.map(permission => permission.id), [permissionNodes])
 
     const [setPermissions, { loading: setPermissionsLoading, error: setPermissionsError }] =
-        useSetPermissions(refetchAll)
+        useSetPermissions(() => {
+            refetchAll()
+            setShowAlert(true)
+        })
 
     const onSubmit = (values: RoleNodePermissionsFormValues): SubmissionResult => {
         setPermissions({ variables: { role: node.id, permissions: values.permissions } })
@@ -88,6 +93,14 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
     const {
         input: { isChecked, onBlur, onChange },
     } = useCheckboxes('permissions', formAPI)
+
+    const { initialValue, value } = formAPI.fields.permissions
+
+    const isUpdateDisabled = useMemo(() => {
+        return isEqual(initialValue, value)
+    }, [initialValue, value])
+
+    console.log({ initialValue, value })
 
     const error = deleteRoleError || setPermissionsError
     return (
@@ -150,6 +163,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
                     ref={ref}
                     onSubmit={handleSubmit}
                 >
+                    {showAlert && <Alert variant="success">Permissions successfully updated.</Alert>}
                     <PermissionsList
                         allPermissions={allPermissions}
                         isChecked={isChecked}
@@ -162,6 +176,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
                         type="submit"
                         loading={setPermissionsLoading}
                         label="Update"
+                        disabled={isUpdateDisabled}
                     />
                 </CollapsePanel>
             </Collapse>
