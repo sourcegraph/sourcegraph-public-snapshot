@@ -91,7 +91,7 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.UR
 		// this user doesn't have access to any depots,
 		// or to the given depot
 		if depot != "" {
-			return errors.New(fmt.Sprintf("the user %s does not have access to the depot %s on the server %s", username, depot, host))
+			return errors.Newf("the user %s does not have access to the depot %s on the server %s", username, depot, host)
 		} else {
 			return errors.New(fmt.Sprintf("the user %s does not have access to any depots on the server %s", username, host))
 		}
