@@ -117,3 +117,40 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   })
 })
+
+// Promise to wait on for DOMContentLoaded
+const domContentLoadedPromise = new Promise(resolve => {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', resolve)
+  } else {
+    resolve()
+  }
+})
+
+// Import Sourcegraph's EventLogger
+const importEventLoggerPromise = import('https://cdn.skypack.dev/@sourcegraph/event-logger')
+
+Promise.all([domContentLoadedPromise, importEventLoggerPromise]).then(([_, { EventLogger }]) => {
+  const eventLogger = new EventLogger('https://sourcegraph.com')
+
+  // Log a Docs page view event
+  const eventArguments = { path: window.location.pathname }
+  console.log('ViewStaticPage', eventArguments) // TODO: remove this console log
+  eventLogger.log('ViewStaticPage', eventArguments, eventArguments)
+
+  // Log download links which have a "data-download-name" attribute
+  // This is used to track Sourcegraph App download links
+  document.addEventListener('click', event => {
+    if (event.target.matches('a[data-download-name]')) {
+      const downloadName = event.target.getAttribute('data-download-name')
+      const eventArguments = {
+        path: window.location.pathname,
+        downloadSource: 'docs',
+        downloadName,
+      }
+
+      console.log('DownloadClick', eventArguments) // TODO: remove console log
+      eventLogger.log('DownloadClick', eventArguments, eventArguments)
+    }
+  })
+})

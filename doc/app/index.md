@@ -46,7 +46,7 @@ Ensure you have `git` installed / on your path, then install.
 brew install sourcegraph/app/sourcegraph
 ```
 
-**Linux:** via [deb pkg](https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_linux_amd64.deb) installer:
+**Linux:** via <a data-download-name="app-download-deb" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_linux_amd64.deb">deb pkg</a> installer:
 
 ```sh
 dpkg -i <file>.deb
@@ -54,8 +54,8 @@ dpkg -i <file>.deb
 
 **Single-binary zip download:**
 
-* [macOS (universal)](https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_darwin_all.zip)
 * [linux (x64)](https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_linux_amd64.zip)
+- <a data-download-name="app-download-zip-mac" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_darwin_all.zip">macOS (universal)</a>
 
 ## Usage
 
