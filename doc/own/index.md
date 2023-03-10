@@ -1,6 +1,5 @@
 # Sourcegraph Own
 
-
 ## Requirements
 
 Sourcegraph Own is an enterprise feature in experimental state. 

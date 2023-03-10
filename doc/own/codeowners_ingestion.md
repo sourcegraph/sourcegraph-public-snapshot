@@ -1,5 +1,13 @@
 ## Codeowners ingestion
 
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change in the future.
+</p>
+
+<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
+</aside>
+
 Sourcegraph Own allows you to surface ownership data using `CODEOWNERS` files. 
 This is done automatically if there is a committed `CODEOWNERS` file in your repository at any of the following locations:
 
