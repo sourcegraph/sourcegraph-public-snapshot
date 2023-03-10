@@ -8,6 +8,7 @@ import {
     type Action,
     CodeMirrorQueryInputWrapper,
     type CodeMirrorQueryInputWrapperProps,
+    type Example,
     exampleSuggestions,
     lastUsedContextSuggestion,
     searchHistoryExtension,
@@ -15,25 +16,84 @@ import {
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import type { Editor } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import type { SearchContextProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
-import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
 import { createSuggestionsSource, type SuggestionsSourceConfig } from './suggestions'
 import { useRecentSearches } from './useRecentSearches'
 
+const examples: Example[] = [
+    {
+        label: 'repo:has.path()',
+        snippet: 'repo:has.path(${}) ${}',
+        description: 'Search in repositories containing a path',
+        valid: tokens => !tokens.some(token => token.type === 'filter' && token.value?.value.startsWith('has.path(')),
+    },
+    {
+        label: 'repo:has.content()',
+        snippet: 'repo:has.content(${}) ${}',
+        description: 'Search in repositories with files having specific contents',
+        valid: tokens =>
+            !tokens.some(token => token.type === 'filter' && token.value?.value.startsWith('has.content(')),
+    },
+    {
+        label: '-file:',
+        description: FILTERS[FilterType.file].description(true),
+        valid: tokens => !tokens.some(token => token.type === 'filter' && token.field.value === '-file'),
+    },
+    {
+        label: '-repo:',
+        description: FILTERS[FilterType.repo].description(true),
+        valid: tokens => !tokens.some(token => token.type === 'filter' && token.field.value === '-repo'),
+    },
+    {
+        label: 'repo:my-org.*/.*-cli$',
+        // eslint-disable-next-line no-template-curly-in-string
+        snippet: 'repo:${my-org.*/.*-cli$} ${}',
+        description: 'Search in repositories matching a pattern',
+        valid: tokens =>
+            !tokens.some(
+                token => token.type === 'filter' && resolveFilterMemoized(token.field.value)?.type === FilterType.repo
+            ),
+    },
+    {
+        label: 'type:diff select:commit.diff.removed TODO',
+        // eslint-disable-next-line no-template-curly-in-string
+        snippet: 'type:diff select:commit.diff.removed repo:${my-repo} TODO ${}',
+        description: 'Find commits that removed "TODO"',
+        valid: tokens => !tokens.some(token => token.type === 'filter' && token.value?.value.startsWith('commit.diff')),
+    },
+]
+
+const ownershipExamples: Example[] = [
+    {
+        label: 'file:has.owner()',
+        snippet: 'file:has.owner(${}) ${}',
+        description: 'Search code ownership',
+        valid: tokens => !tokens.some(token => token.type === 'filter' && token.value?.value.startsWith('has.owner(')),
+    },
+]
+
+function buildExamples(config: { enableOwnershipSearch: boolean }): Example[] {
+    let final = examples
+
+    if (config.enableOwnershipSearch) {
+        final = final.concat(ownershipExamples)
+    }
+
+    return final
+}
+
 function useUsedExamples(): [Set<string>, (value: string) => void] {
     const [usedExamples = [], setUsedExamples] = useTemporarySetting('search.input.usedExamples', [])
-    const usedExamplesRef = useRef(usedExamples)
-
-    useEffect(() => {
-        usedExamplesRef.current = usedExamples
-    }, [usedExamples])
 
     const addUsedExample = useCallback(
         (example: string) => {
-            if (!usedExamplesRef.current?.includes(example)) {
-                setUsedExamples([...usedExamplesRef.current, example])
-            }
+            setUsedExamples(examples => (!examples || examples.includes(example) ? examples : [...examples, example]))
         },
         [setUsedExamples]
     )
@@ -92,6 +152,8 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
         getSearchContextRef.current = () => selectedSearchContextSpec
     }, [selectedSearchContextSpec])
 
+    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
+
     const editorRef = useRef<Editor | null>(null)
 
     const suggestionSource = useMemo(
@@ -134,10 +196,11 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
                 exampleSuggestions({
                     getUsedExamples: () => usedExamplesRef.current,
                     markExampleUsed: addExample,
+                    examples: buildExamples({ enableOwnershipSearch }),
                 })
             ),
         ],
-        [telemetryService, addExample]
+        [telemetryService, addExample, enableOwnershipSearch]
     )
 
     return (
