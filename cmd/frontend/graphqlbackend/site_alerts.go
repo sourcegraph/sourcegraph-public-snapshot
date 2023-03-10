@@ -90,7 +90,7 @@ var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", 
 
 func init() {
 	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
 			return nil
 		}
 		if c.SiteConfig().ExternalURL == "" {
@@ -204,7 +204,7 @@ func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
 func updateAvailableAlert(args AlertFuncArgs) []*Alert {
 	// TODO(app): App Update Messaging
 	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
-	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+	if deploy.IsApp() {
 		return nil
 	}
 
@@ -251,7 +251,7 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 }
 
 func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
-	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
 		return nil
 	}
 	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
@@ -274,7 +274,7 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 func outOfDateAlert(args AlertFuncArgs) []*Alert {
 	// TODO(app): App Update Messaging
 	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
-	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+	if deploy.IsApp() {
 		return nil
 	}
 
