@@ -132,6 +132,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
 
         if (nextRequester.forwardDestination) {
             const destination = new URLSearchParams(location.search).get('destination')
+            // SECURITY: only destinations starting with a "/" are allowed to prevent an open redirect vulnerability.
             if (destination?.startsWith('/')) {
                 const redirectURL = new URL(nextRequester.redirectURL)
                 redirectURL.searchParams.set('destination', destination)
