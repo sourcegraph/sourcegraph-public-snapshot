@@ -14,8 +14,10 @@
 }
 
 .input {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+    &--with-action {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
 }
 
 .pick-path {

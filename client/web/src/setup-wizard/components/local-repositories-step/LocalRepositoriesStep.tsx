@@ -1,4 +1,4 @@
-import { FC, forwardRef, HTMLAttributes, InputHTMLAttributes, useEffect, useState } from 'react'
+import { ChangeEvent, FC, forwardRef, HTMLAttributes, InputHTMLAttributes, useEffect, useState } from 'react'
 
 import { useLazyQuery } from '@apollo/client'
 import { mdiGit, mdiInformationOutline } from '@mdi/js'
@@ -8,7 +8,7 @@ import { parse as parseJSONC } from 'jsonc-parser'
 import { ErrorLike, modify } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, ErrorAlert, Icon, Input, Text } from '@sourcegraph/wildcard'
+import { Button, Container, ErrorAlert, Icon, Input, Text, useDebounce } from '@sourcegraph/wildcard'
 
 import {
     AddRemoteCodeHostResult,
@@ -162,6 +162,7 @@ interface LocalRepositoriesFormProps {
 const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
     const { isFilePickerAvailable, error, directoryPath, onDirectoryPathChange } = props
 
+    const [internalPath, setInternalPath] = useState(directoryPath)
     const [queryPath] = useLazyQuery<GetLocalDirectoryPathResult>(GET_LOCAL_DIRECTORY_PATH, {
         fetchPolicy: 'network-only',
         onCompleted: data => data.localDirectoryPicker?.path && onDirectoryPathChange(data.localDirectoryPicker?.path),
@@ -176,6 +177,21 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
         }
     )
 
+    // By default, input is disabled so this callback won't be fired
+    // but in case if backend-based file picker isn't supported in OS
+    // that is running sg instance we fall back on common input where user
+    // should file path manually
+    const handleInputChange = (event: ChangeEvent<HTMLInputElement>): void => {
+        setInternalPath(event.target.value)
+    }
+
+    const debouncedInternalPath = useDebounce(internalPath, 1000)
+
+    // Sync internal state with parent logic
+    useEffect(() => {
+        onDirectoryPathChange(debouncedInternalPath)
+    }, [debouncedInternalPath, onDirectoryPathChange])
+
     const foundRepositories = repositoriesData?.localDirectory?.repositories ?? []
 
     return (
@@ -183,7 +199,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
             <header>
                 <Input
                     as={InputWitActions}
-                    value={directoryPath}
+                    value={isFilePickerAvailable ? directoryPath : internalPath}
                     label="Directory path"
                     disabled={isFilePickerAvailable}
                     placeholder="Users/user-name/Projects/"
@@ -191,6 +207,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                     className={styles.filePicker}
                     onPickPath={() => queryPath()}
                     onPathReset={() => onDirectoryPathChange('')}
+                    onChange={handleInputChange}
                 />
             </header>
 
@@ -236,15 +253,23 @@ interface InputWitActionsProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const InputWitActions = forwardRef<HTMLInputElement, InputWitActionsProps>((props, ref) => {
-    const { className, onPickPath, onPathReset, ...attributes } = props
+    const { className, onPickPath, onPathReset, disabled, ...attributes } = props
 
     return (
         <div className={styles.inputRoot}>
             {/* eslint-disable-next-line react/forbid-elements */}
-            <input ref={ref} {...attributes} className={classNames(className, styles.input)} />
-            <Button size="sm" type="button" variant="primary" className={styles.pickPath} onClick={onPickPath}>
-                Pick a path
-            </Button>
+            <input
+                {...attributes}
+                ref={ref}
+                disabled={disabled}
+                className={classNames(className, { [styles.inputWithAction]: disabled })}
+            />
+
+            {disabled && (
+                <Button size="sm" type="button" variant="primary" className={styles.pickPath} onClick={onPickPath}>
+                    Pick a path
+                </Button>
+            )}
 
             <Button size="sm" variant="secondary" className={styles.resetPath} onClick={onPathReset}>
                 Reset path
