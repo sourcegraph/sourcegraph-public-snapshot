@@ -47,7 +47,7 @@ func makeEmail(userID int32, address string, primary, verified bool) *database.U
 	return &database.UserEmail{UserID: userID, Email: address, VerifiedAt: vDate, Primary: primary}
 }
 
-func Test_UserResourceHandler_Patch_Username(t *testing.T) {
+func Test_UserResourceHandler_Patch(t *testing.T) {
 	t.Parallel()
 
 	db := getMockDB([]*types.UserForSCIM{
