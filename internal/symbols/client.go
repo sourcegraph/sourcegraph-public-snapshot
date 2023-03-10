@@ -722,30 +722,35 @@ func (c *TTLCache[K, V]) reap() {
 	now := c.clock.Now()
 	earliestAllowed := now.Add(-c.expirationTime)
 
-	var toDelete []K
+	getExpiredKeys := func() []K {
+		var expired []K
+
+		for key, entry := range c.entries {
+			lastUsed := entry.lastUsed.Load()
+			if lastUsed == nil {
+				lastUsed = &time.Time{}
+			}
+
+			if (*lastUsed).Before(earliestAllowed) {
+				expired = append(expired, key)
+			}
+		}
+
+		return expired
+	}
 
 	// First, find all the entries that have expired.
 	// We do this under a read lock to avoid blocking other goroutines
 	// from accessing the cache.
 
+	var maybeDelete []K
+
 	c.mu.RLock()
-	for key, entry := range c.entries {
-		lastUsed := entry.lastUsed.Load()
-		if lastUsed == nil {
-			lastUsed = &time.Time{}
-		}
-
-		if (*lastUsed).After(earliestAllowed) {
-			continue
-		}
-
-		toDelete = append(toDelete, key)
-	}
-
+	maybeDelete = getExpiredKeys()
 	c.mu.RUnlock()
 
 	// If there are no entries to delete, we're done.
-	if len(toDelete) == 0 {
+	if len(maybeDelete) == 0 {
 		return
 	}
 
@@ -755,26 +760,13 @@ func (c *TTLCache[K, V]) reap() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for _, key := range toDelete {
-		// Is the entry still there? It might have been deleted by another
-		// goroutine.
-		entry, ok := c.entries[key]
-		if !ok {
-			continue
-		}
+	// We need to check again to make sure that the entries are still
+	// expired. It's possible that another goroutine has updated the
+	// entry since we released the read lock.
 
-		// Is the entry still expired? It might have been updated by another
-		// goroutine.
-		lastUsed := entry.lastUsed.Load()
-		if lastUsed == nil {
-			lastUsed = &time.Time{}
-		}
+	for _, key := range getExpiredKeys() {
+		entry := c.entries[key]
 
-		if (*lastUsed).After(earliestAllowed) {
-			continue
-		}
-
-		// The entry is still expired, so delete it.
 		c.expirationFunc(key, entry.value)
 		delete(c.entries, key)
 	}
