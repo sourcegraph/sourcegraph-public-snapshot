@@ -89,13 +89,14 @@ pub fn index_language_with_config(
                 .unwrap_or(Ok(vec![]))
                 .unwrap_or(vec![]);
 
-            // Get ranges in top-to-bottom order
+            // Get ranges in reverse order, because we're going to pop off the back of the list.
+            //  (that's why we're sorting the opposite way of the document occurrences above).
             local_occs.sort_by_key(|a| (-a.range[0], -a.range[1]));
 
             let mut next_doc_idx = 0;
             while let Some(local) = local_occs.pop() {
-                // We *should* be able to assume that all these ranges match up,
-                // but it's probably better to just skip them for now.
+                // We *should* be able to assume that all these ranges are valid ranges
+                // but for now we'll skip if they aren't.
                 //
                 // We can add some observability stuff to this later, and/or make
                 // certain builds fail or something to test this out better (but
@@ -201,6 +202,9 @@ impl OffsetManager {
     }
 }
 
+// TODO: I think we could either put this directly in the `scip` bindings OR
+// we can put this in `scip-treesitter` since it's one of the structs we'll
+// be using quite reguarly when comparing and encoding ranges
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct PackedRange {
     pub start_line: i32,
