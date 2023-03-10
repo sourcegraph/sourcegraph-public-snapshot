@@ -1465,6 +1465,12 @@
       "maximum": 90,
       "examples": [12, 24, 50]
     },
+    "own.bestEffortTeamMatching": {
+      "description": "The Own service will attempt to match a Team by the last part of its handle if it contains a slash and no match is found for its full handle.",
+      "type": "boolean",
+      "group": "Own",
+      "default": true
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",
