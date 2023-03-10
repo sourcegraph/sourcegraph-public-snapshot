@@ -333,11 +333,18 @@ func convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
 	// Convert account data – if it doesn't exist, never mind
 	attributes, err := fromAccountData(user.SCIMAccountData)
 	if err != nil {
+		first, middle, last := displayNameToPieces(user.DisplayName)
 		// Failed to convert account data to SCIM resource attributes. Fall back to core user data.
 		attributes = scim.ResourceAttributes{
+			AttrActive:      true,
 			AttrUserName:    user.Username,
 			AttrDisplayName: user.DisplayName,
-			AttrName:        map[string]interface{}{AttrNameFormatted: user.DisplayName},
+			AttrName: map[string]interface{}{
+				AttrNameFormatted: user.DisplayName,
+				AttrNameGiven:     first,
+				AttrNameMiddle:    middle,
+				AttrNameFamily:    last,
+			},
 		}
 		if user.SCIMExternalID != "" {
 			attributes[AttrExternalId] = user.SCIMExternalID
@@ -368,5 +375,20 @@ func convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
 			Created:      &user.CreatedAt,
 			LastModified: &user.UpdatedAt,
 		},
+	}
+}
+
+// displayNameToPieces splits a display name into first, middle, and last name.
+func displayNameToPieces(displayName string) (first, middle, last string) {
+	pieces := strings.Fields(displayName)
+	switch len(pieces) {
+	case 0:
+		return "", "", ""
+	case 1:
+		return pieces[0], "", ""
+	case 2:
+		return pieces[0], "", pieces[1]
+	default:
+		return pieces[0], strings.Join(pieces[1:len(pieces)-1], " "), pieces[len(pieces)-1]
 	}
 }
