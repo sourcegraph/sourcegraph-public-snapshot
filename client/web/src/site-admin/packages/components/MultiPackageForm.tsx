@@ -3,7 +3,6 @@ import { useCallback, useState } from 'react'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
-import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import {
     Button,
@@ -20,15 +19,9 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
-import {
-    SiteAdminPackageFields,
-    PackageRepoReferenceKind,
-    PackageRepoReferencesMatchingFilterResult,
-    PackageRepoReferencesMatchingFilterVariables,
-    PackageRepoMatchFields,
-} from '../../../graphql-operations'
+import { SiteAdminPackageFields, PackageRepoReferenceKind } from '../../../graphql-operations'
 import { prettyBytesBigint } from '../../../util/prettyBytesBigint'
-import { packageRepoFilterQuery } from '../backend'
+import { useMatchingPackages } from '../hooks/useMatchingPackages'
 import { BlockType } from '../modal-content/AddPackageFilterModalContent'
 
 import { FilterPackagesActions } from './FilterPackagesActions'
@@ -64,29 +57,7 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
         nameFilter: defaultNameFilter,
         ecosystem: defaultEcosystem,
     })
-
-    const [packageFetchLimit, setPackageFetchLimit] = useState(15)
     const query = useDebounce(blockState.nameFilter, 200)
-
-    const { data, loading, error } = useQuery<
-        PackageRepoReferencesMatchingFilterResult,
-        PackageRepoReferencesMatchingFilterVariables
-    >(packageRepoFilterQuery, {
-        variables: {
-            kind: blockState.ecosystem,
-            filter: {
-                nameFilter: {
-                    packageGlob: query,
-                },
-            },
-            first: packageFetchLimit,
-        },
-    })
-
-    const packageCount = data?.packageRepoReferencesMatchingFilter.totalCount ?? 0
-
-    // Limit fetching more than 1000 packages
-    const nextFetchLimit = Math.min(packageCount, 1000)
 
     const isValid = useCallback((): boolean => {
         if (blockState.nameFilter === '') {
@@ -154,60 +125,7 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                         </Tooltip>
                     </div>
                     <div className={styles.listContainer}>
-                        <>
-                            {loading ? (
-                                <LoadingSpinner className="d-block mx-auto mt-3" />
-                            ) : error ? (
-                                <ErrorAlert error={error} className="mt-2" />
-                            ) : data ? (
-                                <div className="mt-2">
-                                    <div className="d-flex justify-content-between text-muted">
-                                        <span>
-                                            {data.packageRepoReferencesMatchingFilter.totalCount === 1 ? (
-                                                <>
-                                                    {data.packageRepoReferencesMatchingFilter.totalCount} package
-                                                    currently matches
-                                                </>
-                                            ) : (
-                                                <>
-                                                    {data.packageRepoReferencesMatchingFilter.totalCount} packages
-                                                    currently match
-                                                </>
-                                            )}{' '}
-                                            this filter
-                                            {data.packageRepoReferencesMatchingFilter.nodes.length <
-                                                data.packageRepoReferencesMatchingFilter.totalCount && (
-                                                <>
-                                                    {' '}
-                                                    (showing only{' '}
-                                                    {data.packageRepoReferencesMatchingFilter.nodes.length})
-                                                </>
-                                            )}
-                                            :
-                                        </span>
-                                        {data.packageRepoReferencesMatchingFilter.nodes.length <
-                                            data.packageRepoReferencesMatchingFilter.totalCount && (
-                                            <Button
-                                                variant="link"
-                                                className="p-0 mr-3"
-                                                onClick={() => setPackageFetchLimit(nextFetchLimit)}
-                                            >
-                                                <>
-                                                    Show{' '}
-                                                    {nextFetchLimit ===
-                                                    data.packageRepoReferencesMatchingFilter.totalCount
-                                                        ? 'all '
-                                                        : { nextFetchLimit }}
-                                                </>
-                                            </Button>
-                                        )}
-                                    </div>
-                                    <PackageList nodes={data.packageRepoReferencesMatchingFilter.nodes} />
-                                </div>
-                            ) : (
-                                <></>
-                            )}
-                        </>
+                        <PackageList query={query} blockState={blockState} />
                     </div>
                 </div>
                 <div className="mt-3">
@@ -223,9 +141,32 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
 }
 
 interface PackageListProps {
-    nodes: PackageRepoMatchFields[]
+    blockState: MultiPackageState
+    query: string
 }
-const PackageList: React.FunctionComponent<PackageListProps> = ({ nodes }) => {
+const PackageList: React.FunctionComponent<PackageListProps> = ({ blockState, query }) => {
+    const [packageFetchLimit, setPackageFetchLimit] = useState(15)
+    const { nodes, totalCount, loading, error } = useMatchingPackages({
+        kind: blockState.ecosystem,
+        filter: {
+            nameFilter: {
+                packageGlob: query,
+            },
+        },
+        first: packageFetchLimit,
+    })
+
+    // Limit fetching more than 1000 packages
+    const nextFetchLimit = Math.min(totalCount, 1000)
+
+    if (loading) {
+        return <LoadingSpinner className="d-block mx-auto mt-1" />
+    }
+
+    if (error) {
+        return <ErrorAlert error={error} className="mt-2" />
+    }
+
     if (nodes.length === 0) {
         return (
             <Alert variant="warning" className="mt-1">
@@ -235,19 +176,37 @@ const PackageList: React.FunctionComponent<PackageListProps> = ({ nodes }) => {
     }
 
     return (
-        <ul className={classNames('list-group mt-1', styles.list)}>
-            {nodes.map(node => (
-                <li className="list-group-item" key={node.id}>
-                    {node.repository ? (
-                        <div className="d-flex justify-content-between">
-                            <RepoLink repoName={node.name} to={node.repository.url} />
-                            <small>Size: {prettyBytesBigint(BigInt(node.repository.mirrorInfo.byteSize))}</small>
-                        </div>
+        <div className="mt-2">
+            <div className="d-flex justify-content-between text-muted">
+                <span>
+                    {totalCount === 1 ? (
+                        <>{totalCount} package currently matches</>
                     ) : (
-                        <>{node.name}</>
-                    )}
-                </li>
-            ))}
-        </ul>
+                        <>{totalCount} packages currently match</>
+                    )}{' '}
+                    this filter
+                    {nodes.length < totalCount && <> (showing only {nodes.length})</>}:
+                </span>
+                {nodes.length < totalCount && (
+                    <Button variant="link" className="p-0 mr-3" onClick={() => setPackageFetchLimit(nextFetchLimit)}>
+                        <>Show {nextFetchLimit === totalCount ? 'all ' : { nextFetchLimit }}</>
+                    </Button>
+                )}
+            </div>
+            <ul className={classNames('list-group mt-1', styles.list)}>
+                {nodes.map(node => (
+                    <li className="list-group-item" key={node.id}>
+                        {node.repository ? (
+                            <div className="d-flex justify-content-between">
+                                <RepoLink repoName={node.name} to={node.repository.url} />
+                                <small>Size: {prettyBytesBigint(BigInt(node.repository.mirrorInfo.byteSize))}</small>
+                            </div>
+                        ) : (
+                            <>{node.name}</>
+                        )}
+                    </li>
+                ))}
+            </ul>
+        </div>
     )
 }

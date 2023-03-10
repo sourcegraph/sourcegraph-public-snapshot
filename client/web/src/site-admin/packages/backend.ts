@@ -19,6 +19,13 @@ const packageRepoMatchFragment = gql`
     }
 `
 
+const packageVersionMatchFragment = gql`
+    fragment PackageVersionMatchFields on PackageRepoReferenceVersion {
+        id
+        version
+    }
+`
+
 export const packageRepoFilterQuery = gql`
     query PackageRepoReferencesMatchingFilter(
         $kind: PackageRepoReferenceKind!
@@ -26,14 +33,31 @@ export const packageRepoFilterQuery = gql`
         $first: Int
     ) {
         packageRepoReferencesMatchingFilter(kind: $kind, filter: $filter, first: $first) {
-            nodes {
-                ...PackageRepoMatchFields
+            ... on PackageRepoReferenceConnection {
+                nodes {
+                    ...PackageRepoMatchFields
+                }
+                totalCount
+                pageInfo {
+                    hasNextPage
+                    endCursor
+                }
             }
-            totalCount
+            ... on PackageRepoReferenceVersionConnection {
+                nodes {
+                    ...PackageVersionMatchFields
+                }
+                totalCount
+                pageInfo {
+                    hasNextPage
+                    endCursor
+                }
+            }
         }
     }
 
     ${packageRepoMatchFragment}
+    ${packageVersionMatchFragment}
 `
 
 const packageRepoFilterFragment = gql`
