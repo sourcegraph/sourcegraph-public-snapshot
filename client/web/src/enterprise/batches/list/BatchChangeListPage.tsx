@@ -37,6 +37,7 @@ import {
     GetLicenseAndUsageInfoVariables,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { canWriteBatchChanges } from '../utils'
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
 import { BatchChangeListFilters } from './BatchChangeListFilters'
@@ -155,9 +156,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             <PageHeader
                 className="test-batches-list-page mb-3"
                 actions={
-                    canCreate ? (
-                        <NewBatchChangeButton to={`${location.pathname}/create`} />
-                    ) : (
+                    isSourcegraphDotCom ? (
                         <Button
                             as={Link}
                             to="https://about.sourcegraph.com"
@@ -166,7 +165,9 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                         >
                             Get Sourcegraph Enterprise
                         </Button>
-                    )
+                    ) : canCreate ? (
+                        <NewBatchChangeButton to={`${location.pathname}/create`} />
+                    ) : null
                 }
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
@@ -199,11 +200,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 isSourcegraphDotCom={isSourcegraphDotCom}
             />
             {selectedTab === 'gettingStarted' && (
-                <GettingStarted
-                    isSourcegraphDotCom={isSourcegraphDotCom}
-                    authenticatedUser={authenticatedUser}
-                    className="mb-4"
-                />
+                <GettingStarted canCreate={canCreate} isSourcegraphDotCom={isSourcegraphDotCom} className="mb-4" />
             )}
             {selectedTab === 'batchChanges' && (
                 <>
@@ -277,12 +274,14 @@ export interface NamespaceBatchChangeListPageProps extends Omit<BatchChangeListP
 export const NamespaceBatchChangeListPage: React.FunctionComponent<
     React.PropsWithChildren<NamespaceBatchChangeListPageProps>
 > = ({ authenticatedUser, namespaceID, ...props }) => {
-    // A user should only see the button to create a batch change in a namespace if it is
-    // their namespace (user namespace), or they belong to it (organization namespace)
+    // A user should only see the button to create a batch change in a namespace if they
+    // have permission to create batch changes and either they are looking at their user
+    // namespace or the namespace of one of the organizations they are a member of.
     const canCreateInThisNamespace = useMemo(
         () =>
-            authenticatedUser.id === namespaceID ||
-            authenticatedUser.organizations.nodes.map(org => org.id).includes(namespaceID),
+            canWriteBatchChanges(authenticatedUser) &&
+            (authenticatedUser.id === namespaceID ||
+                authenticatedUser.organizations.nodes.map(org => org.id).includes(namespaceID)),
         [authenticatedUser, namespaceID]
     )
 
