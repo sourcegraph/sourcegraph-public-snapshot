@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren, useEffect, useMemo, useRef } from 'react'
+import { FC, PropsWithChildren, useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { Prec } from '@codemirror/state'
 
@@ -8,6 +8,7 @@ import {
     type Action,
     CodeMirrorQueryInputWrapper,
     type CodeMirrorQueryInputWrapperProps,
+    exampleSuggestions,
     lastUsedContextSuggestion,
     searchHistoryExtension,
     selectionListener,
@@ -15,9 +16,30 @@ import {
 import type { Editor } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import type { SearchContextProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
 import { createSuggestionsSource, type SuggestionsSourceConfig } from './suggestions'
 import { useRecentSearches } from './useRecentSearches'
+
+function useUsedExamples(): [Set<string>, (value: string) => void] {
+    const [usedExamples = [], setUsedExamples] = useTemporarySetting('search.input.usedExamples', [])
+    const usedExamplesRef = useRef(usedExamples)
+
+    useEffect(() => {
+        usedExamplesRef.current = usedExamples
+    }, [usedExamples])
+
+    const addUsedExample = useCallback(
+        (example: string) => {
+            if (!usedExamplesRef.current?.includes(example)) {
+                setUsedExamples([...usedExamplesRef.current, example])
+            }
+        },
+        [setUsedExamples]
+    )
+
+    return [new Set(usedExamples), addUsedExample]
+}
 
 const eventNameMap: Record<Action['type'], string> = {
     completion: 'Add',
@@ -53,6 +75,12 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
     useEffect(() => {
         recentSearchesRef.current = recentSearches
     }, [recentSearches])
+
+    const [usedExamples, addExample] = useUsedExamples()
+    const usedExamplesRef = useRef(usedExamples)
+    useEffect(() => {
+        usedExamplesRef.current = usedExamples
+    }, [usedExamples])
 
     const submitSearchRef = useRef(submitSearch)
     useEffect(() => {
@@ -102,8 +130,14 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
                     source,
                 })
             }),
+            Prec.low(
+                exampleSuggestions({
+                    getUsedExamples: () => usedExamplesRef.current,
+                    markExampleUsed: addExample,
+                })
+            ),
         ],
-        [telemetryService]
+        [telemetryService, addExample]
     )
 
     return (
