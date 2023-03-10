@@ -60,7 +60,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                         <Link to="/help/batch_changes/explanations/server_side">
                             <li>Running batch changes server-side</li>
                         </Link>
-                        <Link to="/help/admin/executors">
+                        <Link to="/help/admin/executors/">
                             <li>Deploying executors</li>
                         </Link>
                     </ul>

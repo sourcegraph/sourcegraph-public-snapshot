@@ -16,7 +16,7 @@ In order to run executors on your machine, a few things need to be set up correc
 - Docker has to be installed on the machine (`curl -fsSL https://get.docker.com | sh`)
 - Git has to be installed at a version `>= v2.26`
 
-If [Firecracker isolation will be used](executors.md#how-it-works): _(recommended)_
+If [Firecracker isolation will be used](index.md#how-it-works): _(recommended)_
 
 - The host has to support KVM (for AWS that means a metal instance, on GCP that means [enabling nested virtualization](https://cloud.google.com/compute/docs/instances/nested-virtualization/enabling))
 - The following additional dependencies need to be installed:
@@ -32,7 +32,7 @@ Once dependencies are met, you can download the executor binary and start config
 
 ### **Step 0:** Confirm that virtualization is enabled (if using Firecracker)
 
-KVM (virtualization) support is required for [our sandboxing model](executors.md#how-it-works) with Firecracker. The following command checks whether virtualization is enabled on the machine (it should print something):
+KVM (virtualization) support is required for [our sandboxing model](index.md#how-it-works) with Firecracker. The following command checks whether virtualization is enabled on the machine (it should print something):
 
 ```bash
 $ lscpu | grep Virtualization
@@ -139,7 +139,7 @@ executor validate
 
 If any issues are found, correct them before proceeding.
 
-If you use [our sandboxing model with Firecracker](executors.md#how-it-works) _(recommended)_, you can also verify that the executor is able to spin up the isolation VMs properly. For that, use the following command:
+If you use [our sandboxing model with Firecracker](index.md#how-it-works) _(recommended)_, you can also verify that the executor is able to spin up the isolation VMs properly. For that, use the following command:
 
 ```bash
 # Optionally provide a repo to clone into the VMs workspace, to verify that cloning works properly as well.
