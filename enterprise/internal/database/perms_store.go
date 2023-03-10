@@ -2159,7 +2159,7 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 	}
 
 	reposQuery := sqlf.Sprintf(
-		reposPermissionsInfoQueryFmt,
+		getReposPermissionsInfoQueryFmt(conf.ExperimentalFeatures().UnifiedPermissions),
 		sqlf.Join(conds, " AND "),
 		order,
 		limit,
@@ -2198,8 +2198,7 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 	return perms, nil
 }
 
-// TODO(milan): need to update read path for new data model
-const reposPermissionsInfoQueryFmt = `
+const baseReposPermissionsInfoQueryFmt = `
 WITH accessible_repos AS (
 	SELECT
 		repo.id,
@@ -2211,7 +2210,26 @@ WITH accessible_repos AS (
 	ORDER BY %s
 	%s -- Limit
 )
+`
 
+func getReposPermissionsInfoQueryFmt(unifiedPermsEnabled bool) string {
+	if unifiedPermsEnabled {
+		return baseReposPermissionsInfoQueryFmt + `
+SELECT
+	ar.*,
+	urp.updated_at AS permission_updated_at,
+	CASE
+		WHEN urp.user_id IS NOT NULL THEN 'Permissions Sync'
+		ELSE 'Unrestricted'
+	END AS permission_reason
+FROM
+	accessible_repos AS ar
+	LEFT JOIN user_repo_permissions AS urp ON urp.user_id = %d
+		AND urp.repo_id = ar.id
+`
+	}
+
+	return baseReposPermissionsInfoQueryFmt + `
 SELECT
 	ar.*,
 	up.updated_at AS permission_updated_at,
@@ -2223,7 +2241,8 @@ FROM
 	accessible_repos AS ar
 	LEFT JOIN user_permissions AS up ON up.user_id = %d
 		AND up.object_ids_ints @> INTSET (ar.id)
-`
+		`
+}
 
 var defaultPageSize = 100
 
