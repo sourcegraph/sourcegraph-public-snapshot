@@ -13,6 +13,7 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
@@ -187,6 +188,18 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			perms := edb.NewStrictMockPermsStore()
 			perms.TransactFunc.SetDefaultReturn(perms, nil)
 			perms.DoneFunc.SetDefaultReturn(nil)
+			perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, ids []authz.UserIDWithExternalAccountID) error {
+				expUserIDs := maps.Keys(test.expUserIDs)
+				userIDs := make([]int32, len(ids))
+				for i, u := range ids {
+					userIDs[i] = u.UserID
+				}
+				if diff := cmp.Diff(expUserIDs, userIDs); diff != "" {
+					return errors.Errorf("userIDs expected: %v, got: %v", expUserIDs, userIDs)
+				}
+
+				return nil
+			})
 			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 				ids := p.UserIDs
 				if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {

@@ -298,6 +298,15 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 			defer cleanupPermsTables(t, s.store.(*permsStore))
 
 			for _, update := range test.updates {
+				userIDs := make([]authz.UserIDWithExternalAccountID, len(update.userIDs))
+				for i, userID := range update.userIDs {
+					userIDs[i] = authz.UserIDWithExternalAccountID{
+						UserID: userID,
+					}
+				}
+				if err := s.store.SetRepoPerms(ctx, update.repoID, userIDs); err != nil {
+					t.Fatal(err)
+				}
 				_, err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 					RepoID:  update.repoID,
 					Perm:    authz.Read,
@@ -336,7 +345,10 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	}
 
 	// Set both effective and pending permissions for a user
-	if _, err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
+	if err = s.store.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: user.ID}, []int32{int32(repo.ID)}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 		RepoID:  int32(repo.ID),
 		Perm:    authz.Read,
 		UserIDs: toMapset(user.ID),
