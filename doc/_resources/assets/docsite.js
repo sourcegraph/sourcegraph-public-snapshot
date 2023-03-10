@@ -147,6 +147,7 @@ Promise.all([domContentLoadedPromise, importEventLoggerPromise]).then(([_, { Eve
         path: window.location.pathname,
         downloadSource: 'docs',
         downloadName,
+        linkUrl: event.target.href,
       }
 
       console.log('DownloadClick', eventArguments) // TODO: remove console log
