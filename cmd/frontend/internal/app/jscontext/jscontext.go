@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
@@ -306,7 +305,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AssetsRoot:          assetsutil.URL("").String(),
 		Version:             version.Version(),
 		IsAuthenticatedUser: a.IsAuthenticated(),
-		CurrentUser:         createCurrentUser(ctx, user, db, licenseInfo),
+		CurrentUser:         createCurrentUser(ctx, user, db),
 		TemporarySettings:   &TemporarySettings{GraphQLTypename: "TemporarySettings", Contents: temporarySettings},
 
 		SentryDSN:                  sentryDSN,
@@ -382,24 +381,12 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	}
 }
 
-func isFreePlan(licenseInfo *hooks.LicenseInfo) bool {
-	if licenseInfo == nil {
-		return true
-	}
-	switch licenseInfo.CurrentPlan {
-	case "free-0", "free-1":
-		return true
-	default:
-		return false
-	}
-}
-
 // createCurrentUser creates CurrentUser object which contains of types.User
 // properties along with some extra data such as user emails, organisations,
 // session information, etc.
 //
 // We return a nil CurrentUser object on any error.
-func createCurrentUser(ctx context.Context, user *types.User, db database.DB, licenseInfo *hooks.LicenseInfo) *CurrentUser {
+func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *CurrentUser {
 	if user == nil {
 		return nil
 	}
@@ -442,7 +429,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB, li
 		URL:                 userResolver.URL(),
 		Username:            userResolver.Username(),
 		ViewerCanAdminister: canAdminister,
-		Permissions:         resolveUserPermissions(ctx, userResolver, licenseInfo),
+		Permissions:         resolveUserPermissions(ctx, userResolver),
 	}
 }
 
@@ -453,47 +440,31 @@ func derefString(s *string) string {
 	return *s
 }
 
-func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.UserResolver, licenseInfo *hooks.LicenseInfo) PermissionsConnection {
-	if isFreePlan(licenseInfo) {
-		return PermissionsConnection{
-			GraphQLTypename: "PermissionConnection",
-			Nodes:           []Permission{},
-		}
+func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.UserResolver) PermissionsConnection {
+	connection := PermissionsConnection{
+		GraphQLTypename: "PermissionConnection",
+		Nodes:           []Permission{},
 	}
-	userID := userResolver.ID()
 
-	permissionResolver, err := userResolver.Permissions(ctx, &graphqlbackend.ListPermissionArgs{
-		ConnectionResolverArgs: graphqlutil.ConnectionResolverArgs{},
-		User:                   &userID,
-	})
+	permissionResolver, err := userResolver.Permissions(ctx)
 	if err != nil {
-		return PermissionsConnection{
-			GraphQLTypename: "PermissionConnection",
-			Nodes:           []Permission{},
-		}
+		return connection
 	}
 
 	nodes, err := permissionResolver.Nodes(ctx)
 	if err != nil {
-		return PermissionsConnection{
-			GraphQLTypename: "PermissionConnection",
-			Nodes:           []Permission{},
-		}
+		return connection
 	}
 
-	userPermissions := make([]Permission, 0, len(nodes))
 	for _, node := range nodes {
-		userPermissions = append(userPermissions, Permission{
+		connection.Nodes = append(connection.Nodes, Permission{
 			GraphQLTypename: "Permission",
 			ID:              node.ID(),
 			DisplayName:     node.DisplayName(),
 		})
 	}
 
-	return PermissionsConnection{
-		GraphQLTypename: "PermissionConnection",
-		Nodes:           userPermissions,
-	}
+	return connection
 }
 
 func resolveUserOrganizations(ctx context.Context, user *graphqlbackend.UserResolver) *UserOrganizationsConnection {
