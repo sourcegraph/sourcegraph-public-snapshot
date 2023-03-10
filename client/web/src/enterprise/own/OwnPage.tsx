@@ -1,12 +1,25 @@
 import { mdiAccount, mdiOpenInNew } from '@mdi/js'
 
-import { Container, H1, H2, H3, Icon, Link, PageHeader, Text, useMatchMedia } from '@sourcegraph/wildcard'
+import {
+    Container,
+    H1,
+    H2,
+    H3,
+    Icon,
+    Link,
+    PageHeader,
+    ProductStatusBadge,
+    Text,
+    useMatchMedia,
+} from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 
 /**
- * A page explaining how to use Sourcegraph Own
+ * A page explaining how to use Sourcegraph Own.
+ * Note that this page is visible regardless of whether the `search-ownership`
+ * feature flag has been enabled.
  */
 export const OwnPage: React.FunctionComponent<{}> = () => {
     const allowAutoplay = useMatchMedia('(prefers-reduced-motion: no-preference)')
@@ -14,15 +27,16 @@ export const OwnPage: React.FunctionComponent<{}> = () => {
     return (
         <Page>
             <PageTitle title="Sourcegraph Own" />
-            <PageHeader description="Track and update code ownership across your entire codebase.">
+            <PageHeader description="Track and update code ownership across your entire codebase." className="mb-3">
                 <H1 as="h2" className="d-flex align-items-center">
                     <Icon svgPath={mdiAccount} aria-hidden={true} />
                     <span className="ml-2">Own</span>
+                    <ProductStatusBadge status="experimental" className="ml-2" />
                 </H1>
             </PageHeader>
 
             <Container className="mb-3">
-                <div className="row align-items-center">
+                <div className="row align-items-start">
                     <div className="col-12 col-md-7">
                         <video
                             className="w-100 h-auto shadow percy-hide"
@@ -35,12 +49,8 @@ export const OwnPage: React.FunctionComponent<{}> = () => {
                             controls={!allowAutoplay}
                         >
                             <source
-                                type="video/webm"
-                                src="https://storage.googleapis.com/sourcegraph-assets/batch-changes/how-it-works.webm"
-                            />
-                            <source
                                 type="video/mp4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/batch-changes/how-it-works.mp4"
+                                src="https://storage.googleapis.com/sourcegraph-assets/own-search-file-owners.mp4"
                             />
                         </video>
                     </div>
