@@ -46,6 +46,7 @@ const (
 	routeRepoTags                = "repo-tags"
 	routeRepoCompare             = "repo-compare"
 	routeRepoStats               = "repo-stats"
+	routeRepoOwnership           = "repo-own"
 	routeInsights                = "insights"
 	routeSetup                   = "setup"
 	routeBatchChanges            = "batch-changes"
@@ -218,6 +219,7 @@ func newRouter() *mux.Router {
 	repo.PathPrefix("/tags").Methods("GET").Name(routeRepoTags)
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
 	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
+	repo.PathPrefix("/own").Methods("GET").Name(routeRepoOwnership)
 
 	// legacy redirects
 	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
@@ -273,6 +275,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	router.Get(routeRepoTags).Handler(brandedNoIndex("Tags"))
 	router.Get(routeRepoCompare).Handler(brandedNoIndex("Compare"))
 	router.Get(routeRepoStats).Handler(brandedNoIndex("Stats"))
+	router.Get(routeRepoOwnership).Handler(brandedNoIndex("Ownership"))
 	router.Get(routeSurvey).Handler(brandedNoIndex("Survey"))
 	router.Get(routeSurveyScore).Handler(brandedNoIndex("Survey"))
 	router.Get(routeRegistry).Handler(brandedNoIndex("Registry"))
