@@ -122,9 +122,6 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 		remove := func(currentEmails []*database.UserEmail, toRemove string) ([]*database.UserEmail, error) {
 			for i, email := range currentEmails {
 				if email.Email == toRemove {
-					if email.Primary {
-						return currentEmails, errors.New("cant delete primary email")
-					}
 					return append(currentEmails[:i], currentEmails[i+1:]...), nil
 				}
 			}
