@@ -86,7 +86,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                 />
                 <Route path=":insightId" element={<CodeInsightIndependentPage telemetryService={telemetryService} />} />
 
-                <Route element={<NotFoundPage pageType="code insights" />} />
+                <Route path="*" element={<NotFoundPage pageType="code insights" />} />
             </Routes>
         </CodeInsightsBackendContext.Provider>
     )
