@@ -92,7 +92,7 @@ export const TeamArea: React.FunctionComponent<TeamAreaProps> = ({ authenticated
                 <Route path="" element={<TeamProfilePage {...context} />} errorElement={<RouteError />} />
                 <Route path="members" element={<TeamMembersPage {...context} />} errorElement={<RouteError />} />
                 <Route path="child-teams" element={<TeamChildTeamsPage {...context} />} errorElement={<RouteError />} />
-                <Route element={<NotFoundPage />} />
+                <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </React.Suspense>
     )

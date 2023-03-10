@@ -163,7 +163,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
                                         />
                                     )
                             )}
-                            <Route element={<NotFoundPage pageType="settings" />} />
+                            <Route path="*" element={<NotFoundPage pageType="settings" />} />
                         </Routes>
                     </React.Suspense>
                 </div>
