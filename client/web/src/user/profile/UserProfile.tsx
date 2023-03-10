@@ -65,7 +65,7 @@ export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) =>
                             {data.isList ? (
                                 <ul>
                                     {data.value.map((value, index) => (
-                                        <li key={index}>{value}</li>
+                                        <li key={value}>{value}</li>
                                     ))}
                                 </ul>
                             ) : (
