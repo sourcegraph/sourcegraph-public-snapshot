@@ -13,6 +13,7 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
@@ -187,6 +188,18 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			perms := edb.NewStrictMockPermsStore()
 			perms.TransactFunc.SetDefaultReturn(perms, nil)
 			perms.DoneFunc.SetDefaultReturn(nil)
+			perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, ids []authz.UserIDWithExternalAccountID) error {
+				expUserIDs := maps.Keys(test.expUserIDs)
+				userIDs := make([]int32, len(ids))
+				for i, u := range ids {
+					userIDs[i] = u.UserID
+				}
+				if diff := cmp.Diff(expUserIDs, userIDs); diff != "" {
+					return errors.Errorf("userIDs expected: %v, got: %v", expUserIDs, userIDs)
+				}
+
+				return nil
+			})
 			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 				ids := p.UserIDs
 				if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
@@ -667,10 +680,10 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		r := &Resolver{db: db, logger: logger}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx, nil)
+		result, err := r.CancelPermissionsSyncJob(ctx, nil)
 
 		require.EqualError(t, err, auth.ErrMustBeSiteAdmin.Error())
-		require.Nil(t, result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageError, result)
 	})
 
 	t.Run("invalid sync job ID", func(t *testing.T) {
@@ -690,7 +703,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		)
 
 		require.Error(t, err)
-		require.Nil(t, result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageError, result)
 	})
 
 	t.Run("sync job not found", func(t *testing.T) {
@@ -714,8 +727,34 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 			},
 		)
 
-		require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
 		require.NoError(t, err)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageNotFound, result)
+	})
+
+	t.Run("SQL error", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+		const errorText = "oops"
+		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(errors.New(errorText))
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+		r := &Resolver{db: db, logger: logger}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		result, err := r.CancelPermissionsSyncJob(ctx,
+			&graphqlbackend.CancelPermissionsSyncJobArgs{
+				Job: marshalPermissionsSyncJobID(1337),
+			},
+		)
+
+		require.EqualError(t, err, errorText)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageError, result)
 	})
 
 	t.Run("sync job successfully cancelled", func(t *testing.T) {
@@ -739,7 +778,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 			},
 		)
 
-		require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageSuccess, result)
 		require.NoError(t, err)
 	})
 }
@@ -755,7 +794,7 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 		if jobID == 1 && reason == "because" {
 			return nil
 		}
-		return errors.New("Oh no, something's wrong.")
+		return database.MockPermissionsSyncJobNotFoundErr
 	})
 
 	db := edb.NewStrictMockEnterpriseDB()
@@ -770,16 +809,31 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 					cancelPermissionsSyncJob(
 						job: "%s",
 						reason: "because"
-					) {
-						alwaysNil
-					}
+					)
 				}
 			`, marshalPermissionsSyncJobID(1)),
 			ExpectedResult: `
 				{
-					"cancelPermissionsSyncJob": {
-						"alwaysNil": null
-					}
+					"cancelPermissionsSyncJob": "SUCCESS"
+				}
+			`,
+		})
+	})
+
+	t.Run("sync job is already dequeued", func(t *testing.T) {
+		graphqlbackend.RunTest(t, &graphqlbackend.Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: fmt.Sprintf(`
+				mutation {
+					cancelPermissionsSyncJob(
+						job: "%s",
+						reason: "cause"
+					)
+				}
+			`, marshalPermissionsSyncJobID(42)),
+			ExpectedResult: `
+				{
+					"cancelPermissionsSyncJob": "NOT_FOUND"
 				}
 			`,
 		})
@@ -1376,6 +1430,9 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 		p.UpdatedAt = clock()
 		p.SyncedAt = clock()
 		return nil
+	})
+	perms.IsRepoUnrestrictedFunc.SetDefaultHook(func(_ context.Context, _ api.RepoID) (bool, error) {
+		return false, nil
 	})
 
 	db := edb.NewStrictMockEnterpriseDB()

@@ -23,13 +23,26 @@ type inputPackageFilter struct {
 	}
 }
 
+type filterMatchingResolver struct {
+	packageResolver *packageRepoReferenceConnectionResolver
+	versionResolver *packageRepoReferenceVersionConnectionResolver
+}
+
+func (r *filterMatchingResolver) ToPackageRepoReferenceConnection() (*packageRepoReferenceConnectionResolver, bool) {
+	return r.packageResolver, r.packageResolver != nil
+}
+
+func (r *filterMatchingResolver) ToPackageRepoReferenceVersionConnection() (*packageRepoReferenceVersionConnectionResolver, bool) {
+	return r.versionResolver, r.versionResolver != nil
+}
+
 func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context, args struct {
 	Kind   string
 	Filter inputPackageFilter
 	graphqlutil.ConnectionArgs
 	After *string
 },
-) (_ *packageRepoReferenceConnectionResolver, err error) {
+) (_ *filterMatchingResolver, err error) {
 	if args.Filter.NameFilter == nil && args.Filter.VersionFilter == nil {
 		return nil, errors.New("must provide either nameFilter or versionFilter")
 	}
@@ -42,28 +55,41 @@ func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context
 
 	var after int
 	if args.After != nil {
-		if after, err = graphqlutil.DecodeIntCursor(args.After); err != nil {
+		if err = relay.UnmarshalSpec(graphql.ID(*args.After), &after); err != nil {
 			return nil, err
 		}
 	}
 
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
 
-	matchingPkgs, totalCount, err := depsService.PackagesOrVersionsMatchingFilter(ctx, shared.MinimalPackageFilter{
+	matchingPkgs, totalCount, hasMore, err := depsService.PackagesOrVersionsMatchingFilter(ctx, shared.MinimalPackageFilter{
 		PackageScheme: externalServiceToPackageSchemeMap[args.Kind],
 		NameFilter:    args.Filter.NameFilter,
 		VersionFilter: args.Filter.VersionFilter,
 	}, limit, after)
 
-	return &packageRepoReferenceConnectionResolver{
-		db:    r.db,
-		deps:  matchingPkgs,
-		total: totalCount,
-	}, err
-}
+	if args.Filter.NameFilter != nil {
+		return &filterMatchingResolver{
+			packageResolver: &packageRepoReferenceConnectionResolver{
+				db:      r.db,
+				deps:    matchingPkgs,
+				hasMore: hasMore,
+				total:   totalCount,
+			},
+		}, err
+	}
 
-type packageRepoFilterResolver struct {
-	filter dependencies.PackageRepoFilter
+	var versions []shared.PackageRepoRefVersion
+	if len(matchingPkgs) == 1 {
+		versions = matchingPkgs[0].Versions
+	}
+	return &filterMatchingResolver{
+		versionResolver: &packageRepoReferenceVersionConnectionResolver{
+			versions: versions,
+			hasMore:  hasMore,
+			total:    totalCount,
+		},
+	}, err
 }
 
 func (r *schemaResolver) PackageRepoFilters(ctx context.Context, args struct {
@@ -82,7 +108,7 @@ func (r *schemaResolver) PackageRepoFilters(ctx context.Context, args struct {
 	}
 
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
-	filters, err := depsService.ListPackageRepoFilters(ctx, opts)
+	filters, _, err := depsService.ListPackageRepoFilters(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "error listing package repo filters")
 	}
@@ -97,6 +123,10 @@ func (r *schemaResolver) PackageRepoFilters(ctx context.Context, args struct {
 	}
 
 	return resolvers, nil
+}
+
+type packageRepoFilterResolver struct {
+	filter dependencies.PackageRepoFilter
 }
 
 func (r *packageRepoFilterResolver) ID() graphql.ID {

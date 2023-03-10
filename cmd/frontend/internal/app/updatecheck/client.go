@@ -10,12 +10,14 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -123,6 +125,11 @@ func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
 	return db.Orgs().Count(ctx, database.OrgsListOptions{})
 }
 
+func getTotalReposCount(ctx context.Context, db database.DB) (_ int, err error) {
+	defer recordOperation("getTotalReposCount")(&err)
+	return db.Repos().Count(ctx, database.ReposListOptions{})
+}
+
 // hasRepo returns true when the instance has at least one repository that isn't
 // soft-deleted nor blocked.
 func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {
@@ -191,6 +198,16 @@ func getAndMarshalRepositoriesJSON(ctx context.Context, db database.DB) (_ json.
 		return nil, err
 	}
 	return json.Marshal(repos)
+}
+
+func getAndMarshalRepositorySizeHistogramJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalRepositorySizeHistogramJSON")(&err)
+
+	buckets, err := usagestats.GetRepositorySizeHistorgram(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(buckets)
 }
 
 func getAndMarshalRetentionStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
@@ -404,6 +421,52 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
+// Create a ping body with limited fields, used in Sourcegraph App.
+func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
+	logFunc := logger.Debug
+
+	r := &pingRequest{
+		ClientSiteID:        siteid.Get(),
+		DeployType:          deploy.Type(),
+		ClientVersionString: version.Version(),
+	}
+
+	os := runtime.GOOS
+	if os == "darwin" {
+		os = "mac"
+	}
+	r.Os = os
+
+	totalRepos, err := getTotalReposCount(ctx, db)
+	if err != nil {
+		logFunc("getTotalReposCount failed", log.Error(err))
+	}
+	r.TotalRepos = int32(totalRepos)
+
+	usersActiveTodayCount, err := getUsersActiveTodayCount(ctx, db)
+	if err != nil {
+		logFunc("getUsersActiveTodayCount failed", log.Error(err))
+	}
+	r.ActiveToday = usersActiveTodayCount > 0
+
+	contents, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+
+	err = db.EventLogs().Insert(ctx, &database.Event{
+		UserID:          0,
+		Name:            "ping",
+		URL:             "",
+		AnonymousUserID: "backend",
+		Source:          "BACKEND",
+		Argument:        contents,
+		Timestamp:       time.Now().UTC(),
+	})
+
+	return bytes.NewReader(contents), err
+}
+
 func getAndMarshalOwnUsageJSON(ctx context.Context, db database.DB) (json.RawMessage, error) {
 	stats, err := usagestats.GetOwnershipUsageStats(ctx, db)
 	if err != nil {
@@ -527,6 +590,11 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
 		if err != nil {
 			logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
+		}
+
+		r.RepositorySizeHistogram, err = getAndMarshalRepositorySizeHistogramJSON(ctx, db)
+		if err != nil {
+			logFunc("getAndMarshalRepositorySizeHistogramJSON failed", log.Error(err))
 		}
 
 		r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx, db)
@@ -695,10 +763,17 @@ func check(logger log.Logger, db database.DB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
+	updateBodyFunc := updateBody
+	// In Sourcegraph App mode, use limited pings.
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		updateBodyFunc = limitedUpdateBody
+	}
 	endpoint := updateCheckURL(logger)
 
 	doCheck := func() (updateVersion string, err error) {
-		body, err := updateBody(ctx, logger, db)
+		body, err := updateBodyFunc(ctx, logger, db)
+
 		if err != nil {
 			return "", err
 		}

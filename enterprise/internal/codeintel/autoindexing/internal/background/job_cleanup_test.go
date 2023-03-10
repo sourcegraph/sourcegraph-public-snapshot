@@ -10,12 +10,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
-func TestShouldDeleteUploadsForCommit(t *testing.T) {
+func TestShouldDeleteRecordsForCommit(t *testing.T) {
 	resolveRevisionFunc := func(commit string) error {
 		return nil
 	}
 
-	testShouldDeleteUploadsForCommit(t, resolveRevisionFunc, []updateInvocation{
+	testShouldDeleteRecordsForCommit(t, resolveRevisionFunc, []updateInvocation{
 		{1, "foo-x", false},
 		{1, "foo-y", false},
 		{1, "foo-z", false},
@@ -28,7 +28,7 @@ func TestShouldDeleteUploadsForCommit(t *testing.T) {
 	})
 }
 
-func TestShouldDeleteUploadsForCommitUnknownCommit(t *testing.T) {
+func TestShouldDeleteRecordsForCommitUnknownCommit(t *testing.T) {
 	resolveRevisionFunc := func(commit string) error {
 		if commit == "foo-y" || commit == "bar-x" || commit == "baz-z" {
 			return &gitdomain.RevisionNotFoundError{}
@@ -37,7 +37,7 @@ func TestShouldDeleteUploadsForCommitUnknownCommit(t *testing.T) {
 		return nil
 	}
 
-	testShouldDeleteUploadsForCommit(t, resolveRevisionFunc, []updateInvocation{
+	testShouldDeleteRecordsForCommit(t, resolveRevisionFunc, []updateInvocation{
 		{1, "foo-x", false},
 		{1, "foo-y", true},
 		{1, "foo-z", false},
@@ -50,7 +50,7 @@ func TestShouldDeleteUploadsForCommitUnknownCommit(t *testing.T) {
 	})
 }
 
-func TestShouldDeleteUploadsForCommitUnknownRepository(t *testing.T) {
+func TestShouldDeleteRecordsForCommitUnknownRepository(t *testing.T) {
 	resolveRevisionFunc := func(commit string) error {
 		if strings.HasPrefix(commit, "foo-") {
 			return &gitdomain.RepoNotExistError{}
@@ -59,7 +59,7 @@ func TestShouldDeleteUploadsForCommitUnknownRepository(t *testing.T) {
 		return nil
 	}
 
-	testShouldDeleteUploadsForCommit(t, resolveRevisionFunc, []updateInvocation{
+	testShouldDeleteRecordsForCommit(t, resolveRevisionFunc, []updateInvocation{
 		{1, "foo-x", false},
 		{1, "foo-y", false},
 		{1, "foo-z", false},
@@ -84,17 +84,15 @@ var testSourcedCommits = []shared.SourcedCommits{
 	{RepositoryID: 3, RepositoryName: "baz", Commits: []string{"baz-x", "baz-y", "baz-z"}},
 }
 
-func testShouldDeleteUploadsForCommit(t *testing.T, resolveRevisionFunc func(commit string) error, expectedCalls []updateInvocation) {
+func testShouldDeleteRecordsForCommit(t *testing.T, resolveRevisionFunc func(commit string) error, expectedCalls []updateInvocation) {
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, i int, spec string) (api.CommitID, error) {
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	})
 
-	job := janitorJob{gitserverClient: gitserverClient}
-
 	for _, sc := range testSourcedCommits {
 		for _, commit := range sc.Commits {
-			shouldDelete, err := job.shouldDeleteUploadsForCommit(context.Background(), sc.RepositoryID, commit)
+			shouldDelete, err := shouldDeleteRecordsForCommit(context.Background(), gitserverClient, sc.RepositoryID, commit)
 			if err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}

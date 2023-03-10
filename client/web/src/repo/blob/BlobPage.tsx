@@ -126,7 +126,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const { repoID, repoName, repoServiceType, revision, commitID, filePath, useBreadcrumb, mode } = props
     const { enableCodeMirror, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(features => ({
         enableCodeMirror: features.enableCodeMirrorFileView ?? true,
-        enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? false,
+        enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? true,
     }))
     const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
 

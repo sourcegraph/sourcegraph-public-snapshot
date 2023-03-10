@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 
@@ -109,6 +110,13 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		UserIDs: userIDs,
 	}
 
+	perms := make([]authz.UserIDWithExternalAccountID, 0, len(userIDs))
+	for userID := range userIDs {
+		perms = append(perms, authz.UserIDWithExternalAccountID{
+			UserID: userID,
+		})
+	}
+
 	txs, err := r.db.Perms().Transact(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "start transaction")
@@ -121,7 +129,9 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		AccountIDs:  pendingBindIDs,
 	}
 
-	if _, err = txs.SetRepoPermissions(ctx, p); err != nil {
+	if err = txs.SetRepoPerms(ctx, p.RepoID, perms); err != nil {
+		return nil, errors.Wrap(err, "set user repo permissions")
+	} else if _, err = txs.SetRepoPermissions(ctx, p); err != nil {
 		return nil, errors.Wrap(err, "set repository permissions")
 	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
 		return nil, errors.Wrap(err, "set repository pending permissions")
@@ -342,19 +352,19 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlbackend.CancelPermissionsSyncJobArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlbackend.CancelPermissionsSyncJobArgs) (graphqlbackend.CancelPermissionsSyncJobResultMessage, error) {
 	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
-		return nil, err
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
 	}
 
 	// 🚨 SECURITY: Only site admins can cancel permissions sync jobs.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
 	}
 
 	syncJobID, err := unmarshalPermissionsSyncJobID(args.Job)
 	if err != nil {
-		return nil, err
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
 	}
 
 	reason := ""
@@ -365,10 +375,13 @@ func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlba
 	err = r.db.PermissionSyncJobs().CancelQueuedJob(ctx, reason, syncJobID)
 	// We shouldn't return an error when the job is already processing or not found
 	// by ID (might already be cleaned up).
-	if err != nil && !errcode.IsNotFound(err) {
-		return nil, err
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return graphqlbackend.CancelPermissionsSyncJobResultMessageNotFound, nil
+		}
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return graphqlbackend.CancelPermissionsSyncJobResultMessageSuccess, nil
 }
 
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
@@ -571,10 +584,6 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 		return nil, err
 	}
 
-	if err == authz.ErrPermsNotFound {
-		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
-	}
-
 	return &permissionsInfoResolver{
 		db:           r.db,
 		ossDB:        r.ossDB,
@@ -612,10 +621,6 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 		return nil, err
 	}
 
-	if err == authz.ErrPermsNotFound {
-		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
-	}
-
 	return &permissionsInfoResolver{
 		db:        r.db,
 		ossDB:     r.ossDB,
@@ -634,3 +639,5 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.
 
 	return NewPermissionsSyncJobsResolver(r.db, args)
 }
+
+func strPtr(s string) *string { return &s }

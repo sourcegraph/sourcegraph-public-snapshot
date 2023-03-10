@@ -38,9 +38,7 @@ import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS } from './backend'
 
 import styles from './SiteAdminUpdatesPage.module.scss'
 
-interface Props extends TelemetryProps {
-    isSourcegraphApp: boolean
-}
+interface Props extends TelemetryProps {}
 
 const SiteUpdateCheck: React.FC = () => {
     const { data, loading, error } = useQuery<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK, {})
@@ -203,23 +201,19 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
 /**
  * A page displaying information about available updates for the server.
  */
-export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService, isSourcegraphApp }) => {
+export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService }) => {
     useMemo(() => {
         telemetryService.logViewEvent('SiteAdminUpdates')
     }, [telemetryService])
 
     return (
         <div>
-            <PageTitle title={`${isSourcegraphApp ? 'Overview' : 'Updates'} - Admin`} />
+            <PageTitle title="Updates - Admin" />
 
-            {!isSourcegraphApp ? (
-                <>
-                    <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
-                    <Container className="mb-3">
-                        <SiteUpdateCheck />
-                    </Container>
-                </>
-            ) : null}
+            <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
+            <Container className="mb-3">
+                <SiteUpdateCheck />
+            </Container>
 
             <PageHeader path={[{ text: 'Readiness' }]} headingElement="h2" className="mb-3" />
             <Container className="mb-3">

@@ -78,7 +78,7 @@ func TestCheckCurrentUserHasPermission(t *testing.T) {
 			name:        "unauthorized user",
 			context:     actor.WithActor(ctx, &actor.Actor{UID: u1.ID}),
 			permission:  p.DisplayName(),
-			expectedErr: ErrNotAuthorized,
+			expectedErr: &ErrNotAuthorized{Permission: p.DisplayName()},
 		},
 		{
 			name:        "authorized user",

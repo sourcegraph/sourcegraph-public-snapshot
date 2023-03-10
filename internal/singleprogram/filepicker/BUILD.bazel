@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/syncx",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],

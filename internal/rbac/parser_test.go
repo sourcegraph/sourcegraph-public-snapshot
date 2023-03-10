@@ -58,7 +58,7 @@ func TestParsePermissionDisplayName(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ns, action, err := parsePermissionDisplayName(tc.displayName)
+			ns, action, err := ParsePermissionDisplayName(tc.displayName)
 
 			require.Equal(t, ns, tc.namespace)
 			require.Equal(t, action, tc.action)

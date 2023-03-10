@@ -293,7 +293,7 @@ func (s *store) InsertPathRanks(
 	ctx context.Context,
 	derivativeGraphKey string,
 	batchSize int,
-) (numPathRanksInserted float64, numInputsProcessed float64, err error) {
+) (numPathRanksInserted int, numInputsProcessed int, err error) {
 	ctx, _, endObservation := s.operations.insertPathRanks.With(
 		ctx,
 		&err,
@@ -401,17 +401,16 @@ const vacuumBatchSize = 1000
 // TODO - configure via envvar
 var threshold = time.Duration(1) * time.Hour
 
-func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
+func (s *store) VacuumStaleDefinitions(ctx context.Context, graphKey string) (
+	numDefinitionRecordsScanned int,
 	numStaleDefinitionRecordsDeleted int,
-	numStaleReferenceRecordsDeleted int,
 	err error,
 ) {
-	ctx, _, endObservation := s.operations.vacuumStaleDefinitionsAndReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.vacuumStaleDefinitions.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
-		vacuumStaleDefinitionsAndReferencesQuery,
-		graphKey, int(threshold/time.Hour), vacuumBatchSize,
+		vacuumStaleDefinitionsQuery,
 		graphKey, int(threshold/time.Hour), vacuumBatchSize,
 	))
 	if err != nil {
@@ -421,17 +420,17 @@ func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKe
 
 	for rows.Next() {
 		if err := rows.Scan(
+			&numDefinitionRecordsScanned,
 			&numStaleDefinitionRecordsDeleted,
-			&numStaleReferenceRecordsDeleted,
 		); err != nil {
 			return 0, 0, err
 		}
 	}
 
-	return numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, nil
+	return numDefinitionRecordsScanned, numStaleDefinitionRecordsDeleted, nil
 }
 
-const vacuumStaleDefinitionsAndReferencesQuery = `
+const vacuumStaleDefinitionsQuery = `
 WITH
 locked_definitions AS (
 	SELECT
@@ -455,7 +454,43 @@ deleted_definitions AS (
 	DELETE FROM codeintel_ranking_definitions
 	WHERE id IN (SELECT ld.id FROM locked_definitions ld WHERE NOT ld.safe)
 	RETURNING 1
-),
+)
+SELECT
+	(SELECT COUNT(*) FROM locked_definitions),
+	(SELECT COUNT(*) FROM deleted_definitions)
+`
+
+func (s *store) VacuumStaleReferences(ctx context.Context, graphKey string) (
+	numReferenceRecordsScanned int,
+	numStaleReferenceRecordsDeleted int,
+	err error,
+) {
+	ctx, _, endObservation := s.operations.vacuumStaleReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
+		vacuumStaleReferencesQuery,
+		graphKey, int(threshold/time.Hour), vacuumBatchSize,
+	))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&numReferenceRecordsScanned,
+			&numStaleReferenceRecordsDeleted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return numReferenceRecordsScanned, numStaleReferenceRecordsDeleted, nil
+}
+
+const vacuumStaleReferencesQuery = `
+WITH
 locked_references AS (
 	SELECT
 		rr.id,
@@ -480,7 +515,7 @@ deleted_references AS (
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM deleted_definitions),
+	(SELECT COUNT(*) FROM locked_references),
 	(SELECT COUNT(*) FROM deleted_references)
 `
 
@@ -541,22 +576,30 @@ SELECT
 	(SELECT COUNT(*) FROM deleted_path_counts_inputs)
 `
 
-func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (rankRecordsSDeleted int, err error) {
+func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (rankRecordsDeleted, rankRecordsScanned int, err error) {
 	ctx, _, endObservation := s.operations.vacuumStaleRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
 	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
 	if !ok {
-		return 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
+		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
 	}
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		vacuumStaleRanksQuery,
 		derivativeGraphKey,
 		graphKey,
 		derivativeGraphKey,
-	)))
-	return count, err
+	))
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(&rankRecordsScanned, &rankRecordsDeleted); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return rankRecordsScanned, rankRecordsDeleted, nil
 }
 
 const vacuumStaleRanksQuery = `
@@ -598,5 +641,7 @@ del AS (
 	WHERE repository_id IN (SELECT repository_id FROM locked_records)
 	RETURNING 1
 )
-SELECT COUNT(*) FROM del
+SELECT
+	(SELECT COUNT(*) FROM locked_records),
+	(SELECT COUNT(*) FROM del)
 `

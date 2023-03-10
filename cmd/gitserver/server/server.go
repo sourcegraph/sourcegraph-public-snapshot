@@ -1932,7 +1932,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Make sure credentials are valid before heavier operation
-	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	err := p4testWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
