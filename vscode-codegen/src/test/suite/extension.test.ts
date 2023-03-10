@@ -2,7 +2,7 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { ChatMessage } from '../../chat/view'
+import { ChatMessage } from '../../chat/ChatViewProvider'
 import { ExtensionApi } from '../../extension-api'
 import * as mockServer from '../mock-server'
 

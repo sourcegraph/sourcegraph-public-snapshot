@@ -12,3 +12,4 @@ tsconfig.json
 *.tsbuildinfo
 .eslintrc.js
 scripts/
+webviews/**

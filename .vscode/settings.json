@@ -20,5 +20,8 @@
 	"eslint.validate": ["javascript", "typescript"],
 	"editor.codeActionsOnSave": {},
 	"eslint.codeActionsOnSave.mode": "problems",
-	"eslint.options": { "cache": true }
+	"eslint.options": {
+		"cache": true
+	},
+	"cody.codebase": "dev.cody"
 }

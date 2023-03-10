@@ -4,6 +4,7 @@
   "version": "0.0.6",
   "publisher": "hpargecruos",
   "license": "Enterprise",
+  "icon": "resources/cody.png",
   "description": "",
   "categories": [
     "Other"
@@ -21,14 +22,19 @@
     "vscode": "^1.74.0"
   },
   "scripts": {
-    "bundle": "ts-node --transpileOnly scripts/bundle.ts",
+    "build": "NODE_ENV=production webpack && vite build --mode production",
+    "build:dev": "NODE_ENV=development webpack && vite build --mode development",
     "download-rg": "scripts/download-rg.sh",
-    "vsce:package": "scripts/check-rg.sh && pnpm run --silent bundle && vsce package --no-dependencies -o dist/kodj.vsix",
-    "test-deps": "scripts/check-rg.sh && pnpm bundle && pnpm exec tsc --build",
+    "prebuild": "NODE_ENV=development ",
     "test": "pnpm test-deps && node ./out/test/runTest.js",
+    "test-deps": "scripts/check-rg.sh && pnpm run --silent build:dev  && vsce package patch --pre-release --no-dependencies -o dist/kodj.vsix",
+    "vsce:package": "scripts/check-rg.sh && pnpm run --silent build && vsce package --no-dependencies -o dist/kodj.vsix",
+    "watch": "NODE_ENV=development concurrently \"webpack --watch\" \"pnpm run watch:webview\"",
+    "watch:webpack": "NODE_ENV=development webpack --watch",
+    "watch:webview": "vite build --mode development --watch",
     "unittest": "mocha ./out/test/unittest"
   },
-  "main": "./dist/node/extension.js",
+  "main": "./dist/extension.js",
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -193,15 +199,18 @@
         "cody.serverEndpoint": {
           "type": "string",
           "default": "https://cody.sgdev.org",
+          "example": "https://cody.sgdev.org",
           "description": "URL to the Cody server"
         },
         "cody.embeddingsEndpoint": {
           "type": "string",
           "default": "https://cody.sgdev.org",
+          "example": "https://cody.sgdev.org",
           "description": "URL to the Cody embeddings API"
         },
         "cody.codebase": {
-          "type": "string"
+          "type": "string",
+          "example": "github.com/sourcegraph/sourcegraph"
         },
         "cody.debug": {
           "type": "boolean"
@@ -229,6 +238,8 @@
     "@types/marked": "^4.0.8",
     "@types/node": "^16.18.1",
     "@types/node-fetch": "^2.6.2",
+    "@types/react": "^18.0.27",
+    "@types/react-dom": "^18.0.10",
     "@types/sanitize-html": "^2.8.0",
     "@types/stopword": "^2.0.0",
     "@types/stream-json": "^1.7.3",
@@ -236,12 +247,20 @@
     "@types/ws": "^8.5.3",
     "@vscode/test-electron": "^2.2.0",
     "@vscode/vsce": "^2.18.0",
+    "@vitejs/plugin-react": "^3.1.0",
     "esbuild": "^0.17.10",
     "glob": "^8.0.3",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.5",
+    "vite": "^4.1.4",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
   },
   "dependencies": {
     "@sourcegraph/cody-common": "workspace:*",
+    "@vscode/webview-ui-toolkit": "^1.2.2",
+    "concurrently": "^7.6.0",
     "escape-html": "^1.0.3",
     "highlight.js": "^11.7.0",
     "isomorphic-ws": "^5.0.0",
@@ -249,6 +268,8 @@
     "natural": "github:NaturalNode/natural#master",
     "node-fetch": "^2.6.7",
     "openai": "^3.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "sanitize-html": "^2.8.1",
     "stopword": "^2.0.7",
     "stream-json": "^1.7.5",

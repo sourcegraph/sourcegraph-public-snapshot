@@ -15,7 +15,7 @@ const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock']
 export class LocalKeywordFetcher {
 	constructor(private rgPath: string) {}
 
-	async getContextMessages(query: string): Promise<Message[]> {
+	public async getContextMessages(query: string): Promise<Message[]> {
 		console.log('fetching keyword matches')
 		const rootPath = getRootPath()
 		if (!rootPath) {
@@ -35,7 +35,7 @@ export class LocalKeywordFetcher {
 		return messagePairs.reverse().flat()
 	}
 
-	async fetchFileStats(
+	public async fetchFileStats(
 		keywords: string[],
 		rootPath: string
 	): Promise<{ [filename: string]: { bytesSearched: number } }> {
@@ -78,7 +78,7 @@ export class LocalKeywordFetcher {
 		return fileTermCounts
 	}
 
-	async fetchFileMatches(
+	public async fetchFileMatches(
 		keywords: string[],
 		rootPath: string
 	): Promise<{
@@ -163,7 +163,7 @@ export class LocalKeywordFetcher {
 		}
 	}
 
-	async fetchKeywordFiles(rootPath: string, query: string): Promise<{ filename: string; score: number }[]> {
+	public async fetchKeywordFiles(rootPath: string, query: string): Promise<{ filename: string; score: number }[]> {
 		const terms = query.split(/\W+/)
 		const stemmedTerms = terms.map(term => natural.PorterStemmer.stem(term)).map(term => escapeRegex(term))
 		// unique stemmed keywords, our representation of the user query

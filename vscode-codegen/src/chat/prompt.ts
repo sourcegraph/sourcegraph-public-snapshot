@@ -36,11 +36,11 @@ export class Transcript {
 		this.keywords = new LocalKeywordFetcher(rgPath)
 	}
 
-	getTranscript(): TranscriptChunk[] {
+	public getTranscript(): TranscriptChunk[] {
 		return this.transcript
 	}
 
-	getDisplayMessages(): Message[] {
+	public getDisplayMessages(): Message[] {
 		return this.transcript.flatMap(({ display, actual }) => display || actual)
 	}
 
@@ -48,7 +48,7 @@ export class Transcript {
 		return this.transcript.flatMap(({ actual }) => actual)
 	}
 
-	getLastContextFiles(): string[] {
+	public getLastContextFiles(): string[] {
 		for (const chunk of [...this.transcript].reverse()) {
 			if (chunk.actual.length === 0) {
 				continue
@@ -106,7 +106,7 @@ export class Transcript {
 
 		let contextMessages: Message[] | undefined
 
-		const fetchEmbeddingsMessages = () =>
+		const fetchEmbeddingsMessages = (): Promise<Message[]> =>
 			this.getEmbeddingsContextMessages(query, {
 				numCodeResults: 8,
 				numMarkdownResults: 2,
@@ -188,7 +188,7 @@ export class Transcript {
 	// messages that should be incorporated into the prompt.
 	// This should only be invoked with the last message was from 'bot'.
 	// Returns the prompt that should be sent to fetch the bot response (same as calling `getPrompt`)
-	async addHumanMessage(humanInput: string): Promise<Message[]> {
+	public async addHumanMessage(humanInput: string): Promise<Message[]> {
 		const actualMessages = this.getUnderlyingMessages()
 		if (actualMessages.length > 0 && actualMessages[actualMessages.length - 1].speaker === 'you') {
 			throw new Error('attempt to add human message when last message was human')
@@ -209,7 +209,7 @@ export class Transcript {
 		return this.getPrompt()
 	}
 
-	async addBotMessage(text: string) {
+	public addBotMessage(text: string): void {
 		this.addMessage({
 			actual: [{ speaker: 'bot', text }],
 			context: [],
@@ -227,7 +227,7 @@ export class Transcript {
 	//   - Note: this means we only include context messages of the most recent chunk that has them
 	// - Visit the next chunk. Repeat until you run out of token budget.
 	// - At the end, incorporate the botResponsePrefix (which controls the first part of the bot response if you wish to constrain that).
-	getPrompt(botResponsePrefix = ''): Message[] {
+	public getPrompt(botResponsePrefix = ''): Message[] {
 		const reversePrompt: Message[] = []
 		const reverseTranscript = [...this.transcript].reverse()
 		let tokenBudget = MAX_AVAILABLE_PROMPT_LENGTH
@@ -275,7 +275,7 @@ export class Transcript {
 		return prompt
 	}
 
-	async resetToRecipe(recipeID: string): Promise<{
+	public async resetToRecipe(recipeID: string): Promise<{
 		prompt: Message[]
 		display: Message[]
 		botResponsePrefix: string
@@ -309,7 +309,7 @@ export class Transcript {
 		}
 	}
 
-	reset(): void {
+	public reset(): void {
 		this.transcript = []
 	}
 }

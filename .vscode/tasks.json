@@ -27,6 +27,24 @@
 			}
 		},
 		{
+			"label": "vsce: pre-build-dev",
+			"type": "npm",
+			"script": "build:dev",
+			"options": { "cwd": "vscode-codegen" },
+			"group": {
+				"kind": "build"
+			}
+		},
+		{
+			"label": "vsce: watch",
+			"type": "npm",
+			"script": "watch",
+			"options": { "cwd": "vscode-codegen" },
+			"group": {
+				"kind": "build"
+			}
+		},
+		{
 			"label": "vscode-codegen: test-deps",
 			"type": "npm",
 			"script": "test-deps",

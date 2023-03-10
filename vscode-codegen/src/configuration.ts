@@ -1,6 +1,8 @@
 import * as vscode from 'vscode'
 
-const CODY_ENDPOINT = 'cody.sgdev.org'
+export const CODY_ENDPOINT = 'cody.sgdev.org'
+
+export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended'
 
@@ -28,4 +30,13 @@ export function getConfiguration(config: vscode.WorkspaceConfiguration): Configu
 		useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
 		experimentalSuggest: config.get('cody.experimental.suggest', false),
 	}
+}
+
+const codyConfiguration = vscode.workspace.getConfiguration('cody')
+const globalConfigTarget = vscode.ConfigurationTarget.Global
+
+// Update user configurations in VS Code for Cody
+export async function updateConfiguration(configKey: string, configValue: string): Promise<void> {
+	// Removing globalConfigTarget will only update configs for the workspace setting only
+	await codyConfiguration.update(configKey, configValue, globalConfigTarget)
 }

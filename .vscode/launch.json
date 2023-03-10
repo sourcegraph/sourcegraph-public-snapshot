@@ -2,12 +2,17 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "Run VS Code Extension",
+			"name": "Launch Cody (Dev) Extension",
 			"type": "extensionHost",
 			"request": "launch",
-			"args": ["--extensionDevelopmentPath=${workspaceFolder}/vscode-codegen"],
-			"outFiles": ["${workspaceFolder}/vscode-codegen/out/**/*.js"],
-			"preLaunchTask": "vscode-codegen: bundle",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/vscode-codegen",
+				"--disable-extension=hpargecruos.kodj",
+				"--disable-extension=sourcegraph.cody"
+			],
+			"outFiles": ["${workspaceFolder}/vscode-codegen/dist/*.js"],
+			"preLaunchTask": "vsce: pre-build-dev",
 			"env": {
 				"NODE_ENV": "development"
 			}

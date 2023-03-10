@@ -1,12 +1,11 @@
-import { readFileSync } from 'fs'
-import path from 'path'
-
 import fetch from 'node-fetch'
 import * as vscode from 'vscode'
 
 import { ChatMetadata, Feedback, Message } from '@sourcegraph/cody-common'
 
+import { CODY_ACCESS_TOKEN_SECRET, updateConfiguration } from '../configuration'
 import { EmbeddingsClient } from '../embeddings-client'
+import { getRgPath } from '../rg'
 import { TestSupport } from '../test-support'
 
 import { renderMarkdown } from './markdown'
@@ -24,12 +23,6 @@ export interface ChatMessage extends Omit<Message, 'text'> {
 const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
-	private readonly staticDir = path.join('resources', 'chat')
-	private readonly staticFiles = {
-		css: ['vscode.css', 'tabs.css', 'style.css', 'highlight.css'],
-		js: ['tabs.js', 'index.js'],
-	}
-
 	private transcript: ChatMessage[] = []
 	private messageInProgress: ChatMessage | null = null
 
@@ -37,19 +30,36 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 	private prompt: Transcript
 	private webview?: vscode.Webview
 
+	private wsclient: Promise<WSChatClient | null>
+	private embeddingsClient: EmbeddingsClient | null
+	private rgPath = 'rg'
+
+	private mode: 'development' | 'production'
+	private tosVersion = 0
+
 	constructor(
+		private codebase: string,
 		private extensionPath: string,
 		private serverUrl: string,
 		private accessToken: string,
-		private wsclient: Promise<WSChatClient | null>,
-		private embeddingsClient: EmbeddingsClient | null,
+		private embeddingsEndpoint: string,
 		private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
 		private debug: boolean,
-		private rgPath: string
+		private secretStorage: vscode.SecretStorage
 	) {
 		if (TestSupport.instance) {
 			TestSupport.instance.chatViewProvider.set(this)
 		}
+
+		this.mode = this.debug ? 'development' : 'production'
+
+		this.findRgPath()
+			.then(path => (this.rgPath = path))
+			.catch(error => console.error(error))
+
+		this.wsclient = this.makeWSChatClient()
+		this.embeddingsClient = this.makeEmbeddingClient()
+
 		this.prompt = new Transcript(
 			this.embeddingsClient,
 			this.contextType,
@@ -59,54 +69,100 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		)
 	}
 
-	async resolveWebviewView(
-		webviewView: vscode.WebviewView,
-		_context: vscode.WebviewViewResolveContext<unknown>,
-		_token: vscode.CancellationToken
-	): Promise<void> {
-		const tosVersion = await vscode.commands.executeCommand('cody.get-accepted-tos-version')
-
-		this.webview = webviewView.webview
-		webviewView.webview.html = this.renderView(webviewView.webview, tosVersion as number)
-		webviewView.webview.options = {
-			enableScripts: true,
-			localResourceRoots: [vscode.Uri.file(path.join(this.extensionPath, this.staticDir))],
-		}
-
-		webviewView.onDidChangeVisibility(async () => {
-			if (webviewView.visible) {
-				const tosVersion = await vscode.commands.executeCommand('cody.get-accepted-tos-version')
-				webviewView.webview.html = this.renderView(webviewView.webview, tosVersion as number)
-			}
-		})
-		webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message, webviewView.webview))
+	private async findRgPath(): Promise<string> {
+		return getRgPath(this.extensionPath)
 	}
 
 	private async onDidReceiveMessage(message: any, webview: vscode.Webview): Promise<void> {
 		switch (message.command) {
 			case 'initialized':
-				this.sendTranscript()
+				await Promise.all([
+					this.sendTranscript(),
+					webview?.postMessage({
+						type: 'token',
+						value: await this.getAccessToken(),
+						mode: this.mode,
+					}),
+				])
 				break
 			case 'reset':
-				this.onResetChat()
+				await this.onResetChat()
 				break
 			case 'submit':
-				this.onHumanMessageSubmitted(message.text)
+				await this.onHumanMessageSubmitted(message.text)
 				break
 			case 'executeRecipe':
-				this.executeRecipe(message.recipe)
+				await vscode.commands.executeCommand('cody.chat.focus')
+				await this.executeRecipe(message.recipe)
 				break
 			case 'feedback':
-				this.sendFeedback(message.feedback)
+				await this.sendFeedback(message.feedback)
 				break
 			case 'acceptTOS':
-				this.acceptTOS(message.version)
+				await this.acceptTOS(message.version)
 				break
+			case 'setToken':
+				await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.value)
+				this.accessToken = message.value as string
+				break
+			case 'settings':
+				await updateConfiguration('serverEndpoint', message.serverURL)
+				await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
+				this.serverUrl = message.value as string
+				this.accessToken = message.accessToken as string
+				if (this.accessToken && this.serverUrl) {
+					this.wsclient = this.makeWSChatClient()
+				}
+				break
+			case 'removeToken':
+				await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+				break
+			default:
+				console.error('Invalid request type from Webview')
 		}
 	}
 
-	private async acceptTOS(version: number) {
-		vscode.commands.executeCommand('cody.accept-tos', version)
+	private async getAccessToken(): Promise<string> {
+		if (this.accessToken) {
+			return this.accessToken
+		}
+		const token = await this.secretStorage.get(CODY_ACCESS_TOKEN_SECRET)
+		return token || ''
+	}
+
+	private async acceptTOS(version: number): Promise<void> {
+		this.tosVersion = version
+		await vscode.commands.executeCommand('cody.accept-tos', version)
+	}
+
+	public async makeWSChatClient(): Promise<WSChatClient | null> {
+		try {
+			if (this.accessToken && this.serverUrl) {
+				const wsclient = await WSChatClient.new(`${this.serverUrl}/chat`, this.accessToken)
+				return wsclient
+			}
+			return null
+		} catch (error) {
+			console.error(error)
+			return null
+		}
+	}
+
+	private makeEmbeddingClient(): EmbeddingsClient | null {
+		if (this.codebase && this.accessToken && this.embeddingsEndpoint && this.contextType === 'embeddings') {
+			const embeddingsClient = new EmbeddingsClient(this.embeddingsEndpoint, this.accessToken, this.codebase)
+
+			if (!embeddingsClient && this.contextType === 'embeddings') {
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				vscode.window.showInformationMessage(
+					'Embeddings were not available (is `cody.codebase` set?), falling back to keyword context'
+				)
+				this.contextType = 'keyword'
+			}
+
+			return embeddingsClient
+		}
+		return null
 	}
 
 	private async sendFeedback(feedback: Feedback): Promise<void> {
@@ -138,23 +194,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 			onChange: text => this.onBotMessageChange(this.reformatBotMessage(text, responsePrefix)),
 			onComplete: text => {
 				const botMessage = this.reformatBotMessage(text, responsePrefix)
-				this.logReceivedBotResponse(botMessage)
-				this.onBotMessageComplete(botMessage)
+				this.logReceivedBotResponse(botMessage).catch(error => console.error(error))
+				this.onBotMessageComplete(botMessage).catch(error => console.error(error))
 			},
 			onError: err => {
-				vscode.window.showErrorMessage(err)
+				void vscode.window.showErrorMessage(err)
 			},
 		})
 	}
 
-	private logReceivedBotResponse(response: string) {
-		this.webview?.postMessage({ type: 'debug', message: `RESPONSE (${response.length} characters):\n${response}` })
+	private async logReceivedBotResponse(response: string): Promise<void> {
+		await this.webview?.postMessage({
+			type: 'debug',
+			message: `RESPONSE (${response.length} characters):\n${response}`,
+		})
 	}
 
 	private async logSendPrompt(promptMessages: Message[]): Promise<void> {
 		const promptStr = promptMessages.map(msg => `${msg.speaker}: ${msg.text}`).join('\n\n')
 		const debugMessage = `REQUEST (${promptStr.length} characters):\n` + promptStr
-		this.webview?.postMessage({ type: 'debug', message: debugMessage })
+		await this.webview?.postMessage({ type: 'debug', message: debugMessage })
 	}
 
 	private async closeConnectionInProgress(): Promise<void> {
@@ -171,10 +230,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		this.messageInProgress = null
 		this.transcript = []
 		this.prompt.reset()
-		this.sendTranscript()
+		await this.sendTranscript()
 	}
 
-	private onNewMessageSubmitted(text: string): void {
+	private async onNewMessageSubmitted(text: string): Promise<void> {
 		this.messageInProgress = {
 			speaker: 'bot',
 			displayText: '',
@@ -187,21 +246,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 			timestamp: getShortTimestamp(),
 		})
 
-		this.sendTranscript()
+		await this.sendTranscript()
 	}
 
 	private async onHumanMessageSubmitted(text: string): Promise<void> {
 		if (this.messageInProgress) {
 			return
 		}
-		this.onNewMessageSubmitted(text)
+		await this.onNewMessageSubmitted(text)
 		const prompt = await this.prompt.addHumanMessage(text)
 		await this.sendPrompt(prompt, { displayMessageLength: this.prompt.getDisplayMessages().length, recipeId: null })
 	}
 
-	async executeRecipe(recipeId: string): Promise<void> {
+	public async executeRecipe(recipeId: string): Promise<void> {
 		if (this.messageInProgress) {
-			vscode.window.showErrorMessage(
+			await vscode.window.showErrorMessage(
 				'Cannot execute multiple recipes. Please wait for the current recipe to finish.'
 			)
 		}
@@ -213,7 +272,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		}
 		const { display, prompt, botResponsePrefix } = messageInfo
 
-		this.showTab('ask')
+		await this.showTab('ask')
 
 		this.messageInProgress = {
 			speaker: 'bot',
@@ -223,6 +282,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		this.transcript.push(
 			...display.map(({ speaker, text }) => ({ speaker, displayText: text, timestamp: getShortTimestamp() }))
 		)
+
+		await this.sendTranscript()
+
 		return this.sendPrompt(
 			prompt,
 			{ displayMessageLength: this.prompt.getDisplayMessages().length, recipeId },
@@ -249,10 +311,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 			contextFiles: this.prompt.getLastContextFiles(),
 		}
 
-		this.sendTranscript()
+		this.sendTranscript().catch(error => console.error(error))
 	}
 
-	private onBotMessageComplete(text: string): void {
+	private async onBotMessageComplete(text: string): Promise<void> {
 		this.messageInProgress = null
 		this.closeConnectionInProgressPromise = null
 		this.transcript.push({
@@ -264,40 +326,53 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
 		this.prompt.addBotMessage(text)
 
-		this.sendTranscript()
+		await this.sendTranscript()
 	}
 
-	private showTab(tab: string): void {
-		this.webview?.postMessage({ type: 'showTab', tab })
+	private async showTab(tab: string): Promise<void> {
+		await this.webview?.postMessage({ type: 'showTab', tab })
 	}
 
-	private sendTranscript() {
-		this.webview?.postMessage({
+	private async sendTranscript(): Promise<void> {
+		await this.webview?.postMessage({
 			type: 'transcript',
 			messages: this.transcript,
 			messageInProgress: this.messageInProgress,
 		})
 	}
 
-	renderView(webview: vscode.Webview, tosVersion?: number): string {
-		const html = readFileSync(path.join(this.extensionPath, this.staticDir, 'index.html')).toString()
+	public async resolveWebviewView(
+		webviewView: vscode.WebviewView,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		_context: vscode.WebviewViewResolveContext<unknown>,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		_token: vscode.CancellationToken
+	): Promise<void> {
+		this.webview = webviewView.webview
+		const extensionPath = vscode.Uri.parse(this.extensionPath)
+		const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
+
+		webviewView.webview.options = {
+			enableScripts: true,
+			localResourceRoots: [webviewPath],
+		}
+
+		// await vscode.commands.executeCommand('cody.get-accepted-tos-version')
+
+		//   Create Webview
+		const root = vscode.Uri.joinPath(webviewPath, 'index.html')
+		const bytes = await vscode.workspace.fs.readFile(root)
+		const decoded = new TextDecoder('utf-8').decode(bytes)
+		const resources = webviewView.webview.asWebviewUri(webviewPath)
+
 		const nonce = getNonce()
-		return html
-			.replace('{nonce}', nonce)
-			.replace('{scripts}', this.staticFiles.js.map(file => this.getScriptTag(webview, file, nonce)).join(''))
-			.replace('{styles}', this.staticFiles.css.map(file => this.getStyleTag(webview, file)).join(''))
-			.replace('{debug-tab-class-hidden}', this.debug ? '' : 'debug-tab-hidden')
-			.replace('{tos-accepted-version}', tosVersion ? `${tosVersion}` : '')
-	}
 
-	private getScriptTag(webview: vscode.Webview, filePath: string, nonce: string): string {
-		const src = webview.asWebviewUri(vscode.Uri.file(path.join(this.extensionPath, this.staticDir, filePath)))
-		return `<script nonce="${nonce}" src="${src}"></script>`
-	}
+		webviewView.webview.html = decoded
+			.replaceAll('/kodj/', `${resources.toString()}/`)
+			.replace('/nonce/', nonce)
+			.replace('/tos-version/', this.tosVersion.toString())
 
-	private getStyleTag(webview: vscode.Webview, filePath: string): string {
-		const href = webview.asWebviewUri(vscode.Uri.file(path.join(this.extensionPath, this.staticDir, filePath)))
-		return `<link rel="stylesheet" href="${href}">`
+		webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message, webviewView.webview))
 	}
 
 	public transcriptForTesting(testing: TestSupport): ChatMessage[] {
@@ -306,6 +381,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 			return []
 		}
 		return this.transcript
+	}
+
+	public async configChangeDetected(changes: string): Promise<void> {
+		switch (changes) {
+			case 'token':
+				await vscode.window.showInformationMessage('Token has been updated.')
+				// TODO: Reset clients.
+				// Notify user with exisiting conversations to reload VS Code.
+				// await vscode.window.showWarningMessage('Please reload VS Code to use the new token.')
+				break
+			default:
+				await vscode.window.showInformationMessage('Your configurations for Cody have been updated.')
+		}
 	}
 }
 
@@ -321,12 +409,12 @@ function padTimePart(timePart: number): string {
 	return timePart < 10 ? `0${timePart}` : timePart.toString()
 }
 
-function getShortTimestamp() {
+function getShortTimestamp(): string {
 	const date = new Date()
 	return `${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}`
 }
 
-function getNonce() {
+function getNonce(): string {
 	let text = ''
 	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 	for (let i = 0; i < 32; i++) {

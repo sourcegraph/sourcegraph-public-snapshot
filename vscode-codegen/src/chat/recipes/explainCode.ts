@@ -7,10 +7,11 @@ import { MARKDOWN_FORMAT_PROMPT, getNormalizedLanguageName, getActiveEditorSelec
 import { Recipe, RecipePrompt } from './recipe'
 
 export class ExplainCodeDetailed implements Recipe {
-	getID(): string {
+	public getID(): string {
 		return 'explainCode'
 	}
-	async getPrompt(
+
+	public async getPrompt(
 		maxTokens: number,
 		getEmbeddingsContextMessages: (query: string, options: ContextSearchOptions) => Promise<Message[]>
 	): Promise<RecipePrompt | null> {
@@ -56,10 +57,11 @@ export class ExplainCodeDetailed implements Recipe {
 }
 
 export class ExplainCodeHighLevel implements Recipe {
-	getID(): string {
+	public getID(): string {
 		return 'explainCodeHighLevel'
 	}
-	async getPrompt(
+
+	public async getPrompt(
 		maxTokens: number,
 		getEmbeddingsContextMessages: (query: string, options: ContextSearchOptions) => Promise<Message[]>
 	): Promise<RecipePrompt | null> {

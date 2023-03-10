@@ -3,29 +3,39 @@ import * as fs from 'fs'
 import * as os from 'os'
 import path from 'path'
 
-export async function getRgPath(extensionPath: string): Promise<string | null> {
-	const target = await getTarget()
-	const resourcesDir = path.join(extensionPath, 'resources', 'bin')
-	const files = await new Promise<string[]>((resolve, reject) => {
-		fs.readdir(resourcesDir, (err, files) => {
-			if (err) {
-				reject(err)
-				return
-			}
-			resolve(files)
+import * as vscode from 'vscode'
+
+export async function getRgPath(extensionPath: string): Promise<string> {
+	try {
+		const target = await getTarget()
+		const resourcesDir = path.join(extensionPath, 'resources', 'bin')
+		const files = await new Promise<string[]>((resolve, reject) => {
+			fs.readdir(resourcesDir, (err, files) => {
+				if (err) {
+					reject(err)
+					return
+				}
+				resolve(files)
+			})
 		})
-	})
-	for (const file of files) {
-		if (file.includes(target)) {
-			return path.join(resourcesDir, file)
+		for (const file of files) {
+			if (file.includes(target)) {
+				return path.join(resourcesDir, file)
+			}
 		}
+		await vscode.window.showInformationMessage(
+			'Did not find bundled `rg` (if running in development, you probably need to run scripts/download-rg.sh). Falling back to the `rg` on $PATH.'
+		)
+		return 'rg'
+	} catch (error) {
+		console.error(error)
+		return 'rg'
 	}
-	return null
 }
 
 // Code below this line copied from https://github.com/microsoft/vscode-ripgrep
 
-async function isMusl() {
+async function isMusl(): Promise<boolean> {
 	let stderr
 	try {
 		stderr = (await exec('ldd --version')).stderr

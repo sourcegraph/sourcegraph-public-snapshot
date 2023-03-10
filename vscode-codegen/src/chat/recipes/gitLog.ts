@@ -8,10 +8,11 @@ import { truncateText } from '../prompt'
 import { Recipe, RecipePrompt } from './recipe'
 
 export class GitHistory implements Recipe {
-	getID(): string {
+	public getID(): string {
 		return 'gitHistory'
 	}
-	async getPrompt(maxTokens: number): Promise<RecipePrompt | null> {
+
+	public async getPrompt(maxTokens: number): Promise<RecipePrompt | null> {
 		const stdout: Buffer = Buffer.from('')
 		const stderr: Buffer = Buffer.from('')
 
@@ -67,7 +68,7 @@ export class GitHistory implements Recipe {
 				Math.floor(maxTokens * 3.25) - messageTextTempl.length + '{gitlogStr}'.length
 			)
 			messageText = messageTextTempl.replace('{gitlogStr}', truncatedGitLog)
-			vscode.window.showWarningMessage('Truncated extra long git log output, so summary may be incomplete')
+			void vscode.window.showWarningMessage('Truncated extra long git log output, so summary may be incomplete')
 		}
 
 		return {

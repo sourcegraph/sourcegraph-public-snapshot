@@ -21,6 +21,12 @@ export interface Message {
 	text: string
 }
 
+export interface ChatMessage extends Omit<Message, 'text'> {
+	displayText: string
+	timestamp: string
+	contextFiles?: string[]
+}
+
 export interface ContextMessage extends Message {
 	filename?: string
 }

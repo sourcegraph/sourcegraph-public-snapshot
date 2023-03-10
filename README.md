@@ -18,8 +18,6 @@ There are four separate components:
 - `embeddings`: generates the embeddings and serves the embeddings endpoint
 - `common`: a library shared by the extension and server with common types
 
-## Development
-
 ### Setup
 
 1. Install [asdf](https://asdf-vm.com/)
@@ -69,10 +67,8 @@ Run the embeddings API:
 
 1. `cd embeddings && asdf env python uvicorn api:app --reload --port 9301`
 
-Run the VS Code extension:
+### Developing the [VS Code extension](vscode-codegen/)
 
-1. Open this repository's root directory in VS Code.
-1. In VS Code, run the `Debug: Start Debugging` command and select the `Run VS Code Extension` target.
 1. Change your VS Code user settings to use your local dev servers:
 
    ```json
@@ -81,9 +77,29 @@ Run the VS Code extension:
    "cody.debug": true,
    ```
 
-   - Note: You may find it more convenient to use a separate user profile for VS Code (or the Insiders build) so that you can continue using the released version of Cody in your usual editing workflow.
+2. Run `pnpm install && pnpm prebuild` from the root of this repository
+3. Select `Launch Cody (Dev) Extension` from the dropdown menu in the `RUN AND DEBUG` sidebar
+   1. Remove `node_modeules` if the start up failed
+4. Refresh the extension to see updated changes
 
-### Testing the VS Code extension
+#### File structure
+
+- `vscode-codegen/src`: source code of the components for the extension
+  host
+- `vscode-codegen/webviews`: source code of the extension UI (webviews),
+  build with Vite and rollup.js using the `vscode-codegen/vite.config.ts` file at directory
+  root
+- `vscode-codegen/dist`: build outputs from both webpack and vite
+- `vscode-codegen/resources`: everything in this directory will be move to
+  the ./dist directory automatically during build time for easy packaging
+- `vscode-codegen/index.html`: the entry file that Vite looks for to build
+  the webviews. The extension host reads this file at run time and replace
+  the variables inside the file with webview specific uri and info
+- `vscode-codegen/webpack.config.js`: config file for bundling the code for
+  the extension, excluding the webviews. The output will be sent to the
+  /dist folder where the webviews output can also be found
+
+### Testing the [VS Code extension](vscode-codegen/)
 
 ```
 $ cd vscode-codegen
@@ -104,3 +120,5 @@ pnpm run vsce:package
 # To publish the packaged extension to the VS Code Extension Marketplace:
 pnpm exec vsce publish --packagePath dist/kodj.vsix
 ```
+
+> NOTE: Since the extension has already been bundled, we will need to add the `--no-dependencies` flag during the packaging step to exclude the npm dependencies ([source](https://github.com/microsoft/vscode-vsce/issues/421#issuecomment-1038911725))

@@ -8,12 +8,15 @@
   },
   "engines": {
     "node": "^16.18.1",
-    "pnpm": "^7.27.1"
+    "pnpm": "^7.29.0"
   },
   "packageManager": "pnpm@7.27.1",
   "scripts": {
     "lint": "eslint .",
-    "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write"
+    "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write",
+    "prebuild": "pnpm exec tsc --build",
+    "vsce:package": "pnpm --filter kodj run vsce:package",
+    "vsce:watch": "pnpm --filter kodj run watch"
   },
   "devDependencies": {
     "@sourcegraph/eslint-config": "^0.33.0",

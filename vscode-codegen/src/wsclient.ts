@@ -1,5 +1,5 @@
+import WebSocket from 'isomorphic-ws'
 import * as vscode from 'vscode'
-import { WebSocket } from 'ws'
 
 import { WSResponse } from '@sourcegraph/cody-common'
 
