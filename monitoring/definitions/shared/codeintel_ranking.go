@@ -123,7 +123,8 @@ func (codeIntelligence) NewRankingPipelineTaskGroups(containerName string) []mon
 
 // Tasks:
 //   - codeintel_ranking_symbol_exporter
-//   - codeintel_ranking_symbol_janitor
+//   - codeintel_ranking_symbol_definitions_janitor
+//   - codeintel_ranking_symbol_references_janitor
 //   - codeintel_ranking_rank_counts_janitor
 //   - codeintel_ranking_rank_janitor
 //   - codeintel_ranking_file_reference_count_mapper
@@ -140,7 +141,8 @@ func (codeIntelligence) NewRankingJanitorTaskGroups(containerName string) []moni
 		"Uploads > Janitor task",
 		containerName,
 		[]string{
-			"codeintel_ranking_symbol_janitor",
+			"codeintel_ranking_symbol_definitions_janitor",
+			"codeintel_ranking_symbol_references_janitor",
 			"codeintel_ranking_rank_counts_janitor",
 			"codeintel_ranking_rank_janitor",
 		},

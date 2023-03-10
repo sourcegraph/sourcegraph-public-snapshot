@@ -766,12 +766,12 @@
             "default": {
               "description": "The default syntax highlighting engine to use",
               "type": "string",
-              "enum": ["tree-sitter", "syntect"]
+              "enum": ["tree-sitter", "syntect", "scip-syntax"]
             },
             "overrides": {
               "description": "Manually specify overrides for syntax highlighting engine per language",
               "type": "object",
-              "additionalProperties": { "type": "string", "enum": ["tree-sitter", "syntect"] }
+              "additionalProperties": { "type": "string", "enum": ["tree-sitter", "syntect", "scip-syntax"] }
             }
           }
         },
