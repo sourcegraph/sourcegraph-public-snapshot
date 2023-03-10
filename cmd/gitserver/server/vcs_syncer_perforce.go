@@ -335,7 +335,7 @@ func p4depots(ctx context.Context, host, username, password, nameFilter string) 
 			depots = append(depots, depot)
 		}
 		if err := buf.Err(); err != nil {
-			return nil, errors.Errorf("malformed output from p4 depots: %s", err)
+			return nil, errors.Wrap(err, "malformed output from p4 depots")
 		}
 		return depots, nil
 	}
