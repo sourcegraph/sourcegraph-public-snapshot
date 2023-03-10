@@ -24,6 +24,7 @@ import { ConnectionError, ConnectionLoading } from '../../components/FilteredCon
 import { PageTitle } from '../../components/PageTitle'
 import {
     CancelPermissionsSyncJobResult,
+    CancelPermissionsSyncJobResultMessage,
     CancelPermissionsSyncJobVariables,
     PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
@@ -168,7 +169,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
             cancelSyncJob({
                 variables: { job: syncJob.id },
                 onCompleted: ({ cancelPermissionsSyncJob }) =>
-                    setNotification({ text: prettyPrintCancelSyncJobMessage(cancelPermissionsSyncJob || undefined) }),
+                    setNotification({ text: prettyPrintCancelSyncJobMessage(cancelPermissionsSyncJob) }),
                 onError,
             }).catch(
                 // noop here is used because an error is handled in `onError` option of `useMutation` above.
@@ -416,7 +417,13 @@ const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
 const finalState = (state: PermissionsSyncJobState): boolean =>
     state !== PermissionsSyncJobState.QUEUED && state !== PermissionsSyncJobState.PROCESSING
 
-const prettyPrintCancelSyncJobMessage = (message: string = 'Permissions sync job canceled.'): string =>
-    message === 'No job that can be canceled found.'
-        ? 'Permissions sync job is already dequeued and cannot be canceled.'
-        : message
+const prettyPrintCancelSyncJobMessage = (message: CancelPermissionsSyncJobResultMessage): string => {
+    switch (message) {
+        case CancelPermissionsSyncJobResultMessage.SUCCESS:
+            return 'Permissions sync job canceled.'
+        case CancelPermissionsSyncJobResultMessage.NOT_FOUND:
+            return 'Permissions sync job is already dequeued and cannot be canceled.'
+        case CancelPermissionsSyncJobResultMessage.ERROR:
+            return 'Error during permissions sync job cancelling.'
+    }
+}
