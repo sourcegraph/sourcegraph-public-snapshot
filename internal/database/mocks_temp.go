@@ -13553,7 +13553,7 @@ func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) PushHook(hook func(context.C
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) SetDefaultReturn(r0 *types.SiteUsageStatistics, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
+	f.SetDefaultHook(func(context.Context, time.Time, int, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
 		return r0, r1
 	})
 }
