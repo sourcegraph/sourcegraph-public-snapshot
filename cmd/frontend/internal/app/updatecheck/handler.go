@@ -113,20 +113,19 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	if !hasUpdate {
-		// No newer version.
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	w.Header().Set("content-type", "application/json; charset=utf-8")
 	body, err := json.Marshal(pingResponse)
 	if err != nil {
 		logger.Error("error preparing update check response", log.Error(err))
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
+
+	if !hasUpdate {
+		// No newer version.
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	w.Header().Set("content-type", "application/json; charset=utf-8")
 	requestHasUpdateCounter.Inc()
 	_, _ = w.Write(body)
 }
