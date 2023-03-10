@@ -23,7 +23,7 @@ end
 -- pathspec:   gen.go (root)
 -- pathspec: */gen.go (non-root)
 M.new_path_basename = function(pattern)
-    return new_pattern(pattern, {pattern, "**/" .. pattern})
+    return new_pattern(pattern, {pattern, "*/" .. pattern})
 end
 
 -- glob:     *.md
