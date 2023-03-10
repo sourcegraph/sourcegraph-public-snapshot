@@ -1,15 +1,18 @@
 import { FC, PropsWithChildren, useEffect, useMemo, useRef } from 'react'
 
-// The experimental search input should be shown in the navbar
+import { Prec } from '@codemirror/state'
+
+// This component makes the experimental search input accessible in the web app
 // eslint-disable-next-line no-restricted-imports
 import {
     Action,
     CodeMirrorQueryInputWrapper,
     CodeMirrorQueryInputWrapperProps,
+    lastUsedContextSuggestion,
     searchHistoryExtension,
     selectionListener,
 } from '@sourcegraph/branded/src/search-ui/experimental'
-import { SubmitSearchParameters } from '@sourcegraph/shared/src/search'
+import { SearchContextProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { createSuggestionsSource, SuggestionsSourceConfig } from './suggestions'
@@ -23,8 +26,9 @@ const eventNameMap: Record<Action['type'], string> = {
 
 export interface ExperimentalSearchInputProps
     extends Omit<CodeMirrorQueryInputWrapperProps, 'suggestionSource' | 'extensions' | 'placeholder'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         TelemetryProps,
-        SuggestionsSourceConfig {
+        Omit<SuggestionsSourceConfig, 'getSearchContext'> {
     submitSearch(parameters: Partial<SubmitSearchParameters>): void
 }
 
@@ -40,6 +44,7 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
     getUserSearchContextNamespaces,
     isSourcegraphDotCom,
     submitSearch,
+    selectedSearchContextSpec,
     ...inputProps
 }) => {
     const { recentSearches } = useRecentSearches()
@@ -53,6 +58,11 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
         submitSearchRef.current = submitSearch
     }, [submitSearch])
 
+    const getSearchContextRef = useRef(() => selectedSearchContextSpec)
+    useEffect(() => {
+        getSearchContextRef.current = () => selectedSearchContextSpec
+    }, [selectedSearchContextSpec])
+
     const suggestionSource = useMemo(
         () =>
             createSuggestionsSource({
@@ -61,12 +71,15 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
                 fetchSearchContexts,
                 getUserSearchContextNamespaces,
                 isSourcegraphDotCom,
+                getSearchContext: () => getSearchContextRef.current(),
             }),
         [platformContext, authenticatedUser, fetchSearchContexts, getUserSearchContextNamespaces, isSourcegraphDotCom]
     )
 
     const extensions = useMemo(
         () => [
+            // Prec ensures that this suggestion is shown first
+            Prec.high(lastUsedContextSuggestion({ getContext: () => getSearchContextRef.current() })),
             searchHistoryExtension({
                 mode: {
                     name: 'History',

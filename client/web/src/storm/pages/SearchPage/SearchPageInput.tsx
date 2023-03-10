@@ -139,6 +139,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
             isSourcegraphDotCom={isSourcegraphDotCom}
             submitSearch={submitSearchOnChange}
+            selectedSearchContextSpec={selectedSearchContextSpec}
         >
             <Toggles
                 patternType={patternType}

@@ -102,6 +102,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                     getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     submitSearch={submitSearchOnChange}
+                    selectedSearchContextSpec={props.selectedSearchContextSpec}
                 >
                     <Toggles
                         patternType={searchPatternType}

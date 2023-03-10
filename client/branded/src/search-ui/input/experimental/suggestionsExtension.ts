@@ -36,7 +36,7 @@ export function getEditorConfig(state: EditorState): EditorConfig {
  * A source for completion/suggestion results
  */
 export interface Source {
-    query: (state: EditorState, position: number, mode?: string) => SuggestionResult
+    query: (state: EditorState, position: number, mode?: string) => SuggestionResult | null
     mode?: string
 }
 
