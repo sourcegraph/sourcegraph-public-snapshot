@@ -50,8 +50,9 @@ func TestPackageRepoFilters(t *testing.T) {
 	}
 
 	job := packagesFilterApplicatorJob{
-		store:      s,
-		operations: newOperations(&observation.TestContext),
+		store:       s,
+		extsvcStore: db.ExternalServices(),
+		operations:  newOperations(&observation.TestContext),
 	}
 
 	if err := job.handle(ctx); err != nil {
