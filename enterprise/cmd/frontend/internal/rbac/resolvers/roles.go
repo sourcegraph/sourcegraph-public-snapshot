@@ -45,9 +45,11 @@ func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (*graphqlu
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
 			OrderBy: database.OrderBy{
-				{Field: "roles.id"},
+				{Field: "roles.system"},
+				{Field: "roles.created_at"},
 			},
-			Ascending: true,
+			Ascending:    false,
+			AllowNoLimit: true,
 		},
 	)
 }
