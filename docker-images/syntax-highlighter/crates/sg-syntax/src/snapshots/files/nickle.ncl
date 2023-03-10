@@ -24,7 +24,6 @@ let primes
       let to_drop = max
         |> array.generate (fun y => (y + 2) * x)
         |> array.filter (fun y => y <= max) in
-        |> array.flatten
       array.filter (fun y => array.all ((!=) y) to_drop) xs in
     let rec loop = fun x xs =>
       if x > limit then
