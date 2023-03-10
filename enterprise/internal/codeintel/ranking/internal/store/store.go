@@ -32,7 +32,7 @@ type Store interface {
 	InsertDefinitionsForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, definitions []shared.RankingDefinitions) (err error)
 	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, references shared.RankingReferences) (err error)
 	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)
-	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted float64, numInputsProcessed float64, err error)
+	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted int, numInputsProcessed int, err error)
 
 	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
 		metadataRecordsDeleted int,
@@ -41,11 +41,14 @@ type Store interface {
 	)
 
 	VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (
+		rankRecordsScanned int,
 		rankRecordsSDeleted int,
 		err error,
 	)
 
 	VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
+		numDefinitionRecordsScanned int,
+		numReferenceRecordsScanned int,
 		numStaleDefinitionRecordsDeleted int,
 		numStaleReferenceRecordsDeleted int,
 		err error,
