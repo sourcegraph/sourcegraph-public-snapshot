@@ -5,7 +5,7 @@ import {
     ExternalServiceEditingTemporaryAlert,
     ExternalServiceEditingAppLimitInPlaceAlert,
     ExternalServiceEditingAppLimitReachedAlert,
-} from '../../../../components/externalServices'
+} from '../../components/externalServices'
 
 export const CodeHostExternalServiceAlert: FC = () => {
     const { extsvcConfigFileExists, extsvcConfigAllowEdits } = window.context
@@ -14,11 +14,11 @@ export const CodeHostExternalServiceAlert: FC = () => {
     const isEditingStateless = extsvcConfigFileExists && extsvcConfigAllowEdits
 
     if (isEditingDisabled) {
-        return <ExternalServiceEditingDisabledAlert />
+        return <ExternalServiceEditingDisabledAlert className="mb-2" />
     }
 
     if (isEditingStateless) {
-        return <ExternalServiceEditingTemporaryAlert />
+        return <ExternalServiceEditingTemporaryAlert className="mb-2" />
     }
 
     // If nothing is specified that means everything is available manually

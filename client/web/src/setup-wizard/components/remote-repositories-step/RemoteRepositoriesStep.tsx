@@ -8,13 +8,13 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Container, Text } from '@sourcegraph/wildcard'
 
 import { GetCodeHostsResult } from '../../../graphql-operations'
+import { CodeHostExternalServiceAlert } from '../CodeHostExternalServiceAlert'
 import { ProgressBar } from '../ProgressBar'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 
 import { CodeHostDeleteModal, CodeHostToDelete } from './components/code-host-delete-modal'
 import { CodeHostsPicker } from './components/code-host-picker'
 import { CodeHostCreation, CodeHostEdit } from './components/code-hosts'
-import { CodeHostExternalServiceAlert } from './components/CodeHostExternalServiceAlert'
 import { CodeHostsNavigation } from './components/navigation'
 import { getNextButtonLabel, getNextButtonLogEvent, getRemoteCodeHostCount, isAnyConnectedCodeHosts } from './helpers'
 import { GET_CODE_HOSTS } from './queries'
