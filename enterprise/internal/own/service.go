@@ -136,7 +136,7 @@ func (s *service) resolveOwner(ctx context.Context, handle, email string) (codeo
 	var resolvedOwner codeowners.ResolvedOwner
 	var err error
 	if handle != "" {
-		resolvedOwner, err = tryGetUserThenTeam(ctx, handle, s.db.Users().GetByUsername, s.whichTeamGetter(ctx))
+		resolvedOwner, err = tryGetUserThenTeam(ctx, handle, s.db.Users().GetByUsername, s.whichTeamGetter())
 		if err != nil {
 			return personOrError(handle, email, err)
 		}
@@ -173,7 +173,7 @@ func tryGetUserThenTeam(ctx context.Context, identifier string, userGetter userG
 	return &codeowners.Person{User: user}, nil
 }
 
-func (s *service) whichTeamGetter(ctx context.Context) teamGetterFunc {
+func (s *service) whichTeamGetter() teamGetterFunc {
 	// If the flag is set, and it is explicitly set to false, then do active matching.
 	// This makes it "on by default".
 	if conf.Get().OwnBestEffortTeamMatching != nil && !*conf.Get().OwnBestEffortTeamMatching {
