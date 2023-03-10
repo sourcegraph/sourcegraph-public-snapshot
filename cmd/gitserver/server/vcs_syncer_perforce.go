@@ -36,11 +36,13 @@ const (
 // PerforceDepot is a definiton of a depot that matches the format
 // returned from `p4 -Mj -ztag depots`
 type PerforceDepot struct {
-	Desc string            `json:"desc,omitempty"`
-	Map  string            `json:"map,omitempty"`
-	Name string            `json:"name,omitempty"`
-	Time string            `json:"time,omitempty"` // seconds since the Epoch, but p4 quotes it in the output, so it's a string
-	Type PerforceDepotType `json:"type,omitempty"` // local, remote, stream, spec, unload, archive, tangent, graph
+	Desc string `json:"desc,omitempty"`
+	Map  string `json:"map,omitempty"`
+	Name string `json:"name,omitempty"`
+	// Time is seconds since the Epoch, but p4 quotes it in the output, so it's a string
+	Time string `json:"time,omitempty"`
+	// Type is local, remote, stream, spec, unload, archive, tangent, graph
+	Type PerforceDepotType `json:"type,omitempty"`
 }
 
 // PerforceDepotSyncer is a syncer for Perforce depots.
@@ -87,8 +89,7 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.UR
 	// get a list of depots that match the supplied depot (if it's defined)
 	if depots, err := p4depots(ctx, host, username, password, depot); err != nil {
 		return err
-	}
-	if len(depots) == 0 {
+	} else if len(depots) == 0 {
 		// this user doesn't have access to any depots,
 		// or to the given depot
 		if depot != "" {
