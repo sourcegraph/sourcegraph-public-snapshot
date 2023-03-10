@@ -30,6 +30,6 @@ EOF
 if run; then
 	exit 0
 else
-	echo 'Need to download ripgrep binaries. Try running `scripts/download-rg.sh`? Afterward, update the list of binaries in `scripts/check-rg.sh`'
+	echo "Need to download ripgrep binaries. Try running 'scripts/download-rg.sh'? Afterward, update the list of binaries in 'scripts/check-rg.sh'"
 	exit 1
 fi

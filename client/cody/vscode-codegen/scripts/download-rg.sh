@@ -10,7 +10,7 @@ run() {
 
 	for url in $(curl https://api.github.com/repos/microsoft/ripgrep-prebuilt/releases/tags/$VERSION 2>/dev/null | jq -r '.assets[] | .browser_download_url'); do
 
-		b=$(basename $url)
+		b=$(basename "$url")
 		ext=${b##*.}
 
 		if [ "$ext" = "gz" ]; then
@@ -22,7 +22,7 @@ run() {
 		elif [ "$ext" = "zip" ]; then
 			stripped=${b%.zip}
 		else
-			echo 'ERROR: unrecognized extension' $ext
+			echo "ERROR: unrecognized extension $ext"
 		fi
 
 	done
