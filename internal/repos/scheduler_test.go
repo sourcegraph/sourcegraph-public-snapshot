@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -1409,8 +1409,8 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			configuredLimiter = func() *mutablelimiter.Limiter {
-				return mutablelimiter.New(test.gitMaxConcurrentClones)
+			configuredLimiter = func() *limiter.MutableLimiter {
+				return limiter.NewMutable(test.gitMaxConcurrentClones)
 			}
 			defer func() {
 				configuredLimiter = nil

@@ -63,8 +63,8 @@ go_library(
         "//internal/honey",
         "//internal/hostname",
         "//internal/lazyregexp",
+        "//internal/limiter",
         "//internal/metrics",
-        "//internal/mutablelimiter",
         "//internal/observation",
         "//internal/ratelimit",
         "//internal/search/streaming/http",
@@ -119,6 +119,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":server"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/api",
@@ -137,7 +141,7 @@ go_test(
         "//internal/gitserver/protocol",
         "//internal/httpcli",
         "//internal/httptestutil",
-        "//internal/mutablelimiter",
+        "//internal/limiter",
         "//internal/observation",
         "//internal/ratelimit",
         "//internal/testutil",

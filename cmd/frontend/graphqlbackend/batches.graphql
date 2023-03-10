@@ -430,6 +430,8 @@ type ExternalChangeset implements Node & Changeset {
 
     """
     The review state of this changeset. This is only set once the changeset is published on the code host.
+
+    Note: The COMMENTED and DISMISSED review states are not yet implemented.
     """
     reviewState: ChangesetReviewState
 
@@ -523,6 +525,14 @@ type ChangesetsStats {
     The count of all changesets.
     """
     total: Int!
+    """
+    If true, then all changesets are either merged or closed. This indicates that the batch change is completed.
+    """
+    isCompleted: Boolean!
+    """
+    The count of changesets that are complete (i.e in a merged or closed state) and not archived or deleted.
+    """
+    percentComplete: Int!
 }
 
 """
@@ -2688,6 +2698,8 @@ type BatchChange implements Node {
         onlyClosable: Boolean
         """
         Only include changesets with the given review state.
+
+        Note: The COMMENTED and DISMISSED review states are not yet implemented.
         """
         reviewState: ChangesetReviewState
         """

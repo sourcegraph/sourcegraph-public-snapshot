@@ -1,10 +1,10 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, RouteObject } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LegacyRoute } from '../LegacyRouteContext'
-import { LayoutRouteProps, routes } from '../routes'
+import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
 
 const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
@@ -32,7 +32,7 @@ const EditSearchContextPage = lazyComponent(
 const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
 const GlobalCodyArea = lazyComponent(() => import('./cody/GlobalCodyArea'), 'GlobalCodyArea')
 
-export const enterpriseRoutes: readonly LayoutRouteProps[] = [
+export const enterpriseRoutes: RouteObject[] = [
     {
         path: EnterprisePageRoutes.BatchChanges,
         element: (

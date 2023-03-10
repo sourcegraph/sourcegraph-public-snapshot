@@ -1,0 +1,40 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "ts_project")
+
+npm_link_all_packages(name = "node_modules")
+
+ts_project(
+    name = "backstage-backend",
+    srcs = [
+        "src/client/Query.ts",
+        "src/client/SourcegraphClient.ts",
+        "src/client/index.ts",
+        "src/index.ts",
+        "src/providers/index.ts",
+        "src/providers/parsers.ts",
+        "src/providers/providers.ts",
+        "src/setupTests.ts",
+    ],
+    deps = [
+        ":node_modules/@backstage/catalog-model",
+        ":node_modules/@backstage/plugin-catalog-backend",
+        ":node_modules/@sourcegraph/http-client",
+        ":node_modules/@sourcegraph/shared",
+        "//:node_modules/@apollo/client",
+    ],
+)
+
+ts_project(
+    name = "backstage-backend_tests",
+    testonly = True,
+    srcs = [
+        "src/client/Query.test.ts",
+        "src/client/SourcegraphClient.test.ts",
+        "src/tests/integration/e2e.test.ts",
+    ],
+    deps = [
+        ":backstage-backend",
+        ":node_modules/@jest/globals",
+        "//:node_modules/@apollo/client",
+    ],
+)

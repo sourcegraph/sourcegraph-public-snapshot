@@ -6,6 +6,7 @@ import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
+import { SiteAdminRolesPageProps } from '../rbac/SiteAdminRolesPage'
 
 const SiteAdminProductSubscriptionPage = lazyComponent(
     () => import('./productSubscription/SiteAdminProductSubscriptionPage'),
@@ -74,7 +75,14 @@ const ExecutorsSiteAdminArea = lazyComponent(
     'ExecutorsSiteAdminArea'
 )
 
+const SiteAdminRolesPage = lazyComponent<SiteAdminRolesPageProps, 'SiteAdminRolesPage'>(
+    () => import('../rbac/SiteAdminRolesPage'),
+    'SiteAdminRolesPage'
+)
+
 const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/CodeInsightsJobs'), 'CodeInsightsJobs')
+
+const SiteAdminCodyPage = lazyComponent(() => import('./cody/SiteAdminCodyPage'), 'SiteAdminCodyPage')
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
@@ -148,6 +156,21 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             render: () => <NavigateToCodeGraph />,
         },
 
+        // Code intelligence dashboard routes
+        {
+            path: '/code-graph',
+            exact: true,
+            render: () => <Navigate to="./code-graph/dashboard" replace={true} />,
+        },
+        {
+            path: '/code-graph/dashboard',
+            render: lazyComponent(
+                () => import('../codeintel/dashboard/pages/GlobalDashboardPage'),
+                'GlobalDashboardPage'
+            ),
+            exact: true,
+        },
+
         // Precise index routes
         {
             path: '/code-graph/indexes',
@@ -187,6 +210,19 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             path: '/executors/*',
             render: () => <ExecutorsSiteAdminArea />,
             condition: () => Boolean(window.context?.executorsEnabled),
+        },
+
+        // Cody configuration
+        {
+            path: '/cody',
+            render: props => <SiteAdminCodyPage {...props} />,
+            condition: () => Boolean(window.context?.embeddingsEnabled),
+        },
+        // rbac-related routes
+        {
+            path: '/roles',
+            exact: true,
+            render: props => <SiteAdminRolesPage {...props} />,
         },
     ] as readonly (SiteAdminAreaRoute | undefined)[]
 ).filter(Boolean) as readonly SiteAdminAreaRoute[]

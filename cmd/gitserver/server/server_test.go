@@ -32,7 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -560,8 +560,8 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		CloneQueue:              NewCloneQueue(list.New()),
 		ctx:                     ctx,
 		locker:                  &RepositoryLocker{},
-		cloneLimiter:            mutablelimiter.New(1),
-		cloneableLimiter:        mutablelimiter.New(1),
+		cloneLimiter:            limiter.NewMutable(1),
+		cloneableLimiter:        limiter.NewMutable(1),
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		recordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 	}

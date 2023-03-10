@@ -32,6 +32,10 @@ go_test(
     name = "retention_test",
     srcs = ["worker_test.go"],
     embed = [":retention"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//enterprise/internal/insights/store",
@@ -41,6 +45,8 @@ go_test(
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "//internal/observation",
+        "//schema",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
     ],
 )

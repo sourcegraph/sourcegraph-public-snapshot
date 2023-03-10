@@ -93,6 +93,31 @@ extend type Mutation {
         """
         unrestricted: Boolean
     ): EmptyResponse!
+
+    """
+    Cancel permissions sync job with given ID.
+    No error is returned when the job is not in `queued` state or there is no such job
+    with the given ID (latter means that most probably, the job has already been cleaned up).
+    """
+    cancelPermissionsSyncJob(
+        """
+        ID of the job to be canceled.
+        """
+        job: ID!
+        """
+        Optional cancellation reason.
+        """
+        reason: String
+    ): CancelPermissionsSyncJobResultMessage!
+}
+
+"""
+A status message of a permissions sync job cancellation.
+"""
+enum CancelPermissionsSyncJobResultMessage {
+    SUCCESS
+    NOT_FOUND
+    ERROR
 }
 
 extend type Query {
@@ -161,6 +186,30 @@ extend type Query {
         also used in conjunction with "last" to return the last N nodes.
         """
         before: String
+        """
+        Optional filter for PermissionsSyncJobReasonGroup.
+        """
+        reasonGroup: PermissionsSyncJobReasonGroup
+        """
+        Optional filter for PermissionsSyncJobState.
+        """
+        state: PermissionsSyncJobState
+        """
+        Type of search for permissions sync jobs: user or repository.
+        """
+        searchType: PermissionsSyncJobsSearchType
+        """
+        Term used to search for permissions sync jobs.
+        """
+        query: String
+        """
+        Optional filter to find permissions sync jobs for a user. Please provide either this or repoID, but not both.
+        """
+        userID: ID
+        """
+        Optional filter to find permissions sync jobs for a repository. Please provide either this or userID, but not both.
+        """
+        repoID: ID
     ): PermissionsSyncJobsConnection!
 
     """
@@ -309,6 +358,137 @@ type PermissionsInfo {
     It will always be false for users.
     """
     unrestricted: Boolean!
+
+    """
+    The connection for repository permissions accessible to the user.
+    """
+    repositories(
+        """
+        Number of nodes returned during forward pagination. Maximum number of returned nodes is 100. Up to 20 nodes are returned by default.
+        """
+        first: Int
+        """
+        Number of nodes returned during backward pagination. Maximum number of returned nodes is 100. Up to 20 nodes are returned by default.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards.
+        """
+        before: String
+        """
+        Search query to filter repositories based on name.
+        """
+        query: String
+    ): PermissionsInfoRepositoriesConnection
+    """
+    The connection for users who have access to the repository.
+    """
+    users(
+        """
+        Number of nodes returned during forward pagination. Maximum number of returned nodes is 100.
+        """
+        first: Int
+        """
+        Number of nodes returned during backward pagination. Maximum number of returned nodes is 100.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards.
+        """
+        before: String
+        """
+        Search query to filter users based on username or display name.
+        """
+        query: String
+    ): PermissionsInfoUsersConnection
+}
+
+"""
+Connection for repository permissions accessible to the user
+"""
+type PermissionsInfoRepositoriesConnection implements Connection {
+    """
+    List of repository permission info nodes
+    """
+    nodes: [PermissionsInfoRepositoryNode!]!
+    """
+    The total number of repository permission info nodes in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+Repository permission node defining why the repository is accessible to the user
+"""
+type PermissionsInfoRepositoryNode {
+    """
+    The ID of the repository.
+    """
+    id: ID!
+    """
+    The repository corresponding to the permission.
+    """
+    repository: Repository
+    """
+    The reason why the current user has permission to access the repository.
+    """
+    reason: String!
+    """
+    The timestamp when the permission was last updated at.
+    """
+    updatedAt: DateTime
+}
+
+"""
+Connection for user permission who has access to the repository.
+"""
+type PermissionsInfoUsersConnection implements Connection {
+    """
+    List of repository permission info nodes
+    """
+    nodes: [PermissionsInfoUserNode!]!
+    """
+    The total number of repository permission info nodes in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+Repository permission node defining why the repository is accessible to the user.
+"""
+type PermissionsInfoUserNode {
+    """
+    The ID of the User.
+    """
+    id: ID!
+    """
+    The user corresponding to the permission.
+    """
+    user: User
+    """
+    The reason why the user has access to the repository.
+    """
+    reason: String!
+    """
+    The timestamp when the permission was last updated at.
+    """
+    updatedAt: DateTime
 }
 
 """
@@ -327,7 +507,7 @@ Permissions sync jobs.
 """
 type PermissionsSyncJobsConnection implements Connection {
     """
-    Permission sync jobs.
+    Permissions sync jobs.
     """
     nodes: [PermissionsSyncJob!]!
     """
@@ -341,7 +521,15 @@ type PermissionsSyncJobsConnection implements Connection {
 }
 
 """
-State types of permission sync jobs.
+Type of search for permissions sync jobs: user or repository.
+"""
+enum PermissionsSyncJobsSearchType {
+    USER
+    REPOSITORY
+}
+
+"""
+State types of permissions sync jobs.
 """
 enum PermissionsSyncJobState {
     QUEUED
@@ -353,23 +541,52 @@ enum PermissionsSyncJobState {
 }
 
 """
-Compound type for a permission sync job trigger reason.
-Consists of a reason group (PermissionSyncJobReasonGroup) and a message, providing details
+Compound type for a permissions sync job trigger reason.
+Consists of a reason group (PermissionsSyncJobReasonGroup) and a reason itself, providing details
 about why/how the sync was triggered.
 """
-type PermissionsSyncJobReason {
+type PermissionsSyncJobReasonWithGroup {
     """
-    PermissionSyncJobReasonGroup combines multiple permission sync job trigger reasons into groups with similar grounds.
+    PermissionsSyncJobReasonGroup combines multiple permission sync job trigger reasons into groups with similar grounds.
     """
     group: PermissionsSyncJobReasonGroup!
     """
-    Message with details about why/how the sync was triggered.
+    Reason with details about why/how the sync was triggered.
     """
-    message: String!
+    reason: PermissionsSyncJobReason!
 }
 
 """
 State types of permission sync jobs.
+"""
+enum PermissionsSyncJobReason {
+    REASON_USER_OUTDATED_PERMS
+    REASON_USER_NO_PERMS
+    REASON_REPO_OUTDATED_PERMS
+    REASON_REPO_NO_PERMS
+    REASON_REPO_UPDATED_FROM_CODE_HOST
+    REASON_USER_EMAIL_REMOVED
+    REASON_USER_EMAIL_VERIFIED
+    REASON_USER_ADDED_TO_ORG
+    REASON_USER_REMOVED_FROM_ORG
+    REASON_USER_ACCEPTED_ORG_INVITE
+    REASON_GITHUB_USER_EVENT
+    REASON_GITHUB_USER_ADDED_EVENT
+    REASON_GITHUB_USER_REMOVED_EVENT
+    REASON_GITHUB_USER_MEMBERSHIP_ADDED_EVENT
+    REASON_GITHUB_USER_MEMBERSHIP_REMOVED_EVENT
+    REASON_GITHUB_TEAM_ADDED_TO_REPO_EVENT
+    REASON_GITHUB_TEAM_REMOVED_FROM_REPO_EVENT
+    REASON_GITHUB_ORG_MEMBER_ADDED_EVENT
+    REASON_GITHUB_ORG_MEMBER_REMOVED_EVENT
+    REASON_GITHUB_REPO_EVENT
+    REASON_GITHUB_REPO_MADE_PRIVATE_EVENT
+    REASON_MANUAL_REPO_SYNC
+    REASON_MANUAL_USER_SYNC
+}
+
+"""
+Sync reason groups of permission sync jobs.
 """
 enum PermissionsSyncJobReasonGroup {
     MANUAL
@@ -381,7 +598,7 @@ enum PermissionsSyncJobReasonGroup {
 """
 Union type for a subject of a permission sync job (repository or user).
 """
-union PermissionSyncJobSubject = User | Repository
+union PermissionsSyncJobSubject = User | Repository
 
 """
 Permission sync job priority.
@@ -433,7 +650,7 @@ type PermissionsSyncJob implements Node {
     """
     Reason for triggering a permission sync job.
     """
-    reason: PermissionsSyncJobReason!
+    reason: PermissionsSyncJobReasonWithGroup!
     """
     Reason for cancellation of a given permission sync job.
     """
@@ -485,7 +702,7 @@ type PermissionsSyncJob implements Node {
     """
     Subject of a permission sync job (repository or user).
     """
-    subject: PermissionSyncJobSubject!
+    subject: PermissionsSyncJobSubject!
     """
     Priority of a permission sync job.
     """

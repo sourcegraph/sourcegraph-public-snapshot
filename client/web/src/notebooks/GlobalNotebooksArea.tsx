@@ -26,9 +26,10 @@ export interface GlobalNotebooksAreaProps
         SettingsCascadeProps,
         NotebookProps,
         SearchStreamingProps,
-        SearchContextProps {
+        Pick<SearchContextProps, 'searchContextsEnabled'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     globbing: boolean
 }

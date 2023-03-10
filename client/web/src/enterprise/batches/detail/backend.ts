@@ -61,6 +61,8 @@ const changesetsStatsFragment = gql`
         open
         unpublished
         archived
+        isCompleted
+        percentComplete
     }
 `
 

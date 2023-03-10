@@ -1,11 +1,9 @@
-import { ApolloCache, ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
+import { ApolloCache, ApolloClient, gql } from '@apollo/client'
 import { from, Observable, of } from 'rxjs'
 import { catchError, map, mapTo, switchMap } from 'rxjs/operators'
 import {
     AddInsightViewToDashboardResult,
     DeleteDashboardResult,
-    ExampleFirstRepositoryResult,
-    ExampleTodoRepositoryResult,
     GetDashboardInsightsResult,
     GetFrozenInsightsCountResult,
     GetInsightsResult,
@@ -32,7 +30,6 @@ import {
 
 import { createInsightView } from './deserialization/create-insight-view'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
-import { GET_EXAMPLE_FIRST_REPOSITORY_GQL, GET_EXAMPLE_TODO_REPOSITORY_GQL } from './gql/GetExampleRepository'
 import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { REMOVE_INSIGHT_FROM_DASHBOARD_GQL } from './gql/RemoveInsightFromDashboard'
 import { createDashboard } from './methods/create-dashboard/create-dashboard'
@@ -162,6 +159,12 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     }
                 `,
                 variables: { id },
+                update(cache: ApolloCache<DeleteDashboardResult>) {
+                    const deletedDashboardReference = cache.identify({ __typename: 'InsightsDashboard', id })
+
+                    // Remove deleted insights from the apollo cache
+                    cache.evict({ id: deletedDashboardReference })
+                },
             })
         ).pipe(mapTo(undefined))
     }
@@ -217,28 +220,4 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             )
         )
     }
-
-    public getFirstExampleRepository = (): Observable<string> => {
-        const firstRepository = (): Observable<string> =>
-            fromObservableQuery(
-                this.apolloClient.watchQuery<ExampleFirstRepositoryResult>({
-                    query: GET_EXAMPLE_FIRST_REPOSITORY_GQL,
-                })
-            ).pipe(map(getRepositoryName))
-
-        const todoRepository = (): Observable<string> =>
-            fromObservableQuery(
-                this.apolloClient.watchQuery<ExampleTodoRepositoryResult>({
-                    query: GET_EXAMPLE_TODO_REPOSITORY_GQL,
-                })
-            ).pipe(map(getRepositoryName))
-
-        return todoRepository().pipe(
-            switchMap(todoRepository => (todoRepository ? of(todoRepository) : firstRepository()))
-        )
-    }
 }
-
-const getRepositoryName = (
-    result: ApolloQueryResult<ExampleTodoRepositoryResult | ExampleFirstRepositoryResult>
-): string => result.data.search?.results.repositories[0]?.name || ''

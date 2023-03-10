@@ -75,9 +75,9 @@ You can use the filter `allowSignup`, available in the builtin configuration, to
 
   If set to `true`, users will see a sign-up link under the login form and will have access to the sign-up page, where they can create their accounts without restriction.
 
-  When not set, it will default to `false` -- in this case, new user accounts should be created by the site admin.
+  When not set, it will default to `false` -- in this case, users will see request access link. Unauthenticated users can submit request access forms and admins will get notification on the instance which they can approve or reject. Access request feature can be disabled by setting `experimentalFeatures.accessRequest.enabled: false`, and in this case new user accounts should be created by the site admin manually.
 
-  If you choose to block sign-ups by using the `allowSignup` filter avaiable in another auth provider (eg., [GitHub](#how-to-control-user-sign-up-and-sign-in-with-github-auth-provider) or [GiLab](#how-to-control-user-sign-up-and-sign-in-with-gitlab-auth-provider)), make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
+  If you choose to block sign-ups by using the `allowSignup` filter avaliable in another auth provider (eg., [GitHub](#how-to-control-user-sign-up-and-sign-in-with-github-auth-provider) or [GiLab](#how-to-control-user-sign-up-and-sign-in-with-gitlab-auth-provider)), make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
 
   During the initial setup, the builtin sign-up will be available for the first user so they can create an account and become admin.
 
@@ -88,6 +88,8 @@ You can use the filter `allowSignup`, available in the builtin configuration, to
   }
 ```
 > NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://about.sourcegraph.com/pricing).
+
+
 
 ### Account lockout
 
@@ -269,8 +271,7 @@ Then add the following lines to your site configuration:
 Replace the `clientID` and `clientSecret` values with the values from your GitLab OAuth app
 configuration.
 
-Once you've configured GitLab as a sign-on provider, you may also want to [add GitLab repositories
-to Sourcegraph](../external_service/gitlab.md#repository-syncing).
+Once you've configured GitLab as a sign-on provider, you may also want to [add GitLab repositories to Sourcegraph](../external_service/gitlab.md#repository-syncing).
 
 > NOTE: Administrators on the GitLab instance who then sign in to Sourcegraph will not have access to all of the repositories on Sourcegraph as well. Administrators will only have access to repositories on GitLab for which they are assigned the Reporter role and above.
 

@@ -5,15 +5,15 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
 
 import { asError, logger } from '@sourcegraph/common'
-import { Button, Link, Alert, Label, H2, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import { Button, Link, Label, H2, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
-import { CopyableText } from '../components/CopyableText'
 import { PageTitle } from '../components/PageTitle'
 import { CreateUserResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { createUser } from './backend'
+import { AccountCreatedAlert } from './components/AccountCreatedAlert'
 
 import styles from './SiteAdminCreateUserPage.module.scss'
 
@@ -88,25 +88,6 @@ export class SiteAdminCreateUserPage extends React.Component<{}, State> {
     }
 
     public render(): JSX.Element | null {
-        const postCreateText = (result: CreateUserResult['createUser'], emailProvided: boolean): React.ReactNode => {
-            let text = 'The user must authenticate using a configured authentication provider.'
-            let copyableURL = null
-            if (result.resetPasswordURL) {
-                copyableURL = <CopyableText text={result.resetPasswordURL} size={40} />
-                text = 'You must manually send this password reset link to the new user: '
-                if (window.context.emailEnabled && emailProvided) {
-                    text =
-                        "A password reset URL has been sent to the new user's email address. If they don't receive it, you can also share the following password reset link: "
-                }
-            }
-            return (
-                <>
-                    <Text>{text}</Text>
-                    {copyableURL}
-                </>
-            )
-        }
-
         return (
             <div className="site-admin-create-user-page">
                 <PageTitle title="Create user - Admin" />
@@ -122,15 +103,15 @@ export class SiteAdminCreateUserPage extends React.Component<{}, State> {
                     <Link to="/help/admin/auth">User authentication</Link> in the Sourcegraph documentation.
                 </Text>
                 {this.state.createUserResult ? (
-                    <Alert variant="success">
-                        <Text>
-                            Account created for <Link to={`/users/${this.state.username}`}>{this.state.username}</Link>.
-                        </Text>
-                        {postCreateText(this.state.createUserResult, !!this.state.email)}
+                    <AccountCreatedAlert
+                        username={this.state.username}
+                        email={this.state.email}
+                        resetPasswordURL={this.state.createUserResult.resetPasswordURL}
+                    >
                         <Button className="mt-2" onClick={this.dismissAlert} autoFocus={true} variant="primary">
                             Create another user
                         </Button>
-                    </Alert>
+                    </AccountCreatedAlert>
                 ) : (
                     <Form onSubmit={this.onSubmit} className="site-admin-create-user-page__form">
                         <div className={classNames('form-group', styles.formGroup)}>

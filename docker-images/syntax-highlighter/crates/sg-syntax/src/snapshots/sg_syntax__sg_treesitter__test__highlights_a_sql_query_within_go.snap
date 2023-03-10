@@ -3,11 +3,11 @@ source: crates/sg-syntax/src/sg_treesitter.rs
 expression: "dump_document(&document, src)"
 ---
   package main
-//^^^^^^^ IdentifierKeyword 
+//^^^^^^^ Keyword 
 //        ^^^^ IdentifierNamespace 
   
   const MySqlQuery = `
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^^^^^ IdentifierConstant 
 //                 ^ IdentifierOperator 
 //                   ^ StringLiteral 2:19..4:1 

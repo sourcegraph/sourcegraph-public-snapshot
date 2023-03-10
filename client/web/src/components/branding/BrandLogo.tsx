@@ -1,10 +1,10 @@
-import React from 'react'
+import { FC } from 'react'
 
 import classNames from 'classnames'
 
 import styles from './BrandLogo.module.scss'
 
-interface Props extends Exclude<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {
+interface BrandLogoProps extends Exclude<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {
     /**
      * The site configuration `branding` property. If not set, the global value from
      * `window.context.branding` is used.
@@ -26,17 +26,15 @@ interface Props extends Exclude<React.ImgHTMLAttributes<HTMLImageElement>, 'src'
  * The Sourcegraph logo image. If a custom logo specified in the `branding` site configuration
  * property, it is used instead.
  */
-export const BrandLogo: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    isLightTheme,
-    branding,
-    assetsRoot,
-    variant,
-    className = '',
-    ...props
-}) => {
-    // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
-    branding = branding ?? window.context?.branding
-    assetsRoot = assetsRoot ?? (window.context?.assetsRoot || '')
+export const BrandLogo: FC<BrandLogoProps> = props => {
+    const {
+        branding = window.context?.branding,
+        assetsRoot = window.context?.assetsRoot || '',
+        variant,
+        className,
+        isLightTheme,
+        ...attrs
+    } = props
 
     const themeProperty = isLightTheme ? 'light' : 'dark'
 
@@ -50,7 +48,7 @@ export const BrandLogo: React.FunctionComponent<React.PropsWithChildren<Props>> 
 
     return (
         <img
-            {...props}
+            {...attrs}
             className={classNames(className, {
                 [styles.brandLogoSpin]: variant === 'symbol' && !branding?.disableSymbolSpin,
             })}

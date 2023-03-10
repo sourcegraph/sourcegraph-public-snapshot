@@ -8,14 +8,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/conc/stream"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -233,10 +235,10 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 	var (
 		start           = time.Now()
-		categoriesGroup = group.NewWithStreaming[error]()
+		categoriesGroup = stream.New()
 
 		// checksLimiter is shared to limit all concurrent checks across categories.
-		checksLimiter = group.NewBasicLimiter(r.Concurrency)
+		checksLimiter = limiter.New(r.Concurrency)
 
 		// aggregated results
 		categoriesSkipped   = map[int]bool{}
@@ -297,7 +299,25 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		i, category := i, category
 
 		// Run categories concurrently
-		categoriesGroup.Go(func() error {
+		cb := func(err error) stream.Callback {
+			return func() {
+				// record duration
+				categoriesDurations[i] = time.Since(start)
+
+				// record if skipped
+				if errors.Is(err, errSkipped) {
+					categoriesSkipped[i] = true
+				}
+
+				// If error'd, status bar has already been set to failed with an error message
+				// so we only update if there is no error
+				if err == nil {
+					updateCategoryCompleted(i)
+				}
+			}
+		}
+
+		categoriesGroup.Go(func() stream.Callback {
 			categoryCtx, categorySpan := r.startSpan(ctx, "category "+category.Name,
 				trace.WithAttributes(
 					attribute.String("action", "check_category"),
@@ -308,19 +328,20 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 				// Mark as done
 				updateCategorySkipped(i, err)
 				categorySpan.Skipped()
-				return errSkipped
+				return cb(errSkipped)
 			}
 
 			// Run all checks for this category concurrently
-			checksGroup := group.New().
-				WithErrors().
-				WithConcurrencyLimiter(checksLimiter)
+			checksGroup := pool.New().WithErrors()
 			for _, check := range category.Checks {
 				// copy
 				check := check
 
 				// run checks concurrently
 				checksGroup.Go(func() (err error) {
+					checksLimiter.Acquire()
+					defer checksLimiter.Release()
+
 					ctx, span := r.startSpan(categoryCtx, "check "+check.Name,
 						trace.WithAttributes(
 							attribute.String("action", "check"),
@@ -368,21 +389,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 				})
 			}
 
-			return checksGroup.Wait()
-		}, func(err error) {
-			// record duration
-			categoriesDurations[i] = time.Since(start)
-
-			// record if skipped
-			if errors.Is(err, errSkipped) {
-				categoriesSkipped[i] = true
-			}
-
-			// If error'd, status bar has already been set to failed with an error message
-			// so we only update if there is no error
-			if err == nil {
-				updateCategoryCompleted(i)
-			}
+			return cb(checksGroup.Wait())
 		})
 	}
 	categoriesGroup.Wait()

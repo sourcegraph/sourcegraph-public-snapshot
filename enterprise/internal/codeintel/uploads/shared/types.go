@@ -208,7 +208,6 @@ type UploadLog struct {
 type RankingDefinitions struct {
 	UploadID     int
 	SymbolName   string
-	Repository   string
 	DocumentPath string
 }
 

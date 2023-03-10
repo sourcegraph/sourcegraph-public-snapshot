@@ -3,13 +3,11 @@ import path from 'path'
 
 import { WebpackPluginFunction } from 'webpack'
 
-import { STATIC_ASSETS_PATH, STATIC_INDEX_PATH } from '@sourcegraph/build-config'
-
 import { SourcegraphContext } from '../../src/jscontext'
 
-import { createJsContext, ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL } from '.'
+import { createJsContext, ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL, STATIC_INDEX_PATH } from '.'
 
-const { NODE_ENV } = ENVIRONMENT_CONFIG
+const { NODE_ENV, STATIC_ASSETS_PATH } = ENVIRONMENT_CONFIG
 
 export const WEBPACK_MANIFEST_PATH = path.resolve(STATIC_ASSETS_PATH, 'webpack.manifest.json')
 

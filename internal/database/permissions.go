@@ -35,18 +35,26 @@ type PermissionStore interface {
 	BulkCreate(ctx context.Context, opts []CreatePermissionOpts) ([]*types.Permission, error)
 	// BulkDelete deletes a permission with the provided ID
 	BulkDelete(ctx context.Context, opts []DeletePermissionOpts) error
+	// GetPermissionForUser retrieves a permission for a user. If the user doesn't have the permission
+	// it returns an error.
+	GetPermissionForUser(ctx context.Context, opts GetPermissionForUserOpts) (*types.Permission, error)
 	// Count returns the number of permissions in the database matching the options provided.
 	Count(ctx context.Context, opts PermissionListOpts) (int, error)
 	// Create inserts the given permission into the database.
 	Create(ctx context.Context, opts CreatePermissionOpts) (*types.Permission, error)
 	// Delete deletes a permission with the provided ID
 	Delete(ctx context.Context, opts DeletePermissionOpts) error
-	// FetchAll returns all permissions in the database. This list is not paginated and is meant for internal use only.
-	FetchAll(ctx context.Context) ([]*types.Permission, error)
 	// GetByID returns the permission matching the given ID, or PermissionNotFoundErr if no such record exists.
 	GetByID(ctx context.Context, opts GetPermissionOpts) (*types.Permission, error)
 	// List returns all the permissions in the database that matches the options.
 	List(ctx context.Context, opts PermissionListOpts) ([]*types.Permission, error)
+}
+
+type GetPermissionForUserOpts struct {
+	UserID int32
+
+	Namespace types.PermissionNamespace
+	Action    string
 }
 
 type CreatePermissionOpts struct {
@@ -72,9 +80,15 @@ type PermissionListOpts struct {
 
 type PermissionNotFoundErr struct {
 	ID int32
+
+	Namespace types.PermissionNamespace
+	Action    string
 }
 
 func (p *PermissionNotFoundErr) Error() string {
+	if p.ID == 0 {
+		return fmt.Sprintf("permission %s#%s not found for user", p.Namespace, p.Action)
+	}
 	return fmt.Sprintf("permission with ID %d not found", p.ID)
 }
 
@@ -90,6 +104,49 @@ var _ PermissionStore = &permissionStore{}
 
 func PermissionsWith(other basestore.ShareableStore) PermissionStore {
 	return &permissionStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+const getPermissionForUserQuery = `
+SELECT %s FROM permissions
+INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id
+INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id
+WHERE permissions.action = %s AND permissions.namespace = %s AND user_roles.user_id = %s
+LIMIT 1
+`
+
+func (p *permissionStore) GetPermissionForUser(ctx context.Context, opts GetPermissionForUserOpts) (*types.Permission, error) {
+	if opts.UserID == 0 {
+		return nil, errors.New("missing user id")
+	}
+
+	if !opts.Namespace.Valid() {
+		return nil, errors.New("invalid permission namespace")
+	}
+
+	if opts.Action == "" {
+		return nil, errors.New("missing permission action")
+	}
+
+	q := sqlf.Sprintf(
+		getPermissionForUserQuery,
+		sqlf.Join(permissionColumns, ", "),
+		opts.Action,
+		opts.Namespace,
+		opts.UserID,
+	)
+
+	permission, err := scanPermission(p.QueryRow(ctx, q))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &PermissionNotFoundErr{
+				Namespace: opts.Namespace,
+				Action:    opts.Action,
+			}
+		}
+		return nil, errors.Wrap(err, "scanning permission")
+	}
+
+	return permission, nil
 }
 
 const permissionCreateQueryFmtStr = `
@@ -194,7 +251,7 @@ func (p *permissionStore) Delete(ctx context.Context, opts DeletePermissionOpts)
 	}
 
 	if rowsAffected == 0 {
-		return errors.Wrap(&PermissionNotFoundErr{opts.ID}, "failed to delete permission")
+		return errors.Wrap(&PermissionNotFoundErr{ID: opts.ID}, "failed to delete permission")
 	}
 	return nil
 }
@@ -257,32 +314,6 @@ func (p *permissionStore) GetByID(ctx context.Context, opts GetPermissionOpts) (
 	}
 
 	return permission, nil
-}
-
-func (p *permissionStore) FetchAll(ctx context.Context) ([]*types.Permission, error) {
-	query := sqlf.Sprintf(
-		"SELECT %s FROM permissions",
-		sqlf.Join(permissionColumns, ", "),
-	)
-
-	rows, err := p.Query(ctx, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "error running query")
-	}
-
-	defer rows.Close()
-
-	var permissions []*types.Permission
-	for rows.Next() {
-		permission, err := scanPermission(rows)
-		if err != nil {
-			return nil, errors.Wrap(err, "scanning permission")
-		}
-
-		permissions = append(permissions, permission)
-	}
-
-	return permissions, rows.Err()
 }
 
 const permissionListQueryFmtStr = `

@@ -110,6 +110,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 		WeeklyGroupResultsOpenSection:                &zeroInt,
 		WeeklyGroupResultsCollapseSection:            &zeroInt,
 		WeeklyGroupResultsInfoIconHover:              &zeroInt,
+		WeeklyDataExportClicks:                       &zeroInt,
 	}
 
 	wantedWeeklyUsage := []types.AggregatedPingStats{

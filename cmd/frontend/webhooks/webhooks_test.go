@@ -12,6 +12,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+
 	gh "github.com/google/go-github/v43/github"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -85,6 +87,16 @@ func TestWebhooksHandler(t *testing.T) {
 		"http://bitbucket.com",
 		u.ID,
 		types.NewUnencryptedSecret("bbcloudsecret"),
+	)
+	require.NoError(t, err)
+
+	azureDevOpsWH, err := dbWebhooks.Create(
+		context.Background(),
+		"ado webhook",
+		extsvc.KindAzureDevOps,
+		"https://dev.azure.com",
+		u.ID,
+		types.NewUnencryptedSecret("adosecret"),
 	)
 	require.NoError(t, err)
 
@@ -388,6 +400,56 @@ func TestWebhooksHandler(t *testing.T) {
 		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
 		require.NoError(t, err)
 		req.Header.Set("X-Event-Key", "unknown_event")
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("Azure DevOps returns 200", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, azureDevOpsWH.UUID)
+
+		event := azuredevops.PullRequestUpdatedEvent{EventType: "git.pullrequest.updated"}
+		payload, err := json.Marshal(event)
+		require.NoError(t, err)
+		wh := &fakeWebhookHandler{}
+		wr.handlers = map[string]eventHandlers{
+			extsvc.KindAzureDevOps: {
+				"git.pullrequest.updated": []Handler{wh.handleEvent},
+			},
+		}
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		logs, _, err := db.WebhookLogs(keyring.Default().WebhookLogKey).List(context.Background(), database.WebhookLogListOpts{
+			WebhookID: &azureDevOpsWH.ID,
+		})
+		assert.NoError(t, err)
+		assert.Len(t, logs, 1)
+		for _, log := range logs {
+			assert.Equal(t, azureDevOpsWH.ID, *log.WebhookID)
+		}
+		assert.Equal(t, azureDevOpsWH.CodeHostURN, wh.codeHostURNReceived)
+		assert.Equal(t, &event, wh.eventReceived)
+	})
+
+	t.Run("Azure DevOps returns 404 not found if webhook event type unknown", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, azureDevOpsWH.UUID)
+
+		payload := []byte(`{"body": "text"}`)
+		require.NoError(t, err)
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := http.DefaultClient.Do(req)

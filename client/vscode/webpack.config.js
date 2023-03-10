@@ -91,6 +91,12 @@ function getExtensionCoreConfiguration(targetType) {
           exclude: /node_modules/,
           use: [getBabelLoader()],
         },
+        {
+          test: /\.m?js/,
+          resolve: {
+            fullySpecified: false,
+          },
+        },
       ],
     },
     plugins: [
@@ -124,8 +130,7 @@ const searchSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'se
 const helpSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'help')
 // Extension Host Worker Path
 const extensionHostWorker = /main\.worker\.ts$/
-// Monaco Editor Path
-const MONACO_EDITOR_PATH = path.resolve(rootPath, 'node_modules', 'monaco-editor')
+
 /** @type {import('webpack').Configuration}*/
 const webviewConfig = {
   context: __dirname, // needed when running `gulp` from the root dir
@@ -215,10 +220,15 @@ const webviewConfig = {
       // to reference path in the extension when we load the font ourselves.
       {
         test: /\.ttf$/,
-        include: [MONACO_EDITOR_PATH],
         type: 'asset/resource',
         generator: {
           filename: '[name][ext]',
+        },
+      },
+      {
+        test: /\.m?js/,
+        resolve: {
+          fullySpecified: false,
         },
       },
     ],

@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -59,7 +59,7 @@ type Options struct {
 type DockerOptions struct {
 	// DockerAuthConfig, if set, will be used to configure the docker CLI to authenticate to
 	// registries.
-	DockerAuthConfig executor.DockerAuthConfig
+	DockerAuthConfig types.DockerAuthConfig
 	// AddHostGateway, if set, will add a host entry and route to the daemon host to the
 	// container. This can be useful to add host.docker.internal as an endpoint inside
 	// the container.

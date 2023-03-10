@@ -6,7 +6,7 @@
 
 By default, Sourcegraph attempts to reconcile (create, update, or close) changesets as quickly as the rate limits on the code host allow. This can result in CI systems being overwhelmed if hundreds or thousands of changesets are being handled as part of a single batch change.
 
-Configuring rollout windows allows changesets to be created and updated at a slower or faster rate based on the time of day and/or the day of the week. These windows are applied to changesets across all code hosts.
+Configuring rollout windows allows changesets to be reconciled at a slower or faster rate based on the time of day and/or the day of the week. These windows are applied to changesets across all code hosts, but they only affect the rate at which changesets are created/published, updated, or closed, as well as some other internal operations like importing and detaching. Bulk operations to publish changesets also respect the rollout window; however, bulk commenting, merging, and closing will happen all at once.
 
 Rollout windows are configured through the `batchChanges.rolloutWindows` [site configuration option](site_config.md). If specified, this option contains an array of rollout window objects that are used to schedule changesets. The format of these objects [is given below](#rollout-window-object).
 

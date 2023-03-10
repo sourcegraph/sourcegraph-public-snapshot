@@ -22,8 +22,11 @@ go_library(
         "//internal/database",
         "//internal/env",
         "//internal/lazyregexp",
+        "//internal/types",
         "//internal/version",
         "//schema",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 

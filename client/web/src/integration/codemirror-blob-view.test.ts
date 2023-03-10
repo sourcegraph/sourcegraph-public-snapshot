@@ -2,11 +2,8 @@ import assert from 'assert'
 
 import { ElementHandle, MouseButton } from 'puppeteer'
 
-import type { ExtensionContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { JsonDocument, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -18,6 +15,7 @@ import {
     createFileExternalLinksResult,
     createTreeEntriesResult,
     createBlobContentResult,
+    createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { createEditorAPI, EditorAPI } from './utils'
@@ -112,10 +110,17 @@ describe('CodeMirror blob view', () => {
             // files from TreeEntries request
             assert.deepStrictEqual(
                 allFilesInTheTree,
-                Object.entries(filePaths).map(([name, path]) => ({
-                    content: name,
-                    href: `${driver.sourcegraphBaseUrl}${path}`,
-                }))
+                Object.entries(filePaths)
+                    .filter(
+                        ([name]) =>
+                            name !==
+                            // This file is not part of the same directory so it won't be shown in this test case
+                            'this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java'
+                    )
+                    .map(([name, path]) => ({
+                        content: name,
+                        href: `${driver.sourcegraphBaseUrl}${path}`,
+                    }))
             )
         })
 
@@ -166,18 +171,6 @@ describe('CodeMirror blob view', () => {
             return lineNumberElement
         }
 
-        it('selects a line when clicking the line', async () => {
-            await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
-            await waitForView()
-            await driver.page.click(lineAt(1))
-
-            // Line is selected
-            await driver.page.waitForSelector(lineAt(1) + "[data-testid='selected-line']")
-
-            // URL is updated
-            await driver.assertWindowLocation(`${filePaths['test.ts']}?L1`)
-        })
-
         // This should also test the "back' button, but that test passed with
         // puppeteer regardless of the implementation.
         for (const button of ['forward', 'middle', 'right'] as MouseButton[]) {
@@ -218,26 +211,6 @@ describe('CodeMirror blob view', () => {
         })
 
         describe('line range selection', () => {
-            it('selects a line range when shift-clicking lines', async () => {
-                await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
-                await waitForView()
-
-                await driver.page.click(lineAt(1))
-                await driver.page.keyboard.down('Shift')
-                await driver.page.click(lineAt(3))
-                await driver.page.keyboard.up('Shift')
-
-                // Lines is selected
-                await Promise.all(
-                    [1, 2, 3].map(lineNumber =>
-                        driver.page.waitForSelector(lineAt(lineNumber) + "[data-testid='selected-line']")
-                    )
-                )
-
-                // URL is updated
-                await driver.assertWindowLocation(`${filePaths['test.ts']}?L1-3`)
-            })
-
             it('selects a line range when shift-clicking line numbers', async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
                 await waitForView()
@@ -280,136 +253,6 @@ describe('CodeMirror blob view', () => {
 
                 // URL is updated
                 await driver.assertWindowLocation(`${filePaths['test.ts']}?L1-5`)
-            })
-        })
-    })
-
-    // Describes the ways the blob viewer can be extended through Sourcegraph extensions.
-    describe('extensibility', () => {
-        beforeEach(() => {
-            testContext.overrideJsContext({ enableLegacyExtensions: true })
-        })
-
-        describe('hovercards', () => {
-            beforeEach(() => {
-                const {
-                    graphqlResults: extensionGraphQlResult,
-                    intercept,
-                    userSettings,
-                } = createExtensionData([
-                    {
-                        id: 'test',
-                        extensionID: 'test/test',
-                        extensionManifest: {
-                            url: new URL(
-                                '/-/static/extension/0001-test-test.js?hash--test-test',
-                                driver.sourcegraphBaseUrl
-                            ).href,
-                            activationEvents: ['*'],
-                        },
-                        bundle: function extensionBundle(): void {
-                            // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-                            const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
-
-                            function activate(context: ExtensionContext): void {
-                                context.subscriptions.add(
-                                    sourcegraph.languages.registerHoverProvider([{ language: 'typescript' }], {
-                                        provideHover: () => ({
-                                            contents: {
-                                                kind: sourcegraph.MarkupKind.Markdown,
-                                                value: 'Test hover content',
-                                            },
-                                        }),
-                                    })
-                                )
-                            }
-
-                            exports.activate = activate
-                        },
-                    },
-                ])
-                testContext.overrideGraphQL({
-                    ...commonBlobGraphQlResults,
-                    ...createViewerSettingsGraphQLOverride({
-                        user: {
-                            ...userSettings,
-                            experimentalFeatures: {
-                                enableCodeMirrorFileView: true,
-                            },
-                        },
-                    }),
-                    ...extensionGraphQlResult,
-                })
-
-                // Serve a mock extension bundle with a simple hover provider
-                intercept(testContext, driver)
-            })
-
-            it('shows a hover overlay from a hover provider when a token is hovered', async () => {
-                await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
-                await waitForView()
-                await driver.page.hover(wordSelector)
-                await driver.page.waitForSelector('.cm-code-intel-hovercard')
-                assert.strictEqual(
-                    await driver.page.evaluate(
-                        (): string =>
-                            document.querySelector('[data-testid="hover-overlay-contents"]')?.textContent?.trim() ?? ''
-                    ),
-                    'Test hover content',
-                    'hovercard is visible with correct content'
-                )
-
-                await driver.page.hover(lineAt(5))
-                try {
-                    await driver.page.waitForSelector('.cm-code-intel-hovercard', { hidden: true })
-                } catch {
-                    throw new Error('Timeout waiting for hovercard to disappear')
-                }
-            })
-
-            it('pins a hovercard and unpins hovercards', async () => {
-                await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
-                await waitForView()
-                await driver.page.hover(wordSelector)
-                await driver.page.waitForSelector('.cm-code-intel-hovercard [data-testid="hover-copy-link"]')
-
-                await driver.page.click('.cm-code-intel-hovercard [data-testid="hover-copy-link"]')
-
-                // URL gets updated
-                await driver.assertWindowLocation(`${filePaths['test.ts']}?L1:1&popover=pinned`)
-
-                // Close button is visible
-                await driver.page.waitForSelector('.cm-code-intel-hovercard [aria-label="Close"]')
-
-                // Hovercard stay open when moving the mouse away
-                await driver.page.hover(lineAt(5))
-                await driver.page.waitForSelector('.cm-code-intel-hovercard')
-
-                // Closes hovercard when clicking on another line
-                await driver.page.click(lineAt(5))
-                try {
-                    await driver.page.waitForSelector('.cm-code-intel-hovercard', { hidden: true })
-                } catch {
-                    throw new Error('Timeout waiting for hovercard to close after selecting another line')
-                }
-
-                // Opens pinned hovecard when navigating back
-                await driver.page.goBack()
-                await driver.page.waitForSelector('.cm-code-intel-hovercard')
-
-                // Closes hover card when clicking the close button
-                await driver.page.click('.cm-code-intel-hovercard [aria-label="Close"]')
-                try {
-                    await driver.page.waitForSelector('.cm-code-intel-hovercard', { hidden: true })
-                } catch {
-                    throw new Error('Timeout waiting for hovercard to close after clicking close button')
-                }
-            })
-
-            it('opens a pinned hovercard on page load', async () => {
-                await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}?L1:1&popover=pinned`)
-                await waitForView()
-                await driver.page.waitForSelector('.cm-code-intel-hovercard')
             })
         })
     })
@@ -530,7 +373,10 @@ function createBlobPageData<T extends BlobInfo>({
     repoName: string
     blobInfo: T
 }): {
-    graphqlResults: Pick<WebGraphQlOperations, 'ResolveRepoRev' | 'FileExternalLinks' | 'Blob' | 'FileNames'> &
+    graphqlResults: Pick<
+        WebGraphQlOperations,
+        'ResolveRepoRev' | 'FileTreeEntries' | 'FileExternalLinks' | 'Blob' | 'FileNames'
+    > &
         Pick<SharedGraphQlOperations, 'TreeEntries' | 'LegacyRepositoryIntrospection' | 'LegacyResolveRepo2'>
     filePaths: { [k in keyof T]: string }
 } {
@@ -547,6 +393,7 @@ function createBlobPageData<T extends BlobInfo>({
             FileExternalLinks: ({ filePath }) =>
                 createFileExternalLinksResult(`https://${repoName}/blob/master/${filePath}`),
             TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, fileNames),
+            FileTreeEntries: () => createFileTreeEntriesResult(repositorySourcegraphUrl, fileNames),
             Blob: ({ filePath }) =>
                 createBlobContentResult(blobInfo[filePath].content, blobInfo[filePath].html, blobInfo[filePath].lsif),
             FileNames: () => ({
@@ -575,57 +422,6 @@ function createBlobPageData<T extends BlobInfo>({
                     name: repoName,
                 },
             }),
-        },
-    }
-}
-
-interface MockExtension {
-    id: string
-    extensionID: string
-    extensionManifest: ExtensionManifest
-    /**
-     * A function whose body is a Sourcegraph extension.
-     *
-     * Bundle must import 'sourcegraph' (e.g. `const sourcegraph = require('sourcegraph')`)
-     * */
-    bundle: () => void
-}
-
-function createExtensionData(extensions: MockExtension[]): {
-    intercept: (testContext: WebIntegrationTestContext, driver: Driver) => void
-    graphqlResults: Pick<SharedGraphQlOperations, 'Extensions'>
-    userSettings: Required<Pick<Settings, 'extensions'>>
-} {
-    return {
-        intercept(testContext: WebIntegrationTestContext, driver: Driver) {
-            for (const extension of extensions) {
-                testContext.server
-                    .get(new URL(extension.extensionManifest.url, driver.sourcegraphBaseUrl).href)
-                    .intercept((_request, response) => {
-                        // Create an immediately-invoked function expression for the extensionBundle function
-                        const extensionBundleString = `(${extension.bundle.toString()})()`
-                        response.type('application/javascript; charset=utf-8').send(extensionBundleString)
-                    })
-            }
-        },
-        graphqlResults: {
-            Extensions: () => ({
-                extensionRegistry: {
-                    __typename: 'ExtensionRegistry',
-                    extensions: {
-                        nodes: extensions.map(extension => ({
-                            ...extension,
-                            manifest: { jsonFields: extension.extensionManifest },
-                        })),
-                    },
-                },
-            }),
-        },
-        userSettings: {
-            extensions: extensions.reduce((extensionsSettings: Record<string, boolean>, mockExtension) => {
-                extensionsSettings[mockExtension.extensionID] = true
-                return extensionsSettings
-            }, {}),
         },
     }
 }

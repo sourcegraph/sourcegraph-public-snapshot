@@ -6,10 +6,11 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/sourcegraph/conc/pool"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -88,10 +89,10 @@ func (r *settingsCascade) finalTyped(ctx context.Context) (*schema.Settings, err
 	}
 
 	// Each LatestSettings is a roundtrip to the database. So we do the requests concurrently.
-	g := group.NewWithResults[*schema.Settings]().WithContext(ctx).WithMaxConcurrency(8)
+	p := pool.NewWithResults[*schema.Settings]().WithContext(ctx).WithMaxGoroutines(8)
 	for _, subject := range subjects {
 		subject := subject
-		g.Go(func(ctx context.Context) (*schema.Settings, error) {
+		p.Go(func(ctx context.Context) (*schema.Settings, error) {
 			settings, err := subject.LatestSettings(ctx)
 			if err != nil {
 				return nil, err
@@ -110,7 +111,7 @@ func (r *settingsCascade) finalTyped(ctx context.Context) (*schema.Settings, err
 		})
 	}
 
-	allSettings, err := g.Wait()
+	allSettings, err := p.Wait()
 	if err != nil {
 		return nil, err
 	}
@@ -225,5 +226,5 @@ func (r *schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, 
 
 // Deprecated: in the GraphQL API
 func (r *schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
-	return newSchemaResolver(r.db, r.gitserverClient).ViewerSettings(ctx)
+	return newSchemaResolver(r.db, r.gitserverClient, nil).ViewerSettings(ctx)
 }

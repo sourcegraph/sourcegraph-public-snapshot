@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
 
 // NewDockerWorkspace creates a new workspace for docker-based execution. A path on
@@ -15,7 +15,7 @@ import (
 func NewDockerWorkspace(
 	ctx context.Context,
 	filesStore FilesStore,
-	job executor.Job,
+	job types.Job,
 	commandRunner command.Runner,
 	logger command.Logger,
 	cloneOpts CloneOptions,

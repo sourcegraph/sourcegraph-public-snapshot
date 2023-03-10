@@ -26,6 +26,14 @@ type Store interface {
 	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
 	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
 	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
+	ProcessSourcedCommits(
+		ctx context.Context,
+		minimumTimeSinceLastCheck time.Duration,
+		commitResolverMaximumCommitLag time.Duration,
+		limit int,
+		f func(ctx context.Context, repositoryID int, commit string) (bool, error),
+		now time.Time,
+	) (_, _ int, err error)
 	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error)
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error)
@@ -56,11 +64,11 @@ type Store interface {
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
 	SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) ([]shared.SourcedCommits, error)
 	UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) error
-	SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (int, error)
-	SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxTraversal int) (int, error)
+	SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (int, int, error)
+	SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxTraversal int) (int, int, error)
 	HardDeleteUploadsByIDs(ctx context.Context, ids ...int) error
-	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
-	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_, _ int, err error)
+	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_, _ int, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) (err error)
 
@@ -86,7 +94,7 @@ type Store interface {
 
 	// Audit Logs
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
-	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
+	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (numRecordsScanned, numRecordsAltered int, err error)
 
 	// Dependencies
 	InsertDependencySyncingJob(ctx context.Context, uploadID int) (jobID int, err error)
@@ -96,35 +104,8 @@ type Store interface {
 
 	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
 
-	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]shared.ExportedUpload, error)
-
-	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
-		metadataRecordsDeleted int,
-		inputRecordsDeleted int,
-		err error,
-	)
-
-	VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
-		numStaleDefinitionRecordsDeleted int,
-		numStaleReferenceRecordsDeleted int,
-		err error,
-	)
-
-	ProcessStaleExportedUploads(
-		ctx context.Context,
-		graphKey string,
-		batchSize int,
-		deleter func(ctx context.Context, objectPrefix string) error,
-	) (totalDeleted int, err error)
-
 	ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error
 	ReindexUploadByID(ctx context.Context, id int) error
-
-	// Ranking
-	InsertDefinitionsForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, definitions []shared.RankingDefinitions) (err error)
-	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, references shared.RankingReferences) (err error)
-	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)
-	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted float64, numInputsProcessed float64, err error)
 }
 
 // store manages the database operations for uploads.

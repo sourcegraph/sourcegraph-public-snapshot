@@ -14,7 +14,7 @@ import (
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,10 +24,13 @@ import (
 // All code intel-specific behavior is delegated to the underlying resolver instance, which is defined
 // in the parent package.
 type gitBlobLSIFDataResolver struct {
-	codeNavSvc      CodeNavService
-	autoindexingSvc AutoIndexingService
-	uploadSvc       UploadsService
-	policiesSvc     PolicyService
+	codeNavSvc       CodeNavService
+	autoindexingSvc  AutoIndexingService
+	uploadSvc        UploadsService
+	policiesSvc      PolicyService
+	siteAdminChecker sharedresolvers.SiteAdminChecker
+	repoStore        database.RepoStore
+	prefetcher       *sharedresolvers.Prefetcher
 
 	requestState     codenav.RequestState
 	locationResolver *sharedresolvers.CachedLocationResolver
@@ -44,18 +47,24 @@ func NewGitBlobLSIFDataResolver(
 	autoindexSvc AutoIndexingService,
 	uploadSvc UploadsService,
 	policiesSvc PolicyService,
+	siteAdminChecker sharedresolvers.SiteAdminChecker,
+	repoStore database.RepoStore,
+	prefetcher *sharedresolvers.Prefetcher,
+	locationResolver *sharedresolvers.CachedLocationResolver,
 	requestState codenav.RequestState,
 	errTracer *observation.ErrCollector,
 	operations *operations,
 ) resolverstubs.GitBlobLSIFDataResolver {
-	db := autoindexSvc.GetUnsafeDB()
 	return &gitBlobLSIFDataResolver{
 		codeNavSvc:       codeNavSvc,
 		autoindexingSvc:  autoindexSvc,
 		uploadSvc:        uploadSvc,
 		policiesSvc:      policiesSvc,
+		siteAdminChecker: siteAdminChecker,
+		repoStore:        repoStore,
+		prefetcher:       prefetcher,
 		requestState:     requestState,
-		locationResolver: sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient()),
+		locationResolver: locationResolver,
 		errTracer:        errTracer,
 		operations:       operations,
 	}
@@ -286,13 +295,9 @@ func (r *gitBlobLSIFDataResolver) LSIFUploads(ctx context.Context) (_ []resolver
 		dbUploads = append(dbUploads, sharedDumpToDbstoreUpload(u))
 	}
 
-	db := r.autoindexingSvc.GetUnsafeDB()
-	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexingSvc, r.uploadSvc)
-	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
-
 	resolvers := make([]resolverstubs.LSIFUploadResolver, 0, len(uploads))
 	for _, upload := range dbUploads {
-		resolvers = append(resolvers, sharedresolvers.NewUploadResolver(r.uploadSvc, r.autoindexingSvc, r.policiesSvc, upload, prefetcher, locationResolver, r.errTracer))
+		resolvers = append(resolvers, sharedresolvers.NewUploadResolver(r.uploadSvc, r.autoindexingSvc, r.policiesSvc, r.siteAdminChecker, r.repoStore, upload, r.prefetcher, r.locationResolver, r.errTracer))
 	}
 
 	return resolvers, nil

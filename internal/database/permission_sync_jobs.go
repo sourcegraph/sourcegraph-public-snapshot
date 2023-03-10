@@ -23,6 +23,13 @@ import (
 
 const CancellationReasonHigherPriority = "A job with higher priority was added."
 
+type PermissionsSyncSearchType string
+
+const (
+	PermissionsSyncSearchTypeUser PermissionsSyncSearchType = "USER"
+	PermissionsSyncSearchTypeRepo PermissionsSyncSearchType = "REPOSITORY"
+)
+
 type PermissionsSyncJobState string
 
 // PermissionsSyncJobState constants.
@@ -71,6 +78,57 @@ const (
 	PermissionsSyncJobReasonGroupSourcegraph PermissionsSyncJobReasonGroup = "SOURCEGRAPH"
 	PermissionsSyncJobReasonGroupUnknown     PermissionsSyncJobReasonGroup = "UNKNOWN"
 )
+
+var ReasonGroupToReasons = map[PermissionsSyncJobReasonGroup][]PermissionsSyncJobReason{
+	PermissionsSyncJobReasonGroupManual: {
+		ReasonManualRepoSync,
+		ReasonManualUserSync,
+	},
+	PermissionsSyncJobReasonGroupWebhook: {
+		ReasonGitHubUserEvent,
+		ReasonGitHubUserAddedEvent,
+		ReasonGitHubUserRemovedEvent,
+		ReasonGitHubUserMembershipAddedEvent,
+		ReasonGitHubUserMembershipRemovedEvent,
+		ReasonGitHubTeamAddedToRepoEvent,
+		ReasonGitHubTeamRemovedFromRepoEvent,
+		ReasonGitHubOrgMemberAddedEvent,
+		ReasonGitHubOrgMemberRemovedEvent,
+		ReasonGitHubRepoEvent,
+		ReasonGitHubRepoMadePrivateEvent,
+	},
+	PermissionsSyncJobReasonGroupSchedule: {
+		ReasonUserOutdatedPermissions,
+		ReasonUserNoPermissions,
+		ReasonRepoOutdatedPermissions,
+		ReasonRepoNoPermissions,
+		ReasonRepoUpdatedFromCodeHost,
+	},
+	PermissionsSyncJobReasonGroupSourcegraph: {
+		ReasonUserEmailRemoved,
+		ReasonUserEmailVerified,
+		ReasonUserAddedToOrg,
+		ReasonUserRemovedFromOrg,
+		ReasonUserAcceptedOrgInvite,
+	},
+}
+
+// sqlConds returns SQL query conditions to filter by reasons which are included
+// into given PermissionsSyncJobReasonGroup.
+//
+// If provided PermissionsSyncJobReasonGroup doesn't contain any reasons
+// (currently it is only PermissionsSyncJobReasonGroupUnknown), then nil is
+// returned.
+func (g PermissionsSyncJobReasonGroup) sqlConds() (conditions *sqlf.Query) {
+	if reasons, ok := ReasonGroupToReasons[g]; ok {
+		reasonQueries := make([]*sqlf.Query, 0, len(reasons))
+		for _, reason := range reasons {
+			reasonQueries = append(reasonQueries, sqlf.Sprintf("%s", reason))
+		}
+		conditions = sqlf.Sprintf("reason IN (%s)", sqlf.Join(reasonQueries, ", "))
+	}
+	return
+}
 
 type PermissionsSyncJobReason string
 
@@ -168,7 +226,7 @@ type PermissionSyncJobStore interface {
 	CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error
 
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
 	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
 }
@@ -391,17 +449,22 @@ type ListPermissionSyncJobOpts struct {
 	UserID              int
 	RepoID              int
 	Reason              PermissionsSyncJobReason
+	ReasonGroup         PermissionsSyncJobReasonGroup
 	State               PermissionsSyncJobState
 	NullProcessAfter    bool
 	NotNullProcessAfter bool
 	NotCanceled         bool
+
+	// SearchType and Query are related to text search for sync jobs.
+	SearchType PermissionsSyncSearchType
+	Query      string
 
 	// Cursor-based pagination arguments.
 	PaginationArgs *PaginationArgs
 }
 
 func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
-	conds := []*sqlf.Query{}
+	conds := make([]*sqlf.Query, 0)
 
 	if opts.ID != 0 {
 		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
@@ -412,11 +475,18 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	if opts.RepoID != 0 {
 		conds = append(conds, sqlf.Sprintf("repository_id = %s", opts.RepoID))
 	}
+	// If both reason group and reason are provided, we narrow down the filtering to
+	// just a reason.
+	if opts.ReasonGroup != "" && opts.Reason == "" {
+		if reasonConds := opts.ReasonGroup.sqlConds(); reasonConds != nil {
+			conds = append(conds, reasonConds)
+		}
+	}
 	if opts.Reason != "" {
 		conds = append(conds, sqlf.Sprintf("reason = %s", opts.Reason))
 	}
 	if opts.State != "" {
-		conds = append(conds, sqlf.Sprintf("state = %s", opts.State))
+		conds = append(conds, sqlf.Sprintf("state = lower(%s)", opts.State))
 	}
 	if opts.NullProcessAfter {
 		conds = append(conds, sqlf.Sprintf("process_after IS NULL"))
@@ -427,12 +497,27 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	if opts.NotCanceled {
 		conds = append(conds, sqlf.Sprintf("cancel = false"))
 	}
+
+	if opts.SearchType == PermissionsSyncSearchTypeRepo {
+		conds = append(conds, sqlf.Sprintf("permission_sync_jobs.repository_id IS NOT NULL"))
+		if opts.Query != "" {
+			conds = append(conds, sqlf.Sprintf("repo.name ILIKE %s", "%"+opts.Query+"%"))
+		}
+	}
+	if opts.SearchType == PermissionsSyncSearchTypeUser {
+		conds = append(conds, sqlf.Sprintf("permission_sync_jobs.user_id IS NOT NULL"))
+		if opts.Query != "" {
+			searchTerm := "%" + opts.Query + "%"
+			conds = append(conds, sqlf.Sprintf("(users.username ILIKE %s OR users.display_name ILIKE %s)", searchTerm, searchTerm))
+		}
+	}
 	return conds
 }
 
 const listPermissionSyncJobQueryFmtstr = `
 SELECT %s
 FROM permission_sync_jobs
+%s -- optional join with repo/user tables for search
 %s -- whereClause
 `
 
@@ -449,16 +534,25 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 		conds = append(conds, pagination.Where)
 	}
 
-	var whereClause *sqlf.Query
-	if len(conds) != 0 {
+	whereClause := sqlf.Sprintf("")
+	if len(conds) > 0 {
 		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
-	} else {
-		whereClause = sqlf.Sprintf("")
+	}
+
+	joinClause := sqlf.Sprintf("")
+	if opts.Query != "" {
+		switch opts.SearchType {
+		case PermissionsSyncSearchTypeRepo:
+			joinClause = sqlf.Sprintf("JOIN repo ON permission_sync_jobs.repository_id = repo.id")
+		case PermissionsSyncSearchTypeUser:
+			joinClause = sqlf.Sprintf("JOIN users ON permission_sync_jobs.user_id = users.id")
+		}
 	}
 
 	q := sqlf.Sprintf(
 		listPermissionSyncJobQueryFmtstr,
 		sqlf.Join(PermissionSyncJobColumns, ", "),
+		joinClause,
 		whereClause,
 	)
 	q = pagination.AppendOrderToQuery(q)
@@ -485,10 +579,29 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 const countPermissionSyncJobsQuery = `
 SELECT COUNT(*)
 FROM permission_sync_jobs
+%s -- optional join with repo/user tables for search
+%s -- whereClause
 `
 
-func (s *permissionSyncJobStore) Count(ctx context.Context) (int, error) {
-	q := sqlf.Sprintf(countPermissionSyncJobsQuery)
+func (s *permissionSyncJobStore) Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error) {
+	conds := opts.sqlConds()
+
+	whereClause := sqlf.Sprintf("")
+	if len(conds) > 0 {
+		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+	}
+
+	joinClause := sqlf.Sprintf("")
+	if opts.Query != "" {
+		switch opts.SearchType {
+		case PermissionsSyncSearchTypeRepo:
+			joinClause = sqlf.Sprintf("JOIN repo ON permission_sync_jobs.repository_id = repo.id")
+		case PermissionsSyncSearchTypeUser:
+			joinClause = sqlf.Sprintf("JOIN users ON permission_sync_jobs.user_id = users.id")
+		}
+	}
+
+	q := sqlf.Sprintf(countPermissionSyncJobsQuery, joinClause, whereClause)
 	var count int
 	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err

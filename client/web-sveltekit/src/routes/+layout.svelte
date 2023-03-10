@@ -1,24 +1,39 @@
 <script lang="ts">
     import { onMount, setContext } from 'svelte'
-    import { readable, writable } from 'svelte/store'
+    import { readable, writable, type Readable } from 'svelte/store'
 
     import { browser } from '$app/environment'
     import { KEY, type SourcegraphContext } from '$lib/stores'
     import { isErrorLike } from '$lib/common'
-    import { observeSystemIsLightTheme, TemporarySettingsStorage } from '$lib/shared'
-    import { readableObservable } from '$lib/utils'
+    import { TemporarySettingsStorage } from '$lib/shared'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
     import Header from './Header.svelte'
     import './styles.scss'
-    import type { LayoutData } from './$types'
+    import type { LayoutData, Snapshot } from './$types'
+    import { setExperimentalFeaturesFromSettings } from '$lib/web'
+    import { beforeNavigate } from '$app/navigation'
 
     export let data: LayoutData
 
+    function createLightThemeStore(): Readable<boolean> {
+        if (browser) {
+            const matchMedia = window.matchMedia('(prefers-color-scheme: dark)')
+            return readable(!matchMedia.matches, set => {
+                const listener = (event: MediaQueryListEventMap['change']) => {
+                    set(!event.matches)
+                }
+                matchMedia.addEventListener('change', listener)
+                return () => matchMedia.removeEventListener('change', listener)
+            })
+        }
+        return readable(true)
+    }
+
     const user = writable(data.user ?? null)
-    const settings = writable(data.settings)
+    const settings = writable(isErrorLike(data.settings) ? null : data.settings.final)
     const platformContext = writable(data.platformContext)
-    const isLightTheme = browser ? readableObservable(observeSystemIsLightTheme(window).observable) : readable(true)
+    const isLightTheme = createLightThemeStore()
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
     const temporarySettingsStorage = createTemporarySettingsStorage(
@@ -43,12 +58,43 @@
     })
 
     $: $user = data.user ?? null
-    $: $settings = data.settings
+    $: $settings = isErrorLike(data.settings) ? null : data.settings.final
     $: $platformContext = data.platformContext
+    // Sync React stores
+    $: setExperimentalFeaturesFromSettings(data.settings)
 
     $: if (browser) {
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
         document.documentElement.classList.toggle('theme-dark', !$isLightTheme)
+    }
+
+    let main: HTMLElement | null = null
+    let scrollTop = 0
+    beforeNavigate(() => {
+        // It looks like `snapshot.capture` is called "too late", i.e. after the
+        // content has been updated. beforeNavigate is used to capture the correct
+        // scroll offset
+        scrollTop = main?.scrollTop ?? 0
+    })
+    export const snapshot: Snapshot<{ x: number }> = {
+        capture() {
+            return { x: scrollTop }
+        },
+        restore(value) {
+            restoreScrollPosition(value.x)
+        },
+    }
+
+    function restoreScrollPosition(y: number) {
+        const start = Date.now()
+        requestAnimationFrame(function scroll() {
+            if (main) {
+                main.scrollTo(0, y)
+            }
+            if ((!main || main.scrollTop !== y) && Date.now() - start < 3000) {
+                requestAnimationFrame(scroll)
+            }
+        })
     }
 </script>
 
@@ -60,12 +106,12 @@
 <div class="app">
     <Header authenticatedUser={$user} />
 
-    <main>
+    <main bind:this={main}>
         <slot />
     </main>
 </div>
 
-<style>
+<style lang="scss">
     .app {
         display: flex;
         flex-direction: column;
@@ -78,6 +124,6 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        overflow: hidden;
+        overflow: auto;
     }
 </style>

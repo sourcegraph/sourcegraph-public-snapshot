@@ -9,7 +9,7 @@ import (
 func init() {
 	go func() {
 		conf.Watch(func() {
-			newPC, _ := getProviderConfig()
+			newPC, _ := GetProviderConfig()
 			if newPC == nil {
 				providers.Update("builtin", nil)
 				return
