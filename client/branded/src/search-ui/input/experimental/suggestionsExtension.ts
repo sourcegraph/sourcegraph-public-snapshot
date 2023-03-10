@@ -21,19 +21,6 @@ import { Suggestions } from './Suggestions'
 
 const ASYNC_THROTTLE_TIME = 300
 
-// Temporary solution to make some editor settings available to other extensions
-interface EditorConfig {
-    onSubmit: () => void
-}
-export const editorConfigFacet = Facet.define<EditorConfig, EditorConfig>({
-    combine(configs) {
-        return configs[0] ?? { onSubmit: () => {} }
-    },
-})
-export function getEditorConfig(state: EditorState): EditorConfig {
-    return state.facet(editorConfigFacet)
-}
-
 /**
  * A source for completion/suggestion results
  */

@@ -5,17 +5,18 @@ import { Prec } from '@codemirror/state'
 // This component makes the experimental search input accessible in the web app
 // eslint-disable-next-line no-restricted-imports
 import {
-    Action,
+    type Action,
     CodeMirrorQueryInputWrapper,
-    CodeMirrorQueryInputWrapperProps,
+    type CodeMirrorQueryInputWrapperProps,
     lastUsedContextSuggestion,
     searchHistoryExtension,
     selectionListener,
 } from '@sourcegraph/branded/src/search-ui/experimental'
-import { SearchContextProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { Editor } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import type { SearchContextProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { createSuggestionsSource, SuggestionsSourceConfig } from './suggestions'
+import { createSuggestionsSource, type SuggestionsSourceConfig } from './suggestions'
 import { useRecentSearches } from './useRecentSearches'
 
 const eventNameMap: Record<Action['type'], string> = {
@@ -63,6 +64,8 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
         getSearchContextRef.current = () => selectedSearchContextSpec
     }, [selectedSearchContextSpec])
 
+    const editorRef = useRef<Editor | null>(null)
+
     const suggestionSource = useMemo(
         () =>
             createSuggestionsSource({
@@ -86,7 +89,12 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
                     placeholder: 'Filter history',
                 },
                 source: () => recentSearchesRef.current ?? [],
-                submitQuery: query => submitSearchRef.current?.({ query }),
+                submitQuery: query => {
+                    if (submitSearchRef?.current) {
+                        submitSearchRef.current?.({ query })
+                        editorRef.current?.blur()
+                    }
+                },
             }),
             selectionListener.of(({ option, action, source }) => {
                 telemetryService.log(`SearchInput${eventNameMap[action.type]}`, {
@@ -100,6 +108,7 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
 
     return (
         <CodeMirrorQueryInputWrapper
+            ref={editorRef}
             patternType={inputProps.patternType}
             interpretComments={false}
             queryState={inputProps.queryState}
