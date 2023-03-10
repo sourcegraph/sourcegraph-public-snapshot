@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/gobwas/glob"
@@ -35,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/ttlcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -46,13 +45,13 @@ func defaultEndpoints() *endpoint.Map {
 }
 
 func LoadConfig() {
-	cacheOptions := []TTLCacheOption[string, connAndErr]{
-		WithExpirationTime[string, connAndErr](10 * time.Minute),
-		WithReapInterval[string, connAndErr](1 * time.Minute),
-		WithExpirationFunc(closeGRPCConnection),
+	cacheOptions := []ttlcache.Option[string, connAndErr]{
+		ttlcache.WithExpirationTime[string, connAndErr](10 * time.Minute),
+		ttlcache.WithReapInterval[string, connAndErr](1 * time.Minute),
+		ttlcache.WithExpirationFunc(closeGRPCConnection),
 	}
 
-	cache := newTTLCache[string, connAndErr](newGRPCConnection, cacheOptions...)
+	cache := ttlcache.New[string, connAndErr](newGRPCConnection, cacheOptions...)
 	cache.StartReaper()
 
 	DefaultClient = &Client{
@@ -81,7 +80,7 @@ type Client struct {
 	// Endpoints to symbols service.
 	Endpoints *endpoint.Map
 
-	gRPCConnCache *TTLCache[string, connAndErr]
+	gRPCConnCache *ttlcache.Cache[string, connAndErr]
 
 	// HTTP client to use
 	HTTPClient httpcli.Doer
@@ -568,224 +567,3 @@ type connAndErr struct {
 	// connection.
 	dialErr error
 }
-
-// TTLCacheOption is a function that configures a TTLCache.
-type TTLCacheOption[K comparable, V any] func(*TTLCache[K, V])
-
-// WithReapInterval sets the interval at which the cache will reap expired entries.
-func WithReapInterval[K comparable, V any](interval time.Duration) TTLCacheOption[K, V] {
-	return func(c *TTLCache[K, V]) {
-		c.reapInterval = interval
-	}
-}
-
-// WithExpirationTime sets the expiration time for entries in the cache.
-func WithExpirationTime[K comparable, V any](expiration time.Duration) TTLCacheOption[K, V] {
-	return func(c *TTLCache[K, V]) {
-		c.expirationTime = expiration
-	}
-}
-
-// WithExpirationFunc sets the callback to be called when an entry expires.
-func WithExpirationFunc[K comparable, V any](onExpiration func(K, V)) TTLCacheOption[K, V] {
-	return func(c *TTLCache[K, V]) {
-		c.expirationFunc = onExpiration
-	}
-}
-
-// withClock sets the clock to be used by the cache. This is useful for testing.
-func withClock[K comparable, V any](clock clock) TTLCacheOption[K, V] {
-	return func(c *TTLCache[K, V]) {
-		c.clock = clock
-	}
-}
-
-// newTTLCache returns a new TTLCache with the provided newEntryFunc and options.
-//
-// newEntryFunc is the routine that runs when a cache miss occurs. The returned value is stored
-// in the cache.
-//
-// By default, the cache will reap expired entries every minute and entries will
-// expire after 10 minutes.
-func newTTLCache[K comparable, V any](newEntryFunc func(K) V, options ...TTLCacheOption[K, V]) *TTLCache[K, V] {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	cache := TTLCache[K, V]{
-		reapContext:    ctx,
-		reapCancelFunc: cancel,
-
-		reapInterval:   1 * time.Minute,
-		expirationTime: 10 * time.Minute,
-
-		newEntryFunc:   newEntryFunc,
-		expirationFunc: func(k K, v V) {},
-
-		entries: make(map[K]*ttlEntry[V]),
-
-		clock: productionClock{},
-	}
-
-	for _, option := range options {
-		option(&cache)
-	}
-
-	return &cache
-}
-
-// TTLCache is a cache that expires entries after a given expiration time.
-type TTLCache[K comparable, V any] struct {
-	reapOnce sync.Once // reapOnce ensures that the background reaper is only started once.
-
-	reapContext    context.Context    // reapContext is the context used for the background reaper.
-	reapCancelFunc context.CancelFunc // reapCancelFunc is the cancel function for reapContext.
-
-	reapInterval   time.Duration // reapInterval is the interval at which the cache will reap expired entries.
-	expirationTime time.Duration // expirationTime is the expiration time for entries in the cache.
-
-	newEntryFunc   func(K) V  // newEntryFunc is the routine that runs when a cache miss occurs.
-	expirationFunc func(K, V) // expirationFunc is the callback to be called when an entry expires in the cache.
-
-	mu      sync.RWMutex
-	entries map[K]*ttlEntry[V] // entries is the map of entries in the cache.
-
-	clock clock // clock is the clock used to determine the current time.
-}
-
-type ttlEntry[V any] struct {
-	lastUsed atomic.Pointer[time.Time]
-	value    V
-}
-
-// Get returns the value for the given key. If the key is not in the cache, it
-// will be added using the newEntryFunc and returned to the caller.
-func (c *TTLCache[K, V]) Get(key K) V {
-	now := c.clock.Now()
-
-	c.mu.RLock()
-
-	// Fast path: check if the entry is already in the cache.
-	e, ok := c.entries[key]
-	if ok {
-		e.lastUsed.Store(&now)
-		value := e.value
-
-		c.mu.RUnlock()
-		return value
-	}
-	c.mu.RUnlock()
-
-	// Slow path: lock the entire cache and check again.
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// Did another goroutine already create the entry?
-	e, ok = c.entries[key]
-	if ok {
-		e.lastUsed.Store(&now)
-		return e.value
-	}
-
-	// Nobody created one, add a new one.
-	e = &ttlEntry[V]{}
-	e.lastUsed.Store(&now)
-	e.value = c.newEntryFunc(key)
-
-	c.entries[key] = e
-
-	return e.value
-}
-
-// StartReaper starts the reaper goroutine. Every reapInterval, the reaper will
-// remove entries that have not been accessed since expirationTime.
-//
-// shutdown can be called to stop the reaper. After shutdown is called, the
-// reaper will not be restarted.
-func (c *TTLCache[K, V]) StartReaper() {
-	c.reapOnce.Do(func() {
-		go func() {
-			for {
-				select {
-				case <-c.reapContext.Done():
-					return
-				case <-time.After(c.reapInterval):
-					c.reap()
-				}
-			}
-		}()
-	})
-}
-
-// reap removes all entries that have not been accessed since expirationTime, and calls
-// the expirationFunc for each entry that is removed.
-func (c *TTLCache[K, V]) reap() {
-	now := c.clock.Now()
-	earliestAllowed := now.Add(-c.expirationTime)
-
-	getExpiredKeys := func() []K {
-		var expired []K
-
-		for key, entry := range c.entries {
-			lastUsed := entry.lastUsed.Load()
-			if lastUsed == nil {
-				lastUsed = &time.Time{}
-			}
-
-			if (*lastUsed).Before(earliestAllowed) {
-				expired = append(expired, key)
-			}
-		}
-
-		return expired
-	}
-
-	// First, find all the entries that have expired.
-	// We do this under a read lock to avoid blocking other goroutines
-	// from accessing the cache.
-
-	var maybeDelete []K
-
-	c.mu.RLock()
-	maybeDelete = getExpiredKeys()
-	c.mu.RUnlock()
-
-	// If there are no entries to delete, we're done.
-	if len(maybeDelete) == 0 {
-		return
-	}
-
-	// If there are entries to delete, only now do we need to acquire
-	// the write lock to delete them.
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// We need to check again to make sure that the entries are still
-	// expired. It's possible that another goroutine has updated the
-	// entry since we released the read lock.
-
-	for _, key := range getExpiredKeys() {
-		entry := c.entries[key]
-
-		c.expirationFunc(key, entry.value)
-		delete(c.entries, key)
-	}
-}
-
-// Shutdown stops the background reaper. This function has no effect if the cache
-// has already been shut down.
-func (c *TTLCache[K, V]) Shutdown() {
-	c.reapCancelFunc()
-}
-
-type clock interface {
-	Now() time.Time
-}
-
-type productionClock struct{}
-
-func (productionClock) Now() time.Time {
-	return time.Now()
-}
-
-var _ clock = productionClock{}
