@@ -7,7 +7,7 @@ var enryLanguageMappings = map[string]string{
 	"c#": "c_sharp",
 }
 
-var supportedFiletypes = map[string]struct{}{
+var treesitterSupportedFiletypes = map[string]struct{}{
 	"c":          {},
 	"c++":        {},
 	"c_sharp":    {},
