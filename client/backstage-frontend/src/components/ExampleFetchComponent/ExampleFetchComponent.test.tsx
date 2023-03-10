@@ -1,9 +1,11 @@
 import React from 'react'
+
+import { setupRequestMockHandlers } from '@backstage/test-utils'
 import { render, screen } from '@testing-library/react'
-import { ExampleFetchComponent } from './ExampleFetchComponent'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import { setupRequestMockHandlers } from '@backstage/test-utils'
+
+import { ExampleFetchComponent } from './ExampleFetchComponent'
 
 describe('ExampleFetchComponent', () => {
     const server = setupServer()
