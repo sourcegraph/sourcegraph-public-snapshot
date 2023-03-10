@@ -47,7 +47,7 @@ export const UserAreaGQLFragment = gql`
             email
             isPrimary
         }
-        roles {
+        roles @skip(if: $isSourcegraphDotCom) {
             nodes {
                 name
             }
