@@ -156,7 +156,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                         if (requester) {
                             onDidCreateAccessToken(result)
                             setNewToken(result.token)
-                            const uri = requester?.redirectURL.replace('$TOKEN', result.token)
+                            const uri = replaceToken(requester?.redirectURL, result.token)
                             switch (requester.callbackType) {
                                 case 'new-tab':
                                     window.open(uri, '_blank')
@@ -212,7 +212,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                         {requester.showRedirectButton && (
                             <Button
                                 className="mr-2"
-                                to={requester.redirectURL.replace('$TOKEN', newToken)}
+                                to={replaceToken(requester.redirectURL, newToken)}
                                 disabled={creationOrError === 'loading'}
                                 variant="primary"
                                 as={Link}
@@ -234,4 +234,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
             {isErrorLike(creationOrError) && <ErrorAlert className="my-3" error={creationOrError} />}
         </div>
     )
+}
+
+function replaceToken(url: string, token: string): string {
+    // %24 is the URL encoded version of $
+    return url.replace('$TOKEN', token).replace('%24TOKEN', token)
 }
