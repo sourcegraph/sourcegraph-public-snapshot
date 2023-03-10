@@ -53,7 +53,6 @@ func TestIntegration_PermsStore(t *testing.T) {
 		{"GetUserIDsByExternalAccounts", testPermsStore_GetUserIDsByExternalAccounts(db)},
 		{"Metrics", testPermsStore_Metrics(db)},
 		{"MapUsers", testPermsStore_MapUsers(db)},
-		{"ListUserPermissions", testPermsStore_ListUserPermissions(db)},
 		{"ListRepoPermissions", testPermsStore_ListRepoPermissions(db)},
 	} {
 		t.Run(tc.name, tc.test)
