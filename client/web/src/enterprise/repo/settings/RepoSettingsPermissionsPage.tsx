@@ -4,6 +4,7 @@ import { mdiChevronDown } from '@mdi/js'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
     PageHeader,
@@ -37,6 +38,7 @@ import {
 import { useURLSyncedState } from '../../../hooks'
 import { ActionContainer } from '../../../repo/settings/components/ActionContainer'
 import { scheduleRepositoryPermissionsSync } from '../../../site-admin/backend'
+import { PermissionsSyncJobsTable } from '../../../site-admin/permissions-center/PermissionsSyncJobsTable'
 import { Table, IColumn } from '../../../site-admin/UserManagement/components/Table'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -46,14 +48,14 @@ import styles from './RepoSettingsPermissionsPage.module.scss'
 
 type IUser = INode['user']
 
-export interface RepoSettingsPermissionsPageProps {
+export interface RepoSettingsPermissionsPageProps extends TelemetryProps {
     repo: SettingsAreaRepositoryFields
 }
 
 /**
  * The repository settings permissions page.
  */
-export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> = ({ repo }) => {
+export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> = ({ repo, telemetryService }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsPermissions'))
 
     const [{ query }, setSearchQuery] = useURLSyncedState({ query: '' })
@@ -140,6 +142,20 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                         <ScheduleRepositoryPermissionsSyncActionContainer repo={repo} />
                     </div>
                 )}
+            </Container>
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Permissions Sync Jobs' }]}
+                description={
+                    <>
+                        List of permissions sync jobs. A permission sync job fetches the newest permissions for the
+                        given repository.
+                    </>
+                }
+                className="my-3 pt-3"
+            />
+            <Container className="mb-3">
+                <PermissionsSyncJobsTable telemetryService={telemetryService} minimal={true} repoID={repo.id} />
             </Container>
             <PageHeader
                 headingElement="h2"

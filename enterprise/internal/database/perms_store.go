@@ -10,12 +10,14 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -150,15 +152,15 @@ type PermsStore interface {
 	//         1 |       read |        {1, 2} | <DateTime>
 	SetRepoPendingPermissions(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) error
 	// GrantPendingPermissions is used to grant pending permissions when the
-	// associated "ServiceType", "ServiceID" and "BindID" found in p becomes
+	// associated "ServiceType", "ServiceID" and "AccountID" found in p becomes
 	// effective for a given user, e.g. username as bind ID when a user is created,
 	// email as bind ID when the email address is verified.
 	//
 	// Because there could be multiple external services and bind IDs that are
 	// associated with a single user (e.g. same user on different code hosts,
 	// multiple email addresses), it merges data from "repo_pending_permissions" and
-	// "user_pending_permissions" tables to "repo_permissions" and "user_permissions"
-	// tables for the user.
+	// "user_pending_permissions" tables to "user_repo_permissions" and legacy
+	// "repo_permissions" and "user_permissions" tables for the user.
 	//
 	// Therefore, permissions are unioned not replaced, which is one of the main
 	// differences from SetRepoPermissions and SetRepoPendingPermissions methods.
@@ -169,11 +171,11 @@ type PermsStore interface {
 	// This method starts its own transaction for update consistency if the caller
 	// hasn't started one already.
 	//
-	// 🚨 SECURITY: This method takes arbitrary string as a valid bind ID and does
-	// not interpret the meaning of the value it represents. Therefore, it is
+	// 🚨 SECURITY: This method takes arbitrary string as a valid account ID to bind
+	// and does not interpret the meaning of the value it represents. Therefore, it is
 	// caller's responsibility to ensure the legitimate relation between the given
-	// user ID and the bind ID found in p.
-	GrantPendingPermissions(ctx context.Context, userID int32, p *authz.UserPendingPermissions) error
+	// user ID, user external account ID and the accountID found in p.
+	GrantPendingPermissions(ctx context.Context, p *authz.UserGrantPermissions) error
 	// ListPendingUsers returns a list of bind IDs who have pending permissions by
 	// given service type and ID.
 	ListPendingUsers(ctx context.Context, serviceType, serviceID string) (bindIDs []string, _ error)
@@ -467,7 +469,8 @@ func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permi
 }
 
 // upsertUserRepoPermissions upserts multiple rows of permissions. It also updates the updated_at and source
-// columns for all the rows that match the permissions input parameter
+// columns for all the rows that match the permissions input parameter.
+// We rely on the caller to call this method in a transaction.
 func (s *permsStore) upsertUserRepoPermissions(ctx context.Context, permissions []authz.Permission, currentTime time.Time, source string) (t []time.Time, err error) {
 	const format = `
 INSERT INTO user_repo_permissions
@@ -480,28 +483,41 @@ DO UPDATE SET
 	source = excluded.source
 RETURNING updated_at;
 `
-	values := make([]*sqlf.Query, 0, len(permissions))
-	for _, p := range permissions {
-		values = append(values, sqlf.Sprintf("(NULLIF(%s::integer, 0), NULLIF(%s::integer, 0), %s::integer, %s::timestamptz, %s::timestamptz, %s::text)",
-			p.UserID,
-			p.ExternalAccountID,
-			p.RepoID,
-			currentTime,
-			currentTime,
-			source,
-		))
+
+	if !s.InTransaction() {
+		return nil, errors.New("upsertUserRepoPermissions must be called in a transaction")
 	}
 
-	q := sqlf.Sprintf(format, sqlf.Join(values, ","))
-	ctx, save := s.observe(ctx, "load", "")
-	defer func() {
-		save(&err,
-			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
-			otlog.Object("Query.Args", q.Args()),
-		)
-	}()
+	// we split into chunks, so that we don't exceed the maximum number of parameters
+	// we supply 6 parameters per row, so we can only have 65535/6 = 10922 rows per chunk
+	slicedPermissions, err := collections.SplitIntoChunks(permissions, 65535/6)
+	if err != nil {
+		return nil, err
+	}
 
-	return basestore.ScanTimes(s.Query(ctx, q))
+	output := make([]time.Time, 0, len(permissions))
+	for _, permissionSlice := range slicedPermissions {
+		values := make([]*sqlf.Query, 0, len(permissionSlice))
+		for _, p := range permissionSlice {
+			values = append(values, sqlf.Sprintf("(NULLIF(%s::integer, 0), NULLIF(%s::integer, 0), %s::integer, %s::timestamptz, %s::timestamptz, %s::text)",
+				p.UserID,
+				p.ExternalAccountID,
+				p.RepoID,
+				currentTime,
+				currentTime,
+				source,
+			))
+		}
+
+		q := sqlf.Sprintf(format, sqlf.Join(values, ","))
+
+		userRepoPerms, err := basestore.ScanTimes(s.Query(ctx, q))
+		if err != nil {
+			return nil, err
+		}
+		output = append(output, userRepoPerms...)
+	}
+	return output, nil
 }
 
 // deleteOldUserRepoPermissions deletes multiple rows of permissions. It also updates the updated_at and source
@@ -1159,9 +1175,9 @@ AND object_type = %s
 	), nil
 }
 
-func (s *permsStore) GrantPendingPermissions(ctx context.Context, userID int32, p *authz.UserPendingPermissions) (err error) {
+func (s *permsStore) GrantPendingPermissions(ctx context.Context, p *authz.UserGrantPermissions) (err error) {
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
-	defer func() { save(&err, append(p.TracingFields(), otlog.Int32("userID", userID))...) }()
+	defer func() { save(&err, p.TracingFields()...) }()
 
 	var txs *permsStore
 	if s.InTransaction() {
@@ -1174,7 +1190,15 @@ func (s *permsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 		defer func() { err = txs.Done(err) }()
 	}
 
-	id, ids, _, err := txs.loadUserPendingPermissions(ctx, p, "FOR UPDATE")
+	pendingPermissions := &authz.UserPendingPermissions{
+		ServiceID:   p.ServiceID,
+		ServiceType: p.ServiceType,
+		BindID:      p.AccountID,
+		Perm:        authz.Read,
+		Type:        authz.PermRepos,
+	}
+
+	id, ids, _, err := txs.loadUserPendingPermissions(ctx, pendingPermissions, "FOR UPDATE")
 	if err != nil {
 		// Skip the whole grant process if the user has no pending permissions.
 		if err == authz.ErrPermsNotFound {
@@ -1182,21 +1206,26 @@ func (s *permsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 		}
 		return errors.Wrap(err, "load user pending permissions")
 	}
-	p.ID = id
-	p.IDs = make(map[int32]struct{}, len(ids))
-	allRepoIDs := make([]int32, 0, len(ids))
+
+	uniqueRepoIDs := make(map[int32]struct{}, len(ids))
 	for _, id := range ids {
-		p.IDs[id] = struct{}{}
-		allRepoIDs = append(allRepoIDs, id)
+		uniqueRepoIDs[id] = struct{}{}
 	}
-	// NOTE: We currently only have "repos" type, so avoid unnecessary type checking for now.
+	allRepoIDs := maps.Keys(uniqueRepoIDs)
+
+	// Write to the unified user_repo_permissions table.
+	err = txs.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: p.UserID, ExternalAccountID: p.UserExternalAccountID}, allRepoIDs)
+	if err != nil {
+		return err
+	}
+
 	if len(allRepoIDs) == 0 {
 		return nil
 	}
 
 	var (
 		updatedAt  = txs.clock()
-		allUserIDs = []int32{userID}
+		allUserIDs = []int32{p.UserID}
 
 		addQueue    = allRepoIDs
 		hasNextPage = true
@@ -1205,23 +1234,26 @@ func (s *permsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 		var page *upsertRepoPermissionsPage
 		page, addQueue, _, hasNextPage = newUpsertRepoPermissionsPage(addQueue, nil)
 
-		if q, err := upsertRepoPermissionsBatchQuery(page, allRepoIDs, allUserIDs, p.Perm, updatedAt); err != nil {
+		if q, err := upsertRepoPermissionsBatchQuery(page, allRepoIDs, allUserIDs, authz.Read, updatedAt); err != nil {
 			return err
 		} else if err = txs.execute(ctx, q); err != nil {
 			return errors.Wrap(err, "execute upsert repo permissions batch query")
 		}
 	}
 
-	if q, err := upsertUserPermissionsBatchQuery(allUserIDs, nil, allRepoIDs, p.Perm, authz.PermRepos, updatedAt); err != nil {
+	if q, err := upsertUserPermissionsBatchQuery(allUserIDs, nil, allRepoIDs, authz.Read, authz.PermRepos, updatedAt); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert user permissions batch query")
 	}
 
+	pendingPermissions.ID = id
+	pendingPermissions.IDs = uniqueRepoIDs
+
 	// NOTE: Practically, we don't need to clean up "repo_pending_permissions" table because the value of "id" column
 	// that is associated with this user will be invalidated automatically by deleting this row. Thus, we are able to
 	// avoid database deadlocks with other methods (e.g. SetRepoPermissions, SetRepoPendingPermissions).
-	if err = txs.execute(ctx, deleteUserPendingPermissionsQuery(p)); err != nil {
+	if err = txs.execute(ctx, deleteUserPendingPermissionsQuery(pendingPermissions)); err != nil {
 		return errors.Wrap(err, "execute delete user pending permissions query")
 	}
 
