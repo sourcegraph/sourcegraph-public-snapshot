@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
@@ -148,7 +149,7 @@ func (s *service) resolveOwner(ctx context.Context, handle, email string) (codeo
 		return nil, nil
 	}
 	resolvedOwner.SetOwnerData(handle, email)
-	if person, ok := resolvedOwner.(*codeowners.Person); ok && person.User != nil {
+	if person, ok := resolvedOwner.(*codeowners.Person); ok && person.User != nil && !envvar.SourcegraphDotComMode() {
 		ms, err := s.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 			UserID:       person.User.ID,
 			OnlyVerified: true,
