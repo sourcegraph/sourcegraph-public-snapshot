@@ -328,11 +328,6 @@ func (s *Service) resolvePaths(
 	ctx, traceLogger, endObservation := s.operations.resolvePaths.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	pathPattern, err := flattenPatterns(patternsForPaths, false)
-	if err != nil {
-		return nil, err
-	}
-
 	start := time.Now()
 	rateLimitErr := s.limiter.Wait(ctx)
 	traceLogger.AddEvent("rate_limit", attribute.Int("wait_duration_ms", int(time.Since(start).Milliseconds())))
@@ -340,12 +335,18 @@ func (s *Service) resolvePaths(
 		return nil, err
 	}
 
-	paths, err := invocationContext.gitService.ListFiles(ctx, invocationContext.repo, invocationContext.commit, pathPattern)
+	globs, pathspecs, err := flattenPatterns(patternsForPaths, false)
 	if err != nil {
 		return nil, err
 	}
 
-	return paths, err
+	// Ideally we can pass the globs we explicitly filter by below
+	paths, err := invocationContext.gitService.LsFiles(ctx, invocationContext.repo, invocationContext.commit, pathspecs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return filterPaths(paths, globs, nil), nil
 }
 
 // resolveFileContents requests the content of the paths that match the given combined regular expression.

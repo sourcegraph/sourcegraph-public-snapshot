@@ -113,6 +113,11 @@ func runExec(ctx *cli.Context) error {
 		return nil
 	}
 
+	// First we build everything once, to ensure all binaries are present.
+	if err := run.BazelBuild(ctx.Context, bcmds...); err != nil {
+		return err
+	}
+
 	p := pool.New().WithContext(ctx.Context).WithCancelOnError()
 	p.Go(func(ctx context.Context) error {
 		return run.Commands(ctx, config.Env, verbose, cmds...)

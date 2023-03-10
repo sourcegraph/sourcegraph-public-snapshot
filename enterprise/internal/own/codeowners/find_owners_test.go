@@ -88,6 +88,20 @@ func TestFileOwnersMatch(t *testing.T) {
 				"/main/src/foo/bar/README.md",
 			},
 		},
+		// Literal absolute match.
+		{
+			pattern: "/main/src/README.md",
+			paths: []string{
+				"/main/src/README.md",
+			},
+		},
+		// Without a leading `/` still matches correctly.
+		{
+			pattern: "/main/src/README.md",
+			paths: []string{
+				"main/src/README.md",
+			},
+		},
 	}
 	for _, c := range cases {
 		for _, path := range c.paths {
@@ -95,13 +109,16 @@ func TestFileOwnersMatch(t *testing.T) {
 			owner := []*codeownerspb.Owner{
 				{Handle: "foo"},
 			}
-			file := codeowners.NewRuleset(&codeownerspb.File{
-				Rule: []*codeownerspb.Rule{
-					{Pattern: pattern, Owner: owner},
+			rs := codeowners.NewRuleset(
+				codeowners.IngestedRulesetSource{},
+				&codeownerspb.File{
+					Rule: []*codeownerspb.Rule{
+						{Pattern: pattern, Owner: owner},
+					},
 				},
-			})
-			got := file.FindOwners(path)
-			if !reflect.DeepEqual(got, owner) {
+			)
+			got := rs.Match(path)
+			if !reflect.DeepEqual(got.GetOwner(), owner) {
 				t.Errorf("want %q to match %q", pattern, path)
 			}
 		}
@@ -197,13 +214,16 @@ func TestFileOwnersNoMatch(t *testing.T) {
 			owner := []*codeownerspb.Owner{
 				{Handle: "foo"},
 			}
-			file := codeowners.NewRuleset(&codeownerspb.File{
-				Rule: []*codeownerspb.Rule{
-					{Pattern: pattern, Owner: owner},
+			rs := codeowners.NewRuleset(
+				codeowners.IngestedRulesetSource{},
+				&codeownerspb.File{
+					Rule: []*codeownerspb.Rule{
+						{Pattern: pattern, Owner: owner},
+					},
 				},
-			})
-			got := file.FindOwners(path)
-			if got != nil {
+			)
+			got := rs.Match(path)
+			if got.GetOwner() != nil {
 				t.Errorf("want %q not to match %q", pattern, path)
 			}
 		}
@@ -212,25 +232,27 @@ func TestFileOwnersNoMatch(t *testing.T) {
 
 func TestFileOwnersOrder(t *testing.T) {
 	wantOwner := []*codeownerspb.Owner{{Handle: "some-path-owner"}}
-	file := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{
-				Pattern: "/top-level-directory/",
-				Owner:   []*codeownerspb.Owner{{Handle: "top-level-owner"}},
+	rs := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{
+					Pattern: "/top-level-directory/",
+					Owner:   []*codeownerspb.Owner{{Handle: "top-level-owner"}},
+				},
+				// The owner of the last matching pattern is being picked
+				{
+					Pattern: "some/path/*",
+					Owner:   wantOwner,
+				},
+				{
+					Pattern: "does/not/match",
+					Owner:   []*codeownerspb.Owner{{Handle: "not-matching-owner"}},
+				},
 			},
-			// The owner of the last matching pattern is being picked
-			{
-				Pattern: "some/path/*",
-				Owner:   wantOwner,
-			},
-			{
-				Pattern: "does/not/match",
-				Owner:   []*codeownerspb.Owner{{Handle: "not-matching-owner"}},
-			},
-		},
-	})
-	got := file.FindOwners("/top-level-directory/some/path/main.go")
-	assert.Equal(t, wantOwner, got)
+		})
+	got := rs.Match("/top-level-directory/some/path/main.go")
+	assert.Equal(t, wantOwner, got.GetOwner())
 }
 
 func BenchmarkOwnersMatchLiteral(b *testing.B) {
@@ -241,18 +263,21 @@ func BenchmarkOwnersMatchLiteral(b *testing.B) {
 	owner := []*codeownerspb.Owner{
 		{Handle: "foo"},
 	}
-	rs := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{Pattern: pattern, Owner: owner},
+	rs := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{Pattern: pattern, Owner: owner},
+			},
 		},
-	})
+	)
 	// Warm cache.
 	for _, path := range paths {
-		rs.FindOwners(path)
+		rs.Match(path)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.FindOwners(pattern)
+		rs.Match(pattern)
 	}
 }
 
@@ -264,18 +289,21 @@ func BenchmarkOwnersMatchRelativeGlob(b *testing.B) {
 	owner := []*codeownerspb.Owner{
 		{Handle: "foo"},
 	}
-	rs := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{Pattern: pattern, Owner: owner},
+	rs := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{Pattern: pattern, Owner: owner},
+			},
 		},
-	})
+	)
 	// Warm cache.
 	for _, path := range paths {
-		rs.FindOwners(path)
+		rs.Match(path)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.FindOwners(pattern)
+		rs.Match(pattern)
 	}
 }
 
@@ -287,18 +315,21 @@ func BenchmarkOwnersMatchAbsoluteGlob(b *testing.B) {
 	owner := []*codeownerspb.Owner{
 		{Handle: "foo"},
 	}
-	rs := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{Pattern: pattern, Owner: owner},
+	rs := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{Pattern: pattern, Owner: owner},
+			},
 		},
-	})
+	)
 	// Warm cache.
 	for _, path := range paths {
-		rs.FindOwners(path)
+		rs.Match(path)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.FindOwners(pattern)
+		rs.Match(pattern)
 	}
 }
 
@@ -310,18 +341,21 @@ func BenchmarkOwnersMismatchLiteral(b *testing.B) {
 	owner := []*codeownerspb.Owner{
 		{Handle: "foo"},
 	}
-	rs := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{Pattern: pattern, Owner: owner},
+	rs := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{Pattern: pattern, Owner: owner},
+			},
 		},
-	})
+	)
 	// Warm cache.
 	for _, path := range paths {
-		rs.FindOwners(path)
+		rs.Match(path)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.FindOwners(pattern)
+		rs.Match(pattern)
 	}
 }
 
@@ -333,18 +367,21 @@ func BenchmarkOwnersMismatchRelativeGlob(b *testing.B) {
 	owner := []*codeownerspb.Owner{
 		{Handle: "foo"},
 	}
-	rs := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{Pattern: pattern, Owner: owner},
+	rs := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{Pattern: pattern, Owner: owner},
+			},
 		},
-	})
+	)
 	// Warm cache.
 	for _, path := range paths {
-		rs.FindOwners(path)
+		rs.Match(path)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.FindOwners(pattern)
+		rs.Match(pattern)
 	}
 }
 
@@ -356,18 +393,21 @@ func BenchmarkOwnersMismatchAbsoluteGlob(b *testing.B) {
 	owner := []*codeownerspb.Owner{
 		{Handle: "foo"},
 	}
-	rs := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{Pattern: pattern, Owner: owner},
+	rs := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{Pattern: pattern, Owner: owner},
+			},
 		},
-	})
+	)
 	// Warm cache.
 	for _, path := range paths {
-		rs.FindOwners(path)
+		rs.Match(path)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.FindOwners(pattern)
+		rs.Match(pattern)
 	}
 }
 
@@ -379,18 +419,21 @@ func BenchmarkOwnersMatchMultiHole(b *testing.B) {
 	owner := []*codeownerspb.Owner{
 		{Handle: "foo"},
 	}
-	rs := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{Pattern: pattern, Owner: owner},
+	rs := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{Pattern: pattern, Owner: owner},
+			},
 		},
-	})
+	)
 	// Warm cache.
 	for _, path := range paths {
-		rs.FindOwners(path)
+		rs.Match(path)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.FindOwners(pattern)
+		rs.Match(pattern)
 	}
 }
 
@@ -402,18 +445,21 @@ func BenchmarkOwnersMismatchMultiHole(b *testing.B) {
 	owner := []*codeownerspb.Owner{
 		{Handle: "foo"},
 	}
-	rs := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{Pattern: pattern, Owner: owner},
+	rs := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{Pattern: pattern, Owner: owner},
+			},
 		},
-	})
+	)
 	// Warm cache.
 	for _, path := range paths {
-		rs.FindOwners(path)
+		rs.Match(path)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.FindOwners(pattern)
+		rs.Match(pattern)
 	}
 }
 
@@ -433,13 +479,13 @@ func BenchmarkOwnersMatchLiteralLargeRuleset(b *testing.B) {
 	for i := 0; i < 10000; i++ {
 		f.Rule = append(f.Rule, &codeownerspb.Rule{Pattern: fmt.Sprintf("%s-%d", pattern, i), Owner: owner})
 	}
-	rs := codeowners.NewRuleset(f)
+	rs := codeowners.NewRuleset(codeowners.IngestedRulesetSource{}, f)
 	// Warm cache.
 	for _, path := range paths {
-		rs.FindOwners(path)
+		rs.Match(path)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.FindOwners(pattern)
+		rs.Match(pattern)
 	}
 }

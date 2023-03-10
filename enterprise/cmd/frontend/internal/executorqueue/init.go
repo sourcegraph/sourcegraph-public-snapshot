@@ -26,7 +26,7 @@ func Init(
 	accessToken := func() string {
 		isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
 		if isSingleProgram {
-			return confdefaults.SingleProgramInMemoryExecutorPassword
+			return confdefaults.AppInMemoryExecutorPassword
 		}
 		return conf.SiteConfig().ExecutorsAccessToken
 	}

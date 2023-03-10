@@ -12,13 +12,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const permissionsSyncJobIDKind = "PermissionsSyncJob"
 
 func NewPermissionsSyncJobsResolver(db database.DB, args graphqlbackend.ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsSyncJobResolver], error) {
 	store := &permissionsSyncJobConnectionStore{
 		db:   db,
 		args: args,
 	}
+
+	if args.UserID != nil && args.RepoID != nil {
+		return nil, errors.New("please provide either userID or repoID, but not both.")
+	}
+
 	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsSyncJobResolver](store, &args.ConnectionResolverArgs, nil)
 }
 
@@ -46,7 +54,10 @@ func (s *permissionsSyncJobConnectionStore) ComputeNodes(ctx context.Context, ar
 	for _, job := range jobs {
 		syncSubject, err := s.resolveSubject(ctx, job)
 		if err != nil {
-			return nil, err
+			// NOTE(naman): async cleaning of repos might make repo record unavailable.
+			// That will break the api, as subject will not be resolved. In this case
+			// it is better to not bubble up the error but return the remaining nodes.
+			continue
 		}
 		resolvers = append(resolvers, &permissionsSyncJobResolver{
 			db:          s.db,
@@ -104,6 +115,16 @@ func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *database.Pagin
 	}
 	if s.args.State != nil {
 		opts.State = *s.args.State
+	}
+	if s.args.UserID != nil {
+		if userID, err := graphqlbackend.UnmarshalUserID(*s.args.UserID); err == nil {
+			opts.UserID = int(userID)
+		}
+	}
+	if s.args.RepoID != nil {
+		if repoID, err := graphqlbackend.UnmarshalRepositoryID(*s.args.RepoID); err == nil {
+			opts.RepoID = int(repoID)
+		}
 	}
 	// First, we check for search type, because it can exist without search query,
 	// but not vice versa.
@@ -278,10 +299,14 @@ func (s subject) ToUser() (*graphqlbackend.UserResolver, bool) {
 }
 
 func marshalPermissionsSyncJobID(id int) graphql.ID {
-	return relay.MarshalID("PermissionsSyncJob", id)
+	return relay.MarshalID(permissionsSyncJobIDKind, id)
 }
 
 func unmarshalPermissionsSyncJobID(id graphql.ID) (jobID int, err error) {
+	if kind := relay.UnmarshalKind(id); kind != permissionsSyncJobIDKind {
+		err = errors.Errorf("expected graphql ID to have kind %q; got %q", permissionsSyncJobIDKind, kind)
+		return
+	}
 	err = relay.UnmarshalSpec(id, &jobID)
 	return
 }

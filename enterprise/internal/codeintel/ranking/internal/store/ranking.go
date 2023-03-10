@@ -2,13 +2,13 @@ package store
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -65,7 +65,6 @@ func (s *store) InsertDefinitionsForRanking(
 		[]string{
 			"upload_id",
 			"symbol_name",
-			"repository",
 			"document_path",
 			"graph_key",
 		},
@@ -88,7 +87,6 @@ func insertDefinitions(
 			ctx,
 			def.UploadID,
 			def.SymbolName,
-			def.Repository,
 			def.DocumentPath,
 			rankingGraphKey,
 		); err != nil {
@@ -165,21 +163,19 @@ func (s *store) InsertPathCountInputs(
 	ctx, _, endObservation := s.operations.insertPathCountInputs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	parts := strings.Split(derivativeGraphKey, "-")
-	if len(parts) < 2 {
-		return 0, 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
+	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	if !ok {
+		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
 	}
-	// Remove last segment, which indicates the current time bucket
-	parentGraphKey := strings.Join(parts[:len(parts)-1], "-")
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		insertPathCountInputsQuery,
-		parentGraphKey,
+		graphKey,
 		derivativeGraphKey,
 		batchSize,
 		derivativeGraphKey,
 		derivativeGraphKey,
-		parentGraphKey,
+		graphKey,
 		derivativeGraphKey,
 	))
 	if err != nil {
@@ -243,7 +239,8 @@ processable_symbols AS (
 				rrp.graph_key = %s AND
 				u.repository_id = u2.repository_id AND
 				u.root = u2.root AND
-				u.indexer = u2.indexer
+				u.indexer = u2.indexer AND
+				u.id != u2.id
 		) AND
 		-- For multiple references for the same repository/root/indexer in THIS batch, we want to
 		-- process the one associated with the most recently processed upload record. This should
@@ -266,24 +263,25 @@ referenced_symbols AS (
 ),
 referenced_definitions AS (
 	SELECT
-		rd.repository,
+		u.repository_id,
 		rd.document_path,
 		rd.graph_key,
 		COUNT(*) AS count
 	FROM codeintel_ranking_definitions rd
 	JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
+	JOIN lsif_uploads u ON u.id = rd.upload_id
 	WHERE rd.graph_key = %s
-	GROUP BY rd.repository, rd.document_path, rd.graph_key
+	GROUP BY u.repository_id, rd.document_path, rd.graph_key
 ),
 ins AS (
-	INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
+	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
 	SELECT
-		rx.repository,
+		rx.repository_id,
 		rx.document_path,
 		SUM(rx.count),
 		%s
 	FROM referenced_definitions rx
-	GROUP BY rx.repository, rx.document_path
+	GROUP BY rx.repository_id, rx.document_path
 	RETURNING 1
 )
 SELECT
@@ -295,7 +293,7 @@ func (s *store) InsertPathRanks(
 	ctx context.Context,
 	derivativeGraphKey string,
 	batchSize int,
-) (numPathRanksInserted float64, numInputsProcessed float64, err error) {
+) (numPathRanksInserted int, numInputsProcessed int, err error) {
 	ctx, _, endObservation := s.operations.insertPathRanks.With(
 		ctx,
 		&err,
@@ -305,9 +303,9 @@ func (s *store) InsertPathRanks(
 	)
 	defer endObservation(1, observation.Args{})
 
-	// Unused, but here for validation
-	if parts := strings.Split(derivativeGraphKey, "-"); len(parts) < 2 {
-		return 0, 0, errors.Newf("unexpected graph key format %q", derivativeGraphKey)
+	_, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	if !ok {
+		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
 	}
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
@@ -337,17 +335,17 @@ WITH
 input_ranks AS (
 	SELECT
 		pci.id,
-		r.id AS repository_id,
+		pci.repository_id,
 		pci.document_path AS path,
 		pci.count
 	FROM codeintel_ranking_path_counts_inputs pci
-	JOIN repo r ON lower(r.name) = (lower(pci.repository::text) COLLATE "C")
+	JOIN repo r ON r.id = pci.repository_id
 	WHERE
 		pci.graph_key = %s AND
 		NOT pci.processed AND
 		r.deleted_at IS NULL AND
 		r.blocked IS NULL
-	ORDER BY pci.graph_key, pci.repository, pci.id
+	ORDER BY pci.graph_key, pci.repository_id, pci.id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
@@ -358,10 +356,9 @@ processed AS (
 	RETURNING 1
 ),
 inserted AS (
-	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, graph_key, payload)
+	INSERT INTO codeintel_path_ranks AS pr (repository_id, graph_key, payload)
 	SELECT
 		temp.repository_id,
-		1,
 		%s,
 		sg_jsonb_concat_agg(temp.row)
 	FROM (
@@ -372,7 +369,7 @@ inserted AS (
 		GROUP BY cr.repository_id, cr.path
 	) temp
 	GROUP BY temp.repository_id
-	ON CONFLICT (repository_id, precision) DO UPDATE SET
+	ON CONFLICT (repository_id) DO UPDATE SET
 		graph_key = EXCLUDED.graph_key,
 		payload = CASE
 			WHEN pr.graph_key != EXCLUDED.graph_key
@@ -404,17 +401,16 @@ const vacuumBatchSize = 1000
 // TODO - configure via envvar
 var threshold = time.Duration(1) * time.Hour
 
-func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
+func (s *store) VacuumStaleDefinitions(ctx context.Context, graphKey string) (
+	numDefinitionRecordsScanned int,
 	numStaleDefinitionRecordsDeleted int,
-	numStaleReferenceRecordsDeleted int,
 	err error,
 ) {
-	ctx, _, endObservation := s.operations.vacuumStaleDefinitionsAndReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.vacuumStaleDefinitions.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
-		vacuumStaleDefinitionsAndReferencesQuery,
-		graphKey, int(threshold/time.Hour), vacuumBatchSize,
+		vacuumStaleDefinitionsQuery,
 		graphKey, int(threshold/time.Hour), vacuumBatchSize,
 	))
 	if err != nil {
@@ -424,17 +420,17 @@ func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKe
 
 	for rows.Next() {
 		if err := rows.Scan(
+			&numDefinitionRecordsScanned,
 			&numStaleDefinitionRecordsDeleted,
-			&numStaleReferenceRecordsDeleted,
 		); err != nil {
 			return 0, 0, err
 		}
 	}
 
-	return numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, nil
+	return numDefinitionRecordsScanned, numStaleDefinitionRecordsDeleted, nil
 }
 
-const vacuumStaleDefinitionsAndReferencesQuery = `
+const vacuumStaleDefinitionsQuery = `
 WITH
 locked_definitions AS (
 	SELECT
@@ -458,7 +454,43 @@ deleted_definitions AS (
 	DELETE FROM codeintel_ranking_definitions
 	WHERE id IN (SELECT ld.id FROM locked_definitions ld WHERE NOT ld.safe)
 	RETURNING 1
-),
+)
+SELECT
+	(SELECT COUNT(*) FROM locked_definitions),
+	(SELECT COUNT(*) FROM deleted_definitions)
+`
+
+func (s *store) VacuumStaleReferences(ctx context.Context, graphKey string) (
+	numReferenceRecordsScanned int,
+	numStaleReferenceRecordsDeleted int,
+	err error,
+) {
+	ctx, _, endObservation := s.operations.vacuumStaleReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
+		vacuumStaleReferencesQuery,
+		graphKey, int(threshold/time.Hour), vacuumBatchSize,
+	))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&numReferenceRecordsScanned,
+			&numStaleReferenceRecordsDeleted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return numReferenceRecordsScanned, numStaleReferenceRecordsDeleted, nil
+}
+
+const vacuumStaleReferencesQuery = `
+WITH
 locked_references AS (
 	SELECT
 		rr.id,
@@ -483,7 +515,7 @@ deleted_references AS (
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM deleted_definitions),
+	(SELECT COUNT(*) FROM locked_references),
 	(SELECT COUNT(*) FROM deleted_references)
 `
 
@@ -542,4 +574,74 @@ deleted_path_counts_inputs AS (
 SELECT
 	(SELECT COUNT(*) FROM deleted_references_processed),
 	(SELECT COUNT(*) FROM deleted_path_counts_inputs)
+`
+
+func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (rankRecordsDeleted, rankRecordsScanned int, err error) {
+	ctx, _, endObservation := s.operations.vacuumStaleRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	if !ok {
+		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
+	}
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
+		vacuumStaleRanksQuery,
+		derivativeGraphKey,
+		graphKey,
+		derivativeGraphKey,
+	))
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(&rankRecordsScanned, &rankRecordsDeleted); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return rankRecordsScanned, rankRecordsDeleted, nil
+}
+
+const vacuumStaleRanksQuery = `
+WITH
+matching_graph_keys AS (
+	SELECT DISTINCT graph_key
+	FROM codeintel_path_ranks
+	-- Implicit delete anything with a different graph key root
+	WHERE graph_key != %s AND graph_key LIKE %s || '.%%'
+),
+valid_graph_keys AS (
+	-- Select the current graph key as well as the highest graph key that
+	-- shares the same parent graph key. Returning both will help bridge
+	-- the gap that happens if we were to flush the entire table at the
+	-- start of a new graph reduction.
+	--
+	-- This may have the effect of returning stale ranking data for a repo
+	-- for which we no longer have SCIP data, but only from the previous
+	-- graph reduction (and changing the parent graph key will flush all
+	-- previous data (see the CTE definition above) if the need arises.
+	SELECT %s AS graph_key
+	UNION (
+		SELECT graph_key
+		FROM matching_graph_keys
+		ORDER BY reverse(split_part(reverse(graph_key), '-', 1))::int DESC
+		LIMIT 1
+	)
+),
+locked_records AS (
+	-- Lock all path rank records that don't have a recent graph key
+	SELECT repository_id
+	FROM codeintel_path_ranks
+	WHERE graph_key NOT IN (SELECT graph_key FROM valid_graph_keys)
+	ORDER BY repository_id
+	FOR UPDATE
+),
+del AS (
+	DELETE FROM codeintel_path_ranks
+	WHERE repository_id IN (SELECT repository_id FROM locked_records)
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM locked_records),
+	(SELECT COUNT(*) FROM del)
 `

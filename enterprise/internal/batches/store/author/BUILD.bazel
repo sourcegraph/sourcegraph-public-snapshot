@@ -17,6 +17,10 @@ go_test(
     name = "author_test",
     srcs = ["author_test.go"],
     embed = [":author"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

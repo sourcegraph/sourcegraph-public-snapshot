@@ -12,10 +12,11 @@ export const filterDecoration = [
     EditorView.baseTheme({
         '.sg-query-token-filter-context': {
             borderRadius: '3px',
-            border: '1px solid var(--border-color)',
+            padding: '1px 0',
+            backgroundColor: '#eff2f5a0', // --gray-02 with transparency to make selection visible
         },
         '&dark .sg-query-token-filter-context': {
-            borderColor: 'var(--border-color-2)',
+            backgroundColor: '#343a4da0', // --gray-08 with transparency to make selection visible
         },
     }),
     EditorView.decorations.compute([decoratedTokens, 'selection'], state => {

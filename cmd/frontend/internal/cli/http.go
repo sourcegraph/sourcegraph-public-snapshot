@@ -8,6 +8,7 @@ import (
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/log"
 
@@ -137,6 +138,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 func newInternalHTTPHandler(
 	schema *graphql.Schema,
 	db database.DB,
+	grpcServer *grpc.Server,
 	enterpriseJobs jobutil.EnterpriseJobs,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
 	rankingService enterprise.RankingService,
@@ -145,23 +147,30 @@ func newInternalHTTPHandler(
 ) http.Handler {
 	internalMux := http.NewServeMux()
 	logger := log.Scoped("internal", "internal http handlers")
+
+	internalRouter := router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter())
+	internalhttpapi.RegisterInternalServices(
+		internalRouter,
+		grpcServer,
+		db,
+		enterpriseJobs,
+		schema,
+		newCodeIntelUploadHandler,
+		rankingService,
+		newComputeStreamHandler,
+		rateLimitWatcher,
+	)
+
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
 		actor.HTTPMiddleware(
 			logger,
-			featureflag.Middleware(db.FeatureFlags(),
-				internalhttpapi.NewInternalHandler(
-					router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
-					db,
-					enterpriseJobs,
-					schema,
-					newCodeIntelUploadHandler,
-					rankingService,
-					newComputeStreamHandler,
-					rateLimitWatcher,
-				),
+			featureflag.Middleware(
+				db.FeatureFlags(),
+				internalRouter,
 			),
 		),
 	))
+
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())

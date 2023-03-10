@@ -20,6 +20,7 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { singleLine, placeholder as placeholderExtension } from '../codemirror'
 import { filterPlaceholder } from '../codemirror/active-filter'
+import { queryDiagnostic } from '../codemirror/diagnostics'
 import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
 import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 import { tokenInfo } from '../codemirror/token-info'
@@ -175,6 +176,7 @@ function createStaticExtensions({ popoverID }: { popoverID: string }): Extension
         keymap.of(defaultKeymap),
         codemirrorHistory(),
         filterPlaceholder,
+        queryDiagnostic(),
         Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
         EditorView.theme({
             '&': {
@@ -264,13 +266,16 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
     const popoverID = useMemo(() => uuid.v4(), [])
     const [mode, setMode, modeNotifierExtension] = useInputMode()
 
-    // Wraps the onSubmit prop because that one changes whenever the input
-    // value changes causing unnecessary reconfiguration of the extensions
     const onSubmitRef = useRef(onSubmit)
     useEffect(() => {
         onSubmitRef.current = onSubmit
     }, [onSubmit])
     const hasSubmitHandler = !!onSubmit
+
+    const onChangeRef = useRef(onChange)
+    useEffect(() => {
+        onChangeRef.current = onChange
+    }, [onChange])
 
     const staticExtensions = useMemo(() => createStaticExtensions({ popoverID }), [popoverID])
     // Update extensions whenever any of these props change
@@ -280,7 +285,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
                 popoverID,
                 isLightTheme,
                 placeholder,
-                onChange,
+                onChange: (...args) => onChangeRef.current(...args),
                 onSubmit: hasSubmitHandler ? (): void => onSubmitRef.current?.() : undefined,
                 suggestionsContainer,
                 suggestionSource,
@@ -293,9 +298,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
             popoverID,
             isLightTheme,
             placeholder,
-            onChange,
             hasSubmitHandler,
-            onSubmitRef,
             suggestionsContainer,
             suggestionSource,
             navigate,
@@ -337,9 +340,18 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
         )
     )
 
+    // Position cursor at the end of the input when it is initialized
+    useEffect(() => {
+        if (editorRef.current) {
+            editorRef.current.dispatch({
+                selection: { anchor: editorRef.current.state.doc.length },
+            })
+        }
+    }, [])
+
     const focus = useCallback(() => {
         editorRef.current?.contentDOM.focus()
-    }, [editorRef])
+    }, [])
 
     const toggleHistoryMode = useCallback(() => {
         if (editorRef.current) {
@@ -366,8 +378,8 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
                         </Tooltip>
                         {mode && <span className="ml-1">{mode}:</span>}
                     </div>
-                    <div ref={editorContainerRef} className="d-contents" />
-                    {children}
+                    <div ref={editorContainerRef} className={styles.input} />
+                    {!mode && children}
                 </div>
                 <div ref={setSuggestionsContainer} className={styles.suggestions} />
             </div>

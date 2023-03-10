@@ -273,5 +273,20 @@ describe('ShortcutManager', () => {
 
             platform.reset()
         })
+
+        it("doesn't match shortcut when any modifier key is held, but no modifier key is defined for the shortcut", () => {
+            const fooSpy = sinon.spy()
+
+            render(
+                <ShortcutProvider>
+                    <Shortcut ordered={['/']} onMatch={fooSpy} />
+                </ShortcutProvider>
+            )
+
+            for (const key of ['Alt', 'Control', 'Meta', 'Shift']) {
+                userEvent.keyboard(`{${key}>}/{/${key}}`)
+                sinon.assert.notCalled(fooSpy)
+            }
+        })
     })
 })

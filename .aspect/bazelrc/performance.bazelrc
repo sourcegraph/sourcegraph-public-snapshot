@@ -41,8 +41,6 @@ build --experimental_reuse_sandbox_directories
 # author.
 # Docs: https://bazel.build/reference/command-line-reference#flag--legacy_external_runfiles
 build --nolegacy_external_runfiles
-run --nolegacy_external_runfiles
-test --nolegacy_external_runfiles
 
 # Some actions are always IO-intensive but require little compute. It's wasteful to put the output
 # in the remote cache, it just saturates the network and fills the cache storage causing earlier

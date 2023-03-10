@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { mdiAccount, mdiSourceRepository, mdiCommentOutline } from '@mdi/js'
+import { mdiAccount, mdiCommentOutline, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import format from 'date-fns/format'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, H2, Text, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
+import { AnchorLink, Card, H2, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { OverviewStatisticsResult, OverviewStatisticsVariables } from '../../../graphql-operations'
@@ -74,6 +74,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
     const { productSubscription } = data.site
     const licenseExpiresAt = productSubscription.license ? new Date(productSubscription.license.expiresAt) : null
 
+    const changelogUrl = getChangelogUrl(data.site.productVersion)
     return (
         <>
             <AnalyticsPageTitle>Overview</AnalyticsPageTitle>
@@ -87,18 +88,27 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
                         </div>
                         <div className="d-flex">
                             <Text className="text-muted">
-                                Version <span className={styles.purple}>{data.site.productVersion}</span>
+                                Version{' '}
+                                {changelogUrl ? (
+                                    <Link to={changelogUrl} className={styles.purple}>
+                                        {data.site.productVersion}
+                                    </Link>
+                                ) : (
+                                    <span className={styles.purple}>{data.site.productVersion}</span>
+                                )}
                             </Text>
                             {productSubscription.license && licenseExpiresAt ? (
                                 <>
-                                    <AnchorLink
-                                        to="/help/admin/updates"
-                                        target="_blank"
-                                        rel="noopener"
-                                        className="ml-1"
-                                    >
-                                        Upgrade
-                                    </AnchorLink>
+                                    {data.site.updateCheck.updateVersionAvailable || error ? (
+                                        <AnchorLink
+                                            to="/help/admin/updates"
+                                            target="_blank"
+                                            rel="noopener"
+                                            className="ml-1"
+                                        >
+                                            Upgrade
+                                        </AnchorLink>
+                                    ) : null}
                                     <Text className="text-muted mx-2">|</Text>
                                     <Text className="text-muted">
                                         License
@@ -187,4 +197,13 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
             </Card>
         </>
     )
+}
+
+function getChangelogUrl(version: string): string | null {
+    const versionAnchor = version.replace(/\./g, '-')
+    // Only show changelog link for versions that match the X.Y.Z format.
+    // Other versions don't have a changelog entry.
+    return version.match(/^\d+-\d+-\d+$/)
+        ? `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
+        : null
 }

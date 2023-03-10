@@ -1,0 +1,1 @@
+ALTER TABLE teams ALTER COLUMN creator_id SET NOT NULL;

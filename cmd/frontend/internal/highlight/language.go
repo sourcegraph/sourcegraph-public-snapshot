@@ -19,26 +19,52 @@ const (
 	EngineInvalid EngineType = iota
 	EngineTreeSitter
 	EngineSyntect
+	EngineScipSyntax
 )
 
 func (e EngineType) String() string {
 	switch e {
-	case EngineTreeSitter:
-		return "tree-sitter"
 	case EngineSyntect:
-		return "syntect"
+		return gosyntect.SyntaxEngineSyntect
+	case EngineTreeSitter:
+		return gosyntect.SyntaxEngineTreesitter
+	case EngineScipSyntax:
+		return gosyntect.SyntaxEngineScipSyntax
 	default:
-		return "invalid"
+		return gosyntect.SyntaxEngineInvalid
+	}
+}
+
+func (e EngineType) isTreesitterBased() bool {
+	switch e {
+	case EngineTreeSitter, EngineScipSyntax:
+		return true
+	default:
+		return false
 	}
 }
 
 // Converts an engine type to the corresponding parameter value for the syntax
-// highlighting request. Defaults to "syntec".
+// highlighting request. Defaults to "syntect".
 func getEngineParameter(engine EngineType) string {
-	if engine == EngineTreeSitter {
-		return gosyntect.SyntaxEngineTreesitter
+	if engine == EngineInvalid {
+		return EngineSyntect.String()
 	}
-	return gosyntect.SyntaxEngineSyntect
+
+	return engine.String()
+}
+
+func engineNameToEngineType(engineName string) (engine EngineType, ok bool) {
+	switch engineName {
+	case gosyntect.SyntaxEngineSyntect:
+		return EngineSyntect, true
+	case gosyntect.SyntaxEngineTreesitter:
+		return EngineTreeSitter, true
+	case gosyntect.SyntaxEngineScipSyntax:
+		return EngineScipSyntax, true
+	default:
+		return EngineInvalid, false
+	}
 }
 
 type SyntaxEngineQuery struct {
@@ -72,6 +98,7 @@ var baseHighlightConfig = syntaxHighlightConfig{
 	Extensions: map[string]string{
 		"jsx":  "jsx", // default `getLanguage()` helper doesn't handle JSX
 		"tsx":  "tsx", // default `getLanguage()` helper doesn't handle TSX
+		"ncl":  "nickel",
 		"sbt":  "scala",
 		"sc":   "scala",
 		"xlsg": "xlsg",
@@ -104,17 +131,25 @@ var engineConfig = syntaxEngineConfig{
 var baseEngineConfig = syntaxEngineConfig{
 	Default: EngineSyntect,
 	Overrides: map[string]EngineType{
-		"javascript": EngineTreeSitter,
-		"jsx":        EngineTreeSitter,
-		"typescript": EngineTreeSitter,
-		"tsx":        EngineTreeSitter,
-		"java":       EngineTreeSitter,
+		// Languages enabled for tree-sitter highlighting
 		"c":          EngineTreeSitter,
-		"scala":      EngineTreeSitter,
-		"rust":       EngineTreeSitter,
 		"c#":         EngineTreeSitter,
+		"c++":        EngineTreeSitter,
+		"cpp":        EngineTreeSitter,
+		"go":         EngineTreeSitter,
+		"java":       EngineTreeSitter,
+		"javascript": EngineTreeSitter,
 		"jsonnet":    EngineTreeSitter,
+		"jsx":        EngineTreeSitter,
+		"nickel":     EngineTreeSitter,
+		"rust":       EngineTreeSitter,
+		"scala":      EngineTreeSitter,
+		"tsx":        EngineTreeSitter,
+		"typescript": EngineTreeSitter,
 		"xlsg":       EngineTreeSitter,
+
+		// Languages enabled for advanced syntax features
+		"perl": EngineScipSyntax,
 	},
 }
 
@@ -204,23 +239,6 @@ func init() {
 	}()
 }
 
-var engineToDisplay = map[EngineType]string{
-	EngineInvalid:    "invalid",
-	EngineSyntect:    "syntect",
-	EngineTreeSitter: "tree-sitter",
-}
-
-func engineNameToEngineType(engineName string) (engine EngineType, ok bool) {
-	switch engineName {
-	case "tree-sitter":
-		return EngineTreeSitter, true
-	case "syntect":
-		return EngineSyntect, true
-	default:
-		return EngineInvalid, false
-	}
-}
-
 // Matches against config. Only returns values if there is a match.
 func getLanguageFromConfig(config syntaxHighlightConfig, path string) (string, bool) {
 	extension := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
@@ -258,6 +276,10 @@ func DetectSyntaxHighlightingLanguage(path string, contents string) SyntaxEngine
 	engine := engineConfig.Default
 	if overrideEngine, ok := engineConfig.Overrides[lang]; ok {
 		engine = overrideEngine
+	}
+
+	if engine.isTreesitterBased() && lang == "c++" {
+		lang = "cpp"
 	}
 
 	return SyntaxEngineQuery{

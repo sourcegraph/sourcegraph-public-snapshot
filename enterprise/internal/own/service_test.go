@@ -9,14 +9,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -38,14 +40,17 @@ func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker
 }
 
 func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
-	codeownersText := codeowners.NewRuleset((&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{
-				Pattern: "README.md",
-				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+	codeownersText := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{
+					Pattern: "README.md",
+					Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+				},
 			},
 		},
-	})).Repr()
+	).Repr()
 	for name, repo := range map[string]repoFiles{
 		"top-level": {{"repo", "SHA", "CODEOWNERS"}: codeownersText},
 		".github":   {{"repo", "SHA", ".github/CODEOWNERS"}: codeownersText},
@@ -54,7 +59,13 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			git := gitserver.NewMockClient()
 			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-			got, err := own.NewService(git, database.NewMockDB()).RulesetForRepo(context.Background(), "repo", "SHA")
+
+			codeownersStore := edb.NewMockCodeownersStore()
+			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
+			db := edb.NewMockEnterpriseDB()
+			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+
+			got, err := own.NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
 			require.NoError(t, err)
 			assert.Equal(t, codeownersText, got.Repr())
 		})
@@ -62,22 +73,71 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 }
 
 func TestOwnersCannotFindFile(t *testing.T) {
-	codeownersFile := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{
-				Pattern: "README.md",
-				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+	codeownersFile := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{
+					Pattern: "README.md",
+					Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+				},
 			},
 		},
-	})
+	)
 	repo := repoFiles{
 		{"repo", "SHA", "notCODEOWNERS"}: codeownersFile.Repr(),
 	}
 	git := gitserver.NewMockClient()
 	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-	got, err := own.NewService(git, database.NewMockDB()).RulesetForRepo(context.Background(), "repo", "SHA")
+
+	codeownersStore := edb.NewMockCodeownersStore()
+	codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, edb.CodeownersFileNotFoundError{})
+	db := edb.NewMockEnterpriseDB()
+	db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+
+	got, err := own.NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
 	require.NoError(t, err)
 	assert.Nil(t, got)
+}
+
+func TestOwnersServesIngestedFile(t *testing.T) {
+	t.Run("return manually ingested codeowners file", func(t *testing.T) {
+		codeownersProto := &codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{
+					Pattern: "README.md",
+					Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+				},
+			},
+		}
+		codeownersText := codeowners.NewRuleset(codeowners.IngestedRulesetSource{}, codeownersProto).Repr()
+
+		git := gitserver.NewMockClient()
+
+		codeownersStore := edb.NewMockCodeownersStore()
+		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(&types.CodeownersFile{
+			Proto: codeownersProto,
+		}, nil)
+		db := edb.NewMockEnterpriseDB()
+		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+
+		got, err := own.NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
+		require.NoError(t, err)
+		assert.Equal(t, codeownersText, got.Repr())
+	})
+	t.Run("file not found and codeowners file does not exist return nil", func(t *testing.T) {
+		git := gitserver.NewMockClient()
+		git.ReadFileFunc.SetDefaultReturn(nil, nil)
+
+		codeownersStore := edb.NewMockCodeownersStore()
+		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, edb.CodeownersFileNotFoundError{})
+		db := edb.NewMockEnterpriseDB()
+		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+
+		got, err := own.NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
+		require.NoError(t, err)
+		require.Nil(t, got)
+	})
 }
 
 func TestResolveOwnersWithType(t *testing.T) {
@@ -221,19 +281,19 @@ func TestResolveOwnersWithType(t *testing.T) {
 		testTeamWithHandle := newTestTeam(teamHandle)
 		testUnknownOwner := newTestUnknownOwner("", unknownOwnerEmail)
 
-		mockUserStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*types.User, error) {
+		mockUserStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*itypes.User, error) {
 			if username == userHandle {
 				return testUserWithHandle, nil
 			}
 			return nil, database.MockUserNotFoundErr
 		})
-		mockUserStore.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, email string) (*types.User, error) {
+		mockUserStore.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, email string) (*itypes.User, error) {
 			if email == userEmail {
 				return testUserWithEmail, nil
 			}
 			return nil, database.MockUserNotFoundErr
 		})
-		mockTeamStore.GetTeamByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*types.Team, error) {
+		mockTeamStore.GetTeamByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*itypes.Team, error) {
 			if name == teamHandle {
 				return testTeamWithHandle, nil
 			}
@@ -335,8 +395,8 @@ func TestResolveOwnersWithType(t *testing.T) {
 	})
 }
 
-func newTestUser(username string) *types.User {
-	return &types.User{
+func newTestUser(username string) *itypes.User {
+	return &itypes.User{
 		ID:          1,
 		Username:    username,
 		AvatarURL:   "https://sourcegraph.com/avatar/" + username,
@@ -344,8 +404,8 @@ func newTestUser(username string) *types.User {
 	}
 }
 
-func newTestTeam(teamName string) *types.Team {
-	return &types.Team{
+func newTestTeam(teamName string) *itypes.Team {
+	return &itypes.Team{
 		ID:          1,
 		Name:        teamName,
 		DisplayName: "Team " + teamName,

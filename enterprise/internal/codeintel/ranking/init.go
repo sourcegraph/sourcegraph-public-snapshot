@@ -15,50 +15,67 @@ func NewService(
 	observationCtx *observation.Context,
 	db database.DB,
 	codeIntelDB codeintelshared.CodeIntelDB,
-	gitserverClient GitserverClient,
 ) *Service {
 	return newService(
 		scopedContext("service", observationCtx),
 		store.New(scopedContext("store", observationCtx), db),
 		lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB),
-		gitserverClient,
 		conf.DefaultClient(),
 	)
 }
 
-func NewSymbolExporter(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
+func NewSymbolExporter(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
+	return background.NewSymbolExporter(
+		observationCtx,
+		rankingService.store,
+		rankingService.lsifstore,
+		ConfigInst.SymbolExporterInterval,
+		ConfigInst.SymbolExporterReadBatchSize,
+		ConfigInst.SymbolExporterWriteBatchSize,
+	)
+}
+
+func NewSymbolJanitor(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewSymbolExporter(
+		background.NewSymbolDefinitionsJanitor(
 			observationCtx,
-			rankingService,
-			ConfigInst.SymbolExporterNumRoutines,
+			rankingService.store,
 			ConfigInst.SymbolExporterInterval,
-			ConfigInst.SymbolExporterWriteBatchSize,
-			ConfigInst.DocumentReferenceCountsEnabled,
+		),
+		background.NewSymbolReferencesJanitor(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
+		),
+		background.NewRankCountsJanitor(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
+		),
+		background.NewRankJanitor(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
 		),
 	}
 }
 
-func NewMapper(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewMapper(
-			observationCtx,
-			rankingService,
-			ConfigInst.SymbolExporterInterval,
-			ConfigInst.DocumentReferenceCountsEnabled,
-		),
-	}
+func NewMapper(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
+	return background.NewMapper(
+		observationCtx,
+		rankingService.store,
+		ConfigInst.SymbolExporterInterval,
+		ConfigInst.MapperBatchSize,
+	)
 }
 
-func NewReducer(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewReducer(
-			observationCtx,
-			rankingService,
-			ConfigInst.SymbolExporterInterval,
-			ConfigInst.DocumentReferenceCountsEnabled,
-		),
-	}
+func NewReducer(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
+	return background.NewReducer(
+		observationCtx,
+		rankingService.store,
+		ConfigInst.SymbolExporterInterval,
+		ConfigInst.ReducerBatchSize,
+	)
 }
 
 func scopedContext(component string, observationCtx *observation.Context) *observation.Context {

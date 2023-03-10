@@ -7,7 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
@@ -15,13 +14,13 @@ import (
 func TestMakeGetUploadsOptions(t *testing.T) {
 	opts, err := makeGetUploadsOptions(&resolverstubs.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: &resolverstubs.LSIFUploadsQueryArgs{
-			ConnectionArgs: graphqlutil.ConnectionArgs{
+			ConnectionArgs: resolverstubs.ConnectionArgs{
 				First: intPtr(5),
 			},
 			Query:           strPtr("q"),
 			State:           strPtr("s"),
 			IsLatestForRepo: boolPtr(true),
-			After:           graphqlutil.EncodeIntCursor(intPtr(25)).EndCursor(),
+			After:           resolverstubs.EncodeIntCursor(intPtr(25)).EndCursor(),
 		},
 		RepositoryID: graphql.ID(base64.StdEncoding.EncodeToString([]byte("Repo:50"))),
 	})

@@ -201,6 +201,10 @@ go_test(
         "zoekt_repos_test.go",
     ],
     embed = [":database"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",

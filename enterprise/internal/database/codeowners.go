@@ -30,7 +30,7 @@ type CodeownersStore interface {
 	// GetCodeownersForRepo gets a manually ingested Codeowners file for the given repo if it exists.
 	GetCodeownersForRepo(ctx context.Context, id api.RepoID) (*types.CodeownersFile, error)
 	// DeleteCodeownersForRepos deletes manually ingested Codeowners files for the given repos if it exists.
-	DeleteCodeownersForRepos(ctx context.Context, ids ...int32) error
+	DeleteCodeownersForRepos(ctx context.Context, ids ...api.RepoID) error
 	// ListCodeowners lists manually ingested Codeowners files given the options.
 	ListCodeowners(ctx context.Context, opts ListCodeownersOpts) ([]*types.CodeownersFile, int32, error)
 	// CountCodeownersFiles counts the number of manually ingested Codeowners files.
@@ -178,7 +178,7 @@ WHERE %s
 LIMIT 1
 `
 
-func (s *codeownersStore) DeleteCodeownersForRepos(ctx context.Context, ids ...int32) error {
+func (s *codeownersStore) DeleteCodeownersForRepos(ctx context.Context, ids ...api.RepoID) error {
 	return s.WithTransact(ctx, func(tx CodeownersStore) error {
 		conds := []*sqlf.Query{
 			sqlf.Sprintf("repo_id = ANY (%s)", pq.Array(ids)),

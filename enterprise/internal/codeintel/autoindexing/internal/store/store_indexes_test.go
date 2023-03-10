@@ -651,18 +651,12 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 		}
 	}
 
-	ids, err := store.DeleteIndexesWithoutRepository(context.Background(), t1)
+	_, count, err := store.DeleteIndexesWithoutRepository(context.Background(), t1)
 	if err != nil {
 		t.Fatalf("unexpected error deleting indexes: %s", err)
 	}
-
-	expected := map[int]int{
-		61: 21,
-		63: 23,
-		65: 25,
-	}
-	if diff := cmp.Diff(expected, ids); diff != "" {
-		t.Errorf("unexpected ids (-want +got):\n%s", diff)
+	if expected := 21 + 23 + 25; count != expected {
+		t.Fatalf("unexpected count. want=%d have=%d", expected, count)
 	}
 }
 

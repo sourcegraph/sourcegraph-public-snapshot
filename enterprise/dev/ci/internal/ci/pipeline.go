@@ -90,7 +90,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case runtype.BazelExpBranch:
-		ops.Merge(BazelOperations())
+		// false means not optional, so this build will fail if Bazel build doesn't pass.
+		ops.Merge(BazelOperations(false))
 	case runtype.WolfiExpBranch:
 		if c.Diff.Has(changed.WolfiPackages) {
 			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
@@ -115,6 +116,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ClientLintOnlyChangedFiles: false,
 			CreateBundleSizeDiff:       true,
 		}))
+
+		// At this stage, we don't break builds because of a Bazel failure.
+		// TODO(JH) Disabled until re-enabled with flag
+		// ops.Merge(BazelOperations(true))
 
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
@@ -171,7 +176,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a vs code extension release branch, run the vscode-extension tests and release
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addVsceIntegrationTests,
+			addVsceTests,
 			wait,
 			addVsceReleaseSteps)
 
@@ -190,13 +195,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
-			// addVsceIntegrationTests,
+			addVsceTests,
 		)
 
-	case runtype.AppSnapshotRelease:
-		// If this is an App snapshot build, release a snapshot.
-		ops = operations.NewSet(addAppSnapshotReleaseSteps(c))
+	case runtype.AppRelease:
+		ops = operations.NewSet(addAppReleaseSteps(c, false))
+
+	case runtype.AppInsiders:
+		ops = operations.NewSet(addAppReleaseSteps(c, true))
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
@@ -270,6 +276,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Slow async pipeline
 		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 			triggerAsync(buildOptions)))
+
+		// At this stage, we don't break builds because of a Bazel failure.
+		// TODO(JH) disabled until I re-enable this with a flag
+		// ops.Merge(BazelOperations(true))
 
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")

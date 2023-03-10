@@ -1,19 +1,25 @@
 package scim
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/elimity-com/scim"
+	"github.com/elimity-com/scim/schema"
 	"github.com/scim2/filter-parser/v2"
+
+	sgfilter "github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-// Patch update one or more attributes of a SCIM resource using a sequence of
+// Patch updates one or more attributes of a SCIM resource using a sequence of
 // operations to "add", "remove", or "replace" values.
-// If you return no Resource.Attributes, a 204 No Content status code will be returned.
+// If this returns no Resource.Attributes, a 204 No Content status code will be returned.
 // This case is only valid in the following scenarios:
-// 1. the Add/Replace operation should return No Content only when the value already exists AND is the same.
-// 2. the Remove operation should return No Content when the value to be removed is already absent.
+//  1. the Add/Replace operation should return No Content only when the value already exists AND is the same.
+//  2. the Remove operation should return No Content when the value to be removed is already absent.
+//
 // More information in Section 3.5.2 of RFC 7644: https://tools.ietf.org/html/rfc7644#section-3.5.2
 func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []scim.PatchOperation) (scim.Resource, error) {
 	if err := checkBodyNotEmpty(r); err != nil {
@@ -21,6 +27,8 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 	}
 
 	userRes := scim.Resource{}
+	// Because emails require special handling keep track if they have changed
+	emailsModified := false
 
 	// Start transaction
 	err := h.db.WithTransact(r.Context(), func(tx database.DB) error {
@@ -29,7 +37,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		if err != nil {
 			return err
 		}
-		userRes = h.convertUserToSCIMResource(user)
+		userRes = convertUserToSCIMResource(user)
 
 		// Perform changes on the user resource
 		var changed bool
@@ -39,6 +47,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 				for rawPath, value := range op.Value.(map[string]interface{}) {
 					newlyChanged := applyChangeToAttributes(userRes.Attributes, rawPath, value)
 					changed = changed || newlyChanged
+					emailsModified = true
 				}
 				continue
 			}
@@ -49,18 +58,28 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 				valueExpr   = op.Path.ValueExpression
 			)
 
+			if attrName == AttrEmails {
+				emailsModified = true
+			}
+
+			// There might be a bug in the parser: when a filter is present, SubAttributeName() isn't populated.
+			// Populating it manually here.
+			if subAttrName == "" && op.Path.SubAttribute != nil {
+				subAttrName = *op.Path.SubAttribute
+			}
+
 			// Attribute does not exist yet → add it
 			old, ok := userRes.Attributes[attrName]
-			if !ok {
+			if !ok && op.Op != "remove" {
 				switch {
-				case subAttrName != "":
+				case subAttrName != "": // Add new attribute with a sub-attribute
 					userRes.Attributes[attrName] = map[string]interface{}{
 						subAttrName: op.Value,
 					}
 					changed = true
 				case valueExpr != nil:
-					// TODO: Implement value expression handling
-				default:
+					// Having a value expression for a non-existing attribute is invalid → do nothing
+				default: // Add new attribute
 					userRes.Attributes[attrName] = op.Value
 					changed = true
 				}
@@ -71,14 +90,79 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 			switch op.Op {
 			case "add", "replace":
 				switch v := op.Value.(type) {
-				case []interface{}:
+				case []interface{}: // this value has multiple items → append or replace
 					if op.Op == "add" {
 						userRes.Attributes[attrName] = append(old.([]interface{}), v...)
 					} else { // replace
 						userRes.Attributes[attrName] = v
 					}
 					changed = true
-				default:
+				default: // this value has a single item
+					var newlyChanged bool
+					if valueExpr == nil { // no value expression → just apply the change
+						if subAttrName != "" {
+							newlyChanged = applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
+						} else {
+							newlyChanged = applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
+						}
+						changed = changed || newlyChanged
+					}
+
+					// We have a valueExpression to apply which means this must be a slice
+					attributeItems, isArray := userRes.Attributes[attrName].([]interface{})
+					if !isArray {
+						continue // This isn't a slice, so nothing will match the expression → do nothing
+					}
+					validator, _ := sgfilter.NewValidator(buildFilterString(valueExpr, attrName), h.coreSchema, getExtensionSchemas(h.schemaExtensions)...)
+					for i := 0; i < len(attributeItems); i++ {
+						item, ok := attributeItems[i].(map[string]interface{})
+						if !ok {
+							continue // if this isn't a map of properties it can't match or be replaced
+						}
+						if arrayItemMatchesFilter(attrName, item, validator) {
+							var newlyChanged bool
+							if subAttrName != "" {
+								newlyChanged = applyAttributeChange(item, subAttrName, v, op.Op)
+							} else {
+								newlyChanged = applyAttributeChange(item, attrName, v, op.Op)
+							}
+							if newlyChanged {
+								attributeItems[i] = item //attribute items are updated
+							}
+							changed = changed || newlyChanged
+						}
+					}
+					userRes.Attributes[attrName] = attributeItems
+				}
+			case "remove":
+				currentValue, ok := userRes.Attributes[attrName]
+				if !ok { // The current attribute does not exist - nothing to do
+					continue
+				}
+
+				switch v := currentValue.(type) {
+				case []interface{}: // this value has multiple items
+					if valueExpr == nil { // this applies to whole attribute remove it
+						newlyChanged := applyAttributeChange(userRes.Attributes, attrName, nil, op.Op)
+						changed = changed || newlyChanged
+						continue
+					}
+					remainingItems := []interface{}{} // keep track of the items that should remain
+					validator, _ := sgfilter.NewValidator(buildFilterString(valueExpr, attrName), h.coreSchema, getExtensionSchemas(h.schemaExtensions)...)
+					for i := 0; i < len(v); i++ {
+						item, ok := v[i].(map[string]interface{})
+						if !ok {
+							continue // if this isn't a map of properties it can't match or be replaced
+						}
+						if !arrayItemMatchesFilter(attrName, item, validator) {
+							remainingItems = append(remainingItems, item)
+						}
+					}
+					// Even though this is a "remove" operation since there is a filter we're actually replacing
+					// the attribute with the items that do not match the filter
+					newlyChanged := applyAttributeChange(userRes.Attributes, attrName, remainingItems, "replace")
+					changed = changed || newlyChanged
+				default: // this is just a value remove the attribute
 					var newlyChanged bool
 					if subAttrName != "" {
 						newlyChanged = applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
@@ -96,7 +180,9 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		}
 
 		// Update user
-		return updateUser(r.Context(), tx, user, userRes)
+		var now = time.Now()
+		userRes.Meta.LastModified = &now
+		return updateUser(r.Context(), tx, user, userRes.Attributes, emailsModified)
 	})
 	if err != nil {
 		return scim.Resource{}, err
@@ -147,8 +233,10 @@ func applyChangeToAttributes(attributes scim.ResourceAttributes, rawPath string,
 
 // applyAttributeChange applies a change to an _existing_ resource attribute (for example, userName).
 func applyAttributeChange(attributes scim.ResourceAttributes, attrName string, value interface{}, op string) (changed bool) {
+	// apply remove operation
 	if op == "remove" {
 		delete(attributes, attrName)
+		return true
 	}
 
 	// add only works for arrays and maps, otherwise it's the same as replace
@@ -162,10 +250,7 @@ func applyAttributeChange(attributes scim.ResourceAttributes, attrName string, v
 		}
 	}
 
-	// replace
-	if attributes[attrName] == value {
-		return false
-	}
+	// apply replace operation (or add operation for non-array and non-map values)
 	attributes[attrName] = value
 	return true
 }
@@ -186,4 +271,33 @@ func applyMapChanges(m map[string]interface{}, items map[string]interface{}) (ch
 		changed = true
 	}
 	return changed
+}
+
+// getExtensionSchemas extracts the schemas from the provided schema extensions.
+func getExtensionSchemas(extensions []scim.SchemaExtension) []schema.Schema {
+	extensionSchemas := make([]schema.Schema, 0, len(extensions))
+	for _, ext := range extensions {
+		extensionSchemas = append(extensionSchemas, ext.Schema)
+	}
+	return extensionSchemas
+}
+
+// arrayItemMatchesFilter checks if a resource array item passes the filter of the given validator.
+func arrayItemMatchesFilter(attrName string, item interface{}, validator sgfilter.Validator) bool {
+	// PassesFilter checks entire resources so here we make a "new" resource that only contains a single item.
+	tmp := map[string]interface{}{attrName: []interface{}{item}}
+	// A returned error indicates that the item does not match
+	return validator.PassesFilter(tmp) == nil
+}
+
+// buildFilterString converts filter.Expression (originally built from a string) back to a string.
+// It uses the attribute name so that the expression will work with a Validator.
+func buildFilterString(valueExpression filter.Expression, attrName string) string {
+	switch t := valueExpression.(type) {
+	case fmt.Stringer:
+		return fmt.Sprintf("%s[%s]", attrName, t.String())
+	default:
+		return fmt.Sprintf("%s[%v]", attrName, t)
+	}
+
 }

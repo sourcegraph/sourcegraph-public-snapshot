@@ -32,7 +32,7 @@ func (api patternAPI) LuaAPI() map[string]lua.LGFunction {
 
 	return map[string]lua.LGFunction{
 		"backdoor": util.WrapLuaFunction(func(state *lua.LState) error {
-			state.Push(luar.New(state, luatypes.NewPattern(state.CheckString(1))))
+			state.Push(luar.New(state, luatypes.NewPattern(state.CheckString(1), state.CheckString(2))))
 			return nil
 		}),
 		"path_combine": util.WrapLuaFunction(newPathPatternCombineConstructor(luatypes.NewCombinedPattern)),

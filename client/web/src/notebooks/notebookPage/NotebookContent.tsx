@@ -17,7 +17,10 @@ import { NotebookComponent } from '../notebook/NotebookComponent'
 export interface NotebookContentProps
     extends SearchStreamingProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
+        Omit<
+            StreamingSearchResultsListProps,
+            'allExpanded' | 'platformContext' | 'executedQuery' | 'enableOwnershipSearch'
+        >,
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean

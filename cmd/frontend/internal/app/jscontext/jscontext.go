@@ -6,10 +6,12 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -27,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -75,6 +78,21 @@ type UserSession struct {
 	CanSignOut bool `json:"canSignOut"`
 }
 
+type TemporarySettings struct {
+	GraphQLTypename string `json:"__typename"`
+	Contents        string `json:"contents"`
+}
+
+type Permission struct {
+	GraphQLTypename string     `json:"__typename"`
+	ID              graphql.ID `json:"id"`
+	DisplayName     string     `json:"displayName"`
+}
+
+type PermissionsConnection struct {
+	GraphQLTypename string       `json:"__typename"`
+	Nodes           []Permission `json:"nodes"`
+}
 type CurrentUser struct {
 	GraphQLTypename     string     `json:"__typename"`
 	ID                  graphql.ID `json:"id"`
@@ -94,6 +112,7 @@ type CurrentUser struct {
 	Session        *UserSession                 `json:"session"`
 	Emails         []UserEmail                  `json:"emails"`
 	LatestSettings *UserLatestSettings          `json:"latestSettings"`
+	Permissions    PermissionsConnection        `json:"permissions"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -112,8 +131,9 @@ type JSContext struct {
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
 
-	IsAuthenticatedUser bool         `json:"isAuthenticatedUser"`
-	CurrentUser         *CurrentUser `json:"currentUser"`
+	IsAuthenticatedUser bool               `json:"isAuthenticatedUser"`
+	CurrentUser         *CurrentUser       `json:"currentUser"`
+	TemporarySettings   *TemporarySettings `json:"temporarySettings"`
 
 	SentryDSN     *string               `json:"sentryDSN"`
 	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
@@ -172,6 +192,18 @@ type JSContext struct {
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
 
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey"`
+
+	NeedsRepositoryConfiguration bool `json:"needsRepositoryConfiguration"`
+
+	ExtsvcConfigFileExists bool `json:"extsvcConfigFileExists"`
+
+	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
+
+	RunningOnMacOS bool `json:"runningOnMacOS"`
+
+	LocalFilePickerAvailable bool `json:"localFilePickerAvailable"`
+
+	SrcServeGitUrl string `json:"srcServeGitUrl"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -237,13 +269,29 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	var licenseInfo *hooks.LicenseInfo
 	var user *types.User
+	temporarySettings := "{}"
 	if !a.IsAuthenticated() {
 		licenseInfo = hooks.GetLicenseInfo(false)
 	} else {
 		// Ignore err as we don't care if user does not exist
 		user, _ = a.User(ctx, db.Users())
 		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
+		if user != nil {
+			if settings, err := db.TemporarySettings().GetTemporarySettings(ctx, user.ID); err == nil {
+				temporarySettings = settings.Contents
+			}
+		}
 	}
+
+	siteResolver := graphqlbackend.NewSiteResolver(logger.Scoped("jscontext", "constructing jscontext"), db)
+	needsRepositoryConfiguration, err := siteResolver.NeedsRepositoryConfiguration(ctx)
+	if err != nil {
+		needsRepositoryConfiguration = false
+	}
+
+	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
+	runningOnMacOS := runtime.GOOS == "darwin"
+	srcServeGitUrl := envvar.SrcServeGitUrl()
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
@@ -258,6 +306,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		Version:             version.Version(),
 		IsAuthenticatedUser: a.IsAuthenticated(),
 		CurrentUser:         createCurrentUser(ctx, user, db),
+		TemporarySettings:   &TemporarySettings{GraphQLTypename: "TemporarySettings", Contents: temporarySettings},
 
 		SentryDSN:                  sentryDSN,
 		OpenTelemetry:              openTelemetry,
@@ -304,7 +353,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
-		CodeInsightsEnabled: enterprise.IsCodeInsightsEnabled(),
+		CodeInsightsEnabled: graphqlbackend.IsCodeInsightsEnabled(),
 
 		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
 
@@ -317,6 +366,18 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 
 		DisableFeedbackSurvey: conf.Get().DisableFeedbackSurvey,
+
+		NeedsRepositoryConfiguration: needsRepositoryConfiguration,
+
+		ExtsvcConfigFileExists: extsvcConfigFileExists,
+
+		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
+
+		RunningOnMacOS: runningOnMacOS,
+
+		LocalFilePickerAvailable: deploy.IsDeployTypeSingleProgram(deploy.Type()) && filepicker.Available(),
+
+		SrcServeGitUrl: srcServeGitUrl,
 	}
 }
 
@@ -368,6 +429,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		URL:                 userResolver.URL(),
 		Username:            userResolver.Username(),
 		ViewerCanAdminister: canAdminister,
+		Permissions:         resolveUserPermissions(ctx, userResolver),
 	}
 }
 
@@ -376,6 +438,33 @@ func derefString(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.UserResolver) PermissionsConnection {
+	connection := PermissionsConnection{
+		GraphQLTypename: "PermissionConnection",
+		Nodes:           []Permission{},
+	}
+
+	permissionResolver, err := userResolver.Permissions(ctx)
+	if err != nil {
+		return connection
+	}
+
+	nodes, err := permissionResolver.Nodes(ctx)
+	if err != nil {
+		return connection
+	}
+
+	for _, node := range nodes {
+		connection.Nodes = append(connection.Nodes, Permission{
+			GraphQLTypename: "Permission",
+			ID:              node.ID(),
+			DisplayName:     node.DisplayName(),
+		})
+	}
+
+	return connection
 }
 
 func resolveUserOrganizations(ctx context.Context, user *graphqlbackend.UserResolver) *UserOrganizationsConnection {

@@ -218,12 +218,6 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
-        "azureDevOps": {
-          "description": "Allow adding Azure DevOps code host connections",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "subRepoPermissions": {
           "type": "object",
           "additionalProperties": false,
@@ -356,14 +350,14 @@
           "type": "boolean",
           "default": false
         },
-        "enablePermissionsWebhooks": {
-          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
+        "enableGRPC": {
+          "description": "Enables gRPC for communication between internal services",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": false }
         },
-        "enablePostSignupFlow": {
-          "description": "Enables post sign-up user flow to add code hosts and sync code",
+        "enablePermissionsWebhooks": {
+          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": false }
@@ -627,6 +621,31 @@
       "group": "Code intelligence",
       "default": false
     },
+    "codeIntelRanking.documentReferenceCountsEnabled": {
+      "description": "Enables/disables the document reference counts feature. Currently experimental.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
+    "codeIntelRanking.documentReferenceCountsGraphKey": {
+      "description": "An arbitrary identifier used to group calculated rankings from SCIP data (including the SCIP export).",
+      "type": "string",
+      "group": "Code intelligence",
+      "examples": ["dev"]
+    },
+    "codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix": {
+      "description": "An arbitrary identifier used to group calculated rankings from SCIP data (excluding the SCIP export).",
+      "type": "string",
+      "group": "Code intelligence",
+      "examples": [""]
+    },
+    "codeIntelRanking.staleResultsAge": {
+      "description": "The interval at which to run the reduce job that computes document reference counts. Default is 72hrs.",
+      "type": "integer",
+      "default": 72,
+      "group": "Code intelligence"
+    },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
@@ -747,12 +766,12 @@
             "default": {
               "description": "The default syntax highlighting engine to use",
               "type": "string",
-              "enum": ["tree-sitter", "syntect"]
+              "enum": ["tree-sitter", "syntect", "scip-syntax"]
             },
             "overrides": {
               "description": "Manually specify overrides for syntax highlighting engine per language",
               "type": "object",
-              "additionalProperties": { "type": "string", "enum": ["tree-sitter", "syntect"] }
+              "additionalProperties": { "type": "string", "enum": ["tree-sitter", "syntect", "scip-syntax"] }
             }
           }
         },
@@ -1861,12 +1880,16 @@
     "completions": {
       "description": "Configuration for the completions service.",
       "type": "object",
-      "required": ["enabled", "accessToken", "provider"],
+      "required": ["enabled", "model", "accessToken", "provider"],
       "properties": {
         "enabled": {
           "description": "Toggles whether completions are enabled.",
           "type": "boolean",
           "default": false
+        },
+        "model": {
+          "description": "The model used for completions.",
+          "type": "string"
         },
         "accessToken": {
           "description": "The access token used to authenticate with the external completions provider.",
@@ -2277,8 +2300,18 @@
         "apiScope": {
           "type": "string",
           "description": "The OAuth API scope that should be used",
-          "default": "vso.code,vso.identity"
+          "default": "vso.code,vso.identity,vso.project"
         },
+        "allowOrgs": {
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of these Azure DevOps organizations only. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts Azure DevOps authentication. If false, users signing in via Azure DevOps must have an existing Sourcegraph account, which will be linked to their Azure DevOps identity after sign-in.",
           "default": true,

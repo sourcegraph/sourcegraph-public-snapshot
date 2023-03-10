@@ -1515,3 +1515,244 @@ func TestEventLogs_IllegalPeriodType(t *testing.T) {
 		}
 	})
 }
+
+func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	ptr := func(i int32) *int32 { return &i }
+	for name, testCase := range map[string]struct {
+		now             time.Time
+		events          []*Event
+		queryEventNames []string
+		stats           map[string]*types.OwnershipUsageStatisticsActiveUsers
+	}{
+		"same day events count as MAU, WAU & DAU": {
+			now: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC), // Thursday
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(2),
+					WAU: ptr(2),
+					MAU: ptr(2),
+				},
+			},
+		},
+		"previous day, same week events count as MAU, WAU but not DAU": {
+			now: time.Date(2000, time.March, 18, 12, 0, 0, 0, time.UTC), // Saturday
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.March, 17, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.March, 17, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(0),
+					WAU: ptr(2),
+					MAU: ptr(2),
+				},
+			},
+		},
+		"previous day, different week events count as MAU, but not WAU or DAU": {
+			now: time.Date(2000, time.May, 21, 12, 0, 0, 0, time.UTC), // Sunday
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.May, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.May, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(0),
+					WAU: ptr(0),
+					MAU: ptr(2),
+				},
+			},
+		},
+		"previous day, different month events count as WAU but not MAU or DAU": {
+			now: time.Date(2000, time.August, 1, 12, 0, 0, 0, time.UTC), // Tuesday
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.July, 31, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.July, 31, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(0),
+					WAU: ptr(2),
+					MAU: ptr(0),
+				},
+			},
+		},
+		"return zeroes on missing events": {
+			now: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "mice",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "ram",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "crane",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "wolf",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    4,
+					Name:      "coyote",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"cat", "dog"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"cat": {
+					DAU: ptr(0),
+					WAU: ptr(0),
+					MAU: ptr(0),
+				},
+				"dog": {
+					DAU: ptr(0),
+					WAU: ptr(0),
+					MAU: ptr(0),
+				},
+			},
+		},
+		"only include events by name": {
+			now: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "ram",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "ram",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "coyote",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    4,
+					Name:      "coyote",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse", "ram"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(2),
+					WAU: ptr(2),
+					MAU: ptr(2),
+				},
+				"ram": {
+					DAU: ptr(2),
+					WAU: ptr(2),
+					MAU: ptr(2),
+				},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			logger := logtest.Scoped(t)
+			db := NewDB(logger, dbtest.NewDB(logger, t))
+			ctx := context.Background()
+			for _, e := range testCase.events {
+				if err := db.EventLogs().Insert(ctx, e); err != nil {
+					t.Fatalf("failed inserting test data: %s", err)
+				}
+			}
+			stats, err := db.EventLogs().OwnershipFeatureActivity(ctx, testCase.now, testCase.queryEventNames...)
+			if err != nil {
+				t.Fatalf("querying activity failed: %s", err)
+			}
+			if diff := cmp.Diff(testCase.stats, stats); diff != "" {
+				t.Errorf("unexpected statistics returned:\n%s", diff)
+			}
+		})
+	}
+}

@@ -1,5 +1,5 @@
 // Package enterprisecmd defines entrypoint functions for the enterprise (non-OSS) build of
-// Sourcegraph's single-program distribution. It is invoked by all enterprise (non-OSS) commands'
+// Sourcegraph's single-binary distribution. It is invoked by all enterprise (non-OSS) commands'
 // main functions.
 package enterprisecmd
 

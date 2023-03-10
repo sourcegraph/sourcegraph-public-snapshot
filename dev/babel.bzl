@@ -1,7 +1,21 @@
+"Babel rule"
+
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:@babel/cli/package_json.bzl", "bin")
 
 def babel(name, srcs, module = None, **kwargs):
+    """A wrapper around Babel CLI
+
+    Args:
+        name: A unique name for this target
+
+        srcs: A list of sources
+
+        module: If specified, sets BABEL_MODULE environment variable to this value
+
+        **kwargs: Additional arguments to pass to the rule
+    """
+
     # rules_js runs in the execroot under the output tree in bazel-out/[arch]/bin
     execroot = "../../.."
 

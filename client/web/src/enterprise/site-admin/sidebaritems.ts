@@ -22,6 +22,8 @@ const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'License',
             to: '/site-admin/license',
+
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -47,6 +49,7 @@ const executorsGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/executors',
             label: 'Instances',
+            exact: true,
         },
         {
             to: '/site-admin/executors/secrets',
@@ -80,7 +83,7 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/outbound-webhooks',
         },
     ],
-    condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+    condition: ({ batchChangesEnabled, isSourcegraphApp }) => batchChangesEnabled && !isSourcegraphApp,
 }
 
 const businessGroup: SiteAdminSideBarGroup = {
@@ -107,6 +110,7 @@ const businessGroup: SiteAdminSideBarGroup = {
 
 const codeIntelGroup: SiteAdminSideBarGroup = {
     header: { label: 'Code graph', icon: BrainIcon },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             to: '/site-admin/code-graph/dashboard',
@@ -134,6 +138,7 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
         {
             label: 'Incoming webhooks',
             to: '/site-admin/webhooks',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -156,6 +161,10 @@ const usersGroup: SiteAdminSideBarGroup = {
         {
             label: 'Roles',
             to: '/site-admin/roles',
+        },
+        {
+            label: 'Permissions',
+            to: '/site-admin/permissions-syncs',
         },
     ],
 }

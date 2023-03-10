@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	regexp "github.com/grafana/regexp"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
 	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
@@ -30,6 +29,10 @@ type MockStore struct {
 	// GetDocumentRanksFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDocumentRanks.
 	GetDocumentRanksFunc *StoreGetDocumentRanksFunc
+	// GetReferenceCountStatisticsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetReferenceCountStatistics.
+	GetReferenceCountStatisticsFunc *StoreGetReferenceCountStatisticsFunc
 	// GetStarRankFunc is an instance of a mock function object controlling
 	// the behavior of the method GetStarRank.
 	GetStarRankFunc *StoreGetStarRankFunc
@@ -63,13 +66,18 @@ type MockStore struct {
 	// UpdatedAfterFunc is an instance of a mock function object controlling
 	// the behavior of the method UpdatedAfter.
 	UpdatedAfterFunc *StoreUpdatedAfterFunc
-	// VacuumStaleDefinitionsAndReferencesFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// VacuumStaleDefinitionsAndReferences.
-	VacuumStaleDefinitionsAndReferencesFunc *StoreVacuumStaleDefinitionsAndReferencesFunc
+	// VacuumStaleDefinitionsFunc is an instance of a mock function object
+	// controlling the behavior of the method VacuumStaleDefinitions.
+	VacuumStaleDefinitionsFunc *StoreVacuumStaleDefinitionsFunc
 	// VacuumStaleGraphsFunc is an instance of a mock function object
 	// controlling the behavior of the method VacuumStaleGraphs.
 	VacuumStaleGraphsFunc *StoreVacuumStaleGraphsFunc
+	// VacuumStaleRanksFunc is an instance of a mock function object
+	// controlling the behavior of the method VacuumStaleRanks.
+	VacuumStaleRanksFunc *StoreVacuumStaleRanksFunc
+	// VacuumStaleReferencesFunc is an instance of a mock function object
+	// controlling the behavior of the method VacuumStaleReferences.
+	VacuumStaleReferencesFunc *StoreVacuumStaleReferencesFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -82,7 +90,12 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetDocumentRanksFunc: &StoreGetDocumentRanksFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 map[string][2]float64, r1 bool, r2 error) {
+			defaultHook: func(context.Context, api.RepoName) (r0 map[string]float64, r1 bool, r2 error) {
+				return
+			},
+		},
+		GetReferenceCountStatisticsFunc: &StoreGetReferenceCountStatisticsFunc{
+			defaultHook: func(context.Context) (r0 float64, r1 error) {
 				return
 			},
 		},
@@ -107,7 +120,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		InsertPathRanksFunc: &StoreInsertPathRanksFunc{
-			defaultHook: func(context.Context, string, int) (r0 float64, r1 float64, r2 error) {
+			defaultHook: func(context.Context, string, int) (r0 int, r1 int, r2 error) {
 				return
 			},
 		},
@@ -136,12 +149,22 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		VacuumStaleDefinitionsAndReferencesFunc: &StoreVacuumStaleDefinitionsAndReferencesFunc{
+		VacuumStaleDefinitionsFunc: &StoreVacuumStaleDefinitionsFunc{
 			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
 				return
 			},
 		},
 		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
+			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
+				return
+			},
+		},
+		VacuumStaleRanksFunc: &StoreVacuumStaleRanksFunc{
+			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
+				return
+			},
+		},
+		VacuumStaleReferencesFunc: &StoreVacuumStaleReferencesFunc{
 			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
 				return
 			},
@@ -159,8 +182,13 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetDocumentRanksFunc: &StoreGetDocumentRanksFunc{
-			defaultHook: func(context.Context, api.RepoName) (map[string][2]float64, bool, error) {
+			defaultHook: func(context.Context, api.RepoName) (map[string]float64, bool, error) {
 				panic("unexpected invocation of MockStore.GetDocumentRanks")
+			},
+		},
+		GetReferenceCountStatisticsFunc: &StoreGetReferenceCountStatisticsFunc{
+			defaultHook: func(context.Context) (float64, error) {
+				panic("unexpected invocation of MockStore.GetReferenceCountStatistics")
 			},
 		},
 		GetStarRankFunc: &StoreGetStarRankFunc{
@@ -184,7 +212,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		InsertPathRanksFunc: &StoreInsertPathRanksFunc{
-			defaultHook: func(context.Context, string, int) (float64, float64, error) {
+			defaultHook: func(context.Context, string, int) (int, int, error) {
 				panic("unexpected invocation of MockStore.InsertPathRanks")
 			},
 		},
@@ -213,14 +241,24 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.UpdatedAfter")
 			},
 		},
-		VacuumStaleDefinitionsAndReferencesFunc: &StoreVacuumStaleDefinitionsAndReferencesFunc{
+		VacuumStaleDefinitionsFunc: &StoreVacuumStaleDefinitionsFunc{
 			defaultHook: func(context.Context, string) (int, int, error) {
-				panic("unexpected invocation of MockStore.VacuumStaleDefinitionsAndReferences")
+				panic("unexpected invocation of MockStore.VacuumStaleDefinitions")
 			},
 		},
 		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
 			defaultHook: func(context.Context, string) (int, int, error) {
 				panic("unexpected invocation of MockStore.VacuumStaleGraphs")
+			},
+		},
+		VacuumStaleRanksFunc: &StoreVacuumStaleRanksFunc{
+			defaultHook: func(context.Context, string) (int, int, error) {
+				panic("unexpected invocation of MockStore.VacuumStaleRanks")
+			},
+		},
+		VacuumStaleReferencesFunc: &StoreVacuumStaleReferencesFunc{
+			defaultHook: func(context.Context, string) (int, int, error) {
+				panic("unexpected invocation of MockStore.VacuumStaleReferences")
 			},
 		},
 	}
@@ -235,6 +273,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		GetDocumentRanksFunc: &StoreGetDocumentRanksFunc{
 			defaultHook: i.GetDocumentRanks,
+		},
+		GetReferenceCountStatisticsFunc: &StoreGetReferenceCountStatisticsFunc{
+			defaultHook: i.GetReferenceCountStatistics,
 		},
 		GetStarRankFunc: &StoreGetStarRankFunc{
 			defaultHook: i.GetStarRank,
@@ -266,11 +307,17 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		UpdatedAfterFunc: &StoreUpdatedAfterFunc{
 			defaultHook: i.UpdatedAfter,
 		},
-		VacuumStaleDefinitionsAndReferencesFunc: &StoreVacuumStaleDefinitionsAndReferencesFunc{
-			defaultHook: i.VacuumStaleDefinitionsAndReferences,
+		VacuumStaleDefinitionsFunc: &StoreVacuumStaleDefinitionsFunc{
+			defaultHook: i.VacuumStaleDefinitions,
 		},
 		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
 			defaultHook: i.VacuumStaleGraphs,
+		},
+		VacuumStaleRanksFunc: &StoreVacuumStaleRanksFunc{
+			defaultHook: i.VacuumStaleRanks,
+		},
+		VacuumStaleReferencesFunc: &StoreVacuumStaleReferencesFunc{
+			defaultHook: i.VacuumStaleReferences,
 		},
 	}
 }
@@ -379,15 +426,15 @@ func (c StoreDoneFuncCall) Results() []interface{} {
 // StoreGetDocumentRanksFunc describes the behavior when the
 // GetDocumentRanks method of the parent MockStore instance is invoked.
 type StoreGetDocumentRanksFunc struct {
-	defaultHook func(context.Context, api.RepoName) (map[string][2]float64, bool, error)
-	hooks       []func(context.Context, api.RepoName) (map[string][2]float64, bool, error)
+	defaultHook func(context.Context, api.RepoName) (map[string]float64, bool, error)
+	hooks       []func(context.Context, api.RepoName) (map[string]float64, bool, error)
 	history     []StoreGetDocumentRanksFuncCall
 	mutex       sync.Mutex
 }
 
 // GetDocumentRanks delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) GetDocumentRanks(v0 context.Context, v1 api.RepoName) (map[string][2]float64, bool, error) {
+func (m *MockStore) GetDocumentRanks(v0 context.Context, v1 api.RepoName) (map[string]float64, bool, error) {
 	r0, r1, r2 := m.GetDocumentRanksFunc.nextHook()(v0, v1)
 	m.GetDocumentRanksFunc.appendCall(StoreGetDocumentRanksFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -396,7 +443,7 @@ func (m *MockStore) GetDocumentRanks(v0 context.Context, v1 api.RepoName) (map[s
 // SetDefaultHook sets function that is called when the GetDocumentRanks
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreGetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (map[string][2]float64, bool, error)) {
+func (f *StoreGetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (map[string]float64, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -404,7 +451,7 @@ func (f *StoreGetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, ap
 // GetDocumentRanks method of the parent MockStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetDocumentRanksFunc) PushHook(hook func(context.Context, api.RepoName) (map[string][2]float64, bool, error)) {
+func (f *StoreGetDocumentRanksFunc) PushHook(hook func(context.Context, api.RepoName) (map[string]float64, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -412,20 +459,20 @@ func (f *StoreGetDocumentRanksFunc) PushHook(hook func(context.Context, api.Repo
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetDocumentRanksFunc) SetDefaultReturn(r0 map[string][2]float64, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (map[string][2]float64, bool, error) {
+func (f *StoreGetDocumentRanksFunc) SetDefaultReturn(r0 map[string]float64, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (map[string]float64, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetDocumentRanksFunc) PushReturn(r0 map[string][2]float64, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, api.RepoName) (map[string][2]float64, bool, error) {
+func (f *StoreGetDocumentRanksFunc) PushReturn(r0 map[string]float64, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, api.RepoName) (map[string]float64, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreGetDocumentRanksFunc) nextHook() func(context.Context, api.RepoName) (map[string][2]float64, bool, error) {
+func (f *StoreGetDocumentRanksFunc) nextHook() func(context.Context, api.RepoName) (map[string]float64, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -466,7 +513,7 @@ type StoreGetDocumentRanksFuncCall struct {
 	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[string][2]float64
+	Result0 map[string]float64
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -485,6 +532,114 @@ func (c StoreGetDocumentRanksFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreGetDocumentRanksFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// StoreGetReferenceCountStatisticsFunc describes the behavior when the
+// GetReferenceCountStatistics method of the parent MockStore instance is
+// invoked.
+type StoreGetReferenceCountStatisticsFunc struct {
+	defaultHook func(context.Context) (float64, error)
+	hooks       []func(context.Context) (float64, error)
+	history     []StoreGetReferenceCountStatisticsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetReferenceCountStatistics delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) GetReferenceCountStatistics(v0 context.Context) (float64, error) {
+	r0, r1 := m.GetReferenceCountStatisticsFunc.nextHook()(v0)
+	m.GetReferenceCountStatisticsFunc.appendCall(StoreGetReferenceCountStatisticsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetReferenceCountStatistics method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreGetReferenceCountStatisticsFunc) SetDefaultHook(hook func(context.Context) (float64, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetReferenceCountStatistics method of the parent MockStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *StoreGetReferenceCountStatisticsFunc) PushHook(hook func(context.Context) (float64, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreGetReferenceCountStatisticsFunc) SetDefaultReturn(r0 float64, r1 error) {
+	f.SetDefaultHook(func(context.Context) (float64, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreGetReferenceCountStatisticsFunc) PushReturn(r0 float64, r1 error) {
+	f.PushHook(func(context.Context) (float64, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreGetReferenceCountStatisticsFunc) nextHook() func(context.Context) (float64, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetReferenceCountStatisticsFunc) appendCall(r0 StoreGetReferenceCountStatisticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreGetReferenceCountStatisticsFuncCall
+// objects describing the invocations of this function.
+func (f *StoreGetReferenceCountStatisticsFunc) History() []StoreGetReferenceCountStatisticsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetReferenceCountStatisticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetReferenceCountStatisticsFuncCall is an object that describes an
+// invocation of method GetReferenceCountStatistics on an instance of
+// MockStore.
+type StoreGetReferenceCountStatisticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 float64
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetReferenceCountStatisticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetReferenceCountStatisticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreGetStarRankFunc describes the behavior when the GetStarRank method
@@ -939,15 +1094,15 @@ func (c StoreInsertPathCountInputsFuncCall) Results() []interface{} {
 // StoreInsertPathRanksFunc describes the behavior when the InsertPathRanks
 // method of the parent MockStore instance is invoked.
 type StoreInsertPathRanksFunc struct {
-	defaultHook func(context.Context, string, int) (float64, float64, error)
-	hooks       []func(context.Context, string, int) (float64, float64, error)
+	defaultHook func(context.Context, string, int) (int, int, error)
+	hooks       []func(context.Context, string, int) (int, int, error)
 	history     []StoreInsertPathRanksFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertPathRanks delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) InsertPathRanks(v0 context.Context, v1 string, v2 int) (float64, float64, error) {
+func (m *MockStore) InsertPathRanks(v0 context.Context, v1 string, v2 int) (int, int, error) {
 	r0, r1, r2 := m.InsertPathRanksFunc.nextHook()(v0, v1, v2)
 	m.InsertPathRanksFunc.appendCall(StoreInsertPathRanksFuncCall{v0, v1, v2, r0, r1, r2})
 	return r0, r1, r2
@@ -956,7 +1111,7 @@ func (m *MockStore) InsertPathRanks(v0 context.Context, v1 string, v2 int) (floa
 // SetDefaultHook sets function that is called when the InsertPathRanks
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreInsertPathRanksFunc) SetDefaultHook(hook func(context.Context, string, int) (float64, float64, error)) {
+func (f *StoreInsertPathRanksFunc) SetDefaultHook(hook func(context.Context, string, int) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -964,7 +1119,7 @@ func (f *StoreInsertPathRanksFunc) SetDefaultHook(hook func(context.Context, str
 // InsertPathRanks method of the parent MockStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreInsertPathRanksFunc) PushHook(hook func(context.Context, string, int) (float64, float64, error)) {
+func (f *StoreInsertPathRanksFunc) PushHook(hook func(context.Context, string, int) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -972,20 +1127,20 @@ func (f *StoreInsertPathRanksFunc) PushHook(hook func(context.Context, string, i
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreInsertPathRanksFunc) SetDefaultReturn(r0 float64, r1 float64, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, int) (float64, float64, error) {
+func (f *StoreInsertPathRanksFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, int) (int, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreInsertPathRanksFunc) PushReturn(r0 float64, r1 float64, r2 error) {
-	f.PushHook(func(context.Context, string, int) (float64, float64, error) {
+func (f *StoreInsertPathRanksFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, string, int) (int, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreInsertPathRanksFunc) nextHook() func(context.Context, string, int) (float64, float64, error) {
+func (f *StoreInsertPathRanksFunc) nextHook() func(context.Context, string, int) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1029,10 +1184,10 @@ type StoreInsertPathRanksFuncCall struct {
 	Arg2 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 float64
+	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 float64
+	Result1 int
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
@@ -1599,38 +1754,36 @@ func (c StoreUpdatedAfterFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreVacuumStaleDefinitionsAndReferencesFunc describes the behavior when
-// the VacuumStaleDefinitionsAndReferences method of the parent MockStore
-// instance is invoked.
-type StoreVacuumStaleDefinitionsAndReferencesFunc struct {
+// StoreVacuumStaleDefinitionsFunc describes the behavior when the
+// VacuumStaleDefinitions method of the parent MockStore instance is
+// invoked.
+type StoreVacuumStaleDefinitionsFunc struct {
 	defaultHook func(context.Context, string) (int, int, error)
 	hooks       []func(context.Context, string) (int, int, error)
-	history     []StoreVacuumStaleDefinitionsAndReferencesFuncCall
+	history     []StoreVacuumStaleDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
-// VacuumStaleDefinitionsAndReferences delegates to the next hook function
-// in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockStore) VacuumStaleDefinitionsAndReferences(v0 context.Context, v1 string) (int, int, error) {
-	r0, r1, r2 := m.VacuumStaleDefinitionsAndReferencesFunc.nextHook()(v0, v1)
-	m.VacuumStaleDefinitionsAndReferencesFunc.appendCall(StoreVacuumStaleDefinitionsAndReferencesFuncCall{v0, v1, r0, r1, r2})
+// VacuumStaleDefinitions delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) VacuumStaleDefinitions(v0 context.Context, v1 string) (int, int, error) {
+	r0, r1, r2 := m.VacuumStaleDefinitionsFunc.nextHook()(v0, v1)
+	m.VacuumStaleDefinitionsFunc.appendCall(StoreVacuumStaleDefinitionsFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
-// VacuumStaleDefinitionsAndReferences method of the parent MockStore
-// instance is invoked and the hook queue is empty.
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) SetDefaultHook(hook func(context.Context, string) (int, int, error)) {
+// VacuumStaleDefinitions method of the parent MockStore instance is invoked
+// and the hook queue is empty.
+func (f *StoreVacuumStaleDefinitionsFunc) SetDefaultHook(hook func(context.Context, string) (int, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// VacuumStaleDefinitionsAndReferences method of the parent MockStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) PushHook(hook func(context.Context, string) (int, int, error)) {
+// VacuumStaleDefinitions method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreVacuumStaleDefinitionsFunc) PushHook(hook func(context.Context, string) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1638,20 +1791,20 @@ func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) PushHook(hook func(contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+func (f *StoreVacuumStaleDefinitionsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
 	f.SetDefaultHook(func(context.Context, string) (int, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) PushReturn(r0 int, r1 int, r2 error) {
+func (f *StoreVacuumStaleDefinitionsFunc) PushReturn(r0 int, r1 int, r2 error) {
 	f.PushHook(func(context.Context, string) (int, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) nextHook() func(context.Context, string) (int, int, error) {
+func (f *StoreVacuumStaleDefinitionsFunc) nextHook() func(context.Context, string) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1664,28 +1817,26 @@ func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) nextHook() func(context.C
 	return hook
 }
 
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) appendCall(r0 StoreVacuumStaleDefinitionsAndReferencesFuncCall) {
+func (f *StoreVacuumStaleDefinitionsFunc) appendCall(r0 StoreVacuumStaleDefinitionsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// StoreVacuumStaleDefinitionsAndReferencesFuncCall objects describing the
-// invocations of this function.
-func (f *StoreVacuumStaleDefinitionsAndReferencesFunc) History() []StoreVacuumStaleDefinitionsAndReferencesFuncCall {
+// History returns a sequence of StoreVacuumStaleDefinitionsFuncCall objects
+// describing the invocations of this function.
+func (f *StoreVacuumStaleDefinitionsFunc) History() []StoreVacuumStaleDefinitionsFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreVacuumStaleDefinitionsAndReferencesFuncCall, len(f.history))
+	history := make([]StoreVacuumStaleDefinitionsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreVacuumStaleDefinitionsAndReferencesFuncCall is an object that
-// describes an invocation of method VacuumStaleDefinitionsAndReferences on
-// an instance of MockStore.
-type StoreVacuumStaleDefinitionsAndReferencesFuncCall struct {
+// StoreVacuumStaleDefinitionsFuncCall is an object that describes an
+// invocation of method VacuumStaleDefinitions on an instance of MockStore.
+type StoreVacuumStaleDefinitionsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1705,13 +1856,13 @@ type StoreVacuumStaleDefinitionsAndReferencesFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreVacuumStaleDefinitionsAndReferencesFuncCall) Args() []interface{} {
+func (c StoreVacuumStaleDefinitionsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreVacuumStaleDefinitionsAndReferencesFuncCall) Results() []interface{} {
+func (c StoreVacuumStaleDefinitionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
@@ -1826,83 +1977,35 @@ func (c StoreVacuumStaleGraphsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// MockGitserverClient is a mock implementation of the GitserverClient
-// interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking)
-// used for unit testing.
-type MockGitserverClient struct {
-	// ListFilesForRepoFunc is an instance of a mock function object
-	// controlling the behavior of the method ListFilesForRepo.
-	ListFilesForRepoFunc *GitserverClientListFilesForRepoFunc
-}
-
-// NewMockGitserverClient creates a new mock of the GitserverClient
-// interface. All methods return zero values for all results, unless
-// overwritten.
-func NewMockGitserverClient() *MockGitserverClient {
-	return &MockGitserverClient{
-		ListFilesForRepoFunc: &GitserverClientListFilesForRepoFunc{
-			defaultHook: func(context.Context, api.RepoName, string, *regexp.Regexp) (r0 []string, r1 error) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockGitserverClient creates a new mock of the GitserverClient
-// interface. All methods panic on invocation, unless overwritten.
-func NewStrictMockGitserverClient() *MockGitserverClient {
-	return &MockGitserverClient{
-		ListFilesForRepoFunc: &GitserverClientListFilesForRepoFunc{
-			defaultHook: func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error) {
-				panic("unexpected invocation of MockGitserverClient.ListFilesForRepo")
-			},
-		},
-	}
-}
-
-// NewMockGitserverClientFrom creates a new mock of the MockGitserverClient
-// interface. All methods delegate to the given implementation, unless
-// overwritten.
-func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
-	return &MockGitserverClient{
-		ListFilesForRepoFunc: &GitserverClientListFilesForRepoFunc{
-			defaultHook: i.ListFilesForRepo,
-		},
-	}
-}
-
-// GitserverClientListFilesForRepoFunc describes the behavior when the
-// ListFilesForRepo method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientListFilesForRepoFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error)
-	hooks       []func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error)
-	history     []GitserverClientListFilesForRepoFuncCall
+// StoreVacuumStaleRanksFunc describes the behavior when the
+// VacuumStaleRanks method of the parent MockStore instance is invoked.
+type StoreVacuumStaleRanksFunc struct {
+	defaultHook func(context.Context, string) (int, int, error)
+	hooks       []func(context.Context, string) (int, int, error)
+	history     []StoreVacuumStaleRanksFuncCall
 	mutex       sync.Mutex
 }
 
-// ListFilesForRepo delegates to the next hook function in the queue and
+// VacuumStaleRanks delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) ListFilesForRepo(v0 context.Context, v1 api.RepoName, v2 string, v3 *regexp.Regexp) ([]string, error) {
-	r0, r1 := m.ListFilesForRepoFunc.nextHook()(v0, v1, v2, v3)
-	m.ListFilesForRepoFunc.appendCall(GitserverClientListFilesForRepoFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
+func (m *MockStore) VacuumStaleRanks(v0 context.Context, v1 string) (int, int, error) {
+	r0, r1, r2 := m.VacuumStaleRanksFunc.nextHook()(v0, v1)
+	m.VacuumStaleRanksFunc.appendCall(StoreVacuumStaleRanksFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the ListFilesForRepo
-// method of the parent MockGitserverClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverClientListFilesForRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error)) {
+// SetDefaultHook sets function that is called when the VacuumStaleRanks
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreVacuumStaleRanksFunc) SetDefaultHook(hook func(context.Context, string) (int, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ListFilesForRepo method of the parent MockGitserverClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverClientListFilesForRepoFunc) PushHook(hook func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error)) {
+// VacuumStaleRanks method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreVacuumStaleRanksFunc) PushHook(hook func(context.Context, string) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1910,20 +2013,20 @@ func (f *GitserverClientListFilesForRepoFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverClientListFilesForRepoFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error) {
-		return r0, r1
+func (f *StoreVacuumStaleRanksFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, string) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientListFilesForRepoFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error) {
-		return r0, r1
+func (f *StoreVacuumStaleRanksFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, string) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *GitserverClientListFilesForRepoFunc) nextHook() func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error) {
+func (f *StoreVacuumStaleRanksFunc) nextHook() func(context.Context, string) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1936,57 +2039,164 @@ func (f *GitserverClientListFilesForRepoFunc) nextHook() func(context.Context, a
 	return hook
 }
 
-func (f *GitserverClientListFilesForRepoFunc) appendCall(r0 GitserverClientListFilesForRepoFuncCall) {
+func (f *StoreVacuumStaleRanksFunc) appendCall(r0 StoreVacuumStaleRanksFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitserverClientListFilesForRepoFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverClientListFilesForRepoFunc) History() []GitserverClientListFilesForRepoFuncCall {
+// History returns a sequence of StoreVacuumStaleRanksFuncCall objects
+// describing the invocations of this function.
+func (f *StoreVacuumStaleRanksFunc) History() []StoreVacuumStaleRanksFuncCall {
 	f.mutex.Lock()
-	history := make([]GitserverClientListFilesForRepoFuncCall, len(f.history))
+	history := make([]StoreVacuumStaleRanksFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitserverClientListFilesForRepoFuncCall is an object that describes an
-// invocation of method ListFilesForRepo on an instance of
-// MockGitserverClient.
-type GitserverClientListFilesForRepoFuncCall struct {
+// StoreVacuumStaleRanksFuncCall is an object that describes an invocation
+// of method VacuumStaleRanks on an instance of MockStore.
+type StoreVacuumStaleRanksFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 *regexp.Regexp
+	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []string
+	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitserverClientListFilesForRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+func (c StoreVacuumStaleRanksFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitserverClientListFilesForRepoFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+func (c StoreVacuumStaleRanksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// StoreVacuumStaleReferencesFunc describes the behavior when the
+// VacuumStaleReferences method of the parent MockStore instance is invoked.
+type StoreVacuumStaleReferencesFunc struct {
+	defaultHook func(context.Context, string) (int, int, error)
+	hooks       []func(context.Context, string) (int, int, error)
+	history     []StoreVacuumStaleReferencesFuncCall
+	mutex       sync.Mutex
+}
+
+// VacuumStaleReferences delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) VacuumStaleReferences(v0 context.Context, v1 string) (int, int, error) {
+	r0, r1, r2 := m.VacuumStaleReferencesFunc.nextHook()(v0, v1)
+	m.VacuumStaleReferencesFunc.appendCall(StoreVacuumStaleReferencesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// VacuumStaleReferences method of the parent MockStore instance is invoked
+// and the hook queue is empty.
+func (f *StoreVacuumStaleReferencesFunc) SetDefaultHook(hook func(context.Context, string) (int, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// VacuumStaleReferences method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreVacuumStaleReferencesFunc) PushHook(hook func(context.Context, string) (int, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreVacuumStaleReferencesFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, string) (int, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreVacuumStaleReferencesFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, string) (int, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreVacuumStaleReferencesFunc) nextHook() func(context.Context, string) (int, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreVacuumStaleReferencesFunc) appendCall(r0 StoreVacuumStaleReferencesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreVacuumStaleReferencesFuncCall objects
+// describing the invocations of this function.
+func (f *StoreVacuumStaleReferencesFunc) History() []StoreVacuumStaleReferencesFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreVacuumStaleReferencesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreVacuumStaleReferencesFuncCall is an object that describes an
+// invocation of method VacuumStaleReferences on an instance of MockStore.
+type StoreVacuumStaleReferencesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreVacuumStaleReferencesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreVacuumStaleReferencesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // MockSiteConfigQuerier is a mock implementation of the SiteConfigQuerier

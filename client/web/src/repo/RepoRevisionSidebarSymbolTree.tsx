@@ -8,16 +8,17 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { Tree, Link, flattenTree, TreeNode } from '@sourcegraph/wildcard'
+import { Link, flattenTree, TreeNode } from '@sourcegraph/wildcard'
 
 import { SymbolNodeFields, SymbolKind as SymbolKindEnum } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
+import { FocusableTree, FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
 
-interface Props {
+interface Props extends FocusableTreeProps {
     symbols: SymbolWithChildren[]
     onClick: () => void
     selectedSymbolUrl: string | null
@@ -30,6 +31,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
     onClick,
     selectedSymbolUrl,
     setSelectedSymbolUrl,
+    focusKey,
 }) => {
     const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
 
@@ -64,12 +66,14 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
             //
             // Note: React errors when calling flushSync from lifecycle method, so we move this into
             // an async timeout instead.
-            queueMicrotask(() =>
-                flushSync(() => {
-                    onClick()
-                    setSelectedSymbolUrl(element.url)
-                    navigate(element.url)
-                })
+            setTimeout(
+                () =>
+                    flushSync(() => {
+                        onClick()
+                        setSelectedSymbolUrl(element.url)
+                        navigate(element.url)
+                    }),
+                0
             )
         },
         [navigate, onClick, selectedSymbolUrl, setSelectedSymbolUrl]
@@ -116,13 +120,22 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
         : []
 
     return (
-        <Tree<SymbolNode>
+        <FocusableTree<SymbolNode>
             data={treeData}
+            focusKey={focusKey}
             defaultExpandedIds={defaultExpandedIds}
             onSelect={onSelect}
             selectedIds={selectedIds}
             nodeClassName={styles.treeNode}
-            renderNode={({ element, handleSelect, props }): React.ReactNode => {
+            renderNode={({
+                element,
+                handleSelect,
+                props,
+            }: {
+                element: SymbolNode
+                handleSelect: (event: React.MouseEvent) => {}
+                props: { className: string; tabIndex: number }
+            }): React.ReactNode => {
                 const { className, ...rest } = props
 
                 const to = element.__typename === 'SymbolPlaceholder' ? '' : element.url
@@ -139,7 +152,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
                         }}
                     >
                         <SymbolKind kind={kind} className="mr-1" symbolKindTags={symbolKindTags} />
-                        {element.name}
+                        <span data-testid="symbol-name">{element.name}</span>
                     </Link>
                 )
             }}
