@@ -1,4 +1,4 @@
-import { BrainDot } from './CodeIntelligenceBadge'
+import { BrainDot } from './BrainDot'
 import { UseCodeIntel } from './useCodeIntel'
 
 /**
