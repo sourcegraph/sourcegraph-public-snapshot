@@ -483,7 +483,7 @@ func (c *Client) httpPost(
 		span.Finish()
 	}()
 
-	symbolsURL, err := c.Endpoints.Get(string(repo))
+	symbolsURL, err := c.url(repo)
 	if err != nil {
 		return nil, err
 	}
@@ -525,6 +525,13 @@ func (c *Client) getGRPCConn(repo string) (*grpc.ClientConn, error) {
 
 	connWithErr := c.gRPCConnCache.Get(address)
 	return connWithErr.conn, connWithErr.dialErr
+}
+
+func (c *Client) url(repo api.RepoName) (string, error) {
+	if c.Endpoints == nil {
+		return "", errors.New("a symbols service has not been configured")
+	}
+	return c.Endpoints.Get(string(repo))
 }
 
 func newGRPCConnection(address string) connAndErr {
