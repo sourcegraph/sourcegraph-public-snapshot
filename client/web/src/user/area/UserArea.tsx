@@ -47,6 +47,11 @@ export const UserAreaGQLFragment = gql`
             email
             isPrimary
         }
+        roles {
+            nodes {
+                name
+            }
+        }
     }
 `
 
