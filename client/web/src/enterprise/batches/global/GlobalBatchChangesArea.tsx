@@ -79,7 +79,7 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
                         />
                     }
                 />
-                {!isSourcegraphDotCom && (
+                {!isSourcegraphDotCom && canCreate && (
                     <Route
                         path="create"
                         element={
