@@ -207,7 +207,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                     value={path}
                     label="Directory path"
                     disabled={isFilePickerAvailable}
-                    placeholder="Users/user-name/Projects/"
+                    placeholder="/Users/user-name/Projects/"
                     message="You can pick git directory or folder that contains multiple git folders"
                     isProcessing={loading}
                     className={styles.filePicker}
