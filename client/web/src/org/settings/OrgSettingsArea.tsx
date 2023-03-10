@@ -62,7 +62,7 @@ export const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
                                     />
                                 )
                         )}
-                        <Route element={<NotFoundPage />} />
+                        <Route path="*" element={<NotFoundPage />} />
                     </Routes>
                 </React.Suspense>
             </div>

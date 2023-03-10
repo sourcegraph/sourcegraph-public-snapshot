@@ -1,4 +1,4 @@
-// Package osscmd defines entrypoint functions for the OSS build of Sourcegraph's single-program
+// Package osscmd defines entrypoint functions for the OSS build of Sourcegraph's single-binary
 // distribution. It is invoked by all OSS commands' main functions.
 package osscmd
 

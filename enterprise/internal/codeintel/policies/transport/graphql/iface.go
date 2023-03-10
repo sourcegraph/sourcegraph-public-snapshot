@@ -7,7 +7,6 @@ import (
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type PoliciesService interface {
@@ -19,7 +18,6 @@ type PoliciesService interface {
 	UpdateConfigurationPolicy(ctx context.Context, policy types.ConfigurationPolicy) (err error)
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) error
 	GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit int) (_ []int, totalCount int, matchesAll bool, repositoryMatchLimit *int, err error)
-	GetUnsafeDB() database.DB
 
 	GetPreviewGitObjectFilter(
 		ctx context.Context,

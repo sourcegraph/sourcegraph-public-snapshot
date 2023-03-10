@@ -265,8 +265,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		// Ignore err as we don't care if user does not exist
 		user, _ = a.User(ctx, db.Users())
 		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
-		if settings, err := db.TemporarySettings().GetTemporarySettings(ctx, user.ID); err == nil {
-			temporarySettings = settings.Contents
+		if user != nil {
+			if settings, err := db.TemporarySettings().GetTemporarySettings(ctx, user.ID); err == nil {
+				temporarySettings = settings.Contents
+			}
 		}
 	}
 
