@@ -1,7 +1,8 @@
+use std::{collections::HashSet, fmt::Debug};
+
 use once_cell::sync::OnceCell;
 use protobuf::{EnumOrUnknown, SpecialFields};
 use scip::types::{Document, Occurrence, SyntaxKind};
-use std::{collections::HashSet, fmt::Debug};
 use syntect::{
     parsing::{BasicScopeStackOp, ParseState, Scope, ScopeStack, SyntaxReference, SyntaxSet},
     util::LinesWithEndings,
@@ -79,12 +80,23 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.type.keyword"), IdentifierKeyword),
             (scope("entity.name.function"), IdentifierFunction),
             (scope("entity.name.type"), IdentifierType),
-
             // TODO: optimization opportunity, skip testing language-specific scopes.
-            (scope("keyword.operator.expression.keyof.ts"), IdentifierKeyword),
-            (scope("keyword.operator.expression.keyof.tsx"), IdentifierKeyword),
-            (scope("keyword.operator.expression.typeof.ts"), IdentifierKeyword),
-            (scope("keyword.operator.expression.typeof.tsx"), IdentifierKeyword),
+            (
+                scope("keyword.operator.expression.keyof.ts"),
+                IdentifierKeyword,
+            ),
+            (
+                scope("keyword.operator.expression.keyof.tsx"),
+                IdentifierKeyword,
+            ),
+            (
+                scope("keyword.operator.expression.typeof.ts"),
+                IdentifierKeyword,
+            ),
+            (
+                scope("keyword.operator.expression.typeof.tsx"),
+                IdentifierKeyword,
+            ),
             (scope("storage.type.namespace.ts"), IdentifierKeyword),
             (scope("storage.type.namespace.tsx"), IdentifierKeyword),
             (scope("storage.type.module.js"), IdentifierKeyword),
@@ -108,7 +120,10 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.type.ts"), IdentifierKeyword),
             (scope("storage.type.tsx"), IdentifierKeyword),
             (scope("keyword.operator.logical.sql"), IdentifierKeyword),
-            (scope("keyword.operator.assignment.alias.sql"), IdentifierKeyword),
+            (
+                scope("keyword.operator.assignment.alias.sql"),
+                IdentifierKeyword,
+            ),
             (scope("meta.mapping.key.json"), StringLiteralKey),
             (scope("entity.name.tag.yaml"), StringLiteralKey),
             (scope("entity.other.attribute-name.class.css"), Identifier),
@@ -119,7 +134,6 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.type.function.scala"), IdentifierKeyword),
             (scope("storage.type.volatile.scala"), IdentifierKeyword),
             // (scope("entity.name.section.markdown"), IdentifierType),
-
             (scope("meta.tag"), Identifier),
             (scope("markup.bold"), Identifier),
             (scope("markup.underline"), Identifier),
@@ -151,7 +165,6 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("support.class"), IdentifierType),
             (scope("support.function"), IdentifierFunction),
             (scope("support.variable"), Identifier),
-
             (scope("entity.other.attribute-name"), TagAttribute),
             (scope("entity.name"), Identifier),
             (scope("entity.other"), Identifier),
@@ -199,7 +212,7 @@ impl HighlightStart {
             row: row as i32,
             col: col as i32,
             kind: Some(kind),
-            scope: scope,
+            scope,
         }
     }
 
@@ -472,13 +485,12 @@ fn push_document_occurence(
         return;
     }
 
-    match partial_hl.kind {
-        Some(kind) => document.occurrences.push(new_occurence(
+    if let Some(kind) = partial_hl.kind {
+        document.occurrences.push(new_occurence(
             vec![partial_hl.row, partial_hl.col, row, col],
             kind,
             scope,
-        )),
-        None => (),
+        ));
     }
 }
 
@@ -504,7 +516,7 @@ fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind, scope: Scope) -> Occu
         range,
         syntax_kind,
         symbol_roles: 0,
-        symbol: symbol,
+        symbol,
         override_documentation: vec![],
         diagnostics: vec![],
         special_fields: SpecialFields::default(),
@@ -527,9 +539,11 @@ mod test {
     #[test]
     fn test_generates_empty_file() {
         let syntax_set = SyntaxSet::load_defaults_newlines();
-        let mut q = crate::SourcegraphQuery::default();
-        q.filetype = Some("go".to_string());
-        q.code = "".to_string();
+        let q = crate::SourcegraphQuery {
+            filetype: Some("go".to_string()),
+            code: "".to_string(),
+            ..Default::default()
+        };
 
         let syntax_def = determine_language(&q, &syntax_set).unwrap();
         let output = DocumentGenerator::new(&syntax_set, syntax_def, &q.code, q.line_length_limit)

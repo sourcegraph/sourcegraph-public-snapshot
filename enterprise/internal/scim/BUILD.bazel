@@ -48,6 +48,7 @@ go_test(
     ],
     embed = [":scim"],
     deps = [
+        "//internal/database",
         "//internal/observation",
         "//internal/types",
         "@com_github_elimity_com_scim//:scim",

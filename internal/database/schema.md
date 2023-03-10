@@ -1807,9 +1807,11 @@ Foreign-key constraints:
  last_checked_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
+    "lsif_dependency_repos_unique_scheme_name" UNIQUE, btree (scheme, name)
     "lsif_dependency_repos_blocked" btree (blocked)
     "lsif_dependency_repos_last_checked_at" btree (last_checked_at)
-    "lsif_dependency_repos_name_idx" btree (name)
+    "lsif_dependency_repos_name_id" btree (name, id)
+    "lsif_dependency_repos_scheme_id" btree (scheme, id)
 Referenced by:
     TABLE "package_repo_versions" CONSTRAINT "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
 
@@ -2972,6 +2974,7 @@ Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
+    "idx_repo_github_topics" gin (((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text)) WHERE external_service_type = 'github'::text
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)
@@ -3136,21 +3139,17 @@ Foreign-key constraints:
    Column   |           Type           | Collation | Nullable |              Default              
 ------------+--------------------------+-----------+----------+-----------------------------------
  id         | integer                  |           | not null | nextval('roles_id_seq'::regclass)
- name       | text                     |           | not null | 
  created_at | timestamp with time zone |           | not null | now()
  system     | boolean                  |           | not null | false
+ name       | citext                   |           | not null | 
 Indexes:
     "roles_pkey" PRIMARY KEY, btree (id)
-    "roles_name" UNIQUE CONSTRAINT, btree (name)
-Check constraints:
-    "name_not_blank" CHECK (name <> ''::text)
+    "unique_role_name" UNIQUE, btree (name)
 Referenced by:
     TABLE "role_permissions" CONSTRAINT "role_permissions_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_roles" CONSTRAINT "user_roles_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
 
 ```
-
-**name**: The uniquely identifying name of the role.
 
 **system**: This is used to indicate whether a role is read-only or can be modified.
 

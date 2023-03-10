@@ -37,7 +37,8 @@ fn main() -> Result<(), std::io::Error> {
 
     println!("  filetype: {:?}", filetype);
 
-    let document = sg_syntax::treesitter_index(&filetype, &contents).expect("parse document");
+    let document =
+        sg_syntax::treesitter_index(&filetype, &contents, false).expect("parse document");
     println!("  parsed document");
 
     scip::write_message_to_file(output, document).expect("writes document");

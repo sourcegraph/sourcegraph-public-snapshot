@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -19,6 +20,7 @@ import (
 type IndexEnqueuer struct {
 	store           store.Store
 	repoUpdater     RepoUpdaterClient
+	repoStore       database.RepoStore
 	gitserverClient GitserverClient
 	operations      *operations
 	jobSelector     *jobselector.JobSelector
@@ -28,12 +30,14 @@ func NewIndexEnqueuer(
 	observationCtx *observation.Context,
 	store store.Store,
 	repoUpdater RepoUpdaterClient,
+	repoStore database.RepoStore,
 	gitserverClient GitserverClient,
 	jobSelector *jobselector.JobSelector,
 ) *IndexEnqueuer {
 	return &IndexEnqueuer{
 		store:           store,
 		repoUpdater:     repoUpdater,
+		repoStore:       repoStore,
 		gitserverClient: gitserverClient,
 		operations:      newOperations(observationCtx),
 		jobSelector:     jobSelector,
@@ -101,7 +105,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependen
 		}
 		repoID = int(resp.ID)
 	} else {
-		repo, err := s.store.GetUnsafeDB().Repos().GetByName(ctx, repoName)
+		repo, err := s.repoStore.GetByName(ctx, repoName)
 		if err != nil {
 			return errors.Wrap(err, "store.Repos.GetByName")
 		}

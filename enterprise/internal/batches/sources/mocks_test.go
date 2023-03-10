@@ -5736,6 +5736,9 @@ type MockAzureDevOpsClient struct {
 	// object controlling the behavior of the method
 	// ListRepositoriesByProjectOrOrg.
 	ListRepositoriesByProjectOrOrgFunc *AzureDevOpsClientListRepositoriesByProjectOrOrgFunc
+	// SetWaitForRateLimitFunc is an instance of a mock function object
+	// controlling the behavior of the method SetWaitForRateLimit.
+	SetWaitForRateLimitFunc *AzureDevOpsClientSetWaitForRateLimitFunc
 	// UpdatePullRequestFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdatePullRequest.
 	UpdatePullRequestFunc *AzureDevOpsClientUpdatePullRequestFunc
@@ -5825,6 +5828,11 @@ func NewMockAzureDevOpsClient() *MockAzureDevOpsClient {
 		},
 		ListRepositoriesByProjectOrOrgFunc: &AzureDevOpsClientListRepositoriesByProjectOrOrgFunc{
 			defaultHook: func(context.Context, azuredevops.ListRepositoriesByProjectOrOrgArgs) (r0 []azuredevops.Repository, r1 error) {
+				return
+			},
+		},
+		SetWaitForRateLimitFunc: &AzureDevOpsClientSetWaitForRateLimitFunc{
+			defaultHook: func(bool) {
 				return
 			},
 		},
@@ -5925,6 +5933,11 @@ func NewStrictMockAzureDevOpsClient() *MockAzureDevOpsClient {
 				panic("unexpected invocation of MockAzureDevOpsClient.ListRepositoriesByProjectOrOrg")
 			},
 		},
+		SetWaitForRateLimitFunc: &AzureDevOpsClientSetWaitForRateLimitFunc{
+			defaultHook: func(bool) {
+				panic("unexpected invocation of MockAzureDevOpsClient.SetWaitForRateLimit")
+			},
+		},
 		UpdatePullRequestFunc: &AzureDevOpsClientUpdatePullRequestFunc{
 			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
 				panic("unexpected invocation of MockAzureDevOpsClient.UpdatePullRequest")
@@ -5990,6 +6003,9 @@ func NewMockAzureDevOpsClientFrom(i azuredevops.Client) *MockAzureDevOpsClient {
 		},
 		ListRepositoriesByProjectOrOrgFunc: &AzureDevOpsClientListRepositoriesByProjectOrOrgFunc{
 			defaultHook: i.ListRepositoriesByProjectOrOrg,
+		},
+		SetWaitForRateLimitFunc: &AzureDevOpsClientSetWaitForRateLimitFunc{
+			defaultHook: i.SetWaitForRateLimit,
 		},
 		UpdatePullRequestFunc: &AzureDevOpsClientUpdatePullRequestFunc{
 			defaultHook: i.UpdatePullRequest,
@@ -7761,6 +7777,109 @@ func (c AzureDevOpsClientListRepositoriesByProjectOrOrgFuncCall) Args() []interf
 // invocation.
 func (c AzureDevOpsClientListRepositoriesByProjectOrOrgFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientSetWaitForRateLimitFunc describes the behavior when the
+// SetWaitForRateLimit method of the parent MockAzureDevOpsClient instance
+// is invoked.
+type AzureDevOpsClientSetWaitForRateLimitFunc struct {
+	defaultHook func(bool)
+	hooks       []func(bool)
+	history     []AzureDevOpsClientSetWaitForRateLimitFuncCall
+	mutex       sync.Mutex
+}
+
+// SetWaitForRateLimit delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) SetWaitForRateLimit(v0 bool) {
+	m.SetWaitForRateLimitFunc.nextHook()(v0)
+	m.SetWaitForRateLimitFunc.appendCall(AzureDevOpsClientSetWaitForRateLimitFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the SetWaitForRateLimit
+// method of the parent MockAzureDevOpsClient instance is invoked and the
+// hook queue is empty.
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) SetDefaultHook(hook func(bool)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetWaitForRateLimit method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) PushHook(hook func(bool)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(bool) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) PushReturn() {
+	f.PushHook(func(bool) {
+		return
+	})
+}
+
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) nextHook() func(bool) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) appendCall(r0 AzureDevOpsClientSetWaitForRateLimitFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AzureDevOpsClientSetWaitForRateLimitFuncCall objects describing the
+// invocations of this function.
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) History() []AzureDevOpsClientSetWaitForRateLimitFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientSetWaitForRateLimitFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientSetWaitForRateLimitFuncCall is an object that describes
+// an invocation of method SetWaitForRateLimit on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientSetWaitForRateLimitFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 bool
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientSetWaitForRateLimitFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientSetWaitForRateLimitFuncCall) Results() []interface{} {
+	return []interface{}{}
 }
 
 // AzureDevOpsClientUpdatePullRequestFunc describes the behavior when the

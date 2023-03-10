@@ -5,17 +5,17 @@ import { useQuery } from '@sourcegraph/http-client'
 import {
     RepoCodeIntelStatusResult,
     RepoCodeIntelStatusVariables,
-    InferredAvailableIndexersFields,
     PreciseIndexFields,
     RepoCodeIntelStatusSummaryFields,
     RepoCodeIntelStatusCommitGraphFields,
+    InferredAvailableIndexersWithKeysFields,
 } from '../../../../graphql-operations'
 import { repoCodeIntelStatusQuery } from '../backend'
 
 export interface UseRepoCodeIntelStatusPayload {
     lastIndexScan?: string
     lastUploadRetentionScan?: string
-    availableIndexers: InferredAvailableIndexersFields[]
+    availableIndexers: InferredAvailableIndexersWithKeysFields[]
     recentActivity: PreciseIndexFields[]
 }
 
