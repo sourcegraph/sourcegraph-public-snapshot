@@ -34,7 +34,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 		name     string
 		userId   string
 		attrs    scim.ResourceAttributes
-		testFunc func(userRes scim.Resource, err error)
+		testFunc func(userRes scim.Resource)
 	}{
 		{
 			name:   "replace username",
@@ -48,8 +48,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 					},
 				},
 			},
-			testFunc: func(userRes scim.Resource, err error) {
-				assert.NoError(t, err)
+			testFunc: func(userRes scim.Resource) {
 				assert.Equal(t, "user6", userRes.Attributes[AttrUserName])
 				assert.Equal(t, false, userRes.ExternalID.Present())
 				userID, _ := strconv.Atoi(userRes.ID)
@@ -70,8 +69,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 					},
 				},
 			},
-			testFunc: func(userRes scim.Resource, err error) {
-				assert.NoError(t, err)
+			testFunc: func(userRes scim.Resource) {
 				assert.Nil(t, userRes.Attributes[AttrUserName])
 				userID, _ := strconv.Atoi(userRes.ID)
 				user, _ := db.Users().GetByID(context.Background(), int32(userID))
@@ -93,8 +91,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 					},
 				},
 			},
-			testFunc: func(userRes scim.Resource, err error) {
-				assert.NoError(t, err)
+			testFunc: func(userRes scim.Resource) {
 				assert.Nil(t, userRes.Attributes[AttrUserName])
 				assert.Equal(t, "Test User", userRes.Attributes[AttrDisplayName])
 				assert.Equal(t, "testy", userRes.Attributes[AttrNickName])
@@ -120,8 +117,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 					},
 				},
 			},
-			testFunc: func(userRes scim.Resource, err error) {
-				assert.NoError(t, err)
+			testFunc: func(userRes scim.Resource) {
 				assert.Nil(t, userRes.Attributes[AttrUserName])
 				assert.Equal(t, "Test User", userRes.Attributes[AttrDisplayName])
 				assert.Equal(t, "testy", userRes.Attributes[AttrNickName])
@@ -139,7 +135,8 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			user, err := userResourceHandler.Replace(createDummyRequest(), tc.userId, tc.attrs)
-			tc.testFunc(user, err)
+			assert.NoError(t, err)
+			tc.testFunc(user)
 		})
 	}
 }
