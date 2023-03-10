@@ -34,7 +34,7 @@ import {
     ValidateAccessTokenResult,
     ValidateAccessTokenVariables,
 } from '../../../../../../graphql-operations'
-import { CodeHostRepositoriesAppLimitAlert } from '../../CodeHostExternalServiceAlert'
+import { CodeHostRepositoriesAppLimitAlert } from '../../../../CodeHostExternalServiceAlert'
 import { CodeHostJSONFormContent, RadioGroupSection, CodeHostConnectFormFields, CodeHostJSONFormState } from '../common'
 
 import { GithubOrganizationsPicker, GithubRepositoriesPicker } from './GithubEntityPickers'

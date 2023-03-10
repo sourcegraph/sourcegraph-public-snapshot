@@ -25,7 +25,7 @@ import {
 
 import { AddExternalServiceOptions } from '../../../../../../components/externalServices/externalServices'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { CodeHostRepositoriesAppLimitAlert } from '../../CodeHostExternalServiceAlert'
+import { CodeHostRepositoriesAppLimitAlert } from '../../../../CodeHostExternalServiceAlert'
 
 import styles from './CodeHostConnection.module.scss'
 
