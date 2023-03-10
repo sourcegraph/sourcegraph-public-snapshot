@@ -6360,7 +6360,7 @@ type User implements Node & SettingsSubject & Namespace {
     """
     emails: [UserEmail!]!
     """
-    The user's primary email address (if any).
+    The user's verified primary email address (if any).
     On dotcom only the user and site admins can access this field.
     """
     primaryEmail: UserEmail
