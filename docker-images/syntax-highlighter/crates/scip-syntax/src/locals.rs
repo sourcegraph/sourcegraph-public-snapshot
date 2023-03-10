@@ -305,9 +305,10 @@ pub fn parse_tree<'a>(
         let mut scope_modifier = None;
 
         for capture in m.captures {
-            let capture_name = capture_names
-                .get(capture.index as usize)
-                .expect("capture indexes should always work");
+            let capture_name = match capture_names.get(capture.index as usize) {
+                Some(capture_name) => capture_name,
+                None => continue,
+            };
 
             node = Some(capture.node);
 
@@ -342,10 +343,17 @@ pub fn parse_tree<'a>(
             }
         }
 
-        let node = node.expect("there must always be at least one descriptor");
+        let node = match node {
+            Some(node) => node,
+            None => continue,
+        };
 
         if let Some(group) = definition {
-            let identifier = node.utf8_text(source_bytes).expect("utf8_text");
+            let identifier = match node.utf8_text(source_bytes) {
+                Ok(identifier) => identifier,
+                Err(_) => continue,
+            };
+
             let scope_modifier = scope_modifier.unwrap_or_default();
             definitions.push(Definition {
                 range: ByteRange {
@@ -358,7 +366,11 @@ pub fn parse_tree<'a>(
                 scope_modifier,
             });
         } else if let Some(group) = reference {
-            let identifier = node.utf8_text(source_bytes).expect("utf8_text");
+            let identifier = match node.utf8_text(source_bytes) {
+                Ok(identifier) => identifier,
+                Err(_) => continue,
+            };
+
             references.push(Reference {
                 range: ByteRange {
                     start: node.start_byte(),
@@ -369,12 +381,11 @@ pub fn parse_tree<'a>(
                 node,
             });
         } else {
-            assert!(
-                scope.is_some(),
-                "if there is no definition or reference, there must be a scope: {:?}",
-                node,
-            );
-            let scope = scope.unwrap();
+            let scope = match scope {
+                Some(scope) => scope,
+                None => continue,
+            };
+
             scopes.push(Scope::new(scope.node));
         }
     }
@@ -415,11 +426,11 @@ pub fn parse_tree<'a>(
 mod test {
     use anyhow::Result;
     use scip::types::Document;
+    use scip_treesitter_languages::parsers::BundledParser;
 
     use super::*;
     use crate::{languages::LocalConfiguration, snapshot::dump_document};
 
-    #[allow(dead_code)]
     fn parse_file_for_lang(config: &mut LocalConfiguration, source_code: &str) -> Result<Document> {
         let source_bytes = source_code.as_bytes();
         let tree = config.parser.parse(source_bytes, None).unwrap();
@@ -441,7 +452,7 @@ mod test {
 
     #[test]
     fn test_can_do_go() -> Result<()> {
-        let mut config = crate::languages::go_locals();
+        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
@@ -453,7 +464,7 @@ mod test {
 
     #[test]
     fn test_can_do_nested_locals() -> Result<()> {
-        let mut config = crate::languages::go_locals();
+        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals-nested.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
@@ -465,7 +476,7 @@ mod test {
 
     #[test]
     fn test_can_do_functions() -> Result<()> {
-        let mut config = crate::languages::go_locals();
+        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/funcs.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
@@ -477,7 +488,7 @@ mod test {
 
     #[test]
     fn test_can_do_perl() -> Result<()> {
-        let mut config = crate::languages::perl_locals();
+        let mut config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
         let source_code = include_str!("../testdata/perl.pm");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 

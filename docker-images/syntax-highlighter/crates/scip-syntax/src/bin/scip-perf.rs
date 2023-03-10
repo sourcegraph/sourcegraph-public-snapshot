@@ -1,6 +1,7 @@
 use std::{path::Path, time::Instant};
 
 use scip_syntax::locals::parse_tree;
+use scip_treesitter_languages::parsers::BundledParser;
 use walkdir::WalkDir;
 
 struct ParseTiming {
@@ -9,7 +10,7 @@ struct ParseTiming {
 }
 
 fn parse_files(dir: &Path) -> Vec<ParseTiming> {
-    let mut config = scip_syntax::languages::go_locals();
+    let mut config = scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap();
     let extension = "go";
 
     let mut timings = vec![];

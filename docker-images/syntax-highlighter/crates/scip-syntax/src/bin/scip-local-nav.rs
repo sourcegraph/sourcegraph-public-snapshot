@@ -2,6 +2,7 @@ use std::{fs, path::Path};
 
 use scip::{types::Document, write_message_to_file};
 use scip_syntax::{languages::LocalConfiguration, locals::parse_tree};
+use scip_treesitter_languages::parsers::BundledParser;
 use walkdir::WalkDir;
 
 fn parse_files(config: &mut LocalConfiguration, root: &Path, dir: &Path) -> Vec<Document> {
@@ -61,7 +62,6 @@ fn main() {
     println!("scip-local-nav");
 
     let directory = Path::new("/home/tjdevries/sourcegraph/sourcegraph.git/main/");
-    // let extension = "go";
 
     let mut index = scip::types::Index {
         metadata: Some(scip::types::Metadata {
@@ -79,7 +79,7 @@ fn main() {
         ..Default::default()
     };
 
-    let mut config = scip_syntax::languages::go_locals();
+    let mut config = scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap();
     index
         .documents
         .extend(parse_files(&mut config, directory, directory));

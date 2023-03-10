@@ -42,7 +42,7 @@ pub struct LocalConfiguration {
     pub parser: Parser,
 }
 
-pub fn go_locals() -> LocalConfiguration {
+fn go_locals() -> LocalConfiguration {
     let language = BundledParser::Go.get_language();
     let query = include_scip_query!("go", "scip-locals");
 
@@ -56,7 +56,7 @@ pub fn go_locals() -> LocalConfiguration {
     }
 }
 
-pub fn perl_locals() -> LocalConfiguration {
+fn perl_locals() -> LocalConfiguration {
     let language = BundledParser::Perl.get_language();
     let query = include_scip_query!("perl", "scip-locals");
 

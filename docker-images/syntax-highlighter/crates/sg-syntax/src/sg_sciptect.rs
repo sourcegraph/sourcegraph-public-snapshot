@@ -212,7 +212,7 @@ impl HighlightStart {
             row: row as i32,
             col: col as i32,
             kind: Some(kind),
-            scope: scope,
+            scope,
         }
     }
 
@@ -485,13 +485,12 @@ fn push_document_occurence(
         return;
     }
 
-    match partial_hl.kind {
-        Some(kind) => document.occurrences.push(new_occurence(
+    if let Some(kind) = partial_hl.kind {
+        document.occurrences.push(new_occurence(
             vec![partial_hl.row, partial_hl.col, row, col],
             kind,
             scope,
-        )),
-        None => (),
+        ));
     }
 }
 
@@ -517,7 +516,7 @@ fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind, scope: Scope) -> Occu
         range,
         syntax_kind,
         symbol_roles: 0,
-        symbol: symbol,
+        symbol,
         override_documentation: vec![],
         diagnostics: vec![],
         special_fields: SpecialFields::default(),
@@ -540,9 +539,11 @@ mod test {
     #[test]
     fn test_generates_empty_file() {
         let syntax_set = SyntaxSet::load_defaults_newlines();
-        let mut q = crate::SourcegraphQuery::default();
-        q.filetype = Some("go".to_string());
-        q.code = "".to_string();
+        let q = crate::SourcegraphQuery {
+            filetype: Some("go".to_string()),
+            code: "".to_string(),
+            ..Default::default()
+        };
 
         let syntax_def = determine_language(&q, &syntax_set).unwrap();
         let output = DocumentGenerator::new(&syntax_set, syntax_def, &q.code, q.line_length_limit)
