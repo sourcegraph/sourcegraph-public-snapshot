@@ -1,3 +1,27 @@
+.subject-container {
+    max-width: 16rem;
+
+    svg {
+        min-width: 1rem;
+    }
+}
+
+.visible-actions-on-hover {
+    .actions-button {
+        visibility: hidden;
+    }
+
+    &:hover {
+        .actions-button {
+            visibility: visible;
+        }
+    }
+}
+
+.reason-group-container {
+    max-width: 10rem;
+}
+
 .jobs {
     &__grid {
         display: grid;
@@ -18,4 +42,15 @@
 
 .search-input {
     margin-top: 0.6rem;
+
+    input:disabled {
+        background: var(--input-bg) !important;
+        color: var(--text-muted) !important;
+    }
+}
+
+.table-row {
+    td {
+        padding-bottom: var(--spacer);
+    }
 }

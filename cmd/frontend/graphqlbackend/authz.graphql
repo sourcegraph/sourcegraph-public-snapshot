@@ -203,11 +203,11 @@ extend type Query {
         """
         query: String
         """
-        Optional filter to find permissions sync jobs for a user.
+        Optional filter to find permissions sync jobs for a user. Please provide either this or repoID, but not both.
         """
         userID: ID
         """
-        Optional filter to find permissions sync jobs for a repository.
+        Optional filter to find permissions sync jobs for a repository. Please provide either this or userID, but not both.
         """
         repoID: ID
     ): PermissionsSyncJobsConnection!

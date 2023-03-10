@@ -76,8 +76,10 @@ interface repo {
     __typename: 'Repository'
     id: string
     name: string
+    url: string
     externalRepository: {
         serviceType: ExternalServiceKind
+        serviceID: string
     }
 }
 
@@ -85,6 +87,8 @@ interface user {
     __typename: 'User'
     id: string
     username: string
+    displayName: string | null
+    email: string
 }
 
 type subject = repo | user
@@ -153,14 +157,18 @@ function getSyncJobs(): PermissionsSyncJob[] {
                       __typename: 'Repository',
                       id: index.toString(),
                       name: `sourcegraph/repo-${index}`,
+                      url: `/ghe.sgdev.org/milton/repo-${index}/`,
                       externalRepository: {
                           serviceType: index % 3 === 0 ? ExternalServiceKind.GITHUB : ExternalServiceKind.GITLAB,
+                          serviceID: index % 3 === 0 ? 'github.com' : 'gitlab.com',
                       },
                   }
                 : {
                       __typename: 'User',
                       id: index.toString(),
                       username: `username-${index}`,
+                      displayName: 'Test User',
+                      email: 'example@sourcegraph.com',
                   }
 
         jobs.push(createSyncJobMock(index.toString(), state, subject, reason))
