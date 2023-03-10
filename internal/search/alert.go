@@ -183,8 +183,10 @@ func AlertForUnindexedLockfile(repoName api.RepoName, revisions []string) *Alert
 
 func AlertForUnownedResult() *Alert {
 	return &Alert{
+		Kind:        "unowned-results",
 		Title:       "Some results have no owners",
-		Description: "For some of the search results, either no ownership data was found, or no rule covered the search results. Learn more about ownership data in our documentation: [https://docs.sourcegraph.com/own](https://docs.sourcegraph.com/own).",
-		Priority:    0,
+		Description: "For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring Sourcegraph Own](https://docs.sourcegraph.com/own).",
+		// Explicitly set a low priority, so other alerts take precedence.
+		Priority: 0,
 	}
 }

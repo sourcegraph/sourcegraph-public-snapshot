@@ -58,7 +58,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 
 		rules := NewRulesCache(gitserverClient, setupDB())
 
-		matches, err := getCodeOwnersFromMatches(ctx, &rules, []result.Match{
+		matches, hasNoResults, err := getCodeOwnersFromMatches(ctx, &rules, []result.Match{
 			&result.FileMatch{
 				File: result.File{
 					Path: "RepoWithNoCodeowners.md",
@@ -69,6 +69,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Empty(t, matches)
+		assert.Equal(t, true, hasNoResults)
 	})
 
 	t.Run("no results for no owner matches", func(t *testing.T) {
@@ -81,7 +82,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		})
 		rules := NewRulesCache(gitserverClient, setupDB())
 
-		matches, err := getCodeOwnersFromMatches(ctx, &rules, []result.Match{
+		matches, hasNoResults, err := getCodeOwnersFromMatches(ctx, &rules, []result.Match{
 			&result.FileMatch{
 				File: result.File{
 					Path: "AnotherPath.md",
@@ -92,6 +93,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Empty(t, matches)
+		assert.Equal(t, true, hasNoResults)
 	})
 
 	t.Run("returns person team and unknown owner matches", func(t *testing.T) {
@@ -134,7 +136,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			return nil, database.TeamNotFoundError{}
 		})
 
-		matches, err := getCodeOwnersFromMatches(ctx, &rules, []result.Match{
+		matches, hasNoResults, err := getCodeOwnersFromMatches(ctx, &rules, []result.Match{
 			&result.FileMatch{
 				File: result.File{
 					Path: "README.md",
@@ -186,6 +188,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			return want[x].Key().Less(want[y].Key())
 		})
 		autogold.Expect(want).Equal(t, matches)
+		assert.Equal(t, false, hasNoResults)
 	})
 }
 
