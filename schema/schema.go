@@ -65,6 +65,16 @@ type ApiRatelimit struct {
 	// PerUser description: Limit granted per user per hour
 	PerUser int `json:"perUser"`
 }
+type AppNotifications struct {
+	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.
+	Key string `json:"key"`
+	// Message description: The Markdown message to display
+	Message string `json:"message"`
+	// VersionMax description: If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.
+	VersionMax string `json:"version.max,omitempty"`
+	// VersionMin description: If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.
+	VersionMin string `json:"version.min,omitempty"`
+}
 
 // AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 type AuditLog struct {
@@ -569,6 +579,8 @@ type DebugLog struct {
 
 // Dotcom description: Configuration options for Sourcegraph.com only.
 type Dotcom struct {
+	// AppNotifications description: Notifications to display in the Sourcegraph app.
+	AppNotifications []*AppNotifications `json:"app.notifications,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.

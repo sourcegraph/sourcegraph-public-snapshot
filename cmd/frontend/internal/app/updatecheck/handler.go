@@ -113,10 +113,24 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	if deploy.IsDeployTypeApp(pr.DeployType) {
+		pingResponse.Notifications = getNotifications(pr.ClientVersionString)
+	}
 	body, err := json.Marshal(pingResponse)
 	if err != nil {
 		logger.Error("error preparing update check response", log.Error(err))
 		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	// Sourcegraph App: We always send back a ping response (rather than StatusNoContent) because
+	// the user's instance may have unseen notification messages.
+	if deploy.IsDeployTypeApp(pr.DeployType) {
+		if hasUpdate {
+			requestHasUpdateCounter.Inc()
+		}
+		w.Header().Set("content-type", "application/json; charset=utf-8")
+		_, _ = w.Write(body)
 		return
 	}
 
