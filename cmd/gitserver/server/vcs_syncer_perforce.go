@@ -269,7 +269,7 @@ func p4test(ctx context.Context, host, username, password string) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	// `p4 ping` requires extra-special access, so it would be good to avoid using it
+	// `p4 ping` requires extra-special access, so we want to avoid using it
 	//
 	// p4 login -s checks the connection and the credentials,
 	// so it seems like the perfect alternative to `p4 ping`.
@@ -359,7 +359,7 @@ func p4testWithTrust(ctx context.Context, host, username, password string) error
 	// Attempt to check connectivity, may be prompted to trust.
 	err := p4test(ctx, host, username, password)
 	if err == nil {
-		return nil // The test worked, session still validate for the user
+		return nil // The test worked, session still valid for the user
 	}
 
 	if strings.Contains(err.Error(), "To allow connection use the 'p4 trust' command.") {
