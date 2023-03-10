@@ -6,6 +6,7 @@ import { pluralize } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PageHeader, H2, useObservable, Text, H4 } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { DiffStat } from '../../../components/diff/DiffStat'
 import { Page } from '../../../components/Page'
@@ -29,6 +30,8 @@ import { RepoBatchChanges } from './RepoBatchChanges'
 
 interface BatchChangeRepoPageProps {
     repo: RepositoryFields
+    authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
     /** For testing only. */
     queryRepoBatchChangeStats?: typeof _queryRepoBatchChangeStats
     /** For testing only. */

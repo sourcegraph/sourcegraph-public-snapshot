@@ -22,16 +22,17 @@ const config: Meta = {
             control: { type: 'boolean' },
             defaultValue: false,
         },
+        canCreateBatchChanges: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
     },
 }
 
 export default config
 
-const commonProps = (props: Args): Pick<React.ComponentProps<typeof GettingStarted>, 'isSourcegraphDotCom'> => ({
-    isSourcegraphDotCom: props.isSourcegraphDotCom,
-})
-
-export const Overview: Story = args => {
-    const props = { ...useMemo(() => commonProps(args), [args]) }
-    return <WebStory>{() => <GettingStarted {...props} authenticatedUser={null} />}</WebStory>
-}
+export const Overview: Story = args => (
+    <WebStory>
+        {() => <GettingStarted isSourcegraphDotCom={args.isSourcegraphDotCom} canCreate={args.canCreateBatchChanges} />}
+    </WebStory>
+)

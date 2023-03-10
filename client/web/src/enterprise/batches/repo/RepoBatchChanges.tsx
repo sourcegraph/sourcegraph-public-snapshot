@@ -1,13 +1,15 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import { map } from 'rxjs/operators'
 
 import { Container, H3, H5 } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 import { GettingStarted } from '../list/GettingStarted'
+import { canWriteBatchChanges } from '../utils'
 
 import { queryRepoBatchChanges as _queryRepoBatchChanges } from './backend'
 import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
@@ -16,7 +18,9 @@ import styles from './RepoBatchChanges.module.scss'
 
 interface Props {
     viewerCanAdminister: boolean
+    authenticatedUser: AuthenticatedUser | null
     repo: RepositoryFields
+    isSourcegraphDotCom: boolean
     onlyArchived?: boolean
 
     /** For testing only. */
@@ -30,7 +34,9 @@ interface Props {
  */
 export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     viewerCanAdminister,
+    authenticatedUser,
     repo,
+    isSourcegraphDotCom,
     queryRepoBatchChanges = _queryRepoBatchChanges,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
 }) => {
@@ -45,6 +51,11 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
             return queryRepoBatchChanges(passedArguments).pipe(map(data => data.batchChanges))
         },
         [queryRepoBatchChanges, repo.id, repo.name]
+    )
+
+    const canCreate = useMemo(
+        () => !isSourcegraphDotCom && canWriteBatchChanges(authenticatedUser),
+        [isSourcegraphDotCom, authenticatedUser]
     )
 
     return (
@@ -65,7 +76,7 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
                 headComponent={RepoBatchChangesHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={<GettingStarted isSourcegraphDotCom={false} />}
+                emptyElement={<GettingStarted isSourcegraphDotCom={isSourcegraphDotCom} canCreate={canCreate} />}
             />
         </Container>
     )
