@@ -493,7 +493,9 @@ func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlu
 	return graphqlutil.NewConnectionResolver[RoleResolver](
 		connectionStore,
 		&args.ConnectionResolverArgs,
-		nil,
+		&graphqlutil.ConnectionResolverOptions{
+			AllowNoLimit: true,
+		},
 	)
 }
 
