@@ -31,12 +31,6 @@ type RBACResolver interface {
 	CreateRole(ctx context.Context, args *CreateRoleArgs) (RoleResolver, error)
 	SetPermissions(ctx context.Context, args SetPermissionsArgs) (*EmptyResponse, error)
 	SetRoles(ctx context.Context, args *SetRolesArgs) (*EmptyResponse, error)
-
-	// QUERIES
-	Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error)
-	Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error)
-
-	NodeResolvers() map[string]NodeByIDFunc
 }
 
 type DeleteRoleArgs struct {
