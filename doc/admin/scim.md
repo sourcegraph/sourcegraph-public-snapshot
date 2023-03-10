@@ -12,7 +12,7 @@ SCIM (System for Cross-domain Identity Management) is a standard for provisionin
 
 Sourcegraph supports SCIM 2.0 for provisioning and de-provisioning _users_.
 
-You can use any IdP that supports SCIM, but we’ve only tested the endpoint with Okta and Azure Active Directory.
+> WARNING: We’ve only tested the endpoint with Okta and Azure Active Directory. Be cautious when using our SCIM server with other IdPs.
 
 ## How to use
 
@@ -77,3 +77,4 @@ We support the following SCIM 2.0 features:
 - ❌ Entity tags (ETags)
 - ❌ Multi-tenancy – you can only have 1 SCIM client configured at a time.
 - ❌ Soft delete – Currently, we do not support soft deletion through SCIM. When a user is deleted (typically, when removed from a group of users who can access Sourcegraph), we **permanently delete** their user in Sourcegraph. This means that if the user is re-added to such a group, their settings will be reset.
+- ❌ Tests with many IdPs – we’ve only validated the endpoint with Okta and Azure AD.
