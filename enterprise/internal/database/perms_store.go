@@ -2241,7 +2241,7 @@ FROM
 	accessible_repos AS ar
 	LEFT JOIN user_permissions AS up ON up.user_id = %d
 		AND up.object_ids_ints @> INTSET (ar.id)
-		`
+`
 }
 
 var defaultPageSize = 100
