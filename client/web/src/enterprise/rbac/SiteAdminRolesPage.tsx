@@ -6,18 +6,9 @@ import { groupBy } from 'lodash'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Button, Icon, ProductStatusBadge, ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import {
-    ConnectionContainer,
-    ConnectionError,
-    ConnectionList,
-    ConnectionLoading,
-    ConnectionSummary,
-    ShowMoreButton,
-    SummaryContainer,
-} from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
 
-import { useRolesConnection, usePermissions, PermissionsMap, DEFAULT_PAGE_LIMIT } from './backend'
+import { useRolesConnection, usePermissions, PermissionsMap } from './backend'
 import { CreateRoleModal } from './components/CreateRoleModal'
 import { RoleNode } from './components/RoleNode'
 
