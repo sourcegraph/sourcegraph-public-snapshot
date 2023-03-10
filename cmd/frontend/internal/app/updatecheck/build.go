@@ -1,11 +1,14 @@
 package updatecheck
 
 import (
+	"context"
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -28,7 +31,7 @@ type Notification struct {
 }
 
 func getNotifications(clientVersionString string) []Notification {
-	calcNotifications(clientVersionString, conf.Get().Dotcom.AppNotifications)
+	return calcNotifications(clientVersionString, conf.Get().Dotcom.AppNotifications)
 }
 
 func calcNotifications(clientVersionString string, notifications []*schema.AppNotifications) []Notification {
@@ -63,4 +66,37 @@ func calcNotifications(clientVersionString string, notifications []*schema.AppNo
 	}
 	return results
 
+}
+
+// handleNotifications is called on a Sourcegraph client instance to handle notification messages that
+// the client recieved from the server (sourcegraph.com). They get stored in the site config.
+func (r pingResponse) handleNotifications() {
+	ctx := context.Background()
+
+	server := globals.ConfigurationServerFrontendOnly
+	if server == nil {
+		// Cannot ever happen, as updatecheck only runs in the frontend, but just in case do nothing.
+		return
+	}
+
+	// Update the site configuration "app.notifications" field. Note that this also removes notifications
+	// if they are no longer present in the sourcegraph.com site configuration.
+	var notifications []*schema.Notifications
+	for _, v := range r.Notifications {
+		notifications = append(notifications, &schema.Notifications{
+			Key:     v.Key,
+			Message: v.Message,
+		})
+	}
+	updated := conf.Raw()
+	var err error
+	updated.Site, err = jsonc.Edit(updated.Site, notifications, "notifications")
+	if err != nil {
+		return // clearly our edit logic would be broken, so do nothing (better than panic in the case of pings.)
+	}
+
+	if err := server.Write(ctx, updated, updated.ID, 0); err != nil {
+		// error or conflicting edit; do nothing, the next updatecheck will try again.
+		return
+	}
 }
