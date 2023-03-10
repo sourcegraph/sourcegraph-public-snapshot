@@ -1,3 +1,6 @@
+import { findIndex } from 'lodash'
+
+import { AuthenticatedUser } from '../../auth'
 import {
     ChangesetCheckState,
     ChangesetReviewState,
@@ -20,3 +23,6 @@ export function isValidChangesetSpecOperation(input: string): input is Changeset
 export function isValidChangesetState(input: string): input is ChangesetState {
     return Object.values<string>(ChangesetState).includes(input)
 }
+
+export const canWriteBatchChanges = (user: Pick<AuthenticatedUser, 'permissions'> | null): boolean =>
+    !!user && findIndex(user.permissions.nodes, permission => permission.displayName === 'BATCH_CHANGES#WRITE') !== -1
