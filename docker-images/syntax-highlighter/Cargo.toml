@@ -41,3 +41,8 @@ tree-sitter = "0.20.9"
 
 scip = { git = "https://github.com/sourcegraph/scip" }
 protobuf = "3"
+
+[profile.release]
+# Enabled debug symbols in release build, so if we have a crash
+# we can inspect the coredump.
+debug = true
