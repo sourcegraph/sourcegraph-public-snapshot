@@ -35,20 +35,20 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("4.5.1")
+	latestReleaseDockerServerImageBuild = newPingResponse("4.5.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("4.5.1")
+	latestReleaseKubernetesBuild = newPingResponse("4.5.1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("4.5.1")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("4.5.1")
 )
 
-func getLatestRelease(deployType string) build {
+func getLatestRelease(deployType string) pingResponse {
 	switch {
 	case deploy.IsDeployTypeKubernetes(deployType):
 		return latestReleaseKubernetesBuild
@@ -125,7 +125,7 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 }
 
 // canUpdate returns true if the latestReleaseBuild is newer than the clientVersionString.
-func canUpdate(clientVersionString string, latestReleaseBuild build) (bool, error) {
+func canUpdate(clientVersionString string, latestReleaseBuild pingResponse) (bool, error) {
 	// Check for a date in the version string to handle developer builds that don't have a semver.
 	// If there is an error parsing a date out of the version string, then we ignore the error
 	// and parse it as a semver.
@@ -139,7 +139,7 @@ func canUpdate(clientVersionString string, latestReleaseBuild build) (bool, erro
 
 // canUpdateVersion returns true if the latest released build is newer than
 // the clientVersionString. It returns an error if clientVersionString is not a semver.
-func canUpdateVersion(clientVersionString string, latestReleaseBuild build) (bool, error) {
+func canUpdateVersion(clientVersionString string, latestReleaseBuild pingResponse) (bool, error) {
 	clientVersionString = strings.TrimPrefix(clientVersionString, "v")
 	clientVersion, err := semver.NewVersion(clientVersionString)
 	if err != nil {

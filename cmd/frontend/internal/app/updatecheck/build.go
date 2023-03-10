@@ -2,13 +2,13 @@ package updatecheck
 
 import "github.com/coreos/go-semver/semver"
 
-// build is the JSON shape of the update check handler's response body.
-type build struct {
+// pingResponse is the JSON shape of the update check handler's response body.
+type pingResponse struct {
 	Version semver.Version `json:"version"`
 }
 
-func newBuild(version string) build {
-	return build{
+func newPingResponse(version string) pingResponse {
+	return pingResponse{
 		Version: *semver.New(version),
 	}
 }

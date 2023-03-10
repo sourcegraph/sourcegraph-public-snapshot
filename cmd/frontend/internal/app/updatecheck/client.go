@@ -818,7 +818,7 @@ func check(logger log.Logger, db database.DB) {
 			return "", nil // no update available
 		}
 
-		var latestBuild build
+		var latestBuild pingResponse
 		if err := json.NewDecoder(resp.Body).Decode(&latestBuild); err != nil {
 			return "", err
 		}
