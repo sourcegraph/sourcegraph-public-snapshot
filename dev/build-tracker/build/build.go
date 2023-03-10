@@ -7,6 +7,7 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/util"
 )
 
@@ -37,6 +38,7 @@ type Step struct {
 }
 
 // Implement the notify.JobLine interface
+var _ notify.JobLine = &Step{}
 
 func (s *Step) Title() string {
 	return s.Name
@@ -126,7 +128,7 @@ func (b *Build) GetMessage() string {
 	return util.Strp(b.Message)
 }
 
-// Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline is a safe maner
+// Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline in a safe maner
 type Pipeline struct {
 	buildkite.Pipeline `json:"pipeline"`
 }
