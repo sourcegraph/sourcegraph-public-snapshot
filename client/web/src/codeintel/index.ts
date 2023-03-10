@@ -1,4 +1,4 @@
-import { CodeIntelligenceBadge } from './CodeIntelligenceBadge'
+import { BrainDot } from './CodeIntelligenceBadge'
 import { UseCodeIntel } from './useCodeIntel'
 
 /**
@@ -6,7 +6,6 @@ import { UseCodeIntel } from './useCodeIntel'
  */
 export interface CodeIntelligenceProps {
     codeIntelligenceEnabled: boolean
-    codeIntelligenceBadgeMenu?: typeof CodeIntelligenceBadge
-    codeIntelligenceBadgeContent?: typeof CodeIntelligenceBadge
+    brainDot?: typeof BrainDot
     useCodeIntel?: UseCodeIntel
 }

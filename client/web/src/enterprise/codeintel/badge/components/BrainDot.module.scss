@@ -19,10 +19,14 @@
     border: 2px solid var(--body-bg);
 }
 
-.braindot-error::after {
-    background-color: var(--red);
+.braindot-success:after {
+    background-color: var(--green);
 }
 
-.braindot-attention::after {
-    background-color: var(--purple);
+.braindot-warning::after {
+    background-color: var(--yellow);
+}
+
+.braindot-danger::after {
+    background-color: var(--red);
 }

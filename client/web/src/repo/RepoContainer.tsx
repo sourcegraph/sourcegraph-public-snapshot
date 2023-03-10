@@ -376,14 +376,8 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     {...repoHeaderContributionsLifecycleProps}
                 >
                     {({ actionType }) =>
-                        props.codeIntelligenceBadgeMenu && actionType === 'nav' ? (
-                            <props.codeIntelligenceBadgeMenu
-                                key="code-intelligence-status"
-                                repoName={repoName}
-                                revision={rawRevision || 'HEAD'}
-                                filePath={filePath || ''}
-                                settingsCascade={props.settingsCascade}
-                            />
+                        props.brainDot && actionType === 'nav' ? (
+                            <props.brainDot key="code-intelligence-status" repoName={repoName} />
                         ) : null
                     }
                 </RepoHeaderContributionPortal>
