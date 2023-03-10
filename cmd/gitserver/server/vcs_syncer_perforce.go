@@ -318,7 +318,7 @@ func p4depots(ctx context.Context, host, username, password, nameFilter string) 
 			err = ctxerr
 		}
 		if len(out) > 0 {
-			err = errors.Errorf("%s (output follows)\n\n%s", err, specifyCommandInErrorMessage(string(out), cmd))
+			err = errors.Wrapf(err, `failed to run command "p4 depots" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))
 		}
 		return nil, err
 	}
