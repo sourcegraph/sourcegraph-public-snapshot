@@ -37,12 +37,6 @@ func init() {
 	if coursierCacheDir == "" && srcReposDir != "" {
 		coursierCacheDir = filepath.Join(srcReposDir, "coursier")
 	}
-	if coursierCacheDir != "" {
-		if err := os.MkdirAll(coursierCacheDir, os.ModePerm); err != nil {
-			fmt.Printf("failed to create coursier cache dir in %q: %s\n", coursierCacheDir, err)
-			os.Exit(1)
-		}
-	}
 }
 
 func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error) {
@@ -183,6 +177,11 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 		)
 	}
 	if coursierCacheDir != "" {
+		// TODO: Don't run this every time we run a coursier command. Hotfix to fix
+		// production.
+		if err := os.MkdirAll(coursierCacheDir, os.ModePerm); err != nil {
+			return nil, errors.Wrapf(err, "failed to create coursier cache dir in %q", coursierCacheDir)
+		}
 		cmd.Env = append(cmd.Env, "COURSIER_CACHE="+coursierCacheDir)
 	}
 
