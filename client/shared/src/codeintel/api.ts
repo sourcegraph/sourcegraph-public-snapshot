@@ -14,7 +14,7 @@ import { isDefined } from '@sourcegraph/common/src/types'
 import * as clientType from '@sourcegraph/extension-api-types'
 
 import { match } from '../api/client/types/textDocument'
-import { FlatExtensionHostAPI } from '../api/contract'
+import { FlatExtensionHostAPI, ScipParameters } from '../api/contract'
 import { proxySubscribable } from '../api/extension/api/common'
 import { toPosition } from '../api/extension/api/types'
 import { PanelViewData } from '../api/extension/extensionHostApi'
@@ -29,13 +29,18 @@ import { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
 import { languageSpecs } from './legacy-extensions/language-specs/languages'
 import { RedactingLogger } from './legacy-extensions/logging'
 import { createProviders, emptySourcegraphProviders, SourcegraphProviders } from './legacy-extensions/providers'
+import { Occurrence } from './scip'
 
 interface CodeIntelAPI {
     hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Observable<boolean>
-    getDefinition(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
+    getDefinition(
+        textParameters: TextDocumentPositionParameters,
+        scipParameters?: ScipParameters
+    ): Observable<clientType.Location[]>
     getReferences(
         textParameters: TextDocumentPositionParameters,
-        context: sourcegraph.ReferenceContext
+        context: sourcegraph.ReferenceContext,
+        scipParameters?: ScipParameters
     ): Observable<clientType.Location[]>
     getImplementations(parameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
     getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null | undefined>
@@ -93,14 +98,28 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
     }
     public getReferences(
         textParameters: TextDocumentPositionParameters,
-        context: sourcegraph.ReferenceContext
+        context: sourcegraph.ReferenceContext,
+        scipParameters?: ScipParameters
     ): Observable<clientType.Location[]> {
+        const locals = scipParameters ? localReferences(scipParameters) : []
+        if (locals.length > 0) {
+            return of(locals.map(local => ({ uri: textParameters.textDocument.uri, range: local.range })))
+        }
         const request = requestFor(textParameters)
         return this.locationResult(
             request.providers.references.provideReferences(request.document, request.position, context)
         )
     }
-    public getDefinition(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]> {
+    public getDefinition(
+        textParameters: TextDocumentPositionParameters,
+        scipParameters?: ScipParameters
+    ): Observable<clientType.Location[]> {
+        const definitions = scipParameters ? localDefinition(scipParameters) : []
+        if (definitions.length > 0) {
+            return of(
+                definitions.map(definition => ({ uri: textParameters.textDocument.uri, range: definition.range }))
+            )
+        }
         const request = requestFor(textParameters)
         return this.locationResult(request.providers.definition.provideDefinition(request.document, request.position))
     }
@@ -261,8 +280,10 @@ export function injectNewCodeintel(
         getDefinition(parameters) {
             return proxySubscribable(thenMaybeLoadingResult(codeintel.getDefinition(parameters)))
         },
-        getReferences(parameters, context) {
-            return proxySubscribable(thenMaybeLoadingResult(codeintel.getReferences(parameters, context)))
+        getReferences(parameters, context, scipParameters) {
+            return proxySubscribable(
+                thenMaybeLoadingResult(codeintel.getReferences(parameters, context, scipParameters))
+            )
         },
         getDocumentHighlights: (textParameters: TextDocumentPositionParameters) =>
             proxySubscribable(codeintel.getDocumentHighlights(textParameters)),
@@ -281,4 +302,23 @@ export function injectNewCodeintel(
             return Reflect.get(target, prop, ...arguments)
         },
     })
+}
+
+export function localReferences(params: ScipParameters): Occurrence[] {
+    if (params.referenceOccurrence.symbol?.startsWith('local ')) {
+        return params.documentOccurrences.filter(occurrence => occurrence.symbol === params.referenceOccurrence.symbol)
+    }
+    return []
+}
+
+function localDefinition(params: ScipParameters): Occurrence[] {
+    if (!params.referenceOccurrence.symbol) {
+        return []
+    }
+    return params.documentOccurrences.filter(
+        definitionOccurrence =>
+            definitionOccurrence.symbol === params.referenceOccurrence.symbol &&
+            definitionOccurrence.symbolRoles &&
+            (definitionOccurrence.symbolRoles & 1) === 1
+    )
 }

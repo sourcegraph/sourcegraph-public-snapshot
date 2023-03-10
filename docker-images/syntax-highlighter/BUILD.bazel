@@ -5,6 +5,9 @@ rust_binary(
     name = "syntect_server",
     srcs = ["src/main.rs"],
     aliases = aliases(),
+    deps = all_crate_deps(
+        normal = True,
+    ) + ["//docker-images/syntax-highlighter/crates/sg-syntax:sg-syntax"],
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
