@@ -179,8 +179,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
                                         <div className="mr-2">
-                                            New Search Input{' '}
-                                            <ProductStatusBadge status="experimental" className="ml-1" />
+                                            New search input <ProductStatusBadge status="beta" className="ml-1" />
                                         </div>
                                         <Toggle
                                             value={experimentalQueryInputEnabled}
