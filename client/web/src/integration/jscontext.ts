@@ -55,4 +55,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     authMinPasswordLength: 12,
     embeddingsEnabled: false,
     runningOnMacOS: true,
+    localFilePickerAvailable: false,
+    srcServeGitUrl: 'http://127.0.0.1:3434',
 })
