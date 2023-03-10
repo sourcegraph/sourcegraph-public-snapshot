@@ -1411,6 +1411,12 @@ type Notice struct {
 	// Message description: The message to display. Markdown formatting is supported.
 	Message string `json:"message"`
 }
+type Notifications struct {
+	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.
+	Key string `json:"key"`
+	// Message description: The Markdown message to display
+	Message string `json:"message"`
+}
 type Notifier struct {
 	Slack     *NotifierSlack
 	Pagerduty *NotifierPagerduty
@@ -2485,6 +2491,8 @@ type SiteConfiguration struct {
 	LsifEnforceAuth bool `json:"lsifEnforceAuth,omitempty"`
 	// MaxReposToSearch description: DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
+	// Notifications description: Notifications recieved from Sourcegraph.com to display in Sourcegraph.
+	Notifications []*Notifications `json:"notifications,omitempty"`
 	// ObservabilityAlerts description: Configure notifications for Sourcegraph's built-in alerts.
 	ObservabilityAlerts []*ObservabilityAlerts `json:"observability.alerts,omitempty"`
 	// ObservabilityCaptureSlowGraphQLRequestsLimit description: (debug) Set a limit to the amount of captured slow GraphQL requests being stored for visualization. For defining the threshold for a slow GraphQL request, see observability.logSlowGraphQLRequests.
@@ -2663,6 +2671,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "log")
 	delete(m, "lsifEnforceAuth")
 	delete(m, "maxReposToSearch")
+	delete(m, "notifications")
 	delete(m, "observability.alerts")
 	delete(m, "observability.captureSlowGraphQLRequestsLimit")
 	delete(m, "observability.client")
