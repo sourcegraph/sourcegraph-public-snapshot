@@ -199,11 +199,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 isSourcegraphDotCom={isSourcegraphDotCom}
             />
             {selectedTab === 'gettingStarted' && (
-                <GettingStarted
-                    isSourcegraphDotCom={isSourcegraphDotCom}
-                    authenticatedUser={authenticatedUser}
-                    className="mb-4"
-                />
+                <GettingStarted isSourcegraphDotCom={isSourcegraphDotCom} className="mb-4" />
             )}
             {selectedTab === 'batchChanges' && (
                 <>

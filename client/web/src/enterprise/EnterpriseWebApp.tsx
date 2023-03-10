@@ -73,6 +73,7 @@ const hardcodedConfig = {
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
     searchAggregationEnabled: true,
+    ownEnabled: true,
 } satisfies StaticHardcodedAppConfig
 
 const staticAppConfig = {
