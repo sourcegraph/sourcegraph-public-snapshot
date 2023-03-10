@@ -1,5 +1,5 @@
 {
-  "checksum": "4b1567945807f924be360c99ac543e2fa72b7eaee6913c33694e357332abc1c0",
+  "checksum": "f75a82db10200b13e7f60a818f75b6a92f2a996a9bcba13dde76e2a6fe8edf55",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -115,13 +115,13 @@
       },
       "license": "MIT"
     },
-    "anyhow 1.0.56": {
+    "anyhow 1.0.69": {
       "name": "anyhow",
-      "version": "1.0.56",
+      "version": "1.0.69",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/anyhow/1.0.56/download",
-          "sha256": "4361135be9122e0870de935d7c439aef945b9f9ddd4199a553b5270b49c82a27"
+          "url": "https://crates.io/api/v1/crates/anyhow/1.0.69/download",
+          "sha256": "224afbd727c3d6e4b90103ece64b8d1b67fbb1973b1046c2281eed3f3803f800"
         }
       },
       "targets": [
@@ -156,14 +156,14 @@
         "deps": {
           "common": [
             {
-              "id": "anyhow 1.0.56",
+              "id": "anyhow 1.0.69",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.56"
+        "version": "1.0.69"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -832,13 +832,13 @@
       },
       "license": "BSL-1.0"
     },
-    "console 0.15.0": {
+    "console 0.15.5": {
       "name": "console",
-      "version": "0.15.0",
+      "version": "0.15.5",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/console/0.15.0/download",
-          "sha256": "a28b32d32ca44b70c3e4acd7db1babf555fa026e385fb95f18028f88848b3c31"
+          "url": "https://crates.io/api/v1/crates/console/0.15.5/download",
+          "sha256": "c3d79fbe8970a77e3e34151cc13d3b3e248aa0faaecb9f6091fa07ebefe5ad60"
         }
       },
       "targets": [
@@ -860,16 +860,12 @@
         "deps": {
           "common": [
             {
+              "id": "lazy_static 1.4.0",
+              "target": "lazy_static"
+            },
+            {
               "id": "libc 0.2.121",
               "target": "libc"
-            },
-            {
-              "id": "once_cell 1.13.0",
-              "target": "once_cell"
-            },
-            {
-              "id": "terminal_size 0.1.17",
-              "target": "terminal_size"
             }
           ],
           "selects": {
@@ -879,14 +875,14 @@
                 "target": "encode_unicode"
               },
               {
-                "id": "winapi 0.3.9",
-                "target": "winapi"
+                "id": "windows-sys 0.42.0",
+                "target": "windows_sys"
               }
             ]
           }
         },
         "edition": "2018",
-        "version": "0.15.0"
+        "version": "0.15.5"
       },
       "license": "MIT"
     },
@@ -3284,13 +3280,13 @@
       },
       "license": "Apache-2.0/MIT"
     },
-    "insta 1.14.0": {
+    "insta 1.28.0": {
       "name": "insta",
-      "version": "1.14.0",
+      "version": "1.28.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/insta/1.14.0/download",
-          "sha256": "689960f187c43c01650c805fb6bc6f55ab944499d86d4ffe9474ad78991d8e94"
+          "url": "https://crates.io/api/v1/crates/insta/1.28.0/download",
+          "sha256": "fea5b3894afe466b4bcf0388630fc15e11938a6074af0cd637c825ba2ec8a099"
         }
       },
       "targets": [
@@ -3317,34 +3313,30 @@
         "deps": {
           "common": [
             {
-              "id": "console 0.15.0",
+              "id": "console 0.15.5",
               "target": "console"
             },
             {
-              "id": "once_cell 1.13.0",
-              "target": "once_cell"
+              "id": "lazy_static 1.4.0",
+              "target": "lazy_static"
             },
             {
-              "id": "serde 1.0.136",
-              "target": "serde"
-            },
-            {
-              "id": "serde_json 1.0.79",
-              "target": "serde_json"
-            },
-            {
-              "id": "serde_yaml 0.8.23",
-              "target": "serde_yaml"
+              "id": "linked-hash-map 0.5.6",
+              "target": "linked_hash_map"
             },
             {
               "id": "similar 2.1.0",
               "target": "similar"
+            },
+            {
+              "id": "yaml-rust 0.4.5",
+              "target": "yaml_rust"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.14.0"
+        "version": "1.28.0"
       },
       "license": "Apache-2.0"
     },
@@ -3644,13 +3636,13 @@
       },
       "license": "Apache-2.0"
     },
-    "linked-hash-map 0.5.4": {
+    "linked-hash-map 0.5.6": {
       "name": "linked-hash-map",
-      "version": "0.5.4",
+      "version": "0.5.6",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/linked-hash-map/0.5.4/download",
-          "sha256": "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
+          "url": "https://crates.io/api/v1/crates/linked-hash-map/0.5.6/download",
+          "sha256": "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
         }
       },
       "targets": [
@@ -3670,7 +3662,7 @@
           "**"
         ],
         "edition": "2015",
-        "version": "0.5.4"
+        "version": "0.5.6"
       },
       "license": "MIT/Apache-2.0"
     },
@@ -5318,13 +5310,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "pretty_assertions 1.2.1": {
+    "pretty_assertions 1.3.0": {
       "name": "pretty_assertions",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/pretty_assertions/1.2.1/download",
-          "sha256": "c89f989ac94207d048d92db058e4f6ec7342b0971fc58d1271ca148b799b3563"
+          "url": "https://crates.io/api/v1/crates/pretty_assertions/1.3.0/download",
+          "sha256": "a25e9bcb20aa780fd0bb16b72403a9064d6b3f22f026946029acb941a50af755"
         }
       },
       "targets": [
@@ -5350,12 +5342,12 @@
         "deps": {
           "common": [
             {
-              "id": "ansi_term 0.12.1",
-              "target": "ansi_term"
-            },
-            {
               "id": "diff 0.1.12",
               "target": "diff"
+            },
+            {
+              "id": "yansi 0.5.1",
+              "target": "yansi"
             }
           ],
           "selects": {
@@ -5379,7 +5371,7 @@
             ]
           }
         },
-        "version": "1.2.1"
+        "version": "1.3.0"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -5580,13 +5572,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "protobuf 3.2.0": {
+    "protobuf 3.1.0": {
       "name": "protobuf",
-      "version": "3.2.0",
+      "version": "3.1.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/protobuf/3.2.0/download",
-          "sha256": "b55bad9126f378a853655831eb7363b7b01b81d19f8cb1218861086ca4a1a61e"
+          "url": "https://crates.io/api/v1/crates/protobuf/3.1.0/download",
+          "sha256": "4ee4a7d8b91800c8f167a6268d1a1026607368e1adc84e98fe044aeb905302f7"
         }
       },
       "targets": [
@@ -5624,11 +5616,11 @@
               "target": "once_cell"
             },
             {
-              "id": "protobuf 3.2.0",
+              "id": "protobuf 3.1.0",
               "target": "build_script_build"
             },
             {
-              "id": "protobuf-support 3.2.0",
+              "id": "protobuf-support 3.1.0",
               "target": "protobuf_support"
             },
             {
@@ -5639,7 +5631,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "3.2.0"
+        "version": "3.1.0"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -5648,13 +5640,13 @@
       },
       "license": "MIT"
     },
-    "protobuf-support 3.2.0": {
+    "protobuf-support 3.1.0": {
       "name": "protobuf-support",
-      "version": "3.2.0",
+      "version": "3.1.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/protobuf-support/3.2.0/download",
-          "sha256": "a5d4d7b8601c814cfb36bcebb79f0e61e45e1e93640cf778837833bbed05c372"
+          "url": "https://crates.io/api/v1/crates/protobuf-support/3.1.0/download",
+          "sha256": "8ca157fe12fc7ee2e315f2f735e27df41b3d97cdd70ea112824dac1ffb08ee1c"
         }
       },
       "targets": [
@@ -5683,7 +5675,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "3.2.0"
+        "version": "3.1.0"
       },
       "license": "MIT"
     },
@@ -6693,6 +6685,40 @@
       },
       "license": "MIT OR Apache-2.0"
     },
+    "rustc-hash 1.1.0": {
+      "name": "rustc-hash",
+      "version": "1.1.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/rustc-hash/1.1.0/download",
+          "sha256": "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "rustc_hash",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "rustc_hash",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": [
+          "default",
+          "std"
+        ],
+        "edition": "2015",
+        "version": "1.1.0"
+      },
+      "license": "Apache-2.0/MIT"
+    },
     "rustc_version 0.2.3": {
       "name": "rustc_version",
       "version": "0.2.3",
@@ -7094,14 +7120,14 @@
       },
       "license": "Unlicense/MIT"
     },
-    "scip 0.1.1": {
+    "scip 0.1.0": {
       "name": "scip",
-      "version": "0.1.1",
+      "version": "0.1.0",
       "repository": {
         "Git": {
           "remote": "https://github.com/sourcegraph/scip",
           "commitish": {
-            "Rev": "f90a867eb194bf6dae2e2b176e4f8ec7928bf70b"
+            "Rev": "7ff845ef5b78772f65463542d5f384967d329b2c"
           },
           "strip_prefix": "bindings/rust"
         }
@@ -7125,16 +7151,287 @@
         "deps": {
           "common": [
             {
-              "id": "protobuf 3.2.0",
+              "id": "protobuf 3.1.0",
               "target": "protobuf"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.1"
+        "version": "0.1.0"
       },
-      "license": "Apache-2.0"
+      "license": null
+    },
+    "scip-macros 0.1.0": {
+      "name": "scip-macros",
+      "version": "0.1.0",
+      "repository": null,
+      "targets": [
+        {
+          "ProcMacro": {
+            "crate_name": "scip_macros",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "scip_macros",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "quote 1.0.17",
+              "target": "quote"
+            },
+            {
+              "id": "syn 1.0.91",
+              "target": "syn"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.1.0"
+      },
+      "license": null
+    },
+    "scip-syntax 0.1.0": {
+      "name": "scip-syntax",
+      "version": "0.1.0",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "scip_syntax",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "scip_syntax",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "anyhow 1.0.69",
+              "target": "anyhow"
+            },
+            {
+              "id": "insta 1.28.0",
+              "target": "insta"
+            },
+            {
+              "id": "protobuf 3.1.0",
+              "target": "protobuf"
+            },
+            {
+              "id": "rustc-hash 1.1.0",
+              "target": "rustc_hash"
+            },
+            {
+              "id": "scip 0.1.0",
+              "target": "scip"
+            },
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "walkdir 2.3.2",
+              "target": "walkdir"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.1.0"
+      },
+      "license": null
+    },
+    "scip-treesitter 0.1.0": {
+      "name": "scip-treesitter",
+      "version": "0.1.0",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "scip_treesitter",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "scip_treesitter",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.1.0"
+      },
+      "license": null
+    },
+    "scip-treesitter-languages 0.1.0": {
+      "name": "scip-treesitter-languages",
+      "version": "0.1.0",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "scip_treesitter_languages",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "scip_treesitter_languages",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "lazy_static 1.4.0",
+              "target": "lazy_static"
+            },
+            {
+              "id": "scip 0.1.0",
+              "target": "scip"
+            },
+            {
+              "id": "scip-treesitter-languages 0.1.0",
+              "target": "build_script_build"
+            },
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-c 0.20.2",
+              "target": "tree_sitter_c"
+            },
+            {
+              "id": "tree-sitter-c-sharp 0.20.0",
+              "target": "tree_sitter_c_sharp"
+            },
+            {
+              "id": "tree-sitter-cpp 0.20.0",
+              "target": "tree_sitter_cpp"
+            },
+            {
+              "id": "tree-sitter-go 0.19.1",
+              "target": "tree_sitter_go"
+            },
+            {
+              "id": "tree-sitter-highlight 0.20.1",
+              "target": "tree_sitter_highlight"
+            },
+            {
+              "id": "tree-sitter-java 0.20.0",
+              "target": "tree_sitter_java"
+            },
+            {
+              "id": "tree-sitter-javascript 0.20.0",
+              "target": "tree_sitter_javascript"
+            },
+            {
+              "id": "tree-sitter-jsonnet 0.0.1",
+              "target": "tree_sitter_jsonnet"
+            },
+            {
+              "id": "tree-sitter-nickel 0.0.1",
+              "target": "tree_sitter_nickel"
+            },
+            {
+              "id": "tree-sitter-perl 0.0.1",
+              "target": "tree_sitter_perl"
+            },
+            {
+              "id": "tree-sitter-pod 0.0.1",
+              "target": "tree_sitter_pod"
+            },
+            {
+              "id": "tree-sitter-python 0.20.2",
+              "target": "tree_sitter_python"
+            },
+            {
+              "id": "tree-sitter-ruby 0.20.0",
+              "target": "tree_sitter_ruby"
+            },
+            {
+              "id": "tree-sitter-rust 0.20.3",
+              "target": "tree_sitter_rust"
+            },
+            {
+              "id": "tree-sitter-scala 0.20.7",
+              "target": "tree_sitter_scala"
+            },
+            {
+              "id": "tree-sitter-sql 0.0.2",
+              "target": "tree_sitter_sql"
+            },
+            {
+              "id": "tree-sitter-typescript 0.20.2",
+              "target": "tree_sitter_typescript"
+            },
+            {
+              "id": "tree-sitter-xlsg 0.0.1",
+              "target": "tree_sitter_xlsg"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "proc_macro_deps": {
+          "common": [
+            {
+              "id": "paste 1.0.7",
+              "target": "paste"
+            }
+          ],
+          "selects": {}
+        },
+        "version": "0.1.0"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ]
+      },
+      "license": null
     },
     "scoped-tls 1.0.0": {
       "name": "scoped-tls",
@@ -7478,104 +7775,6 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "serde_yaml 0.8.23": {
-      "name": "serde_yaml",
-      "version": "0.8.23",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/serde_yaml/0.8.23/download",
-          "sha256": "a4a521f2940385c165a24ee286aa8599633d162077a54bdcae2a6fd5a7bfa7a0"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "serde_yaml",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "serde_yaml",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "indexmap 1.8.1",
-              "target": "indexmap"
-            },
-            {
-              "id": "ryu 1.0.9",
-              "target": "ryu"
-            },
-            {
-              "id": "serde 1.0.136",
-              "target": "serde"
-            },
-            {
-              "id": "yaml-rust 0.4.5",
-              "target": "yaml_rust"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.8.23"
-      },
-      "license": "MIT OR Apache-2.0"
-    },
-    "sg-macros 0.1.0": {
-      "name": "sg-macros",
-      "version": "0.1.0",
-      "repository": null,
-      "targets": [
-        {
-          "ProcMacro": {
-            "crate_name": "sg_macros",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "sg_macros",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "quote 1.0.17",
-              "target": "quote"
-            },
-            {
-              "id": "syn 1.0.91",
-              "target": "syn"
-            }
-          ],
-          "selects": {}
-        },
-        "deps_dev": {
-          "common": [
-            {
-              "id": "pretty_assertions 1.2.1",
-              "target": "pretty_assertions"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2021",
-        "version": "0.1.0"
-      },
-      "license": null
-    },
     "sg-syntax 0.1.0": {
       "name": "sg-syntax",
       "version": "0.1.0",
@@ -7608,7 +7807,7 @@
         "deps": {
           "common": [
             {
-              "id": "anyhow 1.0.56",
+              "id": "anyhow 1.0.69",
               "target": "anyhow"
             },
             {
@@ -7628,7 +7827,7 @@
               "target": "once_cell"
             },
             {
-              "id": "protobuf 3.2.0",
+              "id": "protobuf 3.1.0",
               "target": "protobuf"
             },
             {
@@ -7636,7 +7835,7 @@
               "target": "rocket"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.1.0",
               "target": "scip"
             },
             {
@@ -7660,64 +7859,8 @@
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-c 0.20.2",
-              "target": "tree_sitter_c"
-            },
-            {
-              "id": "tree-sitter-c-sharp 0.20.0",
-              "target": "tree_sitter_c_sharp"
-            },
-            {
-              "id": "tree-sitter-cpp 0.20.0",
-              "target": "tree_sitter_cpp"
-            },
-            {
-              "id": "tree-sitter-go 0.19.1",
-              "target": "tree_sitter_go"
-            },
-            {
               "id": "tree-sitter-highlight 0.20.1",
               "target": "tree_sitter_highlight"
-            },
-            {
-              "id": "tree-sitter-java 0.20.0",
-              "target": "tree_sitter_java"
-            },
-            {
-              "id": "tree-sitter-javascript 0.20.0",
-              "target": "tree_sitter_javascript"
-            },
-            {
-              "id": "tree-sitter-jsonnet 0.0.1",
-              "target": "tree_sitter_jsonnet"
-            },
-            {
-              "id": "tree-sitter-python 0.20.2",
-              "target": "tree_sitter_python"
-            },
-            {
-              "id": "tree-sitter-ruby 0.20.0",
-              "target": "tree_sitter_ruby"
-            },
-            {
-              "id": "tree-sitter-rust 0.20.3",
-              "target": "tree_sitter_rust"
-            },
-            {
-              "id": "tree-sitter-scala 0.20.7",
-              "target": "tree_sitter_scala"
-            },
-            {
-              "id": "tree-sitter-sql 0.0.2",
-              "target": "tree_sitter_sql"
-            },
-            {
-              "id": "tree-sitter-typescript 0.20.2",
-              "target": "tree_sitter_typescript"
-            },
-            {
-              "id": "tree-sitter-xlsg 0.0.1",
-              "target": "tree_sitter_xlsg"
             }
           ],
           "selects": {}
@@ -7725,11 +7868,11 @@
         "deps_dev": {
           "common": [
             {
-              "id": "insta 1.14.0",
+              "id": "insta 1.28.0",
               "target": "insta"
             },
             {
-              "id": "pretty_assertions 1.2.1",
+              "id": "pretty_assertions 1.3.0",
               "target": "pretty_assertions"
             }
           ],
@@ -8757,7 +8900,7 @@
               "target": "rustyline"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.1.0",
               "target": "scip"
             },
             {
@@ -8843,53 +8986,6 @@
         },
         "edition": "2018",
         "version": "3.3.0"
-      },
-      "license": "MIT OR Apache-2.0"
-    },
-    "terminal_size 0.1.17": {
-      "name": "terminal_size",
-      "version": "0.1.17",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/terminal_size/0.1.17/download",
-          "sha256": "633c1a546cee861a1a6d0dc69ebeca693bf4296661ba7852b9d21d159e0506df"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "terminal_size",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "terminal_size",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [],
-          "selects": {
-            "cfg(not(windows))": [
-              {
-                "id": "libc 0.2.121",
-                "target": "libc"
-              }
-            ],
-            "cfg(windows)": [
-              {
-                "id": "winapi 0.3.9",
-                "target": "winapi"
-              }
-            ]
-          }
-        },
-        "edition": "2018",
-        "version": "0.1.17"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -10577,6 +10673,210 @@
       },
       "license": "MIT"
     },
+    "tree-sitter-nickel 0.0.1": {
+      "name": "tree-sitter-nickel",
+      "version": "0.0.1",
+      "repository": {
+        "Git": {
+          "remote": "https://github.com/nickel-lang/tree-sitter-nickel",
+          "commitish": {
+            "Branch": "main"
+          }
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_nickel",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_nickel",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-nickel 0.0.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.0.1"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.73",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
+    "tree-sitter-perl 0.0.1": {
+      "name": "tree-sitter-perl",
+      "version": "0.0.1",
+      "repository": {
+        "Git": {
+          "remote": "https://github.com/sourcegraph/tree-sitter-perl",
+          "commitish": {
+            "Branch": "master"
+          }
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_perl",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_perl",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-perl 0.0.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.0.1"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.73",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
+    "tree-sitter-pod 0.0.1": {
+      "name": "tree-sitter-pod",
+      "version": "0.0.1",
+      "repository": {
+        "Git": {
+          "remote": "https://github.com/sourcegraph/tree-sitter-pod",
+          "commitish": {
+            "Branch": "main"
+          }
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_pod",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_pod",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-pod 0.0.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.0.1"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.73",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
     "tree-sitter-python 0.20.2": {
       "name": "tree-sitter-python",
       "version": "0.20.2",
@@ -12221,6 +12521,178 @@
       },
       "license": "MIT OR Apache-2.0"
     },
+    "windows-sys 0.42.0": {
+      "name": "windows-sys",
+      "version": "0.42.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/windows-sys/0.42.0/download",
+          "sha256": "5a3e1820f08b8513f676f7ab6c1f99ff312fb97b553d30ff4dd86f9f15728aa7"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "windows_sys",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "windows_sys",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": [
+          "Win32",
+          "Win32_Foundation",
+          "Win32_Storage",
+          "Win32_Storage_FileSystem",
+          "Win32_System",
+          "Win32_System_Console",
+          "Win32_UI",
+          "Win32_UI_Input",
+          "Win32_UI_Input_KeyboardAndMouse",
+          "default"
+        ],
+        "deps": {
+          "common": [],
+          "selects": {
+            "aarch64-pc-windows-gnullvm": [
+              {
+                "id": "windows_aarch64_gnullvm 0.42.1",
+                "target": "windows_aarch64_gnullvm"
+              }
+            ],
+            "aarch64-pc-windows-msvc": [
+              {
+                "id": "windows_aarch64_msvc 0.42.1",
+                "target": "windows_aarch64_msvc"
+              }
+            ],
+            "aarch64-uwp-windows-msvc": [
+              {
+                "id": "windows_aarch64_msvc 0.42.1",
+                "target": "windows_aarch64_msvc"
+              }
+            ],
+            "i686-pc-windows-gnu": [
+              {
+                "id": "windows_i686_gnu 0.42.1",
+                "target": "windows_i686_gnu"
+              }
+            ],
+            "i686-pc-windows-msvc": [
+              {
+                "id": "windows_i686_msvc 0.42.1",
+                "target": "windows_i686_msvc"
+              }
+            ],
+            "i686-uwp-windows-gnu": [
+              {
+                "id": "windows_i686_gnu 0.42.1",
+                "target": "windows_i686_gnu"
+              }
+            ],
+            "i686-uwp-windows-msvc": [
+              {
+                "id": "windows_i686_msvc 0.42.1",
+                "target": "windows_i686_msvc"
+              }
+            ],
+            "x86_64-pc-windows-gnu": [
+              {
+                "id": "windows_x86_64_gnu 0.42.1",
+                "target": "windows_x86_64_gnu"
+              }
+            ],
+            "x86_64-pc-windows-gnullvm": [
+              {
+                "id": "windows_x86_64_gnullvm 0.42.1",
+                "target": "windows_x86_64_gnullvm"
+              }
+            ],
+            "x86_64-pc-windows-msvc": [
+              {
+                "id": "windows_x86_64_msvc 0.42.1",
+                "target": "windows_x86_64_msvc"
+              }
+            ],
+            "x86_64-uwp-windows-gnu": [
+              {
+                "id": "windows_x86_64_gnu 0.42.1",
+                "target": "windows_x86_64_gnu"
+              }
+            ],
+            "x86_64-uwp-windows-msvc": [
+              {
+                "id": "windows_x86_64_msvc 0.42.1",
+                "target": "windows_x86_64_msvc"
+              }
+            ]
+          }
+        },
+        "edition": "2018",
+        "version": "0.42.0"
+      },
+      "license": "MIT OR Apache-2.0"
+    },
+    "windows_aarch64_gnullvm 0.42.1": {
+      "name": "windows_aarch64_gnullvm",
+      "version": "0.42.1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/windows_aarch64_gnullvm/0.42.1/download",
+          "sha256": "8c9864e83243fdec7fc9c5444389dcbbfd258f745e7853198f365e3c4968a608"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "windows_aarch64_gnullvm",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "windows_aarch64_gnullvm",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "windows_aarch64_gnullvm 0.42.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.42.1"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ]
+      },
+      "license": "MIT OR Apache-2.0"
+    },
     "windows_aarch64_msvc 0.30.0": {
       "name": "windows_aarch64_msvc",
       "version": "0.30.0",
@@ -12266,6 +12738,59 @@
         },
         "edition": "2018",
         "version": "0.30.0"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ]
+      },
+      "license": "MIT OR Apache-2.0"
+    },
+    "windows_aarch64_msvc 0.42.1": {
+      "name": "windows_aarch64_msvc",
+      "version": "0.42.1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/windows_aarch64_msvc/0.42.1/download",
+          "sha256": "4c8b1b673ffc16c47a9ff48570a9d85e25d265735c503681332589af6253c6c7"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "windows_aarch64_msvc",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "windows_aarch64_msvc",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "windows_aarch64_msvc 0.42.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.42.1"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -12327,6 +12852,59 @@
       },
       "license": "MIT OR Apache-2.0"
     },
+    "windows_i686_gnu 0.42.1": {
+      "name": "windows_i686_gnu",
+      "version": "0.42.1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/windows_i686_gnu/0.42.1/download",
+          "sha256": "de3887528ad530ba7bdbb1faa8275ec7a1155a45ffa57c37993960277145d640"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "windows_i686_gnu",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "windows_i686_gnu",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "windows_i686_gnu 0.42.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.42.1"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ]
+      },
+      "license": "MIT OR Apache-2.0"
+    },
     "windows_i686_msvc 0.30.0": {
       "name": "windows_i686_msvc",
       "version": "0.30.0",
@@ -12372,6 +12950,59 @@
         },
         "edition": "2018",
         "version": "0.30.0"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ]
+      },
+      "license": "MIT OR Apache-2.0"
+    },
+    "windows_i686_msvc 0.42.1": {
+      "name": "windows_i686_msvc",
+      "version": "0.42.1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/windows_i686_msvc/0.42.1/download",
+          "sha256": "bf4d1122317eddd6ff351aa852118a2418ad4214e6613a50e0191f7004372605"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "windows_i686_msvc",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "windows_i686_msvc",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "windows_i686_msvc 0.42.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.42.1"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -12433,6 +13064,112 @@
       },
       "license": "MIT OR Apache-2.0"
     },
+    "windows_x86_64_gnu 0.42.1": {
+      "name": "windows_x86_64_gnu",
+      "version": "0.42.1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/windows_x86_64_gnu/0.42.1/download",
+          "sha256": "c1040f221285e17ebccbc2591ffdc2d44ee1f9186324dd3e84e99ac68d699c45"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "windows_x86_64_gnu",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "windows_x86_64_gnu",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "windows_x86_64_gnu 0.42.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.42.1"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ]
+      },
+      "license": "MIT OR Apache-2.0"
+    },
+    "windows_x86_64_gnullvm 0.42.1": {
+      "name": "windows_x86_64_gnullvm",
+      "version": "0.42.1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/windows_x86_64_gnullvm/0.42.1/download",
+          "sha256": "628bfdf232daa22b0d64fdb62b09fcc36bb01f05a3939e20ab73aaf9470d0463"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "windows_x86_64_gnullvm",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "windows_x86_64_gnullvm",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "windows_x86_64_gnullvm 0.42.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.42.1"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ]
+      },
+      "license": "MIT OR Apache-2.0"
+    },
     "windows_x86_64_msvc 0.30.0": {
       "name": "windows_x86_64_msvc",
       "version": "0.30.0",
@@ -12478,6 +13215,59 @@
         },
         "edition": "2018",
         "version": "0.30.0"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ]
+      },
+      "license": "MIT OR Apache-2.0"
+    },
+    "windows_x86_64_msvc 0.42.1": {
+      "name": "windows_x86_64_msvc",
+      "version": "0.42.1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/windows_x86_64_msvc/0.42.1/download",
+          "sha256": "447660ad36a13288b1db4d4248e857b510e8c3a225c822ba4fb748c0aafecffd"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "windows_x86_64_msvc",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "windows_x86_64_msvc",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "windows_x86_64_msvc 0.42.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.42.1"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -12544,7 +13334,7 @@
         "deps": {
           "common": [
             {
-              "id": "linked-hash-map 0.5.4",
+              "id": "linked-hash-map 0.5.6",
               "target": "linked_hash_map"
             }
           ],
@@ -12588,11 +13378,15 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "sg-macros 0.1.0": "docker-images/syntax-highlighter/crates/sg-macros",
+    "scip-macros 0.1.0": "docker-images/syntax-highlighter/crates/scip-macros",
+    "scip-syntax 0.1.0": "docker-images/syntax-highlighter/crates/scip-syntax",
+    "scip-treesitter 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter",
+    "scip-treesitter-languages 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter-languages",
     "sg-syntax 0.1.0": "docker-images/syntax-highlighter/crates/sg-syntax",
     "syntect_server 1.0.1": "docker-images/syntax-highlighter"
   },
   "conditions": {
+    "aarch64-pc-windows-gnullvm": [],
     "aarch64-pc-windows-msvc": [
       "aarch64-pc-windows-msvc"
     ],
@@ -12806,6 +13600,7 @@
     "i686-uwp-windows-gnu": [],
     "i686-uwp-windows-msvc": [],
     "x86_64-pc-windows-gnu": [],
+    "x86_64-pc-windows-gnullvm": [],
     "x86_64-pc-windows-msvc": [
       "x86_64-pc-windows-msvc"
     ],

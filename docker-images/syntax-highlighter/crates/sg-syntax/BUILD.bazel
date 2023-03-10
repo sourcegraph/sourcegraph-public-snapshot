@@ -5,17 +5,19 @@ rust_library(
     name = "sg-syntax",
     srcs = glob(["src/*.rs"]),
     aliases = aliases(),
-    compile_data = glob(
-        ["queries/**"],
-        allow_empty = False,
-    ),
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
-    ) + ["//docker-images/syntax-highlighter/crates/sg-macros:sg-macros"],
+    ) + [
+    "//docker-images/syntax-highlighter/crates/scip-macros:scip-macros",
+    ],
     visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
     deps = all_crate_deps(
         normal = True,
-    ),
+    )+ [
+      "//docker-images/syntax-highlighter/crates/scip-syntax:scip-syntax",
+      "//docker-images/syntax-highlighter/crates/scip-treesitter:scip-treesitter",
+      "//docker-images/syntax-highlighter/crates/scip-treesitter-languages:scip-treesitter-languages",
+    ],
 )
 
 # This prevents bazel configure for generating buildfiles because it sees

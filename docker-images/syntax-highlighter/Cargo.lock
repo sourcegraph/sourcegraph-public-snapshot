@@ -1338,8 +1338,8 @@ dependencies = [
 
 [[package]]
 name = "scip"
-version = "0.1.1"
-source = "git+https://github.com/sourcegraph/scip#3050326a91551abf4e6f690af6a471a160581ba4"
+version = "0.1.0"
+source = "git+https://github.com/sourcegraph/scip?rev=7ff845ef5b78772f65463542d5f384967d329b2c#7ff845ef5b78772f65463542d5f384967d329b2c"
 dependencies = [
  "protobuf",
 ]
@@ -2002,7 +2002,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-jsonnet"
 version = "0.0.1"
-source = "git+https://github.com/sourcegraph/tree-sitter-jsonnet#009e6f06266f46ae07077dd6c8026ded56ab7dd8"
+source = "git+https://github.com/sourcegraph/tree-sitter-jsonnet?rev=009e6f06266f46ae07077dd6c8026ded56ab7dd8#009e6f06266f46ae07077dd6c8026ded56ab7dd8"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2011,7 +2011,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-nickel"
 version = "0.0.1"
-source = "git+https://github.com/nickel-lang/tree-sitter-nickel#d6c7eeb751038f934b5b1aa7ff236376d0235c56"
+source = "git+https://github.com/nickel-lang/tree-sitter-nickel?branch=main#d6c7eeb751038f934b5b1aa7ff236376d0235c56"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2029,7 +2029,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-pod"
 version = "0.0.1"
-source = "git+https://github.com/sourcegraph/tree-sitter-pod#f422a0dca6847c692e811f06fd92c6a75d647222"
+source = "git+https://github.com/sourcegraph/tree-sitter-pod?branch=main#f422a0dca6847c692e811f06fd92c6a75d647222"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2077,7 +2077,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-sql"
 version = "0.0.2"
-source = "git+https://github.com/sourcegraph/tree-sitter-sql#6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
+source = "git+https://github.com/sourcegraph/tree-sitter-sql?branch=main#6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
 dependencies = [
  "cc",
  "tree-sitter",

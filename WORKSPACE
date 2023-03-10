@@ -244,10 +244,13 @@ crates_repository(
     cargo_lockfile = "//docker-images/syntax-highlighter:Cargo.lock",
     # this file has to be manually created and it will be filled when
     # the target is ran.
-    # To regenerate this file run: CARGO_BAZEL_REPIN=1 bazel sync --only=crates_index
+    # To regenerate this file run: CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
     lockfile = "//docker-images/syntax-highlighter:Cargo.Bazel.lock",
     manifests = [
-        "//docker-images/syntax-highlighter:crates/sg-macros/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-macros/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-treesitter/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-syntax/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
         "//docker-images/syntax-highlighter:Cargo.toml",
     ],

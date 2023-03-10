@@ -39,7 +39,7 @@ serde_json = "1.0"
 syntect = { git = "https://github.com/sourcegraph/syntect", branch = "main" }
 tree-sitter = "0.20.9"
 
-scip = { git = "https://github.com/sourcegraph/scip" }
+scip = { git = "https://github.com/sourcegraph/scip", rev = "7ff845ef5b78772f65463542d5f384967d329b2c" }
 protobuf = "3"
 
 [profile.release]
