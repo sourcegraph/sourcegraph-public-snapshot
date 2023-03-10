@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -33,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/ttlcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -45,18 +43,12 @@ func defaultEndpoints() *endpoint.Map {
 }
 
 func LoadConfig() {
-	cacheOptions := []ttlcache.Option[string, connAndErr]{
-		ttlcache.WithExpirationTime[string, connAndErr](10 * time.Minute),
-		ttlcache.WithReapInterval[string, connAndErr](1 * time.Minute),
-		ttlcache.WithExpirationFunc(closeGRPCConnection),
-	}
-
-	cache := ttlcache.New[string, connAndErr](newGRPCConnection, cacheOptions...)
-	cache.StartReaper()
+	cache := defaults.NewConnectionCache()
+	cache.Start()
 
 	DefaultClient = &Client{
 		Endpoints:           defaultEndpoints(),
-		gRPCConnCache:       cache,
+		GRPCConnectionCache: cache,
 		HTTPClient:          defaultDoer,
 		HTTPLimiter:         limiter.New(500),
 		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
@@ -80,7 +72,7 @@ type Client struct {
 	// Endpoints to symbols service.
 	Endpoints *endpoint.Map
 
-	gRPCConnCache *ttlcache.Cache[string, connAndErr]
+	GRPCConnectionCache *defaults.ConnectionCache
 
 	// HTTP client to use
 	HTTPClient httpcli.Doer
@@ -522,8 +514,7 @@ func (c *Client) getGRPCConn(repo string) (*grpc.ClientConn, error) {
 		return nil, errors.Wrapf(err, "getting symbols server address for repo %q", repo)
 	}
 
-	connWithErr := c.gRPCConnCache.Get(address)
-	return connWithErr.conn, connWithErr.dialErr
+	return c.GRPCConnectionCache.GetConnection(address)
 }
 
 func (c *Client) url(repo api.RepoName) (string, error) {
@@ -531,39 +522,4 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 		return "", errors.New("a symbols service has not been configured")
 	}
 	return c.Endpoints.Get(string(repo))
-}
-
-func newGRPCConnection(address string) connAndErr {
-	u, err := url.Parse(address)
-	if err != nil {
-		return connAndErr{
-			dialErr: errors.Wrapf(err, "parsing address %q", address),
-		}
-	}
-
-	gRPCConn, err := defaults.Dial(u.Host)
-	if err != nil {
-		return connAndErr{
-			dialErr: errors.Wrapf(err, "dialing gRPC connection to %q", address),
-		}
-	}
-
-	return connAndErr{conn: gRPCConn}
-}
-
-func closeGRPCConnection(_ string, conn connAndErr) {
-	if conn.dialErr != nil {
-		_ = conn.conn.Close()
-	}
-}
-
-// connAndErr is a gRPC connection and its associated error. The error is
-// non-nil if the connection failed to be established.
-type connAndErr struct {
-	// conn is the gRPC connection.
-	conn *grpc.ClientConn
-
-	// dialErr is the error returned by grpc.Dial when establishing the
-	// connection.
-	dialErr error
 }

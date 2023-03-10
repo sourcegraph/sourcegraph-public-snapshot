@@ -18,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -71,9 +73,13 @@ func TestHandler(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
+	connectionCache := internalgrpc.NewConnectionCache()
+	t.Cleanup(connectionCache.Shutdown)
+
 	client := symbolsclient.Client{
-		ConnectionSource: symbolsclient.NewTestConnectionSource(t, server.URL),
-		HTTPClient:       httpcli.InternalDoer,
+		Endpoints:           endpoint.Static(server.URL),
+		GRPCConnectionCache: connectionCache,
+		HTTPClient:          httpcli.InternalDoer,
 	}
 
 	x := result.Symbol{Name: "x", Path: "a.js", Line: 0, Character: 4}
