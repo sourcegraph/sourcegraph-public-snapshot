@@ -61,6 +61,8 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 		{User: types.User{ID: 8, Username: "test-user8"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id8", SCIMAccountData: sampleAccountData},
 		{User: types.User{ID: 9, Username: "test-user9"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id9", SCIMAccountData: sampleAccountData},
 		{User: types.User{ID: 10, Username: "test-user10"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id10", SCIMAccountData: sampleAccountData},
+		{User: types.User{ID: 11, Username: "test-user11"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id11", SCIMAccountData: sampleAccountData},
+		{User: types.User{ID: 12, Username: "test-user12"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id12", SCIMAccountData: sampleAccountData},
 	},
 		map[int32][]*database.UserEmail{
 			2:  {},
@@ -243,7 +245,7 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 		},
 		{
 			name:   "Move existing unverified email to primary with filter",
-			userId: "10",
+			userId: "11",
 			operations: []scim.PatchOperation{
 				{Op: "replace", Path: parseStringPath("emails[value eq \"primary@work.com\"].primary"), Value: false},
 				{Op: "replace", Path: parseStringPath("emails[value eq \"secondary@work.com\"].primary"), Value: true},
@@ -265,6 +267,34 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 				assert.Len(t, dbEmails, 2)
 				assert.True(t, containsEmail(dbEmails, "primary@work.com", true, false))
 				assert.True(t, containsEmail(dbEmails, "secondary@work.com", true, true))
+			},
+		},
+		{
+			name:   "Add email with replace",
+			userId: "12",
+			operations: []scim.PatchOperation{
+				{Op: "replace", Path: parseStringPath("emails[type eq \"work\"].value"), Value: "work@work.com"},
+				{Op: "replace", Path: parseStringPath("emails[type eq \"work\"].primary"), Value: true},
+				{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].value"), Value: "home@work.com"},
+				{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].primary"), Value: false},
+			},
+			testFunc: func(userRes scim.Resource) {
+				// Check both emails remain and primary value flipped
+				emails := userRes.Attributes[AttrEmails].([]interface{})
+				assert.Len(t, emails, 2)
+				assert.Contains(t, emails, map[string]interface{}{"value": "primary@work.com", "primary": true, "type": "work"})
+				assert.Contains(t, emails, map[string]interface{}{"value": "secondary@work.com", "primary": false, "type": "work"})
+
+				// Check user in DB
+				userID, _ := strconv.Atoi(userRes.ID)
+				user, err := db.Users().GetByID(context.Background(), int32(userID))
+				assert.NoError(t, err)
+
+				// Check db email changes and both marked verified
+				dbEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
+				assert.Len(t, dbEmails, 2)
+				assert.True(t, containsEmail(dbEmails, "primary@work.com", true, true))
+				assert.True(t, containsEmail(dbEmails, "secondary@work.com", true, false))
 			},
 		},
 	}
