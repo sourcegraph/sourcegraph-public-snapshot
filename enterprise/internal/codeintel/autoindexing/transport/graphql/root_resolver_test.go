@@ -39,7 +39,6 @@ func TestDeleteLSIFIndex(t *testing.T) {
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockAutoIndexingService := NewMockAutoIndexingService()
-	mockAutoIndexingService.GetUnsafeDBFunc.SetDefaultReturn(db)
 
 	siteAdminChecker := sharedresolvers.NewSiteAdminChecker(db)
 	locationResolverFactory := sharedresolvers.NewCachedLocationResolverFactory(nil, repos, gitserver.NewClient())
@@ -66,7 +65,6 @@ func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockAutoIndexingService := NewMockAutoIndexingService()
-	mockAutoIndexingService.GetUnsafeDBFunc.SetDefaultReturn(db)
 
 	siteAdminChecker := sharedresolvers.NewSiteAdminChecker(db)
 	locationResolverFactory := sharedresolvers.NewCachedLocationResolverFactory(nil, repos, gitserver.NewClient())
