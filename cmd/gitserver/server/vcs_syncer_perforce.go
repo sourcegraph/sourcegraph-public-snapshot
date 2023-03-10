@@ -324,7 +324,7 @@ func p4depots(ctx context.Context, host, username, password, nameFilter string) 
 	}
 	depots := make([]PerforceDepot, 0)
 	if len(out) > 0 {
-		// the output of `p4 -Mj -ztag depots` is a series of JSON-formatted depot defintions, one per line
+		// the output of `p4 -Mj -ztag depots` is a series of JSON-formatted depot definitions, one per line
 		buf := bufio.NewScanner(bytes.NewBuffer(out))
 		for buf.Scan() {
 			depot := PerforceDepot{}
