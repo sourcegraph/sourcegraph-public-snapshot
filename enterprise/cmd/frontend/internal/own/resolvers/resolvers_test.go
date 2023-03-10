@@ -190,8 +190,8 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 									},
 									"reasons": [
 										{
-											"title": "CodeOwners",
-											"description": "Owner is associated with a rule in code owners file.",
+											"title": "CODEOWNERS",
+											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "GitBlob",
 												"url": "/github.com/sourcegraph/own@deadbeef/-/blob/CODEOWNERS"
@@ -288,8 +288,8 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 								{
 									"reasons": [
 										{
-											"title": "CodeOwners",
-											"description": "Owner is associated with a rule in code owners file.",
+											"title": "CODEOWNERS",
+											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
 												"url": "/github.com/sourcegraph/own/-/own"
