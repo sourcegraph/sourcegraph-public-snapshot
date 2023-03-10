@@ -8,7 +8,7 @@ import { createAggregateError, ErrorLike } from '@sourcegraph/common'
 import { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
-import { Position } from '@sourcegraph/shared/src/codeintel/scip'
+import { Position as ScipPosition } from '@sourcegraph/shared/src/codeintel/scip'
 import { searchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
@@ -131,7 +131,7 @@ export async function searchBasedReferences({
         for (const occurrence of occurrences) {
             if (
                 occurrence.symbol?.startsWith('local ') &&
-                occurrence.range.contains(new Position(position.line, position.character))
+                occurrence.range.contains(new ScipPosition(position.line, position.character))
             ) {
                 return occurrences
                     .filter(reference => reference.symbol === occurrence.symbol)
