@@ -114,9 +114,11 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
         textParameters: TextDocumentPositionParameters,
         scipParameters?: ScipParameters
     ): Observable<clientType.Location[]> {
-        const definition = scipParameters ? localDefinition(scipParameters) : undefined
-        if (definition) {
-            return of([{ uri: textParameters.textDocument.uri, range: definition.range }])
+        const definitions = scipParameters ? localDefinition(scipParameters) : []
+        if (definitions.length > 0) {
+            return of(
+                definitions.map(definition => ({ uri: textParameters.textDocument.uri, range: definition.range }))
+            )
         }
         const request = requestFor(textParameters)
         return this.locationResult(request.providers.definition.provideDefinition(request.document, request.position))
@@ -309,18 +311,14 @@ export function localReferences(params: ScipParameters): Occurrence[] {
     return []
 }
 
-function localDefinition(params: ScipParameters): Occurrence | undefined {
+function localDefinition(params: ScipParameters): Occurrence[] {
     if (!params.referenceOccurrence.symbol) {
-        return undefined
+        return []
     }
-    for (const definitionOccurrence of params.documentOccurrences) {
-        if (
+    return params.documentOccurrences.filter(
+        definitionOccurrence =>
             definitionOccurrence.symbol === params.referenceOccurrence.symbol &&
             definitionOccurrence.symbolRoles &&
             (definitionOccurrence.symbolRoles & 1) === 1
-        ) {
-            return definitionOccurrence
-        }
-    }
-    return undefined
+    )
 }
