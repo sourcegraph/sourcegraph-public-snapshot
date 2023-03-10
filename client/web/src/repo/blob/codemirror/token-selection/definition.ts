@@ -9,6 +9,7 @@ import { Occurrence, Position, Range } from '@sourcegraph/shared/src/codeintel/s
 import { BlobViewState, parseRepoURI, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
+import { syntaxHighlight } from '../highlight'
 import {
     isInteractiveOccurrence,
     occurrenceAtMouseEvent,
@@ -21,7 +22,6 @@ import { preciseOffsetAtCoords } from '../utils'
 
 import { getCodeIntelTooltipState, selectOccurrence, setFocusedOccurrenceTooltip } from './code-intel-tooltips'
 import { isModifierKey } from './modifier-click'
-import { syntaxHighlight } from '../highlight'
 
 export interface DefinitionResult {
     handler: (position: Position) => void
@@ -150,7 +150,6 @@ async function goToDefinition(
     let definition: Location[] = []
     const local = localDefinition(view, occurrence)
     if (local) {
-        console.log({ occurrence, local })
         definition.push({ uri: toURIWithPath(view.state.facet(blobPropsFacet).blobInfo), range: local.range })
     }
 
