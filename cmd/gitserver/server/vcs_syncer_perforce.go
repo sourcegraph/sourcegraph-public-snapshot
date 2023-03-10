@@ -330,7 +330,7 @@ func p4depots(ctx context.Context, host, username, password, nameFilter string) 
 			depot := PerforceDepot{}
 			err := json.Unmarshal(buf.Bytes(), &depot)
 			if err != nil {
-				return nil, errors.Errorf("malformed output from p4 depots: %s", err)
+				return nil, errors.Wrap(err, "malformed output from p4 depots")
 			}
 			depots = append(depots, depot)
 		}
