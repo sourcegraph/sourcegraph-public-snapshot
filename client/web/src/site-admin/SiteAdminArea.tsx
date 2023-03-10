@@ -85,7 +85,9 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         <Page>
             <PageHeader>
                 <PageHeader.Heading as="h2" styleAs="h1">
-                    <PageHeader.Breadcrumb>Admin</PageHeader.Breadcrumb>
+                    <PageHeader.Breadcrumb>
+                        {props.isSourcegraphApp ? 'Advanced Settings' : 'Admin'}
+                    </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
             <div className="d-flex my-3 flex-column flex-sm-row" ref={reference}>

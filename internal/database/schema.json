@@ -13109,6 +13109,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "lsif_dependency_repos_unique_scheme_name",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_dependency_repos_unique_scheme_name ON lsif_dependency_repos USING btree (scheme, name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "lsif_dependency_repos_blocked",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -13129,12 +13139,22 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "lsif_dependency_repos_name_idx",
+          "Name": "lsif_dependency_repos_name_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX lsif_dependency_repos_name_idx ON lsif_dependency_repos USING btree (name)",
+          "IndexDefinition": "CREATE INDEX lsif_dependency_repos_name_id ON lsif_dependency_repos USING btree (name, id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_dependency_repos_scheme_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_dependency_repos_scheme_id ON lsif_dependency_repos USING btree (scheme, id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -19784,6 +19804,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "idx_repo_github_topics",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX idx_repo_github_topics ON repo USING gin (((metadata -\u003e 'RepositoryTopics'::text) -\u003e 'Nodes'::text)) WHERE external_service_type = 'github'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "repo_archived",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -20669,8 +20699,8 @@
         },
         {
           "Name": "name",
-          "Index": 2,
-          "TypeName": "text",
+          "Index": 6,
+          "TypeName": "citext",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -20678,7 +20708,7 @@
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": "The uniquely identifying name of the role."
+          "Comment": ""
         },
         {
           "Name": "system",
@@ -20696,16 +20726,6 @@
       ],
       "Indexes": [
         {
-          "Name": "roles_name",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX roles_name ON roles USING btree (name)",
-          "ConstraintType": "u",
-          "ConstraintDefinition": "UNIQUE (name)"
-        },
-        {
           "Name": "roles_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,
@@ -20714,17 +20734,19 @@
           "IndexDefinition": "CREATE UNIQUE INDEX roles_pkey ON roles USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
-        }
-      ],
-      "Constraints": [
+        },
         {
-          "Name": "name_not_blank",
-          "ConstraintType": "c",
-          "RefTableName": "",
+          "Name": "unique_role_name",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
           "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (name \u003c\u003e ''::text)"
+          "IndexDefinition": "CREATE UNIQUE INDEX unique_role_name ON roles USING btree (name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
+      "Constraints": null,
       "Triggers": []
     },
     {

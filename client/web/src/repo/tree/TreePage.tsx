@@ -6,10 +6,10 @@ import {
     mdiCog,
     mdiFolder,
     mdiHistory,
+    mdiPackageVariantClosed,
     mdiSourceBranch,
     mdiSourceRepository,
     mdiTag,
-    mdiPackageVariantClosed,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
@@ -160,6 +160,7 @@ export const TreePage: FC<Props> = ({
         settingsCascade.final['insights.displayLocation.directory'] === true
 
     const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
+    const showOwnership = ownEnabled && ownFeatureFlagEnabled && !isSourcegraphDotCom
 
     // Add DirectoryViewer
     const uri = toURIWithPath({ repoName, commitID, filePath })
@@ -284,7 +285,7 @@ export const TreePage: FC<Props> = ({
                             />
                         </Tooltip>
                     )}
-                    {ownEnabled && ownFeatureFlagEnabled && (
+                    {showOwnership && (
                         <Tooltip content="Ownership">
                             <Button
                                 className="flex-shrink-0"

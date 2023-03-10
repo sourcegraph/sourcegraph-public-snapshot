@@ -27,6 +27,7 @@ export const mockUser: AuthenticatedUser = {
     searchable: true,
     emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
     latestSettings: null,
+    permissions: { nodes: [] },
 }
 
 export const mockCodeMonitorFields: CodeMonitorFields = {

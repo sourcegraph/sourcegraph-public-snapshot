@@ -46,7 +46,6 @@ go_test(
         "//enterprise/internal/codeintel/policies/internal/store",
         "//enterprise/internal/codeintel/policies/shared",
         "//enterprise/internal/codeintel/shared/types",
-        "//internal/database",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/timeutil",

@@ -9,7 +9,6 @@ import (
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -259,10 +258,6 @@ func (s *Service) GetPreviewGitObjectFilter(
 	}
 
 	return gitObjects, totalCount, totalCountYoungerThanThreshold, nil
-}
-
-func (s *Service) GetUnsafeDB() database.DB {
-	return s.store.GetUnsafeDB()
 }
 
 func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload types.Upload) (commits []string, err error) {

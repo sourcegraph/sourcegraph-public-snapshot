@@ -21,7 +21,7 @@ import { useExternalServicesConnection } from './backend'
 import { ExternalServiceEditingAppLimitAlert } from './ExternalServiceEditingAppLimitReachedAlert'
 import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
-import { ExternalServiceNode } from './ExternalServiceNode.tsx'
+import { ExternalServiceNode } from './ExternalServiceNode'
 import { isAppLocalFileService } from './isAppLocalFileService'
 
 interface Props extends TelemetryProps {

@@ -1,7 +1,8 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from 'react'
 
 import { ApolloError } from '@apollo/client/errors'
-import { mdiCancel, mdiClose, mdiMapSearch, mdiReload } from '@mdi/js'
+import { mdiCancel, mdiClose, mdiMapSearch, mdiReload, mdiSecurity } from '@mdi/js'
+import classNames from 'classnames'
 import { noop } from 'lodash'
 
 import { useMutation } from '@sourcegraph/http-client'
@@ -17,6 +18,7 @@ import {
     PageSwitcher,
     Select,
     useDebounce,
+    useLocalStorage,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -24,6 +26,7 @@ import { ConnectionError, ConnectionLoading } from '../../components/FilteredCon
 import { PageTitle } from '../../components/PageTitle'
 import {
     CancelPermissionsSyncJobResult,
+    CancelPermissionsSyncJobResultMessage,
     CancelPermissionsSyncJobVariables,
     PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
@@ -52,7 +55,7 @@ import {
     PermissionsSyncJobSubject,
 } from './PermissionsSyncJobNode'
 
-import styles from './PermissionsSyncJobsTable.module.scss'
+import styles from './styles.module.scss'
 
 interface Filters {
     reason: string
@@ -74,10 +77,17 @@ const DEFAULT_FILTERS = {
 }
 const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 5000
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps {
+    minimal?: boolean
+    userID?: string
+    repoID?: string
+}
 
 export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    minimal = false,
+    userID,
+    repoID,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('PermissionsSyncJobsTable')
@@ -85,6 +95,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
 
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const debouncedQuery = useDebounce(filters.query, 300)
+    const [polling, setPolling] = useLocalStorage<boolean>('polling_for_permissions_sync_jobs', true)
 
     const { connection, loading, startPolling, stopPolling, error, variables, ...paginationProps } =
         usePageSwitcherPagination<PermissionsSyncJobsResult, PermissionsSyncJobsVariables, PermissionsSyncJob>({
@@ -95,20 +106,25 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 state: stringToState(filters.state),
                 searchType: stringToSearchType(filters.searchType),
                 query: debouncedQuery,
+                userID,
+                repoID,
             } as PermissionsSyncJobsVariables,
             getConnection: ({ data }) => data?.permissionsSyncJobs || undefined,
-            options: { pollInterval: PERMISSIONS_SYNC_JOBS_POLL_INTERVAL },
+            // always do polling if minimal
+            options: { pollInterval: minimal ? PERMISSIONS_SYNC_JOBS_POLL_INTERVAL : undefined },
         })
 
-    const [polling, setPolling] = useState(true)
-    const togglePolling = useCallback(() => {
-        if (polling) {
-            stopPolling()
-        } else {
-            startPolling(PERMISSIONS_SYNC_JOBS_POLL_INTERVAL)
+    useEffect(() => {
+        if (minimal) {
+            return
         }
-        setPolling(!polling)
-    }, [polling, startPolling, stopPolling])
+
+        if (polling) {
+            startPolling(PERMISSIONS_SYNC_JOBS_POLL_INTERVAL)
+        } else {
+            stopPolling()
+        }
+    }, [polling, stopPolling, startPolling, minimal])
 
     const setReason = useCallback(
         (reasonGroup: PermissionsSyncJobReasonGroup | null) => setFilters({ reason: reasonGroup?.toString() || '' }),
@@ -168,7 +184,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
             cancelSyncJob({
                 variables: { job: syncJob.id },
                 onCompleted: ({ cancelPermissionsSyncJob }) =>
-                    setNotification({ text: prettyPrintCancelSyncJobMessage(cancelPermissionsSyncJob || undefined) }),
+                    setNotification({ text: prettyPrintCancelSyncJobMessage(cancelPermissionsSyncJob) }),
                 onError,
             }).catch(
                 // noop here is used because an error is handled in `onError` option of `useMutation` above.
@@ -177,6 +193,30 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         },
         [cancelSyncJob]
     )
+
+    if (minimal) {
+        return (
+            <>
+                {error && <ConnectionError errors={[error.message]} />}
+                {!connection && <ConnectionLoading />}
+                {connection?.nodes?.length === 0 && <EmptyList />}
+                {!!connection?.nodes?.length && (
+                    <Table<PermissionsSyncJob>
+                        columns={TableColumns}
+                        getRowId={node => node.id}
+                        data={connection.nodes}
+                        rowClassName={styles.tableRow}
+                    />
+                )}
+                <PageSwitcher
+                    {...paginationProps}
+                    className="mt-4"
+                    totalCount={connection?.totalCount ?? null}
+                    totalLabel="permissions sync jobs"
+                />
+            </>
+        )
+    }
 
     return (
         <div>
@@ -192,7 +232,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                     </>
                 }
                 actions={
-                    <Button variant="secondary" onClick={togglePolling}>
+                    <Button variant="secondary" onClick={() => setPolling(oldValue => !oldValue)}>
                         {polling ? 'Pause polling' : 'Resume polling'}
                     </Button>
                 }
@@ -226,6 +266,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                         columns={TableColumns}
                         getRowId={node => node.id}
                         data={connection.nodes}
+                        rowClassName={styles.tableRow}
                         actions={[
                             {
                                 key: 'Re-trigger job',
@@ -240,6 +281,16 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                                 icon: mdiCancel,
                                 onClick: handleCancelSyncJob,
                                 condition: ([node]) => node.state === PermissionsSyncJobState.QUEUED,
+                            },
+                            {
+                                key: 'View Permissions',
+                                label: 'View Permissions',
+                                icon: mdiSecurity,
+                                href: ([node]) =>
+                                    node.subject.__typename === 'Repository'
+                                        ? node.subject.url + '/-/settings/permissions'
+                                        : `/users/${node.subject.username}/settings/permissions`,
+                                target: '_blank',
                             },
                         ]}
                     />
@@ -265,11 +316,13 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
         key: 'Name',
         header: 'Name',
         render: (node: PermissionsSyncJob) => <PermissionsSyncJobSubject job={node} />,
+        cellClassName: classNames(styles.subjectContainer, 'pr-1'),
     },
     {
         key: 'Reason',
         header: 'Reason',
         render: (node: PermissionsSyncJob) => <PermissionsSyncJobReasonByline job={node} />,
+        cellClassName: classNames(styles.reasonGroupContainer, 'pr-1'),
     },
     {
         key: 'Added',
@@ -416,7 +469,13 @@ const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
 const finalState = (state: PermissionsSyncJobState): boolean =>
     state !== PermissionsSyncJobState.QUEUED && state !== PermissionsSyncJobState.PROCESSING
 
-const prettyPrintCancelSyncJobMessage = (message: string = 'Permissions sync job canceled.'): string =>
-    message === 'No job that can be canceled found.'
-        ? 'Permissions sync job is already dequeued and cannot be canceled.'
-        : message
+const prettyPrintCancelSyncJobMessage = (message: CancelPermissionsSyncJobResultMessage): string => {
+    switch (message) {
+        case CancelPermissionsSyncJobResultMessage.SUCCESS:
+            return 'Permissions sync job canceled.'
+        case CancelPermissionsSyncJobResultMessage.NOT_FOUND:
+            return 'Permissions sync job is already dequeued and cannot be canceled.'
+        case CancelPermissionsSyncJobResultMessage.ERROR:
+            return 'Error during permissions sync job cancelling.'
+    }
+}

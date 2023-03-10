@@ -29,13 +29,17 @@ var (
 )
 
 func init() {
-	// Should only be set for gitserver for persistence, repo-updater will use ephemeral storage.
-	// repo-updater only performs existence checks which doesnt involve downloading any JARs (except for JDK),
-	// only POM files which are much lighter.
-	if reposDir := os.Getenv("SRC_REPOS_DIR"); reposDir != "" {
-		coursierCacheDir = filepath.Join(reposDir, "coursier")
+	// if COURSIER_CACHE_DIR is set, try create that dir and use it. If not set, use the SRC_REPOS_DIR value (or default).
+	// This is expected to only be used in gitserver, if this assumption changes, please revisit this due to the failability
+	// of this on read-only filesystems.
+	coursierCacheDir = env.Get("COURSIER_CACHE_DIR", "", "Directory in which coursier data is cached for JVM package repos.")
+	srcReposDir := env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+	if coursierCacheDir == "" && srcReposDir != "" {
+		coursierCacheDir = filepath.Join(srcReposDir, "coursier")
+	}
+	if coursierCacheDir != "" {
 		if err := os.MkdirAll(coursierCacheDir, os.ModePerm); err != nil {
-			println(fmt.Sprintf("failed to create coursier cache dir in %s: %s", coursierCacheDir, err))
+			fmt.Printf("failed to create coursier cache dir in %q: %s\n", coursierCacheDir, err)
 			os.Exit(1)
 		}
 	}

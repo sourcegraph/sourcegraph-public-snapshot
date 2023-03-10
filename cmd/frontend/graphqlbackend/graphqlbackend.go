@@ -537,10 +537,6 @@ func NewSchema(
 		EnterpriseResolvers.rbacResolver = rbacResolver
 		resolver.RBACResolver = rbacResolver
 		schemas = append(schemas, rbacSchema)
-		// Register NodeByID handlers.
-		for kind, res := range rbacResolver.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
-		}
 	}
 
 	if ownResolver := optional.OwnResolver; ownResolver != nil {
@@ -688,6 +684,12 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client, enterpr
 		},
 		outboundWebhookIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return OutboundWebhookByID(ctx, db, id)
+		},
+		roleIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.roleByID(ctx, id)
+		},
+		permissionIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.permissionByID(ctx, id)
 		},
 	}
 	return r

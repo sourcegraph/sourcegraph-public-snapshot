@@ -66,7 +66,7 @@ func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *Packag
 	opts.Limit = int(args.GetFirst())
 
 	if args.After != nil {
-		if opts.After, err = graphqlutil.DecodeIntCursor(args.After); err != nil {
+		if err := relay.UnmarshalSpec(graphql.ID(*args.After), &opts.After); err != nil {
 			return nil, err
 		}
 	}
@@ -130,7 +130,7 @@ func (r *packageRepoReferenceConnectionResolver) PageInfo(ctx context.Context) (
 
 	next := r.deps[len(r.deps)-1].ID
 	cursor := string(relay.MarshalID("PackageRepoReference", next))
-	return graphqlutil.EncodeCursor(&cursor), nil
+	return graphqlutil.NextPageCursor(cursor), nil
 }
 
 type packageRepoReferenceVersionConnectionResolver struct {
@@ -159,7 +159,7 @@ func (r *packageRepoReferenceVersionConnectionResolver) PageInfo(ctx context.Con
 
 	next := r.versions[len(r.versions)-1].ID
 	cursor := string(relay.MarshalID("PackageRepoReferenceVersion", next))
-	return graphqlutil.EncodeCursor(&cursor), nil
+	return graphqlutil.NextPageCursor(cursor), nil
 }
 
 type packageRepoReferenceResolver struct {

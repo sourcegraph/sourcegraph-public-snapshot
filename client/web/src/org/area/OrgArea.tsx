@@ -283,7 +283,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
                                 />
                             )
                     )}
-                    <Route element={<NotFoundPage />} />
+                    <Route path="*" element={<NotFoundPage />} />
                 </Routes>
             </React.Suspense>
         )

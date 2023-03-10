@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -59,6 +60,7 @@ describe('UserNavItem', () => {
                             isSourcegraphApp={false}
                             codeHostIntegrationMessaging="browser-extension"
                             showFeedbackModal={() => undefined}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
                     </MockedTestProvider>
                 </MemoryRouter>
@@ -76,6 +78,7 @@ describe('UserNavItem', () => {
                     isSourcegraphApp={false}
                     codeHostIntegrationMessaging="browser-extension"
                     showFeedbackModal={() => undefined}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             </MockedTestProvider>
         )

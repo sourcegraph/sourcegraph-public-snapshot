@@ -193,7 +193,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}}, providers)
 }
 
-func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
+func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 	p := &mockProvider{
 		id:          1,
 		serviceType: extsvc.TypeGitLab,
@@ -249,9 +249,6 @@ func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
 		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
 		return nil, nil
 	})
-	perms.TouchUserPermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32) error {
-		return nil
-	})
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 
@@ -260,7 +257,6 @@ func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected an error")
 		}
-		mockrequire.CalledN(t, perms.TouchUserPermissionsFunc, 1)
 	})
 }
 
@@ -702,7 +698,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		return NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 	}
 
-	t.Run("TouchRepoPermissions is called when no authz provider", func(t *testing.T) {
+	t.Run("Err is nil when no authz provider", func(t *testing.T) {
 		mockRepos.GetFunc.SetDefaultReturn(
 			&types.Repo{
 				ID:      1,
@@ -723,12 +719,11 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		perms := edb.NewMockPermsStore()
 		s := newPermsSyncer(reposStore, perms)
 
+		// error should be nil in this case
 		_, _, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		mockrequire.Called(t, perms.TouchRepoPermissionsFunc)
 	})
 
 	t.Run("identify authz provider by URN", func(t *testing.T) {

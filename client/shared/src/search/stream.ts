@@ -266,7 +266,8 @@ export interface Filter {
     kind: 'file' | 'repo' | 'lang' | 'utility'
 }
 
-export type AlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
+export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
+export type AlertKind = SmartSearchAlertKind | 'unowned-results'
 
 interface Alert {
     title: string

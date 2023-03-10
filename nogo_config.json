@@ -1,6 +1,6 @@
 {
   "_base": {
-    "description": "Base config which all analyzers will inherit, even unspecified",
+    "description": "Base config which all analyzers will inherit, unless a specific config is given",
     "exclude_files": {
       "rules_go.*/*": "ignore rules_go working directory",
       "external/*": "no need to vet third party code",

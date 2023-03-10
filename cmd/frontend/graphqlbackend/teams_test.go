@@ -1386,11 +1386,6 @@ func TestMembersSearch(t *testing.T) {
 			UserID: userID,
 		})
 	}
-	idOfMissingUser := -7
-	fs.AddTeamMember(&types.TeamMember{
-		TeamID: team.ID,
-		UserID: int32(idOfMissingUser),
-	})
 	fs.AddUser(types.User{Username: "search-hit-but-not-team-member"})
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
