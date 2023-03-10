@@ -146,48 +146,37 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
         <>
             <BeforeUnloadPrompt when={isDirty} message="Discard changes?" />
             <Form onSubmit={handleSubmit}>
-                <>
-                    {formData.index_jobs.length === 0 ? (
-                        <Container className={styles.job}>
-                            {!readOnly && (
-                                <Button variant="secondary" className="d-block ml-auto" onClick={addJob}>
-                                    <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
-                                    Add job
-                                </Button>
-                            )}
-                        </Container>
-                    ) : (
-                        <>
-                            {formData.index_jobs.map((job, index) => (
-                                <Container id={job.meta.id} key={job.meta.id} className={styles.job}>
-                                    <IndexJobNode
-                                        job={job}
-                                        jobNumber={index + 1}
-                                        readOnly={readOnly}
-                                        onChange={getChangeHandler(job.meta.id)}
-                                        onRemove={getRemoveHandler(job.meta.id)}
-                                    />
-                                    {!readOnly && (
-                                        <Button variant="secondary" className="d-block mt-3 ml-auto" onClick={addJob}>
-                                            <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
-                                            Add job
-                                        </Button>
-                                    )}
-                                </Container>
-                            ))}
-                        </>
-                    )}
-                </>
+                {formData.index_jobs.map((job, index) => (
+                    <Container id={job.meta.id} key={job.meta.id} className={styles.job}>
+                        <IndexJobNode
+                            job={job}
+                            jobNumber={index + 1}
+                            readOnly={readOnly}
+                            onChange={getChangeHandler(job.meta.id)}
+                            onRemove={getRemoveHandler(job.meta.id)}
+                        />
+                    </Container>
+                ))}
                 {!readOnly && (
-                    <div className="d-flex align-items-center">
-                        <Button type="submit" variant="primary" disabled={!isDirty} className="mr-2">
-                            Save
+                    <div className="d-flex justify-content-between">
+                        <div className="d-flex align-items-center">
+                            <Button type="submit" variant="primary" disabled={!isDirty} className="mr-2">
+                                Save
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                disabled={!isDirty}
+                                onClick={() => setFormData(initialFormData)}
+                            >
+                                Discard changes
+                            </Button>
+                            {showInferButton && <ConfigurationInferButton onClick={onInfer} />}
+                            {loading && <LoadingSpinner className="ml-2" />}
+                        </div>
+                        <Button variant="secondary" onClick={addJob} className="mr-2">
+                            <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
+                            Add job
                         </Button>
-                        <Button variant="secondary" disabled={!isDirty} onClick={() => setFormData(initialFormData)}>
-                            Discard changes
-                        </Button>
-                        {showInferButton && <ConfigurationInferButton onClick={onInfer} />}
-                        {loading && <LoadingSpinner className="ml-2" />}
                     </div>
                 )}
             </Form>

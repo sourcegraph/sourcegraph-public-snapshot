@@ -93,57 +93,55 @@ export const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({
                     className={styles.jobInput}
                 />
             </IndexJobLabel>
-            {job.steps.length > 0 && (
-                <Container className={styles.jobStepContainer} as="li">
-                    {job.steps.map((step, index) => (
-                        <div className={styles.jobStep} key={step.meta.id}>
-                            <div className={styles.jobStepHeader}>
-                                <Tooltip content="A step performed before this index job. Changes are only reflected in the repository directory.">
-                                    <H4 className="mb-0">Step #{index + 1}</H4>
-                                </Tooltip>
-                                {!readOnly && (
-                                    <Button
-                                        variant="icon"
-                                        className="ml-2 text-danger"
-                                        aria-label="Remove"
-                                        onClick={() => {
-                                            const steps = [...job.steps]
-                                            steps.splice(index, 1)
-                                            onChange('steps', steps)
-                                        }}
-                                    >
-                                        <Icon svgPath={mdiClose} aria-hidden={true} />
-                                    </Button>
-                                )}
-                            </div>
-                            <IndexStepNode
-                                step={step}
-                                readOnly={readOnly}
-                                onChange={(name, value) => {
-                                    const steps = [...job.steps]
-                                    steps[index] = { ...steps[index], [name]: value }
-                                    onChange('steps', steps)
-                                }}
-                            />
+            <Container className={styles.jobStepContainer} as="li">
+                {job.steps.map((step, index) => (
+                    <div className={styles.jobStep} key={step.meta.id}>
+                        <div className={styles.jobStepHeader}>
+                            <Tooltip content="A step performed before this index job. Changes are only reflected in the repository directory.">
+                                <H4 className="mb-0">Step #{index + 1}</H4>
+                            </Tooltip>
+                            {!readOnly && (
+                                <Button
+                                    variant="icon"
+                                    className="ml-2 text-danger"
+                                    aria-label="Remove"
+                                    onClick={() => {
+                                        const steps = [...job.steps]
+                                        steps.splice(index, 1)
+                                        onChange('steps', steps)
+                                    }}
+                                >
+                                    <Icon svgPath={mdiClose} aria-hidden={true} />
+                                </Button>
+                            )}
                         </div>
-                    ))}
-                    {!readOnly && (
-                        <Button
-                            variant="secondary"
-                            className="d-block mb-3 ml-auto"
-                            onClick={() => {
-                                onChange('steps', [
-                                    ...job.steps,
-                                    { root: '', image: '', commands: [], meta: { id: uniqueId() } },
-                                ])
+                        <IndexStepNode
+                            step={step}
+                            readOnly={readOnly}
+                            onChange={(name, value) => {
+                                const steps = [...job.steps]
+                                steps[index] = { ...steps[index], [name]: value }
+                                onChange('steps', steps)
                             }}
-                        >
-                            <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
-                            Add step
-                        </Button>
-                    )}
-                </Container>
-            )}
+                        />
+                    </div>
+                ))}
+                {!readOnly && (
+                    <Button
+                        variant="secondary"
+                        className="d-block ml-auto my-3"
+                        onClick={() => {
+                            onChange('steps', [
+                                ...job.steps,
+                                { root: '', image: '', commands: [], meta: { id: uniqueId() } },
+                            ])
+                        }}
+                    >
+                        <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
+                        Add step
+                    </Button>
+                )}
+            </Container>
         </ul>
     </>
 )
