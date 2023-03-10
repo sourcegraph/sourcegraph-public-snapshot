@@ -1,0 +1,11 @@
+.actions-container {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    margin-top: 1rem;
+}
+
+.actions {
+    padding: 1rem 0.5rem 0;
+    display: flex;
+    justify-content: flex-end;
+}
