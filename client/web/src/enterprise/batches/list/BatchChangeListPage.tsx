@@ -51,7 +51,7 @@ import { useBatchChangeListFilters } from './useBatchChangeListFilters'
 import styles from './BatchChangeListPage.module.scss'
 
 export interface BatchChangeListPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {
-    // canCreate indicates whether or not the currently-authenticed user has sufficient
+    // canCreate indicates whether or not the currently-authenticated user has sufficient
     // permissions to create a batch change in whatever context this list page is being
     // presented. If not, canCreate will be a string reason why the user cannot create.
     canCreate: true | string

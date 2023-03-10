@@ -7,7 +7,7 @@ import { Link, LinkProps, Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 interface NewBatchChangeButtonProps extends Pick<LinkProps, 'to'> {
-    // canCreate indicates whether or not the currently-authenticed user has sufficient
+    // canCreate indicates whether or not the currently-authenticated user has sufficient
     // permissions to create a batch change in whatever context this button is being
     // presented. If not, canCreate should be a string reason why the user cannot create
     // to be used for the button tooltip.

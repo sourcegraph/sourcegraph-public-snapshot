@@ -11,7 +11,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface GettingStartedProps {
     isSourcegraphDotCom: boolean
-    // canCreate indicates whether or not the currently-authenticed user has sufficient
+    // canCreate indicates whether or not the currently-authenticated user has sufficient
     // permissions to create a batch change in whatever context this getting started
     // section is being presented. If not, canCreate will be a string reason why the user
     // cannot create.

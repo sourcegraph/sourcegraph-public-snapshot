@@ -16,7 +16,7 @@ import styles from './RepoBatchChanges.module.scss'
 
 interface Props {
     viewerCanAdminister: boolean
-    // canCreate indicates whether or not the currently-authenticed user has sufficient
+    // canCreate indicates whether or not the currently-authenticated user has sufficient
     // permissions to create a batch change. If not, canCreate will be a string reason why
     // the user cannot create.
     canCreate: true | string
