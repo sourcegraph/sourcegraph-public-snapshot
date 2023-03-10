@@ -153,6 +153,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
 		ownService := own.NewService(git, db)
 
@@ -200,6 +201,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
 		ownService := own.NewService(gitserver.NewMockClient(), db)
 
@@ -224,6 +226,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
 		ownService := own.NewService(gitserver.NewMockClient(), db)
 
@@ -249,6 +252,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
 		ownService := own.NewService(gitserver.NewMockClient(), db)
 
@@ -269,6 +273,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
 		ownService := own.NewService(gitserver.NewMockClient(), db)
 
@@ -329,6 +334,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
 		ownService := own.NewService(gitserver.NewMockClient(), db)
 
@@ -363,6 +369,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
 		ownService := own.NewService(gitserver.NewMockClient(), db)
 
@@ -383,6 +390,7 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
 		ownService := own.NewService(gitserver.NewMockClient(), db)
 
