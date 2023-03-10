@@ -17,6 +17,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
+        "//internal/api",
         "//internal/conf",
         "//internal/honey",
         "//internal/httpcli",
@@ -36,10 +37,12 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_zoekt//:zoekt",
+        "@com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1:configuration",
         "@com_github_sourcegraph_zoekt//query",
         "@com_github_sourcegraph_zoekt//rpc",
         "@com_github_sourcegraph_zoekt//stream",
         "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_protobuf//types/known/timestamppb",
         "@org_golang_x_exp//slices",
     ],
 )

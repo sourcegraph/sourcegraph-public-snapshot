@@ -13,7 +13,6 @@ go_library(
         "//internal/auth",
         "//internal/codeintel/types",
         "//internal/conf",
-        "//internal/conf/deploy",
         "//internal/database",
         "//internal/search/job/jobutil",
     ],
