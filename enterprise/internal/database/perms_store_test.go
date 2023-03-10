@@ -2770,7 +2770,7 @@ func testPermsStore_DeleteAllUserPendingPermissions(db database.DB) func(*testin
 			AccountIDs:  []string{"alice", "bob"},
 		}
 
-		// Set pending permissions for alice and bob
+		// Set pending permissions for "alice" and "bob"
 		if err := s.SetRepoPendingPermissions(ctx, accounts, &authz.RepoPermissions{
 			RepoID: 1,
 			Perm:   authz.Read,
@@ -2778,7 +2778,7 @@ func testPermsStore_DeleteAllUserPendingPermissions(db database.DB) func(*testin
 			t.Fatal(err)
 		}
 
-		// Remove all pending permissions for alice
+		// Remove all pending permissions for "alice"
 		accounts.AccountIDs = []string{"alice"}
 		if err := s.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
 			t.Fatal(err)
@@ -3070,7 +3070,7 @@ func TestPermsStore_UserIDsWithNoPerms(t *testing.T) {
 	t.Run("unified user_repo_permissions table", func(t *testing.T) {
 		mockUnifiedPermsConfig(true)
 
-		// mark sync jobs as completed for alice and add permissions for bob
+		// mark sync jobs as completed for "alice" and add permissions for "bob"
 		q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonUserNoPermissions)
 		execQuery(t, ctx, s, q)
 
