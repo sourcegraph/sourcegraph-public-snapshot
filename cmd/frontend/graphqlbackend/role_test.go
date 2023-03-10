@@ -1,4 +1,4 @@
-package resolvers
+package graphqlbackend
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -54,16 +54,13 @@ func TestRoleResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := newSchema(db, &Resolver{
-		db:     db,
-		logger: logger,
-	})
+	s, err := NewSchemaWithoutResolvers(db)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	mrid := string(marshalRoleID(role.ID))
-	mpid := string(marshalPermissionID(perm.ID))
+	mrid := string(MarshalRoleID(role.ID))
+	mpid := string(MarshalPermissionID(perm.ID))
 
 	t.Run("as site-administrator", func(t *testing.T) {
 		want := apitest.Role{
