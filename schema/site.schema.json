@@ -1469,6 +1469,7 @@
       "description": "The Own service will attempt to match a Team by the last part of its handle if it contains a slash and no match is found for its full handle.",
       "type": "boolean",
       "group": "Own",
+      "!go": { "pointer": true },
       "default": true
     },
     "htmlHeadTop": {

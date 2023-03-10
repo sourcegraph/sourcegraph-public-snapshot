@@ -3,6 +3,7 @@ package own
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -174,7 +175,8 @@ func tryGetUserThenTeam(ctx context.Context, identifier string, userGetter userG
 }
 
 func (s *service) whichTeamGetter(ctx context.Context) teamGetterFunc {
-	if !conf.Get().OwnBestEffortTeamMatching {
+	fmt.Println("conf", conf.Get().OwnBestEffortTeamMatching)
+	if conf.Get().OwnBestEffortTeamMatching != nil && !*conf.Get().OwnBestEffortTeamMatching {
 		return s.db.Teams().GetTeamByName
 	}
 	return s.bestEffortTeamGetter
@@ -200,12 +202,7 @@ func getLastPartOfTeamHandle(teamHandle string) string {
 	if len(teamHandle) == 1 {
 		return teamHandle
 	}
-	lastSlashPos := 0
-	for i := len(teamHandle) - 1; i >= 0; i-- {
-		if teamHandle[i] == '/' {
-			lastSlashPos = i
-		}
-	}
+	lastSlashPos := strings.LastIndex(teamHandle, "/")
 	return teamHandle[lastSlashPos+1:]
 }
 
