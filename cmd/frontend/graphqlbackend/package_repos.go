@@ -66,7 +66,7 @@ func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *Packag
 	opts.Limit = int(args.GetFirst())
 
 	if args.After != nil {
-		if opts.After, err = graphqlutil.DecodeIntCursor(args.After); err != nil {
+		if err := relay.UnmarshalSpec(graphql.ID(*args.After), &opts.After); err != nil {
 			return nil, err
 		}
 	}
