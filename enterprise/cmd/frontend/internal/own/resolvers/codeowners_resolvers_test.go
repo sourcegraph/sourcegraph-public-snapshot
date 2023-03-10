@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+// userCtx returns a context where the given user ID identifies a logged-in user.
 func userCtx(userID int32) context.Context {
 	ctx := context.Background()
 	a := actor.FromUser(userID)
