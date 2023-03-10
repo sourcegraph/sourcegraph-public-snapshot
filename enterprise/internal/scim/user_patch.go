@@ -39,140 +39,14 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		}
 		userRes = convertUserToSCIMResource(user)
 
-		// Perform changes on the user resource
+		// Apply changes to the user resource
 		var changed bool
 		for _, op := range operations {
-			// Handle multiple operations in one value
-			if op.Path == nil {
-				for rawPath, value := range op.Value.(map[string]interface{}) {
-					newlyChanged := applyChangeToAttributes(userRes.Attributes, rawPath, value)
-					changed = changed || newlyChanged
-					emailsModified = true
-				}
-				continue
-			}
-
-			var (
-				attrName    = op.Path.AttributePath.AttributeName
-				subAttrName = op.Path.AttributePath.SubAttributeName()
-				valueExpr   = op.Path.ValueExpression
-			)
-
-			if attrName == AttrEmails {
-				emailsModified = true
-			}
-
-			// There might be a bug in the parser: when a filter is present, SubAttributeName() isn't populated.
-			// Populating it manually here.
-			if subAttrName == "" && op.Path.SubAttribute != nil {
-				subAttrName = *op.Path.SubAttribute
-			}
-
-			// Attribute does not exist yet → add it
-			old, ok := userRes.Attributes[attrName]
-			if !ok && op.Op != "remove" {
-				switch {
-				case subAttrName != "": // Add new attribute with a sub-attribute
-					userRes.Attributes[attrName] = map[string]interface{}{
-						subAttrName: op.Value,
-					}
-					changed = true
-				case valueExpr != nil:
-					// Having a value expression for a non-existing attribute is invalid → do nothing
-				default: // Add new attribute
-					userRes.Attributes[attrName] = op.Value
-					changed = true
-				}
-				continue
-			}
-
-			// Attribute exists
-			switch op.Op {
-			case "add", "replace":
-				switch v := op.Value.(type) {
-				case []interface{}: // this value has multiple items → append or replace
-					if op.Op == "add" {
-						userRes.Attributes[attrName] = append(old.([]interface{}), v...)
-					} else { // replace
-						userRes.Attributes[attrName] = v
-					}
-					changed = true
-				default: // this value has a single item
-					var newlyChanged bool
-					if valueExpr == nil { // no value expression → just apply the change
-						if subAttrName != "" {
-							newlyChanged = applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
-						} else {
-							newlyChanged = applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
-						}
-						changed = changed || newlyChanged
-					}
-
-					// We have a valueExpression to apply which means this must be a slice
-					attributeItems, isArray := userRes.Attributes[attrName].([]interface{})
-					if !isArray {
-						continue // This isn't a slice, so nothing will match the expression → do nothing
-					}
-					validator, _ := sgfilter.NewValidator(buildFilterString(valueExpr, attrName), h.coreSchema, getExtensionSchemas(h.schemaExtensions)...)
-					for i := 0; i < len(attributeItems); i++ {
-						item, ok := attributeItems[i].(map[string]interface{})
-						if !ok {
-							continue // if this isn't a map of properties it can't match or be replaced
-						}
-						if arrayItemMatchesFilter(attrName, item, validator) {
-							var newlyChanged bool
-							if subAttrName != "" {
-								newlyChanged = applyAttributeChange(item, subAttrName, v, op.Op)
-							} else {
-								newlyChanged = applyAttributeChange(item, attrName, v, op.Op)
-							}
-							if newlyChanged {
-								attributeItems[i] = item //attribute items are updated
-							}
-							changed = changed || newlyChanged
-						}
-					}
-					userRes.Attributes[attrName] = attributeItems
-				}
-			case "remove":
-				currentValue, ok := userRes.Attributes[attrName]
-				if !ok { // The current attribute does not exist - nothing to do
-					continue
-				}
-
-				switch v := currentValue.(type) {
-				case []interface{}: // this value has multiple items
-					if valueExpr == nil { // this applies to whole attribute remove it
-						newlyChanged := applyAttributeChange(userRes.Attributes, attrName, nil, op.Op)
-						changed = changed || newlyChanged
-						continue
-					}
-					remainingItems := []interface{}{} // keep track of the items that should remain
-					validator, _ := sgfilter.NewValidator(buildFilterString(valueExpr, attrName), h.coreSchema, getExtensionSchemas(h.schemaExtensions)...)
-					for i := 0; i < len(v); i++ {
-						item, ok := v[i].(map[string]interface{})
-						if !ok {
-							continue // if this isn't a map of properties it can't match or be replaced
-						}
-						if !arrayItemMatchesFilter(attrName, item, validator) {
-							remainingItems = append(remainingItems, item)
-						}
-					}
-					// Even though this is a "remove" operation since there is a filter we're actually replacing
-					// the attribute with the items that do not match the filter
-					newlyChanged := applyAttributeChange(userRes.Attributes, attrName, remainingItems, "replace")
-					changed = changed || newlyChanged
-				default: // this is just a value remove the attribute
-					var newlyChanged bool
-					if subAttrName != "" {
-						newlyChanged = applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
-					} else {
-						newlyChanged = applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
-					}
-					changed = changed || newlyChanged
-				}
-			}
+			newlyChanged, emailsNewlyModified := h.applyOperation(op, &userRes)
+			changed = changed || newlyChanged
+			emailsModified = emailsModified || emailsNewlyModified
 		}
+
 		if !changed {
 			// StatusNoContent
 			userRes = scim.Resource{}
@@ -189,6 +63,141 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 	}
 
 	return userRes, nil
+}
+
+// applyOperation applies a single operation to the given user resource and reports what it did.
+func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *scim.Resource) (changed bool, emailsModified bool) {
+	// Handle multiple operations in one value
+	if op.Path == nil {
+		for rawPath, value := range op.Value.(map[string]interface{}) {
+			newlyChanged := applyChangeToAttributes(userRes.Attributes, rawPath, value)
+			changed = changed || newlyChanged
+			emailsModified = true
+		}
+		return
+	}
+
+	var (
+		attrName    = op.Path.AttributePath.AttributeName
+		subAttrName = op.Path.AttributePath.SubAttributeName()
+		valueExpr   = op.Path.ValueExpression
+	)
+
+	if attrName == AttrEmails {
+		emailsModified = true
+	}
+
+	// There might be a bug in the parser: when a filter is present, SubAttributeName() isn't populated.
+	// Populating it manually here.
+	if subAttrName == "" && op.Path.SubAttribute != nil {
+		subAttrName = *op.Path.SubAttribute
+	}
+
+	// Attribute does not exist yet → add it
+	old, ok := userRes.Attributes[attrName]
+	if !ok && op.Op != "remove" {
+		switch {
+		case subAttrName != "": // Add new attribute with a sub-attribute
+			userRes.Attributes[attrName] = map[string]interface{}{
+				subAttrName: op.Value,
+			}
+			changed = true
+		case valueExpr != nil:
+			// Having a value expression for a non-existing attribute is invalid → do nothing
+		default: // Add new attribute
+			userRes.Attributes[attrName] = op.Value
+			changed = true
+		}
+		return
+	}
+
+	// Attribute exists
+	if op.Op == "remove" {
+		currentValue, ok := userRes.Attributes[attrName]
+		if !ok { // The current attribute does not exist - nothing to do
+			return
+		}
+
+		switch v := currentValue.(type) {
+		case []interface{}: // this value has multiple items
+			if valueExpr == nil { // this applies to whole attribute remove it
+				newlyChanged := applyAttributeChange(userRes.Attributes, attrName, nil, op.Op)
+				changed = changed || newlyChanged
+				return
+			}
+			remainingItems := []interface{}{} // keep track of the items that should remain
+			validator, _ := sgfilter.NewValidator(buildFilterString(valueExpr, attrName), h.coreSchema, getExtensionSchemas(h.schemaExtensions)...)
+			for i := 0; i < len(v); i++ {
+				item, ok := v[i].(map[string]interface{})
+				if !ok {
+					continue // if this isn't a map of properties it can't match or be replaced
+				}
+				if !arrayItemMatchesFilter(attrName, item, validator) {
+					remainingItems = append(remainingItems, item)
+				}
+			}
+			// Even though this is a "remove" operation since there is a filter we're actually replacing
+			// the attribute with the items that do not match the filter
+			newlyChanged := applyAttributeChange(userRes.Attributes, attrName, remainingItems, "replace")
+			changed = changed || newlyChanged
+		default: // this is just a value remove the attribute
+			var newlyChanged bool
+			if subAttrName != "" {
+				newlyChanged = applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
+			} else {
+				newlyChanged = applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
+			}
+			changed = changed || newlyChanged
+		}
+	} else { // add or replace
+		switch v := op.Value.(type) {
+		case []interface{}: // this value has multiple items → append or replace
+			if op.Op == "add" {
+				userRes.Attributes[attrName] = append(old.([]interface{}), v...)
+			} else { // replace
+				userRes.Attributes[attrName] = v
+			}
+			changed = true
+		default: // this value has a single item
+			var newlyChanged bool
+			if valueExpr == nil { // no value expression → just apply the change
+				if subAttrName != "" {
+					newlyChanged = applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
+				} else {
+					newlyChanged = applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
+				}
+				changed = changed || newlyChanged
+			}
+
+			// We have a valueExpression to apply which means this must be a slice
+			attributeItems, isArray := userRes.Attributes[attrName].([]interface{})
+			if !isArray {
+				return // This isn't a slice, so nothing will match the expression → do nothing
+			}
+			validator, _ := sgfilter.NewValidator(buildFilterString(valueExpr, attrName), h.coreSchema, getExtensionSchemas(h.schemaExtensions)...)
+			for i := 0; i < len(attributeItems); i++ {
+				item, ok := attributeItems[i].(map[string]interface{})
+				if !ok {
+					continue // if this isn't a map of properties it can't match or be replaced
+				}
+				if arrayItemMatchesFilter(attrName, item, validator) {
+					var newlyChanged bool
+					if subAttrName != "" {
+						newlyChanged = applyAttributeChange(item, subAttrName, v, op.Op)
+					} else {
+						newlyChanged = applyAttributeChange(item, attrName, v, op.Op)
+					}
+					if newlyChanged {
+						attributeItems[i] = item //attribute items are updated
+					}
+					changed = changed || newlyChanged
+				}
+			}
+			userRes.Attributes[attrName] = attributeItems
+		}
+	}
+
+	return
 }
 
 // applyChangeToAttributes applies a change to a resource (for example, sets its userName).
