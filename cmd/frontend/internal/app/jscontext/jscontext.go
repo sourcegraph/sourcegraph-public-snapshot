@@ -113,7 +113,7 @@ type CurrentUser struct {
 	Session        *UserSession                 `json:"session"`
 	Emails         []UserEmail                  `json:"emails"`
 	LatestSettings *UserLatestSettings          `json:"latestSettings"`
-	Permissions    *PermissionsConnection       `json:"permissions"`
+	Permissions    PermissionsConnection        `json:"permissions"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -453,11 +453,13 @@ func derefString(s *string) string {
 	return *s
 }
 
-func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.UserResolver, licenseInfo *hooks.LicenseInfo) *PermissionsConnection {
+func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.UserResolver, licenseInfo *hooks.LicenseInfo) PermissionsConnection {
 	if isFreePlan(licenseInfo) {
-		return nil
+		return PermissionsConnection{
+			GraphQLTypename: "PermissionConnection",
+			Nodes:           []Permission{},
+		}
 	}
-
 	userID := userResolver.ID()
 
 	permissionResolver, err := userResolver.Permissions(ctx, &graphqlbackend.ListPermissionArgs{
@@ -465,24 +467,30 @@ func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.Us
 		User:                   &userID,
 	})
 	if err != nil {
-		return nil
-	}
-
-	nodes, err := permissionResolver.Nodes(ctx)
-	userPermissions := make([]Permission, 0, len(nodes))
-	// When an error occurs, we don't want to return nil - because when that occurs, we assume the user is on a free plan
-	// and doesn't have access to RBAC. Instead we return an empty permission slice.
-	if err == nil {
-		for _, node := range nodes {
-			userPermissions = append(userPermissions, Permission{
-				GraphQLTypename: "Permission",
-				ID:              node.ID(),
-				DisplayName:     node.DisplayName(),
-			})
+		return PermissionsConnection{
+			GraphQLTypename: "PermissionConnection",
+			Nodes:           []Permission{},
 		}
 	}
 
-	return &PermissionsConnection{
+	nodes, err := permissionResolver.Nodes(ctx)
+	if err != nil {
+		return PermissionsConnection{
+			GraphQLTypename: "PermissionConnection",
+			Nodes:           []Permission{},
+		}
+	}
+
+	userPermissions := make([]Permission, 0, len(nodes))
+	for _, node := range nodes {
+		userPermissions = append(userPermissions, Permission{
+			GraphQLTypename: "Permission",
+			ID:              node.ID(),
+			DisplayName:     node.DisplayName(),
+		})
+	}
+
+	return PermissionsConnection{
 		GraphQLTypename: "PermissionConnection",
 		Nodes:           userPermissions,
 	}
