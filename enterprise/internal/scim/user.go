@@ -31,6 +31,7 @@ const (
 	AttrNickName      = "nickName"
 	AttrEmails        = "emails"
 	AttrExternalId    = "externalId"
+	AttrActive        = "active"
 )
 
 // UserResourceHandler implements the scim.ResourceHandler interface for users.

@@ -267,6 +267,21 @@ func Test_UserResourceHandler_Patch(t *testing.T) {
 				assert.True(t, containsEmail(dbEmails, "secondary@work.com", true, true))
 			},
 		},
+		{
+			name:   "Trigger hard delete with soft delete",
+			userId: "10",
+			operations: []scim.PatchOperation{
+				{Op: "replace", Path: parseStringPath(AttrActive), Value: false},
+			},
+			testFunc: func(userRes scim.Resource) {
+				assert.Equal(t, userRes.Attributes[AttrActive], false)
+
+				// Check user in DB
+				userID, _ := strconv.Atoi(userRes.ID)
+				_, err := db.Users().GetByID(context.Background(), int32(userID))
+				assert.Error(t, err, "user not found")
+			},
+		},
 	}
 
 	for _, tc := range testCases {

@@ -130,6 +130,23 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 				assert.Equal(t, "a@example.com", userEmails[0].Email)
 			},
 		},
+		{
+			name:   "Trigger hard delete with soft delete",
+			userId: "4",
+			attrs: scim.ResourceAttributes{
+				AttrDisplayName: "It will be deleted anyway",
+				AttrActive:      false,
+			},
+			testFunc: func(userRes scim.Resource) {
+				assert.Equal(t, userRes.Attributes[AttrDisplayName], "It will be deleted anyway")
+				assert.Equal(t, userRes.Attributes[AttrActive], false)
+
+				// Check user in DB
+				userID, _ := strconv.Atoi(userRes.ID)
+				_, err := db.Users().GetByID(context.Background(), int32(userID))
+				assert.Error(t, err, "user not found")
+			},
+		},
 	}
 
 	for _, tc := range testCases {

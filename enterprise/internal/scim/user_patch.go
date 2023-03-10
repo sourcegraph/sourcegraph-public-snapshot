@@ -53,6 +53,16 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 			return nil
 		}
 
+		// Non-intuitive behavior! If the user is being deactivated, hard delete the user!
+		// We will remove this later if soft deletion becomes a user requirement
+		if userRes.Attributes[AttrActive] == false {
+			err := h.Delete(r, id)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+
 		// Update user
 		var now = time.Now()
 		userRes.Meta.LastModified = &now

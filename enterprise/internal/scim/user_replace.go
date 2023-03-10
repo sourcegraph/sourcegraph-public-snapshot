@@ -53,6 +53,15 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 		return scim.Resource{}, err
 	}
 
+	// Non-intuitive behavior! If the user is being deactivated, hard delete the user!
+	// We will remove this later if soft deletion becomes a user requirement
+	if attributes[AttrActive] == false {
+		err := h.Delete(r, id)
+		if err != nil {
+			return scim.Resource{}, err
+		}
+	}
+
 	// Return user
 	return userRes, nil
 }
