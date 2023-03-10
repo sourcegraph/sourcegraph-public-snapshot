@@ -39,12 +39,7 @@ const mockUser: UserAreaUserFields = {
     ],
     roles: {
         __typename: 'RoleConnection',
-        totalCount: 1,
-        nodes: [{ name: 'User' }, { name: 'Operator' }],
-        pageInfo: {
-            __typename: 'ConnectionPageInfo',
-            hasNextPage: false,
-        },
+        nodes: [{ name: 'USER' }, { name: 'OPERATOR' }],
     },
 }
 
