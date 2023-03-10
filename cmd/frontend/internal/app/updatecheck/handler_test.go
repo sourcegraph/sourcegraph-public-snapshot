@@ -175,7 +175,7 @@ func makeDefaultPingRequest(t *testing.T) *pingRequest {
 func makeLimitedPingRequest(t *testing.T) *pingRequest {
 	return &pingRequest{
 		ClientSiteID:        "0101-0101",
-		DeployType:          "single-program",
+		DeployType:          "app",
 		ClientVersionString: "2023.03.23+205275.dd37e7",
 		Os:                  "mac",
 		TotalRepos:          345,
@@ -251,7 +251,7 @@ func TestSerializeLimited(t *testing.T) {
 	// handler. This checks that omitempty is applied to all the absent fields.
 	compareJSON(t, pingRequestBody, `{
 		"site": "0101-0101",
-		"deployType": "single-program",
+		"deployType": "app",
 		"version": "2023.03.23+205275.dd37e7",
 		"os": "mac",
 		"totalRepos": 345,
@@ -298,7 +298,7 @@ func TestSerializeLimited(t *testing.T) {
 		"code_host_versions": null,
 		"builtin_signup_allowed": "false",
 		"access_request_enabled": "false",
-		"deploy_type": "single-program",
+		"deploy_type": "app",
 		"total_user_accounts": "0",
 		"has_external_url": "false",
 		"has_repos": "false",
