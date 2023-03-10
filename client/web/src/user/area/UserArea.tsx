@@ -215,7 +215,7 @@ export const UserArea: FC<UserAreaProps> = ({
                             />
                         )
                 )}
-                <Route element={<NotFoundPage pageType="user" />} />
+                <Route path="*" element={<NotFoundPage pageType="user" />} />
             </Routes>
         </Suspense>
     )

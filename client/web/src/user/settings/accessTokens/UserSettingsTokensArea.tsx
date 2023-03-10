@@ -43,7 +43,7 @@ export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChil
                     />
                 }
             />
-            <Route element={<NotFoundPage pageType="settings" />} />
+            <Route path="*" element={<NotFoundPage pageType="settings" />} />
         </Routes>
     )
 }

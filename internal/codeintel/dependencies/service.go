@@ -254,7 +254,7 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 			for _, pkg := range pkgs {
 				if matcher.Matches(string(pkg.Name), "") {
 					totalCount++
-					if pkg.ID < after {
+					if pkg.ID <= after {
 						continue
 					}
 					if len(matchingPkgs) == limit {
@@ -289,7 +289,7 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 		for _, version := range pkg.Versions {
 			if matcher.Matches(string(pkg.Name), version.Version) {
 				totalCount++
-				if version.ID < after {
+				if version.ID <= after {
 					continue
 				}
 				if len(versions) == limit {

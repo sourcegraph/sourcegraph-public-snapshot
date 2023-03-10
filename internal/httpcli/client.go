@@ -475,7 +475,7 @@ var schemeErrorRe = lazyregexp.New(`unsupported protocol scheme`)
 // to NewRetryPolicy. If we're in tests, it returns 1, otherwise it tries to
 // parse SRC_HTTP_CLI_MAX_RETRIES and return that. If it can't, it defaults to 20.
 func MaxRetries(n int) int {
-	if strings.HasSuffix(os.Args[0], ".test") {
+	if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], "_test") {
 		return 0
 	}
 	return n

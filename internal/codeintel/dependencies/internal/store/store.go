@@ -64,21 +64,6 @@ func (s *store) WithTransact(ctx context.Context, f func(tx Store) error) error 
 	})
 }
 
-const (
-	groupedVersionedPackageReposColumns = `
-	lr.id,
-	lr.scheme,
-	lr.name,
-	lr.blocked,
-	lr.last_checked_at,
-	array_agg(prv.id) as vid,
-	array_agg(prv.version) as version,
-	array_agg(prv.blocked) as vers_blocked,
-	array_agg(prv.last_checked_at) as vers_last_checked_at
-`
-	packageReposColumns = "lr.id, lr.scheme, lr.name, lr.blocked, lr.last_checked_at"
-)
-
 // ListDependencyReposOpts are options for listing dependency repositories.
 type ListDependencyReposOpts struct {
 	Scheme         string
@@ -104,7 +89,7 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 		listDependencyReposQuery,
 		sqlf.Sprintf(groupedVersionedPackageReposColumns),
 		sqlf.Join([]*sqlf.Query{makeListDependencyReposConds(opts), makeOffset(opts.After)}, "AND"),
-		sqlf.Sprintf("GROUP BY lr.id, lr.scheme, lr.name"),
+		sqlf.Sprintf("GROUP BY lr.id"),
 		sqlf.Sprintf("ORDER BY lr.id ASC"),
 		makeLimit(opts.Limit),
 	)
@@ -134,10 +119,28 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 	return dependencyRepos, totalCount, hasMore, err
 }
 
+const groupedVersionedPackageReposColumns = `
+	lr.id,
+	lr.scheme,
+	lr.name,
+	lr.blocked,
+	lr.last_checked_at,
+	array_agg(prv.id ORDER BY prv.id) as vid,
+	array_agg(prv.version ORDER BY prv.id) as version,
+	array_agg(prv.blocked ORDER BY prv.id) as vers_blocked,
+	array_agg(prv.last_checked_at ORDER BY prv.id) as vers_last_checked_at
+`
+
 const listDependencyReposQuery = `
 SELECT %s
 FROM lsif_dependency_repos lr
-JOIN package_repo_versions prv ON lr.id = prv.package_id
+JOIN LATERAL (
+    SELECT id, package_id, version, blocked, last_checked_at
+    FROM package_repo_versions
+    WHERE package_id = lr.id
+    ORDER BY id
+) prv
+ON lr.id = prv.package_id
 WHERE %s
 %s -- group by
 %s -- order by

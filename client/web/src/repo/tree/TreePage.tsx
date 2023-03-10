@@ -6,10 +6,10 @@ import {
     mdiCog,
     mdiFolder,
     mdiHistory,
+    mdiPackageVariantClosed,
     mdiSourceBranch,
     mdiSourceRepository,
     mdiTag,
-    mdiPackageVariantClosed,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
@@ -281,7 +281,7 @@ export const TreePage: FC<Props> = ({
                             />
                         </Tooltip>
                     )}
-                    {ownEnabled && (
+                    {ownEnabled && !isSourcegraphDotCom && (
                         <Tooltip content="Ownership">
                             <Button
                                 className="flex-shrink-0"

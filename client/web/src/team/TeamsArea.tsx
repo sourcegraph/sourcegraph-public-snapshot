@@ -50,7 +50,7 @@ const AuthenticatedTeamsArea: React.FunctionComponent<React.PropsWithChildren<Pr
                 <Route path="new" element={<NewTeamPage />} errorElement={<RouteError />} />
                 <Route path="" element={<TeamListPage {...props} />} errorElement={<RouteError />} />
                 <Route path=":teamName/*" element={<TeamArea {...props} />} errorElement={<RouteError />} />
-                <Route element={<NotFoundPage pageType="team" />} errorElement={<RouteError />} />
+                <Route path="*" element={<NotFoundPage pageType="team" />} errorElement={<RouteError />} />
             </Routes>
         </React.Suspense>
     )

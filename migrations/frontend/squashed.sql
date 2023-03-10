@@ -5199,6 +5199,10 @@ CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING 
 
 CREATE INDEX gitserver_repos_shard_id ON gitserver_repos USING btree (shard_id, repo_id);
 
+CREATE INDEX idx_repo_github_topics ON repo USING gin ((((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text))) WHERE (external_service_type = 'github'::text);
+
+COMMENT ON INDEX idx_repo_github_topics IS 'An index to speed up listing repos by topic. Intended to be used when TopicFilters are added to the RepoListOptions';
+
 CREATE INDEX insights_query_runner_jobs_cost_idx ON insights_query_runner_jobs USING btree (cost);
 
 CREATE INDEX insights_query_runner_jobs_dependencies_job_id_fk_idx ON insights_query_runner_jobs_dependencies USING btree (job_id);
@@ -5223,7 +5227,11 @@ CREATE INDEX lsif_dependency_repos_blocked ON lsif_dependency_repos USING btree 
 
 CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at);
 
-CREATE INDEX lsif_dependency_repos_name_idx ON lsif_dependency_repos USING btree (name);
+CREATE INDEX lsif_dependency_repos_name_id ON lsif_dependency_repos USING btree (name, id);
+
+CREATE INDEX lsif_dependency_repos_scheme_id ON lsif_dependency_repos USING btree (scheme, id);
+
+CREATE UNIQUE INDEX lsif_dependency_repos_unique_scheme_name ON lsif_dependency_repos USING btree (scheme, name);
 
 CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs USING btree (state);
 

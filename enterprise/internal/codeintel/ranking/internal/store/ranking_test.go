@@ -161,11 +161,11 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 
 	if numPathRanksInserted != 2 {
-		t.Fatalf("unexpected number of path ranks inserted. want=%d have=%f", 2, numPathRanksInserted)
+		t.Fatalf("unexpected number of path ranks inserted. want=%d have=%d", 2, numPathRanksInserted)
 	}
 
 	if numInputsProcessed != 1 {
-		t.Fatalf("unexpected number of inputs processed. want=%d have=%f", 1, numInputsProcessed)
+		t.Fatalf("unexpected number of inputs processed. want=%d have=%d", 1, numInputsProcessed)
 	}
 }
 
@@ -380,7 +380,7 @@ func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
 	insertVisibleAtTip(t, db, 50, 2)
 
 	// remove definitions and references for non-visible uploads
-	numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := store.VacuumStaleDefinitionsAndReferences(ctx, mockRankingGraphKey)
+	_, _, numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := store.VacuumStaleDefinitionsAndReferences(ctx, mockRankingGraphKey)
 	if err != nil {
 		t.Fatalf("unexpected error vacuuming stale definitions and references: %s", err)
 	}
@@ -522,7 +522,7 @@ func TestVacuumStaleRanks(t *testing.T) {
 	assertNames([]string{"bar", "baz", "bonk", "foo1", "foo2", "foo3", "foo4", "foo5"})
 
 	// remove sufficiently stale records associated with other ranking keys
-	rankRecordsDeleted, err := store.VacuumStaleRanks(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456))
+	_, rankRecordsDeleted, err := store.VacuumStaleRanks(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456))
 	if err != nil {
 		t.Fatalf("unexpected error vacuuming stale ranks: %s", err)
 	}

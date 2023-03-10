@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiClose, mdiPlus } from '@mdi/js'
 import { uniqueId } from 'lodash'
 
-import { Button, Container, H3, H4, Icon, Input } from '@sourcegraph/wildcard'
+import { Button, Container, H3, H4, Icon, Input, Tooltip } from '@sourcegraph/wildcard'
 
 import { CommandInput } from './CommandInput'
 import { IndexJobLabel } from './IndexJobLabel'
@@ -25,109 +25,111 @@ export const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({
     readOnly,
     onChange,
     onRemove,
-}) => {
-    const comparisonKey = job.meta.id
-
-    return (
-        <Container id={comparisonKey} className={styles.job}>
-            <div className={styles.jobHeader}>
-                <H3 className="mb-0">Job #{jobNumber}</H3>
-                {!readOnly && (
-                    <Button variant="icon" className="ml-2 text-danger" aria-label="Remove" onClick={onRemove}>
-                        <Icon svgPath={mdiClose} aria-hidden={true} />
-                    </Button>
-                )}
-            </div>
-            <ul className={styles.jobContent}>
-                <IndexJobLabel label="Root">
-                    <Input
-                        value={job.root}
-                        onChange={event => onChange('root', event.target.value)}
-                        readOnly={readOnly}
-                        className={styles.jobInput}
-                    />
-                </IndexJobLabel>
-                <IndexJobLabel label="Indexer">
-                    <CommandInput
-                        value={job.indexer}
-                        onChange={value => onChange('indexer', value)}
-                        readOnly={readOnly}
-                        className={styles.jobInput}
-                    />
-                </IndexJobLabel>
-                <IndexJobLabel label="Indexer args">
-                    <IndexCommandNode
-                        commands={job.indexer_args}
-                        name="indexer_args"
-                        addLabel="arg"
-                        readOnly={readOnly}
-                        onChange={onChange}
-                    />
-                </IndexJobLabel>
-                <IndexJobLabel label="Requested env vars">
-                    <IndexCommandNode
-                        commands={job.requestedEnvVars ?? []}
-                        name="requestedEnvVars"
-                        addLabel="env var"
-                        readOnly={readOnly}
-                        onChange={onChange}
-                    />
-                </IndexJobLabel>
-                <IndexJobLabel label="Local steps">
-                    <IndexCommandNode
-                        commands={job.local_steps}
-                        name="local_steps"
-                        addLabel="local step"
-                        readOnly={readOnly}
-                        onChange={onChange}
-                    />
-                </IndexJobLabel>
-                <IndexJobLabel label="Outfile">
-                    <Input
-                        value={job.outfile}
-                        onChange={event => onChange('outfile', event.target.value)}
-                        readOnly={readOnly}
-                        className={styles.jobInput}
-                    />
-                </IndexJobLabel>
-                {job.steps.length > 0 && (
-                    <Container className={styles.jobStepContainer} as="li">
-                        {job.steps.map((step, index) => (
-                            <div className={styles.jobStep} key={step.meta.id}>
-                                <div className={styles.jobStepHeader}>
-                                    <H4 className="mb-0">Step #{index + 1}</H4>
-                                    {!readOnly && (
-                                        <Button
-                                            variant="icon"
-                                            className="ml-2 text-danger"
-                                            aria-label="Remove"
-                                            onClick={() => {
-                                                const steps = [...job.steps]
-                                                steps.splice(index, 1)
-                                                onChange('steps', steps)
-                                            }}
-                                        >
-                                            <Icon svgPath={mdiClose} aria-hidden={true} />
-                                        </Button>
-                                    )}
-                                </div>
-                                <IndexStepNode
-                                    step={step}
-                                    readOnly={readOnly}
-                                    onChange={(name, value) => {
+}) => (
+    <>
+        <div className={styles.jobHeader}>
+            <H3 className="mb-0">Job #{jobNumber}</H3>
+            {!readOnly && (
+                <Button variant="icon" className="ml-2 text-danger" aria-label="Remove" onClick={onRemove}>
+                    <Icon svgPath={mdiClose} aria-hidden={true} />
+                </Button>
+            )}
+        </div>
+        <ul className={styles.jobContent}>
+            <IndexJobLabel label="Root" tooltip="The path relative to the repository root where the indexer runs.">
+                <Input
+                    value={job.root}
+                    onChange={event => onChange('root', event.target.value)}
+                    readOnly={readOnly}
+                    className={styles.jobInput}
+                />
+            </IndexJobLabel>
+            <IndexJobLabel label="Indexer" tooltip="The name of the docker image containing the indexer.">
+                <CommandInput
+                    value={job.indexer}
+                    onChange={value => onChange('indexer', value)}
+                    readOnly={readOnly}
+                    className={styles.jobInput}
+                />
+            </IndexJobLabel>
+            <IndexJobLabel label="Indexer args" tooltip="A list of arguments to pass to docker run.">
+                <IndexCommandNode
+                    commands={job.indexer_args}
+                    name="indexer_args"
+                    addLabel="arg"
+                    readOnly={readOnly}
+                    onChange={onChange}
+                />
+            </IndexJobLabel>
+            <IndexJobLabel
+                label="Requested env vars"
+                tooltip="A list of environment variables made available to the indexer."
+            >
+                <IndexCommandNode
+                    commands={job.requestedEnvVars ?? []}
+                    name="requestedEnvVars"
+                    addLabel="env var"
+                    readOnly={readOnly}
+                    onChange={onChange}
+                />
+            </IndexJobLabel>
+            <IndexJobLabel
+                label="Local steps"
+                tooltip="A command to run in the docker container to perform setup with effects outside the repository root."
+            >
+                <IndexCommandNode
+                    commands={job.local_steps}
+                    name="local_steps"
+                    addLabel="local step"
+                    readOnly={readOnly}
+                    onChange={onChange}
+                />
+            </IndexJobLabel>
+            <IndexJobLabel label="Outfile" tooltip="The path to the LSIF index relative to the index root.">
+                <Input
+                    value={job.outfile}
+                    onChange={event => onChange('outfile', event.target.value)}
+                    readOnly={readOnly}
+                    className={styles.jobInput}
+                />
+            </IndexJobLabel>
+            <Container className={styles.jobStepContainer} as="li">
+                {job.steps.map((step, index) => (
+                    <div className={styles.jobStep} key={step.meta.id}>
+                        <div className={styles.jobStepHeader}>
+                            <Tooltip content="A step performed before this index job. Changes are only reflected in the repository directory.">
+                                <H4 className="mb-0">Step #{index + 1}</H4>
+                            </Tooltip>
+                            {!readOnly && (
+                                <Button
+                                    variant="icon"
+                                    className="ml-2 text-danger"
+                                    aria-label="Remove"
+                                    onClick={() => {
                                         const steps = [...job.steps]
-                                        steps[index] = { ...steps[index], [name]: value }
+                                        steps.splice(index, 1)
                                         onChange('steps', steps)
                                     }}
-                                />
-                            </div>
-                        ))}
-                    </Container>
-                )}
+                                >
+                                    <Icon svgPath={mdiClose} aria-hidden={true} />
+                                </Button>
+                            )}
+                        </div>
+                        <IndexStepNode
+                            step={step}
+                            readOnly={readOnly}
+                            onChange={(name, value) => {
+                                const steps = [...job.steps]
+                                steps[index] = { ...steps[index], [name]: value }
+                                onChange('steps', steps)
+                            }}
+                        />
+                    </div>
+                ))}
                 {!readOnly && (
                     <Button
                         variant="secondary"
-                        className="d-block mt-2 ml-auto"
+                        className="d-block ml-auto my-3"
                         onClick={() => {
                             onChange('steps', [
                                 ...job.steps,
@@ -139,10 +141,10 @@ export const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({
                         Add step
                     </Button>
                 )}
-            </ul>
-        </Container>
-    )
-}
+            </Container>
+        </ul>
+    </>
+)
 
 interface IndexStepNodeProps {
     step: InferenceFormJobStep
@@ -152,7 +154,7 @@ interface IndexStepNodeProps {
 
 const IndexStepNode: React.FunctionComponent<IndexStepNodeProps> = ({ step, readOnly, onChange }) => (
     <ul className={styles.jobStepContent}>
-        <IndexJobLabel label="Root">
+        <IndexJobLabel label="Root" tooltip="The working directory within the Docker container.">
             <Input
                 value={step.root}
                 onChange={event => onChange('root', event.target.value)}
@@ -160,7 +162,7 @@ const IndexStepNode: React.FunctionComponent<IndexStepNodeProps> = ({ step, read
                 className={styles.jobInput}
             />
         </IndexJobLabel>
-        <IndexJobLabel label="Image">
+        <IndexJobLabel label="Image" tooltip="The docker image to run.">
             <CommandInput
                 value={step.image}
                 onChange={value => onChange('image', value)}
@@ -168,7 +170,7 @@ const IndexStepNode: React.FunctionComponent<IndexStepNodeProps> = ({ step, read
                 className={styles.jobInput}
             />
         </IndexJobLabel>
-        <IndexJobLabel label="Commands">
+        <IndexJobLabel label="Commands" tooltip="A list of arguments to pass to docker run.">
             <IndexCommandNode<keyof InferenceFormJobStep>
                 commands={step.commands}
                 name="commands"

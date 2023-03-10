@@ -86,9 +86,16 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                 <td colSpan={4}>
                     <ul className={styles.reasons}>
                         {reasons.map(reason => (
-                            <li key={reason.title}>
-                                <Badge className={styles.badge}>{reason.title}</Badge> {reason.description}
-                            </li>
+                            <>
+                                {reason.__typename === 'CodeownersFileEntry' && (
+                                    <li key={reason.title}>
+                                        <Badge className={styles.badge}>{reason.title}</Badge>{' '}
+                                        <Link to={`${reason.codeownersFile.url}?L${reason.ruleLineMatch}`}>
+                                            {reason.description}
+                                        </Link>
+                                    </li>
+                                )}
+                            </>
                         ))}
                     </ul>
                 </td>
