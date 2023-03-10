@@ -65,12 +65,12 @@ export const CreateRoleModal: React.FunctionComponent<React.PropsWithChildren<Cr
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <H3 id={labelId}>Add new role</H3>
-            <Text>Enter a descriptive name for the role to be created.</Text>
+            <Text>Enter a unique, descriptive name for the role.</Text>
 
             <Form onSubmit={handleSubmit} ref={ref}>
                 <Label className="w-100">
                     <Text alignment="left" className="mb-2">
-                        Name
+                        Role name
                     </Text>
 
                     <Input
@@ -84,7 +84,6 @@ export const CreateRoleModal: React.FunctionComponent<React.PropsWithChildren<Cr
                         spellCheck="false"
                         minLength={1}
                         // pattern="^[A-Za-z0-9_-]*$"
-                        placeholder="The name of the role to be created."
                         {...nameInput.input}
                     />
                 </Label>
