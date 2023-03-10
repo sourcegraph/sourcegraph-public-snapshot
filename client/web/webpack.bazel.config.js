@@ -126,7 +126,7 @@ const config = {
   },
   // entry: { ... SET BY BAZEL RULE ... }
   output: {
-    // path: STATIC_ASSETS_PATH,
+    path: STATIC_ASSETS_PATH,
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
     // Note: [name] will vary depending on the Webpack chunk. If specified, it will use a provided chunk name, otherwise it will fallback to a deterministic id.
     filename:
@@ -161,7 +161,7 @@ const config = {
     }),
     getMonacoWebpackPlugin(),
     new WebpackManifestPlugin({
-      writeToFileEmit: false,
+      writeToFileEmit: true,
       fileName: 'webpack.manifest.json',
       seed: {
         environment: NODE_ENV,

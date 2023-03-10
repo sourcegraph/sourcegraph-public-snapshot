@@ -15,6 +15,7 @@ import {
 const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
 
 export function createDevelopmentServerConfig(): WebpackDevServer.Configuration {
+    console.log(ENVIRONMENT_CONFIG)
     // if (!SOURCEGRAPH_API_URL) {
     //     throw new Error('bazel.server.ts only supports *web-standalone* usage')
     // }

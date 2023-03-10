@@ -1949,6 +1949,7 @@ webpack_devserver(
     },
     env = {
         "NODE_ENV": "development",
+        "SOURCEGRAPH_API_URL": "https://sourcegraph.sourcegraph.com"
     },
     webpack_config = "webpack.bazel.devserver.config.js",
 )
