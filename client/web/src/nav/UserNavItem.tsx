@@ -197,7 +197,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 </>
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
-                            {authenticatedUser.siteAdmin && (
+                            {authenticatedUser.siteAdmin && !isSourcegraphApp && (
                                 <MenuLink as={Link} to="/site-admin">
                                     Site admin
                                 </MenuLink>
