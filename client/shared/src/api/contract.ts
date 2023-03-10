@@ -17,6 +17,12 @@ import { ExecutableExtension } from './extension/activation'
 import { ProxySubscribable } from './extension/api/common'
 import { ViewContexts, PanelViewData, ViewProviderResult, ContributionOptions } from './extension/extensionHostApi'
 import { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
+import { Occurrence } from '../codeintel/scip'
+
+export interface ScipParameters {
+    referenceOccurrence: Occurrence
+    documentOccurrences: Occurrence[]
+}
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -40,11 +46,13 @@ export interface FlatExtensionHostAPI {
     getHover: (parameters: TextDocumentPositionParameters) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
     getDocumentHighlights: (parameters: TextDocumentPositionParameters) => ProxySubscribable<DocumentHighlight[]>
     getDefinition: (
-        parameters: TextDocumentPositionParameters
+        parameters: TextDocumentPositionParameters,
+        scipParameters?: ScipParameters
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
     getReferences: (
         parameters: TextDocumentPositionParameters,
-        context: ReferenceContext
+        context: ReferenceContext,
+        scipParameters?: ScipParameters
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
     getLocations: (
         id: string,

@@ -28,6 +28,7 @@ import {
     searchWithFallback,
 } from './searchBased'
 import { sortByProximity } from './sort'
+import { getBlobEditView } from '../../repo/blob/use-blob-store'
 
 type LocationHandler = (locations: Location[]) => void
 
@@ -122,6 +123,12 @@ export async function searchBasedReferences({
     getSetting,
     filter,
 }: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
+    const editor = getBlobEditView()
+    if (editor) {
+        console.log({ repo, commit, searchToken })
+    } else {
+        console.log('NOEDITOR')
+    }
     const filterReferences = (results: Location[]): Location[] =>
         filter ? results.filter(location => location.file.includes(filter)) : results
 

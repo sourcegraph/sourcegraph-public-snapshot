@@ -125,38 +125,18 @@ export function goToDefinitionAtOccurrence(view: EditorView, occurrence: Occurre
     return promise
 }
 
-function localDefinition(view: EditorView, referenceOccurrence: Occurrence): Occurrence | undefined {
-    if (!referenceOccurrence.symbol) {
-        return undefined
-    }
-    const table = view.state.facet(syntaxHighlight)
-    for (const definitionOccurrence of table.occurrences) {
-        if (
-            definitionOccurrence.symbol === referenceOccurrence.symbol &&
-            definitionOccurrence.symbolRoles &&
-            (definitionOccurrence.symbolRoles & 1) === 1
-        ) {
-            return definitionOccurrence
-        }
-    }
-    return undefined
-}
-
 async function goToDefinition(
     view: EditorView,
     occurrence: Occurrence,
     params: TextDocumentPositionParameters
 ): Promise<DefinitionResult> {
-    let definition: Location[] = []
-    const local = localDefinition(view, occurrence)
-    if (local) {
-        definition.push({ uri: toURIWithPath(view.state.facet(blobPropsFacet).blobInfo), range: local.range })
-    }
-
-    if (definition.length === 0) {
-        const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
-        definition = await api.getDefinition(params).toPromise()
-    }
+    const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
+    const definition = await api
+        .getDefinition(params, {
+            referenceOccurrence: occurrence,
+            documentOccurrences: view.state.facet(syntaxHighlight).occurrences,
+        })
+        .toPromise()
     const locationFrom: Location = { uri: params.textDocument.uri, range: occurrence.range }
 
     if (definition.length === 0) {

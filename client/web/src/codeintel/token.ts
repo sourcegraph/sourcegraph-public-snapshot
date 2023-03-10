@@ -2,6 +2,9 @@
 import { flatten } from 'lodash'
 
 import { BlockCommentStyle } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
+import { getBlobEditView } from '../repo/blob/use-blob-store'
+import { syntaxHighlight } from '../repo/blob/codemirror/highlight'
+import { Position, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
 /**
  * The default regex for characters allowed in an identifier. It works well for
@@ -40,6 +43,23 @@ export function findSearchToken({
     if (line === undefined) {
         // Weird case where the position is bogus relative to the text
         return undefined
+    }
+
+    const view = getBlobEditView()
+    if (view !== null) {
+        const occurrences = view.state.facet(syntaxHighlight).occurrences
+        for (const occurrence of occurrences) {
+            if (occurrence.range.contains(new Position(position.line, position.character))) {
+                const text = occurrence.range.isSingleLine()
+                    ? line.slice(occurrence.range.start.character, occurrence.range.end.character)
+                    : 'UNSUPPORTED' // TODO
+                return {
+                    searchToken: text,
+                    isString: occurrence.kind === SyntaxKind.StringLiteral,
+                    isComment: occurrence.kind === SyntaxKind.Comment,
+                }
+            }
+        }
     }
 
     // Scan from the current hover position to the right while the characters
