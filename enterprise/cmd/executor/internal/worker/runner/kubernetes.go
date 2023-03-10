@@ -69,22 +69,22 @@ func (r *kubernetesRunner) TempDir() string {
 }
 
 func (r *kubernetesRunner) Teardown(ctx context.Context) error {
-	//if err := os.RemoveAll(r.tmpDir); err != nil {
-	//	r.internalLogger.Error(
-	//		"Failed to remove kubernetes state tmp dir",
-	//		log.String("tmpDir", r.tmpDir),
-	//		log.Error(err),
-	//	)
-	//}
-	//for _, name := range r.jobNames {
-	//	if err := r.cmd.DeleteJob(ctx, name); err != nil {
-	//		r.internalLogger.Error(
-	//			"Failed to delete kubernetes job",
-	//			log.String("jobName", name),
-	//			log.Error(err),
-	//		)
-	//	}
-	//}
+	if err := os.RemoveAll(r.tmpDir); err != nil {
+		r.internalLogger.Error(
+			"Failed to remove kubernetes state tmp dir",
+			log.String("tmpDir", r.tmpDir),
+			log.Error(err),
+		)
+	}
+	for _, name := range r.jobNames {
+		if err := r.cmd.DeleteJob(ctx, name); err != nil {
+			r.internalLogger.Error(
+				"Failed to delete kubernetes job",
+				log.String("jobName", name),
+				log.Error(err),
+			)
+		}
+	}
 
 	return nil
 }
