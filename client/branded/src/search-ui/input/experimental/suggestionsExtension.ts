@@ -68,7 +68,7 @@ export interface Option {
     action: Action
     /**
      * Options can have perform an alternative action when applied via
-     * Shift+Enter.
+     * Mod-Enter.
      */
     alternativeAction?: Action
     /**
@@ -615,7 +615,10 @@ const defaultKeyboardBindings: KeyBinding[] = [
             applyAction(view, option.action, option)
             return true
         },
-        shift(view) {
+    },
+    {
+        key: 'Mod-Enter',
+        run(view) {
             const state = view.state.field(suggestionsStateField)
             const option = state.result.at(state.selectedOption)
             if (!state.open || !option || !option.alternativeAction) {
