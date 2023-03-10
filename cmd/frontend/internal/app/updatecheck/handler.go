@@ -46,6 +46,11 @@ var (
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
 	latestReleaseDockerComposeOrPureDocker = newPingResponse("4.5.1")
+
+	// latestReleaseApp is only used by sourcegraph.com to tell existing Sourcegraph
+	// App instances what the latest version is. The version here _must_ be available for download/released
+	// before being referenced here.
+	latestReleaseApp = newPingResponse("2023.03.23+205301.ca3646")
 )
 
 func getLatestRelease(deployType string) pingResponse {
@@ -54,6 +59,8 @@ func getLatestRelease(deployType string) pingResponse {
 		return latestReleaseKubernetesBuild
 	case deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return latestReleaseDockerComposeOrPureDocker
+	case deploy.IsDeployTypeApp(deployType):
+		return latestReleaseApp
 	default:
 		return latestReleaseDockerServerImageBuild
 	}
@@ -97,7 +104,7 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 	}
 
 	latestReleaseBuild := getLatestRelease(pr.DeployType)
-	hasUpdate, err := canUpdate(pr.ClientVersionString, latestReleaseBuild)
+	hasUpdate, err := canUpdate(pr.ClientVersionString, latestReleaseBuild, pr.DeployType)
 
 	// Always log, even on malformed version strings
 	logPing(logger, r, pr, hasUpdate)
@@ -125,11 +132,11 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 }
 
 // canUpdate returns true if the latestReleaseBuild is newer than the clientVersionString.
-func canUpdate(clientVersionString string, latestReleaseBuild pingResponse) (bool, error) {
+func canUpdate(clientVersionString string, latestReleaseBuild pingResponse, deployType string) (bool, error) {
 	// Check for a date in the version string to handle developer builds that don't have a semver.
 	// If there is an error parsing a date out of the version string, then we ignore the error
 	// and parse it as a semver.
-	if hasDateUpdate, err := canUpdateDate(clientVersionString); err == nil {
+	if hasDateUpdate, err := canUpdateDate(clientVersionString); err == nil && !deploy.IsDeployTypeApp(deployType) {
 		return hasDateUpdate, nil
 	}
 
