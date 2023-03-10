@@ -23,10 +23,10 @@ func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 		Projects: []string{"sgtestazure/sgtestazure", "sgtestazure/sg test with spaces"},
 		Exclude: []*schema.ExcludedAzureDevOpsServerRepo{
 			{
-				Name: "sg test with spaces/sg test with spaces",
+				Name: "sgtestazure/sg test with spaces/sg test with spaces",
 			},
 			{
-				Pattern: "^sgtestazure/sgtestazure[3-9]",
+				Pattern: "^sgtestazure/sgtestazure/sgtestazure[3-9]",
 			},
 		},
 	}

@@ -2300,7 +2300,7 @@
         "apiScope": {
           "type": "string",
           "description": "The OAuth API scope that should be used",
-          "default": "vso.code,vso.identity"
+          "default": "vso.code,vso.identity,vso.project"
         },
         "allowOrgs": {
           "description": "Restricts new logins and signups (if allowSignup is true) to members of these Azure DevOps organizations only. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",

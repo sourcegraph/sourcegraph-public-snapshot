@@ -297,7 +297,7 @@ func (r *autoIndexJobDescriptionResolver) Indexer() resolverstubs.CodeIntelIndex
 }
 
 func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
-	return comparisonKey(r.indexJob.Root, r.indexJob.Indexer)
+	return comparisonKey(r.indexJob.Root, r.Indexer().Name())
 }
 
 func comparisonKey(root, indexer string) string {

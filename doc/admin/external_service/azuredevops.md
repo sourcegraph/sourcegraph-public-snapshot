@@ -2,21 +2,27 @@
 
 Site admins can sync Git repositories hosted on [Azure DevOps](https://dev.azure.com) with Sourcegraph so that users can search and navigate the repositories.
 
-To connect Azure DevOps to Sourcegraph:
+To connect Azure DevOps to Sourcegraph, create a personal access token from your user settings page. Ensure that you select the following scopes:
+
+- Code (Read)
+- Project and Team
+- User Profile
+
+Additionally, under the `Organization` menu, select `All accessible organizations` to allow access to all organizations. This is required to be able to sync repositories from multiple organizations. Alternatively, site admins may also create a unique user that has access to only the selective organizations that they would like to sync with Sourcegraph.
 
 1. Go to **Site admin > Manage code hosts > Add repositories**.
 2. Select **Azure DevOps**.
-3. Next you will have to provide a [configuration](#configuration) for the Azure DevOps code host connection. Here is an example configuration:
+3. Provide a [configuration](#configuration) for the Azure DevOps code host connection. Here is an example configuration:
 
-```json
-{
-  "url": "https://dev.azure.com/",
-  "username": "<admin username>",
-  "token": "<admin token>",
-  "projects": ["org1/project1"],
-  "orgs": ["org2"]
-}
-```
+   ```json
+   {
+     "url": "https://dev.azure.com/",
+     "username": "<admin username>",
+     "token": "<admin token>",
+     "projects": ["org1/project1"],
+     "orgs": ["org2"]
+   }
+   ```
 
 4. Press **Add repositories**.
 
@@ -24,9 +30,7 @@ To connect Azure DevOps to Sourcegraph:
 
 Currently, all repositories belonging to the configured organizations/projects will be synced.
 
-In addition, there is one more field for configuring which repositories are mirrored:
-
-- [`exclude`](azuredevops.md#configuration)<br>A list of repositories to exclude.
+In addition, you may exclude one or more repositories by setting the [`exclude`](azuredevops.md#configuration) field in the code host connection.
 
 ### HTTPS cloning
 

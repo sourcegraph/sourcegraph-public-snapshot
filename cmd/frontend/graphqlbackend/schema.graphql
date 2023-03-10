@@ -1526,7 +1526,11 @@ type Query {
         Returns the first n package/package version matches from the list.
         """
         first: Int
-    ): PackageRepoReferenceConnection!
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): PackageRepoOrVersionConnection!
 
     """
     Looks up a Phabricator repository by name.
@@ -3657,6 +3661,31 @@ type PackageRepoReferenceConnection {
 
     """
     The total number of package repo references in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Connection resolver for either a list of package repo references or versions.
+"""
+union PackageRepoOrVersionConnection = PackageRepoReferenceConnection | PackageRepoReferenceVersionConnection
+
+"""
+List of package repo reference versions.
+"""
+type PackageRepoReferenceVersionConnection {
+    """
+    A list of package repo versions.
+    """
+    nodes: [PackageRepoReferenceVersion!]!
+
+    """
+    The total number of package repo versions in the connection.
     """
     totalCount: Int!
 

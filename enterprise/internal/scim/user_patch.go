@@ -27,6 +27,8 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 	}
 
 	userRes := scim.Resource{}
+	// Because emails require special handling keep track if they have changed
+	emailsModified := false
 
 	// Start transaction
 	err := h.db.WithTransact(r.Context(), func(tx database.DB) error {
@@ -45,6 +47,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 				for rawPath, value := range op.Value.(map[string]interface{}) {
 					newlyChanged := applyChangeToAttributes(userRes.Attributes, rawPath, value)
 					changed = changed || newlyChanged
+					emailsModified = true
 				}
 				continue
 			}
@@ -54,6 +57,11 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 				subAttrName = op.Path.AttributePath.SubAttributeName()
 				valueExpr   = op.Path.ValueExpression
 			)
+
+			if attrName == AttrEmails {
+				emailsModified = true
+			}
+
 			// There might be a bug in the parser: when a filter is present, SubAttributeName() isn't populated.
 			// Populating it manually here.
 			if subAttrName == "" && op.Path.SubAttribute != nil {
@@ -174,7 +182,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		// Update user
 		var now = time.Now()
 		userRes.Meta.LastModified = &now
-		return updateUser(r.Context(), tx, user, userRes.Attributes)
+		return updateUser(r.Context(), tx, user, userRes.Attributes, emailsModified)
 	})
 	if err != nil {
 		return scim.Resource{}, err

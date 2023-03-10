@@ -40,6 +40,7 @@ export const PREDICATES: Access[] = [
                     { name: 'description' },
                     { name: 'tag' },
                     { name: 'key' },
+                    { name: 'topic' },
                 ],
             },
         ],
@@ -191,6 +192,12 @@ export const predicateCompletion = (field: string): Completion[] => {
                 insertText: 'has.file(path:${1:CHANGELOG} content:${2:fix})',
                 asSnippet: true,
                 description: 'Search only in repositories that contain matching file paths and contents',
+            },
+            {
+                label: 'has.topic(...)',
+                insertText: 'has.topic(${1})',
+                description: 'Search only inside repositories that have a matching GitHub tag',
+                asSnippet: true,
             },
             {
                 label: 'has.commit.after(...)',
