@@ -87,7 +87,8 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.UR
 	// get a list of depots that match the supplied depot (if it's defined)
 	if depots, err := p4depots(ctx, host, username, password, depot); err != nil {
 		return err
-	} else if len(depots) == 0 {
+	}
+	if len(depots) == 0 {
 		// this user doesn't have access to any depots,
 		// or to the given depot
 		if depot != "" {
