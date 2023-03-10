@@ -108,7 +108,13 @@ extend type Mutation {
         Optional cancellation reason.
         """
         reason: String
-    ): String
+    ): CancelPermissionsSyncJobResultMessage!
+}
+
+enum CancelPermissionsSyncJobResultMessage {
+    SUCCESS
+    NOT_FOUND
+    ERROR
 }
 
 extend type Query {
