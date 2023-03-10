@@ -97,7 +97,7 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no version specified", http.StatusBadRequest)
 		return
 	}
-	if pr.ClientVersionString == "dev" {
+	if pr.ClientVersionString == "dev" && !deploy.IsDeployTypeApp(pr.DeployType) {
 		// No updates for dev servers.
 		w.WriteHeader(http.StatusNoContent)
 		return
@@ -115,6 +115,7 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 	}
 	if deploy.IsDeployTypeApp(pr.DeployType) {
 		pingResponse.Notifications = getNotifications(pr.ClientVersionString)
+		pingResponse.UpdateAvailable = hasUpdate
 	}
 	body, err := json.Marshal(pingResponse)
 	if err != nil {

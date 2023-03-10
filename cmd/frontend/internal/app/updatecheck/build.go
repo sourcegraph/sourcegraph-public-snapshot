@@ -11,8 +11,9 @@ import (
 
 // pingResponse is the JSON shape of the update check handler's response body.
 type pingResponse struct {
-	Version       semver.Version `json:"version"`
-	Notifications []Notification `json:"notifications,omitempty"`
+	Version         semver.Version `json:"version"`
+	UpdateAvailable bool           `json:"updateAvailable"`
+	Notifications   []Notification `json:"notifications,omitempty"`
 }
 
 func newPingResponse(version string) pingResponse {
