@@ -19,10 +19,14 @@
 
     &:focus-within {
         background-color: var(--color-bg-1);
-        box-shadow: var(--box-shadow);
+        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.15);
 
         .suggestions {
             display: block;
+        }
+
+        :global(.theme-dark) & {
+            box-shadow: 0 10px 60px rgba(0, 0, 0, 0.8);
         }
     }
 }

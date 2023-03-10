@@ -208,6 +208,9 @@ function createStaticExtensions({ popoverID }: { popoverID: string }): Extension
             '.cm-line': {
                 padding: 0,
             },
+            '.cm-selectionLayer .cm-selectionBackground': {
+                backgroundColor: 'var(--gray-08)',
+            },
             '.sg-decorated-token-hover': {
                 borderRadius: '3px',
             },
