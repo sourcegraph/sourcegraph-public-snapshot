@@ -25,12 +25,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func New(db database.DB, gitserver gitserver.Client, ownService own.Service, logger log.Logger) graphqlbackend.OwnResolver {
+func New(db database.DB, gitserver gitserver.Client, logger log.Logger) graphqlbackend.OwnResolver {
 	return &ownResolver{
-		db:         edb.NewEnterpriseDB(db),
-		gitserver:  gitserver,
-		ownService: ownService,
-		logger:     logger,
+		db:           edb.NewEnterpriseDB(db),
+		gitserver:    gitserver,
+		ownServiceFn: func() own.Service { return own.NewService(gitserver, db) },
+		logger:       logger,
+	}
+}
+
+func NewWithService(db database.DB, gitserver gitserver.Client, ownService own.Service, logger log.Logger) graphqlbackend.OwnResolver {
+	return &ownResolver{
+		db:           edb.NewEnterpriseDB(db),
+		gitserver:    gitserver,
+		ownServiceFn: func() own.Service { return ownService },
+		logger:       logger,
 	}
 }
 
@@ -38,14 +47,15 @@ var (
 	_ graphqlbackend.OwnResolver = &ownResolver{}
 )
 
-// ownResolver is a dummy graphqlbackend.OwnResolver that returns a single owner
-// that is the author of currently viewed commit, and fake ownership reason
-// pointing at line 42 of the CODEOWNERS file.
 type ownResolver struct {
-	db         edb.EnterpriseDB
-	gitserver  gitserver.Client
-	ownService own.Service
-	logger     log.Logger
+	db           edb.EnterpriseDB
+	gitserver    gitserver.Client
+	ownServiceFn func() own.Service
+	logger       log.Logger
+}
+
+func (r *ownResolver) ownService() own.Service {
+	return r.ownServiceFn()
 }
 
 func ownerText(o *codeownerspb.Owner) string {
@@ -73,7 +83,8 @@ func (r *ownResolver) GitBlobOwnership(
 	repo := blob.Repository()
 	repoID, repoName := repo.IDInt32(), repo.RepoName()
 	commitID := api.CommitID(blob.Commit().OID())
-	rs, err := r.ownService.RulesetForRepo(ctx, repoName, repoID, commitID)
+	ownService := r.ownService()
+	rs, err := ownService.RulesetForRepo(ctx, repoName, repoID, commitID)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +113,7 @@ func (r *ownResolver) GitBlobOwnership(
 		next = &cursor
 		owners = owners[:*args.First]
 	}
-	resolvedOwners, err := r.ownService.ResolveOwnersWithType(ctx, owners)
+	resolvedOwners, err := ownService.ResolveOwnersWithType(ctx, owners)
 	if err != nil {
 		return nil, err
 	}
@@ -157,8 +168,6 @@ func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	}
 }
 
-// ownershipConnectionResolver is a fake graphqlbackend.OwnershipConnectionResolver
-// connection with a single dummy item.
 type ownershipConnectionResolver struct {
 	db             edb.EnterpriseDB
 	total          int
@@ -179,9 +188,6 @@ func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend
 	return r.ownerships, nil
 }
 
-// ownershipResolver provides a dummy implementation of graphqlbackend.OwnershipResolver
-// which just claims the author of given GitTreeEntryResolver Commit is the owner
-// and is supports it by pointing at line 42 of the CODEOWNERS file.
 type ownershipResolver struct {
 	db            edb.EnterpriseDB
 	resolvedOwner codeowners.ResolvedOwner
