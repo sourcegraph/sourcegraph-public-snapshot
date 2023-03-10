@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
     useDebounce,
@@ -25,6 +26,7 @@ import {
 import { useURLSyncedState } from '../../../../hooks'
 import { ActionContainer } from '../../../../repo/settings/components/ActionContainer'
 import { ExternalRepositoryIcon } from '../../../../site-admin/components/ExternalRepositoryIcon'
+import { PermissionsSyncJobsTable } from '../../../../site-admin/permissions-center/PermissionsSyncJobsTable'
 import { Table, IColumn } from '../../../../site-admin/UserManagement/components/Table'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
@@ -32,14 +34,17 @@ import { scheduleUserPermissionsSync, UserPermissionsInfoQuery } from './backend
 
 import styles from './UserSettingsPermissionsPage.module.scss'
 
+interface Props extends TelemetryProps {
+    user: { id: string; username: string }
+}
+
 /**
  * The user settings permissions page.
  */
-export const UserSettingsPermissionsPage: React.FunctionComponent<
-    React.PropsWithChildren<{
-        user: { id: string; username: string }
-    }>
-> = ({ user }) => {
+export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    user,
+    telemetryService,
+}) => {
     useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'), [])
 
     const [{ query }, setSearchQuery] = useURLSyncedState({ query: '' })
@@ -113,6 +118,20 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<
                     </table>
                     <ScheduleUserPermissionsSyncActionContainer user={user} />
                 </>
+            </Container>
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Permissions Sync Jobs' }]}
+                description={
+                    <>
+                        List of permissions sync jobs. A permission sync job fetches the newest permissions for the
+                        given user.
+                    </>
+                }
+                className="my-3 pt-3"
+            />
+            <Container className="mb-3">
+                <PermissionsSyncJobsTable telemetryService={telemetryService} minimal={true} userID={user.id} />
             </Container>
             <PageHeader
                 headingElement="h2"

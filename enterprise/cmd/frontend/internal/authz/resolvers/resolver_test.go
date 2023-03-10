@@ -680,10 +680,10 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		r := &Resolver{db: db, logger: logger}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx, nil)
+		result, err := r.CancelPermissionsSyncJob(ctx, nil)
 
 		require.EqualError(t, err, auth.ErrMustBeSiteAdmin.Error())
-		require.Nil(t, result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageError, result)
 	})
 
 	t.Run("invalid sync job ID", func(t *testing.T) {
@@ -703,7 +703,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		)
 
 		require.Error(t, err)
-		require.Nil(t, result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageError, result)
 	})
 
 	t.Run("sync job not found", func(t *testing.T) {
@@ -728,7 +728,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		)
 
 		require.NoError(t, err)
-		require.Equal(t, "No job that can be canceled found.", *result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageNotFound, result)
 	})
 
 	t.Run("SQL error", func(t *testing.T) {
@@ -754,7 +754,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		)
 
 		require.EqualError(t, err, errorText)
-		require.Nil(t, result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageError, result)
 	})
 
 	t.Run("sync job successfully cancelled", func(t *testing.T) {
@@ -778,7 +778,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 			},
 		)
 
-		require.Equal(t, "Permissions sync job canceled.", *result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageSuccess, result)
 		require.NoError(t, err)
 	})
 }
@@ -814,7 +814,7 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 			`, marshalPermissionsSyncJobID(1)),
 			ExpectedResult: `
 				{
-					"cancelPermissionsSyncJob": "Permissions sync job canceled."
+					"cancelPermissionsSyncJob": "SUCCESS"
 				}
 			`,
 		})
@@ -833,7 +833,7 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 			`, marshalPermissionsSyncJobID(42)),
 			ExpectedResult: `
 				{
-					"cancelPermissionsSyncJob": "No job that can be canceled found."
+					"cancelPermissionsSyncJob": "NOT_FOUND"
 				}
 			`,
 		})

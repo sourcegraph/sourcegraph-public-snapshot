@@ -352,19 +352,19 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlbackend.CancelPermissionsSyncJobArgs) (*string, error) {
+func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlbackend.CancelPermissionsSyncJobArgs) (graphqlbackend.CancelPermissionsSyncJobResultMessage, error) {
 	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
-		return nil, err
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
 	}
 
 	// 🚨 SECURITY: Only site admins can cancel permissions sync jobs.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
 	}
 
 	syncJobID, err := unmarshalPermissionsSyncJobID(args.Job)
 	if err != nil {
-		return nil, err
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
 	}
 
 	reason := ""
@@ -377,11 +377,11 @@ func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlba
 	// by ID (might already be cleaned up).
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return strPtr("No job that can be canceled found."), nil
+			return graphqlbackend.CancelPermissionsSyncJobResultMessageNotFound, nil
 		}
-		return nil, err
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
 	}
-	return strPtr("Permissions sync job canceled."), nil
+	return graphqlbackend.CancelPermissionsSyncJobResultMessageSuccess, nil
 }
 
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {

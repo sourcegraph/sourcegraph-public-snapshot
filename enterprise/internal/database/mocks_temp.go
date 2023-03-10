@@ -14316,7 +14316,7 @@ func NewMockPermsStore() *MockPermsStore {
 			},
 		},
 		GrantPendingPermissionsFunc: &PermsStoreGrantPendingPermissionsFunc{
-			defaultHook: func(context.Context, int32, *authz.UserPendingPermissions) (r0 error) {
+			defaultHook: func(context.Context, *authz.UserGrantPermissions) (r0 error) {
 				return
 			},
 		},
@@ -14468,7 +14468,7 @@ func NewStrictMockPermsStore() *MockPermsStore {
 			},
 		},
 		GrantPendingPermissionsFunc: &PermsStoreGrantPendingPermissionsFunc{
-			defaultHook: func(context.Context, int32, *authz.UserPendingPermissions) error {
+			defaultHook: func(context.Context, *authz.UserGrantPermissions) error {
 				panic("unexpected invocation of MockPermsStore.GrantPendingPermissions")
 			},
 		},
@@ -15343,24 +15343,24 @@ func (c PermsStoreGetUserIDsByExternalAccountsFuncCall) Results() []interface{} 
 // GrantPendingPermissions method of the parent MockPermsStore instance is
 // invoked.
 type PermsStoreGrantPendingPermissionsFunc struct {
-	defaultHook func(context.Context, int32, *authz.UserPendingPermissions) error
-	hooks       []func(context.Context, int32, *authz.UserPendingPermissions) error
+	defaultHook func(context.Context, *authz.UserGrantPermissions) error
+	hooks       []func(context.Context, *authz.UserGrantPermissions) error
 	history     []PermsStoreGrantPendingPermissionsFuncCall
 	mutex       sync.Mutex
 }
 
 // GrantPendingPermissions delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockPermsStore) GrantPendingPermissions(v0 context.Context, v1 int32, v2 *authz.UserPendingPermissions) error {
-	r0 := m.GrantPendingPermissionsFunc.nextHook()(v0, v1, v2)
-	m.GrantPendingPermissionsFunc.appendCall(PermsStoreGrantPendingPermissionsFuncCall{v0, v1, v2, r0})
+func (m *MockPermsStore) GrantPendingPermissions(v0 context.Context, v1 *authz.UserGrantPermissions) error {
+	r0 := m.GrantPendingPermissionsFunc.nextHook()(v0, v1)
+	m.GrantPendingPermissionsFunc.appendCall(PermsStoreGrantPendingPermissionsFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // GrantPendingPermissions method of the parent MockPermsStore instance is
 // invoked and the hook queue is empty.
-func (f *PermsStoreGrantPendingPermissionsFunc) SetDefaultHook(hook func(context.Context, int32, *authz.UserPendingPermissions) error) {
+func (f *PermsStoreGrantPendingPermissionsFunc) SetDefaultHook(hook func(context.Context, *authz.UserGrantPermissions) error) {
 	f.defaultHook = hook
 }
 
@@ -15369,7 +15369,7 @@ func (f *PermsStoreGrantPendingPermissionsFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PermsStoreGrantPendingPermissionsFunc) PushHook(hook func(context.Context, int32, *authz.UserPendingPermissions) error) {
+func (f *PermsStoreGrantPendingPermissionsFunc) PushHook(hook func(context.Context, *authz.UserGrantPermissions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -15378,19 +15378,19 @@ func (f *PermsStoreGrantPendingPermissionsFunc) PushHook(hook func(context.Conte
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *PermsStoreGrantPendingPermissionsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, *authz.UserPendingPermissions) error {
+	f.SetDefaultHook(func(context.Context, *authz.UserGrantPermissions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *PermsStoreGrantPendingPermissionsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, *authz.UserPendingPermissions) error {
+	f.PushHook(func(context.Context, *authz.UserGrantPermissions) error {
 		return r0
 	})
 }
 
-func (f *PermsStoreGrantPendingPermissionsFunc) nextHook() func(context.Context, int32, *authz.UserPendingPermissions) error {
+func (f *PermsStoreGrantPendingPermissionsFunc) nextHook() func(context.Context, *authz.UserGrantPermissions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -15429,10 +15429,7 @@ type PermsStoreGrantPendingPermissionsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int32
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 *authz.UserPendingPermissions
+	Arg1 *authz.UserGrantPermissions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -15441,7 +15438,7 @@ type PermsStoreGrantPendingPermissionsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c PermsStoreGrantPendingPermissionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
