@@ -2294,8 +2294,6 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 				permsQueryConditions = append(permsQueryConditions, sqlf.Sprintf("users.site_admin"))
 			}
 
-			// TODO(milan): need to update read path for new data model
-			// load user who have access via permissions syncing
 			if !unifiedPermissionsEnabled {
 				permsQueryConditions = append(permsQueryConditions, sqlf.Sprintf(`user_permissions.object_ids_ints @> INTSET(repo.id)`))
 			} else {
