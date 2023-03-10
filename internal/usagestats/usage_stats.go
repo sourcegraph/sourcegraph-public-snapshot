@@ -245,7 +245,7 @@ func activeUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, m
 		}, nil
 	}
 
-	return db.EventLogs().SiteUsageMultiplePeriods(ctx, timeNow().UTC(), dayPeriods, weekPeriods, monthPeriods, &database.CountUniqueUsersOptions{
+	return db.EventLogs().SiteUsageMultiplePeriods(ctx, timeNow().UTC(), dayPeriods, weekPeriods, monthPeriods, rollingMonthPeriods, &database.CountUniqueUsersOptions{
 		CommonUsageOptions: database.CommonUsageOptions{
 			ExcludeSystemUsers:          true,
 			ExcludeNonActiveUsers:       true,
