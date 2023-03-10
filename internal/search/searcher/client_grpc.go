@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -84,7 +83,7 @@ func SearchGRPC(
 			return false, errors.Wrap(err, "failed to parse URL")
 		}
 
-		clientConn, err := grpc.DialContext(ctx, parsed.Host, defaults.DialOptions()...)
+		clientConn, err := defaults.DialContext(ctx, parsed.Host)
 		if err != nil {
 			return false, err
 		}

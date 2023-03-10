@@ -13,7 +13,6 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     COLLAPSABLE_SEARCH_RESULT,
-    extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
@@ -33,7 +32,6 @@ describe('StreamingSearchResults', () => {
     const streamingSearchResult = MULTIPLE_SEARCH_RESULT
 
     const defaultProps: StreamingSearchResultsProps = {
-        extensionsController,
         telemetryService: NOOP_TELEMETRY_SERVICE,
 
         authenticatedUser: null,
@@ -80,9 +78,6 @@ describe('StreamingSearchResults', () => {
             searchCaseSensitivity: false,
             searchQueryFromURL: 'r:golang/oauth2 test f:travis',
         })
-        window.context = {
-            enableLegacyExtensions: false,
-        } as any
     })
 
     it('should call streaming search API with the right parameters from URL', async () => {

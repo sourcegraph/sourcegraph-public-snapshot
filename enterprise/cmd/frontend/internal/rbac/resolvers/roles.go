@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (*graphqlutil.ConnectionResolver[gql.RoleResolver], error) {
@@ -44,8 +45,11 @@ func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (*graphqlu
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
 			OrderBy: database.OrderBy{
-				{Field: "roles.id"},
+				{Field: "roles.system"},
+				{Field: "roles.created_at"},
 			},
+			Ascending:    false,
+			AllowNoLimit: true,
 		},
 	)
 }
@@ -105,13 +109,74 @@ func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gq
 		return nil, err
 	}
 
-	newRole, err := r.db.Roles().Create(ctx, args.Name, false)
+	var role *types.Role
+	err := r.db.WithTransact(ctx, func(tx database.DB) (err error) {
+		role, err = tx.Roles().Create(ctx, args.Name, false)
+		if err != nil {
+			return err
+		}
+
+		if len(args.Permissions) > 0 {
+			opts := database.BulkAssignPermissionsToRoleOpts{RoleID: role.ID}
+			for _, permissionID := range args.Permissions {
+				id, err := unmarshalPermissionID(permissionID)
+				if err != nil {
+					return err
+				}
+				opts.Permissions = append(opts.Permissions, id)
+			}
+			err = tx.RolePermissions().BulkAssignPermissionsToRole(ctx, opts)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &roleResolver{
 		db:   r.db,
-		role: newRole,
+		role: role,
 	}, nil
+}
+
+func (r *Resolver) SetRoles(ctx context.Context, args *gql.SetRolesArgs) (*gql.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site administrators can assign roles to a user.
+	// We need to get the current user any
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	userID, err := gql.UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := auth.CurrentUser(ctx, r.db)
+	if err != nil {
+		return nil, err
+	}
+
+	if user.ID == userID {
+		return nil, errors.New("cannot assign role to self")
+	}
+
+	opts := database.SetRolesForUserOpts{UserID: userID}
+
+	for _, r := range args.Roles {
+		rID, err := unmarshalPermissionID(r)
+		if err != nil {
+			return nil, err
+		}
+		opts.Roles = append(opts.Roles, rID)
+	}
+
+	if err = r.db.UserRoles().SetRolesForUser(ctx, opts); err != nil {
+		return nil, err
+	}
+
+	return &gql.EmptyResponse{}, nil
 }

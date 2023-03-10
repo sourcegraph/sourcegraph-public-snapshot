@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
@@ -22,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -34,6 +32,7 @@ var errDisabledSourcegraphDotCom = errors.New("not enabled on sourcegraph.com")
 type Resolver struct {
 	logger log.Logger
 	db     edb.EnterpriseDB
+	ossDB  database.DB
 }
 
 // checkLicense returns a user-facing error if the provided feature is not purchased
@@ -55,6 +54,7 @@ func NewResolver(observationCtx *observation.Context, db database.DB) graphqlbac
 	return &Resolver{
 		logger: observationCtx.Logger.Scoped("authz.Resolver", ""),
 		db:     edb.NewEnterpriseDB(db),
+		ossDB:  db,
 	}
 }
 
@@ -342,6 +342,38 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlbackend.CancelPermissionsSyncJobArgs) (graphqlbackend.CancelPermissionsSyncJobResultMessage, error) {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
+	}
+
+	// 🚨 SECURITY: Only site admins can cancel permissions sync jobs.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
+	}
+
+	syncJobID, err := unmarshalPermissionsSyncJobID(args.Job)
+	if err != nil {
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
+	}
+
+	reason := ""
+	if args.Reason != nil {
+		reason = *args.Reason
+	}
+
+	err = r.db.PermissionSyncJobs().CancelQueuedJob(ctx, reason, syncJobID)
+	// We shouldn't return an error when the job is already processing or not found
+	// by ID (might already be cleaned up).
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return graphqlbackend.CancelPermissionsSyncJobResultMessageNotFound, nil
+		}
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
+	}
+	return graphqlbackend.CancelPermissionsSyncJobResultMessageSuccess, nil
+}
+
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
@@ -518,32 +550,6 @@ func getOrDefault[T any](ptr *T) T {
 	}
 }
 
-type permissionsInfoResolver struct {
-	perms        authz.Perms
-	syncedAt     time.Time
-	updatedAt    time.Time
-	unrestricted bool
-}
-
-func (r *permissionsInfoResolver) Permissions() []string {
-	return strings.Split(strings.ToUpper(r.perms.String()), ",")
-}
-
-func (r *permissionsInfoResolver) SyncedAt() *gqlutil.DateTime {
-	if r.syncedAt.IsZero() {
-		return nil
-	}
-	return &gqlutil.DateTime{Time: r.syncedAt}
-}
-
-func (r *permissionsInfoResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.updatedAt}
-}
-
-func (r *permissionsInfoResolver) Unrestricted() bool {
-	return r.unrestricted
-}
-
 func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
 	// 🚨 SECURITY: Only site admins can query repository permissions.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -568,11 +574,10 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 		return nil, err
 	}
 
-	if err == authz.ErrPermsNotFound {
-		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
-	}
-
 	return &permissionsInfoResolver{
+		db:           r.db,
+		ossDB:        r.ossDB,
+		repoID:       repoID,
 		perms:        p.Perm,
 		syncedAt:     p.SyncedAt,
 		updatedAt:    p.UpdatedAt,
@@ -606,11 +611,10 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 		return nil, err
 	}
 
-	if err == authz.ErrPermsNotFound {
-		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
-	}
-
 	return &permissionsInfoResolver{
+		db:        r.db,
+		ossDB:     r.ossDB,
+		userID:    userID,
 		perms:     p.Perm,
 		syncedAt:  p.SyncedAt,
 		updatedAt: p.UpdatedAt,
@@ -625,3 +629,5 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.
 
 	return NewPermissionsSyncJobsResolver(r.db, args)
 }
+
+func strPtr(s string) *string { return &s }

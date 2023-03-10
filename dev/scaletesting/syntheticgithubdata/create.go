@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
+	"github.com/sourcegraph/conc/pool"
 
-	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -88,15 +88,15 @@ func create(ctx context.Context, orgs []*org, cfg config) {
 	var membershipsDone int64
 	var reposDone int64
 
-	g := group.New().WithMaxConcurrency(1000)
+	p := pool.New().WithMaxGoroutines(1000)
 
 	for _, o := range orgs {
 		currentOrg := o
-		g.Go(func() {
+		p.Go(func() {
 			currentOrg.executeCreate(ctx, cfg.orgAdmin, &orgsDone)
 		})
 	}
-	g.Wait()
+	p.Wait()
 
 	// Default permission is "read"; we need members to not have access by default on the main organisation.
 	defaultRepoPermission := "none"
@@ -109,22 +109,22 @@ func create(ctx context.Context, orgs []*org, cfg config) {
 
 	for _, t := range teams {
 		currentTeam := t
-		g.Go(func() {
+		p.Go(func() {
 			currentTeam.executeCreate(ctx, &teamsDone)
 		})
 	}
-	g.Wait()
+	p.Wait()
 
 	for _, u := range users {
 		currentUser := u
-		g.Go(func() {
+		p.Go(func() {
 			currentUser.executeCreate(ctx, &usersDone)
 		})
 	}
-	g.Wait()
+	p.Wait()
 
 	membershipsPerTeam := int(math.Ceil(float64(cfg.userCount) / float64(cfg.teamCount)))
-	g2 := group.New().WithMaxConcurrency(100)
+	p2 := pool.New().WithMaxGoroutines(100)
 
 	for i, t := range teams {
 		currentTeam := t
@@ -135,15 +135,15 @@ func create(ctx context.Context, orgs []*org, cfg config) {
 			usersToAssign = append(usersToAssign, users[j])
 		}
 
-		g2.Go(func() {
+		p2.Go(func() {
 			currentTeam.executeCreateMemberships(ctx, usersToAssign, &membershipsDone)
 		})
 	}
-	g2.Wait()
+	p2.Wait()
 
 	mainOrg, orgRepos := categorizeOrgRepos(cfg, repos, orgs)
-	executeAssignOrgRepos(ctx, orgRepos, users, &reposDone, g2)
-	g2.Wait()
+	executeAssignOrgRepos(ctx, orgRepos, users, &reposDone, p2)
+	p2.Wait()
 
 	// 0.5% repos with only users attached
 	amountReposWithOnlyUsers := int(math.Ceil(float64(len(repos)) * 0.005))
@@ -154,11 +154,11 @@ func create(ctx context.Context, orgs []*org, cfg config) {
 	teamRepos := categorizeTeamRepos(cfg, orgRepos[mainOrg], teams)
 	userRepos := categorizeUserRepos(reposWithOnlyUsers, users)
 
-	executeAssignTeamRepos(ctx, teamRepos, &reposDone, g2)
-	g2.Wait()
+	executeAssignTeamRepos(ctx, teamRepos, &reposDone, p2)
+	p2.Wait()
 
-	executeAssignUserRepos(ctx, userRepos, &reposDone, g2)
-	g2.Wait()
+	executeAssignUserRepos(ctx, userRepos, &reposDone, p2)
+	p2.Wait()
 
 	if cfg.generateTokens {
 		generateUserOAuthCsv(ctx, users, tokensDone)
@@ -404,7 +404,7 @@ func categorizeOrgRepos(cfg config, repos []*repo, orgs []*org) (*org, map[*org]
 
 // executeAssignOrgRepos transfers the repos categorised per org from the import org to the new owner.
 // If sub-orgs are defined, they immediately get assigned 2000 users. The sub-orgs are used for org-level permission syncing.
-func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, users []*user, reposDone *int64, g group.Group) {
+func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, users []*user, reposDone *int64, p *pool.Pool) {
 	for o, repos := range reposPerOrg {
 		currentOrg := o
 		currentRepos := repos
@@ -413,7 +413,7 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, us
 		var err error
 		for _, r := range currentRepos {
 			currentRepo := r
-			g.Go(func() {
+			p.Go(func() {
 				if currentOrg.Login == currentRepo.Owner {
 					//writeInfo(out, "Repository %s already owned by %s", r.Name, r.Owner)
 					// The repository is already transferred
@@ -458,7 +458,7 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, us
 			})
 		}
 
-		g.Wait()
+		p.Wait()
 
 		if strings.HasPrefix(currentOrg.Login, "sub-org") {
 			// add 2000 users to sub-orgs
@@ -472,7 +472,7 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, us
 				currentUser := u
 				var uRes *github.Response
 				var uErr error
-				g.Go(func() {
+				p.Go(func() {
 				retryEditOrgMembership:
 					memberState := "active"
 					memberRole := "member"
@@ -559,12 +559,12 @@ func categorizeTeamRepos(cfg config, mainOrgRepos []*repo, teams []*team) map[*t
 }
 
 // executeAssignTeamRepos adds the provided teams as members of the categorised repos.
-func executeAssignTeamRepos(ctx context.Context, reposPerTeam map[*team][]*repo, reposDone *int64, g group.Group) {
+func executeAssignTeamRepos(ctx context.Context, reposPerTeam map[*team][]*repo, reposDone *int64, p *pool.Pool) {
 	for t, repos := range reposPerTeam {
 		currentTeam := t
 		currentRepos := repos
 
-		g.Go(func() {
+		p.Go(func() {
 			for _, r := range currentRepos {
 				currentRepo := r
 				if r.Owner == fmt.Sprintf("%s/%s", currentTeam.Org, currentTeam.Name) {
@@ -621,12 +621,12 @@ func categorizeUserRepos(mainOrgRepos []*repo, users []*user) map[*repo][]*user 
 }
 
 // executeAssignUserRepos adds the categorised users as collaborators to the matched repos.
-func executeAssignUserRepos(ctx context.Context, usersPerRepo map[*repo][]*user, reposDone *int64, g group.Group) {
+func executeAssignUserRepos(ctx context.Context, usersPerRepo map[*repo][]*user, reposDone *int64, p *pool.Pool) {
 	for r, users := range usersPerRepo {
 		currentRepo := r
 		currentUsers := users
 
-		g.Go(func() {
+		p.Go(func() {
 			for _, u := range currentUsers {
 				var res *github.Response
 				var err error

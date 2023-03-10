@@ -21,6 +21,10 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 <!-- Add changes changes to this section before release. -->
 
+## v4.5.0 ➔ v4.5.1
+
+#### Notes:
+
 ## v4.4.2 ➔ v4.5.0
 
 #### Notes:

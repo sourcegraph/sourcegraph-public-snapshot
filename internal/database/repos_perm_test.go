@@ -3,6 +3,10 @@ package database
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"os"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -18,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -82,7 +88,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := authzQuery(false, true, int32(0), authz.Read)
+		want := authzQuery(false, true, int32(0))
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
@@ -99,14 +105,14 @@ func TestAuthzQueryConds(t *testing.T) {
 			setup: func(t *testing.T) (context.Context, DB) {
 				return actor.WithInternalActor(context.Background()), db
 			},
-			wantQuery: authzQuery(true, false, int32(0), authz.Read),
+			wantQuery: authzQuery(true, false, int32(0)),
 		},
 		{
 			name: "no authz provider and not allow by default",
 			setup: func(t *testing.T) (context.Context, DB) {
 				return context.Background(), db
 			},
-			wantQuery: authzQuery(false, false, int32(0), authz.Read),
+			wantQuery: authzQuery(false, false, int32(0)),
 		},
 		{
 			name: "no authz provider but allow by default",
@@ -114,7 +120,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				return context.Background(), db
 			},
 			authzAllowByDefault: true,
-			wantQuery:           authzQuery(true, false, int32(0), authz.Read),
+			wantQuery:           authzQuery(true, false, int32(0)),
 		},
 		{
 			name: "authenticated user is a site admin",
@@ -125,7 +131,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				mockDB.UsersFunc.SetDefaultReturn(users)
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
-			wantQuery: authzQuery(true, false, int32(1), authz.Read),
+			wantQuery: authzQuery(true, false, int32(1)),
 		},
 		{
 			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
@@ -140,7 +146,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
-			wantQuery: authzQuery(false, false, int32(1), authz.Read),
+			wantQuery: authzQuery(false, false, int32(1)),
 		},
 		{
 			name: "authenticated user is not a site admin",
@@ -151,7 +157,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				mockDB.UsersFunc.SetDefaultReturn(users)
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
-			wantQuery: authzQuery(false, false, int32(1), authz.Read),
+			wantQuery: authzQuery(false, false, int32(1)),
 		},
 	}
 
@@ -173,14 +179,17 @@ func TestAuthzQueryConds(t *testing.T) {
 	}
 }
 
-func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+func execQuery(t *testing.T, ctx context.Context, db DB, q *sqlf.Query) {
+	t.Helper()
 
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	_, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatalf("Error executing query %v, err: %v", q, err)
+	}
+}
+
+func setupUnrestrictedDB(t *testing.T, ctx context.Context, db DB) (*types.User, *types.Repo) {
+	t.Helper()
 
 	// Add a single user who is NOT a site admin
 	alice, err := db.Users().Create(ctx,
@@ -201,12 +210,23 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 
 	// Set up a private repo that the user does not have access to
 	internalCtx := actor.WithInternalActor(ctx)
-	privateRepo1 := mustCreate(internalCtx, t, db,
+	privateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
-			Name:    "private_repo_1",
+			Name:    "private_repo",
 			Private: true,
 			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "private_repo_1",
+				ID:          "private_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)
+	unrestrictedRepo := mustCreate(internalCtx, t, db,
+		&types.Repo{
+			Name:    "unrestricted_repo",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "unrestricted_repo",
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
@@ -226,60 +246,86 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	q := sqlf.Sprintf(`
+	execQuery(t, ctx, db, sqlf.Sprintf(`
 INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
-VALUES (%s, %s, '')
-`, externalService.ID, privateRepo1.ID)
+VALUES
+	(%s, %s, ''),
+	(%s, %s, '');
+`,
+		externalService.ID, privateRepo.ID,
+		externalService.ID, unrestrictedRepo.ID,
+	))
 
-	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		t.Fatal(err)
+	// Insert the repo permissions, mark unrestrictedRepo as unrestricted
+	execQuery(t, ctx, db, sqlf.Sprintf(`
+INSERT INTO repo_permissions (repo_id, permission, updated_at, unrestricted)
+VALUES
+	(%s, 'read', %s, FALSE),
+	(%s, 'read', %s, TRUE);
+`,
+		privateRepo.ID, time.Now(),
+		unrestrictedRepo.ID, time.Now(),
+	))
+
+	// Insert the unified permissions, mark unrestrictedRepo as unrestricted
+	execQuery(t, ctx, db, sqlf.Sprintf(`
+INSERT INTO user_repo_permissions (user_id, repo_id)
+VALUES (NULL, %s);
+`, unrestrictedRepo.ID))
+
+	return alice, unrestrictedRepo
+}
+
+func mockUnifiedPermsConfig() {
+	cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{
+			UnifiedPermissions: true,
+		},
+	}}
+	conf.Mock(cfg)
+}
+
+func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
 
-	q = sqlf.Sprintf(`
-INSERT INTO repo_permissions (repo_id, permission, updated_at)
-VALUES (%s, 'read', %s)
-`, privateRepo1.ID, time.Now())
-
-	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		t.Fatal(err)
-	}
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	alice, unrestrictedRepo := setupUnrestrictedDB(t, ctx, db)
 
 	authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
 	defer authz.SetProviders(true, nil)
 
-	// Alice should NOT be able to see the private repo
-	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	repos, err := db.Repos().List(aliceCtx, ReposListOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var wantRepos []*types.Repo
-	if diff := cmp.Diff(wantRepos, repos, cmpopts.IgnoreFields(types.Repo{}, "Sources")); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
-	}
+	// TODO: remove this test once the migration to unified permissions is finished
+	t.Run("Legacy perms: Alice cannot see private repo, but can see unrestricted repo", func(t *testing.T) {
+		aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
+		repos, err := db.Repos().List(aliceCtx, ReposListOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		wantRepos := []*types.Repo{unrestrictedRepo}
+		if diff := cmp.Diff(wantRepos, repos, cmpopts.IgnoreFields(types.Repo{}, "Sources")); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
 
-	// Mark is unrestricted
-	q = sqlf.Sprintf(`
-UPDATE repo_permissions SET unrestricted = true
-`)
+	t.Run("Unified perms: Alice cannot see private repo, but can see unrestricted repo", func(t *testing.T) {
+		mockUnifiedPermsConfig()
+		// Always reset the configuration so that it doesn't interfere with other tests
+		defer conf.Mock(nil)
 
-	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Alice should now be able to see the repo
-	aliceCtx = actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	repos, err = db.Repos().List(aliceCtx, ReposListOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	wantRepos = []*types.Repo{privateRepo1}
-	if diff := cmp.Diff(wantRepos, repos, cmpopts.IgnoreFields(types.Repo{}, "Sources")); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
-	}
+		aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
+		repos, err := db.Repos().List(aliceCtx, ReposListOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		wantRepos := []*types.Repo{unrestrictedRepo}
+		if diff := cmp.Diff(wantRepos, repos, cmpopts.IgnoreFields(types.Repo{}, "Sources")); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func createGitHubExternalService(t *testing.T, db DB) *types.ExternalService {
@@ -299,6 +345,114 @@ func createGitHubExternalService(t *testing.T, db DB) *types.ExternalService {
 	return svc
 }
 
+func setupDB(t *testing.T, ctx context.Context, db DB) (users map[string]*types.User, repos map[string]*types.Repo) {
+	t.Helper()
+
+	users = make(map[string]*types.User)
+	repos = make(map[string]*types.Repo)
+
+	createUser := func(username string) *types.User {
+		user, err := db.Users().Create(ctx, NewUser{Username: username, Password: username})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return user
+	}
+	// Set up 4 users: admin, alice, bob, cindy. Admin is site-admin because it's created first.
+	for _, username := range []string{"admin", "alice", "bob", "cindy"} {
+		users[username] = createUser(username)
+	}
+
+	// Set up default external service
+	siteLevelGitHubService := createGitHubExternalService(t, db)
+
+	// Set up unrestricted external service for cindy
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+	cindyExternalService := &types.ExternalService{
+		Kind:         extsvc.KindGitHub,
+		DisplayName:  "GITHUB #1",
+		Config:       extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		Unrestricted: true,
+	}
+	err := db.ExternalServices().Create(ctx, confGet, cindyExternalService)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set up repositories
+	createRepo := func(name string, es *types.ExternalService) *types.Repo {
+		internalCtx := actor.WithInternalActor(ctx)
+		repo := mustCreate(internalCtx, t, db,
+			&types.Repo{
+				Name: api.RepoName(name),
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          name,
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "https://github.com/",
+				},
+				Private: strings.Contains(name, "_private_"),
+			},
+		)
+		repo.Sources = map[string]*types.SourceInfo{
+			es.URN(): {
+				ID: es.URN(),
+			},
+		}
+		// Make sure there is a record in external_service_repos table as well
+		execQuery(t, ctx, db, sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+VALUES (%s, %s, '')
+`, es.ID, repo.ID))
+		return repo
+	}
+
+	// Set public and private repos for both alice and bob
+	for _, username := range []string{"alice", "bob"} {
+		publicRepoName := username + "_public_repo"
+		privateRepoName := username + "_private_repo"
+		repos[publicRepoName] = createRepo(publicRepoName, siteLevelGitHubService)
+		repos[privateRepoName] = createRepo(privateRepoName, siteLevelGitHubService)
+	}
+	// Setup repository for cindy
+	repos["cindy_private_repo"] = createRepo("cindy_private_repo", cindyExternalService)
+
+	// Convenience variables for alice and bob
+	alice, bob := users["alice"], users["bob"]
+	// Convenience variables for alice and bob private repositories
+	alicePrivateRepo, bobPrivateRepo := repos["alice_private_repo"], repos["bob_private_repo"]
+
+	// Set up external accounts for alice and bob
+	for _, user := range []*types.User{alice, bob} {
+		err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, extsvc.AccountSpec{ServiceType: extsvc.TypeGitHub, ServiceID: "https://github.com/", AccountID: user.Username}, extsvc.AccountData{})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Set up permissions: alice and bob have access to their own private repositories
+	execQuery(t, ctx, db, sqlf.Sprintf(`
+INSERT INTO user_permissions (user_id, permission, object_type, object_ids_ints, updated_at)
+VALUES
+	(%s, 'read', 'repos', %s, NOW()),
+	(%s, 'read', 'repos', %s, NOW())
+`,
+		alice.ID, pq.Array([]int32{int32(alicePrivateRepo.ID)}),
+		bob.ID, pq.Array([]int32{int32(bobPrivateRepo.ID)}),
+	))
+
+	execQuery(t, ctx, db, sqlf.Sprintf(`
+INSERT INTO user_repo_permissions (user_id, user_external_account_id, repo_id)
+VALUES
+	(%d, %d, %d),
+	(%d, %d, %d)
+`,
+		alice.ID, 1, alicePrivateRepo.ID,
+		bob.ID, 2, bobPrivateRepo.ID,
+	))
+
+	return users, repos
+}
+
 // 🚨 SECURITY: Tests are necessary to ensure security.
 func TestRepoStore_List_checkPermissions(t *testing.T) {
 	if testing.Short() {
@@ -309,208 +463,93 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	// Set up three users: admin, bob, alice. Admin is site-admin because it's created first.
-	admin, err := db.Users().Create(ctx, NewUser{Username: "admin", Password: "admin"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	bob, err := db.Users().Create(ctx, NewUser{Username: "bob", Password: "bob"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	alice, err := db.Users().Create(ctx, NewUser{Username: "alice", Password: "alice"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	siteLevelGitHubService := createGitHubExternalService(t, db)
-
-	// Set up some repositories: public and private for both alice and bob
-	internalCtx := actor.WithInternalActor(ctx)
-	alicePublicRepo := mustCreate(internalCtx, t, db,
-		&types.Repo{
-			Name: "alice_public_repo",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "alice_public_repo",
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "https://github.com/",
-			},
-		},
-	)
-	alicePublicRepo.Sources = map[string]*types.SourceInfo{
-		siteLevelGitHubService.URN(): {
-			ID: siteLevelGitHubService.URN(),
-		},
-	}
-
-	alicePrivateRepo := mustCreate(internalCtx, t, db,
-		&types.Repo{
-			Name:    "alice_private_repo",
-			Private: true,
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "alice_private_repo",
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "https://github.com/",
-			},
-		},
-	)
-	alicePrivateRepo.Sources = map[string]*types.SourceInfo{
-		siteLevelGitHubService.URN(): {
-			ID: siteLevelGitHubService.URN(),
-		},
-	}
-
-	bobPublicRepo := mustCreate(internalCtx, t, db,
-		&types.Repo{
-			Name: "bob_public_repo",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "bob_public_repo",
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "https://github.com/",
-			},
-		},
-	)
-	bobPublicRepo.Sources = map[string]*types.SourceInfo{
-		siteLevelGitHubService.URN(): {
-			ID: siteLevelGitHubService.URN(),
-		},
-	}
-
-	bobPrivateRepo := mustCreate(internalCtx, t, db,
-		&types.Repo{
-			Name:    "bob_private_repo",
-			Private: true,
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "bob_private_repo",
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "https://github.com/",
-			},
-		},
-	)
-	bobPrivateRepo.Sources = map[string]*types.SourceInfo{
-		siteLevelGitHubService.URN(): {
-			ID: siteLevelGitHubService.URN(),
-		},
-	}
-
-	// Make sure that alicePublicRepo, alicePrivateRepo, bobPublicRepo and bobPrivateRepo have an
-	// entry in external_service_repos table.
-	repoIDs := []api.RepoID{
-		alicePublicRepo.ID,
-		alicePrivateRepo.ID,
-		bobPublicRepo.ID,
-		bobPrivateRepo.ID,
-	}
-
-	for _, id := range repoIDs {
-		q := sqlf.Sprintf(`
-INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
-VALUES (%s, %s, '')
-`, siteLevelGitHubService.ID, id)
-		_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	// Set up another unrestricted private repo from cindy
-	confGet := func() *conf.Unified { return &conf.Unified{} }
-	cindyExternalService := &types.ExternalService{
-		Kind:         extsvc.KindGitHub,
-		DisplayName:  "GITHUB #1",
-		Config:       extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-		Unrestricted: true,
-	}
-	err = db.ExternalServices().Create(ctx, confGet, cindyExternalService)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cindyPrivateRepo := mustCreate(internalCtx, t, db,
-		&types.Repo{
-			Name:    "cindy_private_repo",
-			Private: true,
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "cindy_private_repo",
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "https://github.com/",
-			},
-		},
-	)
-	cindyPrivateRepo.Sources = map[string]*types.SourceInfo{
-		cindyExternalService.URN(): {ID: cindyExternalService.URN()},
-	}
-
-	q := sqlf.Sprintf(`
-INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
-VALUES (%s, %s, '')
-`, cindyExternalService.ID, cindyPrivateRepo.ID)
-	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Set up permissions: alice and bob have access to their own private repositories
-	q = sqlf.Sprintf(`
-INSERT INTO user_permissions (user_id, permission, object_type, object_ids_ints, updated_at)
-VALUES
-	(%s, 'read', 'repos', %s, NOW()),
-	(%s, 'read', 'repos', %s, NOW())
-`,
-		alice.ID, pq.Array([]int32{int32(alicePrivateRepo.ID)}),
-		bob.ID, pq.Array([]int32{int32(bobPrivateRepo.ID)}),
-	)
-	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		t.Fatal(err)
-	}
+	users, repos := setupDB(t, ctx, db)
+	admin, alice, bob, cindy := users["admin"], users["alice"], users["bob"], users["cindy"]
+	alicePublicRepo, alicePrivateRepo, bobPublicRepo, bobPrivateRepo, cindyPrivateRepo := repos["alice_public_repo"], repos["alice_private_repo"], repos["bob_public_repo"], repos["bob_private_repo"], repos["cindy_private_repo"]
 
 	authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
 	defer authz.SetProviders(true, nil)
 
 	assertRepos := func(t *testing.T, ctx context.Context, want []*types.Repo) {
 		t.Helper()
-		repos, err := db.Repos().List(ctx, ReposListOptions{})
+		repos, err := db.Repos().List(ctx, ReposListOptions{OrderBy: []RepoListSort{{Field: RepoListID}}})
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		// sort the want slice as well, so that ordering does not matter
+		sort.Slice(want, func(i, j int) bool {
+			return want[i].ID < want[j].ID
+		})
+
 		if diff := cmp.Diff(want, repos); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	}
-	// Alice should see "alice_public_repo", "alice_private_repo",
-	// "bob_public_repo", "cindy_private_repo". The "cindy_private_repo" comes from
-	// an unrestricted external service
-	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	wantRepos := []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, cindyPrivateRepo}
-	assertRepos(t, aliceCtx, wantRepos)
 
-	// Bob should see "alice_public_repo", "bob_private_repo", "bob_public_repo",
-	// "cindy_private_repo". The "cindy_private_repo" comes from an unrestricted
-	// external service
-	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
-	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo, bobPrivateRepo, cindyPrivateRepo}
-	assertRepos(t, bobCtx, wantRepos)
+	runTests := func(t *testing.T) {
+		t.Helper()
 
-	// By default, site admins can see all repos
-	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
-	wantRepos = []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, bobPrivateRepo, cindyPrivateRepo}
-	assertRepos(t, adminCtx, wantRepos)
+		t.Run("Internal actor should see all repositories", func(t *testing.T) {
+			internalCtx := actor.WithInternalActor(ctx)
+			wantRepos := maps.Values(repos)
+			assertRepos(t, internalCtx, wantRepos)
+		})
 
-	// When AuthzEnforceForSiteAdmins is set, site admins can only see repos they have access
-	// to based on our authz model
-	conf.Get().AuthzEnforceForSiteAdmins = true
-	t.Cleanup(func() {
-		conf.Get().AuthzEnforceForSiteAdmins = false
+		t.Run("Alice should see authorized repositories", func(t *testing.T) {
+			// Alice should see "alice_public_repo", "alice_private_repo",
+			// "bob_public_repo", "cindy_private_repo".
+			// The "cindy_private_repo" comes from an unrestricted external service
+			aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
+			wantRepos := []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, cindyPrivateRepo}
+			assertRepos(t, aliceCtx, wantRepos)
+		})
+
+		t.Run("Bob should see authorized repositories", func(t *testing.T) {
+			// Bob should see "alice_public_repo", "bob_private_repo", "bob_public_repo",
+			// "cindy_private_repo".
+			// The "cindy_private_repo" comes from an unrestricted external service
+			bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
+			wantRepos := []*types.Repo{alicePublicRepo, bobPublicRepo, bobPrivateRepo, cindyPrivateRepo}
+			assertRepos(t, bobCtx, wantRepos)
+		})
+
+		t.Run("Site admins see all repos by default", func(t *testing.T) {
+			adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
+			wantRepos := maps.Values(repos)
+			assertRepos(t, adminCtx, wantRepos)
+		})
+
+		t.Run("Site admins only see their repos when AuthzEnforceForSiteAdmins is enabled", func(t *testing.T) {
+			conf.Get().AuthzEnforceForSiteAdmins = true
+			t.Cleanup(func() {
+				conf.Get().AuthzEnforceForSiteAdmins = false
+			})
+
+			// since there are no permissions, only public and unrestricted repos are visible
+			adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
+			wantRepos := []*types.Repo{alicePublicRepo, bobPublicRepo, cindyPrivateRepo}
+			assertRepos(t, adminCtx, wantRepos)
+		})
+
+		t.Run("Cindy does not have permissions, only public and unrestricted repos are authorized", func(t *testing.T) {
+			cindyCtx := actor.WithActor(ctx, &actor.Actor{UID: cindy.ID})
+			wantRepos := []*types.Repo{alicePublicRepo, bobPublicRepo, cindyPrivateRepo}
+			assertRepos(t, cindyCtx, wantRepos)
+		})
+	}
+
+	t.Run("Legacy permissions tables should be respected", func(t *testing.T) {
+		runTests(t)
 	})
-	adminCtx = actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
-	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo, cindyPrivateRepo}
-	assertRepos(t, adminCtx, wantRepos)
 
-	// A random user should only see "alice_public_repo", "bob_public_repo"
-	// "cindy_private_repos" comes from an unrestricted external service
-	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo, cindyPrivateRepo}
-	assertRepos(t, ctx, wantRepos)
+	t.Run("Unified permissions table should be respected if feature flag is on", func(t *testing.T) {
+		mockUnifiedPermsConfig()
+		// Always reset the configuration so that it doesn't interfere with other tests
+		defer conf.Mock(nil)
+
+		runTests(t)
+	})
 }
 
 // 🚨 SECURITY: Tests are necessary to ensure security.
@@ -730,4 +769,152 @@ VALUES
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func benchmarkAuthzQuery(b *testing.B, numRepos, numUsers, reposPerUser int) {
+	// disable security access logs, which pollute the output of benchmark
+	os.Setenv("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS", "true")
+
+	logger := logtest.Scoped(b)
+	db := NewDB(logger, dbtest.NewDB(logger, b))
+	ctx := context.Background()
+
+	b.Logf("Creating %d repositories...", numRepos)
+
+	repoInserter := batch.NewInserter(ctx, db.Handle(), "repo", batch.MaxNumPostgresParameters, "name", "private")
+	repoPermissionsInserter := batch.NewInserter(ctx, db.Handle(), "repo_permissions", batch.MaxNumPostgresParameters, "repo_id", "permission", "updated_at", "synced_at", "unrestricted")
+	for i := 1; i <= numRepos; i++ {
+		if err := repoInserter.Insert(ctx, fmt.Sprintf("repo-%d", i), true); err != nil {
+			b.Fatal(err)
+		}
+		if err := repoPermissionsInserter.Insert(ctx, i, "read", "now()", "now()", false); err != nil {
+			b.Fatal(err)
+		}
+	}
+	if err := repoInserter.Flush(ctx); err != nil {
+		b.Fatal(err)
+	}
+	if err := repoPermissionsInserter.Flush(ctx); err != nil {
+		b.Fatal(err)
+	}
+
+	b.Logf("Done creating %d repositories.", numRepos)
+
+	b.Logf("Creating %d users...", numRepos)
+
+	userInserter := batch.NewInserter(ctx, db.Handle(), "users", batch.MaxNumPostgresParameters, "username")
+	for i := 1; i <= numUsers; i++ {
+		if err := userInserter.Insert(ctx, fmt.Sprintf("user-%d", i)); err != nil {
+			b.Fatal(err)
+		}
+	}
+	if err := userInserter.Flush(ctx); err != nil {
+		b.Fatal(err)
+	}
+
+	b.Logf("Done creating %d users.", numUsers)
+
+	b.Logf("Creating %d external accounts...", numUsers)
+
+	externalAccountInserter := batch.NewInserter(ctx, db.Handle(), "user_external_accounts", batch.MaxNumPostgresParameters, "user_id", "account_id", "service_type", "service_id", "client_id")
+	for i := 1; i <= numUsers; i++ {
+		if err := externalAccountInserter.Insert(ctx, i, fmt.Sprintf("test-account-%d", i), "test", "test", "test"); err != nil {
+			b.Fatal(err)
+		}
+	}
+	if err := externalAccountInserter.Flush(ctx); err != nil {
+		b.Fatal(err)
+	}
+
+	b.Logf("Done creating %d external accounts.", numUsers)
+
+	b.Logf("Creating %d permissions...", numUsers*reposPerUser)
+
+	userPermissionsInserter := batch.NewInserter(ctx, db.Handle(), "user_permissions", batch.MaxNumPostgresParameters, "user_id", "object_ids_ints", "permission", "object_type", "updated_at", "synced_at")
+	userRepoPermissionsInserter := batch.NewInserter(ctx, db.Handle(), "user_repo_permissions", batch.MaxNumPostgresParameters, "user_id", "user_external_account_id", "repo_id", "source")
+	for i := 1; i <= numUsers; i++ {
+		objectIDs := make(map[int]struct{})
+		// Assign a random set of repos to the user
+		for j := 0; j < reposPerUser; j++ {
+			repoID := rand.Intn(numRepos) + 1
+			objectIDs[repoID] = struct{}{}
+		}
+
+		if err := userPermissionsInserter.Insert(ctx, i, maps.Keys(objectIDs), "read", "repos", "now()", "now()"); err != nil {
+			b.Fatal(err)
+		}
+
+		for repoID := range objectIDs {
+			if err := userRepoPermissionsInserter.Insert(ctx, i, i, repoID, "test"); err != nil {
+				b.Fatal(err)
+			}
+		}
+	}
+	if err := userPermissionsInserter.Flush(ctx); err != nil {
+		b.Fatal(err)
+	}
+	if err := userRepoPermissionsInserter.Flush(ctx); err != nil {
+		b.Fatal(err)
+	}
+
+	b.Logf("Done creating %d permissions.", numUsers*reposPerUser)
+
+	fetchMinRepos := func() {
+		randomUserID := int32(rand.Intn(numUsers)) + 1
+		ctx := actor.WithActor(ctx, &actor.Actor{UID: randomUserID})
+		if _, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{}); err != nil {
+			b.Fatalf("unexpected error: %s", err)
+		}
+	}
+
+	b.ResetTimer()
+
+	b.Run("list repos, using unified user_repo_permissions table", func(b *testing.B) {
+		mockUnifiedPermsConfig()
+		defer conf.Mock(nil)
+
+		for i := 0; i < b.N; i++ {
+			fetchMinRepos()
+		}
+	})
+
+	b.Run("list repos, using legacy user_permissions table", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			fetchMinRepos()
+		}
+	})
+}
+
+// 2022-03-02 - MacBook Pro M1 Max
+//
+// φ go test -v -timeout=900s -run=XXX -benchtime=10s -bench BenchmarkAuthzQuery ./internal/database
+// goos: darwin
+// goarch: arm64
+// pkg: github.com/sourcegraph/sourcegraph/internal/database
+// BenchmarkAuthzQuery_ListMinimalRepos_1000repos_1000users_50reposPerUser/list_repos,_using_unified_user_repo_permissions_table-10                   23928            495697 ns/op
+// BenchmarkAuthzQuery_ListMinimalRepos_1000repos_1000users_50reposPerUser/list_repos,_using_legacy_user_permissions_table-10                         24399            486467 ns/op
+
+// BenchmarkAuthzQuery_ListMinimalRepos_10krepos_10kusers_150reposPerUser/list_repos,_using_unified_user_repo_permissions_table-10                     3180           4023709 ns/op
+// BenchmarkAuthzQuery_ListMinimalRepos_10krepos_10kusers_150reposPerUser/list_repos,_using_legacy_user_permissions_table-10                           2911           4020591 ns/op
+
+// BenchmarkAuthzQuery_ListMinimalRepos_10krepos_10kusers_500reposPerUser/list_repos,_using_unified_user_repo_permissions_table-10                     3201           4101237 ns/op
+// BenchmarkAuthzQuery_ListMinimalRepos_10krepos_10kusers_500reposPerUser/list_repos,_using_legacy_user_permissions_table-10                           2944           4144971 ns/op
+
+// BenchmarkAuthzQuery_ListMinimalRepos_500krepos_40kusers_500reposPerUser/list_repos,_using_unified_user_repo_permissions_table-10                      63         186395579 ns/op
+// BenchmarkAuthzQuery_ListMinimalRepos_500krepos_40kusers_500reposPerUser/list_repos,_using_legacy_user_permissions_table-10                            62         190570966 ns/op
+
+func BenchmarkAuthzQuery_ListMinimalRepos_1000repos_1000users_50reposPerUser(b *testing.B) {
+	benchmarkAuthzQuery(b, 1_000, 1_000, 50)
+}
+
+func BenchmarkAuthzQuery_ListMinimalRepos_10krepos_10kusers_150reposPerUser(b *testing.B) {
+	benchmarkAuthzQuery(b, 10_000, 10_000, 150)
+}
+
+func BenchmarkAuthzQuery_ListMinimalRepos_10krepos_10kusers_500reposPerUser(b *testing.B) {
+	benchmarkAuthzQuery(b, 10_000, 10_000, 500)
+}
+
+func BenchmarkAuthzQuery_ListMinimalRepos_500krepos_40kusers_500reposPerUser(b *testing.B) {
+	benchmarkAuthzQuery(b, 500_000, 40_000, 500)
 }

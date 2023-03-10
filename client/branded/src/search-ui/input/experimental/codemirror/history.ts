@@ -1,4 +1,5 @@
 import type { Extension } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
 import { mdiClockOutline } from '@mdi/js'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import { Fzf, type FzfOptions } from 'fzf'
@@ -6,7 +7,7 @@ import { Fzf, type FzfOptions } from 'fzf'
 import { pluralize } from '@sourcegraph/common'
 import { type RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 
-import { type ModeDefinition, modesFacet } from '../modes'
+import { type ModeDefinition, modesFacet, setMode } from '../modes'
 import { queryRenderer } from '../optionRenderer'
 import { type Source, suggestionSources, type Option } from '../suggestionsExtension'
 
@@ -24,7 +25,9 @@ function createHistorySuggestionSource(
     source: () => RecentSearch[],
     submitQuery: (query: string) => void
 ): Source['query'] {
-    const applySuggestion = (option: Option): void => {
+    const applySuggestion = (option: Option, view: EditorView): void => {
+        setMode(view, null)
+        view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: option.label } })
         submitQuery(option.label)
     }
 

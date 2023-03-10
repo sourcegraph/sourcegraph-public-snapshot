@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"golang.org/x/sync/semaphore"
-	"google.golang.org/grpc"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -70,7 +69,7 @@ func InitGitserver() {
 		DB:                      db,
 	}
 
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	grpcServer := defaults.NewServer(logger)
 	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 

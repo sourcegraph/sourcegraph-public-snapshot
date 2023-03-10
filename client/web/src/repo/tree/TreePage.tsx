@@ -1,6 +1,16 @@
-import React, { useMemo, useEffect, useState } from 'react'
+import React, { FC, useEffect, useMemo } from 'react'
 
-import { mdiBrain, mdiCog, mdiFolder, mdiHistory, mdiSourceBranch, mdiSourceRepository, mdiTag } from '@mdi/js'
+import {
+    mdiAccount,
+    mdiBrain,
+    mdiCog,
+    mdiFolder,
+    mdiHistory,
+    mdiPackageVariantClosed,
+    mdiSourceBranch,
+    mdiSourceRepository,
+    mdiTag,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
@@ -15,19 +25,19 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    useObservable,
-    Link,
-    Icon,
-    ButtonGroup,
     Button,
-    Text,
+    ButtonGroup,
+    Container,
     ErrorAlert,
+    Icon,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Text,
     Tooltip,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
@@ -35,10 +45,11 @@ import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import { ActionItemsBarProps } from '../../extensions/components/ActionItemsBar'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { isPackageServiceType } from '../packages/isPackageServiceType'
 
 import { TreePageContent } from './TreePageContent'
 
@@ -60,7 +71,6 @@ interface Props
     commitID: string
     revision: string
     globbing: boolean
-    useActionItemsBar: ActionItemsBarProps['useActionItemsBar']
     isSourcegraphDotCom: boolean
     className?: string
 }
@@ -75,7 +85,7 @@ export const treePageRepositoryFragment = gql`
     }
 `
 
-export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const TreePage: FC<Props> = ({
     repo,
     repoName,
     commitID,
@@ -85,24 +95,30 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     useBreadcrumb,
     codeIntelligenceEnabled,
     batchChangesEnabled,
-    useActionItemsBar,
     isSourcegraphDotCom,
     className,
     ...props
 }) => {
+    const isRoot = filePath === ''
+    const isPackage = useMemo(
+        () => isPackageServiceType(repo?.externalRepository.serviceType),
+        [repo?.externalRepository.serviceType]
+    )
+
     useEffect(() => {
-        if (filePath === '') {
+        if (isRoot) {
             props.telemetryService.logViewEvent('Repository')
         } else {
             props.telemetryService.logViewEvent('Tree')
         }
-    }, [filePath, props.telemetryService])
+    }, [isRoot, props.telemetryService])
 
     useBreadcrumb(
         useMemo(() => {
-            if (!filePath) {
+            if (isRoot) {
                 return
             }
+
             return {
                 key: 'treePath',
                 className: 'flex-shrink-past-contents',
@@ -117,7 +133,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     />
                 ),
             }
-        }, [filePath, repoName, revision, props.telemetryService])
+        }, [isRoot, filePath, repoName, revision, props.telemetryService])
     )
 
     const treeOrError = useObservable(
@@ -139,6 +155,8 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         !isErrorLike(settingsCascade.final) &&
         !!settingsCascade.final?.experimentalFeatures?.codeInsights &&
         settingsCascade.final['insights.displayLocation.directory'] === true
+
+    const [ownEnabled] = useFeatureFlag('search-ownership')
 
     // Add DirectoryViewer
     const uri = toURIWithPath({ repoName, commitID, filePath })
@@ -182,23 +200,21 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         return `${repoString}`
     }
 
-    const [showPageTitle] = useState(true)
-
     const RootHeaderSection = (): React.ReactElement => (
-        <>
-            <div className="d-flex flex-wrap justify-content-between px-0">
-                <div className={styles.header}>
-                    <PageHeader className="mb-3 test-tree-page-title">
-                        <PageHeader.Heading as="h2" styleAs="h1">
-                            <PageHeader.Breadcrumb icon={mdiSourceRepository}>
-                                {displayRepoName(repo?.name || '')}
-                            </PageHeader.Breadcrumb>
-                        </PageHeader.Heading>
-                    </PageHeader>
-                    {repo?.description && <Text>{repo.description}</Text>}
-                </div>
-                <div className={styles.menu}>
-                    <ButtonGroup>
+        <div className="d-flex flex-wrap justify-content-between px-0">
+            <div className={styles.header}>
+                <PageHeader className="mb-3 test-tree-page-title">
+                    <PageHeader.Heading as="h2" styleAs="h1">
+                        <PageHeader.Breadcrumb icon={isPackage ? mdiPackageVariantClosed : mdiSourceRepository}>
+                            {displayRepoName(repo?.name || '')}
+                        </PageHeader.Breadcrumb>
+                    </PageHeader.Heading>
+                </PageHeader>
+                {repo?.description && <Text>{repo.description}</Text>}
+            </div>
+            <div className={styles.menu}>
+                <ButtonGroup>
+                    {!isPackage && (
                         <Tooltip content="Branches">
                             <Button
                                 className="flex-shrink-0"
@@ -211,119 +227,137 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 <span className={styles.text}>Branches</span>
                             </Button>
                         </Tooltip>
-                        <Tooltip content="Tags">
+                    )}
+                    <Tooltip content={isPackage ? 'Versions' : 'Tags'}>
+                        <Button
+                            className="flex-shrink-0"
+                            to={`/${encodeURIPathComponent(repoName)}/-${isPackage ? '/versions' : '/tags'}`}
+                            variant="secondary"
+                            outline={true}
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiTag} />{' '}
+                            <span className={styles.text}>{isPackage ? 'Versions' : 'Tags'}</span>
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Compare">
+                        <Button
+                            className="flex-shrink-0"
+                            to={
+                                revision
+                                    ? `/${encodeURIPathComponent(repoName)}/-/compare/...${encodeURIComponent(
+                                          revision
+                                      )}`
+                                    : `/${encodeURIPathComponent(repoName)}/-/compare`
+                            }
+                            variant="secondary"
+                            outline={true}
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiHistory} />{' '}
+                            <span className={styles.text}>Compare</span>
+                        </Button>
+                    </Tooltip>
+                    {codeIntelligenceEnabled && (
+                        <Tooltip content="Code graph data">
                             <Button
                                 className="flex-shrink-0"
-                                to={`/${encodeURIPathComponent(repoName)}/-/tags`}
+                                to={`/${encodeURIPathComponent(repoName)}/-/code-graph`}
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
                             >
-                                <Icon aria-hidden={true} svgPath={mdiTag} /> <span className={styles.text}>Tags</span>
+                                <Icon aria-hidden={true} svgPath={mdiBrain} />{' '}
+                                <span className={styles.text}>Code graph data</span>
                             </Button>
                         </Tooltip>
-                        <Tooltip content="Compare">
+                    )}
+                    {batchChangesEnabled && !isPackage && (
+                        <Tooltip content="Batch changes">
+                            <RepoBatchChangesButton
+                                className="flex-shrink-0"
+                                textClassName={styles.text}
+                                repoName={repoName}
+                            />
+                        </Tooltip>
+                    )}
+                    {ownEnabled && !isSourcegraphDotCom && (
+                        <Tooltip content="Ownership">
                             <Button
                                 className="flex-shrink-0"
-                                to={
-                                    revision
-                                        ? `/${encodeURIPathComponent(repoName)}/-/compare/...${encodeURIComponent(
-                                              revision
-                                          )}`
-                                        : `/${encodeURIPathComponent(repoName)}/-/compare`
-                                }
+                                to={`/${encodeURIPathComponent(repoName)}/-/own`}
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
+                                onClick={() => props.telemetryService.log('repoPage:ownershipPage:clicked')}
                             >
-                                <Icon aria-hidden={true} svgPath={mdiHistory} />{' '}
-                                <span className={styles.text}>Compare</span>
+                                <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
+                                <span className={styles.text}>Ownership</span>
                             </Button>
                         </Tooltip>
-                        {codeIntelligenceEnabled && (
-                            <Tooltip content="Code graph data">
-                                <Button
-                                    className="flex-shrink-0"
-                                    to={`/${encodeURIPathComponent(repoName)}/-/code-graph`}
-                                    variant="secondary"
-                                    outline={true}
-                                    as={Link}
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiBrain} />{' '}
-                                    <span className={styles.text}>Code graph data</span>
-                                </Button>
-                            </Tooltip>
-                        )}
-                        {batchChangesEnabled && (
-                            <Tooltip content="Batch changes">
-                                <RepoBatchChangesButton
-                                    className="flex-shrink-0"
-                                    textClassName={styles.text}
-                                    repoName={repoName}
-                                />
-                            </Tooltip>
-                        )}
-                        {repo?.viewerCanAdminister && (
-                            <Tooltip content="Settings">
-                                <Button
-                                    className="flex-shrink-0"
-                                    to={`/${encodeURIPathComponent(repoName)}/-/settings`}
-                                    variant="secondary"
-                                    outline={true}
-                                    as={Link}
-                                    aria-label="Repository settings"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiCog} />
-                                    <span className={styles.text}>Settings</span>
-                                </Button>
-                            </Tooltip>
-                        )}
-                    </ButtonGroup>
-                </div>
+                    )}
+                    {repo?.viewerCanAdminister && (
+                        <Tooltip content="Settings">
+                            <Button
+                                className="flex-shrink-0"
+                                to={`/${encodeURIPathComponent(repoName)}/-/settings`}
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                                aria-label="Repository settings"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiCog} />
+                                <span className={styles.text}>Settings</span>
+                            </Button>
+                        </Tooltip>
+                    )}
+                </ButtonGroup>
             </div>
-        </>
+        </div>
     )
 
     return (
         <div className={classNames(styles.treePage, className)}>
             <Container className={styles.container}>
-                {!showPageTitle && <PageTitle title={getPageTitle()} />}
-                {treeOrError === undefined || repo === undefined ? (
-                    <div>
-                        <LoadingSpinner /> Loading files and directories
-                    </div>
-                ) : isErrorLike(treeOrError) ? (
-                    // If the tree is actually a blob, be helpful and redirect to the blob page.
-                    // We don't have error names on GraphQL errors.
-                    /not a directory/i.test(treeOrError.message) ? (
-                        <Navigate to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} replace={true} />
-                    ) : (
-                        <ErrorAlert error={treeOrError} />
-                    )
-                ) : (
-                    <div className={classNames(styles.header)}>
-                        <header className="mb-3">
-                            {treeOrError.isRoot ? (
-                                <RootHeaderSection />
-                            ) : (
-                                <PageHeader className="mb-3 mr-2 test-tree-page-title">
-                                    <PageHeader.Heading as="h2" styleAs="h1">
-                                        <PageHeader.Breadcrumb icon={mdiFolder}>{filePath}</PageHeader.Breadcrumb>
-                                    </PageHeader.Heading>
-                                </PageHeader>
-                            )}
-                        </header>
+                <div className={classNames(styles.header)}>
+                    <PageTitle title={getPageTitle()} />
 
+                    <header className="mb-3">
+                        {isRoot ? (
+                            <RootHeaderSection />
+                        ) : (
+                            <PageHeader className="mb-3 mr-2 test-tree-page-title">
+                                <PageHeader.Heading as="h2" styleAs="h1">
+                                    <PageHeader.Breadcrumb icon={mdiFolder}>{filePath}</PageHeader.Breadcrumb>
+                                </PageHeader.Heading>
+                            </PageHeader>
+                        )}
+                    </header>
+
+                    {treeOrError === undefined || repo === undefined ? (
+                        <div>
+                            <LoadingSpinner /> Loading files and directories
+                        </div>
+                    ) : isErrorLike(treeOrError) ? (
+                        // If the tree is actually a blob, be helpful and redirect to the blob page.
+                        // We don't have error names on GraphQL errors.
+                        /not a directory/i.test(treeOrError.message) ? (
+                            <Navigate to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} replace={true} />
+                        ) : (
+                            <ErrorAlert error={treeOrError} />
+                        )
+                    ) : (
                         <TreePageContent
                             filePath={filePath}
                             tree={treeOrError}
                             repo={repo}
                             revision={revision}
                             commitID={commitID}
+                            isPackage={isPackage}
                             {...props}
                         />
-                    </div>
-                )}
+                    )}
+                </div>
             </Container>
         </div>
     )

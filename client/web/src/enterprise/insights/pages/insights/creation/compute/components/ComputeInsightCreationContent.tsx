@@ -127,7 +127,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     <Label htmlFor="repositories-id">Repositories</Label>
                     <RepositoriesField
                         id="repositories-id"
-                        description="Find and choose up to 1 repository to run insight"
+                        description="Find and choose at least 1 repository to run insight"
                         placeholder="Search repositories..."
                         {...getDefaultInputProps(repositories)}
                     />

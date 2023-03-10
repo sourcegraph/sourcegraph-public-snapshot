@@ -1,7 +1,7 @@
 import { QueryState } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { FormInstance, FormChangeEvent, SubmissionErrors, useField, useFieldAPI, useForm } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../../../../../../stores'
 import {
     createDefaultEditSeries,
     EditableDataSeries,

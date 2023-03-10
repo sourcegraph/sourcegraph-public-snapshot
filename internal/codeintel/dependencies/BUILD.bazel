@@ -4,7 +4,6 @@ go_library(
     name = "dependencies",
     srcs = [
         "consts.go",
-        "iface.go",
         "init.go",
         "observability.go",
         "service.go",
@@ -12,15 +11,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/api",
-        "//internal/authz",
         "//internal/codeintel/dependencies/internal/background",
         "//internal/codeintel/dependencies/internal/store",
         "//internal/codeintel/dependencies/shared",
         "//internal/conf/reposource",
         "//internal/database",
-        "//internal/gitserver",
-        "//internal/gitserver/protocol",
         "//internal/goroutine",
         "//internal/metrics",
         "//internal/observation",

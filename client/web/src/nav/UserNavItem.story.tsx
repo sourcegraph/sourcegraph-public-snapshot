@@ -66,6 +66,7 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
 const commonProps = (props: Args): UserNavItemProps => ({
     authenticatedUser,
     isSourcegraphDotCom: props.isSourcegraphDotCom,
+    isSourcegraphApp: false,
     codeHostIntegrationMessaging: props.codeHostIntegrationMessaging,
     showKeyboardShortcutsHelp: () => undefined,
     showFeedbackModal: () => undefined,

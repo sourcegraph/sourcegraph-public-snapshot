@@ -29,11 +29,11 @@ go_library(
         "//internal/trace",
         "//internal/types",
         "//lib/errors",
-        "//lib/group",
         "//lib/iterator",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_grafana_regexp//syntax",
         "@com_github_opentracing_opentracing_go//log",
+        "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_sourcegraph_zoekt//query",
@@ -51,6 +51,10 @@ go_test(
         "repos_test.go",
     ],
     embed = [":repos"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/searcher/protocol",
         "//internal/api",

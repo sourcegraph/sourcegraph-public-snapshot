@@ -35,14 +35,17 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	reposStore := ReposWith(logger, db)
 
 	// Create users.
-	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1"})
+	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1", DisplayName: "t0pc0d3r"})
 	require.NoError(t, err)
 	user2, err := usersStore.Create(ctx, NewUser{Username: "test-user-2"})
 	require.NoError(t, err)
 
-	// Create a repo.
+	// Create repos.
 	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
 	err = reposStore.Create(ctx, &repo1)
+	require.NoError(t, err)
+	repo2 := types.Repo{Name: "test-repo-2", ID: 201}
+	err = reposStore.Create(ctx, &repo2)
 	require.NoError(t, err)
 
 	jobs, err := store.List(ctx, ListPermissionSyncJobOpts{})
@@ -59,20 +62,25 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	require.NoError(t, err)
 
 	processAfter = clock.Now().Add(5 * time.Minute)
-	opts = PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
+	opts = PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonUserEmailVerified}
 	err = store.CreateUserSyncJob(ctx, user2.ID, opts)
+	require.NoError(t, err)
+
+	processAfter = clock.Now().Add(5 * time.Minute)
+	opts = PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Reason: ReasonGitHubRepoEvent}
+	err = store.CreateRepoSyncJob(ctx, repo2.ID, opts)
 	require.NoError(t, err)
 	codeHostStates := getSampleCodeHostStates()
 	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET code_host_states=array["+
 		"'{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"SUCCESS\",\"message\":\"successful success\"}',"+
 		"'{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"ERROR\",\"message\":\"unsuccessful unsuccess :(\"}'"+
-		"]::json[], cancellation_reason='i tried to cancel but it already failed', failure_message='imma failure' WHERE id=3")
+		"]::json[], state='failed', cancellation_reason='i tried to cancel but it already failed', failure_message='imma failure' WHERE id=4")
 	require.NoError(t, err)
 
 	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
 
-	require.Len(t, jobs, 3, "wrong number of jobs returned")
+	require.Len(t, jobs, 4, "wrong number of jobs returned")
 
 	wantJobs := []*PermissionSyncJob{
 		{
@@ -95,13 +103,20 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			Reason:           ReasonManualUserSync,
 		},
 		{
-			ID:                 jobs[2].ID,
-			State:              PermissionsSyncJobStateQueued,
-			UserID:             int(user2.ID),
+			ID:               jobs[2].ID,
+			State:            PermissionsSyncJobStateQueued,
+			UserID:           int(user2.ID),
+			Priority:         LowPriorityPermissionsSync,
+			InvalidateCaches: true,
+			ProcessAfter:     processAfter,
+			Reason:           ReasonUserEmailVerified,
+		},
+		{
+			ID:                 jobs[3].ID,
+			State:              PermissionsSyncJobStateFailed,
+			RepositoryID:       int(repo2.ID),
 			Priority:           LowPriorityPermissionsSync,
-			InvalidateCaches:   true,
-			ProcessAfter:       processAfter,
-			Reason:             ReasonManualUserSync,
+			Reason:             ReasonGitHubRepoEvent,
 			CodeHostStates:     codeHostStates,
 			FailureMessage:     pointer.String("imma failure"),
 			CancellationReason: pointer.String("i tried to cancel but it already failed"),
@@ -122,12 +137,12 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		{
 			name:     "ID",
 			opts:     ListPermissionSyncJobOpts{ID: jobs[0].ID},
-			wantJobs: jobs[0:1],
+			wantJobs: jobs[:1],
 		},
 		{
 			name:     "RepoID",
 			opts:     ListPermissionSyncJobOpts{RepoID: jobs[0].RepositoryID},
-			wantJobs: jobs[0:1],
+			wantJobs: jobs[:1],
 		},
 		{
 			name:     "UserID",
@@ -137,7 +152,77 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		{
 			name:     "UserID",
 			opts:     ListPermissionSyncJobOpts{UserID: jobs[2].UserID},
-			wantJobs: jobs[2:],
+			wantJobs: jobs[2:3],
+		},
+		{
+			name:     "State=queued",
+			opts:     ListPermissionSyncJobOpts{State: PermissionsSyncJobStateQueued},
+			wantJobs: jobs[:3],
+		},
+		{
+			name:     "State=failed",
+			opts:     ListPermissionSyncJobOpts{State: PermissionsSyncJobStateFailed},
+			wantJobs: jobs[3:],
+		},
+		{
+			name:     "Reason filtering",
+			opts:     ListPermissionSyncJobOpts{Reason: ReasonManualUserSync},
+			wantJobs: jobs[1:2],
+		},
+		{
+			name:     "ReasonGroup filtering",
+			opts:     ListPermissionSyncJobOpts{ReasonGroup: PermissionsSyncJobReasonGroupWebhook},
+			wantJobs: jobs[3:],
+		},
+		{
+			name:     "ReasonGroup filtering",
+			opts:     ListPermissionSyncJobOpts{ReasonGroup: PermissionsSyncJobReasonGroupSourcegraph},
+			wantJobs: jobs[2:3],
+		},
+		{
+			name:     "Reason and ReasonGroup filtering (reason filtering wins)",
+			opts:     ListPermissionSyncJobOpts{Reason: ReasonManualUserSync, ReasonGroup: PermissionsSyncJobReasonGroupSchedule},
+			wantJobs: jobs[1:2],
+		},
+		{
+			name:     "Search doesn't work without SearchType",
+			opts:     ListPermissionSyncJobOpts{Query: "where's the search type, Lebowski?"},
+			wantJobs: jobs,
+		},
+		{
+			name:     "SearchType alone works as a filter by sync job subject (repository)",
+			opts:     ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeRepo},
+			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3]},
+		},
+		{
+			name:     "Repo name search, case-insensitivity",
+			opts:     ListPermissionSyncJobOpts{Query: "TeST", SearchType: PermissionsSyncSearchTypeRepo},
+			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3]},
+		},
+		{
+			name:     "Repo name search",
+			opts:     ListPermissionSyncJobOpts{Query: "1", SearchType: PermissionsSyncSearchTypeRepo},
+			wantJobs: jobs[:1],
+		},
+		{
+			name:     "SearchType alone works as a filter by sync job subject (user)",
+			opts:     ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeUser},
+			wantJobs: jobs[1:3],
+		},
+		{
+			name:     "User display name search, case-insensitivity",
+			opts:     ListPermissionSyncJobOpts{Query: "3", SearchType: PermissionsSyncSearchTypeUser},
+			wantJobs: jobs[1:2],
+		},
+		{
+			name:     "User name search",
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser},
+			wantJobs: jobs[2:3],
+		},
+		{
+			name:     "User name search with pagination",
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{First: intPtr(1)}},
+			wantJobs: jobs[2:3],
 		},
 	}
 
@@ -240,6 +325,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	for _, job := range allUser1Jobs {
 		if job.ID == 1 {
 			require.True(t, job.Cancel)
+			require.Equal(t, PermissionsSyncJobStateCanceled, job.State)
 		} else {
 			require.False(t, job.Cancel)
 		}
@@ -560,23 +646,41 @@ func TestPermissionSyncJobs_Count(t *testing.T) {
 	_, err = store.List(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
 
-	count, err := store.Count(ctx)
+	count, err := store.Count(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
 	require.Equal(t, 10, count)
 
 	// Create 10 more sync jobs.
 	createSyncJobs(t, ctx, user.ID, store)
-	count, err = store.Count(ctx)
+	// Now we will count only the ReasonManualUserSync jobs (which should be a half
+	// of all jobs).
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{Reason: ReasonManualUserSync})
+	require.NoError(t, err)
+	require.Equal(t, 10, count)
+
+	// Counting with user search.
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeUser, Query: "hors"})
 	require.NoError(t, err)
 	require.Equal(t, 20, count)
+
+	// Counting with repo search.
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeRepo, Query: "no :("})
+	require.NoError(t, err)
+	require.Equal(t, 0, count)
 }
 
+// createSyncJobs creates 10 sync jobs, half with the ReasonManualUserSync reason
+// and half with the ReasonGitHubUserMembershipRemovedEvent reason.
 func createSyncJobs(t *testing.T, ctx context.Context, userID int32, store PermissionSyncJobStore) {
 	t.Helper()
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	for i := 0; i < 10; i++ {
 		processAfter := clock.Now().Add(5 * time.Minute)
-		opts := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
+		reason := ReasonManualUserSync
+		if i%2 == 0 {
+			reason = ReasonGitHubUserMembershipRemovedEvent
+		}
+		opts := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: reason}
 		err := store.CreateUserSyncJob(ctx, userID, opts)
 		require.NoError(t, err)
 	}

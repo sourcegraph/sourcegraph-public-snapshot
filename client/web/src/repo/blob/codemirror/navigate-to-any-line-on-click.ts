@@ -32,7 +32,7 @@ class LineLinkManager implements PluginValue {
                     Decoration.mark({
                         tagName: 'a',
                         attributes: { href, 'data-cm-line-link': '' },
-                        class: 'text-decoration-none',
+                        class: 'text-decoration-none text-inherit',
                     })
                 )
                 pos = line.to + 1

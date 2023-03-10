@@ -46,6 +46,7 @@ go_test(
         "local_code_intel_test.go",
         "service_test.go",
     ],
+    data = glob(["test_repos/**"]),
     embed = [":squirrel"],
     deps = [
         "//internal/search",

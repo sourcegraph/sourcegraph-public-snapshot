@@ -1,28 +1,19 @@
-; ;; Forked from tree-sitter-go
-; ;; Copyright (c) 2014 Max Brunsfeld (The MIT License)
+;; Builtin types
 
-;; TODO: We can re-enable when we update SQL a bit more.
-; (
-;  (const_spec
-;   name: (identifier) @_id
-;   value: (expression_list (raw_string_literal) @none))
-; 
-;  (#match? @_id ".*Query$")
-; )
+((type_identifier) @type.builtin
+  (#match? @type.builtin
+            "^(bool|byte|complex128|complex64|error|float32|float64|int|int16|int32|int64|int8|rune|string|uint|uint16|uint32|uint64|uint8|uintptr)$"))
+
+
+;; Builtin functions
+
+((identifier) @function.builtin
+  (#match? @function.builtin "^(append|cap|close|complex|copy|delete|imag|len|make|new|panic|print|println|real|recover)$"))
 
 ; Function calls
 
 (parameter_declaration (identifier) @variable.parameter)
 (variadic_parameter_declaration (identifier) @variable.parameter)
-
-; (call_expression
-;  function: (selector_expression
-;    operand: (identifier)
-;    field: (field_identifier) @identifier.function)
-;  arguments: (_))
-;
-; (call_expression
-;  function: (identifier) @identifier)
 
 (call_expression
   function: (identifier) @identifer.function)
@@ -33,11 +24,13 @@
 
 ; Function definitions
 
+(method_spec
+ name: (field_identifier) @identifier.function)
 (function_declaration
- name: (identifier) @function)
+ name: (identifier) @identifier.function)
 
 (method_declaration
- name: (field_identifier) @method)
+ name: (field_identifier) @identifier.function)
 
 ; Constants
 
@@ -124,69 +117,6 @@
 ] @conditional
 
 
-;; Builtin types
-
-((type_identifier) @type.builtin
-  (#any-of? @type.builtin
-            "bool"
-            "byte"
-            "complex128"
-            "complex64"
-            "error"
-            "float32"
-            "float64"
-            "int"
-            "int16"
-            "int32"
-            "int64"
-            "int8"
-            "rune"
-            "string"
-            "uint"
-            "uint16"
-            "uint32"
-            "uint64"
-            "uint8"
-            "uintptr"))
-
-
-;; Builtin functions
-
-((identifier) @function.builtin
-  (#any-of? @function.builtin
-            "append"
-            "cap"
-            "close"
-            "complex"
-            "copy"
-            "delete"
-            "imag"
-            "len"
-            "make"
-            "new"
-            "panic"
-            "print"
-            "println"
-            "real"
-            "recover"))
-
-
-; Delimiters
-
-; TODO: Olaf, you can decide if you want this one or not :)
-; "." @punctuation.delimiter
-
-"," @punctuation.delimiter
-":" @punctuation.delimiter
-";" @punctuation.delimiter
-
-"(" @punctuation.bracket
-")" @punctuation.bracket
-"{" @punctuation.bracket
-"}" @punctuation.bracket
-"[" @punctuation.bracket
-"]" @punctuation.bracket
-
 
 ; Literals
 
@@ -205,30 +135,15 @@
 
 (comment) @comment
 
-(ERROR) @error
-
-
-(
- (const_spec
-  name: (identifier) @_id
-  value: (expression_list (raw_string_literal) @keyword))
-
- (#match? @_id ".*Query$")
-)
-
 ;;
 ; Identifiers
 
 (package_identifier) @variable.module
 (type_identifier) @type
+(keyed_element . (field_identifier) @identifier.attribute)
+((identifier) @constant (#match? @constant "^[A-Z][A-Z\\d_]+$"))
+((identifier) @constant (#eq? @constant "_"))
 (identifier) @variable
+(field_identifier) @identifier.property
 
-; (field_identifier) @property
-
-(
- (identifier) @constant
-  (#eq? @constant "_"))
-
-; ((identifier) @constant
-;  (#vim-match? @constant "^[A-Z][A-Z\\d_]+$"))
 

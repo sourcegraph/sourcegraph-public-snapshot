@@ -7,7 +7,7 @@ import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
 import styles from './Suggestions.module.scss'
 
 const FilterOption: React.FunctionComponent<{ option: Option }> = ({ option }) => (
-    <span className={classnames(styles.filterOption, styles.filterField)}>
+    <span className={classnames(styles.filterOption, 'search-filter-keyword')}>
         {option.matches ? <HighlightedLabel label={option.label} matches={option.matches} /> : option.label}
         <span className={styles.separator}>:</span>
     </span>
@@ -21,7 +21,7 @@ const FilterValueOption: React.FunctionComponent<{ option: Option }> = ({ option
 
     return (
         <span className={styles.filterOption}>
-            <span className={styles.filterField}>
+            <span className="search-filter-keyword">
                 {field}
                 <span className={styles.separator}>:</span>
             </span>

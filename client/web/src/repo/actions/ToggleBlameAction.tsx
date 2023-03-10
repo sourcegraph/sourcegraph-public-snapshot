@@ -14,13 +14,16 @@ interface Props {
     source?: 'repoHeader' | 'actionItemsBar'
     actionType?: 'nav' | 'dropdown'
     renderMode?: RenderMode
+    isPackage: boolean
 }
 export const ToggleBlameAction: React.FC<Props> = props => {
-    const [isBlameVisible, setIsBlameVisible] = useBlameVisibility()
+    const [isBlameVisible, setIsBlameVisible] = useBlameVisibility(props.isPackage)
 
-    const disabled = props.renderMode === 'rendered'
+    const disabled = props.isPackage || props.renderMode === 'rendered'
 
-    const descriptiveText = disabled
+    const descriptiveText = props.isPackage
+        ? 'Git blame line annotations are not available when browsing packages'
+        : disabled
         ? 'Git blame line annotations are not available when viewing a rendered document'
         : `${isBlameVisible ? 'Hide' : 'Show'} Git blame line annotations`
 
@@ -40,7 +43,12 @@ export const ToggleBlameAction: React.FC<Props> = props => {
 
     if (props.source === 'actionItemsBar') {
         return (
-            <SimpleActionItem tooltip={descriptiveText} isActive={isBlameVisible} onSelect={toggleBlameState}>
+            <SimpleActionItem
+                tooltip={descriptiveText}
+                isActive={isBlameVisible}
+                onSelect={toggleBlameState}
+                disabled={disabled}
+            >
                 {icon}
             </SimpleActionItem>
         )

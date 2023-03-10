@@ -136,7 +136,7 @@ func (codeIntelligence) NewCommitGraphQueueGroup(containerName string) monitorin
 		},
 
 		QueueSize: NoAlertsOption("none"),
-		QueueMaxAge: CriticalOption(monitoring.Alert().GreaterOrEqual(time.Hour.Seconds()), `
+		QueueMaxAge: WarningOption(monitoring.Alert().GreaterOrEqual(time.Hour.Seconds()), `
 			An alert here is generally indicative of either underprovisioned worker instance(s) and/or
 			an underprovisioned main postgres instance.
 		`),
@@ -254,36 +254,6 @@ func (codeIntelligence) NewDependencyIndexProcessorGroup(containerName string) m
 			ErrorRate: NoAlertsOption("none"),
 		},
 		Handlers: NoAlertsOption("none"),
-	})
-}
-
-// src_executor_total
-// src_executor_processor_total
-// src_executor_queued_duration_seconds_total
-func (codeIntelligence) NewExecutorQueueGroup(containerName, queueFilter string) monitoring.Group {
-	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
-		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "executor",
-			DescriptionRoot: "Executor jobs",
-
-			// if updating this, also update in NewExecutorProcessorGroup
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "executor",
-				MetricDescriptionRoot: "unprocessed executor job",
-				Filters:               []string{fmt.Sprintf(`queue=~%q`, queueFilter)},
-				By:                    []string{"queue"},
-			},
-		},
-
-		QueueSize:   NoAlertsOption("none"),
-		QueueMaxAge: NoAlertsOption("none"),
-		QueueGrowthRate: NoAlertsOption(`
-			This value compares the rate of enqueues against the rate of finished jobs for the selected queue.
-
-				- A value < than 1 indicates that process rate > enqueue rate
-				- A value = than 1 indicates that process rate = enqueue rate
-				- A value > than 1 indicates that process rate < enqueue rate
-		`),
 	})
 }
 
@@ -881,92 +851,6 @@ func (codeIntelligence) NewAutoIndexEnqueuerGroup(containerName string) monitori
 	})
 }
 
-// src_codeintel_background_upload_records_removed_total
-// src_codeintel_background_index_records_removed_total
-// src_codeintel_background_uploads_purged_total
-// src_codeintel_background_errors_total
-func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
-	return monitoring.Group{
-		Title:  fmt.Sprintf("%s: %s", titlecase("codeintel"), "Janitor stats"),
-		Hidden: true,
-		Rows: []monitoring.Row{
-			{
-				Standard.Count("records scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_repositories_scanned",
-					MetricDescriptionRoot: "repository",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of repositories considered for data retention scanning every 5m
-				`).Observable(),
-
-				Standard.Count("records scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_upload_records_scanned",
-					MetricDescriptionRoot: "lsif upload",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of upload records considered for data retention scanning every 5m
-				`).Observable(),
-
-				Standard.Count("commits scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_commits_scanned",
-					MetricDescriptionRoot: "lsif upload",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of commits considered for data retention scanning every 5m
-				`).Observable(),
-
-				Standard.Count("records expired")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_upload_records_expired",
-					MetricDescriptionRoot: "lsif upload",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of upload records found to be expired every 5m
-				`).Observable(),
-			},
-			{
-				Standard.Count("records deleted")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_upload_records_removed",
-					MetricDescriptionRoot: "lsif upload",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of LSIF upload records deleted due to expiration or unreachability every 5m
-				`).Observable(),
-
-				Standard.Count("records deleted")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_index_records_removed",
-					MetricDescriptionRoot: "lsif index",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of LSIF index records deleted due to expiration or unreachability every 5m
-				`).Observable(),
-
-				Standard.Count("data bundles deleted")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_uploads_purged",
-					MetricDescriptionRoot: "lsif upload",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of LSIF upload data bundles purged from the codeintel-db database every 5m
-				`).Observable(),
-
-				Standard.Count("records deleted")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_documentation_search_records_removed",
-					MetricDescriptionRoot: "documentation search record",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of documentation search records removed from the codeintel-db database every 5m
-				`).Observable(),
-			},
-			{
-				Standard.Count("records deleted")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_audit_log_records_expired",
-					MetricDescriptionRoot: "lsif upload audit log",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of LSIF upload audit log records deleted due to expiration every 5m
-				`).Observable(),
-
-				Observation.Errors(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background",
-					MetricDescriptionRoot: "janitor",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of code intelligence janitor errors every 5m
-				`).Observable(),
-			},
-		},
-	}
-}
-
 func newPackageManagerGroup(packageManager string, containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
@@ -1126,7 +1010,6 @@ func (codeIntelligence) NewSymbolsParserGroup(containerName string) monitoring.G
 	}
 
 	group.Rows = append([]monitoring.Row{queueRow}, group.Rows...)
-
 	return group
 }
 
@@ -1217,7 +1100,6 @@ func (codeIntelligence) NewSymbolsRepositoryFetcherGroup(containerName string) m
 	}
 
 	group.Rows = append([]monitoring.Row{queueRow}, group.Rows...)
-
 	return group
 }
 
@@ -1247,4 +1129,140 @@ func (codeIntelligence) NewSymbolsGitserverClientGroup(containerName string) mon
 			ErrorRate: NoAlertsOption("none"),
 		},
 	})
+}
+
+// src_{task_name}_total
+// src_{task_name}_duration_seconds_bucket
+// src_{task_name}_errors_total
+// src_{task_name}_records_processed_total
+// src_{task_name}_records_altered_total
+func (codeIntelligence) newPipelineGroups(
+	titlePrefix string,
+	containerName string,
+	taskNames []string,
+) []monitoring.Group {
+	groups := make([]monitoring.Group, 0, len(taskNames))
+	for _, taskName := range taskNames {
+		groups = append(groups, CodeIntelligence.newPipelineGroup(titlePrefix, containerName, taskName))
+	}
+
+	return groups
+}
+
+// src_{task_name}_total
+// src_{task_name}_duration_seconds_bucket
+// src_{task_name}_errors_total
+// src_{task_name}_records_processed_total
+// src_{task_name}_records_altered_total
+func (codeIntelligence) newPipelineGroup(
+	titlePrefix string,
+	containerName string,
+	taskName string,
+) monitoring.Group {
+	group := Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: fmt.Sprintf("%s > %s", titlePrefix, titlecase(strings.ReplaceAll(taskName, "_", " "))),
+			Hidden:          true,
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        taskName,
+				MetricDescriptionRoot: "job invocation",
+				Filters:               []string{},
+				By:                    []string{"op"},
+			},
+		},
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+
+	recordProgressRow := monitoring.Row{
+		Standard.Count("processed")(ObservableConstructorOptions{
+			MetricNameRoot:        fmt.Sprintf("%s_records_processed", taskName),
+			MetricDescriptionRoot: "records",
+		})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+			The number of candidate records considered for cleanup.
+		`).Observable(),
+
+		Standard.Count("altered")(ObservableConstructorOptions{
+			MetricNameRoot:        fmt.Sprintf("%s_records_altered", taskName),
+			MetricDescriptionRoot: "records",
+		})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+			The number of candidate records altered as part of cleanup.
+		`).Observable(),
+	}
+
+	group.Rows = append([]monitoring.Row{recordProgressRow}, group.Rows...)
+	return group
+}
+
+// src_{task_name}_total
+// src_{task_name}_duration_seconds_bucket
+// src_{task_name}_errors_total
+// src_{task_name}_records_scanned_total
+// src_{task_name}_records_altered_total
+func (codeIntelligence) newJanitorGroups(
+	titlePrefix string,
+	containerName string,
+	taskNames []string,
+) []monitoring.Group {
+	groups := make([]monitoring.Group, 0, len(taskNames))
+	for _, taskName := range taskNames {
+		groups = append(groups, CodeIntelligence.newJanitorGroup(titlePrefix, containerName, taskName))
+	}
+
+	return groups
+}
+
+// src_{task_name}_total
+// src_{task_name}_duration_seconds_bucket
+// src_{task_name}_errors_total
+// src_{task_name}_records_scanned_total
+// src_{task_name}_records_altered_total
+func (codeIntelligence) newJanitorGroup(
+	titlePrefix string,
+	containerName string,
+	taskName string,
+) monitoring.Group {
+	group := Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: fmt.Sprintf("%s > %s", titlePrefix, titlecase(strings.ReplaceAll(taskName, "_", " "))),
+			Hidden:          true,
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        taskName,
+				MetricDescriptionRoot: "job invocation",
+				Filters:               []string{},
+				By:                    []string{"op"},
+			},
+		},
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+
+	recordProgressRow := monitoring.Row{
+		Standard.Count("scanned")(ObservableConstructorOptions{
+			MetricNameRoot:        fmt.Sprintf("%s_records_scanned", taskName),
+			MetricDescriptionRoot: "records",
+		})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+			The number of candidate records considered for cleanup.
+		`).Observable(),
+
+		Standard.Count("altered")(ObservableConstructorOptions{
+			MetricNameRoot:        fmt.Sprintf("%s_records_altered", taskName),
+			MetricDescriptionRoot: "records",
+		})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+			The number of candidate records altered as part of cleanup.
+		`).Observable(),
+	}
+
+	group.Rows = append([]monitoring.Row{recordProgressRow}, group.Rows...)
+	return group
 }

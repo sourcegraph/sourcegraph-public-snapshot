@@ -3618,7 +3618,7 @@ Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> worker: 3600s+ repository queue longest time in queue
+- <span class="badge badge-warning">warning</span> worker: 3600s+ repository queue longest time in queue
 
 **Next steps**
 
@@ -3629,7 +3629,7 @@ an underprovisioned main postgres instance.
 
 ```json
 "observability.silenceAlerts": [
-  "critical_worker_codeintel_commit_graph_queued_max_age"
+  "warning_worker_codeintel_commit_graph_queued_max_age"
 ]
 ```
 
@@ -3638,7 +3638,7 @@ an underprovisioned main postgres instance.
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^worker.*"})) >= 3600)`
+Generated query for warning alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^worker.*"})) >= 3600)`
 
 </details>
 
@@ -6578,12 +6578,17 @@ Generated query for warning alert: `max((sum by (code) (increase(src_zoekt_reque
 
 - If you are running out of memory map areas, you could resolve this by:
 
+    - Enabling shard merging for Zoekt: Set SRC_ENABLE_SHARD_MERGING="1" for zoekt-indexserver. Use this option
+if your corpus of repositories has a high percentage of small, rarely updated repositories. See
+[documentation](https://docs.sourcegraph.com/code_search/explanations/search_details#shard-merging).
     - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
 means that each _individual_ replica will have fewer shards. This, in turn, decreases the
 amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
-    - Increase the virtual memory subsystem`s "max_map_count" parameter which defines the upper limit of memory areas
-a process can use. The exact instructions for tuning this parameter can differ depending on your environment.
-See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
+    - Increasing the virtual memory subsystem`s "max_map_count" parameter which defines the upper limit of memory areas
+a process can use. The default value of max_map_count is usually 65536. We recommend to set this value to 2x the number
+of repos to be indexed per Zoekt instance. This means, if you want to index 240k repositories with 3 Zoekt instances,
+set max_map_count to (240000 / 3) * 2 = 160000. The exact instructions for tuning this parameter can differ depending
+on your environment. See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-memory-map-areas-percentage-used).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -7763,7 +7768,7 @@ Generated query for warning alert: `max((max by (sg_instance) (go_gc_duration_se
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> codeintel-uploads: 3600s+ repository queue longest time in queue
+- <span class="badge badge-warning">warning</span> codeintel-uploads: 3600s+ repository queue longest time in queue
 
 **Next steps**
 
@@ -7774,7 +7779,7 @@ an underprovisioned main postgres instance.
 
 ```json
 "observability.silenceAlerts": [
-  "critical_codeintel-uploads_codeintel_commit_graph_queued_max_age"
+  "warning_codeintel-uploads_codeintel_commit_graph_queued_max_age"
 ]
 ```
 
@@ -7783,7 +7788,7 @@ an underprovisioned main postgres instance.
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`
+Generated query for warning alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`
 
 </details>
 
@@ -8004,6 +8009,395 @@ Generated query for warning alert: `max((cadvisor_container_memory_usage_percent
 <summary>Technical details</summary>
 
 Generated query for critical alert: `min((sum by (app) (up{app=~".*otel-collector"}) / count by (app) (up{app=~".*otel-collector"}) * 100) <= 90)`
+
+</details>
+
+<br />
+
+## embeddings: mean_blocked_seconds_per_conn_request
+
+<p class="subtitle">mean blocked seconds per conn request</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> embeddings: 0.05s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> embeddings: 0.1s+ mean blocked seconds per conn request for 15m0s
+
+**Next steps**
+
+- Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
+- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-mean-blocked-seconds-per-conn-request).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_embeddings_mean_blocked_seconds_per_conn_request",
+  "critical_embeddings_mean_blocked_seconds_per_conn_request"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="embeddings"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="embeddings"}[5m]))) >= 0.05)`
+
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="embeddings"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="embeddings"}[5m]))) >= 0.1)`
+
+</details>
+
+<br />
+
+## embeddings: frontend_internal_api_error_responses
+
+<p class="subtitle">frontend-internal API error responses every 5m by route</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> embeddings: 2%+ frontend-internal API error responses every 5m by route for 5m0s
+
+**Next steps**
+
+- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
+- **Kubernetes:**
+	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
+	- Check `kubectl logs embeddings` for logs indicate request failures to `frontend` or `frontend-internal`.
+- **Docker Compose:**
+	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
+	- Check `docker logs embeddings` for logs indicating request failures to `frontend` or `frontend-internal`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-frontend-internal-api-error-responses).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_embeddings_frontend_internal_api_error_responses"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="embeddings"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="embeddings"}[5m]))) >= 2)`
+
+</details>
+
+<br />
+
+## embeddings: container_cpu_usage
+
+<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> embeddings: 99%+ container cpu usage total (1m average) across all cores by instance
+
+**Next steps**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the embeddings container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-container-cpu-usage).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_embeddings_container_cpu_usage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage_total{name=~"^embeddings.*"}) >= 99)`
+
+</details>
+
+<br />
+
+## embeddings: container_memory_usage
+
+<p class="subtitle">container memory usage by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> embeddings: 99%+ container memory usage by instance
+
+**Next steps**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of embeddings container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-container-memory-usage).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_embeddings_container_memory_usage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((cadvisor_container_memory_usage_percentage_total{name=~"^embeddings.*"}) >= 99)`
+
+</details>
+
+<br />
+
+## embeddings: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> embeddings: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
+
+**Next steps**
+
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the embeddings service.
+- **Docker Compose:** Consider increasing `cpus:` of the embeddings container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-provisioning-container-cpu-usage-long-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_embeddings_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^embeddings.*"}[1d])) >= 80)`
+
+</details>
+
+<br />
+
+## embeddings: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">container memory usage (1d maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> embeddings: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
+
+**Next steps**
+
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the embeddings service.
+- **Docker Compose:** Consider increasing `memory:` of the embeddings container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-provisioning-container-memory-usage-long-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_embeddings_provisioning_container_memory_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^embeddings.*"}[1d])) >= 80)`
+
+</details>
+
+<br />
+
+## embeddings: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> embeddings: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
+
+**Next steps**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the embeddings container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-provisioning-container-cpu-usage-short-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_embeddings_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^embeddings.*"}[5m])) >= 90)`
+
+</details>
+
+<br />
+
+## embeddings: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">container memory usage (5m maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> embeddings: 90%+ container memory usage (5m maximum) by instance
+
+**Next steps**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of embeddings container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-provisioning-container-memory-usage-short-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_embeddings_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^embeddings.*"}[5m])) >= 90)`
+
+</details>
+
+<br />
+
+## embeddings: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> embeddings: 1+ container OOMKILL events total by instance
+
+**Next steps**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of embeddings container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#embeddings-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_embeddings_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^embeddings.*"})) >= 1)`
+
+</details>
+
+<br />
+
+## embeddings: go_goroutines
+
+<p class="subtitle">maximum active goroutines</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> embeddings: 10000+ maximum active goroutines for 10m0s
+
+**Next steps**
+
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#embeddings-go-goroutines).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_embeddings_go_goroutines"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*embeddings"})) >= 10000)`
+
+</details>
+
+<br />
+
+## embeddings: go_gc_duration_seconds
+
+<p class="subtitle">maximum go garbage collection duration</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> embeddings: 2s+ maximum go garbage collection duration
+
+**Next steps**
+
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-go-gc-duration-seconds).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_embeddings_go_gc_duration_seconds"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*embeddings"})) >= 2)`
+
+</details>
+
+<br />
+
+## embeddings: pods_available_percentage
+
+<p class="subtitle">percentage pods available</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> embeddings: less than 90% percentage pods available for 10m0s
+
+**Next steps**
+
+- Determine if the pod was OOM killed using `kubectl describe pod embeddings` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p embeddings`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-pods-available-percentage).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_embeddings_pods_available_percentage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `min((sum by (app) (up{app=~".*embeddings"}) / count by (app) (up{app=~".*embeddings"}) * 100) <= 90)`
 
 </details>
 

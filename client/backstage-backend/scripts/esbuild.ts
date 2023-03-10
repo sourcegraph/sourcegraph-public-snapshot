@@ -31,6 +31,7 @@ async function build(): Promise<void> {
             'winston',
         ],
         // If we don't specify module first, esbuild bundles somethings "incorrectly" and you'll get a error with './impl/format' error
+        // Most likely due to https://github.com/evanw/esbuild/issues/1619#issuecomment-922787629
         mainFields: ['module', 'main'],
         format: 'cjs',
         platform: 'node',

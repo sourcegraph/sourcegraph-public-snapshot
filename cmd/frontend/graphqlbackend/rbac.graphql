@@ -170,7 +170,21 @@ extend type Mutation {
     """
     Creates a role.
     """
-    createRole(name: String!): Role!
+    createRole(name: String!, permissions: [ID!]!): Role!
+
+    """
+    Set permissions for role. This updates the permissions assigned to a role based on the `permissions` passed
+    in the argument. Permissions already assigned to the role that aren't part of the arguments of this mutation
+    will be revoked for the role.
+    """
+    setPermissions(role: ID!, permissions: [ID!]!): EmptyResponse!
+
+    """
+    Set roles for a user. Similar to `setPermissions`, this updates the roles assigned to a user based on the `roles`
+    passed in the argument. Permissions already assigned to the role that aren't part of the arguments of this
+    mutation will be revoked for the role.
+    """
+    setRoles(user: ID!, roles: [ID!]!): EmptyResponse!
 }
 
 extend type User {

@@ -1250,9 +1250,9 @@ VALUES ($1,'errored', now(), $2)
 		t.Fatal(err)
 	}
 
-	want := map[int64]string{
-		extSvc1.ID: "",
-		extSvc2.ID: "",
+	want := []*SyncError{
+		{ServiceID: extSvc1.ID, Message: ""},
+		{ServiceID: extSvc2.ID, Message: ""},
 	}
 
 	if diff := cmp.Diff(want, results); diff != "" {
@@ -1271,7 +1271,10 @@ VALUES ($1,'errored', now(), $2)
 		t.Fatal(err)
 	}
 
-	want = map[int64]string{extSvc1.ID: failure2, extSvc2.ID: ""}
+	want = []*SyncError{
+		{ServiceID: extSvc1.ID, Message: failure2},
+		{ServiceID: extSvc2.ID, Message: ""},
+	}
 	if diff := cmp.Diff(want, results); diff != "" {
 		t.Fatalf("wrong sync errors (-want +got):\n%s", diff)
 	}
@@ -1284,7 +1287,10 @@ VALUES ($1,'errored', now(), $2)
 		t.Fatal(err)
 	}
 
-	want = map[int64]string{extSvc1.ID: failure2, extSvc2.ID: "oops over here"}
+	want = []*SyncError{
+		{ServiceID: extSvc1.ID, Message: failure2},
+		{ServiceID: extSvc2.ID, Message: "oops over here"},
+	}
 	if diff := cmp.Diff(want, results); diff != "" {
 		t.Fatalf("wrong sync errors (-want +got):\n%s", diff)
 	}

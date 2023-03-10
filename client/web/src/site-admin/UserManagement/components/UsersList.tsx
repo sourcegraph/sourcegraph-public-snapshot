@@ -12,6 +12,7 @@ import {
     mdiLock,
     mdiLockOpen,
     mdiAccountReactivate,
+    mdiSecurity,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
@@ -34,6 +35,7 @@ import {
     PopoverOpenEvent,
     Tooltip,
     ErrorAlert,
+    Badge,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -324,6 +326,14 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 bulk: true,
                                 condition: users => users.some(user => user.deletedAt),
                             },
+                            {
+                                key: 'view-permissions',
+                                label: 'View Permissions',
+                                icon: mdiSecurity,
+                                href: ([user]) => `/users/${user.username}/settings/permissions`,
+                                target: '_blank',
+                                condition: ([user]) => !!user,
+                            },
                         ]}
                         columns={[
                             {
@@ -482,7 +492,14 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
     )
 }
 
-function RenderUsernameAndEmail({ username, email, displayName, deletedAt, locked }: SiteUser): JSX.Element {
+function RenderUsernameAndEmail({
+    username,
+    email,
+    displayName,
+    deletedAt,
+    locked,
+    scimControlled,
+}: SiteUser): JSX.Element {
     const [isOpen, setIsOpen] = useState<boolean>(false)
     const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
         setIsOpen(event.isOpen)
@@ -501,12 +518,36 @@ function RenderUsernameAndEmail({ username, email, displayName, deletedAt, locke
                             <Icon aria-label="Account locked" svgPath={mdiLock} />
                         </Tooltip>
                     )}{' '}
+                    {scimControlled && (
+                        <Tooltip
+                            content={
+                                <Text>
+                                    This user is{' '}
+                                    <Link to="/help/admin/scim" target="_blank" rel="noopener">
+                                        SCIM
+                                    </Link>
+                                    -controlled—an external system controls some of its attributes.
+                                </Text>
+                            }
+                        >
+                            <Badge variant="primary" className="mr-1">
+                                SCIM
+                            </Badge>
+                        </Tooltip>
+                    )}
                     <Link to={`/users/${username}`} className="text-truncate">
                         @{username}
                     </Link>
                 </>
             ) : (
-                <Text className="mb-0 text-truncate">@{username}</Text>
+                <>
+                    {scimControlled && (
+                        <Badge variant="primary" className="mr-1">
+                            SCIM
+                        </Badge>
+                    )}
+                    <Text className="mb-0 text-truncate">@{username}</Text>
+                </>
             )}
             <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
                 <PopoverTrigger

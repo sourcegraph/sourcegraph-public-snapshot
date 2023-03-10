@@ -8,7 +8,7 @@ import { ExternalRepositoryFields } from '../../graphql-operations'
 
 export const ExternalRepositoryIcon: React.FunctionComponent<
     React.PropsWithChildren<{
-        externalRepo: ExternalRepositoryFields
+        externalRepo: Pick<ExternalRepositoryFields, 'serviceType'>
         className?: string
     }>
 > = ({ externalRepo, className }) => {

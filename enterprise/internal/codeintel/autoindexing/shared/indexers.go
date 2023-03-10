@@ -31,7 +31,7 @@ func PopulateInferredAvailableIndexers[J JobsOrHints](jobsOrHints []J, blocklist
 				ai.Indexer = p
 			}
 
-			inferredAvailableIndexers[indexer] = ai
+			inferredAvailableIndexers[key] = ai
 		}
 	}
 

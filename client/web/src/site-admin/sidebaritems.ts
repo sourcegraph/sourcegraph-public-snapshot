@@ -5,6 +5,8 @@ import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
+import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
+
 import { isPackagesEnabled } from './flags'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
@@ -50,6 +52,7 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -71,6 +74,7 @@ export const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'Feature flags',
             to: '/site-admin/feature-flags',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -102,10 +106,22 @@ export const usersGroup: SiteAdminSideBarGroup = {
         label: 'Users & auth',
         icon: AccountMultipleIcon,
     },
+
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             label: 'Users',
             to: '/site-admin/users',
+        },
+        {
+            label: 'Access requests',
+            to: '/site-admin/access-requests',
+            condition: context =>
+                checkRequestAccessAllowed(
+                    context.isSourcegraphDotCom,
+                    window.context.allowSignup,
+                    window.context.experimentalFeatures
+                ),
         },
         {
             label: 'Organizations',
@@ -125,7 +141,7 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
-            label: 'Updates',
+            label: window.context.sourcegraphAppMode ? 'Overview' : 'Updates',
             to: '/site-admin/updates',
         },
         {
@@ -135,6 +151,7 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Pings',
             to: '/site-admin/pings',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Report a bug',

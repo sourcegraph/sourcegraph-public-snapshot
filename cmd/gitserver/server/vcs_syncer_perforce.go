@@ -44,8 +44,8 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.UR
 		return errors.Wrap(err, "decompose")
 	}
 
-	// FIXME: Need to find a way to determine if depot exists instead of a general ping to the Perforce server.
-	return p4pingWithTrust(ctx, host, username, password)
+	// FIXME: Need to find a way to determine if depot exists instead of a general test of the Perforce server.
+	return p4testWithTrust(ctx, host, username, password)
 }
 
 // CloneCommand returns the command to be executed for cloning a Perforce depot as a Git repository.
@@ -55,9 +55,9 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 		return nil, errors.Wrap(err, "decompose")
 	}
 
-	err = p4pingWithTrust(ctx, p4port, username, password)
+	err = p4testWithTrust(ctx, p4port, username, password)
 	if err != nil {
-		return nil, errors.Wrap(err, "ping with trust")
+		return nil, errors.Wrap(err, "test with trust")
 	}
 
 	var cmd *exec.Cmd
@@ -101,9 +101,9 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 		return errors.Wrap(err, "decompose")
 	}
 
-	err = p4pingWithTrust(ctx, host, username, password)
+	err = p4testWithTrust(ctx, host, username, password)
 	if err != nil {
-		return errors.Wrap(err, "ping with trust")
+		return errors.Wrap(err, "test with trust")
 	}
 
 	var cmd *wrexec.Cmd
@@ -210,12 +210,16 @@ func p4trust(ctx context.Context, host string) error {
 	return nil
 }
 
-// p4ping sends one message to the Perforce server to check connectivity.
-func p4ping(ctx context.Context, host, username, password string) error {
+// p4test uses `p4 login -s` to test the Perforce connection: host, port, user, password.
+func p4test(ctx context.Context, host, username, password string) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "p4", "ping", "-c", "1")
+	// `p4 ping` requires extra-special access, so it would be good to avoid using it
+	//
+	// p4 login -s checks the connection and the credentials,
+	// so it seems like the perfect alternative to `p4 ping`.
+	cmd := exec.CommandContext(ctx, "p4", "login", "-s")
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+host,
 		"P4USER="+username,
@@ -245,12 +249,12 @@ func specifyCommandInErrorMessage(errorMsg string, command *exec.Cmd) string {
 	return strings.Replace(errorMsg, "this operation", fmt.Sprintf("`%s`", strings.Join(command.Args, " ")), 1)
 }
 
-// p4pingWithTrust attempts to ping the Perforce server and performs a trust operation when needed.
-func p4pingWithTrust(ctx context.Context, host, username, password string) error {
+// p4testWithTrust attempts to test the Perforce server and performs a trust operation when needed.
+func p4testWithTrust(ctx context.Context, host, username, password string) error {
 	// Attempt to check connectivity, may be prompted to trust.
-	err := p4ping(ctx, host, username, password)
+	err := p4test(ctx, host, username, password)
 	if err == nil {
-		return nil // The ping worked, session still validate for the user
+		return nil // The test worked, session still validate for the user
 	}
 
 	if strings.Contains(err.Error(), "To allow connection use the 'p4 trust' command.") {

@@ -95,13 +95,11 @@ type Mutation {
     """
     updateOrganization(id: ID!, displayName: String): Org!
     """
-    Soft or hard deletes an organization.
-    - When the second argument is not provided, it soft deletes an organization, marking it as deleted.
+    Soft deletes an organization.
+
     Only site admins may perform this mutation.
-    - When the second argument is true, it hard deletes an organization and its associated resources.
-    Hard deletion is currently only supported on cloud. Only org members may perform this mutation
     """
-    deleteOrganization(organization: ID!, hard: Boolean): EmptyResponse
+    deleteOrganization(organization: ID!): EmptyResponse
 
     """
     Creates a webhook for the specified code host. Only site admins may perform this mutation.
@@ -245,7 +243,6 @@ type Mutation {
 
     - All user data (access tokens, email addresses, external account info, survey responses, etc)
     - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
-    - Sourcegraph extensions published by the user.
     - User, Organization, or Global settings authored by the user.
     """
     deleteUser(user: ID!, hard: Boolean): EmptyResponse
@@ -845,6 +842,51 @@ type Mutation {
     the file on disk, and marking it as not-cloned in the database.
     """
     deleteRepositoryFromDisk(repo: ID!): EmptyResponse!
+
+    """
+    Create a new package repo reference filter.
+    """
+    addPackageRepoFilter(
+        """
+        Whether the matcher should be for allowlisting or blocklisting.
+        """
+        behaviour: PackageMatchBehaviour!
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind!
+        """
+        The package repo reference matcher to persist.
+        """
+        filter: PackageVersionOrNameFilterInput!
+    ): PackageFilter!
+
+    """
+    Updates a package repo reference filter.
+    """
+    updatePackageRepoFilter(
+        """
+        The ID of the package repo reference filter to update.
+        """
+        id: ID!
+
+        behaviour: PackageMatchBehaviour!
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind!
+
+        filter: PackageVersionOrNameFilterInput!
+    ): EmptyResponse!
+
+    """
+    Deletes a package repo reference filter.
+    """
+    deletePackageRepoFilter(id: ID!): EmptyResponse!
 }
 
 """
@@ -1301,6 +1343,13 @@ type Query {
     """
     externalServiceNamespaces(
         """
+        The GraphQL ID of the external service whose configuration will be used to define the code host remote url to
+        submit requests to and the token value to authenticate with.
+        If no external service exists which provides the necessary request parameters then leave ID nil and
+        provide kind, remote code host token and url.
+        """
+        id: ID
+        """
         The kind of the external service.
         """
         kind: ExternalServiceKind!
@@ -1313,6 +1362,42 @@ type Query {
         """
         url: String!
     ): ExternalServiceNamespaceConnection!
+    """
+    Lists all repositories for a given external service connection.
+    """
+    externalServiceRepositories(
+        """
+        The GraphQL ID of the external service whose configuration will be used to define the code host remote url to
+        submit requests to and the token value to authenticate with.
+        If no external service exists which provides the necessary request parameters then leave ID nil and
+        provide kind, remote code host token and url.
+        """
+        id: ID
+        """
+        The kind of the external service.
+        """
+        kind: ExternalServiceKind!
+        """
+        The secret token value that is used to authenticate.
+        """
+        token: String!
+        """
+        The url of the external service.
+        """
+        url: String!
+        """
+        Repository query string.
+        """
+        query: String!
+        """
+        A list of repository names to exclude from results (in the form of owner/name).
+        """
+        excludeRepos: [String!]!
+        """
+        Returns the first n repositories matching the query and excludeRepos criteria.
+        """
+        first: Int
+    ): ExternalServiceRepositoryConnection!
     """
     List all repositories.
     """
@@ -1388,9 +1473,9 @@ type Query {
     """
     packageRepoReferences(
         """
-        The exact scheme value to filter by.
+        The exact package repo reference kind to filter by.
         """
-        scheme: PackageRepoReferenceKind
+        kind: PackageRepoReferenceKind
         """
         If supplied, only package repo references that match the given
         terms by their name will be returned.
@@ -1398,7 +1483,7 @@ type Query {
         """
         name: String
         """
-        Returns the first n external services from the list.
+        Returns the first n package repo references from the list.
         """
         first: Int
         """
@@ -1406,6 +1491,46 @@ type Query {
         """
         after: String
     ): PackageRepoReferenceConnection!
+
+    """
+    Query package repo reference filters.
+    """
+    packageRepoFilters(
+        """
+        Whether the matcher should be for allowlisting or blocklisting.
+        """
+        behaviour: PackageMatchBehaviour
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind
+    ): [PackageFilter!]
+
+    """
+    Returns either a list of package repo references,
+    or the versions of a single package repo reference,
+    that match the provided matcher.
+    """
+    packageRepoReferencesMatchingFilter(
+        """
+        The kind of the package repo reference this matcher should apply to.
+        """
+        kind: PackageRepoReferenceKind!
+        """
+        The matcher for which to return matching results.
+        """
+        filter: PackageVersionOrNameFilterInput!
+        """
+        Returns the first n package/package version matches from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): PackageRepoOrVersionConnection!
 
     """
     Looks up a Phabricator repository by name.
@@ -1598,10 +1723,6 @@ type Query {
         """
         first: Int
     ): SurveyResponseConnection!
-    """
-    The extension registry.
-    """
-    extensionRegistry: ExtensionRegistry!
     """
     FOR INTERNAL USE ONLY: Lists all status messages
     """
@@ -3182,6 +3303,36 @@ type ExternalServiceNamespace {
     """
     externalID: String!
 }
+
+"""
+A list of repositories available to an external service configuration.
+"""
+type ExternalServiceRepositoryConnection {
+    """
+    A list of repositories available on the source.
+    """
+    nodes: [ExternalServiceRepository!]!
+}
+
+"""
+A repository sourced from a defined external service (such as GitHub, GitLab, Phabricator, etc.) that can be discovered
+before any sync or mirror operations.
+"""
+type ExternalServiceRepository {
+    """
+    The unique identifier of the external service repository.
+    """
+    id: ID!
+    """
+    The name of the external service repository.
+    """
+    name: String!
+    """
+    The repository's ID on the external service.
+    Example: For GitHub, this is the GitHub GraphQL API's node ID for the repository.
+    """
+    externalID: String!
+}
 """
 A list of repositories.
 
@@ -3520,6 +3671,31 @@ type PackageRepoReferenceConnection {
 }
 
 """
+Connection resolver for either a list of package repo references or versions.
+"""
+union PackageRepoOrVersionConnection = PackageRepoReferenceConnection | PackageRepoReferenceVersionConnection
+
+"""
+List of package repo reference versions.
+"""
+type PackageRepoReferenceVersionConnection {
+    """
+    A list of package repo versions.
+    """
+    nodes: [PackageRepoReferenceVersion!]!
+
+    """
+    The total number of package repo versions in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
 A kind of package repo reference.
 ExternalServiceKind, with a more specific set of values.
 """
@@ -3542,10 +3718,10 @@ type PackageRepoReference {
     id: ID!
 
     """
-    The ecosystem/package-manager/indexer scheme under which this package repo
-    reference is uniquely identified e.g. npm/python/rust-analyzer
+    The external service kind under which this package repo
+    reference is uniquely identified.
     """
-    scheme: PackageRepoReferenceKind!
+    kind: PackageRepoReferenceKind!
 
     """
     The name of the package, in a format relevant to the specific ecosystem e.g.
@@ -3557,6 +3733,12 @@ type PackageRepoReference {
     The versions of this package known to the sourcegraph instance.
     """
     versions: [PackageRepoReferenceVersion!]!
+
+    """
+    Indicates whether a package repo reference has been blocked by a blocklist entry and/or
+    no matching entry in a non-empty allowlist
+    """
+    blocked: Boolean!
 
     """
     The synthetic repository (aka the package repo) created to store the contents of the
@@ -3584,6 +3766,116 @@ type PackageRepoReferenceVersion {
     The version string. Not guaranteed to be semver or any other format.
     """
     version: String!
+}
+
+"""
+Whether a package repo reference filter is part of the allowlist or blocklist
+"""
+enum PackageMatchBehaviour {
+    """
+    Blocks a package repo reference from syncing.
+    """
+    BLOCK
+    """
+    Allows a package repo reference to be synced.
+    """
+    ALLOW
+}
+
+"""
+Filters package repo references of the matching scheme/kind, applying to either
+references of matching names or versions of a specific package name.
+One of either nameFilter or versionFilter must be provided.
+"""
+type PackageFilter {
+    """
+    Opaque ID string.
+    """
+    id: ID!
+
+    """
+    The behaviour of the filter when applied to a matching package repo reference or version.
+    """
+    behaviour: PackageMatchBehaviour!
+
+    """
+    The schemes/kinds of package repo references this filter should apply to only.
+    """
+    kind: PackageRepoReferenceKind!
+
+    """
+    Optional name-matching filter.
+    """
+    nameFilter: PackageNameFilter
+
+    """
+    Optional package-specific version-matching filter.
+    """
+    versionFilter: PackageVersionFilter
+}
+
+"""
+A package repo reference filter that matches names.
+"""
+type PackageNameFilter {
+    """
+    Glob string to match names.
+    """
+    packageGlob: String!
+}
+
+"""
+A package repo reference filter that matches versions for a specific name.
+"""
+type PackageVersionFilter {
+    """
+    Exact package name to match.
+    """
+    packageName: String!
+
+    """
+    Glob string to match versions.
+    """
+    versionGlob: String!
+}
+
+"""
+A name or version matching filter for. One of either nameFilter or versionFilter must be provided.
+"""
+input PackageVersionOrNameFilterInput {
+    """
+    Optional name-matching filter.
+    """
+    nameFilter: PackageNameFilterInput
+    """
+    Optional package-specific version-matching filter.
+    """
+    versionFilter: PackageVersionFilterInput
+}
+
+"""
+A package repo reference filter that matches names.
+"""
+input PackageNameFilterInput {
+    """
+    Glob string to match names.
+    """
+    packageGlob: String!
+}
+
+"""
+A package repo reference filter that matches versions for a specific name.
+"""
+input PackageVersionFilterInput {
+    """
+    Exact package name to match.
+    """
+    packageName: String!
+
+    """
+    Glob string to match versions.
+    """
+    versionGlob: String!
 }
 
 """
@@ -6121,6 +6413,11 @@ type User implements Node & SettingsSubject & Namespace {
     namespaceName: String!
 
     """
+    Whether the user is controlled externally through SCIM.
+    """
+    scimControlled: Boolean!
+
+    """
     EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
     repositories this user has access to, and is derived from recent commit history of those.
     """
@@ -6910,11 +7207,6 @@ type Site implements SettingsSubject {
     the GLOBAL_SETTINGS_FILE environment variable, site settings edits cannot be made through the API.
     """
     allowSiteSettingsEdits: Boolean!
-    """
-    Whether to enable the extension registry and the use of extensions.
-    Reflects the site configuration `enableLegacyExtensions` experimental feature value.
-    """
-    enableLegacyExtensions: Boolean!
 
     """
     FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
@@ -7721,6 +8013,10 @@ type SiteUser {
     """
     siteAdmin: Boolean!
     """
+    Whether the user is controlled through SCIM.
+    """
+    scimControlled: Boolean!
+    """
     Total number of user's event_logs.
     """
     eventsCount: Float!
@@ -8020,75 +8316,6 @@ type ProductLicenseInfo {
     The date when this license expires.
     """
     expiresAt: DateTime!
-}
-
-"""
-An extension registry.
-"""
-type ExtensionRegistry {
-    """
-    A list of extensions published in the extension registry.
-    """
-    extensions(
-        """
-        Returns the first n extensions from the list.
-        """
-        first: Int
-        """
-        Returns only extensions with the given IDs.
-        """
-        extensionIDs: [String!]
-    ): RegistryExtensionConnection!
-}
-
-"""
-An extension's listing in the extension registry.
-"""
-type RegistryExtension implements Node {
-    """
-    The unique, opaque, permanent ID of the extension. Do not display this ID to the user; display
-    RegistryExtension.extensionID instead (it is friendlier and still unique, but it can be renamed).
-    """
-    id: ID!
-    """
-    The qualified, unique name that refers to this extension, consisting of the registry name (if non-default),
-    publisher's name, and the extension's name, all joined by "/" (for example, "acme-corp/my-extension-name").
-    """
-    extensionID: String!
-    """
-    The extension manifest, or null if none is set.
-    """
-    manifest: ExtensionManifest
-}
-
-"""
-A description of the extension, how to run or access it, and when to activate it.
-"""
-type ExtensionManifest {
-    """
-    The raw JSON (or JSONC) contents of the manifest. This value may be large (because many
-    manifests contain README and icon data), and it is JSONC (not strict JSON), which means
-    it must be parsed with a JSON parser that supports trailing commas and comments. Consider
-    using jsonFields instead.
-    """
-    raw: String!
-    """
-    The manifest as JSON (not JSONC, even if the raw manifest is JSONC) with only the
-    specified fields. This is useful for callers that only need certain fields and want
-    to avoid fetching a large amount of data (because many manifests contain README
-    and icon data).
-    """
-    jsonFields(fields: [String!]!): JSONValue!
-}
-
-"""
-A list of registry extensions.
-"""
-type RegistryExtensionConnection {
-    """
-    A list of registry extensions.
-    """
-    nodes: [RegistryExtension!]!
 }
 
 """
@@ -9180,6 +9407,11 @@ type Team implements Node {
     url: String!
 
     """
+    URL to an avatar of this team.
+    """
+    avatarURL: String
+
+    """
     A human readable name substitute for the name. Null, if not defined.
     """
     displayName: String
@@ -9241,6 +9473,11 @@ type Team implements Node {
     True, if the current user can modify this team.
     """
     viewerCanAdminister: Boolean!
+
+    """
+    The creator of this team. Null, if the user was deleted.
+    """
+    creator: User
 }
 
 """
@@ -9407,8 +9644,15 @@ extend type Mutation {
 
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
+
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
     """
-    addTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+    addTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
 
     """
     This is a convenience method to forcefully overwrite the full set of members
@@ -9420,8 +9664,15 @@ extend type Mutation {
 
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
+
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
     """
-    setTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+    setTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
 
     """
     This mutation removes team membership for the given team and set of members.
@@ -9432,6 +9683,164 @@ extend type Mutation {
 
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
+
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
     """
-    removeTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+    removeTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
+}
+
+"""
+Options to specify a user for team membership. Multiple options can be provided,
+with the following precedence order: (Other mismatches will be discarded)
+- UserID
+- Username
+- Email
+- External Account fields
+
+Examples:
+- If ID is set and no match, return.
+- If ID and username is set, and ID matches but username doesn't, match.
+"""
+input TeamMemberInput {
+    """
+    Explicitly define a user by ID.
+    """
+    userID: ID
+    """
+    Explicitly define a user by username in Sourcegraph.
+    """
+    username: String
+    """
+    If the email is associated to a user and verified, the user account will be matched.
+    """
+    email: String
+
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Service ID for the GitHub OAuth provider, for example, is https://github.com/.
+    """
+    externalAccountServiceID: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Service Type for the GitHub OAuth provider, for example, is github.
+    """
+    externalAccountServiceType: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Account ID is the unique identifier on the external account platform.
+    """
+    externalAccountAccountID: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Account Login is usually the username on the external account platform.
+    """
+    externalAccountLogin: String
+}
+
+"""
+A list of access requests
+"""
+type AccessRequestConnection {
+    """
+    Total count of access requests
+    """
+    totalCount: Int!
+    """
+    A list of access requests
+    """
+    nodes: [AccessRequest!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: BidirectionalPageInfo!
+}
+
+"""
+Access request status enum
+"""
+enum AccessRequestStatus {
+    """
+    Access request is submitted and waiting for actions
+    """
+    PENDING
+    """
+    Access request was approved
+    """
+    APPROVED
+    """
+    Access request was rejected
+    """
+    REJECTED
+}
+
+"""
+Access request
+"""
+type AccessRequest implements Node {
+    """
+    The unique identifier of the secret.
+    """
+    id: ID!
+
+    """
+    Name of a person requested access
+    """
+    name: String!
+
+    """
+    Email of a person requested access
+    """
+    email: String!
+
+    """
+    The date and time when request access was created
+    """
+    createdAt: DateTime!
+
+    """
+    Additional information submitted by person requested access
+    """
+    additionalInfo: String
+
+    """
+    Access request status
+    """
+    status: AccessRequestStatus!
+}
+
+extend type Query {
+    """
+    List access requests.
+    """
+    accessRequests(
+        status: AccessRequestStatus
+        """
+        Returns the first n access requests from the list.
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): AccessRequestConnection!
+}
+
+extend type Mutation {
+    """
+    Marks access_request as rejected
+    """
+    setAccessRequestStatus(id: ID!, status: AccessRequestStatus!): EmptyResponse
 }

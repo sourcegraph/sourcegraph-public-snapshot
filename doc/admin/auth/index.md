@@ -1,8 +1,7 @@
-# User authentication (SSO)
+# User authentication
 
 Sourcegraph supports the following ways for users to sign in:
 
-- [Guidance](#guidance)
 - [Builtin password authentication](#builtin-password-authentication)
 - [GitHub](#github)
 - [GitLab](#gitlab)
@@ -18,7 +17,7 @@ Sourcegraph supports the following ways for users to sign in:
 
 The authentication provider is configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
 
-## Guidance
+## Recommendations
 
 If you are unsure which auth provider is right for you, we recommend applying the following rules in
 order:
@@ -76,9 +75,9 @@ You can use the filter `allowSignup`, available in the builtin configuration, to
 
   If set to `true`, users will see a sign-up link under the login form and will have access to the sign-up page, where they can create their accounts without restriction.
 
-  When not set, it will default to `false` -- in this case, new user accounts should be created by the site admin.
+  When not set, it will default to `false` -- in this case, users will see request access link. Unauthenticated users can submit request access forms and admins will get notification on the instance which they can approve or reject. Access request feature can be disabled by setting `experimentalFeatures.accessRequest.enabled: false`, and in this case new user accounts should be created by the site admin manually.
 
-  If you choose to block sign-ups by using the `allowSignup` filter avaiable in another auth provider (eg., [GitHub](#how-to-control-user-sign-up-and-sign-in-with-github-auth-provider) or [GiLab](#how-to-control-user-sign-up-and-sign-in-with-gitlab-auth-provider)), make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
+  If you choose to block sign-ups by using the `allowSignup` filter avaliable in another auth provider (eg., [GitHub](#how-to-control-user-sign-up-and-sign-in-with-github-auth-provider) or [GiLab](#how-to-control-user-sign-up-and-sign-in-with-gitlab-auth-provider)), make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
 
   During the initial setup, the builtin sign-up will be available for the first user so they can create an account and become admin.
 
@@ -89,6 +88,8 @@ You can use the filter `allowSignup`, available in the builtin configuration, to
   }
 ```
 > NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://about.sourcegraph.com/pricing).
+
+
 
 ### Account lockout
 
@@ -270,8 +271,7 @@ Then add the following lines to your site configuration:
 Replace the `clientID` and `clientSecret` values with the values from your GitLab OAuth app
 configuration.
 
-Once you've configured GitLab as a sign-on provider, you may also want to [add GitLab repositories
-to Sourcegraph](../external_service/gitlab.md#repository-syncing).
+Once you've configured GitLab as a sign-on provider, you may also want to [add GitLab repositories to Sourcegraph](../external_service/gitlab.md#repository-syncing).
 
 > NOTE: Administrators on the GitLab instance who then sign in to Sourcegraph will not have access to all of the repositories on Sourcegraph as well. Administrators will only have access to repositories on GitLab for which they are assigned the Reporter role and above.
 
@@ -331,7 +331,7 @@ Sourcegraph instance:
 - Callback URL: `https://sourcegraph.example.com/.auth/bitbucketcloud/callback`
 - Permissions: 
   - `Account`: `Read`
-  - `Repositories`: `Read` (if [permissions syncing](../repo/permissions.md) is desired)
+  - `Repositories`: `Read` (more information in [repository permissions section](../permissions/index.md))
 
 After the consumer is created, you will need the `Key` and the `Secret`, which can be found by expanding OAuth consumer in the list.
 Then add the following lines to your [site configuration](config/site_config.md):
@@ -512,7 +512,7 @@ Let's say the email field in your Sourcegraph account was kept blank when a site
 Exceptions to this rule are [HTTP Proxies](#http-authentication-proxies), where there's an option to make the link via username only.
 For [Bitbucket](../config/authorization_and_authentication.md#bitbucket-server-bitbucket-data-center-authorization), we don't support OAuth. Still, the match between the chosen auth provider used with Bitbucket and a user's Bitbucket account happens via username.
 
-Using only a username to match a Sourcegraph account to an auth provider account is not recommended, as you can see [here](../repo/permissions.md#username), for example.
+Using only a username to match a Sourcegraph account to an auth provider account is not recommended, as you can see [here](../external_service/gitlab.md#username), for example.
 Usernames in Sourcegraph are mutable, so a malicious user could change a username, elevating their privileges.
 
 ## Linking accounts from multiple auth providers

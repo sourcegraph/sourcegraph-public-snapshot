@@ -16,6 +16,7 @@ import {
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -34,7 +35,6 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../components/AwayPrompt'
-import { useExperimentalFeatures } from '../../stores'
 
 import { fetchRepositoriesByNames } from './backend'
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'

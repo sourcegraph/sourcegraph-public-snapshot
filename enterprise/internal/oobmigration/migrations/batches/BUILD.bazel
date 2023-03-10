@@ -23,17 +23,33 @@ go_library(
 
 go_test(
     name = "batches_test",
-    srcs = ["ssh_migrator_test.go"],
+    srcs = [
+        "external_fork_name_migrator_test.go",
+        "ssh_migrator_test.go",
+    ],
     embed = [":batches"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
+        "//enterprise/internal/batches/sources/bitbucketcloud",
+        "//enterprise/internal/batches/store",
+        "//enterprise/internal/batches/testing",
         "//internal/actor",
+        "//internal/api",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "//internal/database/dbutil",
         "//internal/encryption",
         "//internal/encryption/testing",
+        "//internal/extsvc",
+        "//internal/extsvc/bitbucketcloud",
+        "//internal/extsvc/bitbucketserver",
+        "//internal/observation",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
     ],
 )

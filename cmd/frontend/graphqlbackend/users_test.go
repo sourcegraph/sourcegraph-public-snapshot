@@ -11,6 +11,7 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -183,10 +184,6 @@ func TestUsers_Pagination_Integration(t *testing.T) {
 	nonadmin := users[1]
 
 	tests := []usersQueryTest{
-		// no ctx
-		{
-			wantError: "not authenticated",
-		},
 		// no args
 		{
 			ctx:            actor.WithActor(ctx, actor.FromUser(admin.ID)),
@@ -221,10 +218,11 @@ func TestUsers_Pagination_Integration(t *testing.T) {
 			wantUsers:      []string{"user3"},
 			wantTotalCount: 4,
 		},
-		// no admin
+		// no admin on dotcom
 		{
 			ctx:       actor.WithActor(ctx, actor.FromUser(nonadmin.ID)),
 			wantError: "must be site admin",
+			dotcom:    true,
 		},
 	}
 
@@ -245,10 +243,19 @@ type usersQueryTest struct {
 
 	wantNoTotalCount bool
 	wantTotalCount   int
+	dotcom           bool
 }
 
 func runUsersQuery(t *testing.T, schema *graphql.Schema, want usersQueryTest) {
 	t.Helper()
+
+	if want.dotcom {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		t.Cleanup(func() {
+			envvar.MockSourcegraphDotComMode(orig)
+		})
+	}
 
 	type node struct {
 		Username string `json:"username"`

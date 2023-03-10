@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { catchError, map, switchMap } from 'rxjs/operators'
 
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
@@ -165,7 +165,8 @@ export const fetchDiffStats = (args: {
                 aggregatedDiffStats[subdirName].deleted += diffStat.deleted
             }
             return Array.from(Object.values(aggregatedDiffStats))
-        })
+        }),
+        catchError(() => []) // ignore errors
     )
 
 interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
@@ -174,10 +175,11 @@ interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps
     repo: TreePageRepositoryFields
     commitID: string
     revision: string
+    isPackage: boolean
 }
 
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
-    const { filePath, tree, repo, revision } = props
+    const { filePath, tree, repo, revision, isPackage } = props
 
     const readmeEntry = useMemo(() => {
         for (const entry of tree.entries) {
@@ -208,15 +210,19 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
 
-                <Card className={styles.commits}>
-                    <CardHeader className={panelStyles.cardColHeaderWrapper}>Commits</CardHeader>
-                    <Commits {...props} />
-                </Card>
+                {!isPackage && (
+                    <Card className={styles.commits}>
+                        <CardHeader className={panelStyles.cardColHeaderWrapper}>Commits</CardHeader>
+                        <Commits {...props} />
+                    </Card>
+                )}
 
-                <Card className={styles.contributors}>
-                    <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
-                    <Contributors {...props} />
-                </Card>
+                {!isPackage && (
+                    <Card className={styles.contributors}>
+                        <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
+                        <Contributors {...props} />
+                    </Card>
+                )}
             </section>
         </>
     )
@@ -445,7 +451,6 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
     })
 
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
-    const externalURLs = node?.externalURLs
     const connection = node?.commit?.ancestors
 
     return (
@@ -461,7 +466,6 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
                                 className={styles.gitCommitNode}
                                 messageSubjectClassName={styles.gitCommitNodeMessageSubject}
                                 compact={true}
-                                externalURLs={externalURLs}
                             />
                         ))}
                     </tbody>

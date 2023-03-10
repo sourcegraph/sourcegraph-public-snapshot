@@ -32,16 +32,14 @@ func TestCachedLocationResolver(t *testing.T) {
 		return &types.Repo{ID: id, CreatedAt: time.Now()}, nil
 	})
 
-	db := database.NewStrictMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
-
 	gsClient := gitserver.NewMockClient()
 	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), nil
 	})
 
 	var commitCalls uint32
-	cachedResolver := NewCachedLocationResolver(db, gsClient)
+	factory := NewCachedLocationResolverFactory(nil, repos, gsClient)
+	locationResolver := factory.Create()
 
 	var repositoryIDs []api.RepoID
 	for i := 1; i <= numRepositories; i++ {
@@ -73,7 +71,7 @@ func TestCachedLocationResolver(t *testing.T) {
 			defer wg.Done()
 
 			for _, repositoryID := range repositoryIDs {
-				repositoryResolver, err := cachedResolver.Repository(context.Background(), repositoryID)
+				repositoryResolver, err := locationResolver.Repository(context.Background(), repositoryID)
 				if err != nil {
 					errs <- err
 					return
@@ -91,7 +89,7 @@ func TestCachedLocationResolver(t *testing.T) {
 
 			for _, repositoryID := range repositoryIDs {
 				for _, commit := range commits {
-					commitResolver, err := cachedResolver.Commit(context.Background(), repositoryID, commit)
+					commitResolver, err := locationResolver.Commit(context.Background(), repositoryID, commit)
 					if err != nil {
 						errs <- err
 						return
@@ -106,7 +104,7 @@ func TestCachedLocationResolver(t *testing.T) {
 			for _, repositoryID := range repositoryIDs {
 				for _, commit := range commits {
 					for _, path := range paths {
-						treeResolver, err := cachedResolver.Path(context.Background(), repositoryID, commit, path)
+						treeResolver, err := locationResolver.Path(context.Background(), repositoryID, commit, path)
 						if err != nil {
 							errs <- err
 							return
@@ -159,12 +157,12 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 		return nil, &database.RepoNotFoundErr{ID: id}
 	})
 
-	db := database.NewStrictMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
-
 	gsClient := gitserver.NewMockClient()
 
-	repositoryResolver, err := NewCachedLocationResolver(db, gsClient).Repository(context.Background(), 50)
+	factory := NewCachedLocationResolverFactory(nil, repos, gsClient)
+	locationResolver := factory.Create()
+
+	repositoryResolver, err := locationResolver.Repository(context.Background(), 50)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -173,7 +171,7 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 	}
 
 	// Ensure no dereference in child resolvers either
-	pathResolver, err := NewCachedLocationResolver(db, gsClient).Path(context.Background(), 50, "deadbeef", "main.go")
+	pathResolver, err := locationResolver.Path(context.Background(), 50, "deadbeef", "main.go")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -189,13 +187,13 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 		return &types.Repo{ID: id}, nil
 	})
 
-	db := database.NewStrictMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
-
 	gsClient := gitserver.NewMockClient()
 	gsClient.ResolveRevisionFunc.SetDefaultReturn("", &gitdomain.RevisionNotFoundError{})
 
-	commitResolver, err := NewCachedLocationResolver(db, gsClient).Commit(context.Background(), 50, "deadbeef")
+	factory := NewCachedLocationResolverFactory(nil, repos, gsClient)
+	locationResolver := factory.Create()
+
+	commitResolver, err := locationResolver.Commit(context.Background(), 50, "deadbeef")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -204,7 +202,7 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 	}
 
 	// Ensure no dereference in child resolvers either
-	pathResolver, err := NewCachedLocationResolver(db, gsClient).Path(context.Background(), 50, "deadbeef", "main.go")
+	pathResolver, err := locationResolver.Path(context.Background(), 50, "deadbeef", "main.go")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}

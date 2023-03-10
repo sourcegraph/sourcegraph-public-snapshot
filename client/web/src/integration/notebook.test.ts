@@ -203,8 +203,13 @@ describe('Search Notebook', () => {
         })
         testContext.overrideGraphQL(commonSearchGraphQLResults)
         testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
-        testContext.overrideInitialTemporarySettings({
-            'search.notebooks.gettingStartedTabSeen': true,
+        testContext.overrideJsContext({
+            temporarySettings: {
+                __typename: 'TemporarySettings',
+                contents: JSON.stringify({
+                    'search.notebooks.gettingStartedTabSeen': true,
+                }),
+            },
         })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)

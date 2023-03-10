@@ -16,15 +16,15 @@ import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEdito
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../stores'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
@@ -77,6 +77,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
         const applySuggestionsOnEnter =
             useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+        const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
 
         const onInputChange = useCallback(
             (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
@@ -192,6 +193,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                         <div className={styles.results}>
                             <StreamingSearchResultsList
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                enableOwnershipSearch={enableOwnershipSearch}
                                 searchContextsEnabled={searchContextsEnabled}
                                 allExpanded={false}
                                 results={searchResults}

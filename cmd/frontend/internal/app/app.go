@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/accessrequest"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -54,6 +55,7 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 	lockoutStore := userpasswd.NewLockoutStoreFromConf(conf.AuthLockout())
 
 	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(logger, db)))
+	r.Get(router.RequestAccess).Handler(trace.Route(accessrequest.HandleRequestAccess(logger, db)))
 	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(logger, db)))
 	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(logger, db, lockoutStore)))
 	r.Get(router.SignOut).Handler(trace.Route(serveSignOutHandler(db)))

@@ -6,13 +6,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
-	"net/http"
 	"path"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
-	"unicode/utf8"
 
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -23,6 +21,7 @@ import (
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/sourcegraph/sourcegraph/internal/binary"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 
@@ -64,18 +63,6 @@ func getHighlightOp() *observation.Operation {
 	})
 
 	return highlightOp
-}
-
-// IsBinary is a helper to tell if the content of a file is binary or not.
-// TODO(tjdevries): This doesn't make sense to be here, IMO
-func IsBinary(content []byte) bool {
-	// We first check if the file is valid UTF8, since we always consider that
-	// to be non-binary.
-	//
-	// Secondly, if the file is not valid UTF8, we check if the detected HTTP
-	// content type is text, which covers a whole slew of other non-UTF8 text
-	// encodings for us.
-	return !utf8.Valid(content) && !strings.HasPrefix(http.DetectContentType(content), "text/")
 }
 
 // Params defines mandatory and optional parameters to use when highlighting
@@ -266,7 +253,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 		appendTextToNode(currentCell, kind, line)
 	}
 
-	lsifToHTML(h.code, h.document, addRow, addText, validLines)
+	scipToHTML(h.code, h.document, addRow, addText, validLines)
 
 	stringRows := map[int32]string{}
 	for row, node := range htmlRows {
@@ -384,7 +371,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	}
 
 	// Never pass binary files to the syntax highlighter.
-	if IsBinary(p.Content) {
+	if binary.IsBinary(p.Content) {
 		return nil, false, ErrBinary
 	}
 	code := string(p.Content)

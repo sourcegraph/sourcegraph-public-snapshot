@@ -62,7 +62,6 @@ export const CommandAction: Story = () => (
         telemetryService={NOOP_TELEMETRY_SERVICE}
         disabledDuringExecution={true}
         showLoadingSpinnerDuringExecution={true}
-        showInlineError={true}
         onDidExecute={onDidExecute}
     />
 )
@@ -105,7 +104,6 @@ export const Executing: Story = () => {
             action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
             disabledDuringExecution={true}
             showLoadingSpinnerDuringExecution={true}
-            showInlineError={true}
         />
     )
 }
@@ -124,7 +122,6 @@ export const _Error: Story = () => {
             action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
             disabledDuringExecution={true}
             showLoadingSpinnerDuringExecution={true}
-            showInlineError={true}
         />
     )
 }

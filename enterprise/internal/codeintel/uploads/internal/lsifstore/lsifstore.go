@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -23,10 +24,11 @@ type LsifStore interface {
 
 	IDsWithMeta(ctx context.Context, ids []int) ([]int, error)
 	ReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
-	DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (count int, err error)
+	DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (numScanned, numDeleted int, err error)
 
 	// Stream
 	ScanDocuments(ctx context.Context, id int, f func(path string, document *scip.Document) error) (err error)
+	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload shared.ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) (err error)
 }
 
 type SCIPWriter interface {

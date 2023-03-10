@@ -3,7 +3,7 @@ source: crates/sg-syntax/src/sg_treesitter.rs
 expression: "dump_document(&document, src)"
 ---
   using System;
-//^^^^^ IdentifierKeyword 
+//^^^^^ Keyword 
 //      ^^^^^^ IdentifierNamespace 
 //            ^ PunctuationDelimiter 
 

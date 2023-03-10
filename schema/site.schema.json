@@ -218,12 +218,6 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
-        "azureDevOps": {
-          "description": "Allow adding Azure DevOps code host connections",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "subRepoPermissions": {
           "type": "object",
           "additionalProperties": false,
@@ -356,14 +350,14 @@
           "type": "boolean",
           "default": false
         },
-        "enablePermissionsWebhooks": {
-          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
+        "enableGRPC": {
+          "description": "Enables gRPC for communication between internal services",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": false }
         },
-        "enablePostSignupFlow": {
-          "description": "Enables post sign-up user flow to add code hosts and sync code",
+        "enablePermissionsWebhooks": {
+          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": false }
@@ -465,11 +459,6 @@
             }
           ]
         },
-        "enableLegacyExtensions": {
-          "description": "Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).",
-          "type": "boolean",
-          "default": false
-        },
         "insightsAlternateLoadingStrategy": {
           "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
           "type": "boolean",
@@ -488,6 +477,19 @@
           "!go": {
             "pointer": true
           }
+        },
+        "accessRequest.enabled": {
+          "description": "Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.",
+          "type": "boolean",
+          "!go": { "pointer": true },
+          "group": "AccessRequest",
+          "default": true
+        },
+        "unifiedPermissions": {
+          "description": "Enables the new unified permissions model, which stores repository permissions in a single table and a row for each permission instead of postgres arrays.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
         }
       },
       "examples": [
@@ -533,7 +535,7 @@
       "default": false
     },
     "batchChanges.rolloutWindows": {
-      "description": "Specifies specific windows, which can have associated rate limits, to be used when publishing changesets. All days and times are handled in UTC.",
+      "description": "Specifies specific windows, which can have associated rate limits, to be used when reconciling published changesets (creating or updating). All days and times are handled in UTC.",
       "type": "array",
       "!go": { "pointer": true },
       "group": "BatchChanges",
@@ -618,6 +620,31 @@
       "!go": { "pointer": true },
       "group": "Code intelligence",
       "default": false
+    },
+    "codeIntelRanking.documentReferenceCountsEnabled": {
+      "description": "Enables/disables the document reference counts feature. Currently experimental.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
+    "codeIntelRanking.documentReferenceCountsGraphKey": {
+      "description": "An arbitrary identifier used to group calculated rankings from SCIP data (including the SCIP export).",
+      "type": "string",
+      "group": "Code intelligence",
+      "examples": ["dev"]
+    },
+    "codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix": {
+      "description": "An arbitrary identifier used to group calculated rankings from SCIP data (excluding the SCIP export).",
+      "type": "string",
+      "group": "Code intelligence",
+      "examples": [""]
+    },
+    "codeIntelRanking.staleResultsAge": {
+      "description": "The interval at which to run the reduce job that computes document reference counts. Default is 72hrs.",
+      "type": "integer",
+      "default": 72,
+      "group": "Code intelligence"
     },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
@@ -1148,47 +1175,6 @@
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
       "minLength": 20
-    },
-    "extensions": {
-      "description": "Configures Sourcegraph extensions.",
-      "type": "object",
-      "properties": {
-        "disabled": {
-          "description": "Disable all usage of extensions.",
-          "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
-        },
-        "remoteRegistry": {
-          "description": "The remote extension registry URL, or `false` to not use a remote extension registry. If not set, the default remote extension registry URL is used.",
-          "oneOf": [
-            { "type": "string", "format": "uri" },
-            { "type": "boolean", "const": false }
-          ]
-        },
-        "allowRemoteExtensions": {
-          "description": "Allow only the explicitly listed remote extensions (by extension ID, such as \"alice/myextension\") from the remote registry. If not set, all remote extensions may be used from the remote registry. To completely disable the remote registry, set `remoteRegistry` to `false`.\n\nOnly available in Sourcegraph Enterprise.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "allowOnlySourcegraphAuthoredExtensions": {
-          "description": "Allow only Sourcegraph authored extensions from the default remote registry. If not set, all remote extensions may be used from the remote registry. If certain extensions are marked as allowed in `allowRemoteExtensions` field or `remoteRegistry` points to other than default registry, `allowOnlySourcegraphAuthoredExtensions` setting value will be ignored. To completely disable the remote registry, set `remoteRegistry` to `false`.",
-          "type": "boolean",
-          "default": false
-        }
-      },
-      "default": {
-        "remoteRegistry": "https://sourcegraph.com/.api/registry"
-      },
-      "examples": [
-        {
-          "remoteRegistry": "https://sourcegraph.com/.api/registry",
-          "allowRemoteExtensions": ["sourcegraph/java"]
-        }
-      ],
-      "group": "Extensions"
     },
     "auth.userOrgMap": {
       "description": "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{\"*\": [\"org1\", \"org2\"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `\"*\"`.",
@@ -1860,6 +1846,62 @@
           "type": "string"
         }
       }
+    },
+    "embeddings": {
+      "description": "Configuration for embeddings service.",
+      "type": "object",
+      "required": ["enabled", "dimensions", "model", "accessToken", "url"],
+      "properties": {
+        "enabled": {
+          "description": "Toggles whether embedding service is enabled.",
+          "type": "boolean",
+          "default": false
+        },
+        "dimensions": {
+          "description": "The dimensionality of the embedding vectors.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "model": {
+          "description": "The model used for embedding.",
+          "type": "string"
+        },
+        "accessToken": {
+          "description": "The access token used to authenticate with the external embedding API service.",
+          "type": "string"
+        },
+        "url": {
+          "description": "The url to the external embedding API service.",
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "completions": {
+      "description": "Configuration for the completions service.",
+      "type": "object",
+      "required": ["enabled", "model", "accessToken", "provider"],
+      "properties": {
+        "enabled": {
+          "description": "Toggles whether completions are enabled.",
+          "type": "boolean",
+          "default": false
+        },
+        "model": {
+          "description": "The model used for completions.",
+          "type": "string"
+        },
+        "accessToken": {
+          "description": "The access token used to authenticate with the external completions provider.",
+          "type": "string"
+        },
+        "provider": {
+          "type": "string",
+          "description": "The external completions provider.",
+          "default": "anthropic",
+          "enum": ["anthropic"]
+        }
+      }
     }
   },
   "definitions": {
@@ -2118,7 +2160,7 @@
           ]
         },
         "allowGroupsPermissionsSync": {
-          "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",
+          "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching).",
           "default": false,
           "type": "boolean"
         },
@@ -2258,8 +2300,18 @@
         "apiScope": {
           "type": "string",
           "description": "The OAuth API scope that should be used",
-          "default": "vso.code,vso.identity"
+          "default": "vso.code,vso.identity,vso.project"
         },
+        "allowOrgs": {
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of these Azure DevOps organizations only. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts Azure DevOps authentication. If false, users signing in via Azure DevOps must have an existing Sourcegraph account, which will be linked to their Azure DevOps identity after sign-in.",
           "default": true,

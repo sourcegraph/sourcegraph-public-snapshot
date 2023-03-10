@@ -1,119 +1,215 @@
-# Sourcegraph with Kubernetes
+# Sourcegraph on Kubernetes
 
-<p class="lead">
-Deploying Sourcegraph on Kubernetes is for organizations that need highly scalable and available code search and code navigation.
-</p>
+Deploying on Kubernetes is for organizations that need highly scalable and available code search and code navigation. 
 
-> NOTE: Sourcegraph recommends [using Helm to deploy Sourcegraph](helm.md) if possible.
-> This page covers a more manual Kubernetes deployment, using `kubectl` to deploy manifests. This is only recommended if Helm cannot be used in your Kubernetes enviroment. See the Helm guide for more information on why Helm is preferable.
-
-<div class="cta-group">
-<a class="btn btn-primary" href="#installation">★ Installation</a>
-<a class="btn" href="operations">Operations guides</a>
-<a class="btn" href="#about">About Kubernetes</a>
-<a class="btn" href="../../../#get-help">Get help</a>
+<div class="getting-started">
+  <a class="btn btn-primary text-center" href="#prerequisites">★ Installation</a>
+  <a class="btn text-center" href="kustomize">Introduction</a>
+  <a class="btn text-center" href="configure">Configuration</a>
+  <a class="btn text-center" href="operations">Maintenance</a>
 </div>
 
-## Requirements for using Kubernetes
+Below is an overview of installing Sourcegraph on Kubernetes using Kustomize.
 
-Our Kubernetes support has the following requirements:
+### Prerequisites
 
-- [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users_
-- A deployed kubernetes cluster. You can do this yourself, or use [our terraform configs](https://github.com/sourcegraph/tf-k8s-configs) to quickly deploy a cluster that will support a standard Sourcegraph instance on Google Cloud Platform (GKE) or Amazon Web Services (EKS).
-- Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.19 or later (check kubectl docs for backward and forward compatibility with Kubernetes versions)
-- Support for Persistent Volumes (SSDs recommended)
+* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) (v1.19 or later) with [Kustomize](https://kustomize.io/) (built into [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) in version >= 1.14)
+* A [Kubernetes](https://kubernetes.io/) cluster ([v1.19 or later](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/))
+   - Support for Persistent Volumes with SSDs
+   - You can optionally refer to our [terraform configurations](https://github.com/sourcegraph/tf-k8s-configs) for setting up clusters on:
+     - [Amazon Web Services EKS](https://github.com/sourcegraph/tf-k8s-configs/tree/main/aws)
+     - [Azure AKS](https://github.com/sourcegraph/tf-k8s-configs/tree/main/azure)
+     - [Google Cloud Platform GKE](https://github.com/sourcegraph/tf-k8s-configs/tree/main/gcp)
 
-We also recommend some familiarity with the following Kubernetes concepts before proceeding:
+>WARNING: **If your Sourcegraph version is older than `4.5.0`, please refer to the [old deployment docs for Kubernetes](https://docs.sourcegraph.com/@v4.4.2/admin/deploy/kubernetes).**
 
-- [Kubernetes Objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/)
-  - [Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/)
-- [Role Based Access Control](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
-- [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/)
+### **Step 1**: Set up a release branch
 
-Not sure if Kubernetes is the right choice for you? Learn more about the various [Sourcegraph installation options](../index.md).
+Create a release branch from the default branch (or [an available tag](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tags)) in your local fork of the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository.
 
-## Installation
+See the [docs on reference repository](../repositories.md) for detailed instructions on creating a local fork.
 
-Before starting, we recommend reading the [configuration guide](configure.md#getting-started), ensuring you have prepared the items below so that you're ready to start your installation:
+```bash
+  # Recommended: replace the URL with your private fork
+  $ git clone https://github.com/sourcegraph/deploy-sourcegraph-k8s.git
+  $ cd deploy-sourcegraph-k8s
+  $ git checkout v4.5.1 && git checkout -b release
+```
 
-- [Customization](./configure.md#customizations)
-- [Storage class](./configure.md#configure-a-storage-class)
-- [Network Access](./configure.md#configure-network-access)
-- [PostgreSQL Database](./configure.md#configure-external-databases)
-- [Scaling services](./scale.md)
-- [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+### **Step 2**: Set up a directory for your instance
 
-> WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.
+Create a copy of the [instances/template](kustomize/index.md#template) directory and rename it to `instances/my-sourcegraph`:
 
-Once you are all set up, either [install Sourcegraph directly](#direct-installation) or [deploy Sourcegraph to a cloud of your choice](#cloud-installation).
+```bash
+  $ cp -R instances/template instances/my-sourcegraph
+```
 
-### Reference repository
+>NOTE: In Kustomize, this directory is referred to as an [overlay](https://kubectl.docs.kubernetes.io/references/kustomize/glossary/#overlay).
 
-Sourcegraph for Kubernetes is configured using our [`sourcegraph/deploy-sourcegraph` reference repository](https://github.com/sourcegraph/deploy-sourcegraph/). This repository contains everything you need to [spin up](#installation) and [configure](./configure.md) a Sourcegraph deployment on Kubernetes.
+### **Step 3**: Set up the configuration files
 
-### Direct installation
+**1.** Rename the [kustomization.template.yaml](kustomize/index.md#kustomization-yaml) file in `instances/my-sourcegraph` to `kustomization.yaml`. 
 
-- After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
-- `cd` to the forked local copy of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository previously set up during [configuration](./configure.md#getting-started).
-- Deploy the desired version of Sourcegraph to your cluster by [applying the Kubernetes manifests](./configure.md#applying-manifests):
+- The `kustomization.yaml` file is used to configure your Sourcegraph instance. 
 
-  ```sh
-  ./kubectl-apply-all.sh
+```bash
+  $ mv instances/my-sourcegraph/kustomization.template.yaml instances/my-sourcegraph/kustomization.yaml
+```
+
+**2.** Rename the [buildConfig.template.yaml](kustomize/index.md#buildconfig-yaml) file in `instances/my-sourcegraph` to `buildConfig.yaml`.
+
+- The `buildConfig.yaml` file is used to configure components included in your `kustomization` file if required.
+
+```bash
+  $ mv instances/my-sourcegraph/buildConfig.template.yaml instances/my-sourcegraph/buildConfig.yaml
+```
+
+### **Step 4**: Set namespace
+
+By default, the provided `kustomization.yaml` template deploys Sourcegraph into the `ns-sourcegraph` namespace. 
+
+If you intend to deploy Sourcegraph into a different namespace, replace `ns-sourcegraph` with the name of the existing namespace in your cluster, or set it to `default` to deploy into the default namespace.
+
+  ```yaml
+  # instances/my-sourcegraph/kustomization.yaml
+  namespace: sourcegraph
   ```
 
-  > NOTE: Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes
-  > ([Learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control)):
-  >
-  > `kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)`
+### **Step 5**: Set storage class
 
-- Monitor the status of the deployment:
+A storage class must be created and configured before deploying Sourcegraph. SSD storage is not required but is strongly recommended for optimal performance.
 
-  ```sh
-  kubectl get pods -o wide --watch
+#### Option 1: Create a new storage class
+
+We recommend using a preconfigured storage class component for your cloud provider if you can create cluster-wide resources:
+
+```yaml
+# instances/my-sourcegraph/kustomization.yaml
+  components:
+    # Select a component that corresponds to your cluster provider
+    - ../../components/storage-class/aws/aws-ebs
+    - ../../components/storage-class/aws/ebs-csi
+    - ../../components/storage-class/azure
+    - ../../components/storage-class/gke
+```
+
+See our [configurations guide](configure.md) for the full list of available storage class components.
+
+#### Option 2: Use an existing storage class
+
+If you cannot create a new storage class and/or want to use an existing one with SSDs:
+
+<details>
+  <summary>Show instruction</summary>
+
+**1.** Include the `storage-class/name-update` component under the components list
+
+  ```yaml
+  # instances/my-sourcegraph/kustomization.yaml
+    components:
+      # This updates storageClassName to 
+      # the STORAGECLASS_NAME value from buildConfig.yaml
+      - ../../components/storage-class/name-update
   ```
 
-- After deployment is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
+**2.** Input the storage class name by setting the value of `STORAGECLASS_NAME` in `buildConfig.yaml`. 
 
-  ```sh
-  kubectl port-forward svc/sourcegraph-frontend 3080:30080
+For example, set `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name of an existing storage class:
+
+  ```yaml
+  # instances/my-sourcegraph/buildConfig.yaml
+    kind: ConfigMap
+    metadata:
+      name: sourcegraph-kustomize-build-config
+    data:
+      STORAGECLASS_NAME: sourcegraph # -- [ACTION] Update storage class name here
+  ```
+</details>
+
+#### Option 3: Use default storage class
+
+Skip this step to use the default storage class without SSD support for non-production environments. However, you must recreate the cluster with SSDs configured for production environments later.
+
+>WARNING: Search performance will suffer tremendously without SSDs provisioned.
+
+### **Step 6**: Build manifests with Kustomize
+
+Generate a new set of manifests locally using the configuration applied to the `my-sourcegraph` subdirectory without applying to the cluster.
+
+  ```bash
+  $ kubectl kustomize instances/my-sourcegraph -o cluster.yaml
   ```
 
-- Open http://localhost:3080 in your browser and you will see a setup page. Congratulations, you have Sourcegraph up and running! 🎉
+### **Step 7**: Review manifests
 
-> NOTE: If you previously [set up an `ingress-controller`](./configure.md#ingress-controller-recommended), you can now also access your deployment via the ingress.
+Review the generated manifests to ensure they match your intended configuration.
 
-### Cloud installation
+  ```bash
+  $ less cluster.yaml
+  ```
 
-> WARNING: If you intend to set this up as a production instance, we recommend you create the cluster in a VPC
-> or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
-> necessary ports via an
-> [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or equivalent
-> mechanism. Note that SG must expose port 443 for outbound traffic to codehosts and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with
-> Sourcegraph.com. Additionally port 22 may be opened to enable git SSH cloning by Sourcegraph. Take care to secure your cluster in a manner that meets your
-> organization's security requirements.
+### **Step 8**: Deploy the generated manifests
 
-Follow the instructions linked in the table below to provision a Kubernetes cluster for the
-infrastructure provider of your choice, using the recommended node and list types in the
-table.
+Apply the manifests from the ouput file `cluster.yaml` to your cluster:
 
-|Provider|Node type|Boot/ephemeral disk size|
-|--- |--- |--- |
-|[Amazon EKS (better than plain EC2)](eks.md)|m5.4xlarge| 100 GB (SSD preferred) |
-|[AWS EC2](https://kubernetes.io/docs/getting-started-guides/aws/)|m5.4xlarge|  100 GB (SSD preferred) |
-|[Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine/docs/quickstart)|n1-standard-16|100 GB (default)|
-|[Azure](azure.md)|D16 v3|100 GB (SSD preferred)|
-|[Other](https://kubernetes.io/docs/setup/production-environment/turnkey-solutions/)|16 vCPU, 60 GiB memory per node|100 GB (SSD preferred)|
+  ```bash
+  $ kubectl apply --prune -l deploy=sourcegraph -f cluster.yaml
+  ```
 
-<span class="virtual-br"></span>
+### **Step 9**: Monitor the deployment
 
-> NOTE: Sourcegraph can run on any Kubernetes cluster, so if your infrastructure provider is not
-> listed, see the "Other" row. Pull requests to add rows for more infrastructure providers are
-> welcome!
+Monitor the deployment status to ensure all components are running properly.
 
-<span class="virtual-br"></span>
+  ```bash
+  $ kubectl get pods -A -o wide --watch
+  ```
 
-> WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.
+### **Step 10**: Access Sourcegraph in Browser
 
-### ARM / ARM64 support
+To verify that the deployment was successful, port-forward the frontend pod with the following command:
 
-> WARNING: Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
+  ```bash
+  $ kubectl port-forward svc/sourcegraph-frontend 3080:30080
+  ```
+
+Then access your new Sourcegraph instance at http://localhost:3080 to proceed to the site-admin setup step.
+
+  ```bash
+  $ open http://localhost:3080
+  ```
+
+---
+
+## Configure
+
+After the initial deployment, additional configuration might be required for Sourcegraph to customize your deployment to suit your specific needs.
+
+Common configurations that are strongly recommended for all Sourcegraph deployments:
+
+- [Enable the Sourcegraph monitoring stack](configure.md#monitoring-stack)
+- [Enable tracing](configure.md#tracing)
+- [Adjust resource allocations](configure.md#instance-size-based-resources)
+- [Adjust storage sizes](configure.md#adjust-storage-sizes)
+- [Configure ingress](configure.md#ingress)
+- [Enable TLS](configure.md#tls)
+
+Other common configurations include:
+
+- [Set up an external PostgreSQL Database](configure.md#external-postgres)
+- [Set up SSH connection for cloning repositories](configure.md#ssh-for-cloning)
+
+See the [configuration guide for Kustomize](configure.md) for more configuration options.
+
+## Helm Charts
+
+We recommend deploying Sourcegraph on Kubernetes with Kustomize due to the flexibility it provides. If your organization uses Helm to deploy on Kubernetes, please refer to the documentation for the [Sourcegraph Helm Charts](helm.md) instead.
+
+## Learn more
+
+- Examples of deploying Sourcegraph to the cloud provider listed below:
+  - [Amazon EKS](kustomize/eks.md)
+  - [Google GKE](kustomize/gke.md)
+  - [Minikube](../single-node/minikube.md)
+- [Migration guide](kustomize/migrate.md) on migrating from [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) to [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)
+- [Other deployment options](../index.md)
+- [Troubleshooting](troubleshoot.md)

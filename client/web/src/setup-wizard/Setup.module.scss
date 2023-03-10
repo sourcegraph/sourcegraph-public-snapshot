@@ -22,6 +22,15 @@
     flex-direction: column;
 }
 
+.content {
+    flex-grow: 1;
+    overflow: auto;
+}
+
+.footer {
+    flex-shrink: 0;
+}
+
 .header {
     background: var(--header-gradient);
     background: radial-gradient(

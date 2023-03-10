@@ -9,7 +9,6 @@ import {
     STATIC_ASSETS_PATH,
     stylePlugin,
     packageResolutionPlugin,
-    workerPlugin,
     monacoPlugin,
     RXJS_RESOLUTIONS,
     buildMonaco,
@@ -22,6 +21,7 @@ import { ENVIRONMENT_CONFIG } from '../utils'
 
 import { manifestPlugin } from './manifestPlugin'
 
+const hashedEntrypoint = Boolean(process.env.ESBUILD_HASHED_ENTRYPOINT)
 const isEnterpriseBuild = ENVIRONMENT_CONFIG.ENTERPRISE
 const omitSlowDeps = ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS
 
@@ -40,10 +40,10 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     jsxDev: true, // we're only using esbuild for dev server right now
     splitting: true,
     chunkNames: 'chunks/chunk-[name]-[hash]',
+    entryNames: hashedEntrypoint ? 'scripts/[name]-[hash]' : undefined,
     outdir: STATIC_ASSETS_PATH,
     plugins: [
         stylePlugin,
-        workerPlugin,
         manifestPlugin,
         packageResolutionPlugin({
             path: require.resolve('path-browserify'),
@@ -101,6 +101,7 @@ export const build = async (): Promise<void> => {
     }
     if (!omitSlowDeps) {
         const ctx = await buildMonaco(STATIC_ASSETS_PATH)
+        await ctx.rebuild()
         await ctx.dispose()
     }
 }
