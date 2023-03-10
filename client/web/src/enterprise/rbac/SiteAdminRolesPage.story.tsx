@@ -52,7 +52,7 @@ const mocks = new WildcardMockLink([
         },
         result: { data: { setPermissions: { alwaysNil: null } } },
         nMatches: Number.POSITIVE_INFINITY,
-    }
+    },
 ])
 
 export const RolesPage: Story = () => (

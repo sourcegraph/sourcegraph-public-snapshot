@@ -35,12 +35,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
     const [permissions, setPermissions] = useState<PermissionsMap>({} as PermissionsMap)
 
     // Fetch paginated roles.
-    const {
-        data,
-        error: rolesError,
-        loading: rolesLoading,
-        refetch
-    } = useRolesConnection()
+    const { data, error: rolesError, loading: rolesLoading, refetch } = useRolesConnection()
     // We need to query all permissions from the database, so site admins can update easily if they want to.
     const { error: permissionsError, loading: permissionsLoading } = usePermissions(result => {
         const permissions = groupBy(result.permissions.nodes, 'namespace')
@@ -92,13 +87,8 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
             {!loading && data && (
                 <ul className="list-unstyled">
                     {data.roles.nodes.map(node => (
-                    <RoleNode
-                        key={node.id}
-                        node={node}
-                        refetch={refetch}
-                        allPermissions={permissions}
-                    />
-                ))}
+                        <RoleNode key={node.id} node={node} refetch={refetch} allPermissions={permissions} />
+                    ))}
                 </ul>
             )}
         </div>

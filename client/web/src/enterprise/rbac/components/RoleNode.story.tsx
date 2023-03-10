@@ -36,7 +36,7 @@ const mocks = new WildcardMockLink([
         },
         result: { data: { setPermissions: { alwaysNil: null } } },
         nMatches: Number.POSITIVE_INFINITY,
-    }
+    },
 ])
 
 const [systemRole, nonSystemRole] = mockRoles.roles.nodes

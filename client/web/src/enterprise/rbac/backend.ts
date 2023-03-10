@@ -106,9 +106,10 @@ export const SET_PERMISSIONS = gql`
     }
 `
 
-export const useRolesConnection = (): QueryResult<AllRolesResult, AllRolesVariables> => useQuery(ROLES_QUERY, {
-    fetchPolicy: 'no-cache'
-})
+export const useRolesConnection = (): QueryResult<AllRolesResult, AllRolesVariables> =>
+    useQuery(ROLES_QUERY, {
+        fetchPolicy: 'no-cache',
+    })
 
 export const usePermissions = (
     onCompleted: (result: AllPermissionsResult) => void

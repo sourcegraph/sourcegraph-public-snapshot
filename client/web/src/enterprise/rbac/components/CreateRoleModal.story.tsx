@@ -30,9 +30,8 @@ const mocks = new WildcardMockLink([
         },
         result: { data: { createRole: sampleRole } },
         nMatches: Number.POSITIVE_INFINITY,
-    }
+    },
 ])
-
 
 export const CreateRoleModalStory: Story = () => (
     <WebStory>

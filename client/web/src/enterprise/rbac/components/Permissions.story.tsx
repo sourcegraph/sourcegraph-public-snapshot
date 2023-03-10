@@ -19,7 +19,7 @@ export default config
 
 const [roleWithAllPermissions, roleWithOnePermission, roleWithNoPermission] = mockRoles.roles.nodes
 
-const isChecked = (role: typeof roleWithAllPermissions): (value: string) => boolean => {
+const isChecked = (role: typeof roleWithAllPermissions): ((value: string) => boolean) => {
     const rolePermissions = role.permissions.nodes.reduce<Record<string, boolean>>((acc, node) => {
         acc[node.id] = true
         return acc
@@ -33,7 +33,12 @@ export const NoPermissions: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider>
-                <PermissionsList allPermissions={mockPermissionsMap} onChange={noop} onBlur={noop} isChecked={isChecked(roleWithNoPermission)}  />
+                <PermissionsList
+                    allPermissions={mockPermissionsMap}
+                    onChange={noop}
+                    onBlur={noop}
+                    isChecked={isChecked(roleWithNoPermission)}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -45,7 +50,12 @@ export const OnePermissionAssigned: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider>
-                <PermissionsList allPermissions={mockPermissionsMap} onChange={noop} onBlur={noop} isChecked={isChecked(roleWithOnePermission)} />
+                <PermissionsList
+                    allPermissions={mockPermissionsMap}
+                    onChange={noop}
+                    onBlur={noop}
+                    isChecked={isChecked(roleWithOnePermission)}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -57,7 +67,12 @@ export const AllPermissionsAssigned: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider>
-                <PermissionsList allPermissions={mockPermissionsMap} onChange={noop} onBlur={noop} isChecked={isChecked(roleWithAllPermissions)} />
+                <PermissionsList
+                    allPermissions={mockPermissionsMap}
+                    onChange={noop}
+                    onBlur={noop}
+                    isChecked={isChecked(roleWithAllPermissions)}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
