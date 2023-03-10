@@ -43,7 +43,7 @@ For more information on the components being deployed see the [Executors readme]
 
 ## Note
 
-Executors deployed in kubernetes do not use [Firecracker](executors.md#how-it-works), meaning they require [privileged access](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) to the docker daemon running in a sidecar alongside the executor pod.
+Executors deployed in kubernetes do not use [Firecracker](index.md#how-it-works), meaning they require [privileged access](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) to the docker daemon running in a sidecar alongside the executor pod.
 
 If you have security concerns, consider deploying via [terraform](deploy_executors_terraform.md) or [installing the binary](deploy_executors_binary.md) directly.
 
