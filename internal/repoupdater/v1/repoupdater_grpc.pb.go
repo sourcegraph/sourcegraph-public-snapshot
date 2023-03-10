@@ -19,12 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	RepoUpdaterService_RepoUpdateSchedulerInfo_FullMethodName = "/repoupdater.v1.RepoUpdaterService/RepoUpdateSchedulerInfo"
-	RepoUpdaterService_RepoLookup_FullMethodName              = "/repoupdater.v1.RepoUpdaterService/RepoLookup"
-	RepoUpdaterService_EnqueueRepoUpdate_FullMethodName       = "/repoupdater.v1.RepoUpdaterService/EnqueueRepoUpdate"
-	RepoUpdaterService_EnqueueChangesetSync_FullMethodName    = "/repoupdater.v1.RepoUpdaterService/EnqueueChangesetSync"
-	RepoUpdaterService_SchedulePermsSync_FullMethodName       = "/repoupdater.v1.RepoUpdaterService/SchedulePermsSync"
-	RepoUpdaterService_SyncExternalService_FullMethodName     = "/repoupdater.v1.RepoUpdaterService/SyncExternalService"
+	RepoUpdaterService_RepoUpdateSchedulerInfo_FullMethodName     = "/repoupdater.v1.RepoUpdaterService/RepoUpdateSchedulerInfo"
+	RepoUpdaterService_RepoLookup_FullMethodName                  = "/repoupdater.v1.RepoUpdaterService/RepoLookup"
+	RepoUpdaterService_EnqueueRepoUpdate_FullMethodName           = "/repoupdater.v1.RepoUpdaterService/EnqueueRepoUpdate"
+	RepoUpdaterService_EnqueueChangesetSync_FullMethodName        = "/repoupdater.v1.RepoUpdaterService/EnqueueChangesetSync"
+	RepoUpdaterService_SchedulePermsSync_FullMethodName           = "/repoupdater.v1.RepoUpdaterService/SchedulePermsSync"
+	RepoUpdaterService_SyncExternalService_FullMethodName         = "/repoupdater.v1.RepoUpdaterService/SyncExternalService"
+	RepoUpdaterService_ExternalServiceNamespaces_FullMethodName   = "/repoupdater.v1.RepoUpdaterService/ExternalServiceNamespaces"
+	RepoUpdaterService_ExternalServiceRepositories_FullMethodName = "/repoupdater.v1.RepoUpdaterService/ExternalServiceRepositories"
 )
 
 // RepoUpdaterServiceClient is the client API for RepoUpdaterService service.
@@ -112,7 +114,7 @@ func (c *repoUpdaterServiceClient) SyncExternalService(ctx context.Context, in *
 
 func (c *repoUpdaterServiceClient) ExternalServiceNamespaces(ctx context.Context, in *ExternalServiceNamespacesRequest, opts ...grpc.CallOption) (*ExternalServiceNamespacesResponse, error) {
 	out := new(ExternalServiceNamespacesResponse)
-	err := c.cc.Invoke(ctx, "/repoupdater.v1.RepoUpdaterService/ExternalServiceNamespaces", in, out, opts...)
+	err := c.cc.Invoke(ctx, RepoUpdaterService_ExternalServiceNamespaces_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +123,7 @@ func (c *repoUpdaterServiceClient) ExternalServiceNamespaces(ctx context.Context
 
 func (c *repoUpdaterServiceClient) ExternalServiceRepositories(ctx context.Context, in *ExternalServiceRepositoriesRequest, opts ...grpc.CallOption) (*ExternalServiceRepositoriesResponse, error) {
 	out := new(ExternalServiceRepositoriesResponse)
-	err := c.cc.Invoke(ctx, "/repoupdater.v1.RepoUpdaterService/ExternalServiceRepositories", in, out, opts...)
+	err := c.cc.Invoke(ctx, RepoUpdaterService_ExternalServiceRepositories_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +311,7 @@ func _RepoUpdaterService_ExternalServiceNamespaces_Handler(srv interface{}, ctx 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/repoupdater.v1.RepoUpdaterService/ExternalServiceNamespaces",
+		FullMethod: RepoUpdaterService_ExternalServiceNamespaces_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RepoUpdaterServiceServer).ExternalServiceNamespaces(ctx, req.(*ExternalServiceNamespacesRequest))
@@ -327,7 +329,7 @@ func _RepoUpdaterService_ExternalServiceRepositories_Handler(srv interface{}, ct
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/repoupdater.v1.RepoUpdaterService/ExternalServiceRepositories",
+		FullMethod: RepoUpdaterService_ExternalServiceRepositories_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RepoUpdaterServiceServer).ExternalServiceRepositories(ctx, req.(*ExternalServiceRepositoriesRequest))
