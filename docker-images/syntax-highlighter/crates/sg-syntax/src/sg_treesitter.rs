@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 use std::fmt::Write as _; // import without risk of name clashing
 
+use anyhow::Result;
 use protobuf::Message;
 use rocket::serde::json::{serde_json::json, Value as JsonValue};
 use scip::types::{Document, Occurrence, SyntaxKind};
@@ -80,7 +81,6 @@ pub fn index_language_with_config(
     let mut doc = emitter.render(highlights, &code, &get_syntax_kind_for_hl)?;
     doc.occurrences.sort_by_key(|a| (a.range[0], a.range[1]));
 
-    // TODO: Don't let this happen in the final build haha
     if include_locals {
         let parser = scip_treesitter_languages::parsers::BundledParser::get_parser(filetype);
         if let Some(parser) = parser {
@@ -94,25 +94,34 @@ pub fn index_language_with_config(
 
             let mut next_doc_idx = 0;
             while let Some(local) = local_occs.pop() {
-                let x = match doc
+                // We *should* be able to assume that all these ranges match up,
+                // but it's probably better to just skip them for now.
+                //
+                // We can add some observability stuff to this later, and/or make
+                // certain builds fail or something to test this out better (but
+                // not have syntax highlighting completely fall apart from one
+                // bad range)
+                let local_range = match PackedRange::from_vec(&local.range) {
+                    Ok(range) => range,
+                    Err(_) => continue,
+                };
+
+                let (matching_idx, matching_occ) = match doc
                     .occurrences
                     .iter_mut()
                     .enumerate()
                     .skip(next_doc_idx)
-                    .find(|(_, occ)| {
-                        // TODO: Actually compare the languages
-                        occ.range[0] == local.range[0] && occ.range[1] == local.range[1]
-                    }) {
+                    .find(|(_, occ)| local_range.eq_vec(&occ.range))
+                {
                     Some(found) => found,
                     None => continue,
                 };
 
-                next_doc_idx = x.0;
-                let occ = x.1;
+                next_doc_idx = matching_idx;
 
                 // Update occurrence with new information from locals
-                occ.symbol = local.symbol;
-                occ.symbol_roles = local.symbol_roles;
+                matching_occ.symbol = local.symbol;
+                matching_occ.symbol_roles = local.symbol_roles;
             }
         }
     }
@@ -192,7 +201,7 @@ impl OffsetManager {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct PackedRange {
     pub start_line: i32,
     pub start_col: i32,
@@ -201,23 +210,45 @@ pub struct PackedRange {
 }
 
 impl PackedRange {
-    pub fn from_vec(v: &[i32]) -> Self {
+    // TODO: I don't know how much I love just returning an error here...
+    //       Maybe we should make an infallible version too. It's just a bit annoying
+    //       to pack and unpack all of these for effectively no reason.
+    //       But for now it's good.
+    pub fn from_vec(v: &[i32]) -> Result<Self> {
         match v.len() {
-            3 => Self {
+            3 => Ok(Self {
                 start_line: v[0],
                 start_col: v[1],
                 end_line: v[0],
                 end_col: v[2],
-            },
-            4 => Self {
+            }),
+            4 => Ok(Self {
                 start_line: v[0],
                 start_col: v[1],
                 end_line: v[2],
                 end_col: v[3],
-            },
-            _ => {
-                panic!("Unexpected vector length: {:?}", v);
+            }),
+            _ => Err(anyhow::anyhow!("Invalid range: {:?}", v)),
+        }
+    }
+
+    /// Checks if the range is equal to the given vector.
+    /// If the other vector is not a valid PackedRange then it returns false
+    pub fn eq_vec(&self, v: &[i32]) -> bool {
+        match v.len() {
+            3 => {
+                self.start_line == v[0]
+                    && self.start_col == v[1]
+                    && self.end_line == v[0]
+                    && self.end_col == v[2]
             }
+            4 => {
+                self.start_line == v[0]
+                    && self.start_col == v[1]
+                    && self.end_line == v[2]
+                    && self.end_col == v[3]
+            }
+            _ => false,
         }
     }
 }
@@ -307,7 +338,7 @@ pub struct FileRange {
 
 pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<FileRange>) -> String {
     let mut occurrences = doc.occurrences.clone();
-    occurrences.sort_by_key(|o| PackedRange::from_vec(&o.range));
+    occurrences.sort_by_key(|o| PackedRange::from_vec(&o.range).unwrap_or_default());
     let mut occurrences = VecDeque::from(occurrences);
 
     let mut result = String::new();
@@ -333,7 +364,11 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
                 continue;
             }
 
-            let range = PackedRange::from_vec(&occ.range);
+            let range = match PackedRange::from_vec(&occ.range) {
+                Ok(range) => range,
+                Err(_) => continue,
+            };
+
             let is_single_line = range.start_line == range.end_line;
             let end_col = if is_single_line {
                 range.end_col
@@ -445,7 +480,7 @@ SELECT * FROM my_table
                 code: contents.clone(),
             });
 
-            let indexed = index_language(filetype, &contents, false);
+            let indexed = index_language(filetype, &contents, true);
             if indexed.is_err() {
                 // assert failure
                 panic!("unknown filetype {:?}", filetype);
