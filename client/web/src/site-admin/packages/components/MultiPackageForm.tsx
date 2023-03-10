@@ -196,13 +196,23 @@ const PackageList: React.FunctionComponent<PackageListProps> = ({ blockState, qu
             <ul className={classNames('list-group mt-1', styles.list)}>
                 {nodes.map(node => (
                     <li className="list-group-item" key={node.id}>
-                        {node.repository ? (
+                        {node.blocked ? (
+                            <div className="d-flex justify-content-between">
+                                <>{node.name}</>
+                                <small className="text-danger">This package is already blocked by a filter.</small>
+                            </div>
+                        ) : node.repository ? (
                             <div className="d-flex justify-content-between">
                                 <RepoLink repoName={node.name} to={node.repository.url} />
-                                <small>Size: {prettyBytesBigint(BigInt(node.repository.mirrorInfo.byteSize))}</small>
+                                <small className="text-muted">
+                                    Size: {prettyBytesBigint(BigInt(node.repository.mirrorInfo.byteSize))}
+                                </small>
                             </div>
                         ) : (
-                            <>{node.name}</>
+                            <div className="d-flex justify-content-between">
+                                <>{node.name}</>
+                                <small className="text-muted">This package has not yet been synced.</small>
+                            </div>
                         )}
                     </li>
                 ))}

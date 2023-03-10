@@ -73,17 +73,17 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
                 <div className={styles.node}>
                     <div>
                         <Icon as={PackageIconComponent} aria-label="Package host logo" className="mr-2" />
-                        {packageRepository ? (
-                            <>
-                                <RepoLink repoName={node.name} to={packageRepository.url} />
-                                <RepoMirrorInfo mirrorInfo={packageRepository.mirrorInfo} />
-                            </>
-                        ) : node.blocked ? (
+                        {node.blocked ? (
                             <>
                                 <span>{node.name}</span>
                                 <Text className="mb-0 text-danger">
                                     <small>This package is blocked by a filter.</small>
                                 </Text>
+                            </>
+                        ) : packageRepository ? (
+                            <>
+                                <RepoLink repoName={node.name} to={packageRepository.url} />
+                                <RepoMirrorInfo mirrorInfo={packageRepository.mirrorInfo} />
                             </>
                         ) : (
                             <>

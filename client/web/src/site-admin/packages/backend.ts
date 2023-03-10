@@ -4,6 +4,7 @@ const packageRepoMatchFragment = gql`
     fragment PackageRepoMatchFields on PackageRepoReference {
         id
         name
+        blocked
         repository {
             id
             url
