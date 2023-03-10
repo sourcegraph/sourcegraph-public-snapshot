@@ -54,8 +54,8 @@ dpkg -i <file>.deb
 
 **Single-binary zip download:**
 
-* [linux (x64)](https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_linux_amd64.zip)
 - <a data-download-name="app-download-zip-mac" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_darwin_all.zip">macOS (universal)</a>
+- <a data-download-name="app-download-zip-linux" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_linux_amd64.zip" >linux (x64)</a>
 
 ## Usage
 
