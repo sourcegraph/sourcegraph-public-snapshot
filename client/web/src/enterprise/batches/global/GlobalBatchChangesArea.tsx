@@ -16,7 +16,7 @@ import type { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPa
 import { TabName } from '../detail/BatchChangeDetailsTabs'
 import type { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
 import type { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
-import { canWriteBatchChanges } from '../utils'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../utils'
 
 const BatchChangeListPage = lazyComponent<BatchChangeListPageProps, 'BatchChangeListPage'>(
     () => import('../list/BatchChangeListPage'),
@@ -58,10 +58,15 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
     isSourcegraphApp,
     ...props
 }) => {
-    const canCreate = useMemo(
-        () => !isSourcegraphDotCom && canWriteBatchChanges(authenticatedUser),
-        [isSourcegraphDotCom, authenticatedUser]
-    )
+    const canCreate: true | string = useMemo(() => {
+        if (isSourcegraphDotCom) {
+            return NO_ACCESS_SOURCEGRAPH_COM
+        }
+        if (!canWriteBatchChanges(authenticatedUser)) {
+            return NO_ACCESS_BATCH_CHANGES_WRITE
+        }
+        return true
+    }, [isSourcegraphDotCom, authenticatedUser])
 
     return (
         <div className="w-100">
@@ -79,7 +84,7 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
                         />
                     }
                 />
-                {!isSourcegraphDotCom && canCreate && (
+                {!isSourcegraphDotCom && canCreate === true && (
                     <Route
                         path="create"
                         element={

@@ -21,7 +21,7 @@ import {
     ChangesetStatusMerged,
 } from '../detail/changesets/ChangesetStatusCell'
 import { NewBatchChangeButton } from '../list/NewBatchChangeButton'
-import { canWriteBatchChanges } from '../utils'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../utils'
 
 import {
     queryRepoBatchChanges as _queryRepoBatchChanges,
@@ -55,10 +55,15 @@ export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
     )
     const hasChangesets = stats?.changesetsStats.total
 
-    const canCreate = useMemo(
-        () => !isSourcegraphDotCom && canWriteBatchChanges(authenticatedUser),
-        [isSourcegraphDotCom, authenticatedUser]
-    )
+    const canCreate: true | string = useMemo(() => {
+        if (isSourcegraphDotCom) {
+            return NO_ACCESS_SOURCEGRAPH_COM
+        }
+        if (!canWriteBatchChanges(authenticatedUser)) {
+            return NO_ACCESS_BATCH_CHANGES_WRITE
+        }
+        return true
+    }, [isSourcegraphDotCom, authenticatedUser])
 
     return (
         <Page>
@@ -66,7 +71,7 @@ export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 headingElement="h1"
-                actions={hasChangesets || !canCreate ? undefined : <NewBatchChangeButton to="/batch-changes/create" />}
+                actions={<NewBatchChangeButton to="/batch-changes/create" canCreate={canCreate} />}
                 description={
                     hasChangesets
                         ? undefined

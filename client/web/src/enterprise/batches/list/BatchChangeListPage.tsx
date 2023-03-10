@@ -37,7 +37,7 @@ import {
     GetLicenseAndUsageInfoVariables,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { canWriteBatchChanges } from '../utils'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_NAMESPACE } from '../utils'
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
 import { BatchChangeListFilters } from './BatchChangeListFilters'
@@ -51,7 +51,10 @@ import { useBatchChangeListFilters } from './useBatchChangeListFilters'
 import styles from './BatchChangeListPage.module.scss'
 
 export interface BatchChangeListPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {
-    canCreate: boolean
+    // canCreate indicates whether or not the currently-authenticed user has sufficient
+    // permissions to create a batch change in whatever context this list page is being
+    // presented. If not, canCreate will be a string reason why the user cannot create.
+    canCreate: true | string
     headingElement: 'h1' | 'h2'
     namespaceID?: Scalars['ID']
     isSourcegraphDotCom: boolean
@@ -165,9 +168,9 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                         >
                             Get Sourcegraph Enterprise
                         </Button>
-                    ) : canCreate ? (
-                        <NewBatchChangeButton to={`${location.pathname}/create`} />
-                    ) : null
+                    ) : (
+                        <NewBatchChangeButton to={`${location.pathname}/create`} canCreate={canCreate} />
+                    )
                 }
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
@@ -277,13 +280,21 @@ export const NamespaceBatchChangeListPage: React.FunctionComponent<
     // A user should only see the button to create a batch change in a namespace if they
     // have permission to create batch changes and either they are looking at their user
     // namespace or the namespace of one of the organizations they are a member of.
-    const canCreateInThisNamespace = useMemo(
-        () =>
-            canWriteBatchChanges(authenticatedUser) &&
-            (authenticatedUser.id === namespaceID ||
-                authenticatedUser.organizations.nodes.map(org => org.id).includes(namespaceID)),
-        [authenticatedUser, namespaceID]
-    )
+    const canCreateInThisNamespace: true | string = useMemo(() => {
+        if (authenticatedUser.siteAdmin) {
+            return true
+        }
+        if (!canWriteBatchChanges(authenticatedUser)) {
+            return NO_ACCESS_BATCH_CHANGES_WRITE
+        }
+        if (
+            authenticatedUser.id === namespaceID ||
+            authenticatedUser.organizations.nodes.map(org => org.id).includes(namespaceID)
+        ) {
+            return true
+        }
+        return NO_ACCESS_NAMESPACE
+    }, [authenticatedUser, namespaceID])
 
     return (
         <BatchChangeListPage
@@ -306,7 +317,7 @@ const BatchChangeListEmptyElement: React.FunctionComponent<
             <Text>
                 <strong>No batch changes have been created.</strong>
             </Text>
-            {canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
+            <NewBatchChangeButton to={`${location.pathname}/create`} canCreate={canCreate} />
         </div>
     )
 }

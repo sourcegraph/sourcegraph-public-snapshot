@@ -11,7 +11,11 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface GettingStartedProps {
     isSourcegraphDotCom: boolean
-    canCreate: boolean
+    // canCreate indicates whether or not the currently-authenticed user has sufficient
+    // permissions to create a batch change in whatever context this getting started
+    // section is being presented. If not, canCreate will be a string reason why the user
+    // cannot create.
+    canCreate: true | string
     className?: string
 }
 
@@ -21,10 +25,9 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
     className,
 }) => (
     <div className={className} data-testid="test-getting-started">
-        {canCreate ? null : (
+        {canCreate === true ? null : (
             <Alert className="my-3" variant="info">
-                Your user does not have sufficient permissions to create batch changes. Contact your site admin to
-                request access.
+                {canCreate}
             </Alert>
         )}
         <Container className="mb-3">
