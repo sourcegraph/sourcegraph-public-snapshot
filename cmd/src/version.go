@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/version"
 )
@@ -37,7 +39,7 @@ Examples:
 		client := cfg.apiClient(apiFlags, flagSet.Output())
 		recommendedVersion, err := getRecommendedVersion(context.Background(), client)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to get recommended version for Sourcegraph deployment")
 		}
 		if recommendedVersion == "" {
 			fmt.Println("Recommended version: <unknown>")
