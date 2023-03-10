@@ -59,7 +59,6 @@ go_test(
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/codeintel/dependencies",
-        "//internal/database",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/repoupdater/protocol",

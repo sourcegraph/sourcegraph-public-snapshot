@@ -16,17 +16,21 @@ go_library(
         "//enterprise/internal/own/codeowners",
         "//enterprise/internal/own/codeowners/v1:codeowners",
         "//enterprise/internal/own/types",
+        "//internal/actor",
         "//internal/api",
         "//internal/auth",
         "//internal/database",
+        "//internal/deviceid",
         "//internal/errcode",
         "//internal/featureflag",
         "//internal/gitserver",
         "//internal/gqlutil",
         "//internal/types",
+        "//internal/usagestats",
         "//lib/errors",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -40,6 +44,8 @@ go_test(
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/graphqlbackend",
+        "//enterprise/internal/database",
+        "//enterprise/internal/own",
         "//enterprise/internal/own/codeowners",
         "//enterprise/internal/own/codeowners/v1:codeowners",
         "//internal/actor",
@@ -53,5 +59,6 @@ go_test(
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",
         "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )
