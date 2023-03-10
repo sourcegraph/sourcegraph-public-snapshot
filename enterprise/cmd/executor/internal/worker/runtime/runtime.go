@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"context"
-	"os"
 
 	"github.com/sourcegraph/log"
 	"k8s.io/client-go/kubernetes"
@@ -45,70 +44,78 @@ func New(
 	runner util.CmdRunner,
 	cmd command.Command,
 ) (Runtime, error) {
-	if runnerOpts.FirecrackerOptions.Enabled {
-		// We explicitly want a Firecracker runtime. So validation must pass.
-		if err := util.ValidateFirecrackerTools(runner); err != nil {
-			var errMissingTools *util.ErrMissingTools
-			if errors.As(err, &errMissingTools) {
-				logger.Error("runtime 'docker' is not supported: missing required tools", log.Strings("dockerTools", errMissingTools.Tools))
-			} else {
-				logger.Error("failed to determine if docker tools are configured", log.Error(err))
-			}
-			return nil, err
-		} else if err = util.ValidateIgniteInstalled(context.Background(), runner); err != nil {
-			logger.Error("runtime 'firecracker' is not supported: ignite is not installed", log.Error(err))
-			return nil, err
-		} else if err = util.ValidateCNIInstalled(runner); err != nil {
-			logger.Error("runtime 'firecracker' is not supported: CNI plugins are not installed", log.Error(err))
-			return nil, err
-		} else {
-			logger.Info("using runtime 'firecracker'")
-			return &firecrackerRuntime{
-				cmdRunner:       runner,
-				cmd:             cmd,
-				operations:      ops,
-				filesStore:      filesStore,
-				cloneOptions:    cloneOpts,
-				firecrackerOpts: runnerOpts.FirecrackerOptions,
-			}, nil
-		}
+	//if runnerOpts.FirecrackerOptions.Enabled {
+	//	// We explicitly want a Firecracker runtime. So validation must pass.
+	//	if err := util.ValidateFirecrackerTools(runner); err != nil {
+	//		var errMissingTools *util.ErrMissingTools
+	//		if errors.As(err, &errMissingTools) {
+	//			logger.Error("runtime 'docker' is not supported: missing required tools", log.Strings("dockerTools", errMissingTools.Tools))
+	//		} else {
+	//			logger.Error("failed to determine if docker tools are configured", log.Error(err))
+	//		}
+	//		return nil, err
+	//	} else if err = util.ValidateIgniteInstalled(context.Background(), runner); err != nil {
+	//		logger.Error("runtime 'firecracker' is not supported: ignite is not installed", log.Error(err))
+	//		return nil, err
+	//	} else if err = util.ValidateCNIInstalled(runner); err != nil {
+	//		logger.Error("runtime 'firecracker' is not supported: CNI plugins are not installed", log.Error(err))
+	//		return nil, err
+	//	} else {
+	//		logger.Info("using runtime 'firecracker'")
+	//		return &firecrackerRuntime{
+	//			cmdRunner:       runner,
+	//			cmd:             cmd,
+	//			operations:      ops,
+	//			filesStore:      filesStore,
+	//			cloneOptions:    cloneOpts,
+	//			firecrackerOpts: runnerOpts.FirecrackerOptions,
+	//		}, nil
+	//	}
+	//}
+	//
+	//if _, found := os.LookupEnv("KUBERNETES_SERVICE_HOST"); found {
+	logger.Info("using runtime 'kubernetes'")
+	//config, err := clientcmd.BuildConfigFromFlags("", "/Users/randell/.kube/config")
+	config, err := clientcmd.BuildConfigFromFlags("", "")
+	if err != nil {
+		return nil, err
 	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	kubeCmd := &command.KubernetesCommand{
+		Logger:    logger,
+		Clientset: clientset,
+	}
+	return &kubernetesRuntime{
+		cmd:          cmd,
+		kubeCmd:      kubeCmd,
+		filesStore:   filesStore,
+		cloneOptions: cloneOpts,
+		operations:   ops,
+	}, nil
+	//}
 
-	if _, found := os.LookupEnv("KUBERNETES_SERVICE_HOST"); found {
-		logger.Info("using runtime 'kubernetes'")
-		config, err := clientcmd.BuildConfigFromFlags("", "/Users/randell/.kube/config")
-		if err != nil {
-			return nil, err
-		}
-		clientset, err := kubernetes.NewForConfig(config)
-		if err != nil {
-			return nil, err
-		}
-		return &kubernetesRuntime{
-			clientset:  clientset,
-			operations: ops,
-		}, nil
-	}
-
-	// Default to Docker runtime.
-	if err := util.ValidateDockerTools(runner); err != nil {
-		var errMissingTools *util.ErrMissingTools
-		if errors.As(err, &errMissingTools) {
-			logger.Warn("runtime 'docker' is not supported: missing required tools", log.Strings("dockerTools", errMissingTools.Tools))
-		} else {
-			logger.Warn("failed to determine if docker tools are configured", log.Error(err))
-		}
-	} else {
-		logger.Info("using runtime 'docker'")
-		return &dockerRuntime{
-			operations:   ops,
-			filesStore:   filesStore,
-			cloneOptions: cloneOpts,
-			dockerOpts:   runnerOpts.DockerOptions,
-			cmd:          cmd,
-		}, nil
-	}
-	return nil, ErrNoRuntime
+	//// Default to Docker runtime.
+	//if err := util.ValidateDockerTools(runner); err != nil {
+	//	var errMissingTools *util.ErrMissingTools
+	//	if errors.As(err, &errMissingTools) {
+	//		logger.Warn("runtime 'docker' is not supported: missing required tools", log.Strings("dockerTools", errMissingTools.Tools))
+	//	} else {
+	//		logger.Warn("failed to determine if docker tools are configured", log.Error(err))
+	//	}
+	//} else {
+	//	logger.Info("using runtime 'docker'")
+	//	return &dockerRuntime{
+	//		operations:   ops,
+	//		filesStore:   filesStore,d
+	//		cloneOptions: cloneOpts,
+	//		dockerOpts:   runnerOpts.DockerOptions,
+	//		cmd:          cmd,
+	//	}, nil
+	//}
+	//return nil, ErrNoRuntime
 }
 
 // ErrNoRuntime is the error when there is no runtime configured.

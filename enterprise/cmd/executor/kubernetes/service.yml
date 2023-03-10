@@ -11,13 +11,39 @@ spec:
       labels:
         app: executor
     spec:
+      hostNetwork: true
       serviceAccountName: executor-service-account
       containers:
         - name: executor
-          image: k8s-exp:latest
+          image: executor-k8s:latest
           imagePullPolicy: Never
           ports:
             - containerPort: 8080
+          env:
+            - name: EXECUTOR_FRONTEND_URL
+              value: http://host.docker.internal:3082
+            - name: EXECUTOR_FRONTEND_PASSWORD
+              value: hunter2hunter2hunter2
+            - name: EXECUTOR_QUEUE_NAME
+              value: batches
+          volumeMounts:
+            - mountPath: /data
+              name: executor-volume
+      volumes:
+        - name: executor-volume
+          persistentVolumeClaim:
+            claimName: executor-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: executor-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
 ---
 apiVersion: v1
 kind: Service

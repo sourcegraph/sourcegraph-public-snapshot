@@ -36,15 +36,15 @@ func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFir
 		logger.Error("Failed to get git version", log.Error(err))
 	}
 
-	t.SrcCliVersion, err = util.GetSrcVersion(ctx, runner)
-	if err != nil {
-		logger.Error("Failed to get src-cli version", log.Error(err))
-	}
+	//t.SrcCliVersion, err = util.GetSrcVersion(ctx, runner)
+	//if err != nil {
+	//	logger.Error("Failed to get src-cli version", log.Error(err))
+	//}
 
-	t.DockerVersion, err = util.GetDockerVersion(ctx, runner)
-	if err != nil {
-		logger.Error("Failed to get docker version", log.Error(err))
-	}
+	//t.DockerVersion, err = util.GetDockerVersion(ctx, runner)
+	//if err != nil {
+	//	logger.Error("Failed to get docker version", log.Error(err))
+	//}
 
 	if useFirecracker {
 		t.IgniteVersion, err = util.GetIgniteVersion(ctx, runner)
@@ -58,10 +58,9 @@ func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFir
 
 func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
-		VMPrefix:       c.VMPrefix,
-		KeepWorkspaces: c.KeepWorkspaces,
-		QueueName:      c.QueueName,
-		WorkerOptions:  workerOptions(c),
+		VMPrefix:      c.VMPrefix,
+		QueueName:     c.QueueName,
+		WorkerOptions: workerOptions(c),
 		RunnerOptions: runner.Options{
 			DockerOptions:      dockerOptions(c),
 			FirecrackerOptions: firecrackerOptions(c),
@@ -119,6 +118,7 @@ func firecrackerOptions(c *config.Config) runner.FirecrackerOptions {
 		VMStartupScriptPath:      c.VMStartupScriptPath,
 		DockerRegistryMirrorURLs: dockerMirrors,
 		DockerOptions:            dockerOptions(c),
+		KeepWorkspaces:           c.KeepWorkspaces,
 	}
 }
 

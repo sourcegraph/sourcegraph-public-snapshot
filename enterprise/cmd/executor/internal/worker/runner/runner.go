@@ -30,7 +30,7 @@ type Runner interface {
 // is the host, in a virtual machine, or in a docker container. If an image is
 // supplied, then the command will be run in a one-shot docker container.
 type Spec struct {
-	JobID       string
+	JobID       int
 	Queue       string
 	CommandSpec command.Spec
 	Image       string
