@@ -19,16 +19,21 @@ import { noop } from 'lodash'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SetupSteps.module.scss'
+
+interface StepComponentProps extends TelemetryProps {
+    className?: string
+}
 
 export interface StepConfiguration {
     id: string
     path: string
     name: string
     nextURL?: string
-    component: ComponentType<{ className?: string }>
+    component: ComponentType<StepComponentProps>
     onNext?: (client: ApolloClient<{}>) => void
 }
 
@@ -69,7 +74,7 @@ interface SetupStepURLContext {
 }
 
 export const SetupStepsRoot: FC<SetupStepsProps> = props => {
-    const { initialStepId, steps, onSkip, onStepChange, children } = props
+    const { initialStepId, steps, children, onSkip, onStepChange } = props
 
     const navigate = useNavigate()
     const location = useLocation()
@@ -151,8 +156,10 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     return <SetupStepsContext.Provider value={cachedContext}>{children}</SetupStepsContext.Provider>
 }
 
-export const SetupStepsContent: FC<HTMLAttributes<HTMLElement>> = props => {
-    const { className, ...attributes } = props
+interface SetupStepsContentProps extends TelemetryProps, HTMLAttributes<HTMLElement> {}
+
+export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
+    const { className, telemetryService, ...attributes } = props
     const { steps, activeStepIndex } = useContext(SetupStepsContext)
 
     return (
@@ -160,7 +167,11 @@ export const SetupStepsContent: FC<HTMLAttributes<HTMLElement>> = props => {
             <SetupStepsHeader steps={steps} activeStepIndex={activeStepIndex} />
             <Routes>
                 {steps.map(({ path, component: Component }) => (
-                    <Route key="hardcoded-key" path={`${path}/*`} element={<Component className={styles.content} />} />
+                    <Route
+                        key="hardcoded-key"
+                        path={`${path}/*`}
+                        element={<Component className={styles.content} telemetryService={telemetryService} />}
+                    />
                 ))}
                 <Route path="*" element={<Navigate to={steps[activeStepIndex].path} replace={true} />} />
             </Routes>
@@ -251,19 +262,25 @@ interface CustomNextButtonProps {
     label: string
     disabled: boolean
     tooltip?: string
+    onClick?: () => void
 }
 
 export const CustomNextButton: FC<CustomNextButtonProps> = props => {
-    const { label, disabled, tooltip } = props
+    const { label, disabled, tooltip, onClick } = props
     const { nextButtonPortal, onNextStep } = useContext(SetupStepsContext)
 
     if (!nextButtonPortal) {
         return null
     }
 
+    const handleNextClick = (): void => {
+        onClick?.()
+        onNextStep()
+    }
+
     return createPortal(
         <Tooltip content={tooltip}>
-            <Button variant="primary" disabled={disabled} onClick={onNextStep}>
+            <Button variant="primary" disabled={disabled} onClick={handleNextClick}>
                 {label}
                 <Icon svgPath={mdiChevronRight} aria-hidden={true} />
             </Button>

@@ -1,12 +1,13 @@
 package search
 
 import (
-	codeintelsearch "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/search"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/search"
-
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+
+	codeintelsearch "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/search"
+	ownsearch "github.com/sourcegraph/sourcegraph/enterprise/internal/own/search"
 )
 
 func NewEnterpriseSearchJobs(
@@ -21,18 +22,19 @@ type enterpriseJobs struct {
 	codeIntelSearchService *codeintelsearch.Service
 }
 
-func (e *enterpriseJobs) FileHasOwnerJob(child job.Job, includeOwners, excludeOwners []string) job.Job {
-	return search.NewFileHasOwnersJob(child, includeOwners, excludeOwners)
+func (e *enterpriseJobs) FileHasOwnerJob(child job.Job, features *search.Features, includeOwners, excludeOwners []string) job.Job {
+	return ownsearch.NewFileHasOwnersJob(child, features, includeOwners, excludeOwners)
 }
 
-func (e *enterpriseJobs) SelectFileOwnerJob(child job.Job) job.Job {
-	return search.NewSelectOwnersJob(child)
+func (e *enterpriseJobs) SelectFileOwnerJob(child job.Job, features *search.Features) job.Job {
+	return ownsearch.NewSelectOwnersJob(child, features)
 }
 
 func (e *enterpriseJobs) SymbolRelationshipSearchJob(relationship query.SymbolRelationship, rawSymbolSearch job.Job) job.Job {
 	if e.codeIntelSearchService == nil {
 		// Caller might not have codeintel services available, e.g. code monitors workers.
-		return jobutil.NewUnimplementedJob("symbol:$relationship searches are not available for this feature")
+		// TODO as follow-up
+		return jobutil.NewUnimplementedJob("`symbol:$relationship` searches are not available for this feature")
 	}
 	return codeintelsearch.NewSymbolRelationshipSearchJob(e.codeIntelSearchService, relationship, rawSymbolSearch)
 }

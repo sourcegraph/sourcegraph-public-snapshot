@@ -30,6 +30,10 @@ export const FETCH_OWNERS = gql`
     fragment CodeownersFileEntryFields on CodeownersFileEntry {
         title
         description
+        codeownersFile {
+            url
+        }
+        ruleLineMatch
     }
 
     query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {

@@ -38,6 +38,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"has.tag":               func() Predicate { return &RepoHasTagPredicate{} },
 		"has":                   func() Predicate { return &RepoHasKVPPredicate{} },
 		"has.key":               func() Predicate { return &RepoHasKeyPredicate{} },
+		"has.topic":             func() Predicate { return &RepoHasTopicPredicate{} },
 
 		// Deprecated predicates
 		"contains": func() Predicate { return &RepoContainsPredicate{} },
@@ -393,6 +394,23 @@ func (p *RepoHasKeyPredicate) Unmarshal(params string, negated bool) (err error)
 
 func (p *RepoHasKeyPredicate) Field() string { return FieldRepo }
 func (p *RepoHasKeyPredicate) Name() string  { return "has.key" }
+
+type RepoHasTopicPredicate struct {
+	Topic   string
+	Negated bool
+}
+
+func (p *RepoHasTopicPredicate) Unmarshal(params string, negated bool) (err error) {
+	if len(params) == 0 {
+		return errors.New("topic must be non-empty")
+	}
+	p.Topic = params
+	p.Negated = negated
+	return nil
+}
+
+func (p *RepoHasTopicPredicate) Field() string { return FieldRepo }
+func (p *RepoHasTopicPredicate) Name() string  { return "has.topic" }
 
 // RepoContainsPredicate represents the `repo:contains(file:a content:b)` predicate.
 // DEPRECATED: this syntax is deprecated in favor of `repo:contains.file`.

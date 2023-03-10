@@ -5,17 +5,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference/luatypes"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // filterPathsByPatterns returns a slice containing all of the input paths that match
 // any of the given path patterns. Both patterns and inverted patterns are considered
 // when a path is matched.
 func filterPathsByPatterns(paths []string, rawPatterns []*luatypes.PathPattern) ([]string, error) {
-	patterns, err := compileWildcards(flattenPatterns(rawPatterns, false))
+	patterns, _, err := flattenPatterns(rawPatterns, false)
 	if err != nil {
 		return nil, err
 	}
-	invertedPatterns, err := compileWildcards(flattenPatterns(rawPatterns, true))
+	invertedPatterns, _, err := flattenPatterns(rawPatterns, true)
 	if err != nil {
 		return nil, err
 	}
@@ -23,9 +24,26 @@ func filterPathsByPatterns(paths []string, rawPatterns []*luatypes.PathPattern) 
 	return filterPaths(paths, patterns, invertedPatterns), nil
 }
 
-// flattenPatterns converts a tree of patterns into a flat list of compiled glob patterns.
-func flattenPatterns(patterns []*luatypes.PathPattern, inverted bool) []string {
-	return normalizePatterns(luatypes.FlattenPatterns(patterns, inverted))
+// flattenPatterns converts a tree of patterns into a flat list of compiled glob and pathspec patterns.
+func flattenPatterns(patterns []*luatypes.PathPattern, inverted bool) ([]*paths.GlobPattern, []gitdomain.Pathspec, error) {
+	var globPatterns []string
+	var pathspecPatterns []string
+	for _, pattern := range luatypes.FlattenPatterns(patterns, inverted) {
+		globPatterns = append(globPatterns, pattern.Glob)
+		pathspecPatterns = append(pathspecPatterns, pattern.Pathspec)
+	}
+
+	globs, err := compileWildcards(normalizePatterns(globPatterns))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var pathspecs []gitdomain.Pathspec
+	for _, pathspec := range normalizePatterns(pathspecPatterns) {
+		pathspecs = append(pathspecs, gitdomain.Pathspec(pathspec))
+	}
+
+	return globs, pathspecs, nil
 }
 
 // compileWildcards converts a list of wildcard strings into objects that can match inputs.

@@ -32,6 +32,7 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' |
      * Called when a new access token is created and should be temporarily displayed to the user.
      */
     onDidCreateAccessToken: (value: CreateAccessTokenResult['createAccessToken']) => void
+    isSourcegraphDotCom: boolean
 }
 interface TokenRequester {
     /** The name of the source */
@@ -50,6 +51,8 @@ interface TokenRequester {
     callbackType?: 'open' | 'new-tab'
     /** Show button to redirect URL on click */
     showRedirectButton?: boolean
+    /** If set, the requester is only allowed on dotcom */
+    onlyDotCom?: boolean
 }
 // SECURITY: Only accept callback requests from requesters on this allowed list
 const REQUESTERS: Record<string, TokenRequester> = {
@@ -64,6 +67,16 @@ const REQUESTERS: Record<string, TokenRequester> = {
         callbackType: 'new-tab',
         showRedirectButton: true,
     },
+    APP: {
+        name: 'Sourcegraph App',
+        redirectURL: 'http://localhost:3080/app/auth/callback?code=$TOKEN',
+        description: 'Authenticate Sourcegraph App',
+        successMessage: 'Click on the link bellow to continue in Sourcegraph App',
+        infoMessage: 'You will be redirected to Sourcegraph App',
+        callbackType: 'open',
+        showRedirectButton: true,
+        onlyDotCom: true,
+    },
 }
 /**
  * This page acts as a callback URL after the authentication process has been completed by a user.
@@ -74,10 +87,11 @@ const REQUESTERS: Record<string, TokenRequester> = {
  * in as a new URL param, using the redirect URL associated with the allowlisted requester The token should then be processed by the extension's
  * URL handler (For example, "vscode://sourcegraph/sourcegraph?code=$TOKEN" for the VS Code extension)
  */
-export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     telemetryService,
     onDidCreateAccessToken,
     user,
+    isSourcegraphDotCom,
 }) => {
     const navigate = useNavigate()
     const location = useLocation()
@@ -94,17 +108,26 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
     const [newToken, setNewToken] = useState('')
     // Check and Match URL Search Prams
     useEffect((): void => {
+        // If a requester is already set, we don't need to run this effect
+        if (requester) {
+            return
+        }
+
         // SECURITY: Verify if the request is coming from an allowlisted source
         const isRequestValid = requestFrom && requestFrom in REQUESTERS
-        if (requestFrom && requester === undefined) {
-            setRequester(isRequestValid ? REQUESTERS[requestFrom] : null)
-            setNote(isRequestValid ? REQUESTERS[requestFrom].name : '')
-        }
-        // Redirect users back to tokens page if none or invalid url params provided
-        if (!requestFrom || (!requester && requester !== undefined)) {
+        if (!isRequestValid || !requestFrom || requester !== undefined) {
             navigate('../..', { relative: 'path' })
+            return
         }
-    }, [navigate, requestFrom, requester])
+
+        if (REQUESTERS[requestFrom].onlyDotCom && !isSourcegraphDotCom) {
+            navigate('../..', { relative: 'path' })
+            return
+        }
+
+        setRequester(REQUESTERS[requestFrom])
+        setNote(REQUESTERS[requestFrom].name)
+    }, [isSourcegraphDotCom, navigate, requestFrom, requester])
     /**
      * We use this to handle token creation request from redirections.
      * Don't create token if this page wasn't linked to from a valid

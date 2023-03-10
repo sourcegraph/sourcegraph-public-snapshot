@@ -1,13 +1,13 @@
 import { FC, ReactElement } from 'react'
 
 import { QueryResult } from '@apollo/client'
-import { mdiInformationOutline, mdiDelete, mdiPlus } from '@mdi/js'
+import { mdiDelete, mdiInformationOutline, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip, Link } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
-import { CodeHost, GetCodeHostsResult } from '../../../../../graphql-operations'
+import { CodeHost, ExternalServiceKind, GetCodeHostsResult } from '../../../../../graphql-operations'
 import { CodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
 
 import styles from './CodeHostsNavigation.module.scss'
@@ -43,7 +43,14 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
         )
     }
 
-    if (data.externalServices.nodes.length === 0) {
+    // Filter out all other external services since we don't properly support them
+    // in the wizard, "Other" external services are used as local repositories setup in
+    // Sourcegraph App for which we have a special setup step
+    const nonOtherExternalServices = data.externalServices.nodes.filter(
+        service => service.kind !== ExternalServiceKind.OTHER
+    )
+
+    if (nonOtherExternalServices.length === 0) {
         return (
             <small className={classNames(className, styles.emptyState)}>
                 <span>
@@ -63,7 +70,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
     return (
         <ul className={styles.list}>
             {createConnectionType && <CreateCodeHostConnectionCard codeHostType={createConnectionType} />}
-            {data.externalServices.nodes.map(codeHost => (
+            {nonOtherExternalServices.map(codeHost => (
                 <li
                     key={codeHost.id}
                     className={classNames(styles.item, { [styles.itemActive]: codeHost.id === activeConnectionId })}
@@ -89,7 +96,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                                 {codeHost.lastSyncAt !== null && <>Synced, {codeHost.repoCount} repositories found</>}
                                 {codeHost.lastSyncAt === null && (
                                     <>
-                                        Syncing{' '}
+                                        Syncing
                                         {codeHost.repoCount > 0 && (
                                             <>
                                                 , so far {codeHost.repoCount}{' '}

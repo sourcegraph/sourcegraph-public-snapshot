@@ -60,7 +60,7 @@ type packagesDownloadSource interface {
 // dependenciesService captures the methods we use of the codeintel/dependencies.Service,
 // used to make testing easier.
 type dependenciesService interface {
-	ListPackageRepoRefs(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, error)
+	ListPackageRepoRefs(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, bool, error)
 	InsertPackageRepoRefs(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
 	IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error)
 }
@@ -343,7 +343,7 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource
 		}
 	}
 
-	listedPackages, _, err := s.svc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+	listedPackages, _, _, err := s.svc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
 		Scheme:         s.scheme,
 		Name:           packageName,
 		ExactNameOnly:  true,

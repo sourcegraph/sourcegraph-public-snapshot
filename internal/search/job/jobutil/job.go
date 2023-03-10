@@ -86,7 +86,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 		// a basic query rather than first being expanded into
 		// flat queries.
 		resultTypes := computeResultTypes(b, inputs.PatternType)
-		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol, inputs.Features))
+		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
 		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
@@ -196,8 +196,8 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 	}
 
 	{ // Apply code ownership post-search filter
-		if includeOwners, excludeOwners, ok := isOwnershipSearch(b, inputs.Features); ok {
-			basicJob = enterpriseJobs.FileHasOwnerJob(basicJob, includeOwners, excludeOwners)
+		if includeOwners, excludeOwners, ok := isOwnershipSearch(b); ok {
+			basicJob = enterpriseJobs.FileHasOwnerJob(basicJob, inputs.Features, includeOwners, excludeOwners)
 		}
 	}
 
@@ -211,9 +211,9 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 	{ // Apply selectors
 		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
 			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-			if isSelectOwnersSearch(sp, inputs.Features) {
+			if isSelectOwnersSearch(sp) {
 				// the select owners job is ran separately as it requires state and can return multiple owners from one match.
-				basicJob = enterpriseJobs.SelectFileOwnerJob(basicJob)
+				basicJob = enterpriseJobs.SelectFileOwnerJob(basicJob, inputs.Features)
 			} else {
 				basicJob = NewSelectJob(sp, basicJob)
 			}
@@ -517,7 +517,7 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 	return pathRegexps
 }
 
-func computeFileMatchLimit(b query.Basic, p search.Protocol, features *search.Features) int {
+func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 	// Temporary fix:
 	// If doing ownership search, we post-filter results so we may need more than
 	// b.Count() results from the search backends to end up with enough results
@@ -529,13 +529,13 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol, features *search.Fe
 	// the stream once enough results have been consumed. We will revisit this
 	// post-Starship March 2023 as part of search performance improvements for
 	// ownership search.
-	if _, _, ok := isOwnershipSearch(b, features); ok {
+	if _, _, ok := isOwnershipSearch(b); ok {
 		// This is the int equivalent of count:all.
 		return query.CountAllLimit
 	}
 	if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
 		sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-		if isSelectOwnersSearch(sp, features) {
+		if isSelectOwnersSearch(sp) {
 			// This is the int equivalent of count:all.
 			return query.CountAllLimit
 		}
@@ -554,17 +554,16 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol, features *search.Fe
 	panic("unreachable")
 }
 
-func isOwnershipSearch(b query.Basic, features *search.Features) (include, exclude []string, ok bool) {
-	if includeOwners, excludeOwners := b.FileHasOwner(); features.CodeOwnershipSearch && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
+func isOwnershipSearch(b query.Basic) (include, exclude []string, ok bool) {
+	if includeOwners, excludeOwners := b.FileHasOwner(); len(includeOwners) > 0 || len(excludeOwners) > 0 {
 		return includeOwners, excludeOwners, true
 	}
 	return nil, nil, false
 }
 
-func isSelectOwnersSearch(sp filter.SelectPath, features *search.Features) bool {
-	// If the feature flag is enabled, and the filter is for file.owners, this is
-	// a select:file.owners search and we should apply special limits.
-	return features.CodeOwnershipSearch && sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners"
+func isSelectOwnersSearch(sp filter.SelectPath) bool {
+	// If the filter is for file.owners, this is a select:file.owners search, and we should apply special limits.
+	return sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners"
 }
 
 func timeoutDuration(b query.Basic) time.Duration {
@@ -741,6 +740,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		CommitAfter:         b.RepoContainsCommitAfter(),
 		UseIndex:            b.Index(),
 		HasKVPs:             b.RepoHasKVPs(),
+		HasTopics:           b.RepoHasTopics(),
 	}
 }
 
@@ -1006,6 +1006,12 @@ func isGlobal(op search.RepoOptions) bool {
 	// Zoekt does not know about repo key-value pairs or tags, so we depend on the
 	// database to handle this filter.
 	if len(op.HasKVPs) > 0 {
+		return false
+	}
+
+	// Zoekt does not know about repo topics, so we depend on the database to
+	// handle this filter.
+	if len(op.HasTopics) > 0 {
 		return false
 	}
 

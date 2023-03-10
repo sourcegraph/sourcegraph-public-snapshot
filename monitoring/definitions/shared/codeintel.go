@@ -1134,6 +1134,74 @@ func (codeIntelligence) NewSymbolsGitserverClientGroup(containerName string) mon
 // src_{task_name}_total
 // src_{task_name}_duration_seconds_bucket
 // src_{task_name}_errors_total
+// src_{task_name}_records_processed_total
+// src_{task_name}_records_altered_total
+func (codeIntelligence) newPipelineGroups(
+	titlePrefix string,
+	containerName string,
+	taskNames []string,
+) []monitoring.Group {
+	groups := make([]monitoring.Group, 0, len(taskNames))
+	for _, taskName := range taskNames {
+		groups = append(groups, CodeIntelligence.newPipelineGroup(titlePrefix, containerName, taskName))
+	}
+
+	return groups
+}
+
+// src_{task_name}_total
+// src_{task_name}_duration_seconds_bucket
+// src_{task_name}_errors_total
+// src_{task_name}_records_processed_total
+// src_{task_name}_records_altered_total
+func (codeIntelligence) newPipelineGroup(
+	titlePrefix string,
+	containerName string,
+	taskName string,
+) monitoring.Group {
+	group := Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: fmt.Sprintf("%s > %s", titlePrefix, titlecase(strings.ReplaceAll(taskName, "_", " "))),
+			Hidden:          true,
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        taskName,
+				MetricDescriptionRoot: "job invocation",
+				Filters:               []string{},
+				By:                    []string{"op"},
+			},
+		},
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+
+	recordProgressRow := monitoring.Row{
+		Standard.Count("processed")(ObservableConstructorOptions{
+			MetricNameRoot:        fmt.Sprintf("%s_records_processed", taskName),
+			MetricDescriptionRoot: "records",
+		})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+			The number of candidate records considered for cleanup.
+		`).Observable(),
+
+		Standard.Count("altered")(ObservableConstructorOptions{
+			MetricNameRoot:        fmt.Sprintf("%s_records_altered", taskName),
+			MetricDescriptionRoot: "records",
+		})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+			The number of candidate records altered as part of cleanup.
+		`).Observable(),
+	}
+
+	group.Rows = append([]monitoring.Row{recordProgressRow}, group.Rows...)
+	return group
+}
+
+// src_{task_name}_total
+// src_{task_name}_duration_seconds_bucket
+// src_{task_name}_errors_total
 // src_{task_name}_records_scanned_total
 // src_{task_name}_records_altered_total
 func (codeIntelligence) newJanitorGroups(
