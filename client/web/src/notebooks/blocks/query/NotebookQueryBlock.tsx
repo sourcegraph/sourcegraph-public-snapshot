@@ -25,6 +25,7 @@ import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../../../graphql-operations'
+import { OwnConfigProps } from '../../../own/OwnConfigProps'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
@@ -38,7 +39,8 @@ interface NotebookQueryBlockProps
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         SettingsCascadeProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'> {
+        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'>,
+        OwnConfigProps {
     globbing: boolean
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -70,6 +72,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         globbing,
         isSourcegraphDotCom,
         searchContextsEnabled,
+        ownEnabled,
         ...props
     }) => {
         const [editor, setEditor] = useState<EditorView>()
@@ -77,7 +80,8 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
         const applySuggestionsOnEnter =
             useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-        const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
+        const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
+        const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
 
         const onInputChange = useCallback(
             (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
