@@ -1,10 +1,9 @@
-package resolvers
+package graphqlbackend
 
 import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -14,19 +13,19 @@ type permissionResolver struct {
 	permission *types.Permission
 }
 
-var _ gql.PermissionResolver = &permissionResolver{}
+var _ PermissionResolver = &permissionResolver{}
 
 const permissionIDKind = "Permission"
 
-func marshalPermissionID(id int32) graphql.ID { return relay.MarshalID(permissionIDKind, id) }
+func MarshalPermissionID(id int32) graphql.ID { return relay.MarshalID(permissionIDKind, id) }
 
-func unmarshalPermissionID(id graphql.ID) (permissionID int32, err error) {
+func UnmarshalPermissionID(id graphql.ID) (permissionID int32, err error) {
 	err = relay.UnmarshalSpec(id, &permissionID)
 	return
 }
 
 func (r *permissionResolver) ID() graphql.ID {
-	return marshalPermissionID(r.permission.ID)
+	return MarshalPermissionID(r.permission.ID)
 }
 
 func (r *permissionResolver) Namespace() (string, error) {

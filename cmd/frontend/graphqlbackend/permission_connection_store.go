@@ -1,4 +1,4 @@
-package resolvers
+package graphqlbackend
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -16,14 +15,14 @@ type permisionConnectionStore struct {
 	userID int32
 }
 
-func (pcs *permisionConnectionStore) MarshalCursor(node gql.PermissionResolver, _ database.OrderBy) (*string, error) {
+func (pcs *permisionConnectionStore) MarshalCursor(node PermissionResolver, _ database.OrderBy) (*string, error) {
 	cursor := string(node.ID())
 
 	return &cursor, nil
 }
 
 func (pcs *permisionConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	nodeID, err := unmarshalPermissionID(graphql.ID(cursor))
+	nodeID, err := UnmarshalPermissionID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +45,7 @@ func (pcs *permisionConnectionStore) ComputeTotal(ctx context.Context) (*int32, 
 	return &total, nil
 }
 
-func (pcs *permisionConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]gql.PermissionResolver, error) {
+func (pcs *permisionConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]PermissionResolver, error) {
 	permissions, err := pcs.db.Permissions().List(ctx, database.PermissionListOpts{
 		PaginationArgs: args,
 		RoleID:         pcs.roleID,
@@ -56,7 +55,7 @@ func (pcs *permisionConnectionStore) ComputeNodes(ctx context.Context, args *dat
 		return nil, err
 	}
 
-	var permissionResolvers []gql.PermissionResolver
+	var permissionResolvers []PermissionResolver
 	for _, permission := range permissions {
 		permissionResolvers = append(permissionResolvers, &permissionResolver{permission: permission})
 	}

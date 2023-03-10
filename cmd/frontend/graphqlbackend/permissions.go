@@ -1,25 +1,23 @@
-package resolvers
+package graphqlbackend
 
 import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (r *Resolver) permissionByID(ctx context.Context, id graphql.ID) (gql.PermissionResolver, error) {
+func (r *schemaResolver) permissionByID(ctx context.Context, id graphql.ID) (PermissionResolver, error) {
 	// 🚨 SECURITY: Only site admins can query role permissions or all permissions.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	permissionID, err := unmarshalPermissionID(id)
+	permissionID, err := UnmarshalPermissionID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -37,13 +35,13 @@ func (r *Resolver) permissionByID(ctx context.Context, id graphql.ID) (gql.Permi
 	return &permissionResolver{permission: permission}, nil
 }
 
-func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs) (*graphqlutil.ConnectionResolver[gql.PermissionResolver], error) {
+func (r *schemaResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
 	connectionStore := permisionConnectionStore{
 		db: r.db,
 	}
 
 	if args.User != nil {
-		userID, err := gql.UnmarshalUserID(*args.User)
+		userID, err := UnmarshalUserID(*args.User)
 		if err != nil {
 			return nil, err
 		}
@@ -63,7 +61,7 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 	}
 
 	if args.Role != nil {
-		roleID, err := unmarshalRoleID(*args.Role)
+		roleID, err := UnmarshalRoleID(*args.Role)
 		if err != nil {
 			return nil, err
 		}
@@ -75,7 +73,7 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 		connectionStore.roleID = roleID
 	}
 
-	return graphqlutil.NewConnectionResolver[gql.PermissionResolver](
+	return graphqlutil.NewConnectionResolver[PermissionResolver](
 		&connectionStore,
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
@@ -90,34 +88,4 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 			AllowNoLimit: true,
 		},
 	)
-}
-
-func (r *Resolver) SetPermissions(ctx context.Context, args gql.SetPermissionsArgs) (*gql.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site administrators can set permissions for a role.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
-	roleID, err := unmarshalRoleID(args.Role)
-	if err != nil {
-		return nil, err
-	}
-
-	opts := database.SetPermissionsForRoleOpts{
-		RoleID: roleID,
-	}
-
-	for _, p := range args.Permissions {
-		pID, err := unmarshalPermissionID(p)
-		if err != nil {
-			return nil, err
-		}
-		opts.Permissions = append(opts.Permissions, pID)
-	}
-
-	if err = r.db.RolePermissions().SetPermissionsForRole(ctx, opts); err != nil {
-		return nil, err
-	}
-
-	return &gql.EmptyResponse{}, nil
 }

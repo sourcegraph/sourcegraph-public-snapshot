@@ -68,7 +68,7 @@ export interface Option {
     action: Action
     /**
      * Options can have perform an alternative action when applied via
-     * Shift+Enter.
+     * Mod-Enter.
      */
     alternativeAction?: Action
     /**
@@ -93,6 +93,11 @@ export interface Option {
      * positions in the label will be highlighted as matches.
      */
     matches?: Set<number>
+    /**
+     * A word that describes the nature of this option (e.g. file, repo, ...)
+     * Not used by the suggestion engine, but possibly used for metrics collection.
+     */
+    kind: string
 }
 
 export interface CommandAction {
@@ -137,7 +142,7 @@ class SuggestionView {
     private root: Root
 
     private onSelect = (option: Option, action?: Action): void => {
-        applyAction(this.view, action ?? option.action, option)
+        applyAction(this.view, action ?? option.action, option, 'mouse')
         // Query input looses focus when option is selected via
         // mousedown/click. This is a necessary hack to re-focus the query
         // input.
@@ -275,6 +280,10 @@ class Result {
         }
 
         return undefined
+    }
+
+    public groupFor(option: Option): Group | undefined {
+        return this.groups.find(group => group.options.includes(option))
     }
 
     public empty(): boolean {
@@ -534,7 +543,7 @@ function moveSelection(direction: 'forward' | 'backward'): CodeMirrorCommand {
     }
 }
 
-function applyAction(view: EditorView, action: Action, option: Option): void {
+function applyAction(view: EditorView, action: Action, option: Option, source: SelectionSource): void {
     switch (action.type) {
         case 'completion':
             {
@@ -563,20 +572,30 @@ function applyAction(view: EditorView, action: Action, option: Option): void {
                         ...changeSet,
                         effects: changeSet.effects.concat(setModeEffect.of(null)),
                     })
+                    notifySelectionListeners(view.state, option, action, source)
                 }
             }
             break
         case 'command':
+            notifySelectionListeners(view.state, option, action, source)
             action.apply(option, view)
             break
         case 'goto':
             {
                 const historyOrNavigate = view.state.facet(suggestionsConfig).historyOrNavigate
                 if (historyOrNavigate) {
+                    notifySelectionListeners(view.state, option, action, source)
                     compatNavigate(historyOrNavigate, action.url)
                 }
             }
             break
+    }
+}
+
+function notifySelectionListeners(state: EditorState, option: Option, action: Action, source: SelectionSource): void {
+    const params = { option, action, source }
+    for (const listener of state.facet(selectionListener)) {
+        listener(params)
     }
 }
 
@@ -612,16 +631,18 @@ const defaultKeyboardBindings: KeyBinding[] = [
             if (!state.open || !option) {
                 return false
             }
-            applyAction(view, option.action, option)
+            applyAction(view, option.action, option, 'keyboard')
             return true
         },
-        shift(view) {
+    },
+    {
+        key: 'Mod-Enter',
+        run(view) {
             const state = view.state.field(suggestionsStateField)
             const option = state.result.at(state.selectedOption)
-            if (!state.open || !option || !option.alternativeAction) {
-                return false
+            if (state.open && option && option.alternativeAction) {
+                applyAction(view, option.alternativeAction, option, 'keyboard')
             }
-            applyAction(view, option.alternativeAction, option)
             return true
         },
     },
@@ -653,6 +674,10 @@ export const suggestionSources = Facet.define<Source>({
         Prec.highest(keymap.of(defaultKeyboardBindings)),
     ],
 })
+
+type SelectionSource = 'keyboard' | 'mouse'
+export const selectionListener =
+    Facet.define<(params: { option: Option; action: Action; source: SelectionSource }) => void>()
 
 interface ExternalConfig extends Config {
     parent: HTMLDivElement

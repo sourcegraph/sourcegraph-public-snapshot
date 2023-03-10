@@ -26,7 +26,7 @@ import { FILTERS, FilterType, isNegatableFilter, ResolvedFilter } from '@sourceg
 import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
 import { predicateCompletion } from '@sourcegraph/shared/src/search/query/predicates'
 import { selectorHasFields } from '@sourcegraph/shared/src/search/query/selectFilter'
-import { CharacterRange, Filter, Literal, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
+import { CharacterRange, Filter, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
 import { isFilterOfType, resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcons'
 
@@ -184,6 +184,7 @@ function toRepoCompletion(
         label: valuePrefix + item.name,
         matches: positions,
         icon: mdiSourceRepository,
+        kind: 'repo',
         action: {
             type: 'completion',
             insertValue: valuePrefix + regexInsertText(item.name, { globbing: false }) + ' ',
@@ -215,6 +216,7 @@ function toContextCompletion({ item, positions }: FzfResultItem<Context>, from: 
         icon: item.starred ? mdiStar : ' ',
         description,
         matches: positions,
+        kind: 'context',
         action: {
             type: 'completion',
             insertValue: item.spec + ' ',
@@ -233,6 +235,7 @@ function toFilterCompletion(label: string, description: string | undefined, from
         icon: mdiFilterOutline,
         render: filterRenderer,
         description,
+        kind: 'filter',
         action: {
             type: 'completion',
             insertValue: label + ':',
@@ -256,6 +259,7 @@ function toFileCompletion(
         icon: mdiFileOutline,
         description: item.repository,
         matches: positions,
+        kind: 'file',
         action: {
             type: 'completion',
             insertValue: valuePrefix + regexInsertText(item.path, { globbing: false }) + ' ',
@@ -287,6 +291,7 @@ function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from
         matches: positions,
         description: shortenPath(item.path, 20),
         icon: getSymbolIconSVGPath(item.kind),
+        kind: 'symbol',
         action: {
             type: 'completion',
             insertValue: item.name + ' type:symbol ',
@@ -401,6 +406,7 @@ const contextActions: Group = {
         {
             label: 'Manage contexts',
             description: 'Add, edit, remove search contexts',
+            kind: 'command',
             action: {
                 type: 'goto',
                 name: 'Go to /contexts',
@@ -426,12 +432,13 @@ function filterValueSuggestions(caches: Caches): InternalSource {
         }
 
         const value = token.value?.value ?? ''
+        // The value is always inserted after the filter field
         const from = token.value?.range.start ?? token.range.end
-        const to = token.value?.range.end
+        const to = token.value?.range.end ?? token.range.end
 
         switch (resolvedFilter.definition.suggestions) {
             case 'repo': {
-                const predicates = staticFilterPredicateOptions('repo', token.value, position)
+                const predicates = staticFilterPredicateOptions('repo', token, from, to)
                 return caches.repo.query(
                     value,
                     entries => {
@@ -464,7 +471,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
             }
 
             case 'path': {
-                const predicates = staticFilterPredicateOptions('file', token.value, position)
+                const predicates = staticFilterPredicateOptions('file', token, from, to)
                 return caches.file.query(
                     value,
                     entries => {
@@ -538,8 +545,9 @@ function staticFilterValueOptions(
     }
 
     const value = token.value?.value ?? ''
+    // The value is always inserted after the filter field
     const from = token.value?.range.start ?? token.range.end
-    const to = token.value?.range.end
+    const to = token.value?.range.end ?? token.range.end
 
     let options: Option[]
     if (resolvedFilter.type === FilterType.select) {
@@ -566,6 +574,7 @@ function staticFilterValueOptions(
 
         options = values.map(({ label }) => ({
             label,
+            kind: 'filter-value-select',
             action: {
                 type: 'completion',
                 from,
@@ -578,16 +587,19 @@ function staticFilterValueOptions(
         // input.
         options = defaultLanguages.map(label => ({
             label,
+            kind: 'filter-value-lang',
             action: {
                 type: 'completion',
                 from,
                 to,
+                insertValue: label + ' ',
             },
         }))
     } else {
         options = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
             label: value.label,
             description: value.description,
+            kind: `filter-value-${resolvedFilter.type}`,
             action: {
                 type: 'completion',
                 from,
@@ -620,16 +632,17 @@ const predicateFzfOption: PredicateFzfOptions = {
 /**
  * Returns predicate options for the provided filter type.
  */
-function staticFilterPredicateOptions(type: 'repo' | 'file', value: Literal | undefined, position: number): Option[] {
+function staticFilterPredicateOptions(type: 'repo' | 'file', filter: Filter, from: number, to: number): Option[] {
     const fzf = new Fzf(predicateCompletion(type), predicateFzfOption)
-    return fzf.find(value?.value || '').map(({ item, positions }) => ({
+    return fzf.find(filter.value?.value || '').map(({ item, positions }) => ({
         label: item.label,
         description: item.description,
         matches: positions,
+        kind: `filter-predicate-${type}`,
         action: {
             type: 'completion',
-            from: value?.range.start ?? position,
-            to: value?.range.end,
+            from,
+            to,
             // insertText is always set for prediction completions
             insertValue: item.insertText! + ' ${}',
             asSnippet: item.asSnippet,

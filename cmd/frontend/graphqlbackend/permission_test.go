@@ -1,4 +1,4 @@
-package resolvers
+package graphqlbackend
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -42,15 +42,12 @@ func TestPermissionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := newSchema(db, &Resolver{
-		db:     db,
-		logger: logger,
-	})
+	s, err := NewSchemaWithoutResolvers(db)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	mpid := string(marshalPermissionID(perm.ID))
+	mpid := string(MarshalPermissionID(perm.ID))
 
 	t.Run("as non site-administrator", func(t *testing.T) {
 		input := map[string]any{"permission": mpid}

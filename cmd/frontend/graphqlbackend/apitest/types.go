@@ -44,6 +44,17 @@ type RoleConnection struct {
 	PageInfo   PageInfo
 }
 
+type User struct {
+	ID         string
+	DatabaseID int32
+	SiteAdmin  bool
+
+	// All permissions associated with the roles that have been assigned to the user.
+	Permissions PermissionConnection
+	// All roles assigned to this user.
+	Roles RoleConnection
+}
+
 type EmptyResponse struct {
 	AlwaysNil string
 }

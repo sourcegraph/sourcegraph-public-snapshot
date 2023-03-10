@@ -1,4 +1,4 @@
-package resolvers
+package graphqlbackend
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -16,14 +15,14 @@ type roleConnectionStore struct {
 	userID int32
 }
 
-func (rcs *roleConnectionStore) MarshalCursor(node gql.RoleResolver, _ database.OrderBy) (*string, error) {
+func (rcs *roleConnectionStore) MarshalCursor(node RoleResolver, _ database.OrderBy) (*string, error) {
 	cursor := string(node.ID())
 
 	return &cursor, nil
 }
 
 func (rcs *roleConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	nodeID, err := unmarshalRoleID(graphql.ID(cursor))
+	nodeID, err := UnmarshalRoleID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +44,7 @@ func (rcs *roleConnectionStore) ComputeTotal(ctx context.Context) (*int32, error
 	return &total, nil
 }
 
-func (rcs *roleConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]gql.RoleResolver, error) {
+func (rcs *roleConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]RoleResolver, error) {
 	roles, err := rcs.db.Roles().List(ctx, database.RolesListOptions{
 		PaginationArgs: args,
 		System:         rcs.system,
@@ -55,7 +54,7 @@ func (rcs *roleConnectionStore) ComputeNodes(ctx context.Context, args *database
 		return nil, err
 	}
 
-	var roleResolvers []gql.RoleResolver
+	var roleResolvers []RoleResolver
 	for _, role := range roles {
 		roleResolvers = append(roleResolvers, &roleResolver{role: role, db: rcs.db})
 	}
