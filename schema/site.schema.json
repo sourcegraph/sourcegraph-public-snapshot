@@ -1543,10 +1543,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "key",
-              "message"
-            ],
+            "required": ["key", "message"],
             "properties": {
               "key": {
                 "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
@@ -1638,10 +1635,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "key",
-          "message"
-        ],
+        "required": ["key", "message"],
         "properties": {
           "key": {
             "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
