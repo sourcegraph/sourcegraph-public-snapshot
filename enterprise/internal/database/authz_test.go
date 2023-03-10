@@ -242,6 +242,19 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 
 	s := NewAuthzStore(logger, db, clock).(*authzStore)
 
+	// create users and repos
+	for _, userID := range []int32{1, 2} {
+		db.Users().Create(ctx, database.NewUser{
+			Username: fmt.Sprintf("user-%d", userID),
+		})
+	}
+	for _, repoID := range []api.RepoID{1, 2, 3, 4} {
+		db.Repos().Create(ctx, &types.Repo{
+			ID:   repoID,
+			Name: api.RepoName(fmt.Sprintf("repo-%d", repoID)),
+		})
+	}
+
 	type update struct {
 		repoID  int32
 		userIDs []int32
@@ -307,9 +320,20 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			defer cleanupPermsTables(t, s.store.(*permsStore))
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s.store.(*permsStore))
+			})
 
 			for _, update := range test.updates {
+				userIDs := make([]authz.UserIDWithExternalAccountID, len(update.userIDs))
+				for i, userID := range update.userIDs {
+					userIDs[i] = authz.UserIDWithExternalAccountID{
+						UserID: userID,
+					}
+				}
+				if err := s.store.SetRepoPerms(ctx, update.repoID, userIDs); err != nil {
+					t.Fatal(err)
+				}
 				_, err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 					RepoID:  update.repoID,
 					Perm:    authz.Read,
@@ -348,7 +372,10 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	}
 
 	// Set both effective and pending permissions for a user
-	if _, err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
+	if err = s.store.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: user.ID}, []int32{int32(repo.ID)}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 		RepoID:  int32(repo.ID),
 		Perm:    authz.Read,
 		UserIDs: toMapset(user.ID),
