@@ -464,6 +464,9 @@ func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.Us
 		ConnectionResolverArgs: graphqlutil.ConnectionResolverArgs{},
 		User:                   &userID,
 	})
+	if err != nil {
+		return nil
+	}
 
 	nodes, err := permissionResolver.Nodes(ctx)
 	userPermissions := make([]Permission, 0, len(nodes))
