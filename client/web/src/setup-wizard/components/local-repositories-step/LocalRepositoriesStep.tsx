@@ -109,6 +109,16 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         }
     }, [directoryPath, data, loading, addLocalCodeHost, updateLocalCodeHost])
 
+    useEffect(() => {
+        telemetryService.log('SetupWizardLandedAddLocalCode')
+    }, [telemetryService])
+
+    const handleNextButtonClick = (): void => {
+        if (!directoryPath) {
+            telemetryService.log('SetupWizardSkippedAddLocalCode')
+        }
+    }
+
     return (
         <div {...attributes}>
             <Text className="mb-2">Add your local repositories from your disk.</Text>
@@ -131,6 +141,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
             <CustomNextButton
                 label={directoryPath ? 'Next' : 'Skip'}
                 tooltip={!directoryPath ? 'You can get back to this step later' : ''}
+                onClick={handleNextButtonClick}
             />
         </div>
     )
