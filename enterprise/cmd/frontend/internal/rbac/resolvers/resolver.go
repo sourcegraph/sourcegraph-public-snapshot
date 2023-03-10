@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -85,7 +86,7 @@ func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gq
 
 	var role *types.Role
 	err := r.db.WithTransact(ctx, func(tx database.DB) (err error) {
-		role, err = tx.Roles().Create(ctx, args.Name, false)
+		role, err = tx.Roles().Create(ctx, strings.ToUpper(args.Name), false)
 		if err != nil {
 			return err
 		}
