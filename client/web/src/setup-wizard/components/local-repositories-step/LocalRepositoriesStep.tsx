@@ -3,9 +3,8 @@ import { ChangeEvent, FC, forwardRef, HTMLAttributes, InputHTMLAttributes, useEf
 import { useLazyQuery } from '@apollo/client'
 import { mdiGit, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { parse as parseJSONC } from 'jsonc-parser'
 
-import { ErrorLike, modify } from '@sourcegraph/common'
+import { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -24,22 +23,21 @@ import {
 import {
     AddRemoteCodeHostResult,
     AddRemoteCodeHostVariables,
-    CodeHost,
     DiscoverLocalRepositoriesResult,
     DiscoverLocalRepositoriesVariables,
     ExternalServiceKind,
-    GetCodeHostsResult,
     GetLocalDirectoryPathResult,
     UpdateRemoteCodeHostResult,
     UpdateRemoteCodeHostVariables,
+    GetLocalCodeHostsResult,
 } from '../../../graphql-operations'
-// TODO Move these two in shared queries if they are used in different steps UI
+import { ADD_CODE_HOST, UPDATE_CODE_HOST } from '../../queries'
 import { CodeHostExternalServiceAlert } from '../CodeHostExternalServiceAlert'
 import { ProgressBar } from '../ProgressBar'
-import { ADD_CODE_HOST, GET_CODE_HOSTS, UPDATE_CODE_HOST } from '../remote-repositories-step/queries'
 import { CustomNextButton, FooterWidget } from '../setup-steps'
 
-import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_DIRECTORY_PATH } from './queries'
+import { getLocalService, getLocalServicePath, createDefaultLocalServiceConfig } from './helpers'
+import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_CODE_HOSTS, GET_LOCAL_DIRECTORY_PATH } from './queries'
 
 import styles from './LocalRepositoriesStep.module.scss'
 
@@ -53,7 +51,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
 
     // TODO: Trade out for getLocalServices() or extended externalServices(kind: "OTHER")
     // if/when available to simplify this block
-    const { data, loading } = useQuery<GetCodeHostsResult>(GET_CODE_HOSTS, {
+    const { data, loading } = useQuery<GetLocalCodeHostsResult>(GET_LOCAL_CODE_HOSTS, {
         fetchPolicy: 'cache-and-network',
         // Sync local state and local external service path
         onCompleted: data => setDirectoryPath(getLocalServicePath(data)),
@@ -83,22 +81,21 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         }
 
         if (localService) {
-            const newConfig = modify(localService.config, ['root'], directoryPath)
             // We do have local service already so run update mutation
             updateLocalCodeHost({
-                refetchQueries: ['GetCodeHosts', 'RepositoryStats', 'StatusMessages'],
+                refetchQueries: ['GetLocalCodeHosts', 'RepositoryStats', 'StatusMessages'],
                 variables: {
                     input: {
                         id: localService.id,
-                        config: newConfig,
-                        displayName: localService.displayName,
+                        config: createDefaultLocalServiceConfig(directoryPath),
+                        displayName: 'Local repositories service',
                     },
                 },
             }).catch(setError)
         } else {
             // We don't have any local external service yet, so call create mutation
             addLocalCodeHost({
-                refetchQueries: ['GetCodeHosts', 'RepositoryStats', 'StatusMessages'],
+                refetchQueries: ['GetLocalCodeHosts', 'RepositoryStats', 'StatusMessages'],
                 variables: {
                     input: {
                         displayName: 'Local repositories service',
@@ -148,33 +145,6 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
             />
         </div>
     )
-}
-
-function getLocalServicePath(data?: GetCodeHostsResult): string {
-    const localCodeHost = getLocalService(data)
-
-    if (!localCodeHost) {
-        return ''
-    }
-
-    const config = parseJSONC(localCodeHost.config) as Record<string, string>
-    return config.root ?? ''
-}
-
-function getLocalService(data?: GetCodeHostsResult): CodeHost | null {
-    if (!data) {
-        return null
-    }
-
-    return (
-        data.externalServices.nodes.find(
-            node => node.kind === ExternalServiceKind.OTHER && node.id !== 'RXh0ZXJuYWxTZXJ2aWNlOjQ5Mzc0'
-        ) ?? null
-    )
-}
-
-function createDefaultLocalServiceConfig(path: string): string {
-    return `{ "url":"${window.context.srcServeGitUrl}", "root": "${path}", "repos": ["src-serve-local"] }`
 }
 
 interface LocalRepositoriesFormProps {
@@ -291,13 +261,13 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
     )
 }
 
-interface InputWitActionsProps extends InputHTMLAttributes<HTMLInputElement> {
+interface InputWithActionsProps extends InputHTMLAttributes<HTMLInputElement> {
     isProcessing: boolean
     onPickPath: () => void
     onPathReset: () => void
 }
 
-const InputWitActions = forwardRef<HTMLInputElement, InputWitActionsProps>((props, ref) => {
+const InputWitActions = forwardRef<HTMLInputElement, InputWithActionsProps>((props, ref) => {
     const { isProcessing, onPickPath, onPathReset, className, disabled, ...attributes } = props
 
     return (
