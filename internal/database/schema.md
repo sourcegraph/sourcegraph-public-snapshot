@@ -1807,9 +1807,11 @@ Foreign-key constraints:
  last_checked_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
+    "lsif_dependency_repos_unique_scheme_name" UNIQUE, btree (scheme, name)
     "lsif_dependency_repos_blocked" btree (blocked)
     "lsif_dependency_repos_last_checked_at" btree (last_checked_at)
-    "lsif_dependency_repos_name_idx" btree (name)
+    "lsif_dependency_repos_name_id" btree (name, id)
+    "lsif_dependency_repos_scheme_id" btree (scheme, id)
 Referenced by:
     TABLE "package_repo_versions" CONSTRAINT "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
 

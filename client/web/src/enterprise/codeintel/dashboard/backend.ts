@@ -63,6 +63,18 @@ export const inferredAvailableIndexersFieldsFragment = gql`
     }
 `
 
+export const inferredAvailableIndexersWithKeysFieldsFragment = gql`
+    fragment InferredAvailableIndexersWithKeysFields on InferredAvailableIndexers {
+        indexer {
+            ...CodeIntelIndexerFields
+        }
+        rootsWithKeys {
+            root
+            comparisonKey
+        }
+    }
+`
+
 export const gitTreeCodeIntelInfoFragment = gql`
     fragment GitTreeCodeIntelInfoFields on GitTreeCodeIntelInfo {
         preciseSupport {
@@ -113,12 +125,12 @@ export const repoCodeIntelStatusSummaryFragment = gql`
             ...PreciseIndexFields
         }
         availableIndexers {
-            ...InferredAvailableIndexersFields
+            ...InferredAvailableIndexersWithKeysFields
         }
     }
 
     ${preciseIndexFieldsFragment}
-    ${inferredAvailableIndexersFieldsFragment}
+    ${inferredAvailableIndexersWithKeysFieldsFragment}
 `
 
 export const repoCodeIntelStatusQuery = gql`

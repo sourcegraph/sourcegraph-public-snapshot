@@ -54,6 +54,7 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'session'
     | 'emails'
     | 'latestSettings'
+    | 'permissions'
 >
 
 /**

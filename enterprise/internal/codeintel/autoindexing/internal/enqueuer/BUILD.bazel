@@ -16,6 +16,7 @@ go_library(
         "//enterprise/internal/codeintel/autoindexing/internal/store",
         "//enterprise/internal/codeintel/shared/types",
         "//internal/codeintel/dependencies",
+        "//internal/database",
         "//internal/errcode",
         "//internal/metrics",
         "//internal/observation",

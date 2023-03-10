@@ -2,7 +2,7 @@
 
 SCIM (System for Cross-domain Identity Management) is a standard for provisioning and deprovisioning users and groups in an organization. IdPs (identity providers) like Okta, OneLogin, and Azure Active Directory support provisioning users through SCIM.
 
-Sourcegraph supports SCIM 2.0 for provisioning and de-provisioning _users_,.
+Sourcegraph supports SCIM 2.0 for provisioning and de-provisioning _users_.
 
 You can use any IdP that supports SCIM, but we’ve only tested the endpoint with Okta and Azure Active Directory.
 
@@ -22,7 +22,7 @@ To configure:
 3. Set up your IdP to use our SCIM API. The API is at
 
    ```
-   https://sourcegraph.company.com/.api/scim/v2`
+   https://sourcegraph.company.com/.api/scim/v2
    ```
 
    so the "Users" endpoint is at

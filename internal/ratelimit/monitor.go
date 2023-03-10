@@ -65,7 +65,7 @@ type MetricsCollector struct {
 //
 // It is intended to be embedded in an API client struct.
 type Monitor struct {
-	HeaderPrefix string // "X-" (GitHub) or "" (GitLab)
+	HeaderPrefix string // "X-" (GitHub and Azure DevOps) or "" (GitLab)
 
 	mu        sync.Mutex
 	known     bool

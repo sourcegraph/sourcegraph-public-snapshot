@@ -42,6 +42,10 @@ go_test(
         "redis_logger_middleware_test.go",
     ],
     embed = [":httpcli"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/rcache",

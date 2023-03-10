@@ -136,7 +136,7 @@ func (codeIntelligence) NewCommitGraphQueueGroup(containerName string) monitorin
 		},
 
 		QueueSize: NoAlertsOption("none"),
-		QueueMaxAge: CriticalOption(monitoring.Alert().GreaterOrEqual(time.Hour.Seconds()), `
+		QueueMaxAge: WarningOption(monitoring.Alert().GreaterOrEqual(time.Hour.Seconds()), `
 			An alert here is generally indicative of either underprovisioned worker instance(s) and/or
 			an underprovisioned main postgres instance.
 		`),

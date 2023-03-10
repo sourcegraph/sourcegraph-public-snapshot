@@ -9,14 +9,18 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
                 __typename
                 id
                 name
+                url
                 externalRepository {
                     serviceType
+                    serviceID
                 }
             }
             ... on User {
                 __typename
                 id
                 username
+                displayName
+                email
             }
         }
         triggeredByUser {
@@ -58,6 +62,8 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         $state: PermissionsSyncJobState
         $searchType: PermissionsSyncJobsSearchType
         $query: String
+        $userID: ID
+        $repoID: ID
     ) {
         permissionsSyncJobs(
             first: $first
@@ -68,6 +74,8 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
             state: $state
             searchType: $searchType
             query: $query
+            userID: $userID
+            repoID: $repoID
         ) {
             totalCount
             pageInfo {

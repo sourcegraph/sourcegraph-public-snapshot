@@ -5227,7 +5227,11 @@ CREATE INDEX lsif_dependency_repos_blocked ON lsif_dependency_repos USING btree 
 
 CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at);
 
-CREATE INDEX lsif_dependency_repos_name_idx ON lsif_dependency_repos USING btree (name);
+CREATE INDEX lsif_dependency_repos_name_id ON lsif_dependency_repos USING btree (name, id);
+
+CREATE INDEX lsif_dependency_repos_scheme_id ON lsif_dependency_repos USING btree (scheme, id);
+
+CREATE UNIQUE INDEX lsif_dependency_repos_unique_scheme_name ON lsif_dependency_repos USING btree (scheme, name);
 
 CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs USING btree (state);
 

@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "batches",
     srcs = [
+        "empty_spec_id_migrator.go",
         "external_fork_name_migrator.go",
         "ssh_migrator.go",
     ],
@@ -24,6 +25,7 @@ go_library(
 go_test(
     name = "batches_test",
     srcs = [
+        "empty_spec_id_migrator_test.go",
         "external_fork_name_migrator_test.go",
         "ssh_migrator_test.go",
     ],
@@ -36,6 +38,7 @@ go_test(
         "//enterprise/internal/batches/sources/bitbucketcloud",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/testing",
+        "//enterprise/internal/batches/types",
         "//internal/actor",
         "//internal/api",
         "//internal/database",
