@@ -3571,6 +3571,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	t.Run("unified permissions disabled", func(t *testing.T) {
+		mockUnifiedPermsConfig(false)
 		testDb := dbtest.NewDB(logger, t)
 		db := database.NewDB(logger, testDb)
 		s := perms(logger, db, clock)
