@@ -2,11 +2,14 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -19,6 +22,15 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
+
+	// Create repos needed
+	for _, repoID := range []api.RepoID{1, 2, 3} {
+		err := db.Repos().Create(ctx, &types.Repo{
+			ID:   repoID,
+			Name: api.RepoName(fmt.Sprintf("repo-%d", repoID)),
+		})
+		require.NoError(t, err)
+	}
 
 	// Create user with initially verified email
 	user, err := db.Users().Create(ctx, database.NewUser{
