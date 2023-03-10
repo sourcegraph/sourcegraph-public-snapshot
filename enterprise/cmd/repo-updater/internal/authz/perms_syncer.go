@@ -610,14 +610,23 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return result, providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %q (id: %d)", user.Username, user.ID)
 	}
 
-	// fetch current permissions from database
-	oldPerms := &authz.UserPermissions{
-		UserID: user.ID,
-		Perm:   authz.Read,
-		Type:   authz.PermRepos,
-		IDs:    map[int32]struct{}{},
+	// fetch current permissions from database to get the last sync time
+	// TODO: migrate this to read from the sync jobs table instead, this is inefficient
+	oldPerms, _ := s.permsStore.LoadUserPermissions(ctx, user.ID)
+	lastSyncAt := time.Time{}
+	// for legacy user_permissions table, lastSyncAt is the same on all items in the oldPerms slice
+	if len(oldPerms) > 0 {
+		lastSyncAt = oldPerms[0].UpdatedAt
 	}
-	_ = s.permsStore.LoadUserPermissions(ctx, oldPerms)
+	// for unified user_repo_permissions table, we need to find the latest
+	if conf.ExperimentalFeatures().UnifiedPermissions {
+		lastSyncAt = time.Time{}
+		for _, p := range oldPerms {
+			if p.UpdatedAt.After(lastSyncAt) {
+				lastSyncAt = p.UpdatedAt
+			}
+		}
+	}
 
 	// Save new permissions to database
 	p := &authz.UserPermissions{
@@ -669,8 +678,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	metricsSuccessPermsSyncs.WithLabelValues("user").Inc()
 
-	if !oldPerms.SyncedAt.IsZero() {
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
+	if lastSyncAt.IsZero() {
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(lastSyncAt).Seconds())
 	} else {
 		metricsFirstPermsSyncs.WithLabelValues("user").Inc()
 		metricsPermsFirstSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(user.CreatedAt).Seconds())

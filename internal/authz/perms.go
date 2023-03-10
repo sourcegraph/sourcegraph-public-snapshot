@@ -2,10 +2,11 @@ package authz
 
 import (
 	"fmt"
-	"sort"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -144,25 +145,6 @@ type UserPermissions struct {
 // Expired returns true if these UserPermissions have elapsed the given ttl.
 func (p *UserPermissions) Expired(ttl time.Duration, now time.Time) bool {
 	return !now.Before(p.UpdatedAt.Add(ttl))
-}
-
-// AuthorizedRepos returns the intersection of the given repository IDs with
-// the authorized IDs.
-func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []RepoPerms {
-	// Return directly if it's used for wrong permissions type or no permissions available.
-	if p.Type != PermRepos ||
-		p.IDs == nil || len(p.IDs) == 0 {
-		return []RepoPerms{}
-	}
-
-	perms := make([]RepoPerms, 0, len(repos))
-	for _, r := range repos {
-		_, ok := p.IDs[int32(r.ID)]
-		if r.ID != 0 && ok {
-			perms = append(perms, RepoPerms{Repo: r, Perms: p.Perm})
-		}
-	}
-	return perms
 }
 
 // GenerateSortedIDsSlice returns a sorted slice of the IDs set.
@@ -315,10 +297,7 @@ func (p *UserPendingPermissions) TracingFields() []otlog.Field {
 
 // convertMapSetToSortedSlice converts a map set into a slice of sorted integers
 func convertMapSetToSortedSlice(mapSet map[int32]struct{}) []int32 {
-	returnSlice := make([]int32, 0, len(mapSet))
-	for id := range mapSet {
-		returnSlice = append(returnSlice, id)
-	}
-	sort.Slice(returnSlice, func(i, j int) bool { return returnSlice[i] < returnSlice[j] })
-	return returnSlice
+	slice := maps.Keys(mapSet)
+	slices.Sort(slice)
+	return slice
 }

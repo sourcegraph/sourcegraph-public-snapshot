@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/log"
 
@@ -42,9 +43,9 @@ type PermsStore interface {
 	Transact(ctx context.Context) (PermsStore, error)
 	Done(err error) error
 
-	// LoadUserPermissions loads stored user permissions into p. An ErrPermsNotFound
+	// LoadUserPermissions loads returns user permissions. An empty slice
 	// is returned when there are no valid permissions available.
-	LoadUserPermissions(ctx context.Context, p *authz.UserPermissions) error
+	LoadUserPermissions(ctx context.Context, userID int32) (p []authz.Permission, err error)
 	// FetchReposByExternalAccount fetches repo ids that the originate from the given external account.
 	FetchReposByExternalAccount(ctx context.Context, accountID int32) ([]api.RepoID, error)
 	// FetchReposByUserAndExternalService fetches repo ids that the given user can
@@ -273,24 +274,47 @@ func (s *permsStore) Done(err error) error {
 	return s.Store.Done(err)
 }
 
-func (s *permsStore) LoadUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
+func (s *permsStore) LoadUserPermissions(ctx context.Context, userID int32) (p []authz.Permission, err error) {
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
-	defer func() { save(&err, p.TracingFields()...) }()
+	defer func() {
+		tracingFields := []otlog.Field{}
+		for _, perm := range p {
+			tracingFields = append(tracingFields, perm.TracingFields()...)
+		}
+		save(&err, tracingFields...)
+	}()
 
-	ids, updatedAt, syncedAt, err := s.loadUserPermissions(ctx, p, "")
-	if err != nil {
-		return err
+	if !UnifiedPermsEnabled() {
+		ids, _, syncedAt, err := s.legacyLoadUserPermissions(ctx, userID, "")
+		if err != nil && err != authz.ErrPermsNotFound {
+			return nil, err
+		}
+		// return empty slice in case of ErrPermsNotFound
+		if ids == nil {
+			ids = []int32{}
+		}
+
+		idsMap := make(map[int32]struct{}, len(ids))
+		for _, id := range ids {
+			idsMap[id] = struct{}{}
+		}
+		ids = maps.Keys(idsMap)
+		slices.Sort(ids)
+
+		p = make([]authz.Permission, len(ids))
+		for i, id := range ids {
+			p[i] = authz.Permission{
+				UserID:    userID,
+				RepoID:    id,
+				CreatedAt: syncedAt,
+				UpdatedAt: syncedAt,
+			}
+		}
+
+		return p, nil
+	} else {
+		return s.loadUserRepoPermissions(ctx, userID, 0, 0)
 	}
-
-	// Since this is the Permissions table and not pending permissions we still use bitmaps here
-	p.IDs = make(map[int32]struct{}, len(ids))
-	for _, id := range ids {
-		p.IDs[id] = struct{}{}
-	}
-
-	p.UpdatedAt = updatedAt
-	p.SyncedAt = syncedAt
-	return nil
 }
 
 var scanRepoIDs = basestore.NewSliceScanner(basestore.ScanAny[api.RepoID])
@@ -560,7 +584,7 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 
 	// Retrieve currently stored object IDs of this user.
 	oldIDs := map[int32]struct{}{}
-	ids, _, _, err := txs.loadUserPermissions(ctx, p, "FOR UPDATE")
+	ids, _, _, err := txs.legacyLoadUserPermissions(ctx, p.UserID, "FOR UPDATE")
 	if err != nil {
 		if err != authz.ErrPermsNotFound {
 			return nil, errors.Wrap(err, "load user permissions")
@@ -627,7 +651,7 @@ func upsertUserPermissionsQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
 INSERT INTO user_permissions
   (user_id, permission, object_type, object_ids_ints, updated_at, synced_at)
 VALUES
-  (%s, %s, %s, %s, %s, %s)
+  (%s, 'read', 'repos', %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
   user_permissions_perm_object_unique
 DO UPDATE SET
@@ -651,8 +675,6 @@ DO UPDATE SET
 	return sqlf.Sprintf(
 		format,
 		p.UserID,
-		p.Perm.String(),
-		p.Type,
 		pq.Array(idsArray),
 		p.UpdatedAt.UTC(),
 		p.SyncedAt.UTC(),
@@ -1514,23 +1536,46 @@ func (s *permsStore) execute(ctx context.Context, q *sqlf.Query, vs ...any) (err
 	return rows.Close()
 }
 
-// loadUserPermissions is a method that scans three values from one user_permissions table row:
+var ScanPermissions = basestore.NewSliceScanner(func(s dbutil.Scanner) (authz.Permission, error) {
+	p := authz.Permission{}
+	err := s.Scan(&p.UserID, &p.ExternalAccountID, &p.RepoID, &p.CreatedAt, &p.UpdatedAt, &p.Source)
+	return p, err
+})
+
+func (s *permsStore) loadUserRepoPermissions(ctx context.Context, userID, userExternalAccountID, repoID int32) ([]authz.Permission, error) {
+
+	clauses := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+
+	if userID != 0 {
+		clauses = append(clauses, sqlf.Sprintf("user_id = %d", userID))
+	}
+	if userExternalAccountID != 0 {
+		clauses = append(clauses, sqlf.Sprintf("user_external_account_id = %d", userExternalAccountID))
+	}
+	if repoID != 0 {
+		clauses = append(clauses, sqlf.Sprintf("repo_id = %d", repoID))
+	}
+
+	query := sqlf.Sprintf(`
+SELECT user_id, user_external_account_id, repo_id, created_at, updated_at, source
+FROM user_repo_permissions
+WHERE %s
+`, sqlf.Join(clauses, " AND "))
+	return ScanPermissions(s.Query(ctx, query))
+}
+
+// legacyLoadUserPermissions is a method that scans three values from one user_permissions table row:
 // []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
-func (s *permsStore) loadUserPermissions(ctx context.Context, p *authz.UserPermissions, lock string) (ids []int32, updatedAt, syncedAt time.Time, err error) {
+func (s *permsStore) legacyLoadUserPermissions(ctx context.Context, userID int32, lock string) (ids []int32, updatedAt, syncedAt time.Time, err error) {
 	const format = `
 SELECT object_ids_ints, updated_at, synced_at
 FROM user_permissions
 WHERE user_id = %s
-AND permission = %s
-AND object_type = %s
+AND permission = 'read'
+AND object_type = 'repos'
 `
 
-	q := sqlf.Sprintf(
-		format+lock,
-		p.UserID,
-		p.Perm.String(),
-		p.Type,
-	)
+	q := sqlf.Sprintf(format+lock, userID)
 	ctx, save := s.observe(ctx, "load", "")
 	defer func() {
 		save(&err,
