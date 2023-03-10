@@ -111,6 +111,9 @@ extend type Mutation {
     ): CancelPermissionsSyncJobResultMessage!
 }
 
+"""
+A status message of a permissions sync job cancellation.
+"""
 enum CancelPermissionsSyncJobResultMessage {
     SUCCESS
     NOT_FOUND
