@@ -137,6 +137,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                 Saved searches
                             </MenuLink>
+                            {isSourcegraphApp && (
+                                <MenuLink as={Link} to="/setup">
+                                    Setup wizard
+                                </MenuLink>
+                            )}
                             {enableTeams && !isSourcegraphDotCom && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams
