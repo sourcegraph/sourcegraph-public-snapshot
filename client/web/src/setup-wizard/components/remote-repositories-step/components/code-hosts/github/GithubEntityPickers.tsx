@@ -184,7 +184,11 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
             />
             <small className="d-block text-muted pl-2 mt-2">Pick at least one repository</small>
 
-            <MultiComboboxList renderEmptyList={true} items={filteredSuggestions} className={styles.repositoriesSuggest}>
+            <MultiComboboxList
+                renderEmptyList={true}
+                items={filteredSuggestions}
+                className={styles.repositoriesSuggest}
+            >
                 {items =>
                     items.map((item, index) => (
                         <MultiComboboxOption key={item} value={item} index={index}>

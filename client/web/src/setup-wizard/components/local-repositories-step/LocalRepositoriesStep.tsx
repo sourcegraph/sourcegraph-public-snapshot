@@ -222,8 +222,12 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
         onDirectoryPathChange(debouncedInternalPath)
     }, [debouncedInternalPath, onDirectoryPathChange])
 
+    // Use internal path only if backend-based file picker is unavailable
     const path = isFilePickerAvailable ? directoryPath : internalPath
+    const initialState = !repositoriesData && !error && !loading
     const foundRepositories = repositoriesData?.localDirectory?.repositories ?? []
+    const zeroResultState =
+        path && !error && repositoriesData && repositoriesData.localDirectory.repositories.length === 0
 
     return (
         <>
@@ -244,6 +248,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
             </header>
 
             {error && <ErrorAlert error={error} className="mt-3" />}
+
             {!error && (
                 <ul className={styles.list}>
                     {foundRepositories.map(codeHost => (
@@ -262,13 +267,14 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                 </ul>
             )}
 
-            {path && !error && repositoriesData && repositoriesData.localDirectory.repositories.length === 0 && (
+            {zeroResultState && (
                 <Alert variant="primary" className="mt-3 ">
                     <H4>We couldn't resolve any git repositories by the current path</H4>
                     Try to use different path that contains .git repositories
                 </Alert>
             )}
-            {!repositoriesData && !error && !loading && (
+
+            {initialState && (
                 <Text className="d-flex align-items-center mb-0 mt-3 text-muted">
                     <Icon
                         svgPath={mdiInformationOutline}
