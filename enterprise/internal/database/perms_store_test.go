@@ -3783,7 +3783,6 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			mockUnifiedPermsConfig(tt.unifiedPermsEnabled)
 			testDb := dbtest.NewDB(logger, t)
 			db := database.NewDB(logger, testDb)
 
@@ -4045,6 +4044,9 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 						&conf.Unified{
 							SiteConfiguration: schema.SiteConfiguration{
 								AuthzEnforceForSiteAdmins: test.AuthzEnforceForSiteAdmins,
+								ExperimentalFeatures: &schema.ExperimentalFeatures{
+									UnifiedPermissions: tt.unifiedPermsEnabled,
+								},
 							},
 						},
 					)
