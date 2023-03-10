@@ -257,14 +257,14 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	err = db.EventLogs().BulkInsert(ctx, events)
 	require.NoError(t, err)
 
-	values, err := db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, nil)
+	values, err := db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, 0, nil)
 	require.NoError(t, err)
 
 	assertUsageValue(t, values.DAUs[0], startDate.Add(time.Hour*24*2), 4, 4, 0, 0)
 	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 4, 4, 0, 0)
 	assertUsageValue(t, values.DAUs[2], startDate, 3, 3, 0, 0)
 
-	values, err = db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, &CountUniqueUsersOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true, ExcludeSourcegraphOperators: true}, nil})
+	values, err = db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, 0, &CountUniqueUsersOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true, ExcludeSourcegraphOperators: true}, nil})
 	require.NoError(t, err)
 
 	assertUsageValue(t, values.DAUs[0], startDate.Add(time.Hour*24*2), 4, 4, 0, 0)
