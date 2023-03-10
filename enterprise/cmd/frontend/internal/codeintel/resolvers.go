@@ -72,6 +72,10 @@ func (r *Resolver) VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_
 	return r.sentinelRootResolver.VulnerabilityMatchByID(ctx, id)
 }
 
+func (r *Resolver) VulnerabilityMatchesGroupByRepository(ctx context.Context, args resolverstubs.GetVulnerabilityMatchGroupByRepositoryArgs) (_ resolverstubs.VulnerabilityMatchGroupByRepositoryConnectionResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityMatchesGroupByRepository(ctx, args)
+}
+
 func (r *Resolver) IndexerKeys(ctx context.Context, opts *resolverstubs.IndexerKeyQueryArgs) (_ []string, err error) {
 	return r.autoIndexingRootResolver.IndexerKeys(ctx, opts)
 }

@@ -194,6 +194,46 @@ func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, gqlID graphql
 	}, nil
 }
 
+func (r *rootResolver) VulnerabilityMatchesGroupByRepository(ctx context.Context, args resolverstubs.GetVulnerabilityMatchGroupByRepositoryArgs) (_ resolverstubs.VulnerabilityMatchGroupByRepositoryConnectionResolver, err error) {
+	ctx, _, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	limit := 50
+	if args.First != nil {
+		limit = int(*args.First)
+	}
+
+	offset := 0
+	if args.After != nil {
+		after, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+
+		offset = after
+	}
+
+	repositoryName := ""
+	if args.RepositoryName != nil {
+		repositoryName = *args.RepositoryName
+	}
+
+	groupedMatches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesByRepository(ctx, shared.GetVulnerabilityMatchesGroupByRepositoryArgs{
+		Limit:          limit,
+		Offset:         offset,
+		RepositoryName: repositoryName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &vulnerabilityMatchGroupByRepositoryConnectionResolver{
+		groupedMatches: groupedMatches,
+		offset:         offset,
+		totalCount:     totalCount,
+	}, nil
+}
+
 //
 //
 
@@ -402,6 +442,10 @@ func marshalVulnerabilityMatchGQLID(vulnerabilityMatchID int) graphql.ID {
 	return relay.MarshalID("VulnerabilityMatch", vulnerabilityMatchID)
 }
 
+func marshalVulnerabilityMatchGroupByRepositoryGQLID(vulnerabilityMatchID int) graphql.ID {
+	return relay.MarshalID("VulnerabilityMatchGroup", vulnerabilityMatchID)
+}
+
 //
 //
 
@@ -477,6 +521,56 @@ func (r *vulnerabilityMatchConnectionResolver) TotalCount() *int32 {
 func (r *vulnerabilityMatchConnectionResolver) PageInfo() resolverstubs.PageInfo {
 	if r.offset+len(r.matches) < r.totalCount {
 		return sharedresolvers.NextPageCursor(strconv.Itoa(r.offset + len(r.matches)))
+	}
+
+	return sharedresolvers.HasNextPage(false)
+}
+
+//
+//
+
+type vulnerabilityMatchGroupByRepositoryResolver struct {
+	v shared.VulnerabilityMatchesByRepository
+}
+
+func (v vulnerabilityMatchGroupByRepositoryResolver) ID() graphql.ID {
+	return marshalVulnerabilityMatchGroupByRepositoryGQLID(v.v.ID)
+}
+
+func (v vulnerabilityMatchGroupByRepositoryResolver) RepositoryName() string {
+	return v.v.RepositoryName
+}
+
+func (v vulnerabilityMatchGroupByRepositoryResolver) MatchCount() int32 {
+	return v.v.MatchCount
+}
+
+//
+//
+
+type vulnerabilityMatchGroupByRepositoryConnectionResolver struct {
+	groupedMatches []shared.VulnerabilityMatchesByRepository
+	offset         int
+	totalCount     int
+}
+
+func (v *vulnerabilityMatchGroupByRepositoryConnectionResolver) Nodes() []resolverstubs.VulnerabilityMatchGroupByRepositoryResolver {
+	var resolvers []resolverstubs.VulnerabilityMatchGroupByRepositoryResolver
+	for _, m := range v.groupedMatches {
+		resolvers = append(resolvers, &vulnerabilityMatchGroupByRepositoryResolver{v: m})
+	}
+
+	return resolvers
+}
+
+func (v *vulnerabilityMatchGroupByRepositoryConnectionResolver) TotalCount() *int32 {
+	c := int32(v.totalCount)
+	return &c
+}
+
+func (v *vulnerabilityMatchGroupByRepositoryConnectionResolver) PageInfo() resolverstubs.PageInfo {
+	if v.offset+len(v.groupedMatches) < v.totalCount {
+		return sharedresolvers.NextPageCursor(strconv.Itoa(v.offset + len(v.groupedMatches)))
 	}
 
 	return sharedresolvers.HasNextPage(false)
