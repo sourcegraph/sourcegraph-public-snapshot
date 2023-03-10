@@ -80,6 +80,17 @@ const REQUESTERS: Record<string, TokenRequester> = {
         onlyDotCom: true,
         forwardDestination: true,
     },
+    CODY: {
+        name: 'Cody VS Code Extension',
+        redirectURL: 'vscode://sourcegraph.cody?code=$TOKEN',
+        description: 'Auth from VS Code Extension for Sourcegraph',
+        successMessage:
+            'Importing your token will automatically connect your Sourcegraph account in the VS Code extension.',
+        infoMessage:
+            'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
+        callbackType: 'new-tab',
+        showRedirectButton: true,
+    },
 }
 /**
  * This page acts as a callback URL after the authentication process has been completed by a user.
