@@ -29,7 +29,7 @@ func addPerms(t *testing.T, s edb.PermsStore, userID, repoID int32) {
 	ctx := context.Background()
 
 	if conf.ExperimentalFeatures().UnifiedPermissions {
-		err := s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: userID, ExternalAccountID: userID - 1}, []int32{int32(repoID)})
+		err := s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: userID, ExternalAccountID: userID - 1}, []int32{repoID})
 		require.NoError(t, err)
 	} else {
 		_, err := s.SetUserPermissions(ctx, &authz.UserPermissions{
