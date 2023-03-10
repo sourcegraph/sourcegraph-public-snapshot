@@ -36,6 +36,7 @@ import { HeroPage } from '../components/HeroPage'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
+import { OwnConfigProps } from '../own/OwnConfigProps'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useNavbarQueryState } from '../stores'
@@ -115,7 +116,8 @@ interface RepoContainerProps
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        NotebookProps {
+        NotebookProps,
+        OwnConfigProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
