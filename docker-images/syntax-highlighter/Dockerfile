@@ -46,6 +46,8 @@ FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b211
 COPY --from=ss syntax_highlighter /
 COPY --from=hss http-server-stabilizer /
 
+RUN apk add --no-cache libstdc++
+
 EXPOSE 9238
 ENV ROCKET_ENV "production"
 ENV ROCKET_LIMITS "{json=10485760}"
