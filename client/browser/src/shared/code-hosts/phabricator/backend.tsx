@@ -13,9 +13,8 @@ import { addPhabricatorRepoResult, ResolveStagingRevResult } from '../../../grap
 import { isExtension } from '../../context'
 import { resolveRepo } from '../../repo/backend'
 
-import { normalizeRepoName } from './util'
-
 import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
+import { normalizeRepoName } from './util'
 
 interface PhabEntity {
     id: string // e.g. "48"

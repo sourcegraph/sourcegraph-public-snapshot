@@ -5,11 +5,10 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { FileInfo, DiffInfo, BlobInfo } from '../shared/codeHost'
 
+import { PhabricatorMode } from '.'
 import { queryConduitHelper, resolveDiffRevision } from './backend'
 import { getFilepathFromFileForDiff, getFilePathFromFileForRevision } from './scrape'
 import { getPhabricatorState } from './util'
-
-import { PhabricatorMode } from '.'
 
 export const resolveRevisionFileInfo = (
     codeView: HTMLElement,
