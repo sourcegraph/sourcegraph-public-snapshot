@@ -12,6 +12,7 @@ import (
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -173,6 +174,9 @@ func tryGetUserThenTeam(ctx context.Context, identifier string, userGetter userG
 }
 
 func (s *service) whichTeamGetter(ctx context.Context) teamGetterFunc {
+	if !conf.Get().OwnBestEffortTeamMatching {
+		return s.db.Teams().GetTeamByName
+	}
 	return s.bestEffortTeamGetter
 }
 
@@ -186,9 +190,23 @@ func (s *service) bestEffortTeamGetter(ctx context.Context, teamHandle string) (
 	}
 	// If the team handle is potentially embedded we will do best-effort matching on the last part of the team handle.
 	if strings.Contains(teamHandle, "/") {
-		return s.db.Teams().GetTeamByName(ctx, teamHandle)
+		return s.db.Teams().GetTeamByName(ctx, getLastPartOfTeamHandle(teamHandle))
 	}
 	return nil, err
+}
+
+func getLastPartOfTeamHandle(teamHandle string) string {
+	// invariant: teamHandle contains a /.
+	if len(teamHandle) == 1 {
+		return teamHandle
+	}
+	lastSlashPos := 0
+	for i := len(teamHandle) - 1; i >= 0; i-- {
+		if teamHandle[i] == '/' {
+			lastSlashPos = i
+		}
+	}
+	return teamHandle[lastSlashPos+1:]
 }
 
 func personOrError(handle, email string, err error) (*codeowners.Person, error) {
