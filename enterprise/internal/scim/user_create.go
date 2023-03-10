@@ -30,6 +30,9 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	// Try to match emails to existing users
 	allEmails := append([]string{primaryEmail}, otherEmails...)
 	existingEmails, err := h.db.UserEmails().GetVerifiedEmails(r.Context(), allEmails...)
+	if err != nil {
+		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+	}
 	existingUserIDs := make(map[int32]struct{})
 	for _, email := range existingEmails {
 		existingUserIDs[email.UserID] = struct{}{}

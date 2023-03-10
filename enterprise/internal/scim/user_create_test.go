@@ -162,7 +162,7 @@ func TestUserResourceHandler_Create(t *testing.T) {
 
 // createUserResourceAttributes creates a scim.ResourceAttributes object with the given username.
 func createUserResourceAttributes(username string, attrEmails []interface{}) scim.ResourceAttributes {
-	emails := []interface{}{}
+	var emails []interface{}
 	if attrEmails == nil {
 		emails = []interface{}{
 			map[string]interface{}{"value": "a@b.c", "primary": true},
