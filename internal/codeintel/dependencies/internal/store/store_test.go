@@ -69,11 +69,15 @@ func TestUpsertDependencyRepo(t *testing.T) {
 		t.Fatalf("mismatch (-want, +got): %s", diff)
 	}
 
-	have, _, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
+	have, _, hasMore, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
 		Scheme: shared.NpmPackagesScheme,
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if hasMore {
+		t.Error("unexpected more-pages flag set in non-limited listing, expected no more pages to follow")
 	}
 
 	want[0].Versions = []shared.PackageRepoRefVersion{{ID: 1, PackageRefID: 1, Version: "2.0.0"}, {ID: 2, PackageRefID: 1, Version: "3.0.0"}}
@@ -110,6 +114,10 @@ func TestListPackageRepoRefs(t *testing.T) {
 			{Scheme: "npm", Name: "applesauce", Versions: []string{"1.2.3"}},
 			{Scheme: "somethingelse", Name: "banana", Versions: []string{"0.1.2"}},
 		},
+		// should not be listed due to no versions
+		{
+			{Scheme: "npm", Name: "burger", Versions: []string{}},
+		},
 	}
 
 	for _, insertBatch := range batches {
@@ -119,17 +127,33 @@ func TestListPackageRepoRefs(t *testing.T) {
 	}
 
 	var lastID int
-	for _, test := range [][]shared.PackageRepoReference{
-		{{Scheme: "npm", Name: "bar"}, {Scheme: "npm", Name: "foo"}, {Scheme: "npm", Name: "banana"}},
-		{{Scheme: "npm", Name: "turtle"}, {Scheme: "npm", Name: "applesauce"}, {Scheme: "somethingelse", Name: "banana"}},
+	for i, test := range [][]shared.PackageRepoReference{
+		{
+			{Scheme: "npm", Name: "bar", Versions: []shared.PackageRepoRefVersion{{Version: "2.0.0"}, {Version: "2.0.1"}, {Version: "3.0.0"}}},
+			{Scheme: "npm", Name: "foo", Versions: []shared.PackageRepoRefVersion{{Version: "1.0.0"}}},
+			{Scheme: "npm", Name: "banana", Versions: []shared.PackageRepoRefVersion{{Version: "2.0.0"}}},
+		},
+		{
+			{Scheme: "npm", Name: "turtle", Versions: []shared.PackageRepoRefVersion{{Version: "4.2.0"}}},
+			{Scheme: "npm", Name: "applesauce", Versions: []shared.PackageRepoRefVersion{{Version: "1.2.3"}}},
+			{Scheme: "somethingelse", Name: "banana", Versions: []shared.PackageRepoRefVersion{{Version: "0.1.2"}}},
+		},
 	} {
-		depRepos, total, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
+		depRepos, total, hasMore, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
 			Scheme: "",
 			After:  lastID,
 			Limit:  3,
 		})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if i == 1 && hasMore {
+			t.Error("unexpected more-pages flag set, expected no more pages to follow")
+		}
+
+		if i == 0 && !hasMore {
+			t.Error("unexpected more-pages flag not set, expected more pages to follow")
 		}
 
 		if total != 6 {
@@ -140,7 +164,11 @@ func TestListPackageRepoRefs(t *testing.T) {
 
 		for i := range depRepos {
 			depRepos[i].ID = 0
-			depRepos[i].Versions = nil
+			for j, version := range depRepos[i].Versions {
+				depRepos[i].Versions[j] = shared.PackageRepoRefVersion{
+					Version: version.Version,
+				}
+			}
 		}
 
 		if diff := cmp.Diff(test, depRepos); diff != "" {
@@ -179,11 +207,15 @@ func TestDeletePackageRepoRefsByID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, _, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
+	have, _, hasMore, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
 		Scheme: shared.NpmPackagesScheme,
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if hasMore {
+		t.Error("unexpected more-pages flag set, expected no more pages to follow")
 	}
 
 	want := []shared.PackageRepoReference{

@@ -118,7 +118,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}))
 
 		// At this stage, we don't break builds because of a Bazel failure.
-		// TODO(JH) Disabled until we fix database isolation
+		// TODO(JH) Disabled until re-enabled with flag
 		// ops.Merge(BazelOperations(true))
 
 		// Now we set up conditional operations that only apply to pull requests.
@@ -278,6 +278,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			triggerAsync(buildOptions)))
 
 		// At this stage, we don't break builds because of a Bazel failure.
+		// TODO(JH) disabled until I re-enable this with a flag
 		// ops.Merge(BazelOperations(true))
 
 		// Slow image builds

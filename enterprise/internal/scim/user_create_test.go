@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -20,7 +21,8 @@ func TestUserResourceHandler_Create(t *testing.T) {
 
 	db := getMockDB([]*types.UserForSCIM{
 		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
-	})
+	},
+		map[int32][]*database.UserEmail{})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	testCases := []struct {
 		name     string

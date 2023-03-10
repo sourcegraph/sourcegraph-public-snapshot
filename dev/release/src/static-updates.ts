@@ -19,7 +19,7 @@ export async function bakeSrcCliSteps(config: ReleaseConfig): Promise<Edit[]> {
         revisionMustExist: true,
     })
 
-    const next = await nextSrcCliVersionInputWithAutodetect(workdir)
+    const next = await nextSrcCliVersionInputWithAutodetect(config, workdir)
     setSrcCliVersion(config, next.version)
 
     return [
@@ -43,4 +43,9 @@ export function combyReplace(pattern: string, replace: string, path: string): Ed
     pattern = pattern.replaceAll('"', '\\"')
     const sub = pattern.replace(':[1]', replace)
     return `comby -in-place "${pattern}" "${sub}" ${path}`
+}
+
+export function indexerUpdate(): Edit {
+    // eslint-disable-next-line no-template-curly-in-string
+    return 'cd enterprise/internal/codeintel/autoindexing/internal/inference/libs/ && DOCKER_USER=${CR_USERNAME} DOCKER_PASS=${CR_PASSWORD} ./update-shas.sh'
 }

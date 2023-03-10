@@ -54,7 +54,7 @@ type ListDependencyReposOpts struct {
 	IncludeBlocked bool
 }
 
-func (s *Service) ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (_ []PackageRepoReference, total int, err error) {
+func (s *Service) ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (_ []PackageRepoReference, total int, hasMore bool, err error) {
 	ctx, _, endObservation := s.operations.listPackageRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("scheme", opts.Scheme),
 		log.String("name", string(opts.Name)),
@@ -110,7 +110,7 @@ func deref(s *string) string {
 	return *s
 }
 
-func (s *Service) ListPackageRepoFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageRepoFilter, err error) {
+func (s *Service) ListPackageRepoFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageRepoFilter, hasMore bool, err error) {
 	ctx, _, endObservation := s.operations.listPackageRepoFilters.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numPackageRepoFilterIDs", len(opts.IDs)),
 		log.String("packageScheme", opts.PackageScheme),
@@ -165,7 +165,7 @@ func (s *Service) IsPackageRepoVersionAllowed(ctx context.Context, scheme string
 	}})
 	defer endObservation(1, observation.Args{})
 
-	filters, err := s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{
+	filters, _, err := s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{
 		PackageScheme:  scheme,
 		IncludeDeleted: false,
 	})
@@ -188,7 +188,7 @@ func (s *Service) IsPackageRepoAllowed(ctx context.Context, scheme string, pkg r
 	}})
 	defer endObservation(1, observation.Args{})
 
-	filters, err := s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{
+	filters, _, err := s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{
 		PackageScheme:  scheme,
 		IncludeDeleted: false,
 	})
@@ -204,7 +204,7 @@ func (s *Service) IsPackageRepoAllowed(ctx context.Context, scheme string, pkg r
 	return packagefilters.IsPackageAllowed(pkg, allowlist, blocklist), nil
 }
 
-func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter shared.MinimalPackageFilter, limit, after int) (_ []shared.PackageRepoReference, _ int, err error) {
+func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter shared.MinimalPackageFilter, limit, after int) (_ []shared.PackageRepoReference, _ int, hasMore bool, err error) {
 	ctx, _, endObservation := s.operations.pkgsOrVersionsMatchingFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("packageScheme", filter.PackageScheme),
 		log.String("versionFilter", fmt.Sprintf("%+v", filter.VersionFilter)),
@@ -223,7 +223,7 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 		nameToMatch = filter.VersionFilter.PackageName
 	}
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "failed to compile glob")
+		return nil, 0, false, errors.Wrap(err, "failed to compile glob")
 	}
 
 	var (
@@ -232,17 +232,17 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 	)
 
 	if filter.NameFilter != nil {
-		lastID := after
-
+		var lastID int
 		for {
-			pkgs, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
-				Scheme:         filter.PackageScheme,
+			pkgs, _, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
+				Scheme: filter.PackageScheme,
+				// doing this so we don't have to load everything in at once
+				Limit:          500,
 				After:          lastID,
-				Limit:          limit,
 				IncludeBlocked: true,
 			})
 			if err != nil {
-				return nil, 0, errors.Wrap(err, "failed to list package repo references")
+				return nil, 0, false, errors.Wrap(err, "failed to list package repo references")
 			}
 
 			if len(pkgs) == 0 {
@@ -254,7 +254,12 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 			for _, pkg := range pkgs {
 				if matcher.Matches(string(pkg.Name), "") {
 					totalCount++
+					if pkg.ID <= after {
+						continue
+					}
 					if len(matchingPkgs) == limit {
+						// once we've reached the limit but are hitting more, we know theres more
+						hasMore = true
 						continue
 					}
 					pkg.Versions = nil
@@ -263,19 +268,20 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 			}
 		}
 	} else {
-		pkgs, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
-			Scheme:         filter.PackageScheme,
-			Name:           reposource.PackageName(nameToMatch),
-			ExactNameOnly:  true,
+		pkgs, _, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
+			Scheme:        filter.PackageScheme,
+			Name:          reposource.PackageName(nameToMatch),
+			ExactNameOnly: true,
+			// should only have 1 matching package ref
 			Limit:          1,
 			IncludeBlocked: true,
 		})
 		if err != nil {
-			return nil, 0, errors.Wrap(err, "failed to list package repo references")
+			return nil, 0, false, errors.Wrap(err, "failed to list package repo references")
 		}
 
 		if len(pkgs) == 0 {
-			return nil, 0, errors.Newf("package repo reference not found for name %q", nameToMatch)
+			return nil, 0, false, errors.Newf("package repo reference not found for name %q", nameToMatch)
 		}
 
 		pkg := pkgs[0]
@@ -283,7 +289,12 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 		for _, version := range pkg.Versions {
 			if matcher.Matches(string(pkg.Name), version.Version) {
 				totalCount++
+				if version.ID <= after {
+					continue
+				}
 				if len(versions) == limit {
+					// once we've reached the limit but are hitting more, we know theres more
+					hasMore = true
 					continue
 				}
 				versions = append(versions, version)
@@ -293,5 +304,5 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 		matchingPkgs = append(matchingPkgs, pkg)
 	}
 
-	return matchingPkgs, totalCount, nil
+	return matchingPkgs, totalCount, hasMore, nil
 }

@@ -60,6 +60,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 		mockDBStore,
 		inferenceService,
 		nil, // repoUpdater
+		nil, // repoStore
 		mockGitserverClient,
 		nil, // symbolsClient
 	)
@@ -156,6 +157,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 		mockDBStore,
 		inferenceService,
 		nil, // repoUpdater
+		nil, // repoStore
 		mockGitserverClient,
 		nil, // symbolsClient
 	)
@@ -260,6 +262,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 		mockDBStore,
 		inferenceService,
 		nil, // repoUpdater
+		nil, // repoStore
 		mockGitserverClient,
 		nil, // symbolsClient
 	)
@@ -353,6 +356,7 @@ func TestQueueIndexesInferred(t *testing.T) {
 		mockDBStore,
 		inferenceService,
 		nil, // repoUpdater
+		nil, // repoStore
 		mockGitserverClient,
 		nil, // symbolsClient
 	)
@@ -422,6 +426,7 @@ func TestQueueIndexesInferredTooLarge(t *testing.T) {
 		mockDBStore,
 		inferenceService,
 		nil, // repoUpdater
+		nil, // repoStore
 		mockGitserverClient,
 		nil, //
 	)
@@ -479,6 +484,7 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		mockDBStore,
 		inferenceService,
 		mockRepoUpdater, // repoUpdater
+		nil,             // repoStore
 		mockGitserverClient,
 		nil, //
 	)

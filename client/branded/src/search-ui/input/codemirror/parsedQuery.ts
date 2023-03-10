@@ -4,7 +4,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { ParseResult, parseSearchQuery, Node } from '@sourcegraph/shared/src/search/query/parser'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Token } from '@sourcegraph/shared/src/search/query/token'
+import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 
 export interface QueryTokens {
     patternType: SearchPatternType
@@ -117,4 +117,100 @@ export function parseInputAsQuery(initialParseOptions: ParseOptions): Extension 
             ]
         },
     })
+}
+
+/**
+ * Returns the parsed query and the token at the provided position.
+ * The list of tokens returned by this function is pre-processed to
+ * handle open strings better.
+ */
+export function getQueryInformation(
+    state: EditorState,
+    position: number
+): { parsedQuery: Node | null; tokens: Token[]; token: Token | undefined; input: string; position: number } {
+    const input = state.sliceDoc()
+    const queryTokens = collapseOpenFilterValues(tokens(state), input)
+
+    return {
+        parsedQuery: getParsedQuery(state),
+        tokens: queryTokens,
+        token: tokenAt(queryTokens, position),
+        input,
+        position,
+    }
+}
+
+/**
+ * Helper function to convert filter values that start with a quote but are not
+ * closed yet (e.g. author:"firstname lastna|) to a single filter token to
+ * prevent irrelevant suggestions.
+ */
+export function collapseOpenFilterValues(tokens: Token[], input: string): Token[] {
+    const result: Token[] = []
+    let openFilter: Filter | null = null
+    let hold: Token[] = []
+
+    function mergeFilter(filter: Filter, values: Token[]): Filter {
+        if (!filter.value?.value) {
+            // For simplicity but this should never occure
+            return filter
+        }
+        const end = values[values.length - 1]?.range.end ?? filter.value.range.end
+        return {
+            ...filter,
+            range: {
+                start: filter.range.start,
+                end,
+            },
+            value: {
+                ...filter.value,
+                range: {
+                    start: filter.value.range.start,
+                    end,
+                },
+                value:
+                    filter.value.value + values.map(token => input.slice(token.range.start, token.range.end)).join(''),
+            },
+        }
+    }
+
+    for (const token of tokens) {
+        switch (token.type) {
+            case 'filter':
+                {
+                    if (token.value?.value.startsWith('"') && !token.value.quoted) {
+                        openFilter = token
+                    } else {
+                        if (openFilter?.value) {
+                            result.push(mergeFilter(openFilter, hold))
+                            openFilter = null
+                            hold = []
+                        }
+                        result.push(token)
+                    }
+                }
+                break
+            case 'pattern':
+            case 'whitespace':
+                if (openFilter) {
+                    hold.push(token)
+                } else {
+                    result.push(token)
+                }
+                break
+            default:
+                if (openFilter?.value) {
+                    result.push(mergeFilter(openFilter, hold))
+                    openFilter = null
+                    hold = []
+                }
+                result.push(token)
+        }
+    }
+
+    if (openFilter?.value) {
+        result.push(mergeFilter(openFilter, hold))
+    }
+
+    return result
 }

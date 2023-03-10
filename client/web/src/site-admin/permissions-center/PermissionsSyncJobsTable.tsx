@@ -1,7 +1,8 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from 'react'
 
 import { ApolloError } from '@apollo/client/errors'
-import { mdiClose, mdiMapSearch, mdiReload } from '@mdi/js'
+import { mdiCancel, mdiClose, mdiMapSearch, mdiReload, mdiSecurity } from '@mdi/js'
+import classNames from 'classnames'
 import { noop } from 'lodash'
 
 import { useMutation } from '@sourcegraph/http-client'
@@ -17,12 +18,16 @@ import {
     PageSwitcher,
     Select,
     useDebounce,
+    useLocalStorage,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { ConnectionError, ConnectionLoading } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
 import {
+    CancelPermissionsSyncJobResult,
+    CancelPermissionsSyncJobResultMessage,
+    CancelPermissionsSyncJobVariables,
     PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
     PermissionsSyncJobsResult,
@@ -37,7 +42,12 @@ import {
 import { useURLSyncedState } from '../../hooks'
 import { IColumn, Table } from '../UserManagement/components/Table'
 
-import { PERMISSIONS_SYNC_JOBS_QUERY, TRIGGER_REPO_SYNC, TRIGGER_USER_SYNC } from './backend'
+import {
+    CANCEL_PERMISSIONS_SYNC_JOB,
+    PERMISSIONS_SYNC_JOBS_QUERY,
+    TRIGGER_REPO_SYNC,
+    TRIGGER_USER_SYNC,
+} from './backend'
 import {
     PermissionsSyncJobNumbers,
     PermissionsSyncJobReasonByline,
@@ -45,7 +55,7 @@ import {
     PermissionsSyncJobSubject,
 } from './PermissionsSyncJobNode'
 
-import styles from './PermissionsSyncJobsTable.module.scss'
+import styles from './styles.module.scss'
 
 interface Filters {
     reason: string
@@ -67,10 +77,17 @@ const DEFAULT_FILTERS = {
 }
 const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 5000
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps {
+    minimal?: boolean
+    userID?: string
+    repoID?: string
+}
 
 export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    minimal = false,
+    userID,
+    repoID,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('PermissionsSyncJobsTable')
@@ -78,6 +95,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
 
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const debouncedQuery = useDebounce(filters.query, 300)
+    const [polling, setPolling] = useLocalStorage<boolean>('polling_for_permissions_sync_jobs', true)
 
     const { connection, loading, startPolling, stopPolling, error, variables, ...paginationProps } =
         usePageSwitcherPagination<PermissionsSyncJobsResult, PermissionsSyncJobsVariables, PermissionsSyncJob>({
@@ -88,20 +106,25 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 state: stringToState(filters.state),
                 searchType: stringToSearchType(filters.searchType),
                 query: debouncedQuery,
+                userID,
+                repoID,
             } as PermissionsSyncJobsVariables,
             getConnection: ({ data }) => data?.permissionsSyncJobs || undefined,
-            options: { pollInterval: PERMISSIONS_SYNC_JOBS_POLL_INTERVAL },
+            // always do polling if minimal
+            options: { pollInterval: minimal ? PERMISSIONS_SYNC_JOBS_POLL_INTERVAL : undefined },
         })
 
-    const [polling, setPolling] = useState(true)
-    const togglePolling = useCallback(() => {
-        if (polling) {
-            stopPolling()
-        } else {
-            startPolling(PERMISSIONS_SYNC_JOBS_POLL_INTERVAL)
+    useEffect(() => {
+        if (minimal) {
+            return
         }
-        setPolling(!polling)
-    }, [polling, startPolling, stopPolling])
+
+        if (polling) {
+            startPolling(PERMISSIONS_SYNC_JOBS_POLL_INTERVAL)
+        } else {
+            stopPolling()
+        }
+    }, [polling, stopPolling, startPolling, minimal])
 
     const setReason = useCallback(
         (reasonGroup: PermissionsSyncJobReasonGroup | null) => setFilters({ reason: reasonGroup?.toString() || '' }),
@@ -125,10 +148,14 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     const [triggerRepoSync] = useMutation<ScheduleRepoPermissionsSyncResult, ScheduleRepoPermissionsSyncVariables>(
         TRIGGER_REPO_SYNC
     )
+    const [cancelSyncJob] = useMutation<CancelPermissionsSyncJobResult, CancelPermissionsSyncJobVariables>(
+        CANCEL_PERMISSIONS_SYNC_JOB
+    )
 
-    const triggerPermsSync = useCallback(
+    const onError = (error: ApolloError): void => setNotification({ text: error.message, isError: true })
+
+    const handleTriggerPermsSync = useCallback(
         ([job]: PermissionsSyncJob[]) => {
-            const onError = (error: ApolloError): void => setNotification({ text: error.message, isError: true })
             if (job.subject.__typename === 'Repository') {
                 triggerRepoSync({
                     variables: { repo: job.subject.id },
@@ -152,6 +179,45 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         [triggerUserSync, triggerRepoSync]
     )
 
+    const handleCancelSyncJob = useCallback(
+        ([syncJob]: PermissionsSyncJob[]) => {
+            cancelSyncJob({
+                variables: { job: syncJob.id },
+                onCompleted: ({ cancelPermissionsSyncJob }) =>
+                    setNotification({ text: prettyPrintCancelSyncJobMessage(cancelPermissionsSyncJob) }),
+                onError,
+            }).catch(
+                // noop here is used because an error is handled in `onError` option of `useMutation` above.
+                noop
+            )
+        },
+        [cancelSyncJob]
+    )
+
+    if (minimal) {
+        return (
+            <>
+                {error && <ConnectionError errors={[error.message]} />}
+                {!connection && <ConnectionLoading />}
+                {connection?.nodes?.length === 0 && <EmptyList />}
+                {!!connection?.nodes?.length && (
+                    <Table<PermissionsSyncJob>
+                        columns={TableColumns}
+                        getRowId={node => node.id}
+                        data={connection.nodes}
+                        rowClassName={styles.tableRow}
+                    />
+                )}
+                <PageSwitcher
+                    {...paginationProps}
+                    className="mt-4"
+                    totalCount={connection?.totalCount ?? null}
+                    totalLabel="permissions sync jobs"
+                />
+            </>
+        )
+    }
+
     return (
         <div>
             <PageTitle title="Permissions - Admin" />
@@ -166,7 +232,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                     </>
                 }
                 actions={
-                    <Button variant="secondary" onClick={togglePolling}>
+                    <Button variant="secondary" onClick={() => setPolling(oldValue => !oldValue)}>
                         {polling ? 'Pause polling' : 'Resume polling'}
                     </Button>
                 }
@@ -183,7 +249,6 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                         <PermissionsSyncJobSearchPane filters={filters} setFilters={setFilters} />
                     </div>
                 )}
-                {connection?.nodes?.length === 0 && <EmptyList />}
                 {notification && (
                     <Alert
                         className="mt-2 d-flex justify-content-between align-items-center"
@@ -195,18 +260,37 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                         </Button>
                     </Alert>
                 )}
+                {connection?.nodes?.length === 0 && <EmptyList />}
                 {!!connection?.nodes?.length && (
                     <Table<PermissionsSyncJob>
                         columns={TableColumns}
                         getRowId={node => node.id}
                         data={connection.nodes}
+                        rowClassName={styles.tableRow}
                         actions={[
                             {
                                 key: 'Re-trigger job',
                                 label: 'Re-trigger job',
                                 icon: mdiReload,
-                                onClick: triggerPermsSync,
+                                onClick: handleTriggerPermsSync,
                                 condition: ([node]) => finalState(node.state),
+                            },
+                            {
+                                key: 'Cancel job',
+                                label: 'Cancel job',
+                                icon: mdiCancel,
+                                onClick: handleCancelSyncJob,
+                                condition: ([node]) => node.state === PermissionsSyncJobState.QUEUED,
+                            },
+                            {
+                                key: 'View Permissions',
+                                label: 'View Permissions',
+                                icon: mdiSecurity,
+                                href: ([node]) =>
+                                    node.subject.__typename === 'Repository'
+                                        ? node.subject.url + '/-/settings/permissions'
+                                        : `/users/${node.subject.username}/settings/permissions`,
+                                target: '_blank',
                             },
                         ]}
                     />
@@ -232,11 +316,13 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
         key: 'Name',
         header: 'Name',
         render: (node: PermissionsSyncJob) => <PermissionsSyncJobSubject job={node} />,
+        cellClassName: classNames(styles.subjectContainer, 'pr-1'),
     },
     {
         key: 'Reason',
         header: 'Reason',
         render: (node: PermissionsSyncJob) => <PermissionsSyncJobReasonByline job={node} />,
+        cellClassName: classNames(styles.reasonGroupContainer, 'pr-1'),
     },
     {
         key: 'Added',
@@ -382,3 +468,14 @@ const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
 
 const finalState = (state: PermissionsSyncJobState): boolean =>
     state !== PermissionsSyncJobState.QUEUED && state !== PermissionsSyncJobState.PROCESSING
+
+const prettyPrintCancelSyncJobMessage = (message: CancelPermissionsSyncJobResultMessage): string => {
+    switch (message) {
+        case CancelPermissionsSyncJobResultMessage.SUCCESS:
+            return 'Permissions sync job canceled.'
+        case CancelPermissionsSyncJobResultMessage.NOT_FOUND:
+            return 'Permissions sync job is already dequeued and cannot be canceled.'
+        case CancelPermissionsSyncJobResultMessage.ERROR:
+            return 'Error during permissions sync job cancelling.'
+    }
+}

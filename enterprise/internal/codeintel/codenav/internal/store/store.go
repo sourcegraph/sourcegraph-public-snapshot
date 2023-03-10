@@ -10,7 +10,6 @@ import (
 
 // Store provides the interface for codenav storage.
 type Store interface {
-	GetUnsafeDB() database.DB
 }
 
 // store manages the codenav store.
@@ -27,10 +26,4 @@ func New(observationCtx *observation.Context, db database.DB) Store {
 		logger:     logger.Scoped("codenav.store", ""),
 		operations: newOperations(observationCtx),
 	}
-}
-
-// GetUnsafeDB returns the underlying database handle. This is used by the
-// resolvers that have the old convention of using the database handle directly.
-func (s *store) GetUnsafeDB() database.DB {
-	return database.NewDBWith(s.logger, s.db)
 }

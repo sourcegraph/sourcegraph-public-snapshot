@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/packagefilters"
@@ -13,8 +14,9 @@ import (
 )
 
 type packagesFilterApplicatorJob struct {
-	store      store.Store
-	operations *operations
+	store       store.Store
+	extsvcStore ExternalServiceStore
+	operations  *operations
 }
 
 func NewPackagesFilterApplicator(
@@ -22,8 +24,9 @@ func NewPackagesFilterApplicator(
 	db database.DB,
 ) goroutine.BackgroundRoutine {
 	job := packagesFilterApplicatorJob{
-		store:      store.New(obsctx, db),
-		operations: newOperations(obsctx),
+		store:       store.New(obsctx, db),
+		extsvcStore: db.ExternalServices(),
+		operations:  newOperations(obsctx),
 	}
 
 	return goroutine.NewPeriodicGoroutine(
@@ -42,7 +45,7 @@ func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {
 		return errors.Wrap(err, "failed to check whether package repo filters need applying to anything")
 	}
 
-	filters, err := j.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{})
+	filters, _, err := j.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{})
 	if err != nil {
 		return errors.Wrap(err, "failed to list package repo filters")
 	}
@@ -59,7 +62,7 @@ func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {
 	)
 
 	for lastID := 0; ; {
-		pkgs, _, err := j.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
+		pkgs, _, _, err := j.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
 			After:          lastID,
 			Limit:          1000,
 			IncludeBlocked: true,
@@ -93,5 +96,23 @@ func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {
 	j.operations.versionsUpdated.Add(float64(totalVersionsUpdated))
 	j.operations.packagesUpdated.Add(float64(totalPkgsUpdated))
 
-	return err
+	// now we want to mark all package repo extsvcs to sync so any (un)blocked pacakge repo references will be picked up
+
+	nextSyncAt := time.Now()
+
+	extsvcs, err := j.extsvcStore.List(ctx, database.ExternalServicesListOptions{
+		Kinds: []string{extsvc.KindJVMPackages, extsvc.KindNpmPackages, extsvc.KindGoPackages, extsvc.KindRustPackages, extsvc.KindRubyPackages, extsvc.KindPythonPackages},
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to list package repo external services")
+	}
+
+	for _, extsvc := range extsvcs {
+		extsvc.NextSyncAt = nextSyncAt
+	}
+	if err := j.extsvcStore.Upsert(ctx, extsvcs...); err != nil {
+		return errors.Wrap(err, "failed to update next_sync_at for package repo external services")
+	}
+
+	return nil
 }

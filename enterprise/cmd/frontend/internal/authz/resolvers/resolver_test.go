@@ -13,6 +13,7 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
@@ -187,6 +188,18 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			perms := edb.NewStrictMockPermsStore()
 			perms.TransactFunc.SetDefaultReturn(perms, nil)
 			perms.DoneFunc.SetDefaultReturn(nil)
+			perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, ids []authz.UserIDWithExternalAccountID) error {
+				expUserIDs := maps.Keys(test.expUserIDs)
+				userIDs := make([]int32, len(ids))
+				for i, u := range ids {
+					userIDs[i] = u.UserID
+				}
+				if diff := cmp.Diff(expUserIDs, userIDs); diff != "" {
+					return errors.Errorf("userIDs expected: %v, got: %v", expUserIDs, userIDs)
+				}
+
+				return nil
+			})
 			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 				ids := p.UserIDs
 				if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
@@ -667,10 +680,10 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		r := &Resolver{db: db, logger: logger}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx, nil)
+		result, err := r.CancelPermissionsSyncJob(ctx, nil)
 
 		require.EqualError(t, err, auth.ErrMustBeSiteAdmin.Error())
-		require.Nil(t, result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageError, result)
 	})
 
 	t.Run("invalid sync job ID", func(t *testing.T) {
@@ -690,7 +703,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		)
 
 		require.Error(t, err)
-		require.Nil(t, result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageError, result)
 	})
 
 	t.Run("sync job not found", func(t *testing.T) {
@@ -715,7 +728,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		)
 
 		require.NoError(t, err)
-		require.Equal(t, "No job that can be canceled found.", *result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageNotFound, result)
 	})
 
 	t.Run("SQL error", func(t *testing.T) {
@@ -741,7 +754,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		)
 
 		require.EqualError(t, err, errorText)
-		require.Nil(t, result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageError, result)
 	})
 
 	t.Run("sync job successfully cancelled", func(t *testing.T) {
@@ -765,7 +778,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 			},
 		)
 
-		require.Equal(t, "Permissions sync job canceled", *result)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageSuccess, result)
 		require.NoError(t, err)
 	})
 }
@@ -801,7 +814,7 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 			`, marshalPermissionsSyncJobID(1)),
 			ExpectedResult: `
 				{
-					"cancelPermissionsSyncJob": "Permissions sync job canceled"
+					"cancelPermissionsSyncJob": "SUCCESS"
 				}
 			`,
 		})
@@ -820,7 +833,7 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 			`, marshalPermissionsSyncJobID(42)),
 			ExpectedResult: `
 				{
-					"cancelPermissionsSyncJob": "No job that can be canceled found."
+					"cancelPermissionsSyncJob": "NOT_FOUND"
 				}
 			`,
 		})

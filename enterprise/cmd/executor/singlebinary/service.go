@@ -28,7 +28,7 @@ func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, cfg env.Config) error {
 	conf := cfg.(*config.Config)
 	// Always use the in-memory secret.
-	conf.FrontendAuthorizationToken = confdefaults.SingleProgramInMemoryExecutorPassword
+	conf.FrontendAuthorizationToken = confdefaults.AppInMemoryExecutorPassword
 
 	// TODO(sqs) HACK(sqs): run executors for both queues
 	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {

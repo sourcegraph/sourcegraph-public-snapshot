@@ -11,6 +11,7 @@ import { isPackagesEnabled } from './flags'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const analyticsGroup: SiteAdminSideBarGroup = {
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     header: {
         label: 'Analytics',
         icon: ChartLineVariantIcon,
@@ -70,11 +71,11 @@ export const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'Global settings',
             to: '/site-admin/global-settings',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Feature flags',
             to: '/site-admin/feature-flags',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -139,9 +140,10 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         label: 'Maintenance',
         icon: MonitorStarIcon,
     },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
-            label: window.context.sourcegraphAppMode ? 'Overview' : 'Updates',
+            label: 'Updates',
             to: '/site-admin/updates',
         },
         {
@@ -151,7 +153,6 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Pings',
             to: '/site-admin/pings',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Report a bug',

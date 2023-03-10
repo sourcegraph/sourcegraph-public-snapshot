@@ -17,6 +17,8 @@ export const setBlobEditView = (editView: EditorView | null): void => {
     useBlobUIStore.setState({ editorView: editView })
 }
 
+export const getBlobEditView = (): EditorView | null => useBlobUIStore.getState()?.editorView
+
 // Public blob UI API
 export const scrollIntoView = (target: SelectedLineRange): void => {
     const { editorView } = useBlobUIStore.getState()

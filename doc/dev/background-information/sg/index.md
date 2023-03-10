@@ -198,9 +198,9 @@ commands:
       docker run \
       --rm \
       -e "GITSERVER_EXTERNAL_ADDR=${GITSERVER_EXTERNAL_ADDR}" \
-      -e "GITSERVER_ADDR=${HOSTNAME}" \
-      -e 'SRC_FRONTEND_INTERNAL=host.docker.internal:${SRC_FRONTEND_INTERNAL##*:}' \
-      -e "SRC_PROF_HTTP=${SRC_PROF_HTTP}" \
+      -e "GITSERVER_ADDR=0.0.0.0:${HOSTNAME##*:}" \
+      -e "SRC_FRONTEND_INTERNAL=host.docker.internal:${SRC_FRONTEND_INTERNAL##*:}" \
+      -e "SRC_PROF_HTTP=0.0.0.0:${SRC_PROF_HTTP##*:}" \
       -e "HOSTNAME=${HOSTNAME}" \
       -p ${GITSERVER_ADDR}:${HOSTNAME##*:} \
       -p ${SRC_PROF_HTTP}:${SRC_PROF_HTTP##*:} \
@@ -216,9 +216,9 @@ commands:
       docker run \
       --rm \
       -e "GITSERVER_EXTERNAL_ADDR=${GITSERVER_EXTERNAL_ADDR}" \
-      -e "GITSERVER_ADDR=${HOSTNAME}" \
-      -e 'SRC_FRONTEND_INTERNAL=host.docker.internal:3090' \
-      -e "SRC_PROF_HTTP=${SRC_PROF_HTTP}" \
+      -e "GITSERVER_ADDR=0.0.0.0:${HOSTNAME##*:}" \
+      -e "SRC_FRONTEND_INTERNAL=host.docker.internal:${SRC_FRONTEND_INTERNAL##*:}" \
+      -e "SRC_PROF_HTTP=0.0.0.0:${SRC_PROF_HTTP##*:}" \
       -e "HOSTNAME=${HOSTNAME}" \
       -p ${GITSERVER_ADDR}:${HOSTNAME##*:} \
       -p ${SRC_PROF_HTTP}:${SRC_PROF_HTTP##*:} \
