@@ -27,14 +27,6 @@ export const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({
     onRemove,
 }) => (
     <>
-        <div className={styles.jobHeader}>
-            <H3 className="mb-0">Job #{jobNumber}</H3>
-            {!readOnly && (
-                <Button variant="icon" className="ml-2 text-danger" aria-label="Remove" onClick={onRemove}>
-                    <Icon svgPath={mdiClose} aria-hidden={true} />
-                </Button>
-            )}
-        </div>
         <ul className={styles.jobContent}>
             <IndexJobLabel label="Root" tooltip="The path relative to the repository root where the indexer runs.">
                 <Input

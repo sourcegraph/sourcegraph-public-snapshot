@@ -1,4 +1,25 @@
-.job {
+.job-header {
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    margin-top: -0.25rem;
+    margin-left: -0.25rem;
+}
+
+.collapse-container {
+    width: 100%;
+}
+
+.collapse-header,
+.collapse-content {
     padding: 1rem;
-    margin-bottom: 1rem;
+}
+
+.collapse-header {
+    border-bottom: 0;
+}
+
+.collapse-content {
+    border-top: 0;
+    padding: 0 1rem 1rem;
 }

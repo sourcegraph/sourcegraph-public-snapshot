@@ -1,12 +1,24 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiPlus } from '@mdi/js'
+import { mdiPlus, mdiClose } from '@mdi/js'
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
 import { cloneDeep, uniqueId } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
-import { BeforeUnloadPrompt, Button, Container, Form, Icon, LoadingSpinner, useDeepMemo } from '@sourcegraph/wildcard'
+import {
+    BeforeUnloadPrompt,
+    Button,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    Container,
+    Form,
+    H3,
+    Icon,
+    LoadingSpinner,
+    useDeepMemo,
+} from '@sourcegraph/wildcard'
 
 import schema from '../../schema.json'
 import { ConfigurationInferButton } from '../ConfigurationInferButton'
@@ -159,21 +171,59 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
                     ) : (
                         <>
                             {formData.index_jobs.map((job, index) => (
-                                <Container id={job.meta.id} key={job.meta.id} className={styles.job}>
-                                    <IndexJobNode
-                                        job={job}
-                                        jobNumber={index + 1}
-                                        readOnly={readOnly}
-                                        onChange={getChangeHandler(job.meta.id)}
-                                        onRemove={getRemoveHandler(job.meta.id)}
-                                    />
+                                <div
+                                    className="mb-3 d-flex justify-content-between align-items-start"
+                                    key={job.meta.id}
+                                >
+                                    <div className={styles.collapseContainer}>
+                                        <Collapse>
+                                            <CollapseHeader
+                                                className={styles.collapseHeader}
+                                                as={Container}
+                                                role="button"
+                                            >
+                                                <div className={styles.jobHeader}>
+                                                    <H3 className="mb-0">Job #{index + 1}</H3>
+                                                </div>
+                                            </CollapseHeader>
+                                            <CollapsePanel className="w-100">
+                                                <Container id={job.meta.id} className={styles.collapseContent}>
+                                                    <IndexJobNode
+                                                        job={job}
+                                                        jobNumber={index + 1}
+                                                        readOnly={readOnly}
+                                                        onChange={getChangeHandler(job.meta.id)}
+                                                        onRemove={getRemoveHandler(job.meta.id)}
+                                                    />
+                                                    {!readOnly && (
+                                                        <Button
+                                                            variant="secondary"
+                                                            className="d-block mt-3 ml-auto"
+                                                            onClick={addJob}
+                                                        >
+                                                            <Icon
+                                                                svgPath={mdiPlus}
+                                                                aria-hidden={true}
+                                                                className="mr-1"
+                                                            />
+                                                            Add job
+                                                        </Button>
+                                                    )}
+                                                </Container>
+                                            </CollapsePanel>
+                                        </Collapse>
+                                    </div>
                                     {!readOnly && (
-                                        <Button variant="secondary" className="d-block mt-3 ml-auto" onClick={addJob}>
-                                            <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
-                                            Add job
+                                        <Button
+                                            variant="icon"
+                                            className="ml-2 mt-3 text-danger"
+                                            aria-label="Remove"
+                                            onClick={getRemoveHandler(job.meta.id)}
+                                        >
+                                            <Icon svgPath={mdiClose} aria-hidden={true} />
                                         </Button>
                                     )}
-                                </Container>
+                                </div>
                             ))}
                         </>
                     )}
