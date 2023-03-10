@@ -42,6 +42,10 @@ func calcNotifications(clientVersionString string, notifications []*schema.AppNo
 	}
 	var results []Notification
 	for _, notification := range notifications {
+		if len(strings.Split(notification.Key, "-")) < 4 {
+			// TODO(app): this is a poor/approximate check for "YYYY-MM-DD-" prefix that we mandate
+			continue
+		}
 		if notification.VersionMin != "" && notification.VersionMax != "" {
 			versionMin, err := semver.NewVersion(notification.VersionMin)
 			if err != nil {
