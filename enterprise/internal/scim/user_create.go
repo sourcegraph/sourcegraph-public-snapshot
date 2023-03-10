@@ -10,13 +10,19 @@ import (
 	scimerrors "github.com/elimity-com/scim/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
+
+// Reusing the env variable that controls email invites because the intent is the same as the welcome email
+var (
+	disableEmailInvites, _ = strconv.ParseBool(env.Get("DISABLE_EMAIL_INVITES", "false", "Disable email invitations entirely."))
 )
 
 // Create stores given attributes. Returns a resource with the attributes that are stored and a (new) unique identifier.
@@ -88,11 +94,10 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 		}
 	}
 	var now = time.Now()
-	// Send a welcome email in the background.
-	url := globals.ExternalURL().String()
-	goroutine.Go(func() {
-		sendWelcomeEmail(primaryEmail, url)
-	})
+	// Attempt to send welcome email in the background.
+	//goroutine.Go(func() {
+	sendNewUserEmail(primaryEmail, globals.ExternalURL().String())
+	//})
 	return scim.Resource{
 		ID:         strconv.Itoa(int(user.ID)),
 		ExternalID: getOptionalExternalID(attributes),
@@ -174,16 +179,22 @@ func containsErrCannotCreateUserError(err error) (database.ErrCannotCreateUser, 
 	return database.ErrCannotCreateUser{}, false
 }
 
-func sendWelcomeEmail(to, url string) error {
-	return txemail.Send(context.Background(), "user_welcome", txemail.Message{
-		To:       []string{to},
-		Template: emailTemplateEmailWelcomeSCIM,
-		Data: struct {
-			URL string
-		}{
-			URL: url,
-		},
-	})
+func sendNewUserEmail(email, siteURL string) error {
+	if email != "" && conf.CanSendEmail() {
+		if disableEmailInvites {
+			return nil
+		}
+		return txemail.Send(context.Background(), "user_welcome", txemail.Message{
+			To:       []string{email},
+			Template: emailTemplateEmailWelcomeSCIM,
+			Data: struct {
+				URL string
+			}{
+				URL: siteURL,
+			},
+		})
+	}
+	return nil
 }
 
 var emailTemplateEmailWelcomeSCIM = txemail.MustValidate(txtypes.Templates{

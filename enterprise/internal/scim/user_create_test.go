@@ -8,6 +8,7 @@ import (
 	"github.com/elimity-com/scim"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -75,6 +76,8 @@ func TestUserResourceHandler_Create(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			conf.Mock(&conf.Unified{})
+			defer conf.Mock(nil)
 			userRes, err := userResourceHandler.Create(&http.Request{}, createUserResourceAttributes(tc.username))
 			newUser, _ := db.Users().GetByID(context.Background(), 2)
 			tc.testFunc(t, newUser.Username, userRes.Attributes[AttrUserName].(string), err)
