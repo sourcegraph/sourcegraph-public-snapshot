@@ -50,6 +50,7 @@ export interface TemporarySettingsSchema {
         author: string
     }
     'search.results.collapseSmartSearch': boolean
+    'search.results.collapseUnownedResultsAlert': boolean
     'search.input.recentSearches': RecentSearch[]
     'search.input.usedInlineHistory': boolean
     // This is a temporary setting to allow users to easily switch
