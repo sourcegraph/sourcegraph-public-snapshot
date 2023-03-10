@@ -1,6 +1,8 @@
 import { ANNOTATION_LOCATION, ANNOTATION_ORIGIN_LOCATION, ApiEntity } from '@backstage/catalog-model'
 import { CatalogProcessorEntityResult, DeferredEntity, parseEntityYaml } from '@backstage/plugin-catalog-backend'
+
 import { SearchResult } from '../client'
+
 import type { EntityType } from './providers'
 
 export type ParserFunction = (results: SearchResult[], providerName: string) => DeferredEntity[]

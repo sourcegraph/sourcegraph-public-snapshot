@@ -1,7 +1,8 @@
-import { describe, expect, test } from '@jest/globals'
-import { SourcegraphClient, SourcegraphService, BaseClient } from './SourcegraphClient'
-import { SearchQuery, SearchRepoQuery, SearchResult, UserQuery } from './Query'
 import { createMockClient } from '@apollo/client/testing'
+import { describe, expect, test } from '@jest/globals'
+
+import { SearchQuery, SearchRepoQuery, SearchResult, UserQuery } from './Query'
+import { SourcegraphClient, SourcegraphService, BaseClient } from './SourcegraphClient'
 
 describe('SourcegraphService', () => {
     test('current user query', async () => {

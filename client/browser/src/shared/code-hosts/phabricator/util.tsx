@@ -3,9 +3,8 @@ import { map } from 'rxjs/operators'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { getRepoDetailsFromCallsign, getRepoDetailsFromRevisionID, QueryConduitHelper } from './backend'
-
 import { ChangeState, DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
+import { getRepoDetailsFromCallsign, getRepoDetailsFromRevisionID, QueryConduitHelper } from './backend'
 
 const TAG_PATTERN = /r([\dA-z]+)([\da-f]{40})/
 function matchPageTag(): RegExpExecArray | null {

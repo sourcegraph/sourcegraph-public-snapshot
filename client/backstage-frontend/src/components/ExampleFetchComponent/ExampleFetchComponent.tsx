@@ -1,6 +1,7 @@
 import React from 'react'
-import { makeStyles } from '@material-ui/core/styles'
+
 import { Table, TableColumn, Progress } from '@backstage/core-components'
+import { makeStyles } from '@material-ui/core/styles'
 import Alert from '@material-ui/lab/Alert'
 import useAsync from 'react-use/lib/useAsync'
 

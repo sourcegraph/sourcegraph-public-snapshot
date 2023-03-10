@@ -1,8 +1,8 @@
 import { existsSync } from 'fs'
 import path from 'path'
-import { nodeExternalsPlugin } from 'esbuild-node-externals'
 
 import * as esbuild from 'esbuild'
+import { nodeExternalsPlugin } from 'esbuild-node-externals'
 import { rm } from 'shelljs'
 
 import { stylePlugin, workerPlugin, buildTimerPlugin, WORKSPACES_PATH } from '@sourcegraph/build-config'

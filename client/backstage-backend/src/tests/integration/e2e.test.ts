@@ -1,4 +1,5 @@
 import { describe, expect, test } from '@jest/globals'
+
 import { createService, Config, SourcegraphService } from '../../client/SourcegraphClient'
 
 const sgConf: Config = {
