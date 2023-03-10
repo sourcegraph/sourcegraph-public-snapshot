@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/cespare/xxhash/v2"
-
 	"github.com/sourcegraph/go-rendezvous"
 	"github.com/sourcegraph/log"
 

@@ -7,11 +7,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
-	"testing"
 	"time"
 
 	"github.com/gobwas/glob"
@@ -19,17 +17,14 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -44,9 +39,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func defaultEndpoints() *endpoint.Map {
+	return endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+		return conns.Symbols
+	})
+}
+
 func LoadConfig() {
+	cacheOptions := []TTLCacheOption[string, connAndErr]{
+		WithExpirationTime[string, connAndErr](10 * time.Minute),
+		WithReapInterval[string, connAndErr](1 * time.Minute),
+		WithExpirationFunc(closeGRPCConnection),
+	}
+
+	cache := newTTLCache[string, connAndErr](newGRPCConnection, cacheOptions...)
+	cache.StartReaper()
+
 	DefaultClient = &Client{
-		ConnectionSource:    &connectionSourceFromSiteConfig{},
+		Endpoints:           defaultEndpoints(),
+		gRPCConnCache:       cache,
 		HTTPClient:          defaultDoer,
 		HTTPLimiter:         limiter.New(500),
 		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
@@ -67,8 +78,10 @@ var defaultDoer = func() httpcli.Doer {
 
 // Client is a symbols service client.
 type Client struct {
-	// ConnectionSource provides the connection to use for the symbols service for a given repository.
-	ConnectionSource ConnectionSource
+	// Endpoints to symbols service.
+	Endpoints *endpoint.Map
+
+	gRPCConnCache *TTLCache[string, connAndErr]
 
 	// HTTP client to use
 	HTTPClient httpcli.Doer
@@ -124,7 +137,7 @@ func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_
 func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.RepoName) (map[string][]string, error) {
 	// TODO@ggilmore: This address doesn't need the repository name for anything order than dialing
 	// an arbitrary symbols host. We should remove this requirement from this method.
-	conn, err := c.ConnectionSource.GetConn(string(repository))
+	conn, err := c.getGRPCConn(string(repository))
 	if err != nil {
 		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
 	}
@@ -229,7 +242,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 }
 
 func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {
-	conn, err := c.ConnectionSource.GetConn(string(args.Repo))
+	conn, err := c.getGRPCConn(string(args.Repo))
 	if err != nil {
 		return search.SymbolsResponse{}, errors.Wrap(err, "getting gRPC connection to symbols server")
 	}
@@ -297,7 +310,7 @@ func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) 
 }
 
 func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
-	conn, err := c.ConnectionSource.GetConn(path.Repo)
+	conn, err := c.getGRPCConn(path.Repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
 	}
@@ -398,7 +411,7 @@ func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint)
 }
 
 func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
-	conn, err := c.ConnectionSource.GetConn(args.Repo)
+	conn, err := c.getGRPCConn(args.Repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
 	}
@@ -470,7 +483,7 @@ func (c *Client) httpPost(
 		span.Finish()
 	}()
 
-	symbolsURL, err := c.ConnectionSource.GetAddress(string(repo))
+	symbolsURL, err := c.Endpoints.Get(string(repo))
 	if err != nil {
 		return nil, err
 	}
@@ -504,130 +517,38 @@ func (c *Client) httpPost(
 	return c.HTTPClient.Do(req)
 }
 
-// ConnectionSource is an interface for getting the address of the symbols service that handles a
-// given repository.
-type ConnectionSource interface {
-	// GetAddress returns the address of the symbols service that handles the named repository.
-	GetAddress(key string) (string, error)
-
-	// GetConn returns a gRPC connection to the symbols service that handles the named repository.
-	GetConn(key string) (*grpc.ClientConn, error)
-}
-
-// connectionSourceFromSiteConfig is a ConnectionSource that gets its configuration from the site
-// configuration.
-//
-// connectionsSourceFromSiteConfig manages the lifecycle of gRPC connections to symbols servers.
-// Whenever the set of symbols servers changes, it handles the transition gracefully by dialing new
-// gRPC connections to the new servers and closing old connections to the old servers.
-//
-// This implementation is thread-safe. However, it is possible that the set of symbols servers will change
-// between the time that an address or connection is retrieved and the time that it is used. Callers
-// should be prepared to handle this common case.
-type connectionSourceFromSiteConfig struct {
-	initializeOnce sync.Once
-	connections    atomic.Pointer[connectionsAndEndpoints]
-}
-
-func (s *connectionSourceFromSiteConfig) GetAddress(key string) (string, error) {
-	s.ensureInitialized()
-
-	connections := s.connections.Load()
-	return connections.Get(key)
-}
-
-func (s *connectionSourceFromSiteConfig) GetConn(key string) (conn *grpc.ClientConn, err error) {
-	s.ensureInitialized()
-
-	connections := s.connections.Load()
-	return connections.GetConn(key)
-}
-
-func (s *connectionSourceFromSiteConfig) ensureInitialized() {
-	s.initializeOnce.Do(func() {
-		// This ensures that the zero value of connectionSourceFromSiteConfig
-		// is always valid.
-		s.connections.Store(&connectionsAndEndpoints{})
-
-		conf.Watch(func() {
-			configuration := conf.Get()
-			if configuration == nil {
-				return
-			}
-
-			nextAddresses := configuration.ServiceConnectionConfig.Symbols
-			s.update(nextAddresses)
-		})
-	})
-}
-
-func (s *connectionSourceFromSiteConfig) update(newAddresses []string) {
-	oldConnections := s.connections.Load()
-	if oldConnections == nil {
-		oldConnections = &connectionsAndEndpoints{}
-	}
-
-	oldAddresses := maps.Keys(oldConnections.conns)
-
-	sort.Strings(oldAddresses)
-	sort.Strings(newAddresses)
-
-	if slices.Equal(oldAddresses, newAddresses) {
-		// The addresses are the same, so we don't need
-		// to do any work.
-		return
-	}
-
-	// The addresses are different, so we need to dial new
-	// gRPC connections and close the old ones.
-
-	newEndpointMap := endpoint.Static(newAddresses...)
-	newGRPCConnections := make(map[string]connAndErr, len(newAddresses))
-
-	for _, address := range newAddresses {
-		u, err := url.Parse(address)
-		if err != nil {
-			newGRPCConnections[address] = connAndErr{dialErr: errors.Wrapf(err, "parsing address %q", address)}
-			continue
-		}
-
-		conn, err := defaults.Dial(u.Host)
-		newGRPCConnections[address] = connAndErr{conn: conn, dialErr: err}
-	}
-
-	s.connections.Store(&connectionsAndEndpoints{
-		Map:   newEndpointMap,
-		conns: newGRPCConnections,
-	})
-
-	for _, ce := range oldConnections.conns {
-		if ce.dialErr != nil {
-			_ = ce.conn.Close()
-		}
-	}
-}
-
-type connectionsAndEndpoints struct {
-	*endpoint.Map
-
-	// conns is a map from addresses to their associated gRPC connection
-	// and error. The error is non-nil if the connection failed to
-	// be established.
-	conns map[string]connAndErr
-}
-
-func (s *connectionsAndEndpoints) GetConn(key string) (conn *grpc.ClientConn, err error) {
-	address, err := s.Map.Get(key)
+func (c *Client) getGRPCConn(repo string) (*grpc.ClientConn, error) {
+	address, err := c.Endpoints.Get(repo)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to lookup address for key %q", key)
+		return nil, errors.Wrapf(err, "getting symbols server address for repo %q", repo)
 	}
 
-	ce, ok := s.conns[address]
-	if !ok {
-		return nil, errors.Errorf("no GRPC connection entry for address %q", address)
+	connWithErr := c.gRPCConnCache.Get(address)
+	return connWithErr.conn, connWithErr.dialErr
+}
+
+func newGRPCConnection(address string) connAndErr {
+	u, err := url.Parse(address)
+	if err != nil {
+		return connAndErr{
+			dialErr: errors.Wrapf(err, "parsing address %q", address),
+		}
 	}
 
-	return ce.conn, ce.dialErr
+	gRPCConn, err := defaults.Dial(u.Host)
+	if err != nil {
+		return connAndErr{
+			dialErr: errors.Wrapf(err, "dialing gRPC connection to %q", address),
+		}
+	}
+
+	return connAndErr{conn: gRPCConn}
+}
+
+func closeGRPCConnection(_ string, conn connAndErr) {
+	if conn.dialErr != nil {
+		_ = conn.conn.Close()
+	}
 }
 
 // connAndErr is a gRPC connection and its associated error. The error is
@@ -641,45 +562,231 @@ type connAndErr struct {
 	dialErr error
 }
 
-type testConnectionSource struct {
-	address  string
-	grpcConn *grpc.ClientConn
+// TTLCacheOption is a function that configures a TTLCache.
+type TTLCacheOption[K comparable, V any] func(*TTLCache[K, V])
+
+// WithReapInterval sets the interval at which the cache will reap expired entries.
+func WithReapInterval[K comparable, V any](interval time.Duration) TTLCacheOption[K, V] {
+	return func(c *TTLCache[K, V]) {
+		c.reapInterval = interval
+	}
 }
 
-// NewTestConnectionSource returns a ConnectionSource that always returns the given address
-// - suitable for use in tests.
-func NewTestConnectionSource(t *testing.T, address string) ConnectionSource {
-	t.Helper()
+// WithExpirationTime sets the expiration time for entries in the cache.
+func WithExpirationTime[K comparable, V any](expiration time.Duration) TTLCacheOption[K, V] {
+	return func(c *TTLCache[K, V]) {
+		c.expirationTime = expiration
+	}
+}
 
-	u, err := url.Parse(address)
-	if err != nil {
-		t.Fatalf("parsing address %q: %v", address, err)
+// WithExpirationFunc sets the callback to be called when an entry expires.
+func WithExpirationFunc[K comparable, V any](onExpiration func(K, V)) TTLCacheOption[K, V] {
+	return func(c *TTLCache[K, V]) {
+		c.expirationFunc = onExpiration
+	}
+}
+
+// withClock sets the clock to be used by the cache. This is useful for testing.
+func withClock[K comparable, V any](clock clock) TTLCacheOption[K, V] {
+	return func(c *TTLCache[K, V]) {
+		c.clock = clock
+	}
+}
+
+// newTTLCache returns a new TTLCache with the provided newEntryFunc and options.
+//
+// newEntryFunc is the routine that runs when a cache miss occurs. The returned value is stored
+// in the cache.
+//
+// By default, the cache will reap expired entries every minute and entries will
+// expire after 10 minutes.
+func newTTLCache[K comparable, V any](newEntryFunc func(K) V, options ...TTLCacheOption[K, V]) *TTLCache[K, V] {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	cache := TTLCache[K, V]{
+		reapContext:    ctx,
+		reapCancelFunc: cancel,
+
+		reapInterval:   1 * time.Minute,
+		expirationTime: 10 * time.Minute,
+
+		newEntryFunc:   newEntryFunc,
+		expirationFunc: func(k K, v V) {},
+
+		entries: make(map[K]*ttlEntry[V]),
+
+		clock: productionClock{},
 	}
 
-	conn, err := grpc.Dial(u.Host, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		t.Fatalf("dialing gRPC connection to %q: %v", u.Host, err)
+	for _, option := range options {
+		option(&cache)
 	}
 
-	t.Cleanup(func() {
-		_ = conn.Close()
+	return &cache
+}
+
+// TTLCache is a cache that expires entries after a given expiration time.
+type TTLCache[K comparable, V any] struct {
+	reapOnce sync.Once // reapOnce ensures that the background reaper is only started once.
+
+	reapContext    context.Context    // reapContext is the context used for the background reaper.
+	reapCancelFunc context.CancelFunc // reapCancelFunc is the cancel function for reapContext.
+
+	reapInterval   time.Duration // reapInterval is the interval at which the cache will reap expired entries.
+	expirationTime time.Duration // expirationTime is the expiration time for entries in the cache.
+
+	newEntryFunc   func(K) V  // newEntryFunc is the routine that runs when a cache miss occurs.
+	expirationFunc func(K, V) // expirationFunc is the callback to be called when an entry expires in the cache.
+
+	mu      sync.RWMutex
+	entries map[K]*ttlEntry[V] // entries is the map of entries in the cache.
+
+	clock clock // clock is the clock used to determine the current time.
+}
+
+type ttlEntry[V any] struct {
+	lastUsed atomic.Pointer[time.Time]
+	value    V
+}
+
+// Get returns the value for the given key. If the key is not in the cache, it
+// will be added using the newEntryFunc and returned to the caller.
+func (c *TTLCache[K, V]) Get(key K) V {
+	now := c.clock.Now()
+
+	c.mu.RLock()
+
+	// Fast path: check if the entry is already in the cache.
+	e, ok := c.entries[key]
+	if ok {
+		e.lastUsed.Store(&now)
+		value := e.value
+
+		c.mu.RUnlock()
+		return value
+	}
+	c.mu.RUnlock()
+
+	// Slow path: lock the entire cache and check again.
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Did another goroutine already create the entry?
+	e, ok = c.entries[key]
+	if ok {
+		e.lastUsed.Store(&now)
+		return e.value
+	}
+
+	// Nobody created one, add a new one.
+	e = &ttlEntry[V]{}
+	e.lastUsed.Store(&now)
+	e.value = c.newEntryFunc(key)
+
+	c.entries[key] = e
+
+	return e.value
+}
+
+// StartReaper starts the reaper goroutine. Every reapInterval, the reaper will
+// remove entries that have not been accessed since expirationTime.
+//
+// shutdown can be called to stop the reaper. After shutdown is called, the
+// reaper will not be restarted.
+func (c *TTLCache[K, V]) StartReaper() {
+	c.reapOnce.Do(func() {
+		go func() {
+			for {
+				select {
+				case <-c.reapContext.Done():
+					return
+				case <-time.After(c.reapInterval):
+					c.reap()
+				}
+			}
+		}()
 	})
+}
 
-	return &testConnectionSource{
-		address:  address,
-		grpcConn: conn,
+// reap removes all entries that have not been accessed since expirationTime, and calls
+// the expirationFunc for each entry that is removed.
+func (c *TTLCache[K, V]) reap() {
+	now := c.clock.Now()
+	earliestAllowed := now.Add(-c.expirationTime)
+
+	var toDelete []K
+
+	// First, find all the entries that have expired.
+	// We do this under a read lock to avoid blocking other goroutines
+	// from accessing the cache.
+
+	c.mu.RLock()
+	for key, entry := range c.entries {
+		lastUsed := entry.lastUsed.Load()
+		if lastUsed == nil {
+			lastUsed = &time.Time{}
+		}
+
+		if (*lastUsed).After(earliestAllowed) {
+			continue
+		}
+
+		toDelete = append(toDelete, key)
+	}
+
+	c.mu.RUnlock()
+
+	// If there are no entries to delete, we're done.
+	if len(toDelete) == 0 {
+		return
+	}
+
+	// If there are entries to delete, only now do we need to acquire
+	// the write lock to delete them.
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, key := range toDelete {
+		// Is the entry still there? It might have been deleted by another
+		// goroutine.
+		entry, ok := c.entries[key]
+		if !ok {
+			continue
+		}
+
+		// Is the entry still expired? It might have been updated by another
+		// goroutine.
+		lastUsed := entry.lastUsed.Load()
+		if lastUsed == nil {
+			lastUsed = &time.Time{}
+		}
+
+		if (*lastUsed).After(earliestAllowed) {
+			continue
+		}
+
+		// The entry is still expired, so delete it.
+		c.expirationFunc(key, entry.value)
+		delete(c.entries, key)
 	}
 }
 
-func (t testConnectionSource) GetAddress(_ string) (string, error) {
-	return t.address, nil
+// Shutdown stops the background reaper. This function has no effect if the cache
+// has already been shut down.
+func (c *TTLCache[K, V]) Shutdown() {
+	c.reapCancelFunc()
 }
 
-func (t testConnectionSource) GetConn(_ string) (*grpc.ClientConn, error) {
-	return t.grpcConn, nil
+type clock interface {
+	Now() time.Time
 }
 
-var (
-	_ ConnectionSource = &connectionSourceFromSiteConfig{}
-	_                  = &testConnectionSource{}
-)
+type productionClock struct{}
+
+func (productionClock) Now() time.Time {
+	return time.Now()
+}
+
+var _ clock = productionClock{}

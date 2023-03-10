@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -60,7 +61,7 @@ func TestSearchWithFiltering(t *testing.T) {
 		cleanup()
 	})
 
-	DefaultClient.ConnectionSource = NewTestConnectionSource(t, srv.URL)
+	DefaultClient.Endpoints = endpoint.Static(srv.URL)
 
 	results, err := DefaultClient.Search(ctx, search.SymbolsParameters{
 		Repo:     "foo",
@@ -157,7 +158,7 @@ func TestDefinitionWithFiltering(t *testing.T) {
 		cleanup()
 	})
 
-	DefaultClient.ConnectionSource = NewTestConnectionSource(t, srv.URL)
+	DefaultClient.Endpoints = endpoint.Static(srv.URL)
 
 	ctx := context.Background()
 
