@@ -153,7 +153,7 @@ func TestUserResourceHandler_Create(t *testing.T) {
 			}
 			tc.testFunc(t, usernameInDB, usernameInResource, err)
 			if id > 4 {
-				_ = db.Users().Delete(context.Background(), int32(id))
+				_ = db.Users().HardDelete(context.Background(), int32(id))
 			}
 		})
 	}

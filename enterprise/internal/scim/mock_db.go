@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var verifiedDate = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -70,7 +69,7 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 	userStore.TransactFunc.SetDefaultHook(func(ctx context.Context) (database.UserStore, error) {
 		return userStore, nil
 	})
-	userStore.DeleteFunc.SetDefaultHook(func(ctx context.Context, userID int32) error {
+	userStore.HardDeleteFunc.SetDefaultHook(func(ctx context.Context, userID int32) error {
 		for i, u := range users {
 			if u.ID == userID {
 				users = append(users[:i], users[i+1:]...)
