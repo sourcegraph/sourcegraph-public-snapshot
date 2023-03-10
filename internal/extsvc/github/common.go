@@ -1467,8 +1467,7 @@ func ExternalRepoSpec(repo *Repository, baseURL *url.URL) api.ExternalRepoSpec {
 }
 
 func githubBaseURLDefault() string {
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
+	if deploy.IsSingleBinary() {
 		return ""
 	}
 	return "http://github-proxy"

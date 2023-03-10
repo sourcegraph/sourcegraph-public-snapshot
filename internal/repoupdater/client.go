@@ -42,7 +42,7 @@ func repoUpdaterURLDefault() string {
 		return u
 	}
 
-	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+	if deploy.IsApp() {
 		return "http://127.0.0.1:3182"
 	}
 

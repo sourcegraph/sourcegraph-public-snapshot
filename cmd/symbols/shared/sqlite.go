@@ -46,8 +46,7 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 	// anything that tries to open a SQLite database.
 	sqlite.Init()
 
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram && config.Ctags.Command == "" {
+	if deploy.IsSingleBinary() && config.Ctags.Command == "" {
 		// app: ctags is not available
 		searchFunc := func(ctx context.Context, params search.SymbolsParameters) (result.Symbols, error) {
 			return nil, nil
