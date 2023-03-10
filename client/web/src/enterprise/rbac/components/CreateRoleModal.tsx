@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { noop } from 'lodash'
+
 import {
     Button,
     Modal,
@@ -16,8 +18,9 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { PermissionsList } from './Permissions'
 import { useCreateRole, PermissionsMap } from '../backend'
+
+import { PermissionsList } from './Permissions'
 
 export interface CreateRoleModalProps {
     onCancel: () => void
@@ -45,7 +48,8 @@ export const CreateRoleModal: React.FunctionComponent<React.PropsWithChildren<Cr
     const [createRole, { loading, error }] = useCreateRole(afterCreate)
     const onSubmit = (values: CreateRoleModalFormValues): SubmissionResult => {
         const { name, permissions } = values
-        createRole({ variables: { name, permissions } })
+        // We handle any error by destructuring the query result directly
+        createRole({ variables: { name, permissions } }).catch(noop)
     }
 
     const { formAPI, ref, handleSubmit } = useForm({
