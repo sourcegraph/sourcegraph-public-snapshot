@@ -14,6 +14,7 @@ import (
 	"github.com/coreos/go-semver/semver"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -176,45 +177,51 @@ func canUpdateDate(clientVersionString string) (bool, error) {
 // We need to maintain backwards compatibility with the GET-only update checks
 // while expanding the payload size for newer instance versions (via HTTP body).
 type pingRequest struct {
-	ClientSiteID         string `json:"site"`
-	LicenseKey           string
+	ClientSiteID         string          `json:"site"`
+	LicenseKey           string          `json:",omitempty"`
 	DeployType           string          `json:"deployType"`
+	Os                   string          `json:"os,omitempty"` // Only used in Sourcegraph App
 	ClientVersionString  string          `json:"version"`
-	DependencyVersions   json.RawMessage `json:"dependencyVersions"`
-	AuthProviders        []string        `json:"auth"`
-	ExternalServices     []string        `json:"extsvcs"`
-	BuiltinSignupAllowed bool            `json:"signup"`
-	HasExtURL            bool            `json:"hasExtURL"`
-	UniqueUsers          int32           `json:"u"`
-	Activity             json.RawMessage `json:"act"`
-	BatchChangesUsage    json.RawMessage `json:"batchChangesUsage"`
+	DependencyVersions   json.RawMessage `json:"dependencyVersions,omitempty"`
+	AuthProviders        []string        `json:"auth,omitempty"`
+	ExternalServices     []string        `json:"extsvcs,omitempty"`
+	BuiltinSignupAllowed bool            `json:"signup,omitempty"`
+	AccessRequestEnabled bool            `json:"accessRequestEnabled,omitempty"`
+	HasExtURL            bool            `json:"hasExtURL,omitempty"`
+	UniqueUsers          int32           `json:"u,omitempty"`
+	Activity             json.RawMessage `json:"act,omitempty"`
+	BatchChangesUsage    json.RawMessage `json:"batchChangesUsage,omitempty"`
 	// AutomationUsage (campaigns) is deprecated, but here so we can receive pings from older instances
-	AutomationUsage               json.RawMessage `json:"automationUsage"`
-	GrowthStatistics              json.RawMessage `json:"growthStatistics"`
-	SavedSearches                 json.RawMessage `json:"savedSearches"`
-	HomepagePanels                json.RawMessage `json:"homepagePanels"`
-	SearchOnboarding              json.RawMessage `json:"searchOnboarding"`
-	Repositories                  json.RawMessage `json:"repositories"`
-	RetentionStatistics           json.RawMessage `json:"retentionStatistics"`
-	CodeIntelUsage                json.RawMessage `json:"codeIntelUsage"`
-	NewCodeIntelUsage             json.RawMessage `json:"newCodeIntelUsage"`
-	SearchUsage                   json.RawMessage `json:"searchUsage"`
-	ExtensionsUsage               json.RawMessage `json:"extensionsUsage"`
-	CodeInsightsUsage             json.RawMessage `json:"codeInsightsUsage"`
-	CodeInsightsCriticalTelemetry json.RawMessage `json:"codeInsightsCriticalTelemetry"`
-	CodeMonitoringUsage           json.RawMessage `json:"codeMonitoringUsage"`
-	NotebooksUsage                json.RawMessage `json:"notebooksUsage"`
-	CodeHostVersions              json.RawMessage `json:"codeHostVersions"`
-	CodeHostIntegrationUsage      json.RawMessage `json:"codeHostIntegrationUsage"`
-	IDEExtensionsUsage            json.RawMessage `json:"ideExtensionsUsage"`
-	MigratedExtensionsUsage       json.RawMessage `json:"migratedExtensionsUsage"`
-	InitialAdminEmail             string          `json:"initAdmin"`
-	TosAccepted                   bool            `json:"tosAccepted"`
-	TotalUsers                    int32           `json:"totalUsers"`
-	TotalOrgs                     int32           `json:"totalOrgs"`
-	HasRepos                      bool            `json:"repos"`
-	EverSearched                  bool            `json:"searched"`
-	EverFindRefs                  bool            `json:"refs"`
+	AutomationUsage               json.RawMessage `json:"automationUsage,omitempty"`
+	GrowthStatistics              json.RawMessage `json:"growthStatistics,omitempty"`
+	SavedSearches                 json.RawMessage `json:"savedSearches,omitempty"`
+	HomepagePanels                json.RawMessage `json:"homepagePanels,omitempty"`
+	SearchOnboarding              json.RawMessage `json:"searchOnboarding,omitempty"`
+	Repositories                  json.RawMessage `json:"repositories,omitempty"`
+	RepositorySizeHistogram       json.RawMessage `json:"repository_size_histogram,omitempty"`
+	RetentionStatistics           json.RawMessage `json:"retentionStatistics,omitempty"`
+	CodeIntelUsage                json.RawMessage `json:"codeIntelUsage,omitempty"`
+	NewCodeIntelUsage             json.RawMessage `json:"newCodeIntelUsage,omitempty"`
+	SearchUsage                   json.RawMessage `json:"searchUsage,omitempty"`
+	ExtensionsUsage               json.RawMessage `json:"extensionsUsage,omitempty"`
+	CodeInsightsUsage             json.RawMessage `json:"codeInsightsUsage,omitempty"`
+	CodeInsightsCriticalTelemetry json.RawMessage `json:"codeInsightsCriticalTelemetry,omitempty"`
+	CodeMonitoringUsage           json.RawMessage `json:"codeMonitoringUsage,omitempty"`
+	NotebooksUsage                json.RawMessage `json:"notebooksUsage,omitempty"`
+	CodeHostVersions              json.RawMessage `json:"codeHostVersions,omitempty"`
+	CodeHostIntegrationUsage      json.RawMessage `json:"codeHostIntegrationUsage,omitempty"`
+	IDEExtensionsUsage            json.RawMessage `json:"ideExtensionsUsage,omitempty"`
+	MigratedExtensionsUsage       json.RawMessage `json:"migratedExtensionsUsage,omitempty"`
+	OwnUsage                      json.RawMessage `json:"ownUsage,omitempty"`
+	InitialAdminEmail             string          `json:"initAdmin,omitempty"`
+	TosAccepted                   bool            `json:"tosAccepted,omitempty"`
+	TotalUsers                    int32           `json:"totalUsers,omitempty"`
+	TotalOrgs                     int32           `json:"totalOrgs,omitempty"`
+	TotalRepos                    int32           `json:"totalRepos,omitempty"` // Only used in Sourcegraph App
+	HasRepos                      bool            `json:"repos,omitempty"`
+	EverSearched                  bool            `json:"searched,omitempty"`
+	EverFindRefs                  bool            `json:"refs,omitempty"`
+	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Sourcegraph App
 }
 
 type dependencyVersions struct {
@@ -245,6 +252,7 @@ func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 		AuthProviders:        strings.Split(q.Get("auth"), ","),
 		ExternalServices:     strings.Split(q.Get("extsvcs"), ","),
 		BuiltinSignupAllowed: toBool(q.Get("signup")),
+		AccessRequestEnabled: toBool(q.Get("accessRequestEnabled")),
 		HasExtURL:            toBool(q.Get("hasExtURL")),
 		UniqueUsers:          toInt(q.Get("u")),
 		Activity:             toRawMessage(q.Get("act")),
@@ -321,16 +329,21 @@ type pingPayload struct {
 	CodeHostIntegrationUsage      json.RawMessage `json:"code_host_integration_usage"`
 	IDEExtensionsUsage            json.RawMessage `json:"ide_extensions_usage"`
 	MigratedExtensionsUsage       json.RawMessage `json:"migrated_extensions_usage"`
+	OwnUsage                      json.RawMessage `json:"own_usage"`
 	InstallerEmail                string          `json:"installer_email"`
 	AuthProviders                 string          `json:"auth_providers"`
 	ExtServices                   string          `json:"ext_services"`
 	BuiltinSignupAllowed          string          `json:"builtin_signup_allowed"`
+	AccessRequestEnabled          string          `json:"access_request_enabled"`
 	DeployType                    string          `json:"deploy_type"`
 	TotalUserAccounts             string          `json:"total_user_accounts"`
+	TotalRepos                    string          `json:"total_repos"`
 	HasExternalURL                string          `json:"has_external_url"`
 	HasRepos                      string          `json:"has_repos"`
 	EverSearched                  string          `json:"ever_searched"`
 	EverFindRefs                  string          `json:"ever_find_refs"`
+	Os                            string          `json:"os"`
+	ActiveToday                   string          `json:"active_today"`
 	Timestamp                     string          `json:"timestamp"`
 }
 
@@ -389,6 +402,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		RemoteSiteVersion:             pr.ClientVersionString,
 		RemoteSiteID:                  pr.ClientSiteID,
 		LicenseKey:                    pr.LicenseKey,
+		Os:                            pr.Os,
 		HasUpdate:                     strconv.FormatBool(hasUpdate),
 		UniqueUsersToday:              strconv.FormatInt(int64(pr.UniqueUsers), 10),
 		SiteActivity:                  pr.Activity,          // no change in schema
@@ -411,15 +425,19 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		CodeHostVersions:              pr.CodeHostVersions,
 		CodeHostIntegrationUsage:      pr.CodeHostIntegrationUsage,
 		IDEExtensionsUsage:            pr.IDEExtensionsUsage,
+		OwnUsage:                      pr.OwnUsage,
 		AuthProviders:                 strings.Join(pr.AuthProviders, ","),
 		ExtServices:                   strings.Join(pr.ExternalServices, ","),
 		BuiltinSignupAllowed:          strconv.FormatBool(pr.BuiltinSignupAllowed),
+		AccessRequestEnabled:          strconv.FormatBool(pr.AccessRequestEnabled),
 		DeployType:                    pr.DeployType,
 		TotalUserAccounts:             strconv.FormatInt(int64(pr.TotalUsers), 10),
+		TotalRepos:                    strconv.FormatInt(int64(pr.TotalRepos), 10),
 		HasExternalURL:                strconv.FormatBool(pr.HasExtURL),
 		HasRepos:                      strconv.FormatBool(pr.HasRepos),
 		EverSearched:                  strconv.FormatBool(pr.EverSearched),
 		EverFindRefs:                  strconv.FormatBool(pr.EverFindRefs),
+		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
 	})
 }

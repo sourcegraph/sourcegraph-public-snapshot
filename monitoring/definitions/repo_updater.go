@@ -477,7 +477,7 @@ func RepoUpdater() *monitoring.Dashboard {
 							Owner:       monitoring.ObservableOwnerIAM,
 							Interpretation: `
 								Indicates how many repositories have been scheduled for a permissions sync.
-								More about repository permissions synchronization [here](https://docs.sourcegraph.com/admin/repo/permissions#permissions-sync-scheduling)
+								More about repository permissions synchronization [here](https://docs.sourcegraph.com/admin/permissions/syncing#scheduling)
 							`,
 						},
 					},

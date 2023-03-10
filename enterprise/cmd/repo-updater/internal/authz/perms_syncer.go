@@ -455,11 +455,8 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 					if err != nil {
 						return results, errors.Wrap(err, "fetching existing repo permissions")
 					}
-				}
-				// Use the old user_permissions table if feature flag is off or no repos found.
-				// We need to do this because data might not have been migrated to the new table yet.
-				// TODO: refactor to be bulletproof once we have the OOB migration ready
-				if len(currentRepos) == 0 {
+				} else {
+					// Use the old user_permissions table if feature flag is off
 					currentRepos, err = s.permsStore.FetchReposByUserAndExternalService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
 					if err != nil {
 						return results, errors.Wrap(err, "fetching existing repo permissions")
@@ -469,7 +466,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				for _, repoID := range currentRepos {
 					results.repoPerms[acct.ID] = append(results.repoPerms[acct.ID], int32(repoID))
 				}
-
 			}
 
 			// Process partial results if this is an initial fetch.
@@ -608,18 +604,9 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			log.String("name", user.Username)),
 	)
 
-	// We call this when there are errors communicating with external services so
-	// that we don't have the same user stuck at the front of the queue.
-	tryTouchUserPerms := func() {
-		if err := s.permsStore.TouchUserPermissions(ctx, userID); err != nil {
-			logger.Warn("touching user permissions", log.Error(err))
-		}
-	}
-
 	results, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
 	providerStates = results.providerStates
 	if err != nil {
-		tryTouchUserPerms()
 		return result, providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %q (id: %d)", user.Username, user.ID)
 	}
 
@@ -640,15 +627,11 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		IDs:    map[int32]struct{}{},
 	}
 
-	// Get the value of feature flag to store in the unified user_repo_permissions table
-	unifiedEnabled := conf.ExperimentalFeatures().UnifiedPermissions
-
 	for acctID, repoIDs := range results.repoPerms {
-		if unifiedEnabled {
-			err = s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
-			if err != nil {
-				return result, providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
-			}
+		// write to new user_repo_permissions table by default
+		err = s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
+		if err != nil {
+			return result, providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
 		}
 
 		for _, repoID := range repoIDs {
@@ -739,9 +722,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		logger.Debug("skipFetchPerms")
 
 		// We have no authz provider configured for the repository.
-		// However, we need to upsert the dummy record in order to
-		// prevent scheduler keep scheduling this repository.
-		return result, providerStates, errors.Wrap(s.permsStore.TouchRepoPermissions(ctx, int32(repoID)), "touch repository permissions")
+		// So we can skip the fetch permissions step and just return empty result here
+		return result, providerStates, nil
 	}
 
 	pendingAccountIDsSet := make(map[string]struct{})
@@ -763,18 +745,12 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 			log.Error(err),
 			log.String("suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions"),
 		)
-		return result, providerStates, errors.Wrap(s.permsStore.TouchRepoPermissions(ctx, int32(repoID)), "touch repository permissions")
+		return result, providerStates, nil
 	}
 
 	// Skip repo if unimplemented
 	if errors.Is(err, &authz.ErrUnimplemented{}) {
 		logger.Debug("unimplemented", log.Error(err))
-
-		// We should still touch the repo perms so that we don't keep scheduling the repo
-		// for permissions syncs on a tight interval.
-		if err = s.permsStore.TouchRepoPermissions(ctx, int32(repoID)); err != nil {
-			logger.Warn("error touching permissions for unimplemented authz provider", log.Error(err))
-		}
 
 		return result, providerStates, nil
 	}
@@ -848,10 +824,9 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	defer func() { err = txs.Done(err) }()
 
-	if conf.ExperimentalFeatures().UnifiedPermissions {
-		if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs)); err != nil {
-			return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
-		}
+	// write to new user_repo_permissions table by default
+	if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs)); err != nil {
+		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
 	result, err = txs.SetRepoPermissions(ctx, p)
 	if err != nil {

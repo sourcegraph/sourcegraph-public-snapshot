@@ -528,18 +528,12 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 		}
 	}
 
-	deletedCounts, err := store.DeleteUploadsWithoutRepository(context.Background(), t1)
+	_, count, err := store.DeleteUploadsWithoutRepository(context.Background(), t1)
 	if err != nil {
 		t.Fatalf("unexpected error deleting uploads: %s", err)
 	}
-
-	expected := map[int]int{
-		61: 21,
-		63: 23,
-		65: 25,
-	}
-	if diff := cmp.Diff(expected, deletedCounts); diff != "" {
-		t.Errorf("unexpected deletedCounts (-want +got):\n%s", diff)
+	if expected := 21 + 23 + 25; count != expected {
+		t.Fatalf("unexpected count. want=%d have=%d", expected, count)
 	}
 
 	var uploadIDs []int
@@ -558,13 +552,8 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 			}
 		}
 
-		expected := 0
-		for _, deletedCount := range deletedCounts {
-			expected += deletedCount
-		}
-
-		if deletedStates != expected {
-			t.Errorf("unexpected number of deleted records. want=%d have=%d", expected, deletedStates)
+		if deletedStates != count {
+			t.Errorf("unexpected number of deleted records. want=%d have=%d", count, deletedStates)
 		}
 	}
 }
@@ -647,7 +636,7 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 		types.Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // old
 	)
 
-	count, err := store.DeleteUploadsStuckUploading(context.Background(), t1.Add(time.Minute*3))
+	_, count, err := store.DeleteUploadsStuckUploading(context.Background(), t1.Add(time.Minute*3))
 	if err != nil {
 		t.Fatalf("unexpected error deleting uploads stuck uploading: %s", err)
 	}
@@ -843,7 +832,7 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
 
-	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 2 {
 		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 2, count)
@@ -954,20 +943,20 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{100, 101, 102, 103, 104, 106, 107}); err != nil {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
-	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
 	}
 	for i := 0; i < 9; i++ {
 		// Initially null last_traversal_scan_at values; run once for each upload (overkill)
-		if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+		if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 			t.Fatalf("unexpected error soft deleting uploads: %s", err)
 		} else if count != 0 {
 			t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
 		}
 	}
-	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
@@ -981,19 +970,19 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_uploads SET last_traversal_scan_at = NULL"); err != nil {
 		t.Fatalf("unexpected error clearing last_traversal_scan_at: %s", err)
 	}
-	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
 	}
 	// First connected component (rooted with upload 100)
-	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 7 {
 		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 7, count)
 	}
 	// Second connected component (rooted with upload 107)
-	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
@@ -1038,12 +1027,12 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{107, 108}); err != nil {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
-	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
 	}
-	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 2 {
 		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 2, count)

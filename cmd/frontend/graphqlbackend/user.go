@@ -353,6 +353,8 @@ func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 
 func (r *UserResolver) NamespaceName() string { return r.user.Username }
 
+func (r *UserResolver) SCIMControlled() bool { return r.user.SCIMControlled }
+
 func (r *UserResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoResolver, error) {
 	return EnterpriseResolvers.authzResolver.UserPermissionsInfo(ctx, r.ID())
 }
@@ -480,15 +482,39 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 }
 
 func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
-	id := r.ID()
-	args.User = &id
-	return EnterpriseResolvers.rbacResolver.Roles(ctx, args)
+	userID := r.user.ID
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+	connectionStore := &roleConnectionStore{
+		db:     r.db,
+		userID: userID,
+	}
+	return graphqlutil.NewConnectionResolver[RoleResolver](
+		connectionStore,
+		&args.ConnectionResolverArgs,
+		&graphqlutil.ConnectionResolverOptions{
+			AllowNoLimit: true,
+		},
+	)
 }
 
-func (r *UserResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
-	id := r.ID()
-	args.User = &id
-	return EnterpriseResolvers.rbacResolver.Permissions(ctx, args)
+func (r *UserResolver) Permissions(ctx context.Context) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
+	userID := r.user.ID
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+	connectionStore := &permisionConnectionStore{
+		db:     r.db,
+		userID: userID,
+	}
+	return graphqlutil.NewConnectionResolver[PermissionResolver](
+		connectionStore,
+		&graphqlutil.ConnectionResolverArgs{},
+		&graphqlutil.ConnectionResolverOptions{
+			AllowNoLimit: true,
+		},
+	)
 }
 
 func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {
@@ -524,10 +550,6 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 		return nil, err
 	}
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
-}
-
-func (r *UserResolver) Teams(_ context.Context, _ *ListTeamsArgs) (*teamConnectionResolver, error) {
-	return &teamConnectionResolver{}, nil
 }
 
 func (r *UserResolver) ToUser() (*UserResolver, bool) {

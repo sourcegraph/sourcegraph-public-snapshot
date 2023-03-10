@@ -39,6 +39,10 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":http"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/backend",
         "//enterprise/internal/codeintel/uploads",

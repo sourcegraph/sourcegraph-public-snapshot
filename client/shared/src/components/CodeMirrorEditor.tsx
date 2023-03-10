@@ -26,6 +26,13 @@ if (process.env.INTEGRATION_TESTS) {
         EditorView.findFromDOM(element)
 }
 
+const defaultTheme = EditorView.baseTheme({
+    // Overwrites the default cursor color, which has too low contrast in dark mode
+    '&dark .cm-cursor': {
+        borderLeftColor: 'var(--grey-07)',
+    },
+})
+
 /**
  * Hook for rendering and updating a CodeMirror instance.
  */
@@ -35,8 +42,19 @@ export function useCodeMirror(
     value: string,
     extensions?: EditorStateConfig['extensions']
 ): void {
-    // Update editor value if necessary. This also sets the intial value of the
-    // editor.
+    const allExtensions = useMemo(() => [defaultTheme, extensions ?? []], [extensions])
+
+    // The order of effects is important here:
+    //
+    // - If the editor hasn't been created yet (editorRef.current is null) it should be
+    //   fully instantiated with value and extensions. The value/extension update effects
+    //   should not have any ... effect.
+    // - When the hook runs on subsequent renders the value and extensions get update if
+    //   the respective values changed.
+    //
+    // We achieve this by putting the update effects before the creation effect.
+
+    // Update editor value if necessary
     useEffect(() => {
         if (editorRef.current) {
             const changes = replaceValue(editorRef.current, value ?? '')
@@ -47,21 +65,22 @@ export function useCodeMirror(
         }
     }, [editorRef, value])
 
+    // Reconfigure/update extensions if necessary
     useEffect(() => {
-        if (editorRef.current && extensions) {
-            editorRef.current.dispatch({ effects: StateEffect.reconfigure.of(extensions) })
+        if (editorRef.current) {
+            editorRef.current.dispatch({ effects: StateEffect.reconfigure.of(allExtensions) })
         }
-    }, [editorRef, extensions])
+    }, [editorRef, allExtensions])
 
     // Create editor if necessary
     useEffect(() => {
         if (!editorRef.current && containerRef.current) {
             editorRef.current = new EditorView({
-                state: EditorState.create({ doc: value, extensions }),
+                state: EditorState.create({ doc: value, extensions: allExtensions }),
                 parent: containerRef.current,
             })
         }
-    }, [editorRef, containerRef, value, extensions])
+    }, [editorRef, containerRef, value, allExtensions])
 
     // Clean up editor on unmount
     useEffect(
@@ -82,30 +101,32 @@ export interface Editor {
  * to render an editor conditionally.
  */
 export const CodeMirrorEditor = React.memo(
-    forwardRef<Editor, { value: string; extensions?: Extension }>(({ value, extensions }, ref) => {
-        const containerRef = useRef<HTMLDivElement | null>(null)
-        const editorRef = useRef<EditorView | null>(null)
-        useCodeMirror(editorRef, containerRef, value, extensions)
+    forwardRef<Editor, { value: string; extensions?: Extension; className?: string }>(
+        ({ value, extensions, className }, ref) => {
+            const containerRef = useRef<HTMLDivElement | null>(null)
+            const editorRef = useRef<EditorView | null>(null)
+            useCodeMirror(editorRef, containerRef, value, extensions)
 
-        useImperativeHandle(
-            ref,
-            () => ({
-                focus() {
-                    const editor = editorRef.current
-                    if (editor && !editor.hasFocus) {
-                        editor.focus()
-                        editor.dispatch({
-                            selection: { anchor: editor.state.doc.length },
-                            scrollIntoView: true,
-                        })
-                    }
-                },
-            }),
-            []
-        )
+            useImperativeHandle(
+                ref,
+                () => ({
+                    focus() {
+                        const editor = editorRef.current
+                        if (editor && !editor.hasFocus) {
+                            editor.focus()
+                            editor.dispatch({
+                                selection: { anchor: editor.state.doc.length },
+                                scrollIntoView: true,
+                            })
+                        }
+                    },
+                }),
+                []
+            )
 
-        return <div ref={containerRef} />
-    })
+            return <div ref={containerRef} className={className} />
+        }
+    )
 )
 
 /**

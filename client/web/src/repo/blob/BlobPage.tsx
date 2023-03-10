@@ -126,7 +126,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const { repoID, repoName, repoServiceType, revision, commitID, filePath, useBreadcrumb, mode } = props
     const { enableCodeMirror, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(features => ({
         enableCodeMirror: features.enableCodeMirrorFileView ?? true,
-        enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? false,
+        enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? true,
     }))
     const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
 
@@ -385,7 +385,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
                 {context => (
-                    <ToggleHistoryPanel {...context} key="toggle-blob-panel" location={location} navigate={navigate} />
+                    <ToggleHistoryPanel
+                        {...context}
+                        key="toggle-blob-panel"
+                        location={location}
+                        navigate={navigate}
+                        isPackage={isPackage}
+                    />
                 )}
             </RepoHeaderContributionPortal>
             {renderMode === 'code' && (
@@ -500,7 +506,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     return (
         <div className={className}>
             {alwaysRender}
-            {repoID && commitID && <BlobPanel {...props} repoID={repoID} commitID={commitID} />}
+            {repoID && commitID && <BlobPanel {...props} repoID={repoID} commitID={commitID} isPackage={isPackage} />}
             {blobInfoOrError.richHTML && (
                 <RepoHeaderContributionPortal
                     position="right"

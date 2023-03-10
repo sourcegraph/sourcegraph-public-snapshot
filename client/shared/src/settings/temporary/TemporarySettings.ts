@@ -50,8 +50,13 @@ export interface TemporarySettingsSchema {
         author: string
     }
     'search.results.collapseSmartSearch': boolean
+    'search.results.collapseUnownedResultsAlert': boolean
     'search.input.recentSearches': RecentSearch[]
     'search.input.usedInlineHistory': boolean
+    // This is a temporary setting to allow users to easily switch
+    // between  having search  results be ranked or not. It's only
+    // used when the feature flag `search-ranking` is enabled.
+    'search.ranking.experimental': boolean
     // This is a temporary (no pun intended) setting to allow users to easily
     // switch been the current and the new search input. It's only used when
     // the feature flag `"searchQueryInput": "experimental"` is set.
@@ -63,6 +68,11 @@ export interface TemporarySettingsSchema {
     'search.notebooks.minSavedPerView': number
     'repo.commitPage.diffMode': DiffMode
     'setup.activeStepId': string
+    'own.panelExplanationHidden': boolean
+    // Sourcegraph App banners
+    'app.limitedAccessBannerDismissed.codeInsights': boolean
+    'app.limitedAccessBannerDismissed.batchChanges': boolean
+    'app.limitedAccessBannerDismissed.notebooks': boolean
 }
 
 /**

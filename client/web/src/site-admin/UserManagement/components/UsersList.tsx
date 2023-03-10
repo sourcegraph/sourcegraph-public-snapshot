@@ -1,40 +1,41 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import {
-    mdiLogoutVariant,
+    mdiAccountReactivate,
     mdiArchive,
-    mdiDelete,
-    mdiLockReset,
     mdiChevronDown,
     mdiClipboardMinus,
     mdiClipboardPlus,
     mdiClose,
+    mdiDelete,
     mdiLock,
     mdiLockOpen,
-    mdiAccountReactivate,
+    mdiLockReset,
+    mdiLogoutVariant,
     mdiSecurity,
 } from '@mdi/js'
 import classNames from 'classnames'
-import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
+import { endOfDay, formatDistanceToNowStrict, startOfDay } from 'date-fns'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import {
-    H2,
-    LoadingSpinner,
-    Text,
-    Button,
     Alert,
-    useDebounce,
-    Link,
-    Icon,
-    PopoverTrigger,
-    PopoverContent,
-    Popover,
-    Position,
-    PopoverOpenEvent,
-    Tooltip,
+    Badge,
+    Button,
     ErrorAlert,
+    H2,
+    Icon,
+    Link,
+    LoadingSpinner,
+    Popover,
+    PopoverContent,
+    PopoverOpenEvent,
+    PopoverTrigger,
+    Position,
+    Text,
+    Tooltip,
+    useDebounce,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -53,6 +54,7 @@ import styles from '../index.module.scss'
 export type SiteUser = UsersManagementUsersListResult['site']['users']['nodes'][0]
 
 const LIMIT = 25
+
 interface UsersListProps {
     onActionEnd?: () => void
 }
@@ -491,7 +493,14 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
     )
 }
 
-function RenderUsernameAndEmail({ username, email, displayName, deletedAt, locked }: SiteUser): JSX.Element {
+function RenderUsernameAndEmail({
+    username,
+    email,
+    displayName,
+    deletedAt,
+    locked,
+    scimControlled,
+}: SiteUser): JSX.Element {
     const [isOpen, setIsOpen] = useState<boolean>(false)
     const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
         setIsOpen(event.isOpen)
@@ -499,40 +508,59 @@ function RenderUsernameAndEmail({ username, email, displayName, deletedAt, locke
 
     return (
         <div
-            className={classNames('d-flex p-2 align-items-center', styles.usernameColumn, {
+            className={classNames('d-flex p-2 align-items-center justify-content-between', styles.usernameColumn, {
                 [styles.visibleActionsOnHover]: !isOpen,
             })}
         >
-            {!deletedAt ? (
-                <>
-                    {locked && (
-                        <Tooltip content="This user is locked and cannot sign in.">
-                            <Icon aria-label="Account locked" svgPath={mdiLock} />
-                        </Tooltip>
-                    )}{' '}
-                    <Link to={`/users/${username}`} className="text-truncate">
-                        @{username}
-                    </Link>
-                </>
-            ) : (
-                <Text className="mb-0 text-truncate">@{username}</Text>
-            )}
-            <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
-                <PopoverTrigger
-                    as={Button}
-                    className={classNames('ml-1 border-0 p-1', styles.actionsButton)}
-                    variant="secondary"
-                    outline={true}
+            <div className="d-flex align-items-center text-truncate">
+                {!deletedAt ? (
+                    <>
+                        {locked && (
+                            <Tooltip content="This user is locked and cannot sign in.">
+                                <Icon aria-label="Account locked" svgPath={mdiLock} />
+                            </Tooltip>
+                        )}{' '}
+                        <Link to={`/users/${username}`} className="text-truncate">
+                            @{username}
+                        </Link>
+                    </>
+                ) : (
+                    <Text className="mb-0 text-truncate">@{username}</Text>
+                )}
+                <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
+                    <PopoverTrigger
+                        as={Button}
+                        className={classNames('ml-1 border-0 p-1', styles.actionsButton)}
+                        variant="secondary"
+                        outline={true}
+                    >
+                        <Icon aria-label="Show details" svgPath={mdiChevronDown} />
+                    </PopoverTrigger>
+                    <PopoverContent position={Position.bottom} focusLocked={false}>
+                        <div className="p-2">
+                            <Text className="mb-0">{displayName}</Text>
+                            <Text className="mb-0">{email}</Text>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </div>
+            {scimControlled && (
+                <Tooltip
+                    content={
+                        <Text>
+                            This user is{' '}
+                            <Link to="/help/admin/scim" target="_blank" rel="noopener">
+                                SCIM
+                            </Link>
+                            -controlled—an external system controls some of its attributes.
+                        </Text>
+                    }
                 >
-                    <Icon aria-label="Show details" svgPath={mdiChevronDown} />
-                </PopoverTrigger>
-                <PopoverContent position={Position.bottom} focusLocked={false}>
-                    <div className="p-2">
-                        <Text className="mb-0">{displayName}</Text>
-                        <Text className="mb-0">{email}</Text>
-                    </div>
-                </PopoverContent>
-            </Popover>
+                    <Badge variant="secondary" className="mr-1">
+                        SCIM
+                    </Badge>
+                </Tooltip>
+            )}
         </div>
     )
 }

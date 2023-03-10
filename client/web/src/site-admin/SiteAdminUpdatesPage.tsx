@@ -1,13 +1,6 @@
 import React, { FunctionComponent, useMemo, useState } from 'react'
 
-import {
-    mdiOpenInNew,
-    mdiCheckCircle,
-    mdiChevronUp,
-    mdiChevronDown,
-    mdiCheckBold,
-    mdiAlertCircleOutline,
-} from '@mdi/js'
+import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown, mdiCheckBold, mdiAlertOctagram } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
@@ -47,7 +40,7 @@ import styles from './SiteAdminUpdatesPage.module.scss'
 
 interface Props extends TelemetryProps {}
 
-const SiteUpdateCheck: FunctionComponent = () => {
+const SiteUpdateCheck: React.FC = () => {
     const { data, loading, error } = useQuery<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK, {})
     const autoUpdateCheckingEnabled = window.context.site['update.channel'] === 'release'
 
@@ -142,20 +135,21 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                     <H3 as={H4}>Schema drift</H3>
                     {data.site.upgradeReadiness.schemaDrift.length > 0 ? (
                         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={false}>
+                            <span>
+                                <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" /> There are
+                                schema drifts detected, please contact{' '}
+                                <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
+                                    Sourcegraph support
+                                </Link>{' '}
+                                for assistance.
+                            </span>
                             <CollapseHeader
                                 as={Button}
                                 variant="secondary"
                                 outline={true}
                                 className="p-0 m-0 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
                             >
-                                <span>
-                                    <Icon aria-hidden={true} svgPath={mdiAlertCircleOutline} className="text-danger" />{' '}
-                                    There are schema drifts detected, please contact{' '}
-                                    <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
-                                        Sourcegraph support
-                                    </Link>{' '}
-                                    for assistance.
-                                </span>
+                                Click to view the drift output:
                                 <Icon
                                     aria-hidden={true}
                                     svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
@@ -182,8 +176,8 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                     {data.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ? (
                         <>
                             <span>
-                                <Icon aria-hidden={true} svgPath={mdiAlertCircleOutline} className="text-danger" />{' '}
-                                There are pending out-of-band migrations that need to complete, please go to{' '}
+                                <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" /> There are
+                                pending out-of-band migrations that need to complete, please go to{' '}
                                 <Link to="/site-admin/migrations?filters=pending">migrations</Link> to check details.
                             </span>
                             <ul className="mt-2 pl-3">
@@ -207,7 +201,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
 /**
  * A page displaying information about available updates for the server.
  */
-export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemetryService }) => {
+export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService }) => {
     useMemo(() => {
         telemetryService.logViewEvent('SiteAdminUpdates')
     }, [telemetryService])
@@ -217,11 +211,11 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
             <PageTitle title="Updates - Admin" />
 
             <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
-            <Container className="mb-2">
+            <Container className="mb-3">
                 <SiteUpdateCheck />
             </Container>
 
-            <PageHeader path={[{ text: 'Readiness' }]} headingElement="h2" className="mb-3 mt-3" />
+            <PageHeader path={[{ text: 'Readiness' }]} headingElement="h2" className="mb-3" />
             <Container className="mb-3">
                 <SiteUpgradeReadiness />
             </Container>

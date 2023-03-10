@@ -26,38 +26,13 @@
     min-height: 0 !important;
 }
 
-.link {
-    display: block;
-    padding: 0.25rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--text-muted);
-
-    &--active,
-    &:hover {
-        background-color: var(--color-bg-3);
-        text-decoration: none;
-        color: var(--body-color);
-        border-radius: var(--border-radius);
-    }
-}
-
-.name {
-    color: var(--body-color);
-}
-
-.container-name {
-    margin-left: 0.5rem;
-}
-
 .form-container {
     position: sticky;
     top: 0;
     background-color: var(--body-bg);
 }
 
-.hierarchical-symbols-container {
-    list-style-type: none;
-    padding-left: 0;
+.tree-node {
+    // Account for the sticky input box at the top of the sidebar
+    scroll-margin-top: 2.75rem;
 }

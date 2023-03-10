@@ -1,7 +1,8 @@
 package search
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/own/search"
+	ownsearch "github.com/sourcegraph/sourcegraph/enterprise/internal/own/search"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 )
@@ -12,10 +13,10 @@ func NewEnterpriseSearchJobs() jobutil.EnterpriseJobs {
 
 type enterpriseJobs struct{}
 
-func (e *enterpriseJobs) FileHasOwnerJob(child job.Job, includeOwners, excludeOwners []string) job.Job {
-	return search.NewFileHasOwnersJob(child, includeOwners, excludeOwners)
+func (e *enterpriseJobs) FileHasOwnerJob(child job.Job, features *search.Features, includeOwners, excludeOwners []string) job.Job {
+	return ownsearch.NewFileHasOwnersJob(child, features, includeOwners, excludeOwners)
 }
 
-func (e *enterpriseJobs) SelectFileOwnerJob(child job.Job) job.Job {
-	return search.NewSelectOwnersJob(child)
+func (e *enterpriseJobs) SelectFileOwnerJob(child job.Job, features *search.Features) job.Job {
+	return ownsearch.NewSelectOwnersJob(child, features)
 }

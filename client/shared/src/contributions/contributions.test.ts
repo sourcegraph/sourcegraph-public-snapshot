@@ -15,14 +15,10 @@ describe('getContributedActionItems', () => {
                         { id: 'c', command: 'c', title: 'tc', description: 'dc' },
                     ],
                     menus: {
-                        commandPalette: [
-                            { action: 'a', group: '2' },
-                            { action: 'b', group: '1', alt: 'c' },
-                        ],
-                        'editor/title': [{ action: 'c' }],
+                        'editor/title': [{ action: 'b', alt: 'c' }, { action: 'a' }],
                     },
                 },
-                ContributableMenu.CommandPalette
+                ContributableMenu.EditorTitle
             )
         ).toEqual([
             {

@@ -83,6 +83,7 @@ interface UserAreaProps
     authenticatedUser: AuthenticatedUser | null
 
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
@@ -115,12 +116,19 @@ export interface UserAreaRouteContext
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
  * A user's public profile area.
  */
-export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isSourcegraphDotCom, ...props }) => {
+export const UserArea: FC<UserAreaProps> = ({
+    useBreadcrumb,
+    userAreaRoutes,
+    isSourcegraphDotCom,
+    isSourcegraphApp,
+    ...props
+}) => {
     const { username } = useParams()
     const userAreaMainUrl = `/users/${username}`
 
@@ -170,6 +178,7 @@ export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isS
         namespace: user,
         ...childBreadcrumbSetters,
         isSourcegraphDotCom,
+        isSourcegraphApp,
     }
 
     return (
@@ -206,7 +215,7 @@ export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isS
                             />
                         )
                 )}
-                <Route element={<NotFoundPage pageType="user" />} />
+                <Route path="*" element={<NotFoundPage pageType="user" />} />
             </Routes>
         </Suspense>
     )

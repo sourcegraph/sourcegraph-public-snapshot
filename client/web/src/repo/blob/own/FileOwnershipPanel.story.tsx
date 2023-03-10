@@ -1,7 +1,8 @@
-import { MockedProvider, MockedResponse } from '@apollo/client/testing'
+import { MockedResponse } from '@apollo/client/testing'
 import { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../components/WebStory'
 import { FetchOwnershipResult } from '../../../graphql-operations'
@@ -22,7 +23,7 @@ const response: FetchOwnershipResult = {
                                 __typename: 'Person',
                                 email: 'alice@example.com',
                                 avatarURL: null,
-                                displayName: 'Alice',
+                                displayName: '',
                                 user: null,
                             },
                             reasons: [
@@ -30,6 +31,11 @@ const response: FetchOwnershipResult = {
                                     __typename: 'CodeownersFileEntry',
                                     title: 'CodeOwner',
                                     description: 'This person is listed in the CODEOWNERS file',
+                                    codeownersFile: {
+                                        __typename: 'VirtualFile',
+                                        url: '/own',
+                                    },
+                                    ruleLineMatch: 10,
                                 },
                             ],
                         },
@@ -52,6 +58,55 @@ const response: FetchOwnershipResult = {
                                     __typename: 'CodeownersFileEntry',
                                     title: 'CodeOwner',
                                     description: 'This person is listed in the CODEOWNERS file',
+                                    codeownersFile: {
+                                        __typename: 'VirtualFile',
+                                        url: '/own',
+                                    },
+                                    ruleLineMatch: 10,
+                                },
+                            ],
+                        },
+                        {
+                            __typename: 'Ownership',
+                            owner: {
+                                __typename: 'Person',
+                                email: '',
+                                avatarURL: null,
+                                displayName: 'charlie',
+                                user: null,
+                            },
+                            reasons: [
+                                {
+                                    __typename: 'CodeownersFileEntry',
+                                    title: 'CodeOwner',
+                                    description: 'This person is listed in the CODEOWNERS file',
+                                    codeownersFile: {
+                                        __typename: 'VirtualFile',
+                                        url: '/own',
+                                    },
+                                    ruleLineMatch: 10,
+                                },
+                            ],
+                        },
+                        {
+                            __typename: 'Ownership',
+                            owner: {
+                                __typename: 'Team',
+                                avatarURL: null,
+                                teamDisplayName: 'Delta Team',
+                                name: 'delta',
+                                url: '/teams/delta',
+                            },
+                            reasons: [
+                                {
+                                    __typename: 'CodeownersFileEntry',
+                                    title: 'CodeOwner',
+                                    description: 'This team is listed in the CODEOWNERS file',
+                                    codeownersFile: {
+                                        __typename: 'VirtualFile',
+                                        url: '/own',
+                                    },
+                                    ruleLineMatch: 10,
                                 },
                             ],
                         },
@@ -86,11 +141,13 @@ const config: Meta = {
 export default config
 
 export const Default: Story = () => (
-    <WebStory>
+    <WebStory mocks={[mockResponse]}>
         {() => (
-            <MockedProvider mocks={[mockResponse]}>
-                <FileOwnershipPanel repoID="github.com/sourcegraph/sourcegraph" filePath="README.md" />
-            </MockedProvider>
+            <FileOwnershipPanel
+                repoID="github.com/sourcegraph/sourcegraph"
+                filePath="README.md"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+            />
         )}
     </WebStory>
 )

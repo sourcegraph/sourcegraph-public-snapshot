@@ -1,13 +1,10 @@
-import React, { FC, useCallback, useMemo, useRef } from 'react'
+import React, { FC, useCallback, useEffect, useRef } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
 import { SearchBox, Toggles } from '@sourcegraph/branded'
-// The experimental search input should be shown on the search home page
-// eslint-disable-next-line no-restricted-imports
-import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import {
     CaseSensitivityProps,
@@ -25,7 +22,7 @@ import { Form } from '@sourcegraph/wildcard'
 import { Notices } from '../../../global/Notices'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { submitSearch } from '../../../search/helpers'
-import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../../../search/input/lazy'
+import { LazyExperimentalSearchInput } from '../../../search/input/LazyExperimentalSearchInput'
 import { useRecentSearches } from '../../../search/input/useRecentSearches'
 import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
 import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../../stores'
@@ -81,8 +78,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const { recentSearches } = useRecentSearches()
-    const recentSearchesRef = useRef(recentSearches)
-    recentSearchesRef.current = recentSearches
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -116,7 +111,9 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         ]
     )
     const submitSearchOnChangeRef = useRef(submitSearchOnChange)
-    submitSearchOnChangeRef.current = submitSearchOnChange
+    useEffect(() => {
+        submitSearchOnChangeRef.current = submitSearchOnChange
+    }, [submitSearchOnChange])
 
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
@@ -126,38 +123,23 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         [submitSearchOnChangeRef]
     )
 
-    const suggestionSource = useLazyCreateSuggestions(
-        experimentalQueryInput,
-        useMemo(
-            () => ({
-                platformContext,
-                authenticatedUser,
-                fetchSearchContexts,
-                getUserSearchContextNamespaces,
-                isSourcegraphDotCom,
-            }),
-            [platformContext, authenticatedUser, fetchSearchContexts, isSourcegraphDotCom]
-        )
-    )
-
-    const experimentalExtensions = useLazyHistoryExtension(
-        experimentalQueryInput,
-        recentSearchesRef,
-        submitSearchOnChangeRef
-    )
-
     // TODO (#48103): Remove/simplify when new search input is released
     const input = experimentalQueryInput ? (
-        <LazyCodeMirrorQueryInput
+        <LazyExperimentalSearchInput
+            telemetryService={telemetryService}
             patternType={patternType}
             interpretComments={false}
             queryState={queryState}
             onChange={setQueryState}
             onSubmit={onSubmit}
             isLightTheme={isLightTheme}
-            placeholder="Search for code or files..."
-            suggestionSource={suggestionSource}
-            extensions={experimentalExtensions}
+            platformContext={platformContext}
+            authenticatedUser={authenticatedUser}
+            fetchSearchContexts={fetchSearchContexts}
+            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+            isSourcegraphDotCom={isSourcegraphDotCom}
+            submitSearch={submitSearchOnChange}
+            selectedSearchContextSpec={selectedSearchContextSpec}
         >
             <Toggles
                 patternType={patternType}
@@ -171,7 +153,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                 showCopyQueryButton={false}
                 showSmartSearchButton={false}
             />
-        </LazyCodeMirrorQueryInput>
+        </LazyExperimentalSearchInput>
     ) : (
         <SearchBox
             platformContext={platformContext}
@@ -212,7 +194,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                         <div className="d-flex flex-grow-1 w-100">{input}</div>
                     </TraceSpanProvider>
                 </div>
-                <Notices className="my-3 text-center" location="home" settingsCascade={settingsCascade} />
+                <Notices className="my-3 text-center" location="home" />
             </Form>
         </div>
     )

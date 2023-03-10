@@ -35,7 +35,7 @@ func TestNewAuthzProviders(t *testing.T) {
 	})
 
 	t.Run("no matching auth provider", func(t *testing.T) {
-		licensing.MockCheckFeatureError("")
+		t.Cleanup(licensing.TestingSkipFeatureChecks())
 		initResults := NewAuthzProviders(
 			db,
 			[]*types.BitbucketCloudConnection{
@@ -61,7 +61,7 @@ func TestNewAuthzProviders(t *testing.T) {
 
 	t.Run("matching auth provider found", func(t *testing.T) {
 		t.Run("default case", func(t *testing.T) {
-			licensing.MockCheckFeatureError("")
+			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			initResults := NewAuthzProviders(
 				db,
 				[]*types.BitbucketCloudConnection{
@@ -84,7 +84,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		})
 
 		t.Run("license does not have ACLs feature", func(t *testing.T) {
-			licensing.MockCheckFeatureError("failed")
+			t.Cleanup(licensing.MockCheckFeatureError("failed"))
 			initResults := NewAuthzProviders(
 				db,
 				[]*types.BitbucketCloudConnection{

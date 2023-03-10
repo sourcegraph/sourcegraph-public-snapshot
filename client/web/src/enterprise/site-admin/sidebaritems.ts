@@ -1,6 +1,7 @@
 import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
 import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
+import RobotOutlineIcon from 'mdi-react/RobotOutlineIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
 import {
@@ -9,7 +10,7 @@ import {
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
     repositoriesGroup as ossRepositoriesGroup,
-    usersGroup,
+    usersGroup as ossUsersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
@@ -21,6 +22,8 @@ const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'License',
             to: '/site-admin/license',
+
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -46,6 +49,7 @@ const executorsGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/executors',
             label: 'Instances',
+            exact: true,
         },
         {
             to: '/site-admin/executors/secrets',
@@ -79,7 +83,7 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/outbound-webhooks',
         },
     ],
-    condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+    condition: ({ batchChangesEnabled, isSourcegraphApp }) => batchChangesEnabled && !isSourcegraphApp,
 }
 
 const businessGroup: SiteAdminSideBarGroup = {
@@ -106,7 +110,12 @@ const businessGroup: SiteAdminSideBarGroup = {
 
 const codeIntelGroup: SiteAdminSideBarGroup = {
     header: { label: 'Code graph', icon: BrainIcon },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
+        {
+            to: '/site-admin/code-graph/dashboard',
+            label: 'Dashboard',
+        },
         {
             to: '/site-admin/code-graph/indexes',
             label: 'Precise indexes',
@@ -129,6 +138,33 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
         {
             label: 'Incoming webhooks',
             to: '/site-admin/webhooks',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
+    ],
+}
+
+export const codyGroup: SiteAdminSideBarGroup = {
+    header: { label: 'Cody', icon: RobotOutlineIcon },
+    items: [
+        {
+            label: 'Cody',
+            to: '/site-admin/cody',
+        },
+    ],
+    condition: () => window.context?.embeddingsEnabled,
+}
+
+const usersGroup: SiteAdminSideBarGroup = {
+    ...ossUsersGroup,
+    items: [
+        ...ossUsersGroup.items,
+        {
+            label: 'Roles',
+            to: '/site-admin/roles',
+        },
+        {
+            label: 'Permissions',
+            to: '/site-admin/permissions-syncs',
         },
     ],
 }
@@ -143,5 +179,6 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     maintenanceGroup,
     batchChangesGroup,
     businessGroup,
+    codyGroup,
     apiConsoleGroup,
 ].filter(Boolean) as SiteAdminSideBarGroups

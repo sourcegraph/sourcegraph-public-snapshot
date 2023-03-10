@@ -270,7 +270,7 @@ mtfypOsa1bKhEL84nZ/ivEbBriRGjP2kyDDv3RX4WBk=
 	}
 }
 
-func TestIsAccessRequestsEnabled(t *testing.T) {
+func TestIsAccessRequestEnabled(t *testing.T) {
 	falseVal, trueVal := false, true
 	tests := []struct {
 		name string
@@ -296,7 +296,7 @@ func TestIsAccessRequestsEnabled(t *testing.T) {
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						AccessRequestsEnabled: &trueVal,
+						AccessRequestEnabled: &trueVal,
 					},
 				},
 			},
@@ -307,7 +307,7 @@ func TestIsAccessRequestsEnabled(t *testing.T) {
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						AccessRequestsEnabled: &falseVal,
+						AccessRequestEnabled: &falseVal,
 					},
 				},
 			},
@@ -318,7 +318,7 @@ func TestIsAccessRequestsEnabled(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			Mock(test.sc)
-			have := IsAccessRequestsEnabled()
+			have := IsAccessRequestEnabled()
 			assert.Equal(t, test.want, have)
 		})
 	}

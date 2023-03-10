@@ -181,6 +181,11 @@ func (r *NodeResolver) ToRepository() (*RepositoryResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToRepoEmbeddingJob() (RepoEmbeddingJobResolver, bool) {
+	n, ok := r.Node.(RepoEmbeddingJobResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToUser() (*UserResolver, bool) {
 	n, ok := r.Node.(*UserResolver)
 	return n, ok
@@ -218,6 +223,16 @@ func (r *NodeResolver) ToNotebook() (NotebookResolver, bool) {
 
 func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	n, ok := r.Node.(*siteResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToVulnerability() (resolverstubs.VulnerabilityResolver, bool) {
+	n, ok := r.Node.(resolverstubs.VulnerabilityResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToVulnerabilityMatch() (resolverstubs.VulnerabilityMatchResolver, bool) {
+	n, ok := r.Node.(resolverstubs.VulnerabilityMatchResolver)
 	return n, ok
 }
 
@@ -354,5 +369,10 @@ func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
 
 func (r *NodeResolver) ToAccessRequest() (*accessRequestResolver, bool) {
 	n, ok := r.Node.(*accessRequestResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToCodeownersIngestedFile() (CodeownersIngestedFileResolver, bool) {
+	n, ok := r.Node.(CodeownersIngestedFileResolver)
 	return n, ok
 }

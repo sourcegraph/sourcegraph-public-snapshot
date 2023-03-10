@@ -73,7 +73,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(repoStore, repoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-		return downloadJSONFile[embeddings.RepoEmbeddingIndex](ctx, uploadStore, string(repoEmbeddingIndexName))
+		return embeddings.DownloadIndex[embeddings.RepoEmbeddingIndex](ctx, uploadStore, string(repoEmbeddingIndexName))
 	})
 	if err != nil {
 		return err

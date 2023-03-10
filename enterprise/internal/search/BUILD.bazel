@@ -6,7 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/search",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//internal/own/search",
+        "//enterprise/internal/own/search",
+        "//internal/search",
         "//internal/search/job",
         "//internal/search/job/jobutil",
     ],

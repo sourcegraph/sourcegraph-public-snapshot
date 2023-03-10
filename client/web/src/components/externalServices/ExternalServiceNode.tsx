@@ -1,5 +1,6 @@
 import { FC, useCallback, useState } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -12,16 +13,19 @@ import { refreshSiteFlags } from '../../site/backend'
 
 import { deleteExternalService } from './backend'
 import { defaultExternalServices, EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES } from './externalServices'
+import { isAppLocalFileService } from './isAppLocalFileService'
 
 import styles from './ExternalServiceNode.module.scss'
 
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
     editingDisabled: boolean
+    isSourcegraphApp: boolean
 }
 
-export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editingDisabled }) => {
+export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editingDisabled, isSourcegraphApp }) => {
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
+    const client = useApolloClient()
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         if (!window.confirm(`Delete the external service ${node.displayName}?`)) {
             return
@@ -30,14 +34,13 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
         try {
             await deleteExternalService(node.id)
             setIsDeleting(false)
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe()
+            await refreshSiteFlags(client)
         } catch (error) {
             setIsDeleting(asError(error))
         } finally {
             window.location.reload()
         }
-    }, [node])
+    }, [node, client])
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
@@ -78,7 +81,12 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                         <strong>
                             <Link to={`/site-admin/external-services/${node.id}`}>{node.displayName}</Link>{' '}
                             <small className="text-muted">
-                                ({node.repoCount} {pluralize('repository', node.repoCount, 'repositories')})
+                                ({node.repoCount}
+                                {isSourcegraphApp ? (isAppLocalFileService(node) ? ' of ∞' : ' of 10') : ''}{' '}
+                                {isSourcegraphApp
+                                    ? 'repositories'
+                                    : pluralize('repository', node.repoCount, 'repositories')}
+                                )
                             </small>
                         </strong>
                         <br />

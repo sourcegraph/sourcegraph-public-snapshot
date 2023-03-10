@@ -34,7 +34,7 @@ func TestRequestAccess(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					AccessRequestsEnabled: &falseVal,
+					AccessRequestEnabled: &falseVal,
 				},
 			},
 		})

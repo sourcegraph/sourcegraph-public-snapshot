@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"runtime"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
@@ -30,16 +31,18 @@ func searchRepoEmbeddingIndex(
 	}
 
 	var codeResults, textResults []embeddings.EmbeddingSearchResult
-	if params.CodeResultsCount > 0 && embeddingIndex.CodeIndex != nil {
-		codeResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount)
+	if params.CodeResultsCount > 0 && len(embeddingIndex.CodeIndex.Embeddings) > 0 {
+		codeResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount)
 	}
 
-	if params.TextResultsCount > 0 && embeddingIndex.TextIndex != nil {
-		textResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount)
+	if params.TextResultsCount > 0 && len(embeddingIndex.TextIndex.Embeddings) > 0 {
+		textResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount)
 	}
 
 	return &embeddings.EmbeddingSearchResults{CodeResults: codeResults, TextResults: textResults}, nil
 }
+
+const SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT = 1000
 
 func searchEmbeddingIndex(
 	ctx context.Context,
@@ -50,7 +53,9 @@ func searchEmbeddingIndex(
 	query []float32,
 	nResults int,
 ) []embeddings.EmbeddingSearchResult {
-	rows := index.SimilaritySearch(query, nResults)
+	numWorkers := runtime.GOMAXPROCS(0)
+	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT})
+
 	results := make([]embeddings.EmbeddingSearchResult, len(rows))
 	for idx, row := range rows {
 		fileContent, err := readFile(ctx, repoName, revision, row.FileName)

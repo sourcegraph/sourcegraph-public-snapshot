@@ -8,7 +8,6 @@ import { GraphQLClient, GraphQLResult } from '@sourcegraph/http-client'
 
 import { SettingsEdit } from '../api/client/services/settings'
 import { ExecutableExtension } from '../api/extension/activation'
-import type { InputBoxOptions } from '../codeintel/legacy-extensions/api'
 import { Scalars } from '../graphql-operations'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
@@ -70,6 +69,8 @@ export interface PlatformContext {
      * changes as a result of a call to {@link PlatformContext#updateSettings}).
      *
      * It should be a cold observable so that it does not trigger a network request upon each subscription.
+     *
+     * @deprecated Use useSettings instead
      */
     readonly settings: Subscribable<SettingsCascadeOrError<Settings>>
 
@@ -94,6 +95,8 @@ export interface PlatformContext {
     /**
      * Returns promise that resolves into Apollo Client instance after cache restoration.
      * Only `watchQuery` is available till https://github.com/sourcegraph/sourcegraph/issues/24953 is implemented.
+     *
+     * @deprecated Use [Apollo](docs.sourcegraph.com/dev/background-information/web/graphql#graphql-client) instead
      */
     getGraphQLClient: () => Promise<Pick<GraphQLClient, 'watchQuery'>>
 
@@ -103,6 +106,8 @@ export interface PlatformContext {
      * @template R The GraphQL result type
      * could leak private information such as repository names.
      * @returns Observable that emits the result or an error if the HTTP request failed
+     *
+     * @deprecated Use [Apollo](docs.sourcegraph.com/dev/background-information/web/graphql#graphql-client) instead
      */
     requestGraphQL: <R, V extends { [key: string]: any } = object>(options: {
         /**
@@ -183,22 +188,6 @@ export interface PlatformContext {
      * the extension host will not activate any other settings (e.g. extensions from user settings)
      */
     getStaticExtensions?: () => Observable<ExecutableExtension[] | undefined>
-
-    /**
-     * Display a modal message from an extension to the user.
-     *
-     * @param message The message to display
-     * @returns a Promise that resolves when the user dismisses the message
-     */
-    showMessage?(message: string): Promise<void>
-
-    /**
-     * Displays an input box for an extension that asks the user for input.
-     *
-     * @param options Configures the behavior of the input box.
-     * @returns The string provided by the user, or `undefined` if the input box was canceled.
-     */
-    showInputBox?(options: InputBoxOptions | undefined): Promise<string | undefined>
 }
 
 /**

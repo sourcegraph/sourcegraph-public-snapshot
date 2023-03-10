@@ -88,6 +88,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
       - executor
       - local (using `src-cli`)
 - Aggregated counts of users created, deleted, retained, resurrected and churned within the month
+- Aggregated counts of access requests pending, approved, rejected
 - Saved searches usage data
   - Count of saved searches
   - Count of users using saved searches
@@ -200,7 +201,13 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
     - Count of unique users who interacted with the search exports feature
     - Count interactions with the go imports search query transformation feature
     - Count of unique users who interacted with the go imports search query transformation feature
-
+- Sourcegraph Own usage data
+  - Whether the `search-ownership` feature flag is turned on.
+  - Number and ratio of repositories for which ownership data is available via CODEOWNERS file or the API.
+  - Aggregate monthly weekly and daily active users for the following activities:
+    - Narrowing search results by owner using `file:has.owners` predicate.
+    - Selecting owner search result through `select:file.owners`.
+    - Displaying ownership panel in file view.
 </details>
 
 ## CIDR Range for Sourcegraph

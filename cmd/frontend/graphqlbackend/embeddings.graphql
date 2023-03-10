@@ -29,6 +29,31 @@ extend type Query {
       - "Translate the previous code to Typescript" does not need additional context since it is referring to the existing context (or conversation).
     """
     isContextRequiredForChatQuery(query: String!): Boolean!
+    """
+    Experimental: Repo embedding jobs list.
+    """
+    repoEmbeddingJobs(
+        """
+        Number of jobs returned. Up to 100 jobs are returned by default.
+        """
+        first: Int
+        """
+        The number of nodes to return starting from the end (latest).
+        Note: Use either last or first (see above) in the query. Setting both will
+        return an error.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards that may be also used
+        in conjunction with "first" to return the first N nodes.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards that may be
+        also used in conjunction with "last" to return the last N nodes.
+        """
+        before: String
+    ): RepoEmbeddingJobsConnection!
 }
 
 extend type Mutation {
@@ -76,4 +101,96 @@ type EmbeddingsSearchResults {
     A list of text file results.
     """
     textResults: [EmbeddingsSearchResult!]!
+}
+
+"""
+State types of repo embedding sync jobs.
+"""
+enum RepoEmbeddingJobState {
+    QUEUED
+    PROCESSING
+    FAILED
+    ERRORED
+    COMPLETED
+    CANCELED
+}
+
+"""
+A repo embedding job.
+"""
+type RepoEmbeddingJob implements Node {
+    """
+    Unique node ID.
+    """
+    id: ID!
+    """
+    State of a repo embedding job.
+    """
+    state: RepoEmbeddingJobState!
+    """
+    Failure message for failed job.
+    """
+    failureMessage: String
+    """
+    Time when repo embedding job was queued.
+    """
+    queuedAt: DateTime!
+    """
+    Time when repo embedding job processing was started.
+    """
+    startedAt: DateTime
+    """
+    Time when repo embedding job processing finished.
+    """
+    finishedAt: DateTime
+    """
+    Time after which repo embedding job processing should be started.
+    """
+    processAfter: DateTime
+    """
+    Number of repo embedding job processing resets.
+    """
+    numResets: Int!
+    """
+    Number of repo embedding job processing failures.
+    """
+    numFailures: Int!
+    """
+    Time of last heartbeat of a repo embedding job processing.
+    """
+    lastHeartbeatAt: DateTime
+    """
+    Hostname of a worker on which repo embedding job is processing.
+    """
+    workerHostname: String!
+    """
+    Flag showing that given repo embedding job should be canceled instead of being processed.
+    """
+    cancel: Boolean!
+    """
+    The embedded repository.
+    """
+    repo: Repository
+    """
+    The revision at which the repo was embedded.
+    """
+    revision: GitCommit
+}
+
+"""
+Repo embedding jobs.
+"""
+type RepoEmbeddingJobsConnection implements Connection {
+    """
+    Repo embedding jobs.
+    """
+    nodes: [RepoEmbeddingJob!]!
+    """
+    The total number of jobs in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
 }

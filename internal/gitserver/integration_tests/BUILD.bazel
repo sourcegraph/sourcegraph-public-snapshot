@@ -32,6 +32,9 @@ go_test(
         "tree_test.go",
     ],
     embed = [":integration_tests"],
+    # This test loads coursier as a side effect, so we ensure the
+    # path is sandboxed properly.
+    env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
         "//internal/actor",
         "//internal/api",

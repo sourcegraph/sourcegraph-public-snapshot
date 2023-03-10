@@ -48,3 +48,26 @@
 .purple-color {
     color: var(--purple);
 }
+
+.legend {
+    display: flex;
+    justify-content: space-between;
+
+    &-left-panel {
+        display: flex;
+        gap: 1.25rem;
+        margin-right: auto;
+    }
+
+    &-right-panel {
+        display: flex;
+        gap: 1.25rem;
+    }
+
+    &-item {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+}

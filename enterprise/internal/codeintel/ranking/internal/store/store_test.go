@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -76,19 +77,19 @@ func TestDocumentRanks(t *testing.T) {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
 
-	if err := store.SetDocumentRanks(ctx, repoName, 0.25, map[string]float64{
+	if err := store.setDocumentRanks(ctx, repoName, map[string]float64{
 		"cmd/main.go":        2, // no longer referenced
 		"internal/secret.go": 3,
 		"internal/util.go":   4,
 		"README.md":          5, // no longer referenced
-	}); err != nil {
+	}, mockRankingGraphKey+"-123"); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, repoName, 0.25, map[string]float64{
+	if err := store.setDocumentRanks(ctx, repoName, map[string]float64{
 		"cmd/args.go":        8, // new
 		"internal/secret.go": 7, // edited
 		"internal/util.go":   6, // edited
-	}); err != nil {
+	}, mockRankingGraphKey+"-123"); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 
@@ -96,13 +97,46 @@ func TestDocumentRanks(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
-	expectedRanks := map[string][2]float64{
-		"cmd/args.go":        {0.25, 8},
-		"internal/secret.go": {0.25, 7},
-		"internal/util.go":   {0.25, 6},
+	expectedRanks := map[string]float64{
+		"cmd/args.go":        8,
+		"internal/secret.go": 7,
+		"internal/util.go":   6,
 	}
 	if diff := cmp.Diff(expectedRanks, ranks); diff != "" {
 		t.Errorf("unexpected ranks (-want +got):\n%s", diff)
+	}
+}
+
+func TestGetReferenceCountStatistics(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := newInternal(&observation.TestContext, db)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
+		t.Fatalf("failed to insert repos: %s", err)
+	}
+
+	if err := store.setDocumentRanks(ctx, api.RepoName("foo"), map[string]float64{"foo": 18, "bar": 3985, "baz": 5260}, mockRankingGraphKey); err != nil {
+		t.Fatalf("failed to set document ranks: %s", err)
+	}
+	if err := store.setDocumentRanks(ctx, api.RepoName("bar"), map[string]float64{"foo": 5712, "bar": 5902, "baz": 79}, mockRankingGraphKey); err != nil {
+		t.Fatalf("failed to set document ranks: %s", err)
+	}
+	if err := store.setDocumentRanks(ctx, api.RepoName("baz"), map[string]float64{"foo": 86, "bar": 89, "baz": 9, "bonk": 918, "quux": 0}, mockRankingGraphKey); err != nil {
+		t.Fatalf("failed to set document ranks: %s", err)
+	}
+
+	logmean, err := store.GetReferenceCountStatistics(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error getting reference count statistics: %s", err)
+	}
+	if expected := 7.8181; !cmpFloat(logmean, expected) {
+		t.Errorf("unexpected logmean. want=%.5f have=%.5f", expected, logmean)
 	}
 }
 
@@ -121,10 +155,10 @@ func TestLastUpdatedAt(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (id, name) VALUES (1, 'foo'), (2, 'bar'), (3, 'baz')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, "foo", 0.25, nil); err != nil {
+	if err := store.setDocumentRanks(ctx, "foo", nil, mockRankingGraphKey+"-123"); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, "bar", 0.25, nil); err != nil {
+	if err := store.setDocumentRanks(ctx, "bar", nil, mockRankingGraphKey+"-123"); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 
@@ -163,10 +197,10 @@ func TestUpdatedAfter(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, "foo", 0.25, nil); err != nil {
+	if err := store.setDocumentRanks(ctx, "foo", nil, mockRankingGraphKey+"-123"); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, "bar", 0.25, nil); err != nil {
+	if err := store.setDocumentRanks(ctx, "bar", nil, mockRankingGraphKey+"-123"); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 
@@ -191,4 +225,10 @@ func TestUpdatedAfter(t *testing.T) {
 			t.Fatal("expected no repos")
 		}
 	}
+}
+
+const epsilon = 0.0001
+
+func cmpFloat(x, y float64) bool {
+	return math.Abs(x-y) < epsilon
 }

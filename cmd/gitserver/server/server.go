@@ -995,7 +995,16 @@ func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, 
 // This directory is cleaned up by gitserver and will be ignored by repository
 // listing operations.
 func (s *Server) tempDir(prefix string) (name string, err error) {
-	dir := filepath.Join(s.ReposDir, tempDirName)
+	return tempDir(s.ReposDir, prefix)
+}
+
+// tempDir is a wrapper around os.MkdirTemp, but using the given reposDir
+// temporary directory filepath.Join(s.ReposDir, tempDirName).
+//
+// This directory is cleaned up by gitserver and will be ignored by repository
+// listing operations.
+func tempDir(reposDir, prefix string) (name string, err error) {
+	dir := filepath.Join(reposDir, tempDirName)
 
 	// Create tmpdir directory if doesn't exist yet.
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -1923,7 +1932,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Make sure credentials are valid before heavier operation
-	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	err := p4testWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

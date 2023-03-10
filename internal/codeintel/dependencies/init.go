@@ -13,7 +13,7 @@ func NewService(observationCtx *observation.Context, db database.DB) *Service {
 }
 
 // TestService creates a new dependencies service with noop observation contexts.
-func TestService(db database.DB, _ GitserverClient) *Service {
+func TestService(db database.DB) *Service {
 	store := dependenciesstore.New(&observation.TestContext, db)
 
 	return newService(&observation.TestContext, store)
@@ -29,8 +29,17 @@ func CrateSyncerJob(
 	dependenciesSvc background.DependenciesService,
 	gitserverClient background.GitserverClient,
 	extSvcStore background.ExternalServiceStore,
-) []goroutine.BackgroundRoutine {
+) goroutine.CombinedRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewCrateSyncer(observationCtx, autoindexingSvc, dependenciesSvc, gitserverClient, extSvcStore),
+	}
+}
+
+func PackageFiltersJob(
+	obsctx *observation.Context,
+	db database.DB,
+) goroutine.CombinedRoutine {
+	return []goroutine.BackgroundRoutine{
+		background.NewPackagesFilterApplicator(obsctx, db),
 	}
 }
