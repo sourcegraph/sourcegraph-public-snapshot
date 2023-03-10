@@ -2342,7 +2342,7 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 		if unrestricted {
 			reason = UserRepoPermissionReasonUnrestricted
 			updatedAt = time.Time{}
-		} else if user.SiteAdmin {
+		} else if user.SiteAdmin && !authzParams.AuthzEnforceForSiteAdmins {
 			reason = UserRepoPermissionReasonSiteAdmin
 			updatedAt = time.Time{}
 		}

@@ -4011,6 +4011,24 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 						},
 					},
 				},
+				{
+					Name:                      "TestPrivateRepoWithAuthzEnforceForSiteAdminsEnabled",
+					RepoID:                    1,
+					Args:                      nil,
+					AuthzEnforceForSiteAdmins: true,
+					WantResults: []*listRepoPermissionsResult{
+						{
+							// have access
+							UserID: 666,
+							Reason: UserRepoPermissionReasonPermissionsSync,
+						},
+						{
+							// have access
+							UserID: 555,
+							Reason: UserRepoPermissionReasonPermissionsSync,
+						},
+					},
+				},
 			}
 
 			for _, test := range tests {
@@ -4023,8 +4041,16 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 
 					before := globals.PermissionsUserMapping()
 					globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: test.UsePermissionsUserMapping})
+					conf.Mock(
+						&conf.Unified{
+							SiteConfiguration: schema.SiteConfiguration{
+								AuthzEnforceForSiteAdmins: test.AuthzEnforceForSiteAdmins,
+							},
+						},
+					)
 					t.Cleanup(func() {
 						globals.SetPermissionsUserMapping(before)
+						conf.Mock(nil)
 					})
 
 					results, err := s.ListRepoPermissions(ctx, api.RepoID(test.RepoID), test.Args)
@@ -4057,6 +4083,7 @@ type listRepoPermissionsTest struct {
 	WantResults               []*listRepoPermissionsResult
 	NoAuthzProviders          bool
 	UsePermissionsUserMapping bool
+	AuthzEnforceForSiteAdmins bool
 }
 
 type listRepoPermissionsResult struct {
