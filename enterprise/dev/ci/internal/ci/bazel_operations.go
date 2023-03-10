@@ -21,6 +21,7 @@ func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.Agent("queue", "bazel"),
+		bk.ArtifactPaths("$$(bazel info bazel-testlogs)/**/*.log"),
 	}
 
 	for _, target := range targets {
