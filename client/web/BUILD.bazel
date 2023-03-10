@@ -1690,6 +1690,9 @@ ts_project(
         "src/enterprise/code-monitoring/components/actions/SlackWebhookAction.test.tsx",
         "src/enterprise/code-monitoring/components/actions/WebhookAction.test.tsx",
         "src/enterprise/codeintel/configuration/components/inference-form/auto-index-to-schema.test.ts",
+
+        # TODO(bazel): should not be here. Caused by the issue in `rules_js`.
+        "src/enterprise/codeintel/configuration/schema.json",  #keep
         "src/enterprise/insights/components/creation-ui/code-insight-time-step-picker/get-interval-descrtiption-text/get-interval-description.text.test.ts",
         "src/enterprise/insights/hooks/use-parallel-requests/use-prallel-requests.test.ts",
         "src/enterprise/insights/pages/CodeInsightsRootPage.test.tsx",
@@ -1759,9 +1762,6 @@ ts_project(
         "src/util/prettyBytesBigint.test.ts",
         "src/util/time.test.ts",
         "src/util/url.test.ts",
-
-        # TODO(bazel): should not be here. Caused by the issue in `rules_js`.
-        "src/enterprise/codeintel/configuration/schema.json", #keep
     ],
     tsconfig = ":tsconfig",
     # TODO(bazel): type-only #keep imports
