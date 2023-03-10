@@ -1526,6 +1526,10 @@ type Query {
         Returns the first n package/package version matches from the list.
         """
         first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
     ): PackageRepoOrVersionConnection!
 
     """

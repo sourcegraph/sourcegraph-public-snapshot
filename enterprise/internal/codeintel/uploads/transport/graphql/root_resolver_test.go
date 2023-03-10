@@ -29,7 +29,6 @@ func TestDeleteLSIFUpload(t *testing.T) {
 	mockUploadService := NewMockUploadService()
 	mockPolicyService := NewMockPolicyService()
 	mockAutoIndexingService := NewMockAutoIndexingService()
-	mockAutoIndexingService.GetUnsafeDBFunc.SetDefaultReturn(db)
 
 	rootResolver := NewRootResolver(&observation.TestContext, mockUploadService, mockAutoIndexingService, mockPolicyService, siteAdminChecker, nil, nil, nil)
 
@@ -55,7 +54,6 @@ func TestDeleteLSIFUploadUnauthenticated(t *testing.T) {
 	mockUploadService := NewMockUploadService()
 	mockPolicyService := NewMockPolicyService()
 	mockAutoIndexingService := NewMockAutoIndexingService()
-	mockAutoIndexingService.GetUnsafeDBFunc.SetDefaultReturn(db)
 
 	rootResolver := NewRootResolver(&observation.TestContext, mockUploadService, mockAutoIndexingService, mockPolicyService, siteAdminChecker, nil, nil, nil)
 

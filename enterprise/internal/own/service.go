@@ -73,7 +73,7 @@ func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, rep
 		return nil, err
 	}
 	if ingestedCodeowners != nil {
-		return codeowners.NewRuleset(ingestedCodeowners.Proto), nil
+		return codeowners.NewRuleset(codeowners.IngestedRulesetSource{ID: int32(ingestedCodeowners.RepoID)}, ingestedCodeowners.Proto), nil
 	}
 	for _, path := range codeownersLocations {
 		content, err := s.gitserverClient.ReadFile(
@@ -84,7 +84,11 @@ func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, rep
 			path,
 		)
 		if content != nil && err == nil {
-			return codeowners.Parse(bytes.NewReader(content))
+			pbfile, err := codeowners.Parse(bytes.NewReader(content))
+			if err != nil {
+				return nil, err
+			}
+			return codeowners.NewRuleset(codeowners.GitRulesetSource{Repo: repoID, Commit: commitID, Path: path}, pbfile), nil
 		} else if os.IsNotExist(err) {
 			continue
 		}

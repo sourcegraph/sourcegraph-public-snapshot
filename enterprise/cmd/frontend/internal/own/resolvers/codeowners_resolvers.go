@@ -101,11 +101,11 @@ func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbac
 
 func parseInputString(fileContents string) (*codeownerspb.File, error) {
 	fileReader := strings.NewReader(fileContents)
-	ruleset, err := codeowners.Parse(fileReader)
+	file, err := codeowners.Parse(fileReader)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse input")
 	}
-	return ruleset.GetFile(), nil
+	return file, nil
 }
 
 func (r *ownResolver) getRepo(ctx context.Context, input graphqlbackend.CodeownersFileInput) (*itypes.Repo, error) {

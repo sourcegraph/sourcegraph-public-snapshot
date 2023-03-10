@@ -2972,6 +2972,7 @@ Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
+    "idx_repo_github_topics" gin (((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text)) WHERE external_service_type = 'github'::text
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)

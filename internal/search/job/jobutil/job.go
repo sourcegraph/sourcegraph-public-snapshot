@@ -729,6 +729,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		CommitAfter:         b.RepoContainsCommitAfter(),
 		UseIndex:            b.Index(),
 		HasKVPs:             b.RepoHasKVPs(),
+		HasTopics:           b.RepoHasTopics(),
 	}
 }
 
@@ -994,6 +995,12 @@ func isGlobal(op search.RepoOptions) bool {
 	// Zoekt does not know about repo key-value pairs or tags, so we depend on the
 	// database to handle this filter.
 	if len(op.HasKVPs) > 0 {
+		return false
+	}
+
+	// Zoekt does not know about repo topics, so we depend on the database to
+	// handle this filter.
+	if len(op.HasTopics) > 0 {
 		return false
 	}
 
