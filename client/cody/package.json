@@ -7,10 +7,9 @@
     "url": "https://github.com/sourcegraph/cody"
   },
   "engines": {
-    "node": "^16.18.1",
-    "pnpm": "^7.29.0"
+    "pnpm": "^7.24.2"
   },
-  "packageManager": "pnpm@7.27.1",
+  "packageManager": "pnpm@7.24.2",
   "scripts": {
     "lint": "eslint .",
     "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write",

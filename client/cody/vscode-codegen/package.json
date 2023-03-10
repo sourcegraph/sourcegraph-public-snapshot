@@ -236,7 +236,7 @@
     "@types/escape-html": "^1.0.2",
     "@types/glob": "^8.0.0",
     "@types/marked": "^4.0.8",
-    "@types/node": "^16.18.1",
+    "@types/node": "^18.14.2",
     "@types/node-fetch": "^2.6.2",
     "@types/react": "^18.0.27",
     "@types/react-dom": "^18.0.10",

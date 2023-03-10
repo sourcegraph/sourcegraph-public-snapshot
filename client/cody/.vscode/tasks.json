@@ -9,13 +9,13 @@
 			"problemMatcher": "$tsc-watch",
 			"isBackground": true,
 			"presentation": {
-				"reveal": "never"
+				"reveal": "never",
 			},
 			"group": {
 				"kind": "build",
-				"isDefault": true
+				"isDefault": true,
 			},
-			"runOptions": { "runOn": "folderOpen" }
+			"runOptions": { "runOn": "folderOpen" },
 		},
 		{
 			"label": "vscode-codegen: bundle",
@@ -23,8 +23,8 @@
 			"script": "bundle",
 			"options": { "cwd": "vscode-codegen" },
 			"group": {
-				"kind": "build"
-			}
+				"kind": "build",
+			},
 		},
 		{
 			"label": "vsce: pre-build-dev",
@@ -32,8 +32,8 @@
 			"script": "build:dev",
 			"options": { "cwd": "vscode-codegen" },
 			"group": {
-				"kind": "build"
-			}
+				"kind": "build",
+			},
 		},
 		{
 			"label": "vsce: watch",
@@ -41,8 +41,8 @@
 			"script": "watch",
 			"options": { "cwd": "vscode-codegen" },
 			"group": {
-				"kind": "build"
-			}
+				"kind": "build",
+			},
 		},
 		{
 			"label": "vscode-codegen: test-deps",
@@ -50,8 +50,8 @@
 			"script": "test-deps",
 			"options": { "cwd": "vscode-codegen" },
 			"group": {
-				"kind": "build"
-			}
-		}
-	]
+				"kind": "build",
+			},
+		},
+	],
 }
