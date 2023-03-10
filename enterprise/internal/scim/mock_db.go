@@ -172,6 +172,9 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 		return toReturn, nil
 	})
 
+	authzStore := database.NewMockAuthzStore()
+	authzStore.RevokeUserPermissionsListFunc.SetDefaultReturn(nil)
+
 	// Create DB
 	db := database.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, tx func(database.DB) error) error {
@@ -180,6 +183,7 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 	db.UsersFunc.SetDefaultReturn(userStore)
 	db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
 	db.UserEmailsFunc.SetDefaultReturn(userEmailsStore)
+	db.AuthzFunc.SetDefaultReturn(authzStore)
 	return db
 }
 
