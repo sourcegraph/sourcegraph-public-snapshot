@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronUp, mdiChevronDown, mdiDelete } from '@mdi/js'
-import { startCase, isEqual } from 'lodash'
+import { startCase, isEqual, noop } from 'lodash'
 
 import {
     Button,
@@ -20,10 +20,10 @@ import {
     Alert,
 } from '@sourcegraph/wildcard'
 
+import { LoaderButton } from '../../../components/LoaderButton'
 import { RoleFields } from '../../../graphql-operations'
 import { PermissionsMap, useDeleteRole, useSetPermissions } from '../backend'
 
-import { LoaderButton } from '../../../components/LoaderButton'
 import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
 import { PermissionsList } from './Permissions'
 
@@ -82,7 +82,8 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
     })
 
     const onSubmit = (values: RoleNodePermissionsFormValues): SubmissionResult => {
-        setPermissions({ variables: { role: node.id, permissions: values.permissions } })
+        // We handle any error by destructuring the query result directly
+        setPermissions({ variables: { role: node.id, permissions: values.permissions } }).catch(noop)
     }
     const defaultFormValues: RoleNodePermissionsFormValues = { permissions: rolePermissionIDs }
     const { formAPI, ref, handleSubmit } = useForm({
@@ -95,11 +96,13 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
 
     const { value } = formAPI.fields.permissions
 
-    const isUpdateDisabled = useMemo(() => {
-        // If the form hasn't been submitted, checking the values of the initialValue and current
-        // value suffices to know if a change has occurred.
-        return isEqual(rolePermissionIDs, value)
-    }, [rolePermissionIDs, value])
+    const isUpdateDisabled = useMemo(
+        () =>
+            // If the form hasn't been submitted, checking the values of the initialValue
+            // and current value suffices to know if a change has occurred.
+            isEqual(rolePermissionIDs, value),
+        [rolePermissionIDs, value]
+    )
 
     const error = deleteRoleError || setPermissionsError
     return (

@@ -6,10 +6,10 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
+import { CREATE_ROLE } from '../backend'
 import { mockPermissionsMap, mockRoles } from '../mock'
 
 import { CreateRoleModal } from './CreateRoleModal'
-import { CREATE_ROLE } from '../backend'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 

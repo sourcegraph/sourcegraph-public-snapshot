@@ -24,9 +24,7 @@ const isChecked = (role: typeof roleWithAllPermissions): ((value: string) => boo
         acc[node.id] = true
         return acc
     }, {})
-    return (value: string): boolean => {
-        return rolePermissions[value]
-    }
+    return (value: string): boolean => rolePermissions[value]
 }
 
 export const NoPermissions: Story = () => (

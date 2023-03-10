@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { groupBy } from 'lodash'
+import { groupBy, noop } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Button, Icon, ProductStatusBadge, ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
@@ -44,7 +44,8 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
 
     const afterCreate = useCallback(() => {
         closeModal()
-        refetch()
+        // We handle any error by destructuring the query result directly
+        refetch().catch(noop)
     }, [closeModal, refetch])
 
     const loading = rolesLoading || permissionsLoading
