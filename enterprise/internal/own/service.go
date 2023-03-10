@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"strings"
 	"sync"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -134,7 +135,7 @@ func (s *service) resolveOwner(ctx context.Context, handle, email string) (codeo
 	var resolvedOwner codeowners.ResolvedOwner
 	var err error
 	if handle != "" {
-		resolvedOwner, err = tryGetUserThenTeam(ctx, handle, s.db.Users().GetByUsername, s.db.Teams().GetTeamByName)
+		resolvedOwner, err = tryGetUserThenTeam(ctx, handle, s.db.Users().GetByUsername, s.whichTeamGetter(ctx))
 		if err != nil {
 			return personOrError(handle, email, err)
 		}
@@ -169,6 +170,25 @@ func tryGetUserThenTeam(ctx context.Context, identifier string, userGetter userG
 		return nil, err
 	}
 	return &codeowners.Person{User: user}, nil
+}
+
+func (s *service) whichTeamGetter(ctx context.Context) teamGetterFunc {
+	return s.bestEffortTeamGetter
+}
+
+func (s *service) bestEffortTeamGetter(ctx context.Context, teamHandle string) (*types.Team, error) {
+	team, err := s.db.Teams().GetTeamByName(ctx, teamHandle)
+	if err == nil {
+		return team, nil
+	}
+	if !errcode.IsNotFound(err) {
+		return nil, err
+	}
+	// If the team handle is potentially embedded we will do best-effort matching on the last part of the team handle.
+	if strings.Contains(teamHandle, "/") {
+		return s.db.Teams().GetTeamByName(ctx, teamHandle)
+	}
+	return nil, err
 }
 
 func personOrError(handle, email string, err error) (*codeowners.Person, error) {
