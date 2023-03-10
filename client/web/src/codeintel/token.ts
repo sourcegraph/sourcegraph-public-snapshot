@@ -50,10 +50,11 @@ export function findSearchToken({
     if (view !== null) {
         const occurrences = view.state.facet(syntaxHighlight).occurrences
         for (const occurrence of occurrences) {
-            if (occurrence.range.contains(new Position(position.line, position.character))) {
-                const text = occurrence.range.isSingleLine()
-                    ? line.slice(occurrence.range.start.character, occurrence.range.end.character)
-                    : 'UNSUPPORTED' // TODO
+            if (
+                occurrence.range.isSingleLine() &&
+                occurrence.range.contains(new Position(position.line, position.character))
+            ) {
+                const text = line.slice(occurrence.range.start.character, occurrence.range.end.character)
                 return {
                     searchToken: text,
                     isString: occurrence.kind === SyntaxKind.StringLiteral,
