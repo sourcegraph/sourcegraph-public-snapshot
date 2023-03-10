@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/errors"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// userCtx returns a context where give user ID identifies logged in user.
 func userCtx(userID int32) context.Context {
 	ctx := context.Background()
 	a := actor.FromUser(userID)
@@ -39,7 +39,7 @@ func TestCodeownersIngestionGuarding(t *testing.T) {
 	ctx := context.Background()
 	adminUser := fs.AddUser(types.User{SiteAdmin: false})
 
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: New(db, git, svc)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: New(db, git, svc, logtest.NoOp(t))})
 	if err != nil {
 		t.Fatal(err)
 	}
