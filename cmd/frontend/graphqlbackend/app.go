@@ -155,7 +155,6 @@ func (r *appResolver) LocalExternalServices(ctx context.Context) ([]LocalExterna
 	}
 
 	externalServices, err := r.db.ExternalServices().List(ctx, opt)
-
 	if err != nil {
 		return nil, err
 	}
