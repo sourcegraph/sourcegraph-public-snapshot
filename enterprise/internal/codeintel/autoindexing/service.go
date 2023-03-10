@@ -41,6 +41,7 @@ func newService(
 	store store.Store,
 	inferenceSvc InferenceService,
 	repoUpdater RepoUpdaterClient,
+	repoStore database.RepoStore,
 	gitserver GitserverClient,
 	symbolsClient *symbols.Client,
 ) *Service {
@@ -62,6 +63,7 @@ func newService(
 		observationCtx,
 		store,
 		repoUpdater,
+		repoStore,
 		gitserver,
 		jobSelector,
 	)
@@ -168,10 +170,6 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 
 func (s *Service) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error {
 	return s.store.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, data)
-}
-
-func (s *Service) GetUnsafeDB() database.DB {
-	return s.store.GetUnsafeDB()
 }
 
 func (s *Service) ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {

@@ -14,7 +14,6 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
 	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	database "github.com/sourcegraph/sourcegraph/internal/database"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
@@ -41,9 +40,6 @@ type MockStore struct {
 	// GetRepoIDsByGlobPatternsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetRepoIDsByGlobPatterns.
 	GetRepoIDsByGlobPatternsFunc *StoreGetRepoIDsByGlobPatternsFunc
-	// GetUnsafeDBFunc is an instance of a mock function object controlling
-	// the behavior of the method GetUnsafeDB.
-	GetUnsafeDBFunc *StoreGetUnsafeDBFunc
 	// RepoCountFunc is an instance of a mock function object controlling
 	// the behavior of the method RepoCount.
 	RepoCountFunc *StoreRepoCountFunc
@@ -87,11 +83,6 @@ func NewMockStore() *MockStore {
 		},
 		GetRepoIDsByGlobPatternsFunc: &StoreGetRepoIDsByGlobPatternsFunc{
 			defaultHook: func(context.Context, []string, int, int) (r0 []int, r1 int, r2 error) {
-				return
-			},
-		},
-		GetUnsafeDBFunc: &StoreGetUnsafeDBFunc{
-			defaultHook: func() (r0 database.DB) {
 				return
 			},
 		},
@@ -147,11 +138,6 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetRepoIDsByGlobPatterns")
 			},
 		},
-		GetUnsafeDBFunc: &StoreGetUnsafeDBFunc{
-			defaultHook: func() database.DB {
-				panic("unexpected invocation of MockStore.GetUnsafeDB")
-			},
-		},
 		RepoCountFunc: &StoreRepoCountFunc{
 			defaultHook: func(context.Context) (int, error) {
 				panic("unexpected invocation of MockStore.RepoCount")
@@ -193,9 +179,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		GetRepoIDsByGlobPatternsFunc: &StoreGetRepoIDsByGlobPatternsFunc{
 			defaultHook: i.GetRepoIDsByGlobPatterns,
-		},
-		GetUnsafeDBFunc: &StoreGetUnsafeDBFunc{
-			defaultHook: i.GetUnsafeDB,
 		},
 		RepoCountFunc: &StoreRepoCountFunc{
 			defaultHook: i.RepoCount,
@@ -774,104 +757,6 @@ func (c StoreGetRepoIDsByGlobPatternsFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreGetRepoIDsByGlobPatternsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// StoreGetUnsafeDBFunc describes the behavior when the GetUnsafeDB method
-// of the parent MockStore instance is invoked.
-type StoreGetUnsafeDBFunc struct {
-	defaultHook func() database.DB
-	hooks       []func() database.DB
-	history     []StoreGetUnsafeDBFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUnsafeDB delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockStore) GetUnsafeDB() database.DB {
-	r0 := m.GetUnsafeDBFunc.nextHook()()
-	m.GetUnsafeDBFunc.appendCall(StoreGetUnsafeDBFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the GetUnsafeDB method
-// of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetUnsafeDBFunc) SetDefaultHook(hook func() database.DB) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUnsafeDB method of the parent MockStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *StoreGetUnsafeDBFunc) PushHook(hook func() database.DB) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreGetUnsafeDBFunc) SetDefaultReturn(r0 database.DB) {
-	f.SetDefaultHook(func() database.DB {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetUnsafeDBFunc) PushReturn(r0 database.DB) {
-	f.PushHook(func() database.DB {
-		return r0
-	})
-}
-
-func (f *StoreGetUnsafeDBFunc) nextHook() func() database.DB {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreGetUnsafeDBFunc) appendCall(r0 StoreGetUnsafeDBFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreGetUnsafeDBFuncCall objects describing
-// the invocations of this function.
-func (f *StoreGetUnsafeDBFunc) History() []StoreGetUnsafeDBFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreGetUnsafeDBFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreGetUnsafeDBFuncCall is an object that describes an invocation of
-// method GetUnsafeDB on an instance of MockStore.
-type StoreGetUnsafeDBFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 database.DB
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreGetUnsafeDBFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreGetUnsafeDBFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // StoreRepoCountFunc describes the behavior when the RepoCount method of
