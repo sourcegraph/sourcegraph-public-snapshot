@@ -2,8 +2,7 @@ import React from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Container, H2, H3, Link, Text, Icon } from '@sourcegraph/wildcard'
+import { Container, H2, H3, Link, Text, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CallToActionBanner } from '../../../components/CallToActionBanner'
@@ -12,16 +11,22 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface GettingStartedProps {
     isSourcegraphDotCom: boolean
-    authenticatedUser?: Pick<AuthenticatedUser, 'displayName' | 'emails'> | null
+    canCreate: boolean
     className?: string
 }
 
 export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<GettingStartedProps>> = ({
     isSourcegraphDotCom,
-    authenticatedUser,
+    canCreate,
     className,
 }) => (
     <div className={className} data-testid="test-getting-started">
+        {canCreate ? null : (
+            <Alert className="my-3" variant="info">
+                Your user does not have sufficient permissions to create batch changes. Contact your site admin to
+                request access.
+            </Alert>
+        )}
         <Container className="mb-3">
             <div className="row align-items-center">
                 <div className="col-12 col-md-7">
