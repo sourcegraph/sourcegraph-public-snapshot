@@ -62,13 +62,13 @@ func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult
 			return
 		}
 
-		uuu := url.URL{
+		u := url.URL{
 			Scheme: "perforce",
 			Host:   s.config.P4Port,
 			Path:   depot,
 			User:   url.UserPassword(s.config.P4User, s.config.P4Passwd),
 		}
-		p4Url, err := vcs.ParseURL(uuu.String())
+		p4Url, err := vcs.ParseURL(u.String())
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
 			continue
