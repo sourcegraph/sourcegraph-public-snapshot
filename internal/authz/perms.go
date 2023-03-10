@@ -229,6 +229,34 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 	return fs
 }
 
+// UserGrantPermissions defines the structure to grant pending permissions to a user.
+// See also UserPendingPermissions.
+type UserGrantPermissions struct {
+	// UserID of the user to grant permissions to.
+	UserID int32
+	// ID of the user external account that the permissions are from.
+	UserExternalAccountID int32
+	// The type of the code host as if it would be used as extsvc.AccountSpec.ServiceType
+	ServiceType string
+	// The ID of the code host as if it would be used as extsvc.AccountSpec.ServiceID
+	ServiceID string
+	// The account ID of the user external account, that the permissions are from
+	AccountID string
+}
+
+// TracingFields returns tracing fields for the opentracing log.
+func (p *UserGrantPermissions) TracingFields() []otlog.Field {
+	fs := []otlog.Field{
+		otlog.Int32("UserGrantPermissions.UserID", p.UserID),
+		otlog.Int32("UserGrantPermissions.UserExternalAccountID", p.UserExternalAccountID),
+		otlog.String("UserPendingPermissions.ServiceType", p.ServiceType),
+		otlog.String("UserPendingPermissions.ServiceID", p.ServiceID),
+		otlog.String("UserPendingPermissions.AccountID", p.AccountID),
+	}
+
+	return fs
+}
+
 // UserPendingPermissions defines permissions that a not-yet-created user has to
 // perform on a given set of object IDs. Not-yet-created users may exist on the
 // code host but not yet in Sourcegraph. "ServiceType", "ServiceID" and "BindID"

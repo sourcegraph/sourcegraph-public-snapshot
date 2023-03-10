@@ -38,8 +38,8 @@ export interface InferenceFormJobStep extends Omit<SchemaCompatibleInferenceForm
 }
 
 export interface InferenceFormJob
-    extends Omit<SchemaCompatibleInferenceFormJob, 'indexer_args' | 'requestedEnvVars' | 'local_steps' | 'steps'>,
-        MetaIdentifier {
+    extends MetaIdentifier,
+        Omit<SchemaCompatibleInferenceFormJob, 'indexer_args' | 'requestedEnvVars' | 'local_steps' | 'steps'> {
     indexer_args: InferenceArrayValue[]
     requestedEnvVars: InferenceArrayValue[]
     local_steps: InferenceArrayValue[]
@@ -48,4 +48,5 @@ export interface InferenceFormJob
 
 export interface InferenceFormData {
     index_jobs: InferenceFormJob[]
+    dirty: boolean
 }

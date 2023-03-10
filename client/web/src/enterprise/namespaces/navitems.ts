@@ -6,6 +6,6 @@ export const enterpriseNamespaceAreaHeaderNavItems: readonly NamespaceAreaNavIte
         to: '/batch-changes',
         label: 'Batch Changes',
         icon: BatchChangesIconNamespaceNav,
-        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        condition: ({ batchChangesEnabled, isSourcegraphApp }) => batchChangesEnabled && !isSourcegraphApp,
     },
 ]

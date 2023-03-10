@@ -5,7 +5,7 @@ import { AccordionButton, AccordionItem, AccordionPanel } from '@reach/accordion
 
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { Badge, Button, ButtonLink, Icon, Link } from '@sourcegraph/wildcard'
+import { Badge, Button, ButtonLink, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { CodeownersFileEntryFields, OwnerFields } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
@@ -41,9 +41,17 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                 </td>
                 <td>
                     <div className="d-flex">
-                        <ButtonLink variant="icon" disabled={!email} to={email ? `mailto:${email}` : undefined}>
-                            <Icon svgPath={mdiEmail} aria-label="email" />
-                        </ButtonLink>
+                        <Tooltip content={email ? `Email ${email}` : 'No email address'} placement="top">
+                            {email ? (
+                                <ButtonLink variant="icon" to={`mailto:${email}`}>
+                                    <Icon svgPath={mdiEmail} aria-label="email" />
+                                </ButtonLink>
+                            ) : (
+                                <Button variant="icon" disabled={true}>
+                                    <Icon svgPath={mdiEmail} aria-label="email" />
+                                </Button>
+                            )}
+                        </Tooltip>
                     </div>
                 </td>
                 <td>
@@ -78,9 +86,16 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                 <td colSpan={4}>
                     <ul className={styles.reasons}>
                         {reasons.map(reason => (
-                            <li key={reason.title}>
-                                <Badge className={styles.badge}>{reason.title}</Badge> {reason.description}
-                            </li>
+                            <>
+                                {reason.__typename === 'CodeownersFileEntry' && (
+                                    <li key={reason.title}>
+                                        <Badge className={styles.badge}>{reason.title}</Badge>{' '}
+                                        <Link to={`${reason.codeownersFile.url}?L${reason.ruleLineMatch}`}>
+                                            {reason.description}
+                                        </Link>
+                                    </li>
+                                )}
+                            </>
                         ))}
                     </ul>
                 </td>

@@ -24,40 +24,58 @@ func NewService(
 	)
 }
 
-func NewSymbolExporter(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
+func NewSymbolExporter(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
+	return background.NewSymbolExporter(
+		observationCtx,
+		rankingService.store,
+		rankingService.lsifstore,
+		ConfigInst.SymbolExporterInterval,
+		ConfigInst.SymbolExporterReadBatchSize,
+		ConfigInst.SymbolExporterWriteBatchSize,
+	)
+}
+
+func NewSymbolJanitor(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewSymbolExporter(
+		background.NewSymbolDefinitionsJanitor(
 			observationCtx,
 			rankingService.store,
-			rankingService.lsifstore,
-			ConfigInst.SymbolExporterNumRoutines,
 			ConfigInst.SymbolExporterInterval,
-			ConfigInst.SymbolExporterReadBatchSize,
-			ConfigInst.SymbolExporterWriteBatchSize,
+		),
+		background.NewSymbolReferencesJanitor(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
+		),
+		background.NewRankCountsJanitor(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
+		),
+		background.NewRankJanitor(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
 		),
 	}
 }
 
-func NewMapper(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewMapper(
-			observationCtx,
-			rankingService.store,
-			ConfigInst.SymbolExporterInterval,
-			ConfigInst.MapperBatchSize,
-		),
-	}
+func NewMapper(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
+	return background.NewMapper(
+		observationCtx,
+		rankingService.store,
+		ConfigInst.SymbolExporterInterval,
+		ConfigInst.MapperBatchSize,
+	)
 }
 
-func NewReducer(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewReducer(
-			observationCtx,
-			rankingService.store,
-			ConfigInst.SymbolExporterInterval,
-			ConfigInst.ReducerBatchSize,
-		),
-	}
+func NewReducer(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
+	return background.NewReducer(
+		observationCtx,
+		rankingService.store,
+		ConfigInst.SymbolExporterInterval,
+		ConfigInst.ReducerBatchSize,
+	)
 }
 
 func scopedContext(component string, observationCtx *observation.Context) *observation.Context {

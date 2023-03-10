@@ -1,5 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 591
 expression: "dump_document(&document, &contents)"
 ---
   <!DOCTYPE html>

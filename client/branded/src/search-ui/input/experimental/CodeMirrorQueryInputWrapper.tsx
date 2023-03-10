@@ -208,6 +208,9 @@ function createStaticExtensions({ popoverID }: { popoverID: string }): Extension
             '.cm-line': {
                 padding: 0,
             },
+            '.cm-selectionLayer .cm-selectionBackground': {
+                backgroundColor: 'var(--gray-08)',
+            },
             '.sg-decorated-token-hover': {
                 borderRadius: '3px',
             },
@@ -266,13 +269,16 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
     const popoverID = useMemo(() => uuid.v4(), [])
     const [mode, setMode, modeNotifierExtension] = useInputMode()
 
-    // Wraps the onSubmit prop because that one changes whenever the input
-    // value changes causing unnecessary reconfiguration of the extensions
     const onSubmitRef = useRef(onSubmit)
     useEffect(() => {
         onSubmitRef.current = onSubmit
     }, [onSubmit])
     const hasSubmitHandler = !!onSubmit
+
+    const onChangeRef = useRef(onChange)
+    useEffect(() => {
+        onChangeRef.current = onChange
+    }, [onChange])
 
     const staticExtensions = useMemo(() => createStaticExtensions({ popoverID }), [popoverID])
     // Update extensions whenever any of these props change
@@ -282,7 +288,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
                 popoverID,
                 isLightTheme,
                 placeholder,
-                onChange,
+                onChange: (...args) => onChangeRef.current(...args),
                 onSubmit: hasSubmitHandler ? (): void => onSubmitRef.current?.() : undefined,
                 suggestionsContainer,
                 suggestionSource,
@@ -295,9 +301,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
             popoverID,
             isLightTheme,
             placeholder,
-            onChange,
             hasSubmitHandler,
-            onSubmitRef,
             suggestionsContainer,
             suggestionSource,
             navigate,

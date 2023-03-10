@@ -1,0 +1,56 @@
+.subject-container {
+    max-width: 16rem;
+
+    svg {
+        min-width: 1rem;
+    }
+}
+
+.visible-actions-on-hover {
+    .actions-button {
+        visibility: hidden;
+    }
+
+    &:hover {
+        .actions-button {
+            visibility: visible;
+        }
+    }
+}
+
+.reason-group-container {
+    max-width: 10rem;
+}
+
+.jobs {
+    &__grid {
+        display: grid;
+        grid-template-columns: [status] max-content [name] minmax(auto, 1fr) [reason] minmax(auto, 1fr) [added] min-content [removed] min-content [total] min-content;
+        column-gap: 1rem;
+        align-items: center;
+    }
+}
+
+.filters {
+    &__grid {
+        display: grid;
+        grid-template-columns: [reason] max-content [state] max-content [searchType] max-content [search] auto;
+        column-gap: 1rem;
+        align-items: center;
+    }
+}
+
+.search-input {
+    margin-top: 0.6rem;
+
+    input:disabled {
+        background: var(--input-bg) !important;
+        color: var(--text-muted) !important;
+    }
+}
+
+.table-row {
+    td {
+        padding-bottom: var(--spacer);
+    }
+}

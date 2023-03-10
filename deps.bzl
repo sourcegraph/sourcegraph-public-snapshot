@@ -5328,8 +5328,8 @@ def go_dependencies():
         name = "com_github_russellhaering_gosaml2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/russellhaering/gosaml2",
-        sum = "h1:gMHBQVGFOAHd7lXC0hoYXg3BcR80+4XgTxVMwTV1aLg=",
-        version = "v0.7.0",
+        sum = "h1:CNMnH42z/GirrKjdmNrSS6bAAs47F9bPdl4PfRmVOIk=",
+        version = "v0.9.0",
     )
     go_repository(
         name = "com_github_russellhaering_goxmldsig",
@@ -5723,8 +5723,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:XO7th5aa0YMebq14wz6HC8guKkz9pjvlW1QKIbXchZk=",
-        version = "v0.0.0-20230303172250-3b0248719b12",
+        sum = "h1:O834DoaXIyOiQ27/qrev1Pjd79njJru1Kqjwf59ahpg=",
+        version = "v0.0.0-20230308131753-939eb52f3486",
     )
 
     go_repository(

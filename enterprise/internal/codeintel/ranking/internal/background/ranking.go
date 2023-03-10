@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
@@ -20,77 +19,61 @@ func exportRankingGraph(
 	ctx context.Context,
 	store store.Store,
 	lsifstore lsifstore.LsifStore,
-	metrics *metrics,
 	logger log.Logger,
-	numRoutines int,
 	readBatchSize int,
 	writeBatchSize int,
-) (err error) {
+) (_, _, _ int, err error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
-		return nil
+		return 0, 0, 0, nil
 	}
 
 	graphKey := rankingshared.GraphKey()
 
 	uploads, err := store.GetUploadsForRanking(ctx, graphKey, "ranking", readBatchSize)
 	if err != nil {
-		return err
+		return 0, 0, 0, err
 	}
 
-	p := pool.New().WithContext(ctx)
+	numDefinitionsInserted := 0
+	numReferencesInserted := 0
 
-	sharedUploads := make(chan shared.ExportedUpload, len(uploads))
 	for _, upload := range uploads {
-		sharedUploads <- upload
-	}
-	close(sharedUploads)
+		if err := lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, graphKey, writeBatchSize, func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error {
+			numDefinitions, numReferences, err := setDefinitionsAndReferencesForUpload(ctx, store, upload, rankingBatchSize, rankingGraphKey, path, document)
+			numDefinitionsInserted += numDefinitions
+			numReferencesInserted += numReferences
+			return err
+		}); err != nil {
+			logger.Error(
+				"Failed to process upload for ranking graph",
+				log.Int("id", upload.ID),
+				log.String("repo", upload.Repo),
+				log.String("root", upload.Root),
+				log.Error(err),
+			)
 
-	for i := 0; i < numRoutines; i++ {
-		p.Go(func(ctx context.Context) error {
-			for upload := range sharedUploads {
-				if err := lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, graphKey, writeBatchSize, func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error {
-					return setDefinitionsAndReferencesForUpload(ctx, store, metrics, upload, rankingBatchSize, rankingGraphKey, path, document)
-				}); err != nil {
-					logger.Error(
-						"Failed to process upload for ranking graph",
-						log.Int("id", upload.ID),
-						log.String("repo", upload.Repo),
-						log.String("root", upload.Root),
-						log.Error(err),
-					)
+			return 0, 0, 0, err
+		}
 
-					return err
-				}
-
-				logger.Info(
-					"Processed upload for ranking graph",
-					log.Int("id", upload.ID),
-					log.String("repo", upload.Repo),
-					log.String("root", upload.Root),
-				)
-				metrics.numUploadsRead.Inc()
-			}
-
-			return nil
-		})
+		logger.Info(
+			"Processed upload for ranking graph",
+			log.Int("id", upload.ID),
+			log.String("repo", upload.Repo),
+			log.String("root", upload.Root),
+		)
 	}
 
-	if err := p.Wait(); err != nil {
-		return err
-	}
-
-	return nil
+	return len(uploads), numDefinitionsInserted, numReferencesInserted, nil
 }
 
 func setDefinitionsAndReferencesForUpload(
 	ctx context.Context,
 	store store.Store,
-	metrics *metrics,
 	upload shared.ExportedUpload,
 	rankingBatchNumber int,
 	rankingGraphKey, path string,
 	document *scip.Document,
-) error {
+) (int, int, error) {
 	seenDefinitions := map[string]struct{}{}
 	definitions := []shared.RankingDefinitions{}
 	for _, occ := range document.Occurrences {
@@ -124,10 +107,8 @@ func setDefinitionsAndReferencesForUpload(
 
 	if len(definitions) > 0 {
 		if err := store.InsertDefinitionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
-			return err
+			return 0, 0, err
 		}
-
-		metrics.numDefinitionsInserted.Add(float64(len(definitions)))
 	}
 
 	if len(references) > 0 {
@@ -135,44 +116,45 @@ func setDefinitionsAndReferencesForUpload(
 			UploadID:    upload.ID,
 			SymbolNames: references,
 		}); err != nil {
-			return err
+			return 0, 0, err
 		}
-
-		metrics.numReferencesInserted.Add(float64(len(references)))
 	}
 
-	return nil
+	return len(definitions), len(references), nil
 }
 
-func vacuumRankingGraph(
-	ctx context.Context,
-	store store.Store,
-	metrics *metrics,
-) error {
-	graphKey := rankingshared.GraphKey()
-	derivativeGraphKey := rankingshared.DerivativeGraphKeyFromTime(time.Now())
-
-	numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := store.VacuumStaleDefinitionsAndReferences(ctx, graphKey)
-	if err != nil {
-		return err
+func vacuumStaleDefinitions(ctx context.Context, store store.Store) (int, int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, 0, nil
 	}
-	metrics.numStaleDefinitionRecordsDeleted.Add(float64(numStaleDefinitionRecordsDeleted))
-	metrics.numStaleReferenceRecordsDeleted.Add(float64(numStaleReferenceRecordsDeleted))
 
-	numMetadataRecordsDeleted, numInputRecordsDeleted, err := store.VacuumStaleGraphs(ctx, derivativeGraphKey)
-	if err != nil {
-		return err
+	numDefinitionRecordsScanned, numDefinitionRecordsRemoved, err := store.VacuumStaleDefinitions(ctx, rankingshared.GraphKey())
+	return numDefinitionRecordsScanned, numDefinitionRecordsRemoved, err
+}
+
+func vacuumStaleReferences(ctx context.Context, store store.Store) (int, int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, 0, nil
 	}
-	metrics.numMetadataRecordsDeleted.Add(float64(numMetadataRecordsDeleted))
-	metrics.numInputRecordsDeleted.Add(float64(numInputRecordsDeleted))
 
-	numRankRecordsDeleted, err := store.VacuumStaleRanks(ctx, derivativeGraphKey)
-	if err != nil {
-		return err
+	numReferenceRecordsScanned, numReferenceRecordsRemoved, err := store.VacuumStaleReferences(ctx, rankingshared.GraphKey())
+	return numReferenceRecordsScanned, numReferenceRecordsRemoved, err
+}
+
+func vacuumStaleGraphs(ctx context.Context, store store.Store) (int, int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, 0, nil
 	}
-	metrics.numRankRecordsDeleted.Add(float64(numRankRecordsDeleted))
 
-	return nil
+	return store.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()))
+}
+
+func vacuumStaleRanks(ctx context.Context, store store.Store) (int, int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, 0, nil
+	}
+
+	return store.VacuumStaleRanks(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()))
 }
 
 func mapRankingGraph(
@@ -195,7 +177,7 @@ func reduceRankingGraph(
 	ctx context.Context,
 	store store.Store,
 	batchSize int,
-) (numPathRanksInserted float64, numPathCountInputsProcessed float64, err error) {
+) (numPathRanksInserted int, numPathCountInputsProcessed int, err error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}

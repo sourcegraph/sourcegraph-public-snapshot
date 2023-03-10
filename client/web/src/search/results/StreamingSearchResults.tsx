@@ -13,7 +13,12 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
-import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import {
+    AlertKind,
+    LATEST_VERSION,
+    SmartSearchAlertKind,
+    StreamSearchOptions,
+} from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -39,6 +44,7 @@ import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { SearchFiltersSidebar } from './sidebar/SearchFiltersSidebar'
+import { UnownedResultsAlert } from './UnownedResultsAlert'
 
 import styles from './StreamingSearchResults.module.scss'
 
@@ -127,6 +133,18 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     )
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
+
+    const resultsLength = results?.results.length || 0
+    const logSearchResultClicked = useCallback(
+        (index: number, type: string) => {
+            telemetryService.log('SearchResultClicked')
+
+            const ranked = rankingFeatureEnabled && rankingToggleEnabled
+            // This data ends up in Prometheus and is not part of the ping payload.
+            telemetryService.log('search.ranking.result-clicked', { index, type, resultsLength, ranked })
+        },
+        [telemetryService, resultsLength, rankingFeatureEnabled, rankingToggleEnabled]
+    )
 
     // Log view event on first load
     useEffect(
@@ -440,7 +458,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                         />
 
-                        {results?.alert?.kind && (
+                        {results?.alert?.kind && isSmartSearchAlert(results.alert.kind) && (
                             <SmartSearch alert={results?.alert} onDisableSmartSearch={onDisableSmartSearch} />
                         )}
 
@@ -459,13 +477,24 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                                 onDidCancel={onSaveQueryModalClose}
                             />
                         )}
-                        {results?.alert && !results?.alert.kind && (
+                        {results?.alert && (!results?.alert.kind || !isSmartSearchAlert(results.alert.kind)) && (
                             <div className={classNames(styles.alertArea, 'mt-4')}>
-                                <SearchAlert
-                                    alert={results.alert}
-                                    caseSensitive={caseSensitive}
-                                    patternType={patternType}
-                                />
+                                {results?.alert?.kind === 'unowned-results' ? (
+                                    <UnownedResultsAlert
+                                        alertTitle={results.alert.title}
+                                        alertDescription={results.alert.description}
+                                        queryState={queryState}
+                                        patternType={patternType}
+                                        caseSensitive={caseSensitive}
+                                        selectedSearchContextSpec={props.selectedSearchContextSpec}
+                                    />
+                                ) : (
+                                    <SearchAlert
+                                        alert={results.alert}
+                                        caseSensitive={caseSensitive}
+                                        patternType={patternType}
+                                    />
+                                )}
                             </div>
                         )}
 
@@ -484,6 +513,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             setQueryState={setQueryState}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            logSearchResultClicked={logSearchResultClicked}
                         />
                     </div>
                 </>
@@ -499,4 +529,13 @@ const applyAdditionalFilters = (query: string, additionalFilters: string[]): str
         newQuery = updateFilters(newQuery, fieldValue[0], fieldValue[1])
     }
     return newQuery
+}
+
+function isSmartSearchAlert(kind: AlertKind): kind is SmartSearchAlertKind {
+    switch (kind) {
+        case 'smart-search-additional-results':
+        case 'smart-search-pure-results':
+            return true
+    }
+    return false
 }

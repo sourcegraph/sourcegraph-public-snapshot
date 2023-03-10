@@ -8,6 +8,7 @@ import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
@@ -38,7 +39,7 @@ type MinimalAuthenticatedUser = Pick<
     'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
 >
 
-export interface UserNavItemProps {
+export interface UserNavItemProps extends TelemetryProps {
     authenticatedUser: MinimalAuthenticatedUser
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
@@ -61,6 +62,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         menuButtonRef,
         showFeedbackModal,
         showKeyboardShortcutsHelp,
+        telemetryService,
     } = props
 
     const { themeSetting, setThemeSetting } = useTheme()
@@ -86,6 +88,14 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const organizations = authenticatedUser.organizations.nodes
     const searchQueryInputFeature = useExperimentalFeatures(features => features.searchQueryInput)
     const [experimentalQueryInputEnabled, setExperimentalQueryInputEnabled] = useExperimentalQueryInput()
+
+    const onExperimentalQueryInputChange = useCallback(
+        (enabled: boolean) => {
+            telemetryService.log(`SearchInputToggle${enabled ? 'On' : 'Off'}`)
+            setExperimentalQueryInputEnabled(enabled)
+        },
+        [telemetryService, setExperimentalQueryInputEnabled]
+    )
 
     return (
         <>
@@ -179,7 +189,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                         </div>
                                         <Toggle
                                             value={experimentalQueryInputEnabled}
-                                            onToggle={setExperimentalQueryInputEnabled}
+                                            onToggle={onExperimentalQueryInputChange}
                                         />
                                     </div>
                                 </div>
@@ -202,7 +212,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 </>
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
-                            {authenticatedUser.siteAdmin && (
+                            {authenticatedUser.siteAdmin && !isSourcegraphApp && (
                                 <MenuLink as={Link} to="/site-admin">
                                     Site admin
                                 </MenuLink>

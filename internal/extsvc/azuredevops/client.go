@@ -47,6 +47,7 @@ type Client interface {
 	GetProject(ctx context.Context, org, project string) (Project, error)
 	GetAuthorizedProfile(ctx context.Context) (Profile, error)
 	ListAuthorizedUserOrganizations(ctx context.Context, profile Profile) ([]Org, error)
+	SetWaitForRateLimit(wait bool)
 }
 
 type client struct {
@@ -56,10 +57,13 @@ type client struct {
 	// URL is the base URL of AzureDevOps.
 	URL *url.URL
 
-	// RateLimit is the self-imposed rate limiter (since AzureDevOps does not have a concept
-	// of rate limiting in HTTP response headers).
-	rateLimit *ratelimit.InstrumentedLimiter
-	auth      auth.Authenticator
+	urn string
+
+	internalRateLimiter *ratelimit.InstrumentedLimiter
+	externalRateLimiter *ratelimit.Monitor
+	auth                auth.Authenticator
+	waitForRateLimit    bool
+	maxRateLimitRetries int
 }
 
 // NewClient returns an authenticated AzureDevOps API client with
@@ -76,10 +80,14 @@ func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpc
 	}
 
 	return &client{
-		httpClient: httpClient,
-		URL:        u,
-		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
-		auth:       auth,
+		httpClient:          httpClient,
+		URL:                 u,
+		internalRateLimiter: ratelimit.DefaultRegistry.Get(urn),
+		externalRateLimiter: ratelimit.DefaultMonitorRegistry.GetOrSet(url, auth.Hash(), "rest", &ratelimit.Monitor{HeaderPrefix: "X-"}),
+		auth:                auth,
+		urn:                 urn,
+		waitForRateLimit:    true,
+		maxRateLimitRetries: 2,
 	}, nil
 }
 
@@ -108,14 +116,31 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 		return "", err
 	}
 
-	if err := c.rateLimit.Wait(ctx); err != nil {
+	if err := c.internalRateLimiter.Wait(ctx); err != nil {
 		return "", err
+	}
+
+	if c.waitForRateLimit {
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
 	}
 
 	logger := log.Scoped("azuredevops.Client", "azuredevops Client logger")
 	resp, err := oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
 	if err != nil {
 		return "", err
+	}
+
+	c.externalRateLimiter.Update(resp.Header)
+
+	numRetries := 0
+	for c.waitForRateLimit && resp.StatusCode == http.StatusTooManyRequests &&
+		numRetries < c.maxRateLimitRetries {
+		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
+			resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
+			numRetries++
+		} else {
+			break
+		}
 	}
 
 	defer resp.Body.Close()
@@ -151,12 +176,11 @@ func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
 		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
 	}
 
-	return &client{
-		httpClient: c.httpClient,
-		URL:        c.URL,
-		auth:       a,
-		rateLimit:  c.rateLimit,
-	}, nil
+	return NewClient(c.urn, c.URL.String(), a, c.httpClient)
+}
+
+func (c *client) SetWaitForRateLimit(wait bool) {
+	c.waitForRateLimit = wait
 }
 
 func (c *client) Authenticator() auth.Authenticator {

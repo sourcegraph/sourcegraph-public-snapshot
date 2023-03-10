@@ -3618,7 +3618,7 @@ Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> worker: 3600s+ repository queue longest time in queue
+- <span class="badge badge-warning">warning</span> worker: 3600s+ repository queue longest time in queue
 
 **Next steps**
 
@@ -3629,7 +3629,7 @@ an underprovisioned main postgres instance.
 
 ```json
 "observability.silenceAlerts": [
-  "critical_worker_codeintel_commit_graph_queued_max_age"
+  "warning_worker_codeintel_commit_graph_queued_max_age"
 ]
 ```
 
@@ -3638,7 +3638,7 @@ an underprovisioned main postgres instance.
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^worker.*"})) >= 3600)`
+Generated query for warning alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^worker.*"})) >= 3600)`
 
 </details>
 
@@ -7768,7 +7768,7 @@ Generated query for warning alert: `max((max by (sg_instance) (go_gc_duration_se
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> codeintel-uploads: 3600s+ repository queue longest time in queue
+- <span class="badge badge-warning">warning</span> codeintel-uploads: 3600s+ repository queue longest time in queue
 
 **Next steps**
 
@@ -7779,7 +7779,7 @@ an underprovisioned main postgres instance.
 
 ```json
 "observability.silenceAlerts": [
-  "critical_codeintel-uploads_codeintel_commit_graph_queued_max_age"
+  "warning_codeintel-uploads_codeintel_commit_graph_queued_max_age"
 ]
 ```
 
@@ -7788,7 +7788,7 @@ an underprovisioned main postgres instance.
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`
+Generated query for warning alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`
 
 </details>
 

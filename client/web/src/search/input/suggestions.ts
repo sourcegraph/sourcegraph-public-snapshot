@@ -2,7 +2,6 @@ import { EditorState } from '@codemirror/state'
 import { mdiFilterOutline, mdiSourceRepository, mdiStar, mdiFileOutline } from '@mdi/js'
 import { byLengthAsc, extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
 
-import { tokenAt, tokens as queryTokens } from '@sourcegraph/branded'
 // This module implements suggestions for the experimental search input
 // eslint-disable-next-line no-restricted-imports
 import {
@@ -16,7 +15,7 @@ import {
     combineResults,
     defaultLanguages,
 } from '@sourcegraph/branded/src/search-ui/experimental'
-import { getParsedQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
+import { getQueryInformation } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { isDefined } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -26,7 +25,7 @@ import { FILTERS, FilterType, isNegatableFilter, ResolvedFilter } from '@sourceg
 import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
 import { predicateCompletion } from '@sourcegraph/shared/src/search/query/predicates'
 import { selectorHasFields } from '@sourcegraph/shared/src/search/query/selectFilter'
-import { CharacterRange, Filter, Literal, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
+import { CharacterRange, Filter, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
 import { isFilterOfType, resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcons'
 
@@ -184,6 +183,7 @@ function toRepoCompletion(
         label: valuePrefix + item.name,
         matches: positions,
         icon: mdiSourceRepository,
+        kind: 'repo',
         action: {
             type: 'completion',
             insertValue: valuePrefix + regexInsertText(item.name, { globbing: false }) + ' ',
@@ -215,6 +215,7 @@ function toContextCompletion({ item, positions }: FzfResultItem<Context>, from: 
         icon: item.starred ? mdiStar : ' ',
         description,
         matches: positions,
+        kind: 'context',
         action: {
             type: 'completion',
             insertValue: item.spec + ' ',
@@ -233,6 +234,7 @@ function toFilterCompletion(label: string, description: string | undefined, from
         icon: mdiFilterOutline,
         render: filterRenderer,
         description,
+        kind: 'filter',
         action: {
             type: 'completion',
             insertValue: label + ':',
@@ -256,6 +258,7 @@ function toFileCompletion(
         icon: mdiFileOutline,
         description: item.repository,
         matches: positions,
+        kind: 'file',
         action: {
             type: 'completion',
             insertValue: valuePrefix + regexInsertText(item.path, { globbing: false }) + ' ',
@@ -287,6 +290,7 @@ function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from
         matches: positions,
         description: shortenPath(item.path, 20),
         icon: getSymbolIconSVGPath(item.kind),
+        kind: 'symbol',
         action: {
             type: 'completion',
             insertValue: item.name + ' type:symbol ',
@@ -401,6 +405,7 @@ const contextActions: Group = {
         {
             label: 'Manage contexts',
             description: 'Add, edit, remove search contexts',
+            kind: 'command',
             action: {
                 type: 'goto',
                 name: 'Go to /contexts',
@@ -426,12 +431,13 @@ function filterValueSuggestions(caches: Caches): InternalSource {
         }
 
         const value = token.value?.value ?? ''
+        // The value is always inserted after the filter field
         const from = token.value?.range.start ?? token.range.end
-        const to = token.value?.range.end
+        const to = token.value?.range.end ?? token.range.end
 
         switch (resolvedFilter.definition.suggestions) {
             case 'repo': {
-                const predicates = staticFilterPredicateOptions('repo', token.value, position)
+                const predicates = staticFilterPredicateOptions('repo', token, from, to)
                 return caches.repo.query(
                     value,
                     entries => {
@@ -464,7 +470,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
             }
 
             case 'path': {
-                const predicates = staticFilterPredicateOptions('file', token.value, position)
+                const predicates = staticFilterPredicateOptions('file', token, from, to)
                 return caches.file.query(
                     value,
                     entries => {
@@ -538,8 +544,9 @@ function staticFilterValueOptions(
     }
 
     const value = token.value?.value ?? ''
+    // The value is always inserted after the filter field
     const from = token.value?.range.start ?? token.range.end
-    const to = token.value?.range.end
+    const to = token.value?.range.end ?? token.range.end
 
     let options: Option[]
     if (resolvedFilter.type === FilterType.select) {
@@ -566,6 +573,7 @@ function staticFilterValueOptions(
 
         options = values.map(({ label }) => ({
             label,
+            kind: 'filter-value-select',
             action: {
                 type: 'completion',
                 from,
@@ -578,16 +586,19 @@ function staticFilterValueOptions(
         // input.
         options = defaultLanguages.map(label => ({
             label,
+            kind: 'filter-value-lang',
             action: {
                 type: 'completion',
                 from,
                 to,
+                insertValue: label + ' ',
             },
         }))
     } else {
         options = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
             label: value.label,
             description: value.description,
+            kind: `filter-value-${resolvedFilter.type}`,
             action: {
                 type: 'completion',
                 from,
@@ -620,16 +631,17 @@ const predicateFzfOption: PredicateFzfOptions = {
 /**
  * Returns predicate options for the provided filter type.
  */
-function staticFilterPredicateOptions(type: 'repo' | 'file', value: Literal | undefined, position: number): Option[] {
+function staticFilterPredicateOptions(type: 'repo' | 'file', filter: Filter, from: number, to: number): Option[] {
     const fzf = new Fzf(predicateCompletion(type), predicateFzfOption)
-    return fzf.find(value?.value || '').map(({ item, positions }) => ({
+    return fzf.find(filter.value?.value || '').map(({ item, positions }) => ({
         label: item.label,
         description: item.description,
         matches: positions,
+        kind: `filter-predicate-${type}`,
         action: {
             type: 'completion',
-            from: value?.range.start ?? position,
-            to: value?.range.end,
+            from,
+            to,
             // insertText is always set for prediction completions
             insertValue: item.insertText! + ' ${}',
             asSnippet: item.asSnippet,
@@ -769,6 +781,7 @@ interface Caches {
 export interface SuggestionsSourceConfig
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'> {
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
+    getSearchContext: () => string | undefined
     authenticatedUser?: AuthenticatedUser | null
     isSourcegraphDotCom?: boolean
 }
@@ -983,31 +996,25 @@ function createCaches({
  * delegates to other sources.
  */
 export const createSuggestionsSource = (config: SuggestionsSourceConfig): Source => {
-    const { isSourcegraphDotCom } = config
     const caches = createCaches(config)
 
     const sources: InternalSource[] = [
         filterValueSuggestions(caches),
         filterSuggestions,
         repoSuggestions(caches.repo),
-        fileSuggestions(caches.file, isSourcegraphDotCom),
+        fileSuggestions(caches.file, config.isSourcegraphDotCom),
         symbolSuggestions(caches.symbol),
     ]
 
     return {
         query: (state, position) => {
-            const parsedQuery = getParsedQuery(state)
-            const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
-            const token = tokenAt(tokens, position)
-            const input = state.sliceDoc()
+            const queryInfo = getQueryInformation(state, position)
 
             function valid(state: EditorState, position: number): boolean {
-                const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
-                return token === tokenAt(tokens, position)
+                return queryInfo.token === getQueryInformation(state, position).token
             }
 
-            const params = { token, tokens, input, position, parsedQuery }
-            const results = sources.map(source => source(params))
+            const results = sources.map(source => source(queryInfo))
             const dummyResult = { result: [], valid }
 
             return combineResults([dummyResult, ...results])
@@ -1209,79 +1216,6 @@ function printParsedQuery(node: Node, buffer: string[] = []): string[] {
             return buffer
         }
     }
-}
-
-// Helper function to convert filter values that start with a quote but are not
-// closed yet (e.g. author:"firstname lastna|) to a single filter token to
-// prevent irrelevant suggestions.
-function collapseOpenFilterValues(tokens: Token[], input: string): Token[] {
-    const result: Token[] = []
-    let openFilter: Filter | null = null
-    let hold: Token[] = []
-
-    function mergeFilter(filter: Filter, values: Token[]): Filter {
-        if (!filter.value?.value) {
-            // For simplicity but this should never occure
-            return filter
-        }
-        const end = values[values.length - 1]?.range.end ?? filter.value.range.end
-        return {
-            ...filter,
-            range: {
-                start: filter.range.start,
-                end,
-            },
-            value: {
-                ...filter.value,
-                range: {
-                    start: filter.value.range.start,
-                    end,
-                },
-                value:
-                    filter.value.value + values.map(token => input.slice(token.range.start, token.range.end)).join(''),
-            },
-        }
-    }
-
-    for (const token of tokens) {
-        switch (token.type) {
-            case 'filter':
-                {
-                    if (token.value?.value.startsWith('"') && !token.value.quoted) {
-                        openFilter = token
-                    } else {
-                        if (openFilter?.value) {
-                            result.push(mergeFilter(openFilter, hold))
-                            openFilter = null
-                            hold = []
-                        }
-                        result.push(token)
-                    }
-                }
-                break
-            case 'pattern':
-            case 'whitespace':
-                if (openFilter) {
-                    hold.push(token)
-                } else {
-                    result.push(token)
-                }
-                break
-            default:
-                if (openFilter?.value) {
-                    result.push(mergeFilter(openFilter, hold))
-                    openFilter = null
-                    hold = []
-                }
-                result.push(token)
-        }
-    }
-
-    if (openFilter?.value) {
-        result.push(mergeFilter(openFilter, hold))
-    }
-
-    return result
 }
 
 function containsFilterType(filterTypes: Set<FilterType>, filterType: string): boolean {

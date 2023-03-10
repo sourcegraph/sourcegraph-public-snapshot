@@ -20,6 +20,10 @@ go_test(
         "cmd_test.go",
         "recording_cmd_test.go",
     ],
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
     deps = [
         ":wrexec",
         "//internal/rcache",

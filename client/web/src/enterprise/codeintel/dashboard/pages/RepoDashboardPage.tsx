@@ -132,7 +132,9 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
         }
 
         return data.summary.availableIndexers
-            .flatMap(({ roots, indexer }) => roots.map(root => ({ root, ...indexer })))
+            .flatMap(({ rootsWithKeys, indexer }) =>
+                rootsWithKeys.map(({ root, comparisonKey }) => ({ root, comparisonKey, ...indexer }))
+            )
             .filter(
                 ({ root, key }) =>
                     !indexes.some(index => getIndexRoot(index) === sanitizePath(root) && getIndexerKey(index) === key)
