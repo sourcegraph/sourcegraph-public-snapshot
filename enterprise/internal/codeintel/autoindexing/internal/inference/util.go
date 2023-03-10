@@ -30,7 +30,7 @@ func flattenPatterns(patterns []*luatypes.PathPattern, inverted bool) ([]*paths.
 	var pathspecPatterns []string
 	for _, pattern := range luatypes.FlattenPatterns(patterns, inverted) {
 		globPatterns = append(globPatterns, pattern.Glob)
-		pathspecPatterns = append(pathspecPatterns, pattern.Pathspec)
+		pathspecPatterns = append(pathspecPatterns, pattern.Pathspecs...)
 	}
 
 	globs, err := compileWildcards(normalizePatterns(globPatterns))
