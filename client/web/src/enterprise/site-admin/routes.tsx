@@ -156,6 +156,12 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             render: () => <NavigateToCodeGraph />,
         },
 
+        // Code graph routes
+        {
+            path: '/code-graph/*',
+            render: props => <AdminCodeIntelArea {...props} />,
+        }
+
         // Code intelligence dashboard routes
         {
             path: '/code-graph',
