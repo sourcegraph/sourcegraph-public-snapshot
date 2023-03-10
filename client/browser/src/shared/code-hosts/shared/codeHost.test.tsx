@@ -71,6 +71,7 @@ const createMockPlatformContext = (
     settings: NEVER,
     refreshSettings: () => Promise.resolve(),
     sourcegraphURL: '',
+    clientApplication: 'other',
     ...partialMocks,
 })
 

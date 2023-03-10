@@ -27,16 +27,19 @@ import {
     deleteExternalService,
     useExternalServiceCheckConnectionByIdLazyQuery,
 } from './backend'
+import { ExternalServiceEditingAppLimitInPlaceAlert } from './ExternalServiceEditingAppLimitInPlaceAlert'
 import { ExternalServiceInformation } from './ExternalServiceInformation'
 import { resolveExternalServiceCategory } from './externalServices'
 import { ExternalServiceSyncJobsList } from './ExternalServiceSyncJobsList'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
+import { isAppLocalFileService } from './isAppLocalFileService'
 
 interface Props extends TelemetryProps {
     afterDeleteRoute: string
 
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isSourcegraphApp: boolean
 
     /** For testing only. */
     queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs
@@ -52,6 +55,7 @@ export const ExternalServicePage: FC<Props> = props => {
         afterDeleteRoute,
         externalServicesFromFile,
         allowEditExternalServicesWithFile,
+        isSourcegraphApp,
         queryExternalServiceSyncJobs = _queryExternalServiceSyncJobs,
     } = props
 
@@ -104,6 +108,7 @@ export const ExternalServicePage: FC<Props> = props => {
     const externalServiceCategory = resolveExternalServiceCategory(externalService)
 
     const editingEnabled = allowEditExternalServicesWithFile || !externalServicesFromFile
+    const isAppLimitInPlace = isSourcegraphApp && externalService && !isAppLocalFileService(externalService)
 
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
     const client = useApolloClient()
@@ -175,6 +180,7 @@ export const ExternalServicePage: FC<Props> = props => {
             )}
             {fetchError !== undefined && !fetchLoading && <ErrorAlert className="mb-3" error={fetchError} />}
             {!fetchLoading && !externalService && !fetchError && <NotFoundPage />}
+
             {externalService && (
                 <Container className="mb-3">
                     <PageHeader
@@ -251,6 +257,9 @@ export const ExternalServicePage: FC<Props> = props => {
                     />
                     {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
                     {externalServiceAvailabilityStatus}
+
+                    {isAppLimitInPlace && <ExternalServiceEditingAppLimitInPlaceAlert />}
+
                     <H2>Information</H2>
                     {externalServiceCategory && (
                         <ExternalServiceInformation

@@ -12,7 +12,7 @@ fn main() {
             }
         };
 
-        let document = match treesitter_index("go", &contents) {
+        let document = match treesitter_index("go", &contents, false) {
             Ok(document) => document,
             Err(err) => {
                 eprintln!("Failed to index document: {:?}", err);

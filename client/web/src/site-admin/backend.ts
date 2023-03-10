@@ -922,6 +922,7 @@ const siteAdminPackageFieldsFragment = gql`
         id
         name
         kind
+        blocked
         repository {
             id
             name

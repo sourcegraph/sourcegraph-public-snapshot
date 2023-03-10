@@ -289,6 +289,38 @@ export const ServerSideAlertNoResults: Story = () => {
 
 ServerSideAlertNoResults.storyName = 'server-side alert with no results'
 
+export const ServerSideAlertUnownedResults: Story = () => {
+    const result: AggregateStreamingSearchResults = {
+        state: 'complete',
+        results: [],
+        filters: [],
+        progress: {
+            durationMs: 500,
+            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
+            skipped: [],
+        },
+        alert: {
+            proposedQueries: [],
+            kind: 'unowned-results',
+            title: 'Some results have no owners',
+            description:
+                'For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring Sourcegraph Own](https://docs.sourcegraph.com/own).',
+        },
+    }
+
+    return (
+        <WebStory>
+            {() => (
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />
+                </SearchQueryStateStoreProvider>
+            )}
+        </WebStory>
+    )
+}
+
+ServerSideAlertUnownedResults.storyName = 'server-side alert with unowned results'
+
 export const ErrorWithNoResults: Story = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'error',

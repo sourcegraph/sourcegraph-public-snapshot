@@ -19,7 +19,7 @@ builds:
     ldflags: &ldflags
       - -X github.com/sourcegraph/sourcegraph/internal/version.version={{.Version}}
       - -X github.com/sourcegraph/sourcegraph/internal/version.timestamp={{.Timestamp}}
-      - -X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program
+      - -X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app
     flags: &goflags
       - -trimpath
       - -v

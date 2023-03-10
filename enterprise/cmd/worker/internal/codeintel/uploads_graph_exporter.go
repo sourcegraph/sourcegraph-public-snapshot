@@ -33,8 +33,12 @@ func (j *rankingJob) Routines(_ context.Context, observationCtx *observation.Con
 		return nil, err
 	}
 
-	jobs := ranking.NewSymbolExporter(observationCtx, services.RankingService)
-	jobs = append(jobs, ranking.NewMapper(observationCtx, services.RankingService)...)
-	jobs = append(jobs, ranking.NewReducer(observationCtx, services.RankingService)...)
-	return jobs, nil
+	routines := []goroutine.BackgroundRoutine{
+		ranking.NewSymbolExporter(observationCtx, services.RankingService),
+		ranking.NewMapper(observationCtx, services.RankingService),
+		ranking.NewReducer(observationCtx, services.RankingService),
+	}
+	routines = append(routines, ranking.NewSymbolJanitor(observationCtx, services.RankingService)...)
+
+	return routines, nil
 }

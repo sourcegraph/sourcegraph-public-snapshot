@@ -93,7 +93,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
                         ({ render, path, condition = () => true }) =>
                             condition(context) && <Route key="hardcoded-key" path={path} element={render(context)} />
                     )}
-                    <Route element={<NotFoundPage pageType="repository" />} />
+                    <Route path="*" element={<NotFoundPage pageType="repository" />} />
                 </Routes>
             </div>
         </div>

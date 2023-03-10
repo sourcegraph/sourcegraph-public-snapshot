@@ -241,6 +241,7 @@ func TestReplace_Valid(t *testing.T) {
 
 			got, err := replacer.Replace(test.replacement)
 			test.want.Equal(t, got)
+			require.NoError(t, err)
 		})
 	}
 }

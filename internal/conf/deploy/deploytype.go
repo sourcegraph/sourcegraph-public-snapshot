@@ -12,7 +12,7 @@ const (
 	Dev           = "dev"
 	Helm          = "helm"
 	Kustomize     = "kustomize"
-	SingleProgram = "single-program"
+	App           = "app"
 	K3s           = "k3s"
 )
 
@@ -72,7 +72,7 @@ func IsDeployTypeSingleDockerContainer(deployType string) bool {
 
 // IsDeployTypeSingleProgram tells if the given deployment type is a single Go program.
 func IsDeployTypeSingleProgram(deployType string) bool {
-	return deployType == SingleProgram
+	return deployType == App
 }
 
 // IsDev tells if the given deployment type is "dev".

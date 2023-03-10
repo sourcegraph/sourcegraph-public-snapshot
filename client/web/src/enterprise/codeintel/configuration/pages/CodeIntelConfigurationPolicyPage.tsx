@@ -156,7 +156,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 ? { type: GitObjectType.GIT_TREE, pattern: '*' }
                 : urlType === 'tag'
                 ? { type: GitObjectType.GIT_TAG, pattern: '*' }
-                : { type: GitObjectType.GIT_COMMIT }
+                : { type: GitObjectType.GIT_COMMIT, retentionEnabled: true }
 
         const repoDefaults = repo ? { repository: repo } : {}
         const typeDefaults = policyConfig?.type === GitObjectType.GIT_UNKNOWN ? defaultTypes : {}
@@ -808,52 +808,57 @@ interface RetentionSettingsProps {
     updatePolicy: PolicyUpdater
 }
 
-const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ policy, updatePolicy }) =>
-    policy.type === GitObjectType.GIT_COMMIT ? (
-        <Alert variant="info" className="mt-2">
-            Precise code intelligence indexes serving data for the tip of the default branch are retained implicitly.
-        </Alert>
-    ) : policy.retentionEnabled ? (
-        <div className="ml-3 mb-3">
-            <div className="mt-2 mb-2">
-                <Checkbox
-                    id="retention-max-age-enabled"
-                    label="Expire matching indexes older than a given age"
-                    checked={policy.retentionDurationHours !== null}
-                    onChange={event =>
-                        updatePolicy({
-                            retentionDurationHours: event.target.checked ? 168 : null,
-                        })
-                    }
-                    message="By default, matching indexes are protected indefinitely. Enable this option to expire index records once they have reached a configurable age (after upload)."
-                />
+const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ policy, updatePolicy }) => (
+    <>
+        {policy.type === GitObjectType.GIT_COMMIT && (
+            <Alert variant="info" className="mt-2">
+                Precise code intelligence indexes serving data for the tip of the default branch are retained
+                implicitly.
+            </Alert>
+        )}
+        {policy.retentionEnabled ? (
+            <div className="ml-3 mb-3">
+                <div className="mt-2 mb-2">
+                    <Checkbox
+                        id="retention-max-age-enabled"
+                        label="Expire matching indexes older than a given age"
+                        checked={policy.retentionDurationHours !== null}
+                        onChange={event =>
+                            updatePolicy({
+                                retentionDurationHours: event.target.checked ? 168 : null,
+                            })
+                        }
+                        message="By default, matching indexes are protected indefinitely. Enable this option to expire index records once they have reached a configurable age (after upload)."
+                    />
 
-                {policy.retentionDurationHours !== null && (
-                    <div className="mt-2 ml-4">
-                        <DurationSelect
-                            id="retention-duration"
-                            value={`${policy.retentionDurationHours}`}
-                            onChange={retentionDurationHours => updatePolicy({ retentionDurationHours })}
+                    {policy.retentionDurationHours !== null && (
+                        <div className="mt-2 ml-4">
+                            <DurationSelect
+                                id="retention-duration"
+                                value={`${policy.retentionDurationHours}`}
+                                onChange={retentionDurationHours => updatePolicy({ retentionDurationHours })}
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {policy.type === GitObjectType.GIT_TREE && (
+                    <div className="mb-2">
+                        <Checkbox
+                            id="retain-intermediate-commits"
+                            label="Apply to all commits on matching branches"
+                            checked={policy.retainIntermediateCommits}
+                            onChange={event => updatePolicy({ retainIntermediateCommits: event.target.checked })}
+                            message="By default, only indexes providing data for the tip of the branches are protected. Enable this option to protect indexes providing data for any commit on the matching branches."
                         />
                     </div>
                 )}
             </div>
-
-            {policy.type === GitObjectType.GIT_TREE && (
-                <div className="mb-2">
-                    <Checkbox
-                        id="retain-intermediate-commits"
-                        label="Apply to all commits on matching branches"
-                        checked={policy.retainIntermediateCommits}
-                        onChange={event => updatePolicy({ retainIntermediateCommits: event.target.checked })}
-                        message="By default, only indexes providing data for the tip of the branches are protected. Enable this option to protect indexes providing data for any commit on the matching branches."
-                    />
-                </div>
-            )}
-        </div>
-    ) : (
-        <></>
-    )
+        ) : (
+            <></>
+        )}
+    </>
+)
 
 function validatePolicy(
     policy: CodeIntelligenceConfigurationPolicyFields,

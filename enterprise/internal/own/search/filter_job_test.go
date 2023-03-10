@@ -7,13 +7,35 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
+
+func TestFeatureFlaggedFileHasOwnerJob(t *testing.T) {
+	// We can run a quick exit check on the job runner since we don't need to use any clients or sender.
+	t.Run("does not run if no features attached to job", func(t *testing.T) {
+		selectJob := NewFileHasOwnersJob(nil, nil, nil, nil)
+		alert, err := selectJob.Run(context.Background(), job.RuntimeClients{}, nil)
+		require.Nil(t, alert)
+		var expectedErr *featureFlagError
+		assert.ErrorAs(t, err, &expectedErr)
+	})
+	t.Run("does not run if own feature is false", func(t *testing.T) {
+		selectJob := NewFileHasOwnersJob(nil, &search.Features{CodeOwnershipSearch: false}, nil, nil)
+		alert, err := selectJob.Run(context.Background(), job.RuntimeClients{}, nil)
+		require.Nil(t, alert)
+		var expectedErr *featureFlagError
+		assert.ErrorAs(t, err, &expectedErr)
+	})
+}
 
 func TestApplyCodeOwnershipFiltering(t *testing.T) {
 	type args struct {

@@ -335,10 +335,9 @@ func (s *Service) resolvePaths(
 		return nil, err
 	}
 
-	patterns := flattenPatterns(patternsForPaths, false)
-	pathspecs := make([]gitdomain.Pathspec, 0, len(patterns))
-	for _, pattern := range patterns {
-		pathspecs = append(pathspecs, gitdomain.Pathspec(pattern))
+	globs, pathspecs, err := flattenPatterns(patternsForPaths, false)
+	if err != nil {
+		return nil, err
 	}
 
 	// Ideally we can pass the globs we explicitly filter by below
@@ -347,12 +346,7 @@ func (s *Service) resolvePaths(
 		return nil, err
 	}
 
-	compiledPatterns, err := compileWildcards(patterns)
-	if err != nil {
-		return nil, err
-	}
-
-	return filterPaths(paths, compiledPatterns, nil), nil
+	return filterPaths(paths, globs, nil), nil
 }
 
 // resolveFileContents requests the content of the paths that match the given combined regular expression.

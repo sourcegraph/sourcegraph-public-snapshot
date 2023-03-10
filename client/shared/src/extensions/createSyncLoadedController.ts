@@ -2,6 +2,7 @@ import { Subscription } from 'rxjs'
 
 import { createExtensionHostClientConnection } from '../api/client/connection'
 import type { InitData } from '../api/extension/extensionHost'
+import { syncPromiseSubscription } from '../api/util'
 import type { PlatformContext } from '../platform/context'
 
 import type { Controller } from './controller'
@@ -45,12 +46,14 @@ export function createController(
     // TODO: Debug helpers, logging
 
     return {
-        executeCommand: () => {
-            throw new Error('not implemented')
-        },
-        registerCommand: () => {
-            throw new Error('not implemented')
-        },
+        executeCommand: parameters =>
+            extensionHostClientPromise.then(({ exposedToClient }) => exposedToClient.executeCommand(parameters)),
+        registerCommand: entryToRegister =>
+            syncPromiseSubscription(
+                extensionHostClientPromise.then(({ exposedToClient }) =>
+                    exposedToClient.registerCommand(entryToRegister)
+                )
+            ),
         extHostAPI: extensionHostClientPromise.then(({ api }) => api),
         unsubscribe: () => subscriptions.unsubscribe(),
     }

@@ -13,9 +13,9 @@ var permissionDisplayNameRegex = regexp.MustCompile(`^\w+#\w+$`)
 
 var invalidPermissionDisplayName = errors.New("permission display name is invalid.")
 
-// parsePermissionDisplayName parses a permission display name and returns the namespace and action.
+// ParsePermissionDisplayName parses a permission display name and returns the namespace and action.
 // It returns an error if the displayName is invalid.
-func parsePermissionDisplayName(displayName string) (namespace types.PermissionNamespace, action string, err error) {
+func ParsePermissionDisplayName(displayName string) (namespace types.PermissionNamespace, action string, err error) {
 	if ok := permissionDisplayNameRegex.MatchString(displayName); ok {
 		parts := strings.Split(displayName, "#")
 

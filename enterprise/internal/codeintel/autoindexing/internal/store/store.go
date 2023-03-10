@@ -56,8 +56,6 @@ type Store interface {
 	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
 	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
 
-	GetUnsafeDB() database.DB
-
 	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)
 	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
 	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithCount, totalCount int, err error)
@@ -105,10 +103,4 @@ func (s *store) transact(ctx context.Context) (*store, error) {
 
 func (s *store) Done(err error) error {
 	return s.db.Done(err)
-}
-
-// GetUnsafeDB returns the underlying database handle. This is used by the
-// resolvers that have the old convention of using the database handle directly.
-func (s *store) GetUnsafeDB() database.DB {
-	return database.NewDBWith(s.logger, s.db)
 }

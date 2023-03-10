@@ -207,10 +207,17 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
+        ...createQueryExampleFromString('has.topic({topic})'),
+        field: FilterType.repo,
+        description: 'Search only inside repositories that have the provided GitHub topic',
+        examples: ['repo:has.topic(go)'],
+        showSuggestions: false,
+    },
+    {
         ...createQueryExampleFromString('has.commit.after({date})'),
         field: FilterType.repo,
         description:
-            'Search only inside repositories that contain a a commit after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats. Use this to filter out stale repositories that don’t contain commits past the specified time frame. This parameter is experimental.',
+            'Search only inside repositories that contain a commit after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats. Use this to filter out stale repositories that don’t contain commits past the specified time frame. This parameter is experimental.',
         examples: ['repo:has.commit.after(1 month ago)', 'repo:has.commit.after(june 25 2017)'],
         showSuggestions: false,
     },

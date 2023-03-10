@@ -6,10 +6,6 @@ load("//client/shared/dev:generate_schema.bzl", "generate_schema")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 
-# TODO(bazel): @sourcegraph/shared is currently used by jest setup scripts and must be compiled to commonjs.
-# This should be changed to esm once jest setup scripts are moved to a separate package that can be
-# compiled to commonjs specifically and only for jest.
-
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
 

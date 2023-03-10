@@ -6,6 +6,7 @@ import {
     mdiCog,
     mdiFolder,
     mdiHistory,
+    mdiPackageVariantClosed,
     mdiSourceBranch,
     mdiSourceRepository,
     mdiTag,
@@ -48,6 +49,7 @@ import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { isPackageServiceType } from '../packages/isPackageServiceType'
 
 import { TreePageContent } from './TreePageContent'
 
@@ -98,6 +100,10 @@ export const TreePage: FC<Props> = ({
     ...props
 }) => {
     const isRoot = filePath === ''
+    const isPackage = useMemo(
+        () => isPackageServiceType(repo?.externalRepository.serviceType),
+        [repo?.externalRepository.serviceType]
+    )
 
     useEffect(() => {
         if (isRoot) {
@@ -199,7 +205,7 @@ export const TreePage: FC<Props> = ({
             <div className={styles.header}>
                 <PageHeader className="mb-3 test-tree-page-title">
                     <PageHeader.Heading as="h2" styleAs="h1">
-                        <PageHeader.Breadcrumb icon={mdiSourceRepository}>
+                        <PageHeader.Breadcrumb icon={isPackage ? mdiPackageVariantClosed : mdiSourceRepository}>
                             {displayRepoName(repo?.name || '')}
                         </PageHeader.Breadcrumb>
                     </PageHeader.Heading>
@@ -208,27 +214,30 @@ export const TreePage: FC<Props> = ({
             </div>
             <div className={styles.menu}>
                 <ButtonGroup>
-                    <Tooltip content="Branches">
+                    {!isPackage && (
+                        <Tooltip content="Branches">
+                            <Button
+                                className="flex-shrink-0"
+                                to={`/${encodeURIPathComponent(repoName)}/-/branches`}
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiSourceBranch} />{' '}
+                                <span className={styles.text}>Branches</span>
+                            </Button>
+                        </Tooltip>
+                    )}
+                    <Tooltip content={isPackage ? 'Versions' : 'Tags'}>
                         <Button
                             className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repoName)}/-/branches`}
+                            to={`/${encodeURIPathComponent(repoName)}/-${isPackage ? '/versions' : '/tags'}`}
                             variant="secondary"
                             outline={true}
                             as={Link}
                         >
-                            <Icon aria-hidden={true} svgPath={mdiSourceBranch} />{' '}
-                            <span className={styles.text}>Branches</span>
-                        </Button>
-                    </Tooltip>
-                    <Tooltip content="Tags">
-                        <Button
-                            className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repoName)}/-/tags`}
-                            variant="secondary"
-                            outline={true}
-                            as={Link}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiTag} /> <span className={styles.text}>Tags</span>
+                            <Icon aria-hidden={true} svgPath={mdiTag} />{' '}
+                            <span className={styles.text}>{isPackage ? 'Versions' : 'Tags'}</span>
                         </Button>
                     </Tooltip>
                     <Tooltip content="Compare">
@@ -263,7 +272,7 @@ export const TreePage: FC<Props> = ({
                             </Button>
                         </Tooltip>
                     )}
-                    {batchChangesEnabled && (
+                    {batchChangesEnabled && !isPackage && (
                         <Tooltip content="Batch changes">
                             <RepoBatchChangesButton
                                 className="flex-shrink-0"
@@ -272,7 +281,7 @@ export const TreePage: FC<Props> = ({
                             />
                         </Tooltip>
                     )}
-                    {ownEnabled && (
+                    {ownEnabled && !isSourcegraphDotCom && (
                         <Tooltip content="Ownership">
                             <Button
                                 className="flex-shrink-0"
@@ -344,6 +353,7 @@ export const TreePage: FC<Props> = ({
                             repo={repo}
                             revision={revision}
                             commitID={commitID}
+                            isPackage={isPackage}
                             {...props}
                         />
                     )}
