@@ -33,5 +33,5 @@ const commonProps = (props: Args): Pick<React.ComponentProps<typeof GettingStart
 
 export const Overview: Story = args => {
     const props = { ...useMemo(() => commonProps(args), [args]) }
-    return <WebStory>{() => <GettingStarted {...props} authenticatedUser={null} />}</WebStory>
+    return <WebStory>{() => <GettingStarted {...props} />}</WebStory>
 }

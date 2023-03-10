@@ -23,7 +23,7 @@ import { NotebookContent, NotebookContentProps } from './NotebookContent'
 interface EmbeddedNotebookPageProps
     extends Pick<
             NotebookContentProps,
-            'searchContextsEnabled' | 'isSourcegraphDotCom' | 'authenticatedUser' | 'settingsCascade'
+            'searchContextsEnabled' | 'isSourcegraphDotCom' | 'authenticatedUser' | 'settingsCascade' | 'ownEnabled'
         >,
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {}
 

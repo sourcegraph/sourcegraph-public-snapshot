@@ -28,12 +28,13 @@ interface SearchPageContentProps {
 export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const { shouldShowAddCodeHostWidget } = props
 
-    const { telemetryService, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser } =
+    const { telemetryService, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser, ownEnabled } =
         useLegacyContext_onlyInStormRoutes()
 
     const isLightTheme = useIsLightTheme()
     const [experimentalQueryInput] = useExperimentalQueryInput()
-    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
+    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
+    const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
