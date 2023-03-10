@@ -52,7 +52,8 @@ func (r *UserResolver) PrimaryEmail(ctx context.Context) (*userEmailResolver, er
 		}
 	}
 	ms, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
-		UserID: r.user.ID,
+		UserID:       r.user.ID,
+		OnlyVerified: true,
 	})
 	if err != nil {
 		return nil, err

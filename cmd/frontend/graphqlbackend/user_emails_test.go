@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
@@ -287,6 +288,7 @@ func TestPrimaryEmail(t *testing.T) {
 		Node node
 	}
 
+	now := time.Now()
 	for name, testCase := range map[string]struct {
 		emails []*database.UserEmail
 		want   primaryEmailResponse
@@ -300,8 +302,15 @@ func TestPrimaryEmail(t *testing.T) {
 		},
 		"has primary email": {
 			emails: []*database.UserEmail{
-				{Email: "primary@example.com", Primary: true},
-				{Email: "secondary@example.com"},
+				{
+					Email:      "primary@example.com",
+					Primary:    true,
+					VerifiedAt: &now,
+				},
+				{
+					Email:      "secondary@example.com",
+					VerifiedAt: &now,
+				},
 			},
 			want: primaryEmailResponse{
 				Node: node{
@@ -313,8 +322,30 @@ func TestPrimaryEmail(t *testing.T) {
 		},
 		"no primary email": {
 			emails: []*database.UserEmail{
-				{Email: "not-primary@example.com"},
-				{Email: "not-primary-either@example.com"},
+				{
+					Email:      "not-primary@example.com",
+					VerifiedAt: &now,
+				},
+				{
+					Email:      "not-primary-either@example.com",
+					VerifiedAt: &now,
+				},
+			},
+			want: primaryEmailResponse{
+				Node: node{
+					PrimaryEmail: nil,
+				},
+			},
+		},
+		"no verified email": {
+			emails: []*database.UserEmail{
+				{
+					Email:   "primary@example.com",
+					Primary: true,
+				},
+				{
+					Email: "not-primary@example.com",
+				},
 			},
 			want: primaryEmailResponse{
 				Node: node{
@@ -330,6 +361,9 @@ func TestPrimaryEmail(t *testing.T) {
 			emails.ListByUserFunc.SetDefaultHook(func(_ context.Context, ops database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 				var emails []*database.UserEmail
 				for _, m := range testCase.emails {
+					if ops.OnlyVerified && m.VerifiedAt == nil {
+						continue
+					}
 					copy := *m
 					copy.UserID = ops.UserID
 					emails = append(emails, &copy)
