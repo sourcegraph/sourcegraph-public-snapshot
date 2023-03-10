@@ -34,7 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added feature to disable some fields on user profiles for SCIM-controlled users. [#48816](https://github.com/sourcegraph/sourcegraph/pull/48816)
 - Native support for ingesting and searching GitHub topics with `repo:has.topic()` [#48875](https://github.com/sourcegraph/sourcegraph/pull/48875)
 - Role-based Access Control is now available as an experimental enterprise feature. It is currently only supported for Batch Changes functionality. [#43276](https://github.com/sourcegraph/sourcegraph/issues/43276)
-- Creation of batch changes can now be restricted for users. This is made possible by the Role-based Access Control implementaiton. [#34491](https://github.com/sourcegraph/sourcegraph/issues/34491)
+- Creation of batch changes can now be restricted for users. This is made possible by the Role-based Access Control implementation. [#34491](https://github.com/sourcegraph/sourcegraph/issues/34491)
 - [Sourcegraph Own](https://docs.sourcegraph.com/own) is now available as an experimental enterprise feature. Enable the `search-ownership` feature flag to use it.
 
 ### Changed
