@@ -53,6 +53,8 @@ interface TokenRequester {
     showRedirectButton?: boolean
     /** If set, the requester is only allowed on dotcom */
     onlyDotCom?: boolean
+    /** If true, it will forward the `destination` param to the redirect URL if it starts with / */
+    forwardDestination?: boolean
 }
 // SECURITY: Only accept callback requests from requesters on this allowed list
 const REQUESTERS: Record<string, TokenRequester> = {
@@ -76,6 +78,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
         callbackType: 'open',
         showRedirectButton: true,
         onlyDotCom: true,
+        forwardDestination: true,
     },
 }
 /**
@@ -125,9 +128,19 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
             return
         }
 
-        setRequester(REQUESTERS[requestFrom])
+        const nextRequester = { ...REQUESTERS[requestFrom] }
+
+        if (nextRequester.forwardDestination) {
+            const destination = new URLSearchParams(location.search).get('destination')
+            if (destination?.startsWith('/')) {
+                const redirectURL = new URL(nextRequester.redirectURL)
+                redirectURL.searchParams.set('destination', destination)
+                nextRequester.redirectURL = redirectURL.toString()
+            }
+        }
+        setRequester(nextRequester)
         setNote(REQUESTERS[requestFrom].name)
-    }, [isSourcegraphDotCom, navigate, requestFrom, requester])
+    }, [isSourcegraphDotCom, location.search, navigate, requestFrom, requester])
     /**
      * We use this to handle token creation request from redirections.
      * Don't create token if this page wasn't linked to from a valid
