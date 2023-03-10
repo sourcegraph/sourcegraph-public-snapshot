@@ -135,7 +135,6 @@ Promise.all([domContentLoadedPromise, importEventLoggerPromise]).then(([_, { Eve
 
   // Log a Docs page view event
   const eventArguments = { path: window.location.pathname }
-  console.log('ViewStaticPage', eventArguments) // TODO: remove this console log
   eventLogger.log('ViewStaticPage', eventArguments, eventArguments)
 
   // Log download links which have a "data-download-name" attribute
@@ -147,10 +146,9 @@ Promise.all([domContentLoadedPromise, importEventLoggerPromise]).then(([_, { Eve
         path: window.location.pathname,
         downloadSource: 'docs',
         downloadName,
-        linkUrl: event.target.href,
+        downloadLinkUrl: event.target.href,
       }
 
-      console.log('DownloadClick', eventArguments) // TODO: remove console log
       eventLogger.log('DownloadClick', eventArguments, eventArguments)
     }
   })
