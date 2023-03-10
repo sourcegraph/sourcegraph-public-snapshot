@@ -1,22 +1,28 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from 'react'
 
 import { ApolloError } from '@apollo/client/errors'
-import { mdiCancel, mdiClose, mdiMapSearch, mdiReload, mdiSecurity } from '@mdi/js'
+import { mdiCancel, mdiClose, mdiDetails, mdiMapSearch, mdiReload, mdiSecurity } from '@mdi/js'
 import classNames from 'classnames'
-import { noop } from 'lodash'
+import { intervalToDuration } from 'date-fns'
+import formatDuration from 'date-fns/formatDuration'
+import { capitalize, noop } from 'lodash'
 
 import { useMutation } from '@sourcegraph/http-client'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
     Button,
     Container,
+    H3,
     Icon,
     Input,
     Link,
+    Modal,
     PageHeader,
     PageSwitcher,
     Select,
+    Text,
     useDebounce,
     useLocalStorage,
 } from '@sourcegraph/wildcard'
@@ -28,6 +34,7 @@ import {
     CancelPermissionsSyncJobResult,
     CancelPermissionsSyncJobResultMessage,
     CancelPermissionsSyncJobVariables,
+    CodeHostState,
     PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
     PermissionsSyncJobsResult,
@@ -49,6 +56,7 @@ import {
     TRIGGER_USER_SYNC,
 } from './backend'
 import {
+    JOB_STATE_METADATA_MAPPING,
     PermissionsSyncJobNumbers,
     PermissionsSyncJobReasonByline,
     PermissionsSyncJobStatusBadge,
@@ -96,6 +104,8 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const debouncedQuery = useDebounce(filters.query, 300)
     const [polling, setPolling] = useLocalStorage<boolean>('polling_for_permissions_sync_jobs', true)
+    const [showModal, setShowModal] = useState<boolean>(false)
+    const [selectedJob, setSelectedJob] = useState<PermissionsSyncJob | undefined>(undefined)
 
     const { connection, loading, startPolling, stopPolling, error, variables, ...paginationProps } =
         usePageSwitcherPagination<PermissionsSyncJobsResult, PermissionsSyncJobsVariables, PermissionsSyncJob>({
@@ -188,6 +198,14 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         [cancelSyncJob]
     )
 
+    const handleViewJobDetails = useCallback(
+        ([syncJob]: PermissionsSyncJob[]) => {
+            setShowModal(true)
+            setSelectedJob(syncJob)
+        },
+        [setShowModal, setSelectedJob]
+    )
+
     if (minimal) {
         return (
             <>
@@ -232,6 +250,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 }
                 className="mb-3"
             />
+            {showModal && selectedJob && renderModal(selectedJob, () => setShowModal(false))}
             <Container>
                 {error && <ConnectionError errors={[error.message]} />}
                 {!connection && <ConnectionLoading />}
@@ -285,6 +304,12 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                                         ? node.subject.url + '/-/settings/permissions'
                                         : `/users/${node.subject.username}/settings/permissions`,
                                 target: '_blank',
+                            },
+                            {
+                                key: 'View Job Details',
+                                label: 'View Job Details',
+                                icon: mdiDetails,
+                                onClick: handleViewJobDetails,
                             },
                         ]}
                     />
@@ -473,3 +498,93 @@ const prettyPrintCancelSyncJobMessage = (message: CancelPermissionsSyncJobResult
             return 'Error during permissions sync job cancelling.'
     }
 }
+
+const CodeHostStatesTableColumns: IColumn<CodeHostState>[] = [
+    {
+        key: 'ProviderID',
+        header: 'Provider ID',
+        render: (state: CodeHostState) => <Text>{state.providerID}</Text>,
+    },
+    {
+        key: 'ProviderType',
+        header: 'Provider Type',
+        render: (state: CodeHostState) => <Text>{capitalize(state.providerType)}</Text>,
+    },
+    {
+        key: 'Status',
+        header: 'Status',
+        render: (state: CodeHostState) => <Text>{capitalize(state.status)}</Text>,
+    },
+]
+
+const renderModal = (job: PermissionsSyncJob, hideModal: () => void): React.ReactNode => (
+    <Modal onDismiss={hideModal} aria-labelledby="permissions-sync-job-modal">
+        {job.failureMessage && <Alert variant="danger">{job.failureMessage}</Alert>}
+        <div className={classNames(styles.modalGrid, 'mb-2')}>
+            <Text className="mb-0" weight="bold">
+                Queued at
+            </Text>
+            <Timestamp date={job.queuedAt} preferAbsolute={true} />
+
+            {job.startedAt && (
+                <>
+                    <Text className="mb-0" weight="bold">
+                        Started at
+                    </Text>
+                    <Timestamp date={job.startedAt} preferAbsolute={true} />
+                </>
+            )}
+
+            {job.finishedAt && (
+                <>
+                    <Text className="mb-0" weight="bold">
+                        {JOB_STATE_METADATA_MAPPING[job.state].temporalWording} at
+                    </Text>
+                    <Timestamp date={job.finishedAt} preferAbsolute={true} />
+                </>
+            )}
+
+            {job.ranForMs !== null && job.ranForMs > 0 && (
+                <>
+                    <Text className="mb-0" weight="bold">
+                        Ran for
+                    </Text>
+                    <Text className="mb-0">
+                        {job.ranForMs < 1000
+                            ? `${job.ranForMs}ms`
+                            : formatDuration(intervalToDuration({ start: 0, end: job.ranForMs }))}
+                    </Text>
+                </>
+            )}
+
+            {finalState(job.state) && (
+                <>
+                    <Text className="mb-0" weight="bold">
+                        Permissions added
+                    </Text>
+                    <Text className="mb-0">{job.permissionsAdded}</Text>
+
+                    <Text className="mb-0" weight="bold">
+                        Permissions removed
+                    </Text>
+                    <Text className="mb-0">{job.permissionsRemoved}</Text>
+
+                    <Text className="mb-0" weight="bold">
+                        Permissions found
+                    </Text>
+                    <Text className="mb-0">{job.permissionsFound}</Text>
+                </>
+            )}
+        </div>
+        {job.codeHostStates?.length > 0 && (
+            <div className="mt-4">
+                <H3>Permissions providers information</H3>
+                <Table<CodeHostState>
+                    columns={CodeHostStatesTableColumns}
+                    data={job.codeHostStates}
+                    getRowId={state => state.providerID}
+                />
+            </div>
+        )}
+    </Modal>
+)
