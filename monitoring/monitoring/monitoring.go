@@ -50,6 +50,10 @@ type Dashboard struct {
 	// This is used to configure monitoring features that depend on information exported
 	// by the standard Sourcegraph debug server.
 	NoSourcegraphDebugServer bool
+
+	// MultiContainer indicates this dashboard pertains to multiple containers, i.e.
+	// the Name of the dashboard does not correspond to a workload.
+	MultiContainer bool
 }
 
 func (c *Dashboard) validate() error {
@@ -158,8 +162,15 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 		// inspired by https://github.com/grafana/grafana/issues/11948#issuecomment-403841249
 		// We use `job=~.*SERVICE` because of frontend being called sourcegraph-frontend
 		// in certain environments
+		job := fmt.Sprintf(".*%s", c.Name)
+		groups := "version, instance"
+		if c.MultiContainer {
+			job = ".*"
+			groups = "version, instance, job"
+		}
 		expr, err := promql.InjectMatchers(
-			fmt.Sprintf(`group by(version, instance) (src_service_metadata{job=~".*%[1]s"} unless (src_service_metadata{job=~".*%[1]s"} offset 1m))`, c.Name),
+			fmt.Sprintf(`group by(%[1]s) (src_service_metadata{job=~"%[2]s"} unless (src_service_metadata{job=~"%[2]s"} offset 1m))`,
+				groups, job),
 			injectLabelMatchers,
 			newVariableApplier(c.Variables))
 		if err != nil {
