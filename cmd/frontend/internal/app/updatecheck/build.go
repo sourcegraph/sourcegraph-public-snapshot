@@ -46,7 +46,7 @@ func calcNotifications(clientVersionString string, notifications []*schema.AppNo
 			// TODO(app): this is a poor/approximate check for "YYYY-MM-DD-" prefix that we mandate
 			continue
 		}
-		if notification.VersionMin != "" && notification.VersionMax != "" {
+		if notification.VersionMin != "" {
 			versionMin, err := semver.NewVersion(notification.VersionMin)
 			if err != nil {
 				continue
@@ -54,7 +54,8 @@ func calcNotifications(clientVersionString string, notifications []*schema.AppNo
 			if clientVersion.LessThan(*versionMin) {
 				continue
 			}
-
+		}
+		if notification.VersionMax != "" {
 			versionMax, err := semver.NewVersion(notification.VersionMax)
 			if err != nil {
 				continue

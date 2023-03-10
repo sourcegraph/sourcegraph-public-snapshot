@@ -74,6 +74,7 @@ func TestCanUpdate(t *testing.T) {
 		now                 time.Time
 		clientVersionString string
 		latestReleaseBuild  pingResponse
+		deployType          string
 		hasUpdate           bool
 		err                 error
 	}{
@@ -110,6 +111,12 @@ func TestCanUpdate(t *testing.T) {
 			latestReleaseBuild:  newPingResponse("1.2.3"),
 			hasUpdate:           true,
 		},
+		{
+			name:                "app version update",
+			clientVersionString: "2023.03.23+205275.dd37e7",
+			latestReleaseBuild:  newPingResponse("2023.03.24+205301.ca3646"),
+			hasUpdate:           true,
+		},
 	}
 
 	for _, test := range tests {
@@ -123,7 +130,10 @@ func TestCanUpdate(t *testing.T) {
 				timeNow = time.Now
 			}()
 
-			hasUpdate, err := canUpdate(test.clientVersionString, test.latestReleaseBuild)
+			if test.deployType == "" {
+				test.deployType = "kubernetes"
+			}
+			hasUpdate, err := canUpdate(test.clientVersionString, test.latestReleaseBuild, test.deployType)
 			if err != test.err {
 				t.Fatalf("expected error %s; got %s", test.err, err)
 			}
