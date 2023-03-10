@@ -78,6 +78,13 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
                                 <RepoLink repoName={node.name} to={packageRepository.url} />
                                 <RepoMirrorInfo mirrorInfo={packageRepository.mirrorInfo} />
                             </>
+                        ) : node.blocked ? (
+                            <>
+                                <span>{node.name}</span>
+                                <Text className="mb-0 text-danger">
+                                    <small>This package is blocked by a filter.</small>
+                                </Text>
+                            </>
                         ) : (
                             <>
                                 <span>{node.name}</span>

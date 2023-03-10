@@ -160,7 +160,7 @@ const PackageList: React.FunctionComponent<PackageListProps> = ({ blockState, qu
     const nextFetchLimit = Math.min(totalCount, 1000)
 
     if (loading) {
-        return <LoadingSpinner className="d-block mx-auto mt-1" />
+        return <LoadingSpinner className="d-block mx-auto mt-2" />
     }
 
     if (error) {
@@ -169,7 +169,7 @@ const PackageList: React.FunctionComponent<PackageListProps> = ({ blockState, qu
 
     if (nodes.length === 0) {
         return (
-            <Alert variant="warning" className="mt-1">
+            <Alert variant="warning" className="mt-2">
                 This filter does not match any current package.
             </Alert>
         )

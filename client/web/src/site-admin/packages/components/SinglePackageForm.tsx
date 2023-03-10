@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react'
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
+import { toRepoURL } from '@sourcegraph/shared/src/util/url'
 import {
     Button,
     Icon,
@@ -16,10 +17,12 @@ import {
     useDebounce,
     Form,
     Alert,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
-import { SiteAdminPackageFields, PackageRepoReferenceKind } from '../../../graphql-operations'
+import { SiteAdminPackageFields, PackageRepoReferenceKind, PackageRepoMatchFields } from '../../../graphql-operations'
+import { useMatchingPackages } from '../hooks/useMatchingPackages'
 import { useMatchingVersions } from '../hooks/useMatchingVersions'
 import { BlockType } from '../modal-content/AddPackageFilterModalContent'
 
@@ -61,6 +64,16 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
         ecosystem: defaultEcosystem,
     })
     const versionQuery = useDebounce(blockState.versionFilter, 200)
+
+    const { nodes } = useMatchingPackages({
+        first: 1,
+        kind: blockState.ecosystem,
+        filter: {
+            nameFilter: {
+                packageGlob: defaultName,
+            },
+        },
+    })
 
     const isValid = useCallback((): boolean => {
         if (blockState.versionFilter === '') {
@@ -142,17 +155,18 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                     />
                 </div>
             </div>
-            <VersionList blockState={blockState} query={versionQuery} />
+            <VersionList blockState={blockState} query={versionQuery} node={nodes[0]} />
             <FilterPackagesActions valid={isValid()} onDismiss={props.onDismiss} />
         </Form>
     )
 }
 
 interface VersionListProps {
+    node?: PackageRepoMatchFields
     blockState: SinglePackageState
     query: string
 }
-const VersionList: React.FunctionComponent<VersionListProps> = ({ blockState, query }) => {
+const VersionList: React.FunctionComponent<VersionListProps> = ({ blockState, query, node }) => {
     const [versionFetchLimit, setVersionFetchLimit] = useState(15)
     const { versions, totalCount, loading, error } = useMatchingVersions({
         kind: blockState.ecosystem,
@@ -169,16 +183,16 @@ const VersionList: React.FunctionComponent<VersionListProps> = ({ blockState, qu
     const nextFetchLimit = Math.min(totalCount, 1000)
 
     if (loading) {
-        return <LoadingSpinner className="d-block mx-auto mt-t" />
+        return <LoadingSpinner className="d-block mx-auto mt-2" />
     }
 
     if (error) {
-        return <ErrorAlert error={error} className="mt-1" />
+        return <ErrorAlert error={error} className="mt-2" />
     }
 
     if (versions.length === 0) {
         return (
-            <Alert variant="warning" className="mt-1">
+            <Alert variant="warning" className="mt-2">
                 This filter does not match any current version.
             </Alert>
         )
@@ -205,9 +219,24 @@ const VersionList: React.FunctionComponent<VersionListProps> = ({ blockState, qu
             <ul className={classNames('list-group mt-1', styles.list)}>
                 {versions.map(version => (
                     <li className="list-group-item" key={version}>
-                        <Badge className="px-2 py-0" as="code">
-                            {version}
-                        </Badge>
+                        {node?.repository ? (
+                            <div className="d-flex justify-content-between">
+                                <Link
+                                    to={toRepoURL({
+                                        repoName: node.repository.name,
+                                        revision: `v${version}`,
+                                    })}
+                                >
+                                    <Badge className="px-2 py-0" as="code">
+                                        {version}
+                                    </Badge>
+                                </Link>
+                            </div>
+                        ) : (
+                            <Badge className="px-2 py-0" as="code">
+                                {version}
+                            </Badge>
+                        )}
                     </li>
                 ))}
             </ul>
