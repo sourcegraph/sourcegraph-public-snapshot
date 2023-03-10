@@ -51,10 +51,6 @@ export const UserAreaGQLFragment = gql`
             nodes {
                 name
             }
-            totalCount
-            pageInfo {
-                hasNextPage
-            }
         }
     }
 `
