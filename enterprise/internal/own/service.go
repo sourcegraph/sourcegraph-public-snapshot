@@ -174,6 +174,8 @@ func tryGetUserThenTeam(ctx context.Context, identifier string, userGetter userG
 }
 
 func (s *service) whichTeamGetter(ctx context.Context) teamGetterFunc {
+	// If the flag is set, and it is explicitly set to false, then do active matching.
+	// This makes it "on by default".
 	if conf.Get().OwnBestEffortTeamMatching != nil && !*conf.Get().OwnBestEffortTeamMatching {
 		return s.db.Teams().GetTeamByName
 	}
@@ -181,18 +183,11 @@ func (s *service) whichTeamGetter(ctx context.Context) teamGetterFunc {
 }
 
 func (s *service) bestEffortTeamGetter(ctx context.Context, teamHandle string) (*types.Team, error) {
-	team, err := s.db.Teams().GetTeamByName(ctx, teamHandle)
-	if err == nil {
-		return team, nil
-	}
-	if !errcode.IsNotFound(err) {
-		return nil, err
-	}
 	// If the team handle is potentially embedded we will do best-effort matching on the last part of the team handle.
 	if strings.Contains(teamHandle, "/") {
 		return s.db.Teams().GetTeamByName(ctx, getLastPartOfTeamHandle(teamHandle))
 	}
-	return nil, err
+	return s.db.Teams().GetTeamByName(ctx, teamHandle)
 }
 
 func getLastPartOfTeamHandle(teamHandle string) string {
