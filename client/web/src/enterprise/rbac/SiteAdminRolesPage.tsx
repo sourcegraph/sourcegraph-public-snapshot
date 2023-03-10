@@ -4,7 +4,7 @@ import { mdiPlus } from '@mdi/js'
 import { groupBy } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button, Icon, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Icon, ProductStatusBadge, ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
@@ -36,12 +36,10 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
 
     // Fetch paginated roles.
     const {
-        connection,
+        data,
         error: rolesError,
         loading: rolesLoading,
-        fetchMore,
-        hasNextPage,
-        refetchAll,
+        refetch
     } = useRolesConnection()
     // We need to query all permissions from the database, so site admins can update easily if they want to.
     const { error: permissionsError, loading: permissionsLoading } = usePermissions(result => {
@@ -60,8 +58,8 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
 
     const afterCreate = useCallback(() => {
         closeModal()
-        refetchAll()
-    }, [closeModal, refetchAll])
+        refetch()
+    }, [closeModal, refetch])
 
     const loading = rolesLoading || permissionsLoading
     const error = rolesError || permissionsError
@@ -89,36 +87,20 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                 <CreateRoleModal onCancel={closeModal} afterCreate={afterCreate} allPermissions={permissions} />
             )}
 
-            <ConnectionContainer className="mb-3">
-                {error && <ConnectionError errors={[error.message]} />}
-                {loading && !connection && <ConnectionLoading />}
-                {connection && (
-                    <>
-                        <ConnectionList as="ul" className="list-group" aria-label="Roles">
-                            {connection.nodes?.map(node => (
-                                <RoleNode
-                                    key={node.id}
-                                    node={node}
-                                    refetchAll={refetchAll}
-                                    allPermissions={permissions}
-                                />
-                            ))}
-                        </ConnectionList>
-                        <SummaryContainer className="mt-2">
-                            <ConnectionSummary
-                                noSummaryIfAllNodesVisible={true}
-                                first={DEFAULT_PAGE_LIMIT}
-                                centered={true}
-                                connection={connection}
-                                noun="role"
-                                pluralNoun="roles"
-                                hasNextPage={hasNextPage}
-                            />
-                            {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
-                        </SummaryContainer>
-                    </>
-                )}
-            </ConnectionContainer>
+            {error && <ErrorAlert error={error} />}
+            {loading && <LoadingSpinner />}
+            {!loading && data && (
+                <ul className="list-unstyled">
+                    {data.roles.nodes.map(node => (
+                    <RoleNode
+                        key={node.id}
+                        node={node}
+                        refetchAll={refetch}
+                        allPermissions={permissions}
+                    />
+                ))}
+                </ul>
+            )}
         </div>
     )
 }

@@ -76,11 +76,10 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
     const { nodes: permissionNodes } = node.permissions
     const rolePermissionIDs = useMemo(() => permissionNodes.map(permission => permission.id), [permissionNodes])
 
-    const [setPermissions, { loading: setPermissionsLoading, error: setPermissionsError }] =
-        useSetPermissions(() => {
-            refetchAll()
-            setShowAlert(true)
-        })
+    const [setPermissions, { loading: setPermissionsLoading, error: setPermissionsError }] = useSetPermissions(() => {
+        refetchAll()
+        setShowAlert(true)
+    })
 
     const onSubmit = (values: RoleNodePermissionsFormValues): SubmissionResult => {
         setPermissions({ variables: { role: node.id, permissions: values.permissions } })
@@ -94,13 +93,13 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
         input: { isChecked, onBlur, onChange },
     } = useCheckboxes('permissions', formAPI)
 
-    const { initialValue, value } = formAPI.fields.permissions
+    const { value } = formAPI.fields.permissions
 
     const isUpdateDisabled = useMemo(() => {
-        return isEqual(initialValue, value)
-    }, [initialValue, value])
-
-    console.log({ initialValue, value })
+        // If the form hasn't been submitted, checking the values of the initialValue and current
+        // value suffices to know if a change has occurred.
+        return isEqual(rolePermissionIDs, value)
+    }, [rolePermissionIDs, value])
 
     const error = deleteRoleError || setPermissionsError
     return (
@@ -110,35 +109,37 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
             )}
 
             <Collapse isOpen={isExpanded} onOpenChange={handleOpenChange}>
-                <CollapseHeader
-                    as={Button}
-                    className={styles.roleNodeCollapsibleHeader}
-                    aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
-                    outline={true}
-                    variant="icon"
-                >
-                    <Icon
-                        data-caret={true}
-                        className="mr-1 bg-red"
-                        aria-hidden={true}
-                        svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
-                    />
+                <div className="d-flex">
+                    <CollapseHeader
+                        as={Button}
+                        className={styles.roleNodeCollapsibleHeader}
+                        aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                        outline={true}
+                        variant="icon"
+                    >
+                        <Icon
+                            data-caret={true}
+                            className="mr-1 bg-red"
+                            aria-hidden={true}
+                            svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
+                        />
 
-                    <header className="d-flex flex-column justify-content-center mr-2">
-                        <div className="d-flex align-items-center">
-                            <H4 className="m-0">{roleName}</H4>
+                        <header className="d-flex flex-column justify-content-center mr-2">
+                            <div className="d-flex align-items-center">
+                                <H4 className="m-0">{roleName}</H4>
 
-                            {node.system && (
-                                <Tooltip
-                                    content="System roles are predefined by Sourcegraph. They cannot be deleted."
-                                    placement="topStart"
-                                >
-                                    <Text className={styles.roleNodeSystemText}>System</Text>
-                                </Tooltip>
-                            )}
-                        </div>
-                        {error && <ErrorAlert className="mt-2" error={error} />}
-                    </header>
+                                {node.system && (
+                                    <Tooltip
+                                        content="System roles are predefined by Sourcegraph. They cannot be deleted."
+                                        placement="topStart"
+                                    >
+                                        <Text className={styles.roleNodeSystemText}>System</Text>
+                                    </Tooltip>
+                                )}
+                            </div>
+                            {error && <ErrorAlert className="mt-2" error={error} />}
+                        </header>
+                    </CollapseHeader>
 
                     {!node.system && (
                         <Tooltip content="Deleting a role is an irreversible action.">
@@ -154,7 +155,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
                             </Button>
                         </Tooltip>
                     )}
-                </CollapseHeader>
+                </div>
 
                 <CollapsePanel
                     className={styles.roleNodePermissions}

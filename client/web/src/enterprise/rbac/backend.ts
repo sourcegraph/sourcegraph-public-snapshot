@@ -51,8 +51,8 @@ const roleFragment = gql`
 `
 
 export const ROLES_QUERY = gql`
-    query AllRoles($first: Int, $after: String) {
-        roles(first: $first, after: $after) {
+    query AllRoles {
+        roles {
             __typename
             totalCount
             pageInfo {
@@ -106,22 +106,9 @@ export const SET_PERMISSIONS = gql`
     }
 `
 
-export const useRolesConnection = (): UseShowMorePaginationResult<AllRolesResult, RoleFields> =>
-    useShowMorePagination<AllRolesResult, AllRolesVariables, RoleFields>({
-        query: ROLES_QUERY,
-        variables: {
-            first: DEFAULT_PAGE_LIMIT,
-            after: null,
-        },
-        options: {
-            fetchPolicy: 'no-cache',
-            useURL: true,
-        },
-        getConnection: result => {
-            const { roles } = dataOrThrowErrors(result)
-            return roles
-        },
-    })
+export const useRolesConnection = (): QueryResult<AllRolesResult, AllRolesVariables> => useQuery(ROLES_QUERY, {
+    fetchPolicy: 'no-cache'
+})
 
 export const usePermissions = (
     onCompleted: (result: AllPermissionsResult) => void
