@@ -5,8 +5,9 @@
 ###################################
 
 # Keep Rust version in sync with WORKSPACE file
-FROM rust:1.67.1-alpine3.17@sha256:8269a16b3eaf33893cc00ea0650b4a4e8323f9a459ce0b527b630310dafbf6ee as ss
+FROM rust:1.68.0-alpine3.17@sha256:8269a16b3eaf33893cc00ea0650b4a4e8323f9a459ce0b527b630310dafbf6ee as ss
 RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL sparse
 COPY . /repo
 WORKDIR /repo
 RUN cargo fetch
@@ -61,13 +62,13 @@ ENV ROCKET_SECRET_KEY "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
 # this is a bug in Hyper 0.10 (see https://github.com/SergioBenitez/Rocket/issues/928#issuecomment-464632953).
 # See https://github.com/sourcegraph/sourcegraph/issues/2615 for details on
 # what we observed when this was enabled with the default 5s.
-ENV ROCKET_KEEP_ALIVE=0
+ENV ROCKET_KEEP_ALIVE 0
 
 # The more workers, the more resilient syntect_server is to getting stuck on
 # bad grammar/file combinations. If it happens with four workers, only 1/4th of
 # requests will be affected for a short period of time. Each worker can require
 # at peak around 1.1 GiB of memory.
-ENV WORKERS=4
+ENV WORKERS 4
 
-ENV QUIET=true
+ENV QUIET true
 CMD ["sh", "-c", "/http-server-stabilizer -listen=:9238 -prometheus-app-name=syntax_highlighter -workers=$WORKERS -- env ROCKET_PORT={{.Port}} /syntax_highlighter"]
