@@ -23,7 +23,19 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
         setIsExpanded(!isExpanded)
     }, [isExpanded])
 
-    const email = owner.__typename === 'Person' ? owner.email : undefined
+    const findEmail = (): string | undefined => {
+        if (owner.__typename !== 'Person') {
+            return undefined
+        }
+        const primaryEmail: { __typename?: 'UserEmail' | undefined; email: string } | null | undefined =
+            owner?.user?.primaryEmail
+        if (primaryEmail?.__typename === 'UserEmail') {
+            return primaryEmail.email
+        }
+        return owner.email
+    }
+
+    const email = findEmail()
 
     return (
         <AccordionItem as="tbody">

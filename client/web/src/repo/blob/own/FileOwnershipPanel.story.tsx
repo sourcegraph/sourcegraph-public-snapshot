@@ -51,6 +51,10 @@ const response: FetchOwnershipResult = {
                                     displayName: 'Bob the Builder',
                                     url: '/users/bob',
                                     username: 'bob',
+                                    primaryEmail: {
+                                        __typename: 'UserEmail',
+                                        email: 'bob-primary@example.com',
+                                    },
                                 },
                             },
                             reasons: [
