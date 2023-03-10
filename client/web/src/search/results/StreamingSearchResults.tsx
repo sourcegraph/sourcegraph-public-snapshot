@@ -134,6 +134,18 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
 
+    const resultsLength = results?.results.length || 0
+    const logSearchResultClicked = useCallback(
+        (index: number, type: string) => {
+            telemetryService.log('SearchResultClicked')
+
+            const ranked = rankingFeatureEnabled && rankingToggleEnabled
+            // This data ends up in Prometheus and is not part of the ping payload.
+            telemetryService.log('search.ranking.result-clicked', { index, type, resultsLength, ranked })
+        },
+        [telemetryService, resultsLength, rankingFeatureEnabled, rankingToggleEnabled]
+    )
+
     // Log view event on first load
     useEffect(
         () => {
@@ -501,6 +513,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             setQueryState={setQueryState}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            logSearchResultClicked={logSearchResultClicked}
                         />
                     </div>
                 </>
