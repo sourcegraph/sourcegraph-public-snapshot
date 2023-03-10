@@ -302,6 +302,14 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 condition: ([user]) => !user?.deletedAt && user?.locked,
                             },
                             {
+                                key: 'view-permissions',
+                                label: 'View Permissions',
+                                icon: mdiSecurity,
+                                href: ([user]) => `/users/${user.username}/settings/permissions`,
+                                target: '_blank',
+                                condition: ([user]) => !!user,
+                            },
+                            {
                                 key: 'delete',
                                 label: 'Delete',
                                 icon: mdiArchive,
@@ -326,14 +334,6 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 onClick: handleRecoverUsers,
                                 bulk: true,
                                 condition: users => users.some(user => user.deletedAt),
-                            },
-                            {
-                                key: 'view-permissions',
-                                label: 'View Permissions',
-                                icon: mdiSecurity,
-                                href: ([user]) => `/users/${user.username}/settings/permissions`,
-                                target: '_blank',
-                                condition: ([user]) => !!user,
                             },
                         ]}
                         columns={[

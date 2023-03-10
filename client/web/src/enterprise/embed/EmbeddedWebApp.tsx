@@ -82,6 +82,7 @@ export const EmbeddedWebApp: FC<Props> = ({ graphqlClient }) => {
                                         element={
                                             <EmbeddedNotebookPage
                                                 searchContextsEnabled={true}
+                                                ownEnabled={false}
                                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                                 authenticatedUser={null}
                                                 settingsCascade={EMPTY_SETTINGS_CASCADE}

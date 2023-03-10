@@ -47,6 +47,7 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
+import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { basename } from '../../util/path'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
@@ -63,7 +64,8 @@ interface Props
         CodeIntelligenceProps,
         BatchChangesProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        OwnConfigProps {
     repo: RepositoryFields | undefined
     repoName: string
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
@@ -96,6 +98,7 @@ export const TreePage: FC<Props> = ({
     codeIntelligenceEnabled,
     batchChangesEnabled,
     isSourcegraphDotCom,
+    ownEnabled,
     className,
     ...props
 }) => {
@@ -156,7 +159,8 @@ export const TreePage: FC<Props> = ({
         !!settingsCascade.final?.experimentalFeatures?.codeInsights &&
         settingsCascade.final['insights.displayLocation.directory'] === true
 
-    const [ownEnabled] = useFeatureFlag('search-ownership')
+    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
+    const showOwnership = ownEnabled && ownFeatureFlagEnabled && !isSourcegraphDotCom
 
     // Add DirectoryViewer
     const uri = toURIWithPath({ repoName, commitID, filePath })
@@ -281,7 +285,7 @@ export const TreePage: FC<Props> = ({
                             />
                         </Tooltip>
                     )}
-                    {ownEnabled && !isSourcegraphDotCom && (
+                    {showOwnership && (
                         <Tooltip content="Ownership">
                             <Button
                                 className="flex-shrink-0"

@@ -9,9 +9,9 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -156,6 +156,25 @@ func TestUserRoleListing(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+		RoleID: role.ID,
+		UserID: adminUserID,
+	})
+	require.NoError(t, err)
+
+	t.Run("on sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
+
+		userAPIID := string(MarshalUserID(userID))
+		input := map[string]any{"node": userAPIID}
+
+		var response struct{ Node apitest.User }
+		errs := apitest.Exec(actorCtx, t, s, input, &response, listUserRoles)
+		require.ErrorContains(t, errs[0], "roles are not available on sourcegraph.com")
+	})
+
 	t.Run("listing a user's roles (same user)", func(t *testing.T) {
 		userAPIID := string(MarshalUserID(userID))
 		input := map[string]any{"node": userAPIID}
@@ -208,10 +227,24 @@ func TestUserRoleListing(t *testing.T) {
 		userAPIID := string(MarshalUserID(adminUserID))
 		input := map[string]any{"node": userAPIID}
 
-		var response struct{}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, listUserRoles)
-		require.Len(t, errs, 1)
-		require.Equal(t, auth.ErrMustBeSiteAdminOrSameUser.Error(), errs[0].Message)
+		var response struct{ Node apitest.User }
+		apitest.MustExec(actorCtx, t, s, input, &response, listUserRoles)
+
+		want := apitest.User{
+			ID: userAPIID,
+			Roles: apitest.RoleConnection{
+				TotalCount: 1,
+				Nodes: []apitest.Role{
+					{
+						ID: string(MarshalRoleID(role.ID)),
+					},
+				},
+			},
+		}
+
+		if diff := cmp.Diff(want, response.Node); diff != "" {
+			t.Fatalf("wrong roles response (-want +got):\n%s", diff)
+		}
 	})
 }
 

@@ -22,6 +22,8 @@ import {
     GetGitHubRepositoriesVariables,
 } from '../../../../../../graphql-operations'
 
+import styles from './GithubEntityPickers.module.scss'
+
 const GET_GITHUB_ORGANIZATIONS = gql`
     query GetGitHubOrganizations($id: ID, $token: String!) {
         externalServiceNamespaces(kind: GITHUB, url: "https://github.com", token: $token, id: $id) {
@@ -182,7 +184,11 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
             />
             <small className="d-block text-muted pl-2 mt-2">Pick at least one repository</small>
 
-            <MultiComboboxList items={filteredSuggestions} className="mt-2">
+            <MultiComboboxList
+                renderEmptyList={true}
+                items={filteredSuggestions}
+                className={styles.repositoriesSuggest}
+            >
                 {items =>
                     items.map((item, index) => (
                         <MultiComboboxOption key={item} value={item} index={index}>

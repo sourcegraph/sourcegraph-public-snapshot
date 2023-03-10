@@ -66,6 +66,11 @@ const UserSettingsAreaGQLFragment = gql`
                 name
             }
         }
+        roles {
+            nodes {
+                name
+            }
+        }
         tags @include(if: $siteAdmin)
         ...EditUserProfilePage
     }
