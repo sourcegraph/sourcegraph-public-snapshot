@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -242,6 +243,50 @@ func TestResolveOwnersWithType(t *testing.T) {
 				Handle: handle,
 			},
 		}, got)
+	})
+	t.Run("team match from handle with slash", func(t *testing.T) {
+		mockUserStore := database.NewMockUserStore()
+		mockTeamStore := database.NewMockTeamStore()
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
+
+		handle := "team/handle"
+		testTeam := newTestTeam("handle")
+		mockUserStore.GetByUsernameFunc.PushReturn(nil, database.MockUserNotFoundErr)
+		mockTeamStore.GetTeamByNameFunc.SetDefaultHook(func(ctx context.Context, handle string) (*itypes.Team, error) {
+			if handle == "handle" {
+				return testTeam, nil
+			}
+			return nil, database.TeamNotFoundError{}
+		})
+		owners := []*codeownerspb.Owner{
+			{Handle: handle},
+		}
+		t.Run("best effort matching", func(t *testing.T) {
+			ownService := NewService(gitserver.NewMockClient(), db)
+			got, err := ownService.ResolveOwnersWithType(context.Background(), owners)
+			require.NoError(t, err)
+			assert.Equal(t, []codeowners.ResolvedOwner{
+				&codeowners.Team{
+					Team:   testTeam,
+					Handle: handle,
+				},
+			}, got)
+		})
+		t.Run("early stop", func(t *testing.T) {
+			ownService := NewService(gitserver.NewMockClient(), db)
+			bestEffort := false
+			conf.Get().OwnBestEffortTeamMatching = &bestEffort
+			t.Cleanup(func() {
+				conf.Get().OwnBestEffortTeamMatching = nil
+			})
+			got, err := ownService.ResolveOwnersWithType(context.Background(), owners)
+			require.NoError(t, err)
+			assert.Equal(t, []codeowners.ResolvedOwner{
+				newTestUnknownOwner(handle, ""),
+			}, got)
+		})
 	})
 	t.Run("no user match from email returns unknown owner", func(t *testing.T) {
 		mockUserStore := database.NewMockUserStore()
