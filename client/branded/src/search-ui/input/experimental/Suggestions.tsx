@@ -162,9 +162,7 @@ const Footer: React.FunctionComponent<{ option: Option }> = ({ option }) => (
             {!option.info && (
                 <>
                     <ActionInfo action={option.action} shortcut="Enter" />{' '}
-                    {option.alternativeAction && (
-                        <ActionInfo action={option.alternativeAction} shortcut="Shift+Enter" />
-                    )}
+                    {option.alternativeAction && <ActionInfo action={option.alternativeAction} shortcut="Mod+Enter" />}
                 </>
             )}
         </span>
