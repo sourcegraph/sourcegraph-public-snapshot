@@ -9640,7 +9640,7 @@ func NewMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		SiteUsageMultiplePeriodsFunc: &EventLogStoreSiteUsageMultiplePeriodsFunc{
-			defaultHook: func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (r0 *types.SiteUsageStatistics, r1 error) {
+			defaultHook: func(context.Context, time.Time, int, int, int, int, *CountUniqueUsersOptions) (r0 *types.SiteUsageStatistics, r1 error) {
 				return
 			},
 		},
@@ -9827,7 +9827,7 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		SiteUsageMultiplePeriodsFunc: &EventLogStoreSiteUsageMultiplePeriodsFunc{
-			defaultHook: func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
+			defaultHook: func(context.Context, time.Time, int, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
 				panic("unexpected invocation of MockEventLogStore.SiteUsageMultiplePeriods")
 			},
 		},
@@ -13518,24 +13518,24 @@ func (c EventLogStoreSiteUsageCurrentPeriodsFuncCall) Results() []interface{} {
 // SiteUsageMultiplePeriods method of the parent MockEventLogStore instance
 // is invoked.
 type EventLogStoreSiteUsageMultiplePeriodsFunc struct {
-	defaultHook func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)
-	hooks       []func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)
+	defaultHook func(context.Context, time.Time, int, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)
+	hooks       []func(context.Context, time.Time, int, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)
 	history     []EventLogStoreSiteUsageMultiplePeriodsFuncCall
 	mutex       sync.Mutex
 }
 
 // SiteUsageMultiplePeriods delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockEventLogStore) SiteUsageMultiplePeriods(v0 context.Context, v1 time.Time, v2 int, v3 int, v4 int, v5 *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
-	r0, r1 := m.SiteUsageMultiplePeriodsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.SiteUsageMultiplePeriodsFunc.appendCall(EventLogStoreSiteUsageMultiplePeriodsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
+func (m *MockEventLogStore) SiteUsageMultiplePeriods(v0 context.Context, v1 time.Time, v2 int, v3 int, v4 int, v5 int, v6 *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
+	r0, r1 := m.SiteUsageMultiplePeriodsFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.SiteUsageMultiplePeriodsFunc.appendCall(EventLogStoreSiteUsageMultiplePeriodsFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // SiteUsageMultiplePeriods method of the parent MockEventLogStore instance
 // is invoked and the hook queue is empty.
-func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) SetDefaultHook(hook func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)) {
+func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) SetDefaultHook(hook func(context.Context, time.Time, int, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)) {
 	f.defaultHook = hook
 }
 
@@ -13544,7 +13544,7 @@ func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) PushHook(hook func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)) {
+func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) PushHook(hook func(context.Context, time.Time, int, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -13560,12 +13560,12 @@ func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) SetDefaultReturn(r0 *types.S
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) PushReturn(r0 *types.SiteUsageStatistics, r1 error) {
-	f.PushHook(func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
+	f.PushHook(func(context.Context, time.Time, int, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) nextHook() func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
+func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) nextHook() func(context.Context, time.Time, int, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -13617,7 +13617,10 @@ type EventLogStoreSiteUsageMultiplePeriodsFuncCall struct {
 	Arg4 int
 	// Arg5 is the value of the 6th argument passed to this method
 	// invocation.
-	Arg5 *CountUniqueUsersOptions
+	Arg5 int
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 *CountUniqueUsersOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *types.SiteUsageStatistics
@@ -13629,7 +13632,7 @@ type EventLogStoreSiteUsageMultiplePeriodsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c EventLogStoreSiteUsageMultiplePeriodsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
 }
 
 // Results returns an interface slice containing the results of this
