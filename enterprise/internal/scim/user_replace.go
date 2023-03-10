@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/elimity-com/scim"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -16,7 +15,19 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 		return scim.Resource{}, err
 	}
 
-	userRes := scim.Resource{}
+	// Only use the ID, drop the attributes
+	userRes := scim.Resource{
+		ExternalID: getOptionalExternalID(attributes),
+		Attributes: scim.ResourceAttributes{}, // It's empty because this is a replace
+		Meta:       scim.Meta{},
+	}
+
+	// Set attributes
+	changed := false
+	for k, v := range attributes {
+		newlyChanged := applyChangeToAttributes(userRes.Attributes, k, v)
+		changed = changed || newlyChanged
+	}
 
 	// Start transaction
 	err := h.db.WithTransact(r.Context(), func(tx database.DB) error {
@@ -26,23 +37,11 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 			return err
 		}
 
-		// Only use the ID, drop the attributes
-		userRes = scim.Resource{
-			ID:         strconv.FormatInt(int64(user.ID), 10),
-			ExternalID: getOptionalExternalID(attributes),
-			Attributes: scim.ResourceAttributes{}, // It's empty because this is a replace
-			Meta: scim.Meta{
-				Created:      &user.CreatedAt,
-				LastModified: &user.UpdatedAt,
-			},
-		}
+		userRes.ID = strconv.FormatInt(int64(user.ID), 10)
+		userRes.Meta.Created = &user.CreatedAt
+		userRes.Meta.LastModified = &user.UpdatedAt
 
-		// Set attributes
-		changed := false
-		for k, v := range attributes {
-			newlyChanged := applyChangeToAttributes(userRes.Attributes, k, v)
-			changed = changed || newlyChanged
-		}
+		// If nothing changed, we still wanted to update userRes, but now we can return
 		if !changed {
 			return nil
 		}
