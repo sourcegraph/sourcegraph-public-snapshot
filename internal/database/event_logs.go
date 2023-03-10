@@ -99,7 +99,7 @@ type EventLogStore interface {
 
 	// SiteUsageMultiplePeriods provides a count of unique active users in given time spans, broken up into periods of
 	// a given type. The value of `now` should be the current time in UTC.
-	SiteUsageMultiplePeriods(ctx context.Context, now time.Time, dayPeriods int, weekPeriods int, monthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)
+	SiteUsageMultiplePeriods(ctx context.Context, now time.Time, dayPeriods int, weekPeriods int, monthPeriods int, rollingMonthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)
 
 	// CountUsersWithSetting returns the number of users wtih the given temporary setting set to the given value.
 	CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error)
