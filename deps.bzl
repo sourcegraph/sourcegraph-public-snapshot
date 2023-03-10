@@ -5328,8 +5328,8 @@ def go_dependencies():
         name = "com_github_russellhaering_gosaml2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/russellhaering/gosaml2",
-        sum = "h1:gMHBQVGFOAHd7lXC0hoYXg3BcR80+4XgTxVMwTV1aLg=",
-        version = "v0.7.0",
+        sum = "h1:CNMnH42z/GirrKjdmNrSS6bAAs47F9bPdl4PfRmVOIk=",
+        version = "v0.9.0",
     )
     go_repository(
         name = "com_github_russellhaering_goxmldsig",
