@@ -47,12 +47,12 @@ func NewSymbolExporter(
 	})
 }
 
-func NewSymbolJanitor(
+func NewSymbolDefinitionsJanitor(
 	observationCtx *observation.Context,
 	store store.Store,
 	interval time.Duration,
 ) goroutine.BackgroundRoutine {
-	name := "codeintel.ranking.symbol-janitor"
+	name := "codeintel.ranking.symbol-definitions-janitor"
 
 	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
 		Name:        name,
@@ -60,7 +60,25 @@ func NewSymbolJanitor(
 		Interval:    interval,
 		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			return vacuumStaleDefinitionsAndReferences(ctx, store)
+			return vacuumStaleDefinitions(ctx, store)
+		},
+	})
+}
+
+func NewSymbolReferencesJanitor(
+	observationCtx *observation.Context,
+	store store.Store,
+	interval time.Duration,
+) goroutine.BackgroundRoutine {
+	name := "codeintel.ranking.symbol-references-janitor"
+
+	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+		Name:        name,
+		Description: "Removes stale data from ranking definitions and reference tables.",
+		Interval:    interval,
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
+			return vacuumStaleReferences(ctx, store)
 		},
 	})
 }
