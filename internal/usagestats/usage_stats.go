@@ -196,18 +196,18 @@ func ListRegisteredUsersRollingMonthly(ctx context.Context, db database.DB) ([]i
 // which to calculate the number of unique users (i.e., how many days of Daily Active Users, or DAUs,
 // how many weeks of Weekly Active Users, or WAUs, and how many months of Monthly Active Users, or MAUs).
 type SiteUsageStatisticsOptions struct {
-	DayPeriods   *int
-	WeekPeriods  *int
-	MonthPeriods *int
+	DayPeriods          *int
+	WeekPeriods         *int
+	MonthPeriods        *int
 	RollingMonthPeriods *int
 }
 
 // GetSiteUsageStatistics returns the current site's SiteActivity.
 func GetSiteUsageStatistics(ctx context.Context, db database.DB, opt *SiteUsageStatisticsOptions) (*types.SiteUsageStatistics, error) {
 	var (
-		dayPeriods   = defaultDays
-		weekPeriods  = defaultWeeks
-		monthPeriods = defaultMonths
+		dayPeriods          = defaultDays
+		weekPeriods         = defaultWeeks
+		monthPeriods        = defaultMonths
 		rollingMonthPeriods = defaultRollingMonths
 	)
 

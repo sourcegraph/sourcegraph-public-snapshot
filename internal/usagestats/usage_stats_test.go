@@ -700,18 +700,18 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 	}
 
 	want := &types.SiteUsageStatistics{
-		DAUs: wantDAUs,
-		WAUs: wantWAUs,
-		MAUs: wantMAUs,
+		DAUs:  wantDAUs,
+		WAUs:  wantWAUs,
+		MAUs:  wantMAUs,
 		RMAUs: wantRMAUs,
 	}
 
 	mockTimeNow(now)
 	days, weeks, months, rollingmonths := 7, 4, 3, 1
 	siteActivity, err := GetSiteUsageStatistics(context.Background(), db, &SiteUsageStatisticsOptions{
-		DayPeriods:   		 &days,
-		WeekPeriods:  		 &weeks,
-		MonthPeriods: 		 &months,
+		DayPeriods:          &days,
+		WeekPeriods:         &weeks,
+		MonthPeriods:        &months,
 		RollingMonthPeriods: &rollingmonths,
 	})
 	if err != nil {
@@ -742,7 +742,7 @@ func siteActivityCompare(got, want *types.SiteUsageStatistics) error {
 	if got == want {
 		return nil
 	}
-	if len(got.DAUs) != len(want.DAUs) || len(got.WAUs) != len(want.WAUs) || len(got.MAUs) != len(want.MAUs) || len(got.RMAUs) != len(want.RMAUs){
+	if len(got.DAUs) != len(want.DAUs) || len(got.WAUs) != len(want.WAUs) || len(got.MAUs) != len(want.MAUs) || len(got.RMAUs) != len(want.RMAUs) {
 		return errors.Errorf("site activities must be same length, got %d want %d (DAUs), got %d want %d (WAUs), got %d want %d (RMAUs), got %d want %d (RMAUs)", len(got.DAUs), len(want.DAUs), len(got.WAUs), len(want.WAUs), len(got.MAUs), len(want.MAUs), len(got.RMAUs), len(want.RMAUs))
 	}
 	if err := siteActivityPeriodSliceCompare("DAUs", got.DAUs, want.DAUs); err != nil {
