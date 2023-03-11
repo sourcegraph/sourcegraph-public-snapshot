@@ -285,7 +285,7 @@ func (s *permsStore) LoadUserPermissions(ctx context.Context, userID int32) (p [
 	}()
 
 	if !UnifiedPermsEnabled() {
-		ids, _, syncedAt, err := s.legacyLoadUserPermissions(ctx, userID, "")
+		ids, syncedAt, err := s.legacyLoadUserPermissions(ctx, userID, "")
 		if err != nil && err != authz.ErrPermsNotFound {
 			return nil, err
 		}
@@ -584,7 +584,7 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 
 	// Retrieve currently stored object IDs of this user.
 	oldIDs := map[int32]struct{}{}
-	ids, _, _, err := txs.legacyLoadUserPermissions(ctx, p.UserID, "FOR UPDATE")
+	ids, _, err := txs.legacyLoadUserPermissions(ctx, p.UserID, "FOR UPDATE")
 	if err != nil {
 		if err != authz.ErrPermsNotFound {
 			return nil, errors.Wrap(err, "load user permissions")
@@ -1566,15 +1566,14 @@ WHERE %s
 
 // legacyLoadUserPermissions is a method that scans three values from one user_permissions table row:
 // []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
-func (s *permsStore) legacyLoadUserPermissions(ctx context.Context, userID int32, lock string) (ids []int32, updatedAt, syncedAt time.Time, err error) {
+func (s *permsStore) legacyLoadUserPermissions(ctx context.Context, userID int32, lock string) (ids []int32, syncedAt time.Time, err error) {
 	const format = `
-SELECT object_ids_ints, updated_at, synced_at
+SELECT object_ids_ints, synced_at
 FROM user_permissions
 WHERE user_id = %s
 AND permission = 'read'
 AND object_type = 'repos'
 `
-
 	q := sqlf.Sprintf(format+lock, userID)
 	ctx, save := s.observe(ctx, "load", "")
 	defer func() {
@@ -1586,7 +1585,7 @@ AND object_type = 'repos'
 	var rows *sql.Rows
 	rows, err = s.Query(ctx, q)
 	if err != nil {
-		return nil, time.Time{}, time.Time{}, err
+		return nil, time.Time{}, err
 	}
 
 	if !rows.Next() {
@@ -1595,18 +1594,18 @@ AND object_type = 'repos'
 		if err == nil {
 			err = authz.ErrPermsNotFound
 		}
-		return nil, time.Time{}, time.Time{}, err
+		return nil, time.Time{}, err
 	}
 
-	if err = rows.Scan(pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
-		return nil, time.Time{}, time.Time{}, err
+	if err = rows.Scan(pq.Array(&ids), &dbutil.NullTime{Time: &syncedAt}); err != nil {
+		return nil, time.Time{}, err
 	}
 
 	if err = rows.Close(); err != nil {
-		return nil, time.Time{}, time.Time{}, err
+		return nil, time.Time{}, err
 	}
 
-	return ids, updatedAt, syncedAt, nil
+	return ids, syncedAt, nil
 }
 
 // loadRepoPermissions is a method that scans three values from one repo_permissions table row:
