@@ -45,10 +45,9 @@ xattr -cr "${apppath}"
 find "${apppath}" \( -name '*.dylib' -o -name '*.jnilib' -o -name '*.so' \) -exec codesign -s "${id_application_cert}" -f -v {} \;
 
 # sign the executables; adding entitlement to the binaries
-while IFS= read -r file
-do
-    [ "$(file "${file}" | grep -c "shell script text executable")" -gt 0 ] && codesign -f -v -s "${id_application_cert}" --options=runtime "${file}"
-    [ "$(file "${file}" | grep -c Mach-O)" -gt 0 ] && codesign -f -v -s "${id_application_cert}" --options=runtime --entitlements="${entitlements}" "${file}"
+while IFS= read -r file; do
+  [ "$(file "${file}" | grep -c "shell script text executable")" -gt 0 ] && codesign -f -v -s "${id_application_cert}" --options=runtime "${file}"
+  [ "$(file "${file}" | grep -c Mach-O)" -gt 0 ] && codesign -f -v -s "${id_application_cert}" --options=runtime --entitlements="${entitlements}" "${file}"
 done < <(find "${apppath}" -type f)
 
 # and I suppose the app does, too? Again, cargo-cult programming here

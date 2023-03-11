@@ -80,11 +80,17 @@ fi
 
 # shellcheck disable=SC2086
 exec docker run --rm \
-       ${DOCKER_ARGS[*]} \
-       -v "$DOCKER_VOLUME_SOURCE":/go/src/github.com/sourcegraph/sourcegraph \
-       -w /go/src/github.com/sourcegraph/sourcegraph \
-       -v "$GCLOUD_APP_CREDENTIALS_FILE":/root/.config/gcloud/application_default_credentials.json \
-       -e "GITHUB_TOKEN=$GITHUB_TOKEN" \
-       -e "GORELEASER_CURRENT_TAG=$GORELEASER_CURRENT_TAG" \
-       ghcr.io/goreleaser/goreleaser-cross:$GORELEASER_CROSS_VERSION \
-       --config enterprise/dev/app/goreleaser.yaml --parallelism 1 --debug --rm-dist ${GORELEASER_ARGS[*]} "$@"
+  ${DOCKER_ARGS[*]} \
+  -v "$DOCKER_VOLUME_SOURCE":/go/src/github.com/sourcegraph/sourcegraph \
+  -w /go/src/github.com/sourcegraph/sourcegraph \
+  -v "$GCLOUD_APP_CREDENTIALS_FILE":/root/.config/gcloud/application_default_credentials.json \
+  -e "GITHUB_TOKEN=$GITHUB_TOKEN" \
+  -e "GORELEASER_CURRENT_TAG=$GORELEASER_CURRENT_TAG" \
+  ghcr.io/goreleaser/goreleaser-cross:$GORELEASER_CROSS_VERSION \
+  --config enterprise/dev/app/goreleaser.yaml --parallelism 1 --debug --rm-dist ${GORELEASER_ARGS[*]} "$@"
+
+### post-build sign macOS binaries
+### and build, sign and notarize a macOS app bundle
+### everything is downloads from the GCS versioned bucket,
+### uploaded back to GCS, and replicated in a "latest" bucket
+"${ROOTDIR}/enterprise/dev/app/post-process_macos_artifacts.sh" || exit 1

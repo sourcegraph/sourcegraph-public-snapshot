@@ -4,9 +4,22 @@
 
 Secrets can be found in https://docs.google.com/document/d/1YDqrpxJhdfudlRsYTQMGeGiklmWRuSlpZ7Xvk9ABitM/edit?usp=sharing (requires Sourcegraph team credentials)
 
-## initialize app structure
+Secrets are also stored in 1Password, in the Apple Developer vault
 
-The first step is to create the app bundle structure and put in place some starting files
+The secrets have been stored in Google Secrets, and are set up in the buildkite config so they are pulled into the CI pipeline
+
+### code-signing secrets
+- APPLE_DEV_ID_APPLICATION_CERT - the encrypted code-signing certificate file (.p12)
+- APPLE_DEV_ID_APPLICATION_PASSWORD - password to the code-signing certificate file
+
+### notarization secrets
+- APPLE_APP_STORE_CONNECT_API_KEY_ID - App Store Connect API ID
+- APPLE_APP_STORE_CONNECT_API_KEY_ISSUER - App Store Connect API Issuer GUID
+- APPLE_APP_STORE_CONNECT_API_KEY_FILE - App Store Connect API key file (.p8)
+
+## built the app template
+
+The first step is to create the app bundle template
 
 An app bundle is just a specific directory structure
 

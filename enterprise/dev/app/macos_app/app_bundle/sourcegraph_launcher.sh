@@ -4,52 +4,52 @@
 unset ZPID RPID SPID UPID
 
 cleanup() {
-    # kill any background/child processes
-    [ ${SPID:-0} -gt 0 ] && {
-        echo "$(date) CONTROL KILLING sourcegraph process ${SPID}" | tee -a "${sgdir}/sourcegraph.log"
-        kill "${SPID}"
-    }
-    # App no longer uses the same syntax highlighter, but leave this in place in case it's brought back
-    [ ${RPID:-0} -gt 0 ] && {
-        echo "$(date) CONTROL KILLING syntect_server process ${RPID}" | tee -a "${sgdir}/sourcegraph.log"
-        kill "${RPID}"
-    }
-    [ ${ZPID:-0} -gt 0 ] && {
-        echo "$(date) CONTROL KILLING zoekt process ${ZPID}" | tee -a "${sgdir}/sourcegraph.log"
-        kill "${ZPID}"
-    }
-    # [ ${UPID:-0} -gt 0 ] && {
-    #     echo "$(date) CONTROL KILLING repo-updater process ${UPID}" | tee -a "${sgdir}/sourcegraph.log"
-    #     kill "${UPID}"
-    # }
+  # kill any background/child processes
+  [ ${SPID:-0} -gt 0 ] && {
+    echo "$(date) CONTROL KILLING sourcegraph process ${SPID}" | tee -a "${sgdir}/sourcegraph.log"
+    kill "${SPID}"
+  }
+  # App no longer uses the same syntax highlighter, but leave this in place in case it's brought back
+  [ ${RPID:-0} -gt 0 ] && {
+    echo "$(date) CONTROL KILLING syntect_server process ${RPID}" | tee -a "${sgdir}/sourcegraph.log"
+    kill "${RPID}"
+  }
+  [ ${ZPID:-0} -gt 0 ] && {
+    echo "$(date) CONTROL KILLING zoekt process ${ZPID}" | tee -a "${sgdir}/sourcegraph.log"
+    kill "${ZPID}"
+  }
+  # [ ${UPID:-0} -gt 0 ] && {
+  #     echo "$(date) CONTROL KILLING repo-updater process ${UPID}" | tee -a "${sgdir}/sourcegraph.log"
+  #     kill "${UPID}"
+  # }
 
-    # kill any ctags processes that were started
-    cpids=$(pgrep -f "${CTAGS_COMMAND}" | tr '\n' ' ')
-    [ -n "${cpids}" ] && {
-        echo "$(date) CONTROL KILLING ctags processes ${cpids}" | tee -a "${sgdir}/sourcegraph.log"
-        kill ${cpids}
-    }
+  # kill any ctags processes that were started
+  cpids=$(pgrep -f "${CTAGS_COMMAND}" | tr '\n' ' ')
+  [ -n "${cpids}" ] && {
+    echo "$(date) CONTROL KILLING ctags processes ${cpids}" | tee -a "${sgdir}/sourcegraph.log"
+    kill ${cpids}
+  }
 
-    # manually shut down the embedded database when it exits
-    # until I figure out how to add a shutdown hook
-    # defer or a signal handler, perhaps?
-    # I made an attempt at a signal handler, but it didn't work all of the time
-    # TODO: do we really need to do this? The app startup process runs a shutdown/stop
-    # on the embedded database before trying to start it. Is it ok to leave it running?
-    [ -x "${pgdir}/bin/bin/pg_ctl" ] && {
-        echo "$(date) CONTROL KILLING embedded postgres instance" | tee -a "${sgdir}/sourcegraph.log"
-        echo "\"${pgdir}/bin/bin/pg_ctl\" stop -w -D \"${pgdir}/data\" -m immediate" | tee -a "${sgdir}/sourcegraph.log"
-        "${pgdir}/bin/bin/pg_ctl" stop -w -D "${pgdir}/data" -m immediate 1>&2  | tee -a "${sgdir}/sourcegraph.log"
-    }
+  # manually shut down the embedded database when it exits
+  # until I figure out how to add a shutdown hook
+  # defer or a signal handler, perhaps?
+  # I made an attempt at a signal handler, but it didn't work all of the time
+  # TODO: do we really need to do this? The app startup process runs a shutdown/stop
+  # on the embedded database before trying to start it. Is it ok to leave it running?
+  [ -x "${pgdir}/bin/bin/pg_ctl" ] && {
+    echo "$(date) CONTROL KILLING embedded postgres instance" | tee -a "${sgdir}/sourcegraph.log"
+    echo "\"${pgdir}/bin/bin/pg_ctl\" stop -w -D \"${pgdir}/data\" -m immediate" | tee -a "${sgdir}/sourcegraph.log"
+    "${pgdir}/bin/bin/pg_ctl" stop -w -D "${pgdir}/data" -m immediate 1>&2 | tee -a "${sgdir}/sourcegraph.log"
+  }
 
-    # drop a line in the log file to show we were here
-    echo "$(date) CONTROL END" | tee -a "${sgdir}/sourcegraph.log"
+  # drop a line in the log file to show we were here
+  echo "$(date) CONTROL END" | tee -a "${sgdir}/sourcegraph.log"
 }
 trap cleanup EXIT
 
 # address the app binary and other resources relative to the directory in which this script lives
 DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-RESOURCES=$( cd "${DIR}/../Resources" && pwd)
+RESOURCES=$(cd "${DIR}/../Resources" && pwd)
 
 # set up our storage directory
 sgdir="${HOME}/Library/Application Support/sourcegraph-sp"
@@ -80,7 +80,7 @@ mkdir -p "${zdir}/index" "${zdir}/log"
 # UPID=$!
 
 ### zoekt needs more setup. Needs several binaries, and also needs an indexserver running
-### dont' run zoekt for now
+### don't run zoekt for now
 # launch the zoekt webserver in the background
 # "${DIR}"/zoekt-webserver -index "${zdir}/index" -pprof -rpc -indexserver_proxy -listen 127.0.0.1:6070 -log_dir "${zdir}/log" >"${sgdir}"/zoekt.log 2>&1 &
 # ZPID=$!
@@ -111,7 +111,8 @@ export CTAGS_COMMAND="${DIR}/universal-ctags"
 
 # include some default repositories to immediately begin indexing, so that demos work better
 # TODO: can we use the token in that file???
-export EXTSVC_CONFIG_FILE="${RESOURCES}/external-services-config.json"
+# this was for the demo; don't use it anymore
+#export EXTSVC_CONFIG_FILE="${RESOURCES}/external-services-config.json"
 
 # make sure it knows where the repo updater is
 # (itself? I think?)
@@ -123,7 +124,7 @@ export INSECURE_DEV=true
 
 # pre-populate the site config because if it doesn't exist,
 # it is generated with "host.docker.internal" for frontendURL
-cat > "${sgdir}/site-config.json" <<EOF
+cat >"${sgdir}/site-config.json" <<EOF
 {
 	"auth.providers": [
 		{ "type": "builtin" }
@@ -146,31 +147,29 @@ SPID=$!
 # TODO: parse sourcegraph.log to see when it outputs that it's ready for connections
 # TODO: or use curl to tell when it's listening
 # TODO: or use netstat -an | grep LISTEN | grep 3080
-if command -v curl 2>/dev/null 1>&2
-then
-    # if curl is available, use it to check for the website being ready
-    ## get two success (http code 200) responses before counting it as successful
-    unset now
-    count=0
-    until=$(($(date +%s) + 30))
-    while [ ${now:-0} -le ${until:-0} ]
-    do
-        # wait a bit before checking
-        sleep 1
-        now=$(date +%s)
-        echo "$(date) CONTROL CHECK RUNNING" | tee -a "${sgdir}/sourcegraph.log"
-        x=$(curl -s -L -o /dev/null -w "%{http_code}" http://localhost:3080 2>>"${sgdir}/sourcegraph.log")
-        [ "${x:-0}" -eq 200 ] && {
-            count=$((count + 1))
-            # add 5 seconds to the timeout to make sure there's time to get multiple success responses
-            until=$((until + 5))
-        }
-        # after two success responses, quit checking
-        [ ${count:-0} -ge 2 ] && break
-    done
+if command -v curl 2>/dev/null 1>&2; then
+  # if curl is available, use it to check for the website being ready
+  ## get two success (http code 200) responses before counting it as successful
+  unset now
+  count=0
+  until=$(($(date +%s) + 30))
+  while [ ${now:-0} -le ${until:-0} ]; do
+    # wait a bit before checking
+    sleep 1
+    now=$(date +%s)
+    echo "$(date) CONTROL CHECK RUNNING" | tee -a "${sgdir}/sourcegraph.log"
+    x=$(curl -s -L -o /dev/null -w "%{http_code}" http://localhost:3080 2>>"${sgdir}/sourcegraph.log")
+    [ "${x:-0}" -eq 200 ] && {
+      count=$((count + 1))
+      # add 5 seconds to the timeout to make sure there's time to get multiple success responses
+      until=$((until + 5))
+    }
+    # after two success responses, quit checking
+    [ ${count:-0} -ge 2 ] && break
+  done
 else
-    # curl not available, so just wait for a good long time
-    sleep 10
+  # curl not available, so just wait for a good long time
+  sleep 10
 fi
 
 # launch the web interface
