@@ -883,9 +883,8 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
-		p.IDs = map[int32]struct{}{1: {}}
-		return nil
+	perms.LoadUserPermissionsFunc.SetDefaultHook(func(context.Context, int32) ([]authz.Permission, error) {
+		return []authz.Permission{}, nil
 	})
 	perms.LoadUserPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPendingPermissions) error {
 		p.IDs = map[int32]struct{}{2: {}, 3: {}, 4: {}, 5: {}}
@@ -1513,11 +1512,15 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 		users.GetByIDFunc.SetDefaultReturn(user, nil)
 
 		perms := edb.NewStrictMockPermsStore()
-		perms.LoadUserPermissionsFunc.SetDefaultReturn(nil)
+		perms.LoadUserPermissionsFunc.SetDefaultReturn([]authz.Permission{}, nil)
+
+		syncJobs := database.NewStrictMockPermissionSyncJobStore()
+		syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.PermsFunc.SetDefaultReturn(perms)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
 		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalUserID(user.ID))
@@ -1536,11 +1539,12 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
-		p.UpdatedAt = clock()
-		p.SyncedAt = clock()
-		return nil
+	perms.LoadUserPermissionsFunc.SetDefaultHook(func(context.Context, int32) ([]authz.Permission, error) {
+		return []authz.Permission{{UpdatedAt: clock()}}, nil
 	})
+
+	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: clock()}, nil)
 
 	repos := database.NewStrictMockRepoStore()
 	repos.GetByNameFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) (*types.Repo, error) {
@@ -1551,6 +1555,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.PermsFunc.SetDefaultReturn(perms)
 	db.ReposFunc.SetDefaultReturn(repos)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	tests := []struct {
 		name     string

@@ -610,11 +610,15 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return result, providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %q (id: %d)", user.Username, user.ID)
 	}
 
-	// get last sync time from the database
+	// get last sync time from the database, we don't care about errors here
+	// swallowing errors was previous behavior, so keeping it for now
 	latestSyncJob, err := s.db.PermissionSyncJobs().GetLatestFinishedSyncJob(ctx, database.ListPermissionSyncJobOpts{
 		UserID:      int(userID),
 		NotCanceled: true,
 	})
+	if err != nil {
+		logger.Warn("get latest finished sync job", log.Error(err))
+	}
 
 	// Save new permissions to database
 	p := &authz.UserPermissions{

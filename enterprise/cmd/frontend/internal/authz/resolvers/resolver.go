@@ -635,6 +635,9 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 		UserID:      int(userID),
 		NotCanceled: true,
 	})
+	if err != nil {
+		return nil, err
+	}
 	syncedAt := time.Time{}
 	if latestSyncJob != nil {
 		syncedAt = latestSyncJob.FinishedAt
