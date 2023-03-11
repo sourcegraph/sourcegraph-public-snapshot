@@ -541,18 +541,22 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedSummary := types.SiteUsageSummary{
-		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-		Day:                     now.Truncate(time.Hour * 24),
-		UniquesMonth:            4,
-		UniquesWeek:             3,
-		UniquesDay:              2,
-		RegisteredUniquesMonth:  4,
-		RegisteredUniquesWeek:   3,
-		RegisteredUniquesDay:    2,
-		IntegrationUniquesMonth: 4,
-		IntegrationUniquesWeek:  3,
-		IntegrationUniquesDay:   2,
+		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30),
+		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                            now.Truncate(time.Hour * 24),
+		UniquesRollingMonth:            4,
+		UniquesMonth:                   4,
+		UniquesWeek:                    3,
+		UniquesDay:                     2,
+		RegisteredUniquesRollingMonth:  4,
+		RegisteredUniquesMonth:         4,
+		RegisteredUniquesWeek:          3,
+		RegisteredUniquesDay:           2,
+		IntegrationUniquesRollingMonth: 4,
+		IntegrationUniquesMonth:        4,
+		IntegrationUniquesWeek:         3,
+		IntegrationUniquesDay:          2,
 	}
 	assert.Equal(t, expectedSummary, summary)
 
@@ -560,18 +564,22 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedSummary = types.SiteUsageSummary{
-		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-		Day:                     now.Truncate(time.Hour * 24),
-		UniquesMonth:            2,
-		UniquesWeek:             1,
-		UniquesDay:              0,
-		RegisteredUniquesMonth:  2,
-		RegisteredUniquesWeek:   1,
-		RegisteredUniquesDay:    0,
-		IntegrationUniquesMonth: 2,
-		IntegrationUniquesWeek:  1,
-		IntegrationUniquesDay:   0,
+		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30),
+		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                            now.Truncate(time.Hour * 24),
+		UniquesRollingMonth:            2,
+		UniquesMonth:                   2,
+		UniquesWeek:                    1,
+		UniquesDay:                     0,
+		RegisteredUniquesRollingMonth:  2,
+		RegisteredUniquesMonth:         2,
+		RegisteredUniquesWeek:          1,
+		RegisteredUniquesDay:           0,
+		IntegrationUniquesRollingMonth: 2,
+		IntegrationUniquesMonth:        2,
+		IntegrationUniquesWeek:         1,
+		IntegrationUniquesDay:          0,
 	}
 	assert.Equal(t, expectedSummary, summary)
 }
