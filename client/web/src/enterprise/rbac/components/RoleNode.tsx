@@ -116,13 +116,21 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
 
     const { value } = formAPI.fields.permissions
 
-    const isUpdateDisabled = useMemo(
-        () =>
-            // If the form hasn't been submitted, checking the values of the initialValue
-            // and current value suffices to know if a change has occurred.
-            isEqual(rolePermissionIDs, value),
-        [rolePermissionIDs, value]
-    )
+    const isUpdateDisabled = useMemo(() => {
+        // Compare which values were initially selected against the current values. We
+        // will disable the button if the values are the same.
+        const initialSet = new Set(rolePermissionIDs)
+        const currentSet = new Set(value)
+        if (initialSet.size !== currentSet.size) {
+            return false
+        }
+        for (const item of initialSet) {
+            if (!currentSet.has(item)) {
+                return false
+            }
+        }
+        return true
+    }, [rolePermissionIDs, value])
 
     const error = deleteRoleError || setPermissionsError
     return (
