@@ -23,6 +23,16 @@ const (
 	SCIM_STANDARD IdentityProvider = "STANDARD"
 )
 
+func getConfiguredIdentityProvider() IdentityProvider {
+	value := conf.Get().ScimIdentityProvider
+	switch value {
+	case string(SCIM_AZURE_AD):
+		return SCIM_AZURE_AD
+	default:
+		return SCIM_STANDARD
+	}
+}
+
 // Init sets SCIMHandler to a real handler.
 func Init(ctx context.Context, observationCtx *observation.Context, db database.DB, _ codeintel.Services, _ conftypes.UnifiedWatchable, s *enterprise.Services) error {
 	s.SCIMHandler = newHandler(ctx, db, observationCtx)

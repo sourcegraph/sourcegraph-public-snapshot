@@ -11,7 +11,6 @@ import (
 	"github.com/scim2/filter-parser/v2"
 
 	sgfilter "github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -140,8 +139,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 					}
 					// If this is a replace look up how to handle this based on the idp
 					if !filterMatched && op.Op == "replace" {
-						idp := IdentityProvider(conf.Get().ScimIdentityProvider)
-						strategy := getMultiValueReplaceNotFoundStrategy(idp)
+						strategy := getMultiValueReplaceNotFoundStrategy(getConfiguredIdentityProvider())
 						attributeItems, err = strategy(attributeItems, attributeToSet, v, op.Op, valueExpr)
 						if err != nil {
 							return err

@@ -338,6 +338,7 @@ func Test_UserResourceHandler_Patch_ReplaceStrategies(t *testing.T) {
 		{
 			name:   "Add email with replace SCIM Standard",
 			userId: "2",
+			config: &conf.Unified{},
 			operations: []scim.PatchOperation{
 				{Op: "replace", Path: parseStringPath("emails[type eq \"work\" and primary eq true].value"), Value: "work@work.com"},
 				{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].value"), Value: "home@work.com"},
