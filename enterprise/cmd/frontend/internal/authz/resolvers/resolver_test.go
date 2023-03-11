@@ -883,8 +883,11 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadUserPermissionsFunc.SetDefaultHook(func(context.Context, int32) ([]authz.Permission, error) {
-		return []authz.Permission{}, nil
+	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, userID int32) ([]authz.Permission, error) {
+		return []authz.Permission{{
+			UserID: userID,
+			RepoID: 1,
+		}}, nil
 	})
 	perms.LoadUserPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPendingPermissions) error {
 		p.IDs = map[int32]struct{}{2: {}, 3: {}, 4: {}, 5: {}}
