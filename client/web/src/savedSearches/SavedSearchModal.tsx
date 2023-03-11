@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import type { NavigateFunction } from 'react-router-dom-v5-compat'
+import type { NavigateFunction } from 'react-router-dom'
 
 import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { Button, Modal, Select, H3, Form } from '@sourcegraph/wildcard'

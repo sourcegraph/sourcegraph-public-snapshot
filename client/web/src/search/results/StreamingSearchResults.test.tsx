@@ -3,7 +3,6 @@ import React from 'react'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -14,7 +13,6 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     COLLAPSABLE_SEARCH_RESULT,
-    extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
@@ -34,7 +32,6 @@ describe('StreamingSearchResults', () => {
     const streamingSearchResult = MULTIPLE_SEARCH_RESULT
 
     const defaultProps: StreamingSearchResultsProps = {
-        extensionsController,
         telemetryService: NOOP_TELEMETRY_SERVICE,
 
         authenticatedUser: null,
@@ -48,11 +45,11 @@ describe('StreamingSearchResults', () => {
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
-        isLightTheme: true,
         isSourcegraphDotCom: false,
         searchContextsEnabled: true,
         searchAggregationEnabled: false,
         codeMonitoringEnabled: true,
+        ownEnabled: true,
     }
 
     const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')
@@ -60,13 +57,11 @@ describe('StreamingSearchResults', () => {
     function renderWrapper(component: React.ReactElement<StreamingSearchResultsProps>) {
         return render(
             <BrowserRouter>
-                <CompatRouter>
-                    <MockedTestProvider mocks={revisionsMockResponses}>
-                        <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                            {component}
-                        </SearchQueryStateStoreProvider>
-                    </MockedTestProvider>
-                </CompatRouter>
+                <MockedTestProvider mocks={revisionsMockResponses}>
+                    <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                        {component}
+                    </SearchQueryStateStoreProvider>
+                </MockedTestProvider>
             </BrowserRouter>
         )
     }
@@ -84,9 +79,6 @@ describe('StreamingSearchResults', () => {
             searchCaseSensitivity: false,
             searchQueryFromURL: 'r:golang/oauth2 test f:travis',
         })
-        window.context = {
-            enableLegacyExtensions: false,
-        } as any
     })
 
     it('should call streaming search API with the right parameters from URL', async () => {
@@ -187,7 +179,7 @@ describe('StreamingSearchResults', () => {
         sinon.assert.calledWith(logSpy, 'SearchResultsFetched')
     })
 
-    it('should log event when clicking on search result', () => {
+    it('should log events when clicking on search result', () => {
         const logSpy = sinon.spy()
         const telemetryService = {
             ...NOOP_TELEMETRY_SERVICE,
@@ -198,6 +190,21 @@ describe('StreamingSearchResults', () => {
 
         userEvent.click(screen.getAllByTestId('result-container')[0])
         sinon.assert.calledWith(logSpy, 'SearchResultClicked')
+        sinon.assert.calledWith(logSpy, 'search.ranking.result-clicked', {
+            index: 0,
+            type: 'fileMatch',
+            ranked: false,
+            resultsLength: 3,
+        })
+
+        userEvent.click(screen.getAllByTestId('result-container')[2])
+        sinon.assert.calledWith(logSpy, 'SearchResultClicked')
+        sinon.assert.calledWith(logSpy, 'search.ranking.result-clicked', {
+            index: 2,
+            type: 'fileMatch',
+            ranked: false,
+            resultsLength: 3,
+        })
     })
 
     it('should not show saved search modal on first load', () => {

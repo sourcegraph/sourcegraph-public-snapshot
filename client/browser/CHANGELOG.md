@@ -13,6 +13,12 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome 23.3.1.1624, Firefox 23.3.1.1623, Safari 1.21
+
+- Remove deprecated code-intel endpoints usage.
+
+## Chrome 23.2.17.1613, Firefox 23.2.17.1612, Safari 1.20
+
 - Omit credentials in legacy extension bundles requests: [pull/47486](https://github.com/sourcegraph/sourcegraph/pull/47486)
 - Fix selectors used to inject Sourcegraph code intelligence on GitHub: [pull/47427](https://github.com/sourcegraph/sourcegraph/pull/47427)
 

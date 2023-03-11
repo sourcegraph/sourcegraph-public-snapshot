@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useCallback, useMemo, FC } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalServiceResult, ExternalServiceVariables } from '../../graphql-operations'
@@ -25,17 +27,19 @@ import {
     deleteExternalService,
     useExternalServiceCheckConnectionByIdLazyQuery,
 } from './backend'
+import { ExternalServiceEditingAppLimitInPlaceAlert } from './ExternalServiceEditingAppLimitInPlaceAlert'
 import { ExternalServiceInformation } from './ExternalServiceInformation'
 import { resolveExternalServiceCategory } from './externalServices'
 import { ExternalServiceSyncJobsList } from './ExternalServiceSyncJobsList'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
+import { isAppLocalFileService } from './isAppLocalFileService'
 
 interface Props extends TelemetryProps {
-    isLightTheme: boolean
     afterDeleteRoute: string
 
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isSourcegraphApp: boolean
 
     /** For testing only. */
     queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs
@@ -47,14 +51,15 @@ const NotFoundPage: FC = () => (
 
 export const ExternalServicePage: FC<Props> = props => {
     const {
-        isLightTheme,
         telemetryService,
         afterDeleteRoute,
         externalServicesFromFile,
         allowEditExternalServicesWithFile,
+        isSourcegraphApp,
         queryExternalServiceSyncJobs = _queryExternalServiceSyncJobs,
     } = props
 
+    const isLightTheme = useIsLightTheme()
     const { externalServiceID } = useParams()
     const navigate = useNavigate()
 
@@ -103,8 +108,10 @@ export const ExternalServicePage: FC<Props> = props => {
     const externalServiceCategory = resolveExternalServiceCategory(externalService)
 
     const editingEnabled = allowEditExternalServicesWithFile || !externalServicesFromFile
+    const isAppLimitInPlace = isSourcegraphApp && externalService && !isAppLocalFileService(externalService)
 
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
+    const client = useApolloClient()
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         if (!externalService) {
             return
@@ -116,13 +123,12 @@ export const ExternalServicePage: FC<Props> = props => {
         try {
             await deleteExternalService(externalService.id)
             setIsDeleting(false)
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe()
+            await refreshSiteFlags(client)
             navigate(afterDeleteRoute)
         } catch (error) {
             setIsDeleting(asError(error))
         }
-    }, [afterDeleteRoute, navigate, externalService])
+    }, [afterDeleteRoute, navigate, externalService, client])
 
     // If external service is undefined, we won't use doCheckConnection anyway,
     // that's why it's safe to pass an empty ID to useExternalServiceCheckConnectionByIdLazyQuery
@@ -174,6 +180,7 @@ export const ExternalServicePage: FC<Props> = props => {
             )}
             {fetchError !== undefined && !fetchLoading && <ErrorAlert className="mb-3" error={fetchError} />}
             {!fetchLoading && !externalService && !fetchError && <NotFoundPage />}
+
             {externalService && (
                 <Container className="mb-3">
                     <PageHeader
@@ -250,6 +257,9 @@ export const ExternalServicePage: FC<Props> = props => {
                     />
                     {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
                     {externalServiceAvailabilityStatus}
+
+                    {isAppLimitInPlace && <ExternalServiceEditingAppLimitInPlaceAlert />}
+
                     <H2>Information</H2>
                     {externalServiceCategory && (
                         <ExternalServiceInformation

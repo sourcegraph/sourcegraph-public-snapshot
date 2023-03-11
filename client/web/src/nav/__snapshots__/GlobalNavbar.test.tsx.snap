@@ -179,6 +179,24 @@ exports[`GlobalNavbar default 1`] = `
           </a>
         </li>
         <li
+          class="item d-flex d-sm-none"
+        >
+          <a
+            class="link"
+            href="/own"
+          >
+            <span
+              class="linkContent pl-2"
+            >
+              <span
+                class="text iconIncluded"
+              >
+                Own
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
           class="item"
         >
           <a
@@ -259,20 +277,6 @@ exports[`GlobalNavbar default 1`] = `
         </a>
       </li>
       <li
-        class="action d-sm-flex d-none"
-      >
-        <button
-          aria-expanded="false"
-          aria-label="Feedback"
-          class="btn btnSecondary btnOutline btnSm feedbackTrigger"
-          type="button"
-        >
-          <span>
-            Feedback
-          </span>
-        </button>
-      </li>
-      <li
         class="action"
       >
         <div>
@@ -281,13 +285,6 @@ exports[`GlobalNavbar default 1`] = `
             href="/sign-in?returnTo=/"
           >
             Sign in
-          </a>
-          <a
-            class="anchorLink btn btnPrimary btnSm"
-            href="/sign-up"
-            tabindex="0"
-          >
-            Sign up
           </a>
         </div>
       </li>
@@ -302,7 +299,6 @@ exports[`GlobalNavbar default 1`] = `
       selectedsearchcontextspec=""
       settingscascade="[object Object]"
       telemetryservice="[object Object]"
-      themepreference="light"
     />
   </div>
 </DocumentFragment>

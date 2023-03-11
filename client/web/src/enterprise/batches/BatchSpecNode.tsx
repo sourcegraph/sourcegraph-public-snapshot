@@ -18,7 +18,6 @@ import { upperFirst } from 'lodash'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { BatchSpecSource, BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Code,
     Link,
@@ -48,7 +47,7 @@ import { humanizeSize } from './utils/size'
 
 import styles from './BatchSpecNode.module.scss'
 
-export interface BatchSpecNodeProps extends ThemeProps {
+export interface BatchSpecNodeProps {
     node: BatchSpecListFields
     currentSpecID?: Scalars['ID']
     /** Used for testing purposes. Sets the current date */
@@ -58,7 +57,6 @@ export interface BatchSpecNodeProps extends ThemeProps {
 export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<BatchSpecNodeProps>> = ({
     node,
     currentSpecID,
-    isLightTheme,
     now = () => new Date(),
 }) => {
     const [isExpanded, setIsExpanded] = useState(currentSpecID === node.id)
@@ -128,7 +126,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
             </div>
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
-                    <BatchSpecInfo spec={node} isLightTheme={isLightTheme} />
+                    <BatchSpecInfo spec={node} />
                 </div>
             )}
         </li>
@@ -137,14 +135,13 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
 
 interface BatchSpecInfoProps {
     spec: Pick<BatchSpecListFields, 'originalInput' | 'id' | 'files' | 'description'>
-    isLightTheme: boolean
 }
 
 type BatchWorkspaceFile = {
     isSpecFile: boolean
 } & Omit<PartialBatchSpecWorkspaceFileFields, '__typename'>
 
-export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spec, isLightTheme }) => {
+export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spec }) => {
     const specFile: BatchWorkspaceFile = {
         binary: false,
         isSpecFile: true,
@@ -185,7 +182,6 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
 
                 {selectedFile.isSpecFile ? (
                     <BatchSpec
-                        isLightTheme={isLightTheme}
                         name={spec.description.name}
                         originalInput={spec.originalInput}
                         className={classNames(styles.batchSpec, 'mb-0')}
@@ -201,7 +197,6 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
         <>
             <H4>Input spec</H4>
             <BatchSpec
-                isLightTheme={isLightTheme}
                 name={spec.description.name}
                 originalInput={spec.originalInput}
                 className={classNames(styles.batchSpec, 'mb-0')}

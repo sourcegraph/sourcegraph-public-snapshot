@@ -46,7 +46,7 @@ export const EditorActionsGroup: React.FunctionComponent<EditorActionsGroupProps
         )}
         <div className={classNames(styles.actions, 'mb-2')}>
             {actions.map(({ id, label }) => (
-                <Button key={id} className={styles.action} onClick={() => onClick(id)} variant="secondary" size="sm">
+                <Button key={id} onClick={() => onClick(id)} variant="secondary" outline={true} size="sm">
                     {label}
                 </Button>
             ))}

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { debounce } from 'lodash'
-import { useLocation, useNavigationType } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigationType } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 

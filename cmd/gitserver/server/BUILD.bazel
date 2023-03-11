@@ -56,15 +56,15 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/adapters",
         "//internal/gitserver/gitdomain",
-        "//internal/gitserver/proto",
         "//internal/gitserver/protocol",
         "//internal/gitserver/search",
+        "//internal/gitserver/v1:gitserver",
         "//internal/grpc/streamio",
         "//internal/honey",
         "//internal/hostname",
         "//internal/lazyregexp",
+        "//internal/limiter",
         "//internal/metrics",
-        "//internal/mutablelimiter",
         "//internal/observation",
         "//internal/ratelimit",
         "//internal/search/streaming/http",
@@ -84,6 +84,7 @@ go_library(
         "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_conc//:conc",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_mountinfo//:mountinfo",
         "@io_opentelemetry_go_otel//attribute",
@@ -118,6 +119,13 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":server"],
+    # This test loads coursier as a side effect, so we ensure the
+    # path is sandboxed properly.
+    env = {"COURSIER_CACHE_DIR": "/tmp"},
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/api",
@@ -136,7 +144,7 @@ go_test(
         "//internal/gitserver/protocol",
         "//internal/httpcli",
         "//internal/httptestutil",
-        "//internal/mutablelimiter",
+        "//internal/limiter",
         "//internal/observation",
         "//internal/ratelimit",
         "//internal/testutil",

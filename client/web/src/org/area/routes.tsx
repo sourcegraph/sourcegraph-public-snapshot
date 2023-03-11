@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom-v5-compat'
+import { Navigate } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -20,7 +20,6 @@ export const orgAreaRoutes: readonly OrgAreaRoute[] = [
                 {...props}
                 routes={props.orgSettingsAreaRoutes}
                 sideBarItems={props.orgSettingsSideBarItems}
-                isLightTheme={props.isLightTheme}
             />
         ),
     },

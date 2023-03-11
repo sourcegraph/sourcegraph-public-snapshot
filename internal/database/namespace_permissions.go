@@ -17,7 +17,6 @@ var namespacePermissionColumns = []*sqlf.Query{
 	sqlf.Sprintf("namespace_permissions.id"),
 	sqlf.Sprintf("namespace_permissions.namespace"),
 	sqlf.Sprintf("namespace_permissions.resource_id"),
-	sqlf.Sprintf("namespace_permissions.action"),
 	sqlf.Sprintf("namespace_permissions.user_id"),
 	sqlf.Sprintf("namespace_permissions.created_at"),
 }
@@ -25,7 +24,6 @@ var namespacePermissionColumns = []*sqlf.Query{
 var namespacePermissionInsertColums = []*sqlf.Query{
 	sqlf.Sprintf("namespace"),
 	sqlf.Sprintf("resource_id"),
-	sqlf.Sprintf("action"),
 	sqlf.Sprintf("user_id"),
 }
 
@@ -56,16 +54,14 @@ INSERT INTO
 	VALUES (
 		%s,
 		%s,
-		%s,
 		%s
 	)
 	RETURNING %s
 `
 
 type CreateNamespacePermissionOpts struct {
-	Namespace  string
+	Namespace  types.PermissionNamespace
 	ResourceID int64
-	Action     string
 	UserID     int32
 }
 
@@ -78,12 +74,15 @@ func (n *namespacePermissionStore) Create(ctx context.Context, opts CreateNamesp
 		return nil, errors.New("user id is required")
 	}
 
+	if !opts.Namespace.Valid() {
+		return nil, errors.New("valid namespace is required")
+	}
+
 	q := sqlf.Sprintf(
 		namespacePermissionCreateQueryFmtStr,
 		sqlf.Join(namespacePermissionInsertColums, ", "),
 		opts.Namespace,
 		opts.ResourceID,
-		opts.Action,
 		opts.UserID,
 		sqlf.Join(namespacePermissionColumns, ", "),
 	)
@@ -138,12 +137,11 @@ SELECT %s FROM namespace_permissions WHERE %s
 
 // When querying namespace permissions, you need to provide one of the following
 // 1. The ID belonging to the namespace to be retrieved.
-// 2. The Namespace, ResourceID, Action and UserID associated with the namespace permission.
+// 2. The Namespace, ResourceID and UserID associated with the namespace permission.
 type GetNamespacePermissionOpts struct {
 	ID         int64
-	Namespace  string
+	Namespace  types.PermissionNamespace
 	ResourceID int64
-	Action     string
 	UserID     int32
 }
 
@@ -157,7 +155,6 @@ func (n *namespacePermissionStore) Get(ctx context.Context, opts GetNamespacePer
 		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
 	} else {
 		conds = append(conds, sqlf.Sprintf("namespace = %s", opts.Namespace))
-		conds = append(conds, sqlf.Sprintf("action = %s", opts.Action))
 		conds = append(conds, sqlf.Sprintf("user_id = %s", opts.UserID))
 		conds = append(conds, sqlf.Sprintf("resource_id = %s", opts.ResourceID))
 	}
@@ -182,9 +179,9 @@ func (n *namespacePermissionStore) Get(ctx context.Context, opts GetNamespacePer
 // isGetNamsepaceOptsValid is used to validate the options passed into the `namespacePermissionStore.Get` method are valid.
 // One of the conditions below need to be valid to execute a Get query.
 // 1. ID is provided
-// 2. Namespace, Actions, UserID and ResourceID is provided.
+// 2. Namespace, UserID and ResourceID is provided.
 func isGetNamsepaceOptsValid(opts GetNamespacePermissionOpts) bool {
-	areNonIDOptsValid := opts.Namespace != "" && opts.Action != "" && opts.UserID != 0 && opts.ResourceID != 0
+	areNonIDOptsValid := opts.Namespace.Valid() && opts.UserID != 0 && opts.ResourceID != 0
 	if areNonIDOptsValid || opts.ID != 0 {
 		return true
 	}
@@ -197,7 +194,6 @@ func scanNamespacePermission(sc dbutil.Scanner) (*types.NamespacePermission, err
 		&np.ID,
 		&np.Namespace,
 		&np.ResourceID,
-		&np.Action,
 		&np.UserID,
 		&np.CreatedAt,
 	); err != nil {

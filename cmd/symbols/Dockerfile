@@ -1,12 +1,12 @@
 # NOTE: This layer of the docker image is also used in local development as a wrapper around universal-ctags
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa AS ctags
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5 AS ctags
 # hadolint ignore=DL3002
 USER root
 
 COPY cmd/symbols/ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
-FROM golang:1.19.3-alpine@sha256:27a9653759f44afd08c94418307a26d2db9cf78af12933200bc2ca63c4844316 AS symbols-build
+FROM golang:1.19.6-alpine@sha256:f2e0acaf7c628cd819b73541d7c1ea8f888d51edb0a58935a3c46a084fa953fa AS symbols-build
 # hadolint ignore=DL3002
 USER root
 
@@ -38,7 +38,7 @@ RUN \
   -o /symbols \
   $PKG
 
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa AS symbols
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5 AS symbols
 
 # TODO(security): This container should not run as root!
 #
@@ -66,6 +66,8 @@ COPY --from=symbols-build /symbols /usr/local/bin/symbols
 # symbols is cgo, ensure we have the requisite dynamic libraries
 RUN env SANITY_CHECK=true /usr/local/bin/symbols
 
+# Use SYMBOLS_CACHE_DIR to set the cache dir at runtime for the symbols service. Setting CACHE_DIR
+# will also apply to other services and is deprecated.
 ENV CACHE_DIR=/mnt/cache/symbols
 RUN mkdir -p ${CACHE_DIR}
 EXPOSE 3184

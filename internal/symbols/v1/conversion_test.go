@@ -127,7 +127,7 @@ func Test_Internal_Types_LocalCodeIntelPayload_ProtoRoundTrip(t *testing.T) {
 
 		converted := originalProto.ToInternal()
 
-		if diff = cmp.Diff(original, converted, cmpopts.EquateEmpty()); diff != "" {
+		if diff = cmp.Diff(&original, converted, cmpopts.EquateEmpty()); diff != "" {
 			return false
 		}
 

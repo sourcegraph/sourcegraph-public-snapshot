@@ -1,18 +1,13 @@
 import { QueryState } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { FormInstance, FormChangeEvent, SubmissionErrors, useField, useFieldAPI, useForm } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../../../../../../stores'
 import {
     createDefaultEditSeries,
     EditableDataSeries,
-    Form,
-    FormChangeEvent,
     insightSeriesValidator,
     insightStepValueValidator,
     insightTitleValidator,
-    SubmissionErrors,
-    useField,
-    useFieldAPI,
-    useForm,
     useRepoFields,
 } from '../../../../../components'
 import { CreateInsightFormFields, InsightStep, RepoMode } from '../types'
@@ -39,7 +34,7 @@ export interface UseInsightCreationFormProps {
 }
 
 export interface InsightCreationForm {
-    form: Form<CreateInsightFormFields>
+    form: FormInstance<CreateInsightFormFields>
     title: useFieldAPI<string>
     repositories: useFieldAPI<string[]>
     repoQuery: useFieldAPI<QueryState>
@@ -66,9 +61,9 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
 
     const form = useForm<CreateInsightFormFields>({
         initialValues,
+        touched,
         onSubmit,
         onChange,
-        touched,
     })
 
     const { repoMode, repoQuery, repositories } = useRepoFields({ formApi: form.formAPI })

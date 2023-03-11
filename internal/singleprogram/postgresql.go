@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
@@ -30,7 +31,7 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) error {
 		var err error
 		vars, err = startEmbeddedPostgreSQL(embeddedPostgreSQLRootDir)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Failed to download or start embedded postgresql. Please start your own postgres instance then configure the PG* environment variables to connect to it as well as setting USE_EMBEDDED_POSTGRESQL=0")
 		}
 		os.Setenv("PGPORT", vars.PGPORT)
 		os.Setenv("PGHOST", vars.PGHOST)
@@ -53,7 +54,7 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) error {
 
 	useSinglePostgreSQLDatabase(logger, vars)
 
-	// Migration on startup is ideal for the single-program deployment because there are no other
+	// Migration on startup is ideal for the app deployment because there are no other
 	// simultaneously running services at startup that might interfere with a migration.
 	//
 	// TODO(sqs): TODO(single-binary): make this behavior more official and not just for "dev"
@@ -63,6 +64,20 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) error {
 }
 
 func startEmbeddedPostgreSQL(pgRootDir string) (*postgresqlEnvVars, error) {
+	// Note: some linux distributions (eg NixOS) do not ship with the dynamic
+	// linker at the "standard" location which the embedded postgres
+	// executables rely on. Give a nice error instead of the confusing "file
+	// not found" error.
+	//
+	// We could consider extending embedded-postgres to use something like
+	// patchelf, but this is non-trivial.
+	if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
+		ldso := "/lib64/ld-linux-x86-64.so.2"
+		if _, err := os.Stat(ldso); err != nil {
+			return nil, errors.Errorf("could not use embedded-postgres since %q is missing", ldso)
+		}
+	}
+
 	// Note: on macOS unix socket paths must be <103 bytes, so we place them in the home directory.
 	current, err := user.Current()
 	if err != nil {

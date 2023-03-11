@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 
-import { Navigate, useParams } from 'react-router-dom-v5-compat'
+import { Navigate, useParams } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'

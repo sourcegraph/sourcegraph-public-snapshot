@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import * as H from 'history'
 import { isEqual, uniq } from 'lodash'
-import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,

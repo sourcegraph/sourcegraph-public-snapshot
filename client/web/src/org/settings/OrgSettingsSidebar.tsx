@@ -18,7 +18,7 @@ import styles from './OrgSettingsSidebar.module.scss'
 
 export interface OrgSettingsSidebarItemConditionContext extends BatchChangesProps {
     org: OrgAreaOrganizationFields
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
+    authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
 
@@ -85,8 +85,8 @@ export const OrgSettingsSidebar: React.FunctionComponent<React.PropsWithChildren
                                 <SidebarNavItem
                                     key={label}
                                     to={`/organizations/${org.name}/settings` + to}
-                                    exact={exact}
                                     onClick={collapseMobileSidebar}
+                                    exact={exact}
                                 >
                                     {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
                                 </SidebarNavItem>

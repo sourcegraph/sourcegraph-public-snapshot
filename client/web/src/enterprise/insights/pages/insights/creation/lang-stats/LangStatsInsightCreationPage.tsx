@@ -1,16 +1,11 @@
 import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage, Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { useLocalStorage, Link, PageHeader, useObservable, FORM_ERROR } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import {
-    CodeInsightCreationMode,
-    CodeInsightsCreationActions,
-    CodeInsightsPage,
-    FORM_ERROR,
-} from '../../../../components'
+import { CodeInsightCreationMode, CodeInsightsCreationActions, CodeInsightsPage } from '../../../../components'
 import { MinimalLangStatsInsightData } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'

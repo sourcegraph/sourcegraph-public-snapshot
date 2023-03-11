@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiClose, mdiCheckCircle, mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 import { useStickyBox } from 'react-sticky-box'
 import { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
@@ -13,7 +13,7 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     LoadingSpinner,
     PageHeader,
@@ -32,9 +32,9 @@ import { AuthenticatedUser } from '../../auth'
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { PageTitle } from '../../components/PageTitle'
 import { NotebookFields, NotebookInput } from '../../graphql-operations'
+import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { SearchStreamingProps } from '../../search'
 import { NotepadIcon } from '../../search/Notepad'
-import { useTheme, ThemePreference } from '../../theme'
 import {
     fetchNotebook as _fetchNotebook,
     updateNotebook as _updateNotebook,
@@ -51,13 +51,15 @@ import { NotebookPageHeaderActions } from './NotebookPageHeaderActions'
 import { NotebookTitle } from './NotebookTitle'
 
 import styles from './NotebookPage.module.scss'
-
 interface NotebookPageProps
     extends SearchStreamingProps,
-        ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {
+        Omit<
+            StreamingSearchResultsListProps,
+            'allExpanded' | 'platformContext' | 'executedQuery' | 'enableOwnershipSearch'
+        >,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     fetchNotebook?: typeof _fetchNotebook
@@ -83,9 +85,9 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     copyNotebook = _copyNotebook,
     globbing,
     streamSearch,
-    isLightTheme,
     telemetryService,
     searchContextsEnabled,
+    ownEnabled,
     isSourcegraphDotCom,
     fetchHighlightedFileLineRanges,
     authenticatedUser,
@@ -311,9 +313,9 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                 exportedFileName={exportedFileName}
                                 globbing={globbing}
                                 streamSearch={streamSearch}
-                                isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}
                                 searchContextsEnabled={searchContextsEnabled}
+                                ownEnabled={ownEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 authenticatedUser={authenticatedUser}
@@ -348,7 +350,7 @@ interface NotepadCTAProps {
 
 const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProps>> = ({ onEnable, onClose }) => {
     const assetsRoot = window.context?.assetsRoot || ''
-    const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
+    const isLightTheme = useIsLightTheme()
 
     return (
         <MarketingBlock wrapperClassName={classNames(styles.notepadCta, 'd-none d-md-block')}>

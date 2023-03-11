@@ -9,9 +9,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	br "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/rbac"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -418,6 +420,10 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 		tr.Finish()
 	}()
 
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+		return nil, err
+	}
+
 	opts := service.ApplyBatchChangeOpts{
 		// This is what differentiates CreateBatchChange from ApplyBatchChange
 		FailIfBatchChangeExists: true,
@@ -447,6 +453,10 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+		return nil, err
+	}
 
 	batchChange, err := r.applyOrCreateBatchChange(ctx, args, service.ApplyBatchChangeOpts{})
 	if err != nil {
@@ -555,6 +565,10 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 		return nil, err
 	}
 
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+		return nil, err
+	}
+
 	if batchChangesFeature, err := checkLicense(); err == nil {
 		if !batchChangesFeature.Unrestricted && len(args.ChangesetSpecs) > batchChangesFeature.MaxNumChangesets {
 			return nil, ErrBatchChangesOverLimit{errors.Newf("maximum number of changesets per batch change (%d) exceeded", batchChangesFeature.MaxNumChangesets)}
@@ -609,6 +623,10 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+		return nil, err
+	}
+
 	act := sgactor.FromContext(ctx)
 	// Actor MUST be logged in at this stage, because batchChangesCreateAccess checks that already.
 	// To be extra safe, we'll just do the cheap check again here so if anyone ever modifies
@@ -635,6 +653,10 @@ func (r *Resolver) CreateChangesetSpecs(ctx context.Context, args *graphqlbacken
 	}()
 
 	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -673,6 +695,10 @@ func (r *Resolver) MoveBatchChange(ctx context.Context, args *graphqlbackend.Mov
 	}()
 
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -717,6 +743,10 @@ func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.D
 		tr.Finish()
 	}()
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -995,6 +1025,10 @@ func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.Cl
 		return nil, err
 	}
 
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+		return nil, err
+	}
+
 	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling batch change id")
@@ -1206,6 +1240,13 @@ func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, exter
 			Passphrase: keypair.Passphrase,
 		}
 	} else if externalServiceType == extsvc.TypeBitbucketCloud {
+		a = &extsvcauth.BasicAuthWithSSH{
+			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
+			PrivateKey: keypair.PrivateKey,
+			PublicKey:  keypair.PublicKey,
+			Passphrase: keypair.Passphrase,
+		}
+	} else if externalServiceType == extsvc.TypeAzureDevOps {
 		a = &extsvcauth.BasicAuthWithSSH{
 			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
 			PrivateKey: keypair.PrivateKey,
@@ -1567,6 +1608,10 @@ func (r *Resolver) CreateEmptyBatchChange(ctx context.Context, args *graphqlback
 		return nil, err
 	}
 
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+		return nil, err
+	}
+
 	svc := service.New(r.store)
 
 	var uid, oid int32
@@ -1601,6 +1646,10 @@ func (r *Resolver) UpsertEmptyBatchChange(ctx context.Context, args *graphqlback
 		return nil, err
 	}
 
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+		return nil, err
+	}
+
 	svc := service.New(r.store)
 
 	var uid, oid int32
@@ -1629,6 +1678,10 @@ func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlback
 	}()
 
 	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1667,6 +1720,10 @@ func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.Ex
 		tr.Finish()
 	}()
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1778,6 +1835,10 @@ func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbacke
 		return nil, err
 	}
 
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+		return nil, err
+	}
+
 	batchSpecRandID, err := unmarshalBatchSpecID(args.PreviousSpec)
 	if err != nil {
 		return nil, err
@@ -1815,6 +1876,10 @@ func (r *Resolver) UpsertBatchSpecInput(ctx context.Context, args *graphqlbacken
 	}()
 
 	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1909,6 +1974,10 @@ func (r *Resolver) ToggleBatchSpecAutoApply(ctx context.Context, args *graphqlba
 func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.DeleteBatchSpecArgs) (*graphqlbackend.EmptyResponse, error) {
 	// TODO(ssbc): currently admin only.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 	// TODO(ssbc): not implemented

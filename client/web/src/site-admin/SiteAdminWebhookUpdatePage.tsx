@@ -1,7 +1,7 @@
 import { FC, useEffect } from 'react'
 
 import { mdiCog } from '@mdi/js'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader } from '@sourcegraph/wildcard'

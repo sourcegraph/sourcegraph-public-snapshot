@@ -9,8 +9,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { LangStatsInsightContentResult } from '../../../../../../graphql-operations'
-import { useCodeInsightsState } from '../../../../../../stores'
 import { GET_LANG_STATS_GQL } from '../../../../core/hooks/live-preview-insight'
+import { useCodeInsightsLicenseState } from '../../../../stores'
 
 import { LangStatsInsightCreationPage as LangStatsInsightCreationPageComponent } from './LangStatsInsightCreationPage'
 
@@ -54,7 +54,7 @@ const LANG_STATS_MOCK: MockedResponse<LangStatsInsightContentResult> = {
 }
 
 export const LangStatsInsightCreationPage: Story = () => {
-    useCodeInsightsState.setState({ licensed: true, insightsLimit: null })
+    useCodeInsightsLicenseState.setState({ licensed: true, insightsLimit: null })
 
     return (
         <MockedTestProvider addTypename={true} mocks={[LANG_STATS_MOCK]}>

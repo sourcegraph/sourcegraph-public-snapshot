@@ -123,6 +123,10 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             builtinAuth: true,
             tags: [],
             createdAt: '2020-03-02T11:52:15Z',
+            roles: {
+                __typename: 'RoleConnection',
+                nodes: [],
+            },
         },
     }),
 }
@@ -180,7 +184,10 @@ describe('Search aggregation', () => {
                                 latestSettings: {
                                     id: 0,
                                     contents: JSON.stringify({
-                                        experimentalFeatures: { searchResultsAggregations: true },
+                                        experimentalFeatures: {
+                                            searchResultsAggregations: true,
+                                            searchQueryInput: 'v1',
+                                        },
                                     }),
                                 },
                             },

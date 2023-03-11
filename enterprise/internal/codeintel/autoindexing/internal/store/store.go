@@ -26,7 +26,7 @@ type Store interface {
 		commitResolverBatchSize int,
 		commitResolverMaximumCommitLag time.Duration,
 		shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
-	) (indexesDeleted int, _ error)
+	) (indexesScanned, indexesDeleted int, _ error)
 
 	// Indexes
 	InsertIndexes(ctx context.Context, indexes []types.Index) (_ []types.Index, err error)
@@ -39,7 +39,7 @@ type Store interface {
 	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error)
 	ReindexIndexByID(ctx context.Context, id int) (err error)
 	ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error)
-	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_, _ int, err error)
 	IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
 	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (_ bool, err error)
 	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
@@ -56,12 +56,16 @@ type Store interface {
 	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
 	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
 
-	GetUnsafeDB() database.DB
-
 	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)
+	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
+	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithCount, totalCount int, err error)
+	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithAvailableIndexers, totalCount int, err error)
+	TopRepositoriesToConfigure(ctx context.Context, limit int) ([]shared.RepositoryWithCount, error)
+	SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]shared.AvailableIndexer) (err error)
+	TruncateConfigurationSummary(ctx context.Context, numRecordsToRetain int) error
 
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
-	ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) error
+	ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) (int, int, error)
 }
 
 // store manages the autoindexing store.
@@ -99,10 +103,4 @@ func (s *store) transact(ctx context.Context) (*store, error) {
 
 func (s *store) Done(err error) error {
 	return s.db.Done(err)
-}
-
-// GetUnsafeDB returns the underlying database handle. This is used by the
-// resolvers that have the old convention of using the database handle directly.
-func (s *store) GetUnsafeDB() database.DB {
-	return database.NewDBWith(s.logger, s.db)
 }

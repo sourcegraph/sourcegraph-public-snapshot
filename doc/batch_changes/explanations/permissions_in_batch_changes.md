@@ -50,7 +50,7 @@ Interactions with a code host are made possible by [configuring credentials](../
 
 ## Repository permissions for Batch Changes
 
-Your [repository permissions](../../../admin/repo/permissions.md) determine what information in a batch change you can view. You can only see a batch change's proposed changes to a repository if you have read access to that repository. Read or admin permissions on a batch change does not (by itself) permit you to view all of the batch change's changes.
+Your [repository permissions](../../../admin/permissions/index.md) determine what information in a batch change you can view. You can only see a batch change's proposed changes to a repository if you have read access to that repository. Read or admin permissions on a batch change does not (by itself) permit you to view all of the batch change's changes.
 
 When you view a batch change, you can see a list of patches and changesets. For each patch and changeset:
 

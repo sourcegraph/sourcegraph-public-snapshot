@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { reject } from 'lodash'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Input, Form } from '@sourcegraph/wildcard'
 
@@ -123,7 +124,12 @@ export const ChangesetFilterRow: React.FunctionComponent<React.PropsWithChildren
                         <div className="w-100 d-block d-sm-none" />
                         <div className="col mb-2 ml-0 ml-sm-2">
                             <ChangesetFilter<ChangesetReviewState>
-                                values={Object.values(ChangesetReviewState)}
+                                values={reject(
+                                    Object.values(ChangesetReviewState),
+                                    state =>
+                                        state === ChangesetReviewState.COMMENTED ||
+                                        state === ChangesetReviewState.DISMISSED
+                                )}
                                 label="Review state"
                                 selected={reviewState}
                                 onChange={setReviewState}

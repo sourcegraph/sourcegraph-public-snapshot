@@ -4,7 +4,7 @@ import { SearchMode } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeOrError, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 
 import { AuthenticatedUser } from '../auth'
-import { LayoutProps } from '../Layout'
+import { LegacyLayoutProps } from '../LegacyLayout'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
 export function siteSubjectNoAdmin(): SettingsSubjectCommonFields {
@@ -17,7 +17,7 @@ export function siteSubjectNoAdmin(): SettingsSubjectCommonFields {
 export function viewerSubjectFromSettings(
     cascade: SettingsCascadeOrError,
     authenticatedUser?: AuthenticatedUser | null
-): LayoutProps['viewerSubject'] {
+): LegacyLayoutProps['viewerSubject'] {
     if (authenticatedUser) {
         return authenticatedUser
     }

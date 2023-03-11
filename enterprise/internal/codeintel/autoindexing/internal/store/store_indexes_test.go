@@ -180,8 +180,8 @@ func TestGetIndexes(t *testing.T) {
 		types.Index{ID: 4, QueuedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
 		types.Index{ID: 5, Commit: makeCommit(3333), QueuedAt: t5, State: "processing", AssociatedUploadID: &uploadID1},
 		types.Index{ID: 6, QueuedAt: t6, State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
-		types.Index{ID: 7, QueuedAt: t7},
-		types.Index{ID: 8, QueuedAt: t8},
+		types.Index{ID: 7, QueuedAt: t7, Indexer: "lsif-typescript"},
+		types.Index{ID: 8, QueuedAt: t8, Indexer: "scip-ocaml"},
 		types.Index{ID: 9, QueuedAt: t9, State: "queued"},
 		types.Index{ID: 10, QueuedAt: t10},
 	)
@@ -197,6 +197,7 @@ func TestGetIndexes(t *testing.T) {
 		state         string
 		states        []string
 		term          string
+		indexerNames  []string
 		withoutUpload bool
 		expectedIDs   []int
 	}{
@@ -210,6 +211,7 @@ func TestGetIndexes(t *testing.T) {
 		{state: "failed", expectedIDs: []int{2}},                                   // treats errored/failed states equivalently
 		{states: []string{"completed", "failed"}, expectedIDs: []int{2, 7, 8, 10}}, // searches multiple states
 		{withoutUpload: true, expectedIDs: []int{2, 4, 6, 7, 8, 9, 10}},            // anti-join with upload records
+		{indexerNames: []string{"typescript", "ocaml"}, expectedIDs: []int{7, 8}},  // searches indexer name (only)
 	}
 
 	for _, testCase := range testCases {
@@ -220,12 +222,13 @@ func TestGetIndexes(t *testing.T) {
 			}
 
 			name := fmt.Sprintf(
-				"repositoryID=%d state=%s states=%s term=%s without_upload=%v offset=%d",
+				"repositoryID=%d state=%s states=%s term=%s without_upload=%v indexer_names=%v offset=%d",
 				testCase.repositoryID,
 				testCase.state,
 				strings.Join(testCase.states, ","),
 				testCase.term,
 				testCase.withoutUpload,
+				testCase.indexerNames,
 				lo,
 			)
 
@@ -235,6 +238,7 @@ func TestGetIndexes(t *testing.T) {
 					State:         testCase.state,
 					States:        testCase.states,
 					Term:          testCase.term,
+					IndexerNames:  testCase.indexerNames,
 					WithoutUpload: testCase.withoutUpload,
 					Limit:         3,
 					Offset:        lo,
@@ -647,18 +651,12 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 		}
 	}
 
-	ids, err := store.DeleteIndexesWithoutRepository(context.Background(), t1)
+	_, count, err := store.DeleteIndexesWithoutRepository(context.Background(), t1)
 	if err != nil {
 		t.Fatalf("unexpected error deleting indexes: %s", err)
 	}
-
-	expected := map[int]int{
-		61: 21,
-		63: 23,
-		65: 25,
-	}
-	if diff := cmp.Diff(expected, ids); diff != "" {
-		t.Errorf("unexpected ids (-want +got):\n%s", diff)
+	if expected := 21 + 23 + 25; count != expected {
+		t.Fatalf("unexpected count. want=%d have=%d", expected, count)
 	}
 }
 

@@ -1,7 +1,7 @@
 import React, { useCallback, KeyboardEvent, MouseEvent } from 'react'
 
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 

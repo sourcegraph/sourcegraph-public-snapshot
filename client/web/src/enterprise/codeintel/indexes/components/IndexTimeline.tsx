@@ -313,7 +313,13 @@ const ExecutionLogEntry: React.FunctionComponent<React.PropsWithChildren<Executi
 
         <div className="p-2">
             {logEntry.out ? (
-                <Collapsible title="Log output" titleAtStart={true} buttonClassName="p-2">
+                <Collapsible
+                    title="Log output"
+                    titleAtStart={true}
+                    className="p-0"
+                    buttonClassName={styles.collapseButton}
+                    defaultExpanded={logEntry.exitCode !== null && logEntry.exitCode !== 0}
+                >
                     <LogOutput text={logEntry.out} logDescription="Log output:" />
                 </Collapsible>
             ) : (

@@ -2,7 +2,6 @@ package autoindexing
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -42,6 +41,7 @@ func newService(
 	store store.Store,
 	inferenceSvc InferenceService,
 	repoUpdater RepoUpdaterClient,
+	repoStore database.RepoStore,
 	gitserver GitserverClient,
 	symbolsClient *symbols.Client,
 ) *Service {
@@ -63,6 +63,7 @@ func newService(
 		observationCtx,
 		store,
 		repoUpdater,
+		repoStore,
 		gitserver,
 		jobSelector,
 	)
@@ -80,79 +81,49 @@ func newService(
 	}
 }
 
-func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
-	ctx, _, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]types.Index, int, error) {
 	return s.store.GetIndexes(ctx, opts)
 }
 
-func (s *Service) GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetIndexByID(ctx context.Context, id int) (types.Index, bool, error) {
 	return s.store.GetIndexByID(ctx, id)
 }
 
-func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error) {
-	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) ([]types.Index, error) {
 	return s.store.GetIndexesByIDs(ctx, ids...)
 }
 
-func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error) {
-	ctx, _, endObservation := s.operations.getRecentIndexesSummary.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]shared.IndexesWithRepositoryNamespace, error) {
 	return s.store.GetRecentIndexesSummary(ctx, repositoryID)
 }
 
-func (s *Service) GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
-	ctx, _, endObservation := s.operations.getLastIndexScanForRepository.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error) {
 	return s.store.GetLastIndexScanForRepository(ctx, repositoryID)
 }
 
-func (s *Service) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.deleteIndexByID.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) DeleteIndexByID(ctx context.Context, id int) (bool, error) {
 	return s.store.DeleteIndexByID(ctx, id)
 }
 
-func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error) {
-	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) error {
 	return s.store.DeleteIndexes(ctx, opts)
 }
 
-func (s *Service) ReindexIndexByID(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := s.operations.reindexIndexByID.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) ReindexIndexByID(ctx context.Context, id int) error {
 	return s.store.ReindexIndexByID(ctx, id)
 }
 
-func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error) {
-	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) error {
 	return s.store.ReindexIndexes(ctx, opts)
 }
 
-func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (shared.IndexConfiguration, bool, error) {
 	return s.store.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 }
 
 // InferIndexConfiguration looks at the repository contents at the latest commit on the default branch of the given
 // repository and determines an index configuration that is likely to succeed.
-func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, bypassLimit bool) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error) {
+func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *config.IndexConfiguration, _ []config.IndexJobHint, err error) {
 	ctx, trace, endObservation := s.operations.inferIndexConfiguration.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.Int("repositoryID", repositoryID),
@@ -178,7 +149,7 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 	}
 	trace.AddEvent("found", attribute.String("commit", commit))
 
-	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -197,15 +168,8 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 	}, indexJobHints, nil
 }
 
-func (s *Service) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error) {
-	ctx, _, endObservation := s.operations.updateIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error {
 	return s.store.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, data)
-}
-
-func (s *Service) GetUnsafeDB() database.DB {
-	return s.store.GetUnsafeDB()
 }
 
 func (s *Service) ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
@@ -229,56 +193,27 @@ func (s *Service) GetSupportedByCtags(ctx context.Context, filepath string, repo
 	return false, "", nil
 }
 
-func (s *Service) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
-	ctx, _, endObservation := s.operations.setRequestLanguageSupport.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{otlog.Int("userID", userID), otlog.String("language", language)},
-	})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) SetRequestLanguageSupport(ctx context.Context, userID int, language string) error {
 	return s.store.SetRequestLanguageSupport(ctx, userID, language)
 }
 
-func (s *Service) GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error) {
-	ctx, _, endObservation := s.operations.getLanguagesRequestedBy.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{otlog.Int("userID", userID)},
-	})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetLanguagesRequestedBy(ctx context.Context, userID int) ([]string, error) {
 	return s.store.GetLanguagesRequestedBy(ctx, userID)
 }
 
-func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
-	ctx, _, endObservation := s.operations.getListTags.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{otlog.String("repo", string(repo)), otlog.String("commitObjs", fmt.Sprintf("%v", commitObjs))},
-	})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error) {
 	return s.gitserverClient.ListTags(ctx, repo, commitObjs...)
 }
 
-func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
-	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.Int("repositoryID", repositoryID),
-			otlog.String("rev", rev),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string) error {
 	return s.store.QueueRepoRev(ctx, repositoryID, rev)
 }
 
-func (s *Service) SetInferenceScript(ctx context.Context, script string) (err error) {
-	ctx, _, endObservation := s.operations.setInferenceScript.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) SetInferenceScript(ctx context.Context, script string) error {
 	return s.store.SetInferenceScript(ctx, script)
 }
 
-func (s *Service) GetInferenceScript(ctx context.Context) (script string, err error) {
-	ctx, _, endObservation := s.operations.getInferenceScript.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetInferenceScript(ctx context.Context) (string, error) {
 	return s.store.GetInferenceScript(ctx)
 }
 
@@ -286,14 +221,26 @@ func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, confi
 	return s.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, force, bypassLimit)
 }
 
-func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo, assumeSynced bool) (err error) {
+func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo, assumeSynced bool) error {
 	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg, assumeSynced)
 }
 
-func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
-	return s.jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error) {
+	return s.jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
 }
 
 func (s *Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
 	return s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
+}
+
+func (s *Service) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error) {
+	return s.store.NumRepositoriesWithCodeIntelligence(ctx)
+}
+
+func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]shared.RepositoryWithCount, int, error) {
+	return s.store.RepositoryIDsWithErrors(ctx, offset, limit)
+}
+
+func (s *Service) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]shared.RepositoryWithAvailableIndexers, int, error) {
+	return s.store.RepositoryIDsWithConfiguration(ctx, offset, limit)
 }

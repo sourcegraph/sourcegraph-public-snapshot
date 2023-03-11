@@ -112,6 +112,7 @@ go_library(
         "@com_github_opsgenie_opsgenie_go_sdk_v2//alert",
         "@com_github_opsgenie_opsgenie_go_sdk_v2//client",
         "@com_github_slack_go_slack//:slack",
+        "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_run//:run",
         "@com_github_urfave_cli_v2//:cli",
@@ -137,14 +138,18 @@ go_test(
         "sg_start_test.go",
         "suggest_test.go",
     ],
+    # Required by func findRoot() to check if sg is running in sourcegraph/sourcegraph
+    data = ["//:go.mod"],
     embed = [":sg_lib"],
+    # HOME is required to be set to start sg
+    env = {"HOME": "/tmp"},
     deps = [
         "//dev/sg/internal/run",
         "//dev/sg/internal/sgconf",
         "//dev/sg/internal/std",
         "//lib/output/outputtest",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//assert",
         "@com_github_urfave_cli_v2//:cli",
     ],

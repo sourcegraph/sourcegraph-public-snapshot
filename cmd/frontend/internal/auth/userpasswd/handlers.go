@@ -56,7 +56,7 @@ func HandleSignUp(logger log.Logger, db database.DB) http.HandlerFunc {
 		if handleEnabledCheck(logger, w) {
 			return
 		}
-		if pc, _ := getProviderConfig(); !pc.AllowSignup {
+		if pc, _ := GetProviderConfig(); !pc.AllowSignup {
 			http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
 			return
 		}
@@ -96,7 +96,7 @@ func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused b
 	return false, "", nil
 }
 
-// doServeSignUp is called to create a new user account. It is called for the normal user signup process (where a
+// handleSignUp is called to create a new user account. It is called for the normal user signup process (where a
 // non-admin user is created) and for the site initialization process (where the initial site admin user account is
 // created).
 //
@@ -119,7 +119,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := checkEmailFormat(creds.Email); err != nil {
+	if err := CheckEmailFormat(creds.Email); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -127,7 +127,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	// Create the user.
 	//
 	// We don't need to check the builtin auth provider's allowSignup because we assume the caller
-	// of doServeSignUp checks it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which
+	// of handleSignUp checks it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which
 	// case the only signup allowed is that of the initial site admin).
 	newUserData := database.NewUser{
 		Email:                 creds.Email,
@@ -220,7 +220,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	}
 
 	// Track user data
-	if r.UserAgent() != "Sourcegraph e2etest-bot" {
+	if r.UserAgent() != "Sourcegraph e2etest-bot" || r.UserAgent() != "test" {
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
 	}
 
@@ -229,7 +229,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	}
 }
 
-func checkEmailFormat(email string) error {
+func CheckEmailFormat(email string) error {
 	// Max email length is 320 chars https://datatracker.ietf.org/doc/html/rfc3696#section-3
 	if len(email) > 320 {
 		return errors.Newf("maximum email length is 320, got %d", len(email))

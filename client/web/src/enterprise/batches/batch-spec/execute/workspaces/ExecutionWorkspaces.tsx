@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useRef } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { useNavigate, useParams } from 'react-router-dom'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Card, CardBody, H3, H1, Icon, Text, Code, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { BatchSpecExecutionFields, BatchSpecSource } from '../../../../../graphql-operations'
@@ -20,7 +20,7 @@ import { WorkspacesPanel } from './WorkspacesPanel'
 
 import styles from './ExecutionWorkspaces.module.scss'
 
-interface ExecutionWorkspacesProps extends ThemeProps {
+interface ExecutionWorkspacesProps {
     /** For testing purposes only */
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
@@ -53,7 +53,6 @@ type MemoizedExecutionWorkspacesProps = ExecutionWorkspacesProps & Pick<BatchSpe
 
 const MemoizedExecutionWorkspaces: React.FunctionComponent<React.PropsWithChildren<MemoizedExecutionWorkspacesProps>> =
     React.memo(function MemoizedExecutionWorkspaces({
-        isLightTheme,
         batchSpec,
         errors,
         queryBatchSpecWorkspaceStepFileDiffs,
@@ -61,6 +60,7 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<React.PropsWithChildr
         queryWorkspacesList,
     }) {
         const navigate = useNavigate()
+        const isLightTheme = useIsLightTheme()
         const { workspaceID: selectedWorkspaceID } = useParams()
 
         const deselectWorkspace = useCallback(() => {

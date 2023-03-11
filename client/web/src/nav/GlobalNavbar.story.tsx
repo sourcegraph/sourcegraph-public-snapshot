@@ -5,32 +5,25 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Grid, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
-import { useExperimentalFeatures } from '../stores'
-import { ThemePreference } from '../theme'
 
 import { GlobalNavbar, GlobalNavbarProps } from './GlobalNavbar'
 
-const getDefaultProps = (props: ThemeProps): GlobalNavbarProps => ({
+const defaultProps: GlobalNavbarProps = {
     isSourcegraphDotCom: false,
+    isSourcegraphApp: false,
     settingsCascade: {
         final: null,
         subjects: null,
     },
-    extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    themePreference: ThemePreference.Light,
-    onThemePreferenceChange: () => undefined,
     globbing: false,
     platformContext: {} as any,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
-    isLightTheme: props.isLightTheme,
     searchContextsEnabled: false,
     batchChangesEnabled: false,
     batchChangesExecutionEnabled: false,
@@ -44,8 +37,9 @@ const getDefaultProps = (props: ThemeProps): GlobalNavbarProps => ({
     setFuzzyFinderIsVisible: () => {},
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
+    ownEnabled: true,
     showFeedbackModal: () => undefined,
-})
+}
 
 const allNavItemsProps: Partial<GlobalNavbarProps> = {
     searchContextsEnabled: true,
@@ -53,7 +47,6 @@ const allNavItemsProps: Partial<GlobalNavbarProps> = {
     batchChangesExecutionEnabled: true,
     batchChangesWebhookLogsEnabled: true,
     codeInsightsEnabled: true,
-    enableLegacyExtensions: true,
 }
 
 const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
@@ -64,19 +57,15 @@ const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
     } as AuthenticatedUser,
 }
 
-const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ codeMonitoring: true })
-
-    return (
-        <WebStory>
-            {props => (
-                <div className="mt-3">
-                    <Story args={getDefaultProps(props)} />
-                </div>
-            )}
-        </WebStory>
-    )
-}
+const decorator: DecoratorFn = Story => (
+    <WebStory>
+        {() => (
+            <div className="mt-3">
+                <Story args={defaultProps} />
+            </div>
+        )}
+    </WebStory>
+)
 
 const config: Meta = {
     title: 'web/nav/GlobalNav',

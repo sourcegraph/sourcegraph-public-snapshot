@@ -1,14 +1,16 @@
+import { useMemo, useState } from 'react'
+
 import {
     Compartment,
     EditorState,
-    Extension,
+    type Extension,
     Facet,
     Prec,
     StateEffect,
     StateField,
-    Transaction,
+    type Transaction,
 } from '@codemirror/state'
-import { Decoration, EditorView, KeyBinding, keymap, WidgetType } from '@codemirror/view'
+import { EditorView, type KeyBinding, keymap } from '@codemirror/view'
 
 import { placeholderConfig } from '../codemirror/placeholder'
 
@@ -81,31 +83,6 @@ const selectedModeField = StateField.define<SelectedModeState>({
                     class: selectedMode ? `sg-mode-${selectedMode.name}` : '',
                 }
             }),
-            EditorView.theme({
-                '.sg-mode-marker': {
-                    color: 'var(--logo-purple)',
-                    paddingRight: '0.125rem',
-                },
-            }),
-            EditorView.decorations.compute([field], state => {
-                const selectedMode = state.field(field).selectedMode
-                if (!selectedMode) {
-                    return Decoration.none
-                }
-                return Decoration.set(
-                    Decoration.widget({
-                        widget: new (class extends WidgetType {
-                            public toDOM(): HTMLElement {
-                                const marker = document.createElement('span')
-                                marker.className = 'sg-mode-marker'
-                                marker.textContent = selectedMode.name + ':'
-                                return marker
-                            }
-                        })(),
-                        side: -1,
-                    }).range(0)
-                )
-            }),
         ]
     },
 })
@@ -148,9 +125,15 @@ export function getSelectedMode(state: EditorState): ModeDefinition | null {
     return state.field(selectedModeField, false)?.selectedMode ?? null
 }
 
-export function setMode(view: EditorView, name: string): boolean {
+export function setMode(view: EditorView, name: string | null | ((mode: string | null) => string | null)): boolean {
+    const resolvedName = typeof name === 'function' ? name(getSelectedMode(view.state)?.name ?? null) : name
+
+    if (resolvedName === null) {
+        return clearMode(view)
+    }
+
     view.dispatch({
-        effects: setModeEffect.of(name),
+        effects: setModeEffect.of(resolvedName),
         // Clear input
         changes: { from: 0, to: view.state.doc.length, insert: '' },
         // It seems that setting the selection explicitly
@@ -160,7 +143,7 @@ export function setMode(view: EditorView, name: string): boolean {
     return true
 }
 
-export function clearMode(view: EditorView, restoreInput = true): boolean {
+function clearMode(view: EditorView, restoreInput = true): boolean {
     const state = view.state.field(selectedModeField, false)
     if (state?.selectedMode) {
         const changes = restoreInput
@@ -196,4 +179,31 @@ export function modeScope(extension: Extension, modes: (string | null)[]): Exten
             }
         }),
     ]
+}
+
+/**
+ * React hook to integrate with the input mode extension. The returned extension has to be passed
+ * to the CodeMirror instance when initialized. The hook works like `useState`: The first value
+ * is the currently enabled mode (or `null` if no mode is enabled), the second value is a setter
+ * for changing the mode.
+ */
+export function useInputMode(): [
+    string | null,
+    (view: EditorView, mode: string | null | ((mode: string | null) => string | null)) => void,
+    Extension
+] {
+    const [mode, set] = useState<string | null>(null)
+
+    const extension: Extension = useMemo(
+        () =>
+            EditorView.updateListener.of(update => {
+                const selectedMode = update.state.field(selectedModeField, false)?.selectedMode
+                if (selectedMode !== update.startState.field(selectedModeField, false)?.selectedMode) {
+                    set(selectedMode?.name ?? null)
+                }
+            }),
+        [set]
+    )
+
+    return [mode, setMode, extension]
 }

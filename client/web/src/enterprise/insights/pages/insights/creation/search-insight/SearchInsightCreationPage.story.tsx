@@ -5,7 +5,7 @@ import { noop } from 'lodash'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { useCodeInsightsState } from '../../../../../../stores'
+import { useCodeInsightsLicenseState } from '../../../../stores'
 
 import { SearchInsightCreationPage as SearchInsightCreationPageComponent } from './SearchInsightCreationPage'
 
@@ -29,7 +29,7 @@ const fakeAPIRequest = async () => {
 }
 
 export const SearchInsightCreationPage: Story = () => {
-    useCodeInsightsState.setState({ licensed: true, insightsLimit: null })
+    useCodeInsightsLicenseState.setState({ licensed: true, insightsLimit: null })
 
     return (
         <SearchInsightCreationPageComponent

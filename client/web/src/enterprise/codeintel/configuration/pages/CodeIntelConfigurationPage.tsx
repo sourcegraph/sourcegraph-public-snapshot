@@ -3,7 +3,6 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react
 import { useApolloClient } from '@apollo/client'
 import {
     mdiAlert,
-    mdiChevronDown,
     mdiCircleOffOutline,
     mdiDatabaseClock,
     mdiDelete,
@@ -13,32 +12,14 @@ import {
     mdiPencil,
     mdiSourceRepository,
 } from '@mdi/js'
-import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import {
-    Badge,
-    Button,
-    ButtonGroup,
-    Container,
-    ErrorAlert,
-    Icon,
-    Link,
-    Menu,
-    MenuButton,
-    MenuLink,
-    MenuList,
-    PageHeader,
-    Position,
-    Text,
-    Tooltip,
-} from '@sourcegraph/wildcard'
+import { Badge, Button, Container, ErrorAlert, H3, Icon, Link, PageHeader, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import {
@@ -48,6 +29,7 @@ import {
 } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
+import { CreatePolicyButtons } from '../components/CreatePolicyButtons'
 import { Duration } from '../components/Duration'
 import { EmptyPoliciesList } from '../components/EmptyPoliciesList'
 import { FlashMessage } from '../components/FlashMessage'
@@ -82,12 +64,11 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export interface CodeIntelConfigurationPageProps extends ThemeProps, TelemetryProps {
+export interface CodeIntelConfigurationPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     queryPolicies?: typeof defaultQueryPolicies
     repo?: { id: string; name: string }
     indexingEnabled?: boolean
-    isLightTheme: boolean
     telemetryService: TelemetryService
 }
 
@@ -105,8 +86,14 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
     const updates = useMemo(() => new Subject<void>(), [])
 
     const apolloClient = useApolloClient()
-    const queryPoliciesCallback = useCallback(
-        (args: FilteredConnectionQueryArguments) => queryPolicies({ ...args, repository: repo?.id }, apolloClient),
+    const queryDefaultPoliciesCallback = useCallback(
+        (args: FilteredConnectionQueryArguments) =>
+            queryPolicies({ ...args, repository: repo?.id, protected: true }, apolloClient),
+        [queryPolicies, repo?.id, apolloClient]
+    )
+    const queryCustomPoliciesCallback = useCallback(
+        (args: FilteredConnectionQueryArguments) =>
+            queryPolicies({ ...args, repository: repo?.id, protected: false }, apolloClient),
         [queryPolicies, repo?.id, apolloClient]
     )
 
@@ -126,9 +113,10 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
 
                 navigate(
                     {
-                        pathname: './configuration',
+                        pathname: './',
                     },
                     {
+                        relative: 'path',
                         state: { modal: 'SUCCESS', message: `Configuration policy ${name} has been deleted.` },
                     }
                 )
@@ -179,8 +167,12 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                 </Container>
             )}
 
-            <Container>
-                <FilteredConnection<CodeIntelligenceConfigurationPolicyFields, PoliciesNodeProps>
+            <Container className="mb-3 pb-3">
+                <H3>Custom policies</H3>
+                <FilteredConnection<
+                    CodeIntelligenceConfigurationPolicyFields,
+                    Omit<UnprotectedPoliciesNodeProps, 'node'>
+                >
                     listComponent="div"
                     listClassName={classNames(styles.grid, 'mb-3')}
                     showMoreClassName="mb-0"
@@ -188,76 +180,53 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                     pluralNoun="configuration policies"
                     nodeComponent={PoliciesNode}
                     nodeComponentProps={{ isDeleting, onDelete, indexingEnabled }}
-                    queryConnection={queryPoliciesCallback}
+                    queryConnection={queryCustomPoliciesCallback}
                     cursorPaging={true}
                     filters={filters}
                     inputClassName="ml-2 flex-1"
-                    emptyElement={<EmptyPoliciesList />}
+                    emptyElement={<EmptyPoliciesList repo={repo} showCta={authenticatedUser?.siteAdmin} />}
                     updates={updates}
+                />
+            </Container>
+
+            <Container className="mb-3">
+                <H3>Default policies</H3>
+                <FilteredConnection<CodeIntelligenceConfigurationPolicyFields, Omit<PoliciesNodeProps, 'node'>>
+                    listComponent="div"
+                    listClassName={classNames(styles.grid, 'mb-3')}
+                    noun="configuration policy"
+                    pluralNoun="configuration policies"
+                    nodeComponent={PoliciesNode}
+                    nodeComponentProps={{ indexingEnabled }}
+                    queryConnection={queryDefaultPoliciesCallback}
+                    emptyElement={<EmptyPoliciesList repo={repo} />}
+                    hideSearch={true}
+                    summaryClassName="d-none"
+                    useURLQuery={false}
                 />
             </Container>
         </>
     )
 }
 
-interface CreatePolicyButtonsProps {
-    repo?: { id: string; name: string }
+interface ProtectedPoliciesNodeProps {
+    node: CodeIntelligenceConfigurationPolicyFields
+    indexingEnabled?: boolean
 }
 
-const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = ({ repo }) => (
-    <Menu>
-        <ButtonGroup>
-            <Button to="./configuration/new?type=head" variant="primary" as={Link}>
-                Create new {!repo && 'global'} policy
-            </Button>
-            <MenuButton variant="primary" className={styles.dropdownButton}>
-                <Icon aria-hidden={true} svgPath={mdiChevronDown} />
-                <VisuallyHidden>Actions</VisuallyHidden>
-            </MenuButton>
-        </ButtonGroup>
-        <MenuList position={Position.bottomEnd} className={styles.dropdownList}>
-            <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=head">
-                <>
-                    <Text weight="medium" className="mb-2">
-                        Create new {!repo && 'global'} policy for HEAD
-                    </Text>
-                    <Text className="mb-0 text-muted">
-                        Match the tip of the default branch{' '}
-                        {repo ? 'within this repository' : 'across multiple repositories'}
-                    </Text>
-                </>
-            </MenuLink>
-            <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=branch">
-                <Text weight="medium" className="mb-2">
-                    Create new {!repo && 'global'} branch policy
-                </Text>
-                <Text className="mb-0 text-muted">
-                    Match multiple branches {repo ? 'within this repository' : 'across multiple repositories'}
-                </Text>
-            </MenuLink>
-            <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=tag">
-                <Text weight="medium" className="mb-2">
-                    Create new {!repo && 'global'} tag policy
-                </Text>
-                <Text className="mb-0 text-muted">
-                    Match multiple tags {repo ? 'within this repository' : 'across multiple repositories'}
-                </Text>
-            </MenuLink>
-        </MenuList>
-    </Menu>
-)
-
-interface PoliciesNodeProps {
+interface UnprotectedPoliciesNodeProps {
+    node: CodeIntelligenceConfigurationPolicyFields
     isDeleting: boolean
     onDelete: (id: string, name: string) => Promise<void>
     indexingEnabled?: boolean
 }
 
-const PoliciesNode: FunctionComponent<PoliciesNodeProps & { node: CodeIntelligenceConfigurationPolicyFields }> = ({
+type PoliciesNodeProps = ProtectedPoliciesNodeProps | UnprotectedPoliciesNodeProps
+
+const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNodeProps>> = ({
     node: policy,
-    isDeleting,
-    onDelete,
     indexingEnabled = false,
+    ...props
 }) => (
     <>
         <span className={styles.separator} />
@@ -284,12 +253,12 @@ const PoliciesNode: FunctionComponent<PoliciesNodeProps & { node: CodeIntelligen
         </div>
 
         <div className="h-100">
-            {!policy.protected && (
+            {!policy.protected && 'onDelete' in props && 'isDeleting' in props && (
                 <Button
                     aria-label="Delete the configuration policy"
                     variant="icon"
-                    onClick={() => onDelete(policy.id, policy.name)}
-                    disabled={isDeleting}
+                    onClick={() => props.onDelete(policy.id, policy.name)}
+                    disabled={props.isDeleting}
                 >
                     <Tooltip content="Delete this policy">
                         <Icon className="text-danger" aria-label="Delete this policy" svgPath={mdiDelete} />

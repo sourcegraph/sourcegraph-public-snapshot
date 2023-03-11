@@ -1,11 +1,15 @@
 package azuredevops
 
 import (
+	"fmt"
 	"net/url"
+	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const (
+var (
 	PullRequestBuildStatusStateSucceeded     PullRequestStatusState = "succeeded"
 	PullRequestBuildStatusStateError         PullRequestStatusState = "error"
 	PullRequestBuildStatusStateFailed        PullRequestStatusState = "failed"
@@ -23,6 +27,17 @@ const (
 	PullRequestMergeStrategyRebaseMerge   PullRequestMergeStrategy = "rebaseMerge"
 	PullRequestMergeStrategyNoFastForward PullRequestMergeStrategy = "notFastForward"
 )
+
+type Org struct {
+	ID   string `json:"accountId"`
+	URI  string `json:"accountUri"`
+	Name string `json:"accountName"`
+}
+
+type ListAuthorizedUserOrgsResponse struct {
+	Count int   `json:"count"`
+	Value []Org `json:"value"`
+}
 
 type OrgProjectRepoArgs struct {
 	Org          string
@@ -73,10 +88,29 @@ type CreatePullRequestInput struct {
 	Title         string     `json:"title"`
 	Description   string     `json:"description"`
 	Reviewers     []Reviewer `json:"reviewers"`
+	ForkSource    *ForkRef   `json:"forkSource"`
+	IsDraft       bool       `json:"isDraft"`
+}
+
+type ForkRef struct {
+	Repository Repository `json:"repository"`
+	Name       string     `json:"name"`
+	URl        string     `json:"url"`
 }
 
 type Reviewer struct {
-	ID string `json:"id"`
+	// Vote represents the status of a review on Azure DevOps. Here are possible values for Vote:
+	//
+	//   10: approved
+	//   5 : approved with suggestions
+	//   0 : no vote
+	//  -5 : waiting for author
+	//  -10: rejected
+	Vote        int    `json:"vote"`
+	ID          string `json:"id"`
+	HasDeclined bool   `json:"hasDeclined"`
+	IsRequired  bool   `json:"isRequired"`
+	UniqueName  string `json:"uniqueName"`
 }
 
 type PullRequestCommonArgs struct {
@@ -90,9 +124,10 @@ type PullRequest struct {
 	Repository            Repository        `json:"repository"`
 	ID                    int               `json:"pullRequestId"`
 	CodeReviewID          int               `json:"codeReviewId"`
-	Status                string            `json:"status"`
-	CreationDate          string            `json:"creationDate"`
+	Status                PullRequestStatus `json:"status"`
+	CreationDate          time.Time         `json:"creationDate"`
 	Title                 string            `json:"title"`
+	Description           string            `json:"description"`
 	CreatedBy             CreatorInfo       `json:"createdBy"`
 	SourceRefName         string            `json:"sourceRefName"`
 	TargetRefName         string            `json:"targetRefName"`
@@ -103,6 +138,9 @@ type PullRequest struct {
 	SupportsIterations    bool              `json:"supportsIterations"`
 	ArtifactID            string            `json:"artifactId"`
 	Reviewers             []Reviewer        `json:"reviewers"`
+	ForkSource            *ForkRef          `json:"forkSource"`
+	URL                   string            `json:"url"`
+	IsDraft               bool              `json:"isDraft"`
 }
 
 type PullRequestCommit struct {
@@ -110,23 +148,15 @@ type PullRequestCommit struct {
 	URL      string `json:"url"`
 }
 
-type PullRequestReviewer struct {
-	ID          string `json:"id"`
-	ReviewerURL string `json:"reviewerUrl"`
-	Vote        int    `json:"vote"`
-	DisplayName string `json:"displayName"`
-	UniqueName  string `json:"uniqueName"`
-	URL         string `json:"url"`
-	ImageURL    string `json:"imageUrl"`
-}
-
 type PullRequestUpdateInput struct {
-	Status                *PullRequestStatus       `json:"status"`
-	Title                 *string                  `json:"title"`
-	Description           *string                  `json:"description"`
-	MergeOptions          *PullRequestMergeOptions `json:"mergeOptions"`
-	LastMergeSourceCommit *PullRequestCommitRef    `json:"lastMergeSourceCommit"`
-	TargetRefName         *string                  `json:"targetRefName"`
+	Status                *PullRequestStatus            `json:"status"`
+	Title                 *string                       `json:"title"`
+	Description           *string                       `json:"description"`
+	MergeOptions          *PullRequestMergeOptions      `json:"mergeOptions"`
+	LastMergeSourceCommit *PullRequestCommit            `json:"lastMergeSourceCommit"`
+	TargetRefName         *string                       `json:"targetRefName"`
+	IsDraft               *bool                         `json:"isDraft"`
+	CompletionOptions     *PullRequestCompletionOptions `json:"completionOptions"`
 	// ADO does not seem to support updating Source ref name, only TargetRefName which needs to be explicitly enabled.
 }
 
@@ -139,15 +169,15 @@ type PullRequestMergeOptions struct {
 	DisableRenames             *bool `json:"disableRenames"`
 }
 
-type PullRequestCommitRef struct {
-	CommitID string `json:"commitId"`
+type PullRequestCompleteInput struct {
+	CommitID      string                    `json:"commitId"`
+	MergeStrategy *PullRequestMergeStrategy `json:"mergeStrategy"`
 }
 
 type PullRequestCompletionOptions struct {
 	MergeStrategy      PullRequestMergeStrategy `json:"mergeStrategy"`
 	DeleteSourceBranch bool                     `json:"deleteSourceBranch"`
 	MergeCommitMessage string                   `json:"mergeCommitMessage"`
-	SquashMerge        bool                     `json:"squashMerge"`
 }
 
 type PullRequestCommentInput struct {
@@ -163,9 +193,9 @@ type PullRequestCommentResponse struct {
 }
 
 type PullRequestCommentForInput struct {
-	ParentCommitID int    `json:"parentCommitId"`
-	Content        string `json:"content"`
-	CommentType    int    `json:"commentType"`
+	ParentCommentID int    `json:"parentCommentId"`
+	Content         string `json:"content"`
+	CommentType     int    `json:"commentType"`
 }
 type PullRequestCommentForResponse struct {
 	ID            int64     `json:"id"`
@@ -184,8 +214,8 @@ type PullRequestBuildStatus struct {
 	ID           int                    `json:"id"`
 	State        PullRequestStatusState `json:"state"`
 	Description  string                 `json:"description"`
-	CreationDate string                 `json:"creationDate"`
-	UpdateDate   string                 `json:"updateDate"`
+	CreationDate time.Time              `json:"creationDate"`
+	UpdateDate   time.Time              `json:"updatedDate"`
 	CreatedBy    CreatorInfo            `json:"createdBy"`
 }
 
@@ -199,6 +229,7 @@ type Repository struct {
 	SSHURL     string  `json:"sshUrl"`
 	WebURL     string  `json:"webUrl"`
 	IsDisabled bool    `json:"isDisabled"`
+	IsFork     bool    `json:"isFork"`
 	Project    Project `json:"project"`
 }
 
@@ -208,6 +239,25 @@ type Project struct {
 	State      string `json:"state"`
 	Revision   int    `json:"revision"`
 	Visibility string `json:"visibility"`
+	URL        string `json:"url"`
+}
+
+func (p Repository) GetOrganization() (string, error) {
+	u, err := url.Parse(p.APIURL)
+	if err != nil {
+		return "", err
+	}
+
+	splitPath := strings.SplitN(u.Path, "/", 3)
+	if len(splitPath) != 3 {
+		return "", errors.Errorf("unable to parse Azure DevOps organization from repo URL: %s", p.APIURL)
+	}
+
+	return splitPath[1], nil
+}
+
+func (p Repository) Namespace() string {
+	return p.Project.Name
 }
 
 type Profile struct {
@@ -226,8 +276,23 @@ type CreatorInfo struct {
 	ImageURL    string `json:"imageUrl"`
 }
 
-type httpError struct {
+type HTTPError struct {
 	StatusCode int
 	URL        *url.URL
 	Body       []byte
+}
+
+// Error returns a minimal string of the HTTP error with the status code and the URL.
+//
+// It does not write HTTPError.Body as part of the error string as the Azure DevOPs API returns raw
+// HTML for 4xx errors and non 200 OK responses inspite of using the "application/json" header in
+// the request. It does return JSON for 200 OK responses though.
+//
+// The body would only add noise to logs and error messages that also may bubble up to the user
+// interface which makes for a bad user experience. For our usecases in debugging, the status
+// code and URL should provide plenty of information on what is going contrary to expectations.
+// In the worst case, we should reproduce the error by manually sending a curl request that
+// causes an error and inspecting the HTML output.
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q", e.StatusCode, e.URL)
 }

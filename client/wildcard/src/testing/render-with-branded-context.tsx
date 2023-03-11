@@ -1,22 +1,39 @@
-import { ReactNode, useEffect, useLayoutEffect, useRef } from 'react'
+import { FC, ReactNode, useEffect } from 'react'
 
 import { RenderResult, render } from '@testing-library/react'
-import { MemoryHistory, createMemoryHistory } from 'history'
-import * as H from 'history'
-import { Router } from 'react-router-dom'
-import { CompatRouter, Routes, Route, useLocation } from 'react-router-dom-v5-compat'
+import { InitialEntry } from 'history'
+import {
+    RouterProvider,
+    createMemoryRouter,
+    Location,
+    useLocation,
+    NavigateFunction,
+    useNavigate,
+    RouteObject,
+    Outlet,
+} from 'react-router-dom'
 
 import { WildcardThemeContext, WildcardTheme } from '../hooks/useWildcardTheme'
 
 export interface RenderWithBrandedContextResult extends RenderResult {
-    history: MemoryHistory
+    locationRef: LocationRef
+    navigateRef: NavigateRef
+}
+
+interface LocationRef {
+    current?: Location
+    entries: Location[]
+}
+
+interface NavigateRef {
+    current?: NavigateFunction
 }
 
 interface RenderWithBrandedContextOptions {
-    route?: string
+    route?: InitialEntry
     path?: string
-    history?: MemoryHistory<unknown>
-    onLocationChange?: (location: H.Location) => void
+    /** Required to test redirect URLs. Without the corresponding route react-router doesn't update the location. */
+    extraRoutes?: RouteObject[]
 }
 
 const wildcardTheme: WildcardTheme = {
@@ -25,38 +42,75 @@ const wildcardTheme: WildcardTheme = {
 
 export function renderWithBrandedContext(
     children: ReactNode,
-    {
-        route = '/',
-        path = '*',
-        history = createMemoryHistory({ initialEntries: [route] }),
-        onLocationChange = (_location: H.Location) => {},
-    }: RenderWithBrandedContextOptions = {}
+    options: RenderWithBrandedContextOptions = {}
 ): RenderWithBrandedContextResult {
+    const { route = '/', path = '*', extraRoutes = [] } = options
+
+    const locationRef: LocationRef = {
+        current: undefined,
+        entries: [],
+    }
+
+    const navigateRef: NavigateRef = {
+        current: undefined,
+    }
+
+    const routes = [
+        {
+            element: (
+                <SyncRouterRefs
+                    onLocationChange={location => {
+                        locationRef.current = location
+                        locationRef.entries.push(location)
+                    }}
+                    onNavigateChange={navigate => {
+                        navigateRef.current = navigate
+                    }}
+                />
+            ),
+            children: [
+                {
+                    path,
+                    element: children,
+                },
+                ...extraRoutes,
+            ],
+        },
+    ] satisfies RouteObject[]
+
+    const router = createMemoryRouter(routes, {
+        initialEntries: [route],
+    })
+
     return {
         ...render(
             <WildcardThemeContext.Provider value={wildcardTheme}>
-                <Router history={history}>
-                    <CompatRouter>
-                        <Routes>
-                            <Route path={path} element={children} />
-                        </Routes>
-                        <ExtractCurrentPathname onLocationChange={onLocationChange} />
-                    </CompatRouter>
-                </Router>
+                <RouterProvider router={router} />
             </WildcardThemeContext.Provider>
         ),
-        history,
+        locationRef,
+        navigateRef,
     }
 }
 
-function ExtractCurrentPathname({ onLocationChange }: { onLocationChange: (location: H.Location) => void }): null {
-    const onLocationChangeRef = useRef(onLocationChange)
-    useLayoutEffect(() => {
-        onLocationChangeRef.current = onLocationChange
-    }, [onLocationChange])
+interface SyncRourterRefProps {
+    onLocationChange: (location: Location) => void
+    onNavigateChange: (navigate: NavigateFunction) => void
+}
+
+const SyncRouterRefs: FC<SyncRourterRefProps> = props => {
+    const { onLocationChange, onNavigateChange } = props
+
     const location = useLocation()
+    const navigate = useNavigate()
+
     useEffect(() => {
-        onLocationChangeRef.current(location)
-    }, [location, onLocationChange])
-    return null
+        onLocationChange(location)
+    }, [onLocationChange, location])
+
+    useEffect(() => {
+        onNavigateChange(navigate)
+    }, [onNavigateChange, navigate])
+
+    return <Outlet />
 }

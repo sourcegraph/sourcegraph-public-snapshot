@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 
 	"github.com/docker/docker-credential-helpers/credentials"
+	"github.com/sourcegraph/conc/pool"
 	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -75,7 +75,7 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 		original string
 		new      string
 	}
-	checks := group.NewWithResults[*replace]().WithMaxConcurrency(10)
+	checks := pool.NewWithResults[*replace]().WithMaxGoroutines(10)
 	for name, entry := range services {
 		name := name
 		service, ok := entry.(map[string]any)

@@ -103,3 +103,14 @@ func (r *disabledResolver) PreviewRepositoriesFromQuery(ctx context.Context, arg
 func (r *disabledResolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[*graphqlbackend.BackfillQueueItemResolver], error) {
 	return nil, errors.New(r.reason)
 }
+func (r *disabledResolver) RetryInsightSeriesBackfill(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
+	return nil, errors.New(r.reason)
+}

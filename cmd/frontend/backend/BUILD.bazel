@@ -9,7 +9,6 @@ go_library(
         "inventory.go",
         "mocks.go",
         "mocks_temp.go",
-        "own.go",
         "repos.go",
         "repos_mock.go",
         "symbols.go",
@@ -48,8 +47,6 @@ go_library(
         "//internal/gitserver/gitdomain",
         "//internal/httpcli",
         "//internal/inventory",
-        "//internal/own/codeowners",
-        "//internal/own/codeowners/v1:codeowners",
         "//internal/randstring",
         "//internal/rcache",
         "//internal/repoupdater",
@@ -77,13 +74,16 @@ go_test(
     name = "backend_test",
     srcs = [
         "external_services_test.go",
-        "own_test.go",
         "repos_test.go",
         "repos_vcs_test.go",
         "user_emails_test.go",
         "webhooks_test.go",
     ],
     embed = [":backend"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/envvar",
         "//internal/actor",
@@ -107,7 +107,6 @@ go_test(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/inventory",
-        "//internal/own/codeowners/v1:codeowners",
         "//internal/rcache",
         "//internal/repoupdater",
         "//internal/repoupdater/protocol",

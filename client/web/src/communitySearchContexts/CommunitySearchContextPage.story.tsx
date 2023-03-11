@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
@@ -15,17 +15,10 @@ import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTes
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
-import { useExperimentalFeatures } from '../stores'
-import { ThemePreference } from '../theme'
 
 import { cncf } from './cncf'
 import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
 import { temporal } from './Temporal'
-
-const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ showSearchContext: true })
-    return <Story />
-}
 
 const config: Meta = {
     title: 'web/CommunitySearchContextPage',
@@ -36,7 +29,6 @@ const config: Meta = {
         },
         chromatic: { viewports: [769, 1200] },
     },
-    decorators: [decorator],
 }
 
 export default config
@@ -74,6 +66,7 @@ const authUser: AuthenticatedUser = {
     searchable: true,
     emails: [{ email: 'alice@sourcegraph.com', isPrimary: true, verified: true }],
     latestSettings: null,
+    permissions: { nodes: [] },
 }
 
 const repositories: SearchContextFields['repositories'] = [
@@ -140,26 +133,13 @@ const commonProps = () =>
     })
 
 export const Temporal: Story = () => (
-    <WebStory>
-        {webProps => (
-            <CommunitySearchContextPage
-                {...webProps}
-                {...commonProps()}
-                themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
-            />
-        )}
-    </WebStory>
+    <WebStory>{webProps => <CommunitySearchContextPage {...webProps} {...commonProps()} />}</WebStory>
 )
 
 export const CNCFStory: Story = () => (
     <WebStory>
         {webProps => (
-            <CommunitySearchContextPage
-                {...webProps}
-                {...commonProps()}
-                communitySearchContextMetadata={cncf}
-                themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
-            />
+            <CommunitySearchContextPage {...webProps} {...commonProps()} communitySearchContextMetadata={cncf} />
         )}
     </WebStory>
 )

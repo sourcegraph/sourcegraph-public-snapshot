@@ -133,8 +133,8 @@ func PluginConfigurationFiles() ([]string, error) {
 	return files, err
 }
 
-// FindCodegenFiles lists the absolute path of all the Go-generated GRPC files (*.pb.go) contained in the repository.
-func FindCodegenFiles() ([]string, error) {
+// CodegenFiles lists the absolute path of all the Go-generated GRPC files (*.pb.go) contained in the repository.
+func CodegenFiles() ([]string, error) {
 	rootDir, err := root.RepositoryRoot()
 	if err != nil {
 		return nil, errors.Wrap(err, "finding repository root")

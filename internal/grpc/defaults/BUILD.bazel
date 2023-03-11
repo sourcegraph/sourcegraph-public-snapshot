@@ -7,11 +7,15 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
+        "//internal/env",
         "//internal/grpc",
         "//internal/trace/policy",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_providers_openmetrics_v2//:openmetrics",
+        "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_contrib_instrumentation_google_golang_org_grpc_otelgrpc//:otelgrpc",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//credentials/insecure",
+        "@org_golang_google_grpc//reflection",
     ],
 )

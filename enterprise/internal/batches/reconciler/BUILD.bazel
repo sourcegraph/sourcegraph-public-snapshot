@@ -11,6 +11,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/batches/graphql",
         "//enterprise/internal/batches/sources",
         "//enterprise/internal/batches/state",
         "//enterprise/internal/batches/store",
@@ -43,6 +44,10 @@ go_test(
         "reconciler_test.go",
     ],
     embed = [":reconciler"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/batches/sources",
         "//enterprise/internal/batches/sources/testing",

@@ -15,6 +15,9 @@ export const USERS_MANAGEMENT_SUMMARY = gql`
                 totalCount
             }
         }
+        pendingAccessRequests: accessRequests(status: PENDING) {
+            totalCount
+        }
     }
 `
 
@@ -52,6 +55,7 @@ export const USERS_MANAGEMENT_USERS_LIST = gql`
                     lastActiveAt
                     deletedAt
                     locked
+                    scimControlled
                 }
             }
         }

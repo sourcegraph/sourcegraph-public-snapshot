@@ -3,7 +3,7 @@ import * as React from 'react'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, Routes, NavigateFunction } from 'react-router-dom-v5-compat'
+import { Route, Routes, NavigateFunction } from 'react-router-dom'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
@@ -12,14 +12,13 @@ import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
@@ -90,7 +89,6 @@ export interface OrgAreaRoute extends RouteV6Descriptor<OrgAreaRouteContext> {
 export interface OrgAreaProps
     extends PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps,
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
@@ -105,6 +103,7 @@ export interface OrgAreaProps
      */
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 
     location: H.Location
     navigate: NavigateFunction
@@ -124,7 +123,6 @@ interface State extends BreadcrumbSetters {
 export interface OrgAreaRouteContext
     extends PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps,
         TelemetryProps,
         NamespaceProps,
         BreadcrumbsProps,
@@ -140,6 +138,7 @@ export interface OrgAreaRouteContext
     authenticatedUser: AuthenticatedUser
 
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 
     orgSettingsSideBarItems: OrgSettingsSidebarItems
     orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
@@ -237,10 +236,10 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             onOrganizationUpdate: this.onDidUpdateOrganization,
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
-            isLightTheme: this.props.isLightTheme,
             namespace: this.state.orgOrError,
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
+            isSourcegraphApp: this.props.isSourcegraphApp,
             batchChangesEnabled: this.props.batchChangesEnabled,
             batchChangesExecutionEnabled: this.props.batchChangesExecutionEnabled,
             batchChangesWebhookLogsEnabled: this.props.batchChangesWebhookLogsEnabled,
@@ -257,37 +256,36 @@ export class OrgArea extends React.Component<OrgAreaProps> {
         }
 
         return (
-            <ErrorBoundary location={this.props.location}>
-                <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                    <Routes>
-                        {this.props.orgAreaRoutes.map(
-                            ({ path, render, condition = () => true, fullPage }) =>
-                                condition(context) && (
-                                    <Route
-                                        path={path}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        element={
-                                            fullPage ? (
-                                                render(context)
-                                            ) : (
-                                                <Page className="org-area">
-                                                    <OrgHeader
-                                                        {...this.props}
-                                                        {...context}
-                                                        navItems={this.props.orgAreaHeaderNavItems}
-                                                        className="mb-3"
-                                                    />
-                                                    <div className="container">{render(context)}</div>
-                                                </Page>
-                                            )
-                                        }
-                                    />
-                                )
-                        )}
-                        <Route element={<NotFoundPage />} />
-                    </Routes>
-                </React.Suspense>
-            </ErrorBoundary>
+            <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+                <Routes>
+                    {this.props.orgAreaRoutes.map(
+                        ({ path, render, condition = () => true, fullPage }) =>
+                            condition(context) && (
+                                <Route
+                                    path={path}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    errorElement={<RouteError />}
+                                    element={
+                                        fullPage ? (
+                                            render(context)
+                                        ) : (
+                                            <Page className="org-area">
+                                                <OrgHeader
+                                                    {...this.props}
+                                                    {...context}
+                                                    navItems={this.props.orgAreaHeaderNavItems}
+                                                    className="mb-3"
+                                                />
+                                                <div className="container">{render(context)}</div>
+                                            </Page>
+                                        )
+                                    }
+                                />
+                            )
+                    )}
+                    <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+            </React.Suspense>
         )
     }
 

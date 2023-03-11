@@ -82,6 +82,9 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
         return createMainThreadExtensionGraphQLHelpers()
     }
 
+    /**
+     * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
+     */
     const requestGraphQL = <T, V = object>({
         request,
         variables,
@@ -107,7 +110,6 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
             cache,
             headers: getHeaders(),
             baseUrl: sourcegraphURL,
-            isAuthenticated: false,
             credentials: 'include',
         })
     )

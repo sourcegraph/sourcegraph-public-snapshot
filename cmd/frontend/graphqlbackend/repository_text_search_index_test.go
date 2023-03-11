@@ -34,7 +34,7 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
 		repo: NewRepositoryResolver(db, gsClient, &types.Repo{Name: "alice/repo"}),
-		client: &backend.FakeSearcher{Repos: []*zoekt.RepoListEntry{{
+		client: &backend.FakeStreamer{Repos: []*zoekt.RepoListEntry{{
 			Repository: zoekt.Repository{
 				Name: "alice/repo",
 				Branches: []zoekt.RepositoryBranch{

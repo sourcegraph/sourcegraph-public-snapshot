@@ -2,13 +2,10 @@ import { downloadAndUnzipVSCode } from '@vscode/test-electron'
 
 import { mixedSearchStreamEvents, highlightFileResult } from '@sourcegraph/shared/src/search/integration'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { setupExtensionMocking } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 
 import { createVSCodeIntegrationTestContext, VSCodeIntegrationTestContext } from './context'
 import { getVSCodeWebviewFrames } from './getWebview'
 import { launchVsCode, VSCodeTestDriver } from './launch'
-
-const sourcegraphBaseUrl = 'https://sourcegraph.com'
 
 describe('VS Code extension', () => {
     let vsCodeDriver: VSCodeTestDriver
@@ -39,18 +36,11 @@ describe('VS Code extension', () => {
     // fixing before we add more test cases to the suite.
 
     it('works', async () => {
-        const { Extensions } = setupExtensionMocking({
-            pollyServer: testContext.server,
-            sourcegraphBaseUrl,
-        })
-
         const userSettings: Settings = {
             extensions: {},
         }
 
         testContext.overrideGraphQL({
-            Extensions,
-
             ...highlightFileResult,
             ViewerSettings: () => ({
                 viewerSettings: {

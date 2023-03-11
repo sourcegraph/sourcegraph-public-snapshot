@@ -1,9 +1,8 @@
 import { FC } from 'react'
 
-import { Routes, Route, Navigate } from 'react-router-dom-v5-compat'
+import { Routes, Route, Navigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -16,17 +15,23 @@ import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeInte
 import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
 import { CodeIntelInferenceConfigurationPageProps } from '../configuration/pages/CodeIntelInferenceConfigurationPage'
 import { CodeIntelRepositoryIndexConfigurationPageProps } from '../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'
+import { RepoDashboardPageProps } from '../dashboard/pages/RepoDashboardPage'
 import { CodeIntelPreciseIndexesPageProps } from '../indexes/pages/CodeIntelPreciseIndexesPage'
 import { CodeIntelPreciseIndexPageProps } from '../indexes/pages/CodeIntelPreciseIndexPage'
 
 import { CodeIntelSidebar, CodeIntelSideBarGroups } from './CodeIntelSidebar'
 
-export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
+export interface CodeIntelAreaRouteContext extends TelemetryProps {
     repo: { id: string; name: string }
     authenticatedUser: AuthenticatedUser | null
 }
 
 export interface CodeIntelAreaRoute extends RouteV6Descriptor<CodeIntelAreaRouteContext> {}
+
+const RepoDashboardPage = lazyComponent<RepoDashboardPageProps, 'RepoDashboardPage'>(
+    () => import('../dashboard/pages/RepoDashboardPage'),
+    'RepoDashboardPage'
+)
 
 const CodeIntelPreciseIndexesPage = lazyComponent<CodeIntelPreciseIndexesPageProps, 'CodeIntelPreciseIndexesPage'>(
     () => import('../indexes/pages/CodeIntelPreciseIndexesPage'),
@@ -63,7 +68,11 @@ const CodeIntelConfigurationPolicyPage = lazyComponent<
 export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
     {
         path: '/',
-        render: () => <Navigate to="./indexes" replace={true} />,
+        render: () => <Navigate to="./dashboard" replace={true} />,
+    },
+    {
+        path: '/dashboard',
+        render: props => <RepoDashboardPage {...props} />,
     },
     {
         path: '/indexes',
@@ -104,7 +113,7 @@ export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
 /**
  * Properties passed to all page components in the repository code navigation area.
  */
-export interface RepositoryCodeIntelAreaPageProps extends ThemeProps, BreadcrumbSetters, TelemetryProps {
+export interface RepositoryCodeIntelAreaPageProps extends BreadcrumbSetters, TelemetryProps {
     /** The active repository. */
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
@@ -114,6 +123,10 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
     {
         header: { label: 'Code graph data' },
         items: [
+            {
+                to: '/dashboard',
+                label: 'Dashboard',
+            },
             {
                 to: '/indexes',
                 label: 'Precise indexes',
@@ -137,13 +150,13 @@ const BREADCRUMB = { key: 'code-intelligence', element: 'Code graph data' }
  * Renders pages related to repository code graph.
  */
 export const RepositoryCodeIntelArea: FC<RepositoryCodeIntelAreaPageProps> = props => {
-    const { useBreadcrumb } = props
+    const { useBreadcrumb, repo } = props
 
     useBreadcrumb(BREADCRUMB)
 
     return (
         <div className="container d-flex mt-3">
-            <CodeIntelSidebar className="flex-0 mr-3" codeIntelSidebarGroups={sidebarRoutes} {...props} />
+            <CodeIntelSidebar className="flex-0 mr-3" codeIntelSidebarGroups={sidebarRoutes} repo={repo} />
 
             <div className="flex-bounded">
                 <Routes>
@@ -158,7 +171,7 @@ export const RepositoryCodeIntelArea: FC<RepositoryCodeIntelAreaPageProps> = pro
                             )
                     )}
 
-                    <Route element={<NotFoundPage pageType="repository" />} />
+                    <Route path="*" element={<NotFoundPage pageType="repository" />} />
                 </Routes>
             </div>
         </div>

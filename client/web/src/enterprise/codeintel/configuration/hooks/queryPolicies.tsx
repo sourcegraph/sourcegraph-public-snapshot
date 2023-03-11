@@ -26,6 +26,7 @@ export const POLICIES_CONFIGURATION = gql`
         $forIndexing: Boolean
         $first: Int
         $after: String
+        $protected: Boolean
     ) {
         codeIntelligenceConfigurationPolicies(
             repository: $repository
@@ -34,6 +35,7 @@ export const POLICIES_CONFIGURATION = gql`
             forIndexing: $forIndexing
             first: $first
             after: $after
+            protected: $protected
         ) {
             nodes {
                 ...CodeIntelligenceConfigurationPolicyFields
@@ -57,6 +59,7 @@ export const queryPolicies = (
         forDataRetention,
         forIndexing,
         after,
+        protected: varProtected,
     }: Partial<CodeIntelligenceConfigurationPoliciesVariables>,
     client: ApolloClient<object>
 ): Observable<PolicyConnection> => {
@@ -67,6 +70,7 @@ export const queryPolicies = (
         forIndexing: forIndexing ?? null,
         first: first ?? null,
         after: after ?? null,
+        protected: varProtected ?? null,
     }
 
     return from(

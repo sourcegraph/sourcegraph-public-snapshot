@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 )
 
 func Test_scanTemplate(t *testing.T) {
@@ -13,61 +13,39 @@ func Test_scanTemplate(t *testing.T) {
 		return toJSONString(t)
 	}
 
-	autogold.Want(
-		"basic template",
-		`[{"constant":"artifcats: "},{"variable":"$repo"}]`).
+	autogold.Expect(`[{"constant":"artifcats: "},{"variable":"$repo"}]`).
 		Equal(t, test("artifcats: $repo"))
 
-	autogold.Want(
-		"multiple $",
-		`[{"constant":"$"},{"variable":"$foo"},{"constant":" $"},{"variable":"$bar"}]`).
+	autogold.Expect(`[{"constant":"$"},{"variable":"$foo"},{"constant":" $"},{"variable":"$bar"}]`).
 		Equal(t, test("$$foo $$bar"))
 
-	autogold.Want(
-		"terminating variable",
-		`[{"variable":"$repo"},{"constant":"(derp)"}]`).
+	autogold.Expect(`[{"variable":"$repo"},{"constant":"(derp)"}]`).
 		Equal(t, test(`$repo(derp)`))
 
-	autogold.Want(
-		"consecutive variables with separator",
-		`[{"variable":"$repo"},{"constant":":"},{"variable":"$file"},{"constant":" "},{"variable":"$content"}]`).
+	autogold.Expect(`[{"variable":"$repo"},{"constant":":"},{"variable":"$file"},{"constant":" "},{"variable":"$content"}]`).
 		Equal(t, test(`$repo:$file $content`))
 
-	autogold.Want(
-		"consecutive variables no separator",
-		`[{"variable":"$repo"},{"variable":"$file"}]`).
+	autogold.Expect(`[{"variable":"$repo"},{"variable":"$file"}]`).
 		Equal(t, test("$repo$file"))
 
-	autogold.Want(
-		"terminating variables with trailing $",
-		`[{"constant":"$"},{"variable":"$foo"},{"variable":"$bar"},{"constant":"$"}]`).
+	autogold.Expect(`[{"constant":"$"},{"variable":"$foo"},{"variable":"$bar"},{"constant":"$"}]`).
 		Equal(t, test("$$foo$bar$"))
 
-	autogold.Want(
-		"end-of-template variable",
-		`[{"variable":"$bar"}]`).
+	autogold.Expect(`[{"variable":"$bar"}]`).
 		Equal(t, test("$bar"))
 
-	autogold.Want(
-		"space escaping",
-		`[{"variable":"$repo"},{"constant":" "}]`).
+	autogold.Expect(`[{"variable":"$repo"},{"constant":" "}]`).
 		Equal(t, test(`$repo\ `))
 
-	autogold.Want(
-		"metachar escaping",
-		`[{"constant":"$repo "}]`).
+	autogold.Expect(`[{"constant":"$repo "}]`).
 		Equal(t, test(`\$repo `))
 }
 
 func Test_templatize(t *testing.T) {
-	autogold.Want(
-		"basic templatize",
-		"artifcats: {{.Repo}}").
+	autogold.Expect("artifcats: {{.Repo}}").
 		Equal(t, templatize("artifcats: $repo", &MetaEnvironment{}))
 
-	autogold.Want(
-		"exclude regex var in templatize",
-		"artifcats: {{.Repo}} $1").
+	autogold.Expect("artifcats: {{.Repo}} $1").
 		Equal(t, templatize("artifcats: $repo $1", &MetaEnvironment{}))
 }
 
@@ -80,9 +58,7 @@ func Test_substituteMetaVariables(t *testing.T) {
 		return t
 	}
 
-	autogold.Want(
-		"substitute for meta values in interface",
-		"artifcats: $1 $foo hi").
+	autogold.Expect("artifcats: $1 $foo hi").
 		Equal(t, test(
 			"artifcats: $1 $foo $author",
 			&MetaEnvironment{Author: "hi"},

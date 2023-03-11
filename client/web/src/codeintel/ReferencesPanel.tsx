@@ -4,7 +4,7 @@ import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, 
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -29,9 +29,8 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     RepoSpec,
     RevisionSpec,
@@ -64,7 +63,6 @@ import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import { LegacyBlob } from '../repo/blob/LegacyBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
-import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups, RepoLocationGroup } from './location'
@@ -91,7 +89,6 @@ export interface ReferencesPanelProps
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps,
         HighlightedFileLineRangesProps {
     /** Whether to show the first loaded reference in mini code view */
     jumpToFirst?: boolean
@@ -235,22 +232,24 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
 > = props => {
     const languageId = getModeFromPath(props.token.filePath)
     const spec = findLanguageSpec(languageId)
-    const tokenResult = findSearchToken({
-        text: props.fileContent,
-        position: {
-            line: props.token.line - 1,
-            character: props.token.character - 1,
-        },
-        lineRegexes: spec.commentStyles.map(style => style.lineRegex).filter(isDefined),
-        blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
-        identCharPattern: spec.identCharPattern,
-    })
+    const tokenResult =
+        spec &&
+        findSearchToken({
+            text: props.fileContent,
+            position: {
+                line: props.token.line - 1,
+                character: props.token.character - 1,
+            },
+            lineRegexes: spec.commentStyles.map(style => style.lineRegex).filter(isDefined),
+            blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
+            identCharPattern: spec.identCharPattern,
+        })
     const shouldMixPreciseAndSearchBasedReferences: boolean = newSettingsGetter(props.settingsCascade)<boolean>(
         'codeIntel.mixPreciseAndSearchBasedReferences',
         false
     )
 
-    if (!tokenResult?.searchToken) {
+    if (!spec || !tokenResult?.searchToken) {
         return (
             <div>
                 <Text className="text-danger">Could not find token.</Text>
@@ -693,7 +692,7 @@ function parseSideBlobProps(
 }
 
 const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
-    const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
     const BlobComponent = useCodeMirror ? CodeMirrorBlob : LegacyBlob
 
     const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT

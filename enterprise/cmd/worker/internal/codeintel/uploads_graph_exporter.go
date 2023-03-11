@@ -5,33 +5,40 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type graphExporterJob struct{}
+type rankingJob struct{}
 
-func NewGraphExporterJob() job.Job {
-	return &graphExporterJob{}
+func NewRankingFileReferenceCounter() job.Job {
+	return &rankingJob{}
 }
 
-func (j *graphExporterJob) Description() string {
+func (j *rankingJob) Description() string {
 	return ""
 }
 
-func (j *graphExporterJob) Config() []env.Config {
+func (j *rankingJob) Config() []env.Config {
 	return []env.Config{
-		uploads.ConfigExportInst,
+		ranking.ConfigInst,
 	}
 }
 
-func (j *graphExporterJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *rankingJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return uploads.NewGraphExporters(observationCtx, services.UploadsService), nil
+	routines := []goroutine.BackgroundRoutine{
+		ranking.NewSymbolExporter(observationCtx, services.RankingService),
+		ranking.NewMapper(observationCtx, services.RankingService),
+		ranking.NewReducer(observationCtx, services.RankingService),
+	}
+	routines = append(routines, ranking.NewSymbolJanitor(observationCtx, services.RankingService)...)
+
+	return routines, nil
 }

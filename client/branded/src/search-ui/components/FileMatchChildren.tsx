@@ -1,16 +1,11 @@
 import React, { useCallback, KeyboardEvent, MouseEvent } from 'react'
 
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import {
-    appendLineRangeQueryParameter,
-    appendSubtreeQueryParameter,
-    isErrorLike,
-    toPositionOrRangeQueryParameter,
-} from '@sourcegraph/common'
+import { appendLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
@@ -108,10 +103,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
         const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({ position: group.position })
-        return appendLineRangeQueryParameter(
-            appendSubtreeQueryParameter(getFileMatchUrl(result)),
-            positionOrRangeQueryParameter
-        )
+        return appendLineRangeQueryParameter(getFileMatchUrl(result), positionOrRangeQueryParameter)
     }
 
     const navigate = useNavigate()

@@ -33,6 +33,10 @@ go_test(
     name = "gitserver_test",
     srcs = ["repo_test.go"],
     embed = [":gitserver"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

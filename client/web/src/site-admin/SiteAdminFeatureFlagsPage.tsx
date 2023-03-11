@@ -201,7 +201,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
                 }
                 className="mb-3"
                 actions={
-                    <ButtonLink variant="primary" to="./feature-flags/configuration/new">
+                    <ButtonLink variant="primary" to="./configuration/new">
                         Create feature flag
                     </ButtonLink>
                 }
@@ -273,7 +273,7 @@ const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFl
             </span>
 
             <span className={classNames(styles.button, 'd-none d-md-inline')}>
-                <Link to={`./feature-flags/configuration/${node.name}`} className="p-0">
+                <Link to={`./configuration/${node.name}`} className="p-0">
                     <Icon svgPath={mdiChevronRight} inline={false} aria-label="Configure" />
                 </Link>
             </span>

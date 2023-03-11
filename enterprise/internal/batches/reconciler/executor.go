@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -649,7 +650,7 @@ func handleArchivedRepo(
 }
 
 func (e *executor) enqueueWebhook(ctx context.Context, eventType string) {
-	webhooks.EnqueueChangeset(ctx, e.logger, e.tx, eventType, e.ch)
+	webhooks.EnqueueChangeset(ctx, e.logger, e.tx, eventType, bgql.MarshalChangesetID(e.ch.ID))
 }
 
 func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {

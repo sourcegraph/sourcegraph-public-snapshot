@@ -2,10 +2,12 @@ package diff
 
 import (
 	"context"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -17,6 +19,13 @@ var dumpOldPath = "./testdata/project1/dump-old.lsif"
 var dumpNewPath = "./testdata/project1/dump-new.lsif"
 
 func TestNoDiffOnPermutedDumps(t *testing.T) {
+	cwd, _ := os.Getwd()
+	defer func() { os.Chdir(cwd) }()
+
+	tmpdir1, teardown := createTmpRepo(t, dumpPath)
+	t.Cleanup(teardown)
+	os.Chdir(tmpdir1)
+
 	bundle1, err := conversion.CorrelateLocalGit(
 		context.Background(),
 		dumpPath,
@@ -25,6 +34,10 @@ func TestNoDiffOnPermutedDumps(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error reading dump path: %v", err)
 	}
+
+	tmpdir2, teardown := createTmpRepo(t, dumpPermutedPath)
+	t.Cleanup(teardown)
+	os.Chdir(tmpdir2)
 
 	bundle2, err := conversion.CorrelateLocalGit(
 		context.Background(),
@@ -41,6 +54,13 @@ func TestNoDiffOnPermutedDumps(t *testing.T) {
 }
 
 func TestDiffOnEditedDumps(t *testing.T) {
+	cwd, _ := os.Getwd()
+	defer func() { os.Chdir(cwd) }()
+
+	tmpdir1, teardown := createTmpRepo(t, dumpOldPath)
+	t.Cleanup(teardown)
+	os.Chdir(tmpdir1)
+
 	bundle1, err := conversion.CorrelateLocalGit(
 		context.Background(),
 		dumpOldPath,
@@ -49,6 +69,10 @@ func TestDiffOnEditedDumps(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error reading dump: %v", err)
 	}
+
+	tmpdir2, teardown := createTmpRepo(t, dumpNewPath)
+	t.Cleanup(teardown)
+	os.Chdir(tmpdir2)
 
 	bundle2, err := conversion.CorrelateLocalGit(
 		context.Background(),
@@ -64,5 +88,48 @@ func TestDiffOnEditedDumps(t *testing.T) {
 		precise.GroupedBundleDataChansToMaps(bundle2),
 	)
 
-	autogold.Equal(t, autogold.Raw(computedDiff))
+	autogold.ExpectFile(t, autogold.Raw(computedDiff))
+}
+
+// createTmpRepo returns a temp directory with the testdata copied over from the
+// enclosing folder of path, with a newly initialized git repository.
+func createTmpRepo(t *testing.T, path string) (string, func()) {
+	tmpdir, err := os.MkdirTemp("", "")
+	if err != nil {
+		t.Fatalf("Unexpected error creating dump tmp folder: %v", err)
+	}
+
+	fullpath := filepath.Join(tmpdir, "testdata")
+	os.MkdirAll(fullpath, os.ModePerm)
+
+	if err := exec.Command("cp", "-R", filepath.Dir(path), fullpath).Run(); err != nil {
+		t.Fatalf("Unexpected error copying dump tmp folder: %v", err)
+	}
+
+	gitcmd := exec.Command("git", "init")
+	gitcmd.Dir = tmpdir
+	if err := gitcmd.Run(); err != nil {
+		t.Fatalf("Unexpected error git: %v", err)
+	}
+
+	// We need at least a base identity, otherwise git will fail in CI when sandboxed.
+	gitcmd = exec.Command("git", "config", "user.email", "test@sourcegraph.com")
+	gitcmd.Dir = tmpdir
+	if err := gitcmd.Run(); err != nil {
+		t.Fatalf("Unexpected error git: %v", err)
+	}
+
+	gitcmd = exec.Command("git", "add", ".")
+	gitcmd.Dir = tmpdir
+	if err := gitcmd.Run(); err != nil {
+		t.Fatalf("Unexpected error git: %v", err)
+	}
+
+	gitcmd = exec.Command("git", "commit", "-m", "initial commit")
+	gitcmd.Dir = tmpdir
+	if err := gitcmd.Run(); err != nil {
+		t.Fatalf("Unexpected error git: %v", err)
+	}
+
+	return tmpdir, func() { os.RemoveAll(tmpdir) }
 }

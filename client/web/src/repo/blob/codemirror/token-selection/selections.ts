@@ -1,7 +1,7 @@
 import { Extension, SelectionRange, StateField } from '@codemirror/state'
 import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { memoize } from 'lodash'
-import { Location, createPath } from 'react-router-dom-v5-compat'
+import { Location, createPath } from 'react-router-dom'
 
 import { Occurrence, Range } from '@sourcegraph/shared/src/codeintel/scip'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'

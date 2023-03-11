@@ -1,20 +1,15 @@
 import React, { createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState } from 'react'
 
-import { Remote } from 'comlink'
 import { isEqual } from 'lodash'
-import { useNavigationType, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigationType, useLocation } from 'react-router-dom'
 import { merge, of } from 'rxjs'
 import { last, share, throttleTime } from 'rxjs/operators'
 
-import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
-import { useExperimentalFeatures } from '../../stores'
-import { eventLogger } from '../../tracking/eventLogger'
 
 interface CachedResults {
     results: AggregateStreamingSearchResults | undefined
@@ -39,28 +34,13 @@ export function useCachedSearchResults(
     streamSearch: SearchStreamingProps['streamSearch'],
     query: string,
     options: StreamSearchOptions,
-    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>> | null,
     telemetryService: TelemetryService
 ): AggregateStreamingSearchResults | undefined {
     const [cachedResults, setCachedResults] = useContext(SearchResultsCacheContext)
-    const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
-        features => features.enableGoImportsSearchQueryTransform
-    )
 
     const location = useLocation()
     const navigationType = useNavigationType()
     const [queryTimestamp, setQueryTimestamp] = useState<number | undefined>()
-
-    const transformedQuery = useMemo(
-        () =>
-            transformSearchQuery({
-                query,
-                extensionHostAPIPromise: extensionHostAPI,
-                enableGoImportsSearchQueryTransform,
-                eventLogger,
-            }),
-        [query, extensionHostAPI, enableGoImportsSearchQueryTransform]
-    )
 
     const results = useObservable(
         useMemo(() => {
@@ -69,7 +49,7 @@ export function useCachedSearchResults(
                 return of(cachedResults?.results)
             }
 
-            const stream = streamSearch(transformedQuery, options).pipe(share())
+            const stream = streamSearch(of(query), options).pipe(share())
 
             // If the throttleTime option `trailing` is set, we will return the
             // final value, but it also removes the guarantee that the output events
@@ -79,15 +59,7 @@ export function useCachedSearchResults(
             // merge throttleTime with only leading values and the final value.
             // See: https://github.com/ReactiveX/rxjs/issues/5732
             return merge(stream.pipe(throttleTime(500)), stream.pipe(last()))
-        }, [
-            query,
-            cachedResults?.query,
-            cachedResults?.options,
-            cachedResults?.results,
-            options,
-            streamSearch,
-            transformedQuery,
-        ])
+        }, [query, cachedResults?.query, cachedResults?.options, cachedResults?.results, options, streamSearch])
     )
 
     // Reset cached results if a new search is made with the same query

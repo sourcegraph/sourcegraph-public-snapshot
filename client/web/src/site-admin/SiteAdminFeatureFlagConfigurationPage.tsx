@@ -3,7 +3,7 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } f
 import { gql, useMutation } from '@apollo/client'
 import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { useNavigate, useParams } from 'react-router-dom'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 

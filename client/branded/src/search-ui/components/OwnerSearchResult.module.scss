@@ -1,0 +1,17 @@
+.avatar {
+    --size: 1rem;
+    width: var(--size);
+    height: var(--size);
+    min-width: var(--size);
+    min-height: var(--size);
+    font-size: 0.6875rem;
+
+    margin-right: 0.5rem;
+}
+
+.files-link {
+    display: inline-block;
+    border-left: 1px solid var(--border-color-2);
+    margin-left: 0.5rem;
+    padding-left: 0.5rem;
+}

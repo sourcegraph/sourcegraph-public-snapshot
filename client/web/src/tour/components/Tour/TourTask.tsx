@@ -3,7 +3,7 @@ import React, { useCallback, useContext, useMemo, useState } from 'react'
 import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { CircularProgressbar } from 'react-circular-progressbar'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { ModalVideo } from '@sourcegraph/branded'
 import { isExternalLink } from '@sourcegraph/common'

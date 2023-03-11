@@ -1,5 +1,5 @@
-import { Validator } from '../../form'
-import { createRequiredValidator } from '../../form/hooks/validators'
+import { Validator, createRequiredValidator } from '@sourcegraph/wildcard'
+
 import { EditableDataSeries } from '../form-series'
 
 // Group of shared Creation UI/Edit UI insight validators.

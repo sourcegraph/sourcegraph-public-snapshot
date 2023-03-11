@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { mdiPlus, mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { SourcegraphIcon, Card, CardBody, Link, H2, Text, Icon } from '@sourcegraph/wildcard'
 

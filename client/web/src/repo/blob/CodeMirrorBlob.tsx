@@ -2,13 +2,13 @@
  * An experimental implementation of the Blob view using CodeMirror
  */
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
-import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom-v5-compat'
+import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom'
 
 import {
     addLineRangeQueryParameter,
@@ -17,16 +17,17 @@ import {
 } from '@sourcegraph/common'
 import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
-import { useExperimentalFeatures } from '../../stores'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunkData } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -34,17 +35,16 @@ import { blobPropsFacet } from './codemirror'
 import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
 import { syntaxHighlight } from './codemirror/highlight'
-import { pin, updatePin } from './codemirror/hovercard'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
+import { pin, updatePin, selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
+import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
-import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
 
@@ -60,7 +60,6 @@ export interface BlobProps
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps,
         CodeMirrorBlobProps {
     className: string
     wrapCode: boolean
@@ -71,11 +70,6 @@ export interface BlobProps
     // When navigateToLineOnAnyClick=true, the code intel popover is disabled
     // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
-
-    // Enables experimental navigation by rendering links for all interactive tokens.
-    enableLinkDrivenCodeNavigation?: boolean
-    // Enables experimental navigation by making interactive tokens selectable on click.
-    enableSelectionDrivenCodeNavigation?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
@@ -105,8 +99,6 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** LSIF syntax-highlighting data */
     lsif?: string
-
-    stencil?: BlobStencilFields[]
 
     /** If present, the file is stored in Git LFS (large file storage). */
     lfs?: { byteSize: Scalars['BigInt'] } | null
@@ -177,14 +169,11 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const {
         className,
         wrapCode,
-        isLightTheme,
         ariaLabel,
         role,
         extensionsController,
         isBlameVisible,
         blameHunks,
-        enableLinkDrivenCodeNavigation,
-        enableSelectionDrivenCodeNavigation,
 
         // Reference panel specific props
         navigateToLineOnAnyClick,
@@ -196,9 +185,12 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const navigate = useNavigate()
     const location = useLocation()
 
+    const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
+    const focusCodeEditorShortcut = useKeyboardShortcut('focusCodeEditor')
+
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
-    const [container, setContainer] = useState<HTMLDivElement | null>(null)
+    const containerRef = useRef<HTMLDivElement | null>(null)
     // This is used to avoid reinitializing the editor when new locations in the
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
@@ -225,6 +217,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         [props, navigate, location]
     )
 
+    const isLightTheme = useIsLightTheme()
     const themeSettings = useMemo(() => EditorView.darkTheme.of(isLightTheme === false), [isLightTheme])
     const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
 
@@ -232,8 +225,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         () => createBlameDecorationsExtension(!!isBlameVisible, blameHunks, isLightTheme),
         [isBlameVisible, blameHunks, isLightTheme]
     )
-
-    const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -289,26 +280,21 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
-                enableSelectionDrivenCodeNavigation,
             }),
             codeFoldingExtension(),
-            enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
-            enableLinkDrivenCodeNavigation
-                ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
-                : [],
+            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
+            languageSupport.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
                       blobInfo,
                       initialSelection: position,
                       extensionsController,
-                      enableSelectionDrivenCodeNavigation,
                   })
                 : [],
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
-            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : [],
             settingsCompartment.of(themeSettings),
             wrapCodeCompartment.of(wrapCodeSettings),
             search({
@@ -327,18 +313,11 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         [onSelection, blobInfo, extensionsController]
     )
 
-    const editorRef = useRef<EditorView>()
-    const editor = useCodeMirror(container, blobInfo.content, extensions, {
-        updateValueOnChange: false,
-        updateOnExtensionChange: false,
-    })
-    editorRef.current = editor
-
-    // Sync editor store with global Zustand store API
-    useEffect(() => setBlobEditView(editor ?? null), [editor])
+    const editorRef = useRef<EditorView | null>(null)
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
+        const editor = editorRef.current
         if (editor) {
             // We use setState here instead of dispatching a transaction because
             // the new document has nothing to do with the previous one and so
@@ -346,7 +325,11 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             const state = EditorState.create({ doc: blobInfo.content, extensions })
             editor.setState(state)
 
-            if (!enableSelectionDrivenCodeNavigation) {
+            if (navigateToLineOnAnyClick) {
+                /**
+                 * `navigateToLineOnAnyClick` is `true` when CodeMirrorBlob is rendered in the references panel.
+                 * We don't need code intel and keyboard navigation in the references panel blob: https://github.com/sourcegraph/sourcegraph/pull/41615.
+                 */
                 return
             }
 
@@ -368,73 +351,72 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 }
             }
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [blobInfo, extensions])
+    }, [blobInfo, extensions, navigateToLineOnAnyClick, locationRef])
 
     // Propagate props changes to extensions
     useEffect(() => {
+        const editor = editorRef.current
         if (editor) {
             editor.dispatch({ effects: blobPropsCompartment.reconfigure(blobProps) })
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [blobProps])
 
     // Update blame decorations
     useLayoutEffect(() => {
+        const editor = editorRef.current
         if (editor) {
             const effects = [blameDecorationsCompartment.reconfigure(blameDecorations), ...lockFirstVisibleLine(editor)]
             editor.dispatch({ effects })
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [blameDecorations])
 
     // Update theme
     useEffect(() => {
+        const editor = editorRef.current
         if (editor) {
             editor.dispatch({ effects: settingsCompartment.reconfigure(themeSettings) })
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [themeSettings])
 
     // Update line wrapping
     useEffect(() => {
+        const editor = editorRef.current
         if (editor) {
             const effects = [wrapCodeCompartment.reconfigure(wrapCodeSettings), ...lockFirstVisibleLine(editor)]
             editor.dispatch({ effects })
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [wrapCodeSettings])
 
     // Update selected lines when URL changes
     useEffect(() => {
+        const editor = editorRef.current
         if (editor) {
             selectLines(editor, position.line ? position : null)
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [position])
 
     // Update pinned hovercard range
     useEffect(() => {
+        const editor = editorRef.current
         if (editor && (!hasPin || (position.line && isValidLineRange(position, editor.state.doc)))) {
             // Only update range if position is valid inside the document.
             updatePin(editor, hasPin ? position : null)
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [position, hasPin])
+
+    useCodeMirror(
+        editorRef,
+        containerRef,
+        // We update the value ourselves
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        useMemo(() => blobInfo.content, []),
+        // We update extensions ourselves
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        useMemo(() => extensions, [])
+    )
+
+    // Sync editor store with global Zustand store API
+    useEffect(() => setBlobEditView(editorRef.current ?? null), [])
 
     const openSearch = useCallback(() => {
         if (editorRef.current) {
@@ -445,7 +427,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     return (
         <>
             <div
-                ref={setContainer}
+                ref={containerRef}
                 aria-label={ariaLabel}
                 role={role}
                 data-testid={dataTestId}
@@ -455,6 +437,17 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             {overrideBrowserSearchKeybinding && useFileSearch && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
             )}
+            {enableBlobPageSwitchAreasShortcuts &&
+                focusCodeEditorShortcut?.keybindings.map((keybinding, index) => (
+                    <Shortcut
+                        key={index}
+                        {...keybinding}
+                        allowDefault={true}
+                        onMatch={() => {
+                            editorRef.current?.contentDOM.focus()
+                        }}
+                    />
+                ))}
         </>
     )
 }

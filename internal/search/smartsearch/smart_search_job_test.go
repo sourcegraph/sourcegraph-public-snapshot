@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -87,9 +87,9 @@ func TestGeneratedSearchJob(t *testing.T) {
 		return err.(*alertobserver.ErrLuckyQueries).ProposedQueries[0].Annotations[search.ResultCount]
 	}
 
-	autogold.Want("0 results", autogold.Raw("")).Equal(t, autogold.Raw(test(0)))
-	autogold.Want("1 result", autogold.Raw("1 result")).Equal(t, autogold.Raw(test(1)))
-	autogold.Want("limit results", autogold.Raw("500+ results")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
+	autogold.Expect(autogold.Raw("")).Equal(t, autogold.Raw(test(0)))
+	autogold.Expect(autogold.Raw("1 result")).Equal(t, autogold.Raw(test(1)))
+	autogold.Expect(autogold.Raw("500+ results")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
 }
 
 func TestNewSmartSearchJob_ResultCount(t *testing.T) {

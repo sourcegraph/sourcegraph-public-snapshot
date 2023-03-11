@@ -4,13 +4,12 @@ import { mdiProgressClock } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Navigate, Route, Routes, useParams } from 'react-router-dom-v5-compat'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Icon, LoadingSpinner, ErrorMessage, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
@@ -43,7 +42,7 @@ import { ExecutionWorkspaces } from './workspaces/ExecutionWorkspaces'
 import layoutStyles from '../Layout.module.scss'
 import styles from './ExecuteBatchSpecPage.module.scss'
 
-export interface AuthenticatedExecuteBatchSpecPageProps extends ThemeProps, TelemetryProps, NamespaceProps {
+export interface AuthenticatedExecuteBatchSpecPageProps extends TelemetryProps, NamespaceProps {
     authenticatedUser: AuthenticatedUser
     /** FOR TESTING ONLY */
     testContextState?: Partial<BatchSpecContextState<BatchSpecExecutionFields>>
@@ -108,7 +107,7 @@ export const AuthenticatedExecuteBatchSpecPage: FC<AuthenticatedExecuteBatchSpec
     )
 }
 
-interface ExecuteBatchSpecPageContentProps extends ThemeProps, TelemetryProps {
+interface ExecuteBatchSpecPageContentProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser
     queryWorkspacesList?: typeof _queryWorkspacesList
 }
@@ -128,7 +127,6 @@ type MemoizedExecuteBatchSpecContentProps = ExecuteBatchSpecPageContentProps &
 
 const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> = React.memo(
     function MemoizedExecuteBatchSpecContent({
-        isLightTheme,
         telemetryService,
         authenticatedUser,
         batchChange,
@@ -226,7 +224,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                         element={
                             <>
                                 <TabBar activeTabKey="spec" tabsConfig={tabsConfig} matchURL={executionURL} />
-                                <ReadOnlyBatchSpecForm isLightTheme={isLightTheme} />
+                                <ReadOnlyBatchSpecForm />
                             </>
                         }
                     />
@@ -235,10 +233,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                         element={
                             <>
                                 <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={executionURL} />
-                                <ExecutionWorkspaces
-                                    isLightTheme={isLightTheme}
-                                    queryWorkspacesList={queryWorkspacesList}
-                                />
+                                <ExecutionWorkspaces queryWorkspacesList={queryWorkspacesList} />
                             </>
                         }
                     />
@@ -247,10 +242,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                         element={
                             <>
                                 <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={executionURL} />
-                                <ExecutionWorkspaces
-                                    isLightTheme={isLightTheme}
-                                    queryWorkspacesList={queryWorkspacesList}
-                                />
+                                <ExecutionWorkspaces queryWorkspacesList={queryWorkspacesList} />
                             </>
                         }
                     />
@@ -269,7 +261,6 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                                     <NewBatchChangePreviewPage
                                         authenticatedUser={authenticatedUser}
                                         telemetryService={telemetryService}
-                                        isLightTheme={isLightTheme}
                                     />
                                 </>
                             ) : (
@@ -278,7 +269,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                             )
                         }
                     />
-                    <Route element={<HeroPage icon={MapSearchIcon} title="404: Not Found" />} />
+                    <Route path="*" element={<HeroPage icon={MapSearchIcon} title="404: Not Found" />} />
                 </Routes>
             </div>
         )

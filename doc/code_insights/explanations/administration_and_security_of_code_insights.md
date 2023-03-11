@@ -37,6 +37,15 @@ While the default configuration is appropriate for most deployments, in the site
 Raising these values will increase the speed at which insights are populated however will it cause insights to consume more system resources.  
 Care should be taken when changing these values and it is recommended to update them in small increments.
 
+The following settings apply when backfilling data for a Code Insight:
 - `insights.historical.worker.rateLimit` - Maximum number of historical Code Insights data frames that may be analyzed per second.
-- `insights.query.worker.rateLimit` - Maximum number of Code Insights queries initiated per second on a worker node.
+- `insights.backfill.interruptAfter` - The amount of time an Code Insights will spend backfilling a series before checking if there is higher priority work.
+- `insights.backfill.repositoryGroupSize` - The number of repositories that Code Insights will pull as a batch to backfill in one iteration.
+- `insights.backfill.repositoryConcurrency` - The number of repositories that Code Insights will backfill at once.
+
+The following setting(s) apply to adding new data to a previously backfilled Code Insight:
 - `insights.query.worker.concurrency` - Number of concurrent executions of a code insight query on a worker node.
+
+The following setting(s) apply to both backfilling data and adding new data
+- `insights.query.worker.rateLimit` - Maximum number of Code Insights queries initiated per second on a worker node.
+

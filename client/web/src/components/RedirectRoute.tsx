@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { Location, Navigate, Params, useLocation, useParams } from 'react-router-dom-v5-compat'
+import { Location, Navigate, Params, useLocation, useParams } from 'react-router-dom'
 
 interface RedirectRouteProps {
     getRedirectURL: (data: { location: Location; params: Params }) => string

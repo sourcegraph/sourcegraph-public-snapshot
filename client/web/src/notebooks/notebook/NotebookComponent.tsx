@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { mdiPlayCircleOutline, mdiDownload, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import { Navigate, useLocation } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap, tap } from 'rxjs/operators'
 
@@ -11,12 +11,12 @@ import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useEventObservable, Icon } from '@sourcegraph/wildcard'
 
 import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { NotebookFields } from '../../graphql-operations'
+import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
@@ -34,9 +34,9 @@ import styles from './NotebookComponent.module.scss'
 
 export interface NotebookComponentProps
     extends SearchStreamingProps,
-        ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery'> {
+        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery' | 'enableOwnershipSearch'>,
+        OwnConfigProps {
     globbing: boolean
     isReadOnly?: boolean
     blocks: BlockInit[]
@@ -84,7 +84,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         exportedFileName,
         isEmbedded,
         authenticatedUser,
-        isLightTheme,
         telemetryService,
         isSourcegraphDotCom,
         platformContext,
@@ -92,6 +91,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         fetchHighlightedFileLineRanges,
         globbing,
         searchContextsEnabled,
+        ownEnabled,
         settingsCascade,
         outlineContainerElement,
     }) => {
@@ -378,7 +378,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                     onAddBlock,
                     onMoveBlock,
                     onDuplicateBlock,
-                    isLightTheme,
                     isReadOnly,
                     isSelected,
                     showMenu: isSelected || !isSomethingElseSelected,
@@ -406,6 +405,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 globbing={globbing}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 searchContextsEnabled={searchContextsEnabled}
+                                ownEnabled={ownEnabled}
                                 settingsCascade={settingsCascade}
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
@@ -426,6 +426,8 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 }
             },
             [
+                selectedBlockId,
+                blockInserterIndex,
                 onRunBlock,
                 onBlockInputChange,
                 onDeleteBlock,
@@ -433,19 +435,17 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 onAddBlock,
                 onMoveBlock,
                 onDuplicateBlock,
-                isEmbedded,
-                isLightTheme,
                 isReadOnly,
-                selectedBlockId,
+                isEmbedded,
                 telemetryService,
                 isSourcegraphDotCom,
                 globbing,
                 fetchHighlightedFileLineRanges,
                 searchContextsEnabled,
+                ownEnabled,
                 settingsCascade,
                 platformContext,
                 authenticatedUser,
-                blockInserterIndex,
             ]
         )
 

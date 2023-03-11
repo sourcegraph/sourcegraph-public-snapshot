@@ -1856,7 +1856,7 @@ changesetTemplate:
 				BatchChange:     batchChange.ID,
 			})
 
-			assert.Equal(t, "must be authenticated as the authorized user or site admin", err.Error())
+			assert.Equal(t, auth.ErrMustBeSiteAdminOrSameUser.Error(), err.Error())
 		})
 
 		t.Run("success - without batch change ID", func(t *testing.T) {

@@ -10,16 +10,16 @@ import (
 
 const bazelRemoteCacheURL = "https://storage.googleapis.com/sourcegraph_bazel_cache"
 
-func BazelOperations() *operations.Set {
+func BazelOperations(optional bool) *operations.Set {
 	ops := operations.NewSet()
-	ops.Append(bazelBuild(
+	ops.Append(bazelBuild(optional,
 		"//...",
 	))
-	ops.Append(bazelTest("//monitoring/..."))
+	ops.Append(bazelTest(optional, "//..."))
 	return ops
 }
 
-func bazelTest(targets ...string) func(*bk.Pipeline) {
+func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.Agent("queue", "bazel"),
@@ -30,20 +30,36 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 			"bazel",
 			"--bazelrc=.bazelrc",
 			"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+			"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
 			fmt.Sprintf("test %s", target),
 			"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
 			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
 		}
-		cmds = append(cmds, bk.Cmd(strings.Join(bazelCmd, " ")))
+		cmds = append(cmds, bk.RawCmd(strings.Join(bazelCmd, " ")))
 	}
 
 	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+
+		// TODO(JH) Broken we don't have go on the bazel agents
+		// cmds = append(cmds, bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
+		// 	Message:     ":alert: :bazel: test failed",
+		// 	ChannelName: "dev-experience-alerts",
+		// 	Conditions: bk.SlackStepNotifyPayloadConditions{
+		// 		Failed:   true,
+		// 		Branches: []string{"main"},
+		// 	},
+		// }))
+
 		pipeline.AddStep(":bazel: Tests",
 			cmds...,
 		)
 	}
 }
-func bazelBuild(targets ...string) func(*bk.Pipeline) {
+
+func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.Agent("queue", "bazel"),
@@ -54,14 +70,29 @@ func bazelBuild(targets ...string) func(*bk.Pipeline) {
 			"bazel",
 			"--bazelrc=.bazelrc",
 			"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+			"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
 			fmt.Sprintf("build %s", target),
 			"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
 			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
 		}
-		cmds = append(cmds, bk.Cmd(strings.Join(bazelCmd, " ")))
+		cmds = append(cmds, bk.RawCmd(strings.Join(bazelCmd, " ")))
 	}
 
 	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+
+		// TODO(JH) Broken we don't have go on the bazel agents
+		// cmds = append(cmds, bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
+		// 	Message:     ":alert: :bazel: build failed",
+		// 	ChannelName: "dev-experience-alerts",
+		// 	Conditions: bk.SlackStepNotifyPayloadConditions{
+		// 		Failed:   true,
+		// 		Branches: []string{"main"},
+		// 	},
+		// }))
+
 		pipeline.AddStep(":bazel: Build ...",
 			cmds...,
 		)

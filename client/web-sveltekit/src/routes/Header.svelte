@@ -17,6 +17,8 @@
     <nav class="ml-2">
         <ul>
             <HeaderNavLink href="/search" svgIconPath={mdiMagnify}>Code search</HeaderNavLink>
+            <HeaderNavLink href="/notebooks" svgIconPath={mdiBookOutline}>Notebooks</HeaderNavLink>
+            <HeaderNavLink href="/insights" svgIconPath={mdiChartBar}>Insights</HeaderNavLink>
         </ul>
     </nav>
     <div class="user">

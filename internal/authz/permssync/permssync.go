@@ -18,9 +18,14 @@ func PermissionSyncWorkerEnabled(ctx context.Context, db database.DB, logger log
 		logger.
 			Scoped("PermissionSyncWorkerEnabled", "checking feature flag for permission sync worker").
 			Warn("failed to query global feature flags", log.Error(err))
-		return false
+		return true
 	}
-	return globalFeatureFlags[featureFlagName]
+
+	if value, ok := globalFeatureFlags[featureFlagName]; ok {
+		return value
+	}
+
+	return true
 }
 
 var MockSchedulePermsSync func(ctx context.Context, logger log.Logger, db database.DB, req protocol.PermsSyncRequest)
@@ -44,7 +49,7 @@ func SchedulePermsSync(ctx context.Context, logger log.Logger, db database.DB, r
 	if PermissionSyncWorkerEnabled(ctx, db, logger) {
 		for _, userID := range req.UserIDs {
 			opts := database.PermissionSyncJobOpts{
-				Priority:          database.HighPriorityPermissionSync,
+				Priority:          database.HighPriorityPermissionsSync,
 				InvalidateCaches:  req.Options.InvalidateCaches,
 				Reason:            req.Reason,
 				TriggeredByUserID: req.TriggeredByUserID,
@@ -58,7 +63,7 @@ func SchedulePermsSync(ctx context.Context, logger log.Logger, db database.DB, r
 
 		for _, repoID := range req.RepoIDs {
 			opts := database.PermissionSyncJobOpts{
-				Priority:          database.HighPriorityPermissionSync,
+				Priority:          database.HighPriorityPermissionsSync,
 				InvalidateCaches:  req.Options.InvalidateCaches,
 				Reason:            req.Reason,
 				TriggeredByUserID: req.TriggeredByUserID,

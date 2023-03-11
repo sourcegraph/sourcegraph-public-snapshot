@@ -2,12 +2,17 @@ import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
+import Octokit from '@octokit/rest'
 import chalk from 'chalk'
 import execa from 'execa'
-import { readFile, writeFile, mkdir } from 'mz/fs'
+import { mkdir, readFile, writeFile } from 'mz/fs'
 import fetch from 'node-fetch'
+import * as semver from 'semver'
+import { SemVer } from 'semver'
 
-import { EditFunc } from './github'
+import { ReleaseConfig } from './config'
+import { getPreviousVersionSrcCli } from './git'
+import { cloneRepo, EditFunc, getAuthenticatedGitHubClient, listIssues } from './github'
 import * as update from './update'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
@@ -63,16 +68,16 @@ async function readLineNoCache(prompt: string): Promise<string> {
 
 export async function verifyWithInput(prompt: string): Promise<void> {
     await readLineNoCache(chalk.yellow(`${prompt}\nInput yes to confirm: `)).then(val => {
-        if (val !== 'yes') {
-            throw new Error()
+        if (!(val === 'yes' || val === 'y')) {
+            console.log(chalk.red('Aborting!'))
+            process.exit(0)
         }
     })
 }
 
-export function getWeekNumber(date: Date): number {
-    const firstJan = new Date(date.getFullYear(), 0, 1)
-    const day = 86400000
-    return Math.ceil(((date.valueOf() - firstJan.valueOf()) / day + firstJan.getDay() + 1) / 7)
+// similar to verifyWithInput but will not exit and will allow the caller to decide what to do
+export async function softVerifyWithInput(prompt: string): Promise<boolean> {
+    return readLineNoCache(chalk.yellow(`${prompt}\nInput yes to confirm: `)).then(val => val === 'yes' || val === 'y')
 }
 
 export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {
@@ -138,8 +143,8 @@ export function ensureReleaseBranchUpToDate(branch: string): void {
     }
 }
 
-export async function ensureSrcCliUpToDate(): Promise<void> {
-    const latestTag = await fetch('https://api.github.com/repos/sourcegraph/src-cli/releases/latest', {
+export async function getLatestSrcCliGithubRelease(): Promise<string> {
+    return fetch('https://api.github.com/repos/sourcegraph/src-cli/releases/latest', {
         method: 'GET',
         headers: {
             Accept: 'application/json',
@@ -147,7 +152,10 @@ export async function ensureSrcCliUpToDate(): Promise<void> {
     })
         .then(response => response.json())
         .then(json => json.tag_name)
+}
 
+export async function ensureSrcCliUpToDate(): Promise<void> {
+    const latestTag = await getLatestSrcCliGithubRelease()
     let installedTag = execa.sync('src', ['version']).stdout.split('\n')
     installedTag = installedTag[0].split(':')
     const trimmedInstalledTag = installedTag[1].trim()
@@ -172,7 +180,7 @@ Expected $SRC_ENDPOINT to be "${SOURCEGRAPH_RELEASE_INSTANCE_URL}"`)
 }
 
 export async function getLatestTag(owner: string, repo: string): Promise<string> {
-    const latestTag = await fetch(`https://api.github.com/repos/${owner}/${repo}/tags`, {
+    return fetch(`https://api.github.com/repos/${owner}/${repo}/tags`, {
         method: 'GET',
         headers: {
             Accept: 'application/json',
@@ -180,7 +188,6 @@ export async function getLatestTag(owner: string, repo: string): Promise<string>
     })
         .then(response => response.json())
         .then(json => json[0].name)
-    return latestTag
 }
 
 interface ContainerRegistryCredential {
@@ -206,13 +213,13 @@ export async function getContainerRegistryCredential(registryHostname: string): 
     return credential
 }
 
-export type ContentFunc = (previousVersion: string, nextVersion: string) => string
+export type ContentFunc = (previousVersion?: string, nextVersion?: string) => string
 
 const upgradeContentGenerators: { [s: string]: ContentFunc } = {
-    docker_compose: (previousVersion: string, nextVersion: string) => '',
-    kubernetes: (previousVersion: string, nextVersion: string) => '',
-    server: (previousVersion: string, nextVersion: string) => '',
-    pure_docker: (previousVersion: string, nextVersion: string) => {
+    docker_compose: () => '',
+    kubernetes: () => '',
+    server: () => '',
+    pure_docker: (previousVersion?: string, nextVersion?: string) => {
         const compare = `compare/v${previousVersion}...v${nextVersion}`
         return `As a template, perform the same actions as the following diff in your own deployment: [\`Upgrade to v${nextVersion}\`](https://github.com/sourcegraph/deploy-sourcegraph-docker/${compare})
 \nFor non-standard replica builds: 
@@ -274,4 +281,82 @@ export const updateUpgradeGuides = (previous: string, next: string): EditFunc =>
             writeFileSync(fullPath, updateContents)
         }
     }
+}
+
+export async function retryInput(
+    prompt: string,
+    delegate: (val: string) => boolean,
+    errorMessage?: string
+): Promise<string> {
+    while (true) {
+        const val = await readLine(prompt).then(value => value)
+        if (delegate(val)) {
+            return val
+        }
+        if (errorMessage) {
+            console.log(chalk.red(errorMessage))
+        } else {
+            console.log(chalk.red('invalid input'))
+        }
+    }
+}
+
+const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
+
+export async function getReleaseBlockers(
+    octokit: Octokit
+): Promise<Octokit.SearchIssuesAndPullRequestsResponseItemsItem[]> {
+    return listIssues(octokit, blockingQuery)
+}
+
+export function releaseBlockerUri(): string {
+    return `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
+}
+
+export async function validateNoReleaseBlockers(octokit: Octokit): Promise<void> {
+    const blockers = await getReleaseBlockers(octokit)
+    if (blockers.length > 0) {
+        await verifyWithInput(
+            `Warning! There are ${chalk.red(
+                blockers.length
+            )} release blocking issues open!\n${releaseBlockerUri()}\nConfirm to proceed`
+        )
+    }
+}
+
+export async function nextSrcCliVersionInputWithAutodetect(config: ReleaseConfig, repoPath?: string): Promise<SemVer> {
+    let next: SemVer
+    if (!config.in_progress?.srcCliVersion) {
+        if (!repoPath) {
+            const client = await getAuthenticatedGitHubClient()
+            const { workdir } = await cloneRepo(client, 'sourcegraph', 'src-cli', {
+                revision: 'main',
+                revisionMustExist: true,
+            })
+            repoPath = workdir
+        }
+        console.log('Attempting to detect previous src-cli version...')
+        const previous = getPreviousVersionSrcCli(repoPath)
+        console.log(chalk.blue(`Detected previous src-cli version: ${previous.version}`))
+        next = previous.inc('minor')
+    } else {
+        next = new SemVer(config.in_progress.srcCliVersion)
+    }
+
+    if (!(await softVerifyWithInput(`Confirm next version of src-cli should be: ${next.version}`))) {
+        return new SemVer(
+            await retryInput(
+                'Enter the next version of src-cli: ',
+                val => !!semver.parse(val),
+                'Expected semver format'
+            )
+        )
+    }
+    return next
+}
+
+export function pullRequestBody(content: string): string {
+    const header = 'This pull request was automatically generated by the release-tool.\n'
+    const testPlan = '\n## Test Plan:\nN/A'
+    return `${header}${content}${testPlan}`
 }

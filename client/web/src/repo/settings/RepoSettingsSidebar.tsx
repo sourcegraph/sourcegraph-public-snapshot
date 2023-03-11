@@ -39,19 +39,16 @@ export const RepoSettingsSidebar: React.FunctionComponent<React.PropsWithChildre
                 {repoSettingsSidebarGroups.map(({ header, items }, index) => (
                     <SidebarGroup key={index}>
                         {header && <SidebarGroupHeader label={header.label} />}
-                        {items.map(
-                            ({ label, to, exact, condition = () => true }) =>
-                                condition({}) && (
-                                    <SidebarNavItem
-                                        to={`${repo.url}/-/settings${to}`}
-                                        exact={exact}
-                                        key={label}
-                                        onClick={() => setIsMobileExpanded(false)}
-                                    >
-                                        {label}
-                                    </SidebarNavItem>
-                                )
-                        )}
+                        {items.map(({ label, to, exact }) => (
+                            <SidebarNavItem
+                                to={`${repo.url}/-/settings${to}`}
+                                key={label}
+                                onClick={() => setIsMobileExpanded(false)}
+                                exact={exact}
+                            >
+                                {label}
+                            </SidebarNavItem>
+                        ))}
                     </SidebarGroup>
                 ))}
             </div>

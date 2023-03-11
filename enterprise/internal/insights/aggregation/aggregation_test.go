@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -149,57 +149,66 @@ var sampleDate = time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
 
 func TestRepoAggregation(t *testing.T) {
 	testCases := []struct {
+		name        string
 		mode        types.SearchAggregationMode
 		searchEvent streaming.SearchEvent
 		want        autogold.Value
 	}{
-		{types.REPO_AGGREGATION_MODE,
-			streaming.SearchEvent{Results: []result.Match{}},
-			autogold.Want("No results", map[string]int{})},
 		{
+			"No results",
+			types.REPO_AGGREGATION_MODE,
+			streaming.SearchEvent{Results: []result.Match{}},
+			autogold.Expect(map[string]int{})},
+		{
+			"Single file match multiple results",
 			types.REPO_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "a", "b")},
 			},
-			autogold.Want("Single file match multiple results", map[string]int{"myRepo": 2}),
+			autogold.Expect(map[string]int{"myRepo": 2}),
 		},
 		{
+			"Multiple file match multiple results",
 			types.REPO_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
 					contentMatch("myRepo", "file.go", 1, "a", "b"),
 					contentMatch("myRepo", "file2.go", 1, "d", "e"),
 				}},
-			autogold.Want("Multiple file match multiple results", map[string]int{"myRepo": 4}),
+			autogold.Expect(map[string]int{"myRepo": 4}),
 		},
 		{
+			"Multiple repo multiple match",
 			types.REPO_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
 					contentMatch("myRepo", "file.go", 1, "a", "b"),
 					contentMatch("myRepo2", "file2.go", 2, "a", "b"),
 				}},
-			autogold.Want("Multiple repos multiple match", map[string]int{"myRepo": 2, "myRepo2": 2}),
+			autogold.Expect(map[string]int{"myRepo": 2, "myRepo2": 2}),
 		},
 		{
+			"Count repos on commit matches",
 			types.REPO_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
 					commitMatch("myRepo", "Author A", sampleDate, 1, 2, "a"),
 					commitMatch("myRepo", "Author B", sampleDate, 1, 2, "b"),
 				}},
-			autogold.Want("Count repos on commit matches", map[string]int{"myRepo": 4}),
+			autogold.Expect(map[string]int{"myRepo": 4}),
 		},
 		{
+			"Count repos on repo match",
 			types.REPO_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
 					repoMatch("myRepo", 1),
 					repoMatch("myRepo2", 2),
 				}},
-			autogold.Want("Count repos on repo match", map[string]int{"myRepo": 1, "myRepo2": 1}),
+			autogold.Expect(map[string]int{"myRepo": 1, "myRepo2": 1}),
 		},
 		{
+			"Count repos on path matches",
 			types.REPO_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -207,38 +216,41 @@ func TestRepoAggregation(t *testing.T) {
 					pathMatch("myRepo", "file2.go", 1),
 					pathMatch("myRepoB", "file3.go", 2),
 				}},
-			autogold.Want("Count repos on path matches", map[string]int{"myRepo": 2, "myRepoB": 1}),
+			autogold.Expect(map[string]int{"myRepo": 2, "myRepoB": 1}),
 		},
 		{
+			"Count repos on symbol matches",
 			types.REPO_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
 					symbolMatch("myRepo", "file1.go", 1, "a", "b"),
 					symbolMatch("myRepo", "file2.go", 1, "c", "d"),
 				}},
-			autogold.Want("Count repos on symbol matches", map[string]int{"myRepo": 4}),
+			autogold.Expect(map[string]int{"myRepo": 4}),
 		},
 		{
+			"Count repos on diff matches",
 			types.REPO_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
 					diffMatch("myRepo", "author-a", 1),
 					diffMatch("myRepo", "author-b", 1),
 				}},
-			autogold.Want("Count repos on diff matches", map[string]int{"myRepo": 4}),
+			autogold.Expect(map[string]int{"myRepo": 4}),
 		},
 		{
+			"Count multiple repos on diff matches",
 			types.REPO_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
 					diffMatch("myRepo", "author-a", 1),
 					diffMatch("myRepo2", "author-b", 2),
 				}},
-			autogold.Want("Count multiple repos on diff matches", map[string]int{"myRepo": 2, "myRepo2": 2}),
+			autogold.Expect(map[string]int{"myRepo": 2, "myRepo2": 2}),
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
 			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc)
@@ -250,33 +262,40 @@ func TestRepoAggregation(t *testing.T) {
 
 func TestAuthorAggregation(t *testing.T) {
 	testCases := []struct {
+		name        string
 		mode        types.SearchAggregationMode
 		searchEvent streaming.SearchEvent
 		want        autogold.Value
 	}{
-		{types.AUTHOR_AGGREGATION_MODE, streaming.SearchEvent{}, autogold.Want("No results", map[string]int{})},
 		{
+			"No results",
+			types.AUTHOR_AGGREGATION_MODE, streaming.SearchEvent{}, autogold.Expect(map[string]int{})},
+		{
+			"No author for content match",
 			types.AUTHOR_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "a", "b")},
 			},
-			autogold.Want("No author for content match", map[string]int{}),
+			autogold.Expect(map[string]int{}),
 		},
 		{
+			"No author for symbol match",
 			types.AUTHOR_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{symbolMatch("myRepo", "file.go", 1, "a", "b")},
 			},
-			autogold.Want("No author for symbol match", map[string]int{}),
+			autogold.Expect(map[string]int{}),
 		},
 		{
+			"No author for path match",
 			types.AUTHOR_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{pathMatch("myRepo", "file.go", 1)},
 			},
-			autogold.Want("No author for path match", map[string]int{}),
+			autogold.Expect(map[string]int{}),
 		},
 		{
+			"counts by author",
 			types.AUTHOR_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -286,9 +305,10 @@ func TestAuthorAggregation(t *testing.T) {
 					commitMatch("repoB", "Author C", sampleDate, 2, 2, "a"),
 				},
 			},
-			autogold.Want("counts by author", map[string]int{"Author A": 2, "Author B": 4, "Author C": 2}),
+			autogold.Expect(map[string]int{"Author A": 2, "Author B": 4, "Author C": 2}),
 		},
 		{
+			"Count authors on diff matches",
 			types.AUTHOR_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -296,11 +316,11 @@ func TestAuthorAggregation(t *testing.T) {
 					diffMatch("myRepo2", "author-a", 2),
 					diffMatch("myRepo2", "author-b", 2),
 				}},
-			autogold.Want("Count authors on diff matches", map[string]int{"author-a": 4, "author-b": 2}),
+			autogold.Expect(map[string]int{"author-a": 4, "author-b": 2}),
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
 			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc)
@@ -312,37 +332,44 @@ func TestAuthorAggregation(t *testing.T) {
 
 func TestPathAggregation(t *testing.T) {
 	testCases := []struct {
+		name        string
 		mode        types.SearchAggregationMode
 		searchEvent streaming.SearchEvent
 		want        autogold.Value
 	}{
-		{types.PATH_AGGREGATION_MODE, streaming.SearchEvent{}, autogold.Want("No results", map[string]int{})},
 		{
+			"No results",
+			types.PATH_AGGREGATION_MODE, streaming.SearchEvent{}, autogold.Expect(map[string]int{})},
+		{
+			"no path for commit",
 			types.PATH_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
 					commitMatch("repoA", "Author A", sampleDate, 1, 2, "a"),
 				},
 			},
-			autogold.Want("no path for commit", map[string]int{}),
+			autogold.Expect(map[string]int{}),
 		},
 		{
+			"no path on repo match",
 			types.PATH_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
 					repoMatch("myRepo", 1),
 				},
 			},
-			autogold.Want("no path on repo match", map[string]int{}),
+			autogold.Expect(map[string]int{}),
 		},
 		{
+			"Single file match multiple results",
 			types.PATH_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "a", "b")},
 			},
-			autogold.Want("Single file match multiple results", map[string]int{"file.go": 2}),
+			autogold.Expect(map[string]int{"file.go": 2}),
 		},
 		{
+			"Multiple file match multiple results",
 			types.PATH_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -350,9 +377,10 @@ func TestPathAggregation(t *testing.T) {
 					contentMatch("myRepo", "file2.go", 1, "d", "e"),
 				},
 			},
-			autogold.Want("Multiple file match multiple results", map[string]int{"file.go": 2, "file2.go": 2}),
+			autogold.Expect(map[string]int{"file.go": 2, "file2.go": 2}),
 		},
 		{
+			"Multiple repos same file",
 			types.PATH_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -360,9 +388,10 @@ func TestPathAggregation(t *testing.T) {
 					contentMatch("myRepo2", "file.go", 2, "a", "b"),
 				},
 			},
-			autogold.Want("Multiple repos same file", map[string]int{"file.go": 4}),
+			autogold.Expect(map[string]int{"file.go": 4}),
 		},
 		{
+			"Count paths on path matches",
 			types.PATH_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -371,9 +400,10 @@ func TestPathAggregation(t *testing.T) {
 					pathMatch("myRepoB", "file3.go", 2),
 				},
 			},
-			autogold.Want("Count paths on path matches", map[string]int{"file1.go": 1, "file2.go": 1, "file3.go": 1}),
+			autogold.Expect(map[string]int{"file1.go": 1, "file2.go": 1, "file3.go": 1}),
 		},
 		{
+			"Count paths on symbol matches",
 			types.PATH_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -381,9 +411,10 @@ func TestPathAggregation(t *testing.T) {
 					symbolMatch("myRepo", "file2.go", 1, "c", "d"),
 				},
 			},
-			autogold.Want("Count paths on symbol matches", map[string]int{"file1.go": 2, "file2.go": 2}),
+			autogold.Expect(map[string]int{"file1.go": 2, "file2.go": 2}),
 		},
 		{
+			"Count paths on multiple matche types",
 			types.PATH_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -393,11 +424,11 @@ func TestPathAggregation(t *testing.T) {
 					contentMatch("myRepo", "file.go", 1, "a", "b"),
 				},
 			},
-			autogold.Want("Count paths on multiple matche types", map[string]int{"file.go": 2, "file1.go": 3}),
+			autogold.Expect(map[string]int{"file.go": 2, "file1.go": 3}),
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
 			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc)
@@ -410,29 +441,38 @@ func TestPathAggregation(t *testing.T) {
 func TestCaptureGroupAggregation(t *testing.T) {
 	longCaptureGroup := "111111111|222222222|333333333|444444444|555555555|666666666|777777777|888888888|999999999|000000000|"
 	testCases := []struct {
+		name        string
 		mode        types.SearchAggregationMode
 		searchEvent streaming.SearchEvent
 		query       string
 		want        autogold.Value
 	}{
-		{types.CAPTURE_GROUP_AGGREGATION_MODE, streaming.SearchEvent{}, "TEST", autogold.Want("no results", map[string]int{})},
 		{
+			"no results",
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{},
+			"TEST",
+			autogold.Expect(map[string]int{})},
+		{
+			"two keys from 1 chunk",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "python2.7 python3.9")},
 			},
 			`python([0-9]\.[0-9])`,
-			autogold.Want("two keys from 1 chunk", map[string]int{"2.7": 1, "3.9": 1}),
+			autogold.Expect(map[string]int{"2.7": 1, "3.9": 1}),
 		},
 		{
+			"count 2 from 1 chunk",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "python2.7 python2.7")},
 			},
 			`python([0-9]\.[0-9])`,
-			autogold.Want("count 2 from 1 chunk", map[string]int{"2.7": 2}),
+			autogold.Expect(map[string]int{"2.7": 2}),
 		},
 		{
+			"count multiple results",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -441,9 +481,10 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`python([0-9]\.[0-9])`,
-			autogold.Want("count multiple results", map[string]int{"2.7": 2, "3.9": 2}),
+			autogold.Expect(map[string]int{"2.7": 2, "3.9": 2}),
 		},
 		{
+			"skips non capturing group",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -451,25 +492,28 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`python(?:[0-9])\.([0-9])`,
-			autogold.Want("skips non capturing group", map[string]int{"7": 1, "9": 1}),
+			autogold.Expect(map[string]int{"7": 1, "9": 1}),
 		},
 		{
+			"capture match respects case:no",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
 			},
 			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:no`,
-			autogold.Want("capture match respects case:no", map[string]int{"2.7": 1}),
+			autogold.Expect(map[string]int{"2.7": 1}),
 		},
 		{
+			"capture match respects case:yes",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
 			},
 			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:yes`,
-			autogold.Want("capture match respects case:yes", map[string]int{}),
+			autogold.Expect(map[string]int{}),
 		},
 		{
+			"only get values from first capture group",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -478,9 +522,10 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`python([0-9])\.([0-9])`,
-			autogold.Want("only get values from first capture group", map[string]int{"2": 4}),
+			autogold.Expect(map[string]int{"2": 4}),
 		},
 		{
+			"whole match only",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -489,9 +534,10 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`([0-9]\.[0-9])`,
-			autogold.Want("whole match only", map[string]int{"2.7": 1, "2.9": 1}),
+			autogold.Expect(map[string]int{"2.7": 1, "2.9": 1}),
 		},
 		{
+			"no more than 100 characters",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -500,9 +546,10 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`z(.*)z`,
-			autogold.Want("no more than 100 characters", map[string]int{longCaptureGroup: 1, "smallMatch": 1}),
+			autogold.Expect(map[string]int{longCaptureGroup: 1, "smallMatch": 1}),
 		},
 		{
+			"accepts exactly 100 characters",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -510,9 +557,10 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`z(.*)z`,
-			autogold.Want("accepts exactly 100 characters", map[string]int{longCaptureGroup: 1}),
+			autogold.Expect(map[string]int{longCaptureGroup: 1}),
 		},
 		{
+			"capture groups against whole file matches",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -522,9 +570,10 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`(.*?)\/`,
-			autogold.Want("capture groups against whole file matches", map[string]int{"dir1": 1, "dir2": 2}),
+			autogold.Expect(map[string]int{"dir1": 1, "dir2": 2}),
 		},
 		{
+			"capture groups against repo matches",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -534,9 +583,10 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`myrepo-(.*)`,
-			autogold.Want("capture groups against repo matches", map[string]int{"a": 2, "b": 1}),
+			autogold.Expect(map[string]int{"a": 2, "b": 1}),
 		},
 		{
+			"capture groups against commit matches",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -545,9 +595,10 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`python([0-9]\.[0-9])`,
-			autogold.Want("capture groups against commit matches", map[string]int{"2.7": 3, "2.8": 1}),
+			autogold.Expect(map[string]int{"2.7": 3, "2.8": 1}),
 		},
 		{
+			"capture groups against commit matches case sensitive",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -556,9 +607,10 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`python([0-9]\.[0-9]) case:yes`,
-			autogold.Want("capture groups against commit matches case sensitve", map[string]int{"2.7": 1}),
+			autogold.Expect(map[string]int{"2.7": 1}),
 		},
 		{
+			"capture groups against multiple match types",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -571,9 +623,10 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`/sourcegraph-(\\w+)/ patterntype:standard`,
-			autogold.Want("capture groups against multiple match types", map[string]int{"repo1": 1, "repo2": 1, "test": 1, "client": 1, "notifications": 2, "alerts": 1}),
+			autogold.Expect(map[string]int{"repo1": 1, "repo2": 1, "test": 1, "client": 1, "notifications": 2, "alerts": 1}),
 		},
 		{
+			"capture groups ignores diff types",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -581,12 +634,12 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`/need(.)/ patterntype:standard`,
-			autogold.Want("capture groups ignores diff types", map[string]int{}),
+			autogold.Expect(map[string]int{}),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, err := GetCountFuncForMode(tc.query, "regexp", tc.mode)
 			if err != nil {
@@ -601,14 +654,15 @@ func TestCaptureGroupAggregation(t *testing.T) {
 }
 
 func TestAggregationCancelation(t *testing.T) {
-
 	testCases := []struct {
+		name        string
 		mode        types.SearchAggregationMode
 		searchEvent streaming.SearchEvent
 		query       string
 		want        autogold.Value
 	}{
 		{
+			"aggregator stops counting if context canceled",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
 				Results: []result.Match{
@@ -617,12 +671,12 @@ func TestAggregationCancelation(t *testing.T) {
 				},
 			},
 			`python([0-9]\.[0-9])`,
-			autogold.Want("aggregator stops counting if context canceled", map[string]int{"2.7": 2, "3.9": 2}),
+			autogold.Expect(map[string]int{"2.7": 2, "3.9": 2}),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, err := GetCountFuncForMode(tc.query, "regexp", tc.mode)
 			if err != nil {

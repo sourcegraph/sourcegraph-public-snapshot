@@ -1,10 +1,9 @@
 import { FC } from 'react'
 
 import { mdiInformation } from '@mdi/js'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text, Container } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../PageTitle'
@@ -15,7 +14,7 @@ import { allExternalServices, AddExternalServiceOptions } from './externalServic
 
 import styles from './AddExternalServicesPage.module.scss'
 
-export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps {
+export interface AddExternalServicesPageProps extends TelemetryProps {
     /**
      * The list of code host external services to be displayed.
      * Pick items from externalServices.codeHostExternalServices.
@@ -29,6 +28,7 @@ export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps
 
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isSourcegraphApp: boolean
 
     /** For testing only. */
     autoFocusForm?: boolean
@@ -39,12 +39,12 @@ export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps
  */
 export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     codeHostExternalServices,
-    isLightTheme,
     nonCodeHostExternalServices,
     telemetryService,
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
+    isSourcegraphApp,
 }) => {
     const { search } = useLocation()
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
@@ -61,12 +61,12 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         if (externalService) {
             return (
                 <AddExternalServicePage
-                    isLightTheme={isLightTheme}
                     telemetryService={telemetryService}
                     externalService={externalService}
                     autoFocusForm={autoFocusForm}
                     externalServicesFromFile={externalServicesFromFile}
                     allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
+                    isSourcegraphApp={isSourcegraphApp}
                 />
             )
         }
@@ -105,7 +105,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                             <li>Periodically pulling cloned repositories to ensure search results are current.</li>
                             <li>
                                 Fetching{' '}
-                                <Link to="/help/admin/repo/permissions" target="_blank" rel="noopener noreferrer">
+                                <Link to="/help/admin/permissions" target="_blank" rel="noopener noreferrer">
                                     user repository access permissions
                                 </Link>
                                 , if you have enabled this feature.

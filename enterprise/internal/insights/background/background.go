@@ -67,8 +67,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
 		// Checks for Code Insights license and freezes insights if necessary.
 		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
-		// Stamps backfill completion time.
-		NewBackfillCompletedCheckJob(ctx, mainAppDB, insightsDB),
 	}
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
@@ -83,7 +81,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 			InsightStore:            insightsStore,
 			CommitClient:            gitserver.NewGitCommitClient(),
 			SearchPlanWorkerLimit:   1,
-			SearchRunnerWorkerLimit: 5, // TODO: move these to settings
+			SearchRunnerWorkerLimit: 1, // TODO: this can scale with the number of searcher endpoints
 			SearchRateLimiter:       searchRateLimiter,
 			HistoricRateLimiter:     historicRateLimiter,
 		}

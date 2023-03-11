@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { Container, Button, Alert, Form } from '@sourcegraph/wildcard'
@@ -23,7 +23,7 @@ export const UPDATE_USER = gql`
 `
 
 interface Props {
-    user: Pick<EditUserProfilePage, 'id' | 'viewerCanChangeUsername'>
+    user: Pick<EditUserProfilePage, 'id' | 'viewerCanChangeUsername' | 'scimControlled'>
     initialValue: UserProfileFormFieldsValue
     after?: React.ReactNode
 }
@@ -74,13 +74,16 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
         [updateUser, user.id, userFields]
     )
 
+    const isUserScimControlled = user.scimControlled
+
     return (
         <Container>
             <Form className="w-100" onSubmit={onSubmit}>
                 <UserProfileFormFields
                     value={userFields}
                     onChange={onChange}
-                    usernameFieldDisabled={!user.viewerCanChangeUsername}
+                    usernameFieldDisabled={!user.viewerCanChangeUsername || isUserScimControlled}
+                    displayNameFieldDisabled={isUserScimControlled}
                     disabled={loading}
                 />
                 <Button type="submit" disabled={loading} id="test-EditUserProfileForm__save" variant="primary">

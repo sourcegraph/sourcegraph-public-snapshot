@@ -48,7 +48,7 @@ Add the following to your `docker run` command:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql1.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"> -e CODEINTEL_PGHOST=psql2.mycompany.org<span class="virtual-br"></span> -e CODEINTEL_PGUSER=sourcegraph<span class="virtual-br"></span> -e CODEINTEL_PGPASSWORD=secret<span class="virtual-br"></span> -e CODEINTEL_PGDATABASE=sourcegraph-codeintel<span class="virtual-br"></span> -e CODEINTEL_PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:4.4.2</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql1.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"> -e CODEINTEL_PGHOST=psql2.mycompany.org<span class="virtual-br"></span> -e CODEINTEL_PGUSER=sourcegraph<span class="virtual-br"></span> -e CODEINTEL_PGPASSWORD=secret<span class="virtual-br"></span> -e CODEINTEL_PGDATABASE=sourcegraph-codeintel<span class="virtual-br"></span> -e CODEINTEL_PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:4.5.1</code></pre>
 
 ### Docker Compose
 
@@ -144,6 +144,45 @@ Most standard PostgreSQL environment variables may be specified (`PGPORT`, etc).
 
 ----
 
+## Usage with AWS RDS IAM Auth
+
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> 
+This method is experimental and may have performance implication. Please reach out to your account team for support.
+</p>
+</aside>
+
+For AWS RDS for Postgres, you have the option to use IAM database authentication to avoid using static database credentials. Learn more from [AWS documentation](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html).
+
+In order to enable IAM Auth, you first need to:
+
+- enabled [IAM authentication on the RDS instance](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.Enabling.html)
+- created [the database account using IAM authentication](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.DBAccounts.html#UsingWithRDS.IAMDBAuth.DBAccounts.PostgreSQL)
+- created [IAM policy for IAM database access](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.IAMPolicy.html)
+- created IAM roles for your compute workload and grant the role with the above policy
+- ensured your compute resources can assume those IAM roles
+  - For EKS (k8s deployment), use [IAM roles for service accounts](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)
+  - For EC2 (docker-compose deployment), use [IAM roles for Amazon EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html)
+
+For [every services that require postgres database connection](https://github.com/sourcegraph/sourcegraph/blob/main/lib/servicecatalog/service-catalog.yaml), ensure below environment variables are configured:
+
+- `PG_CONNECTION_UPDATER=EC2_ROLE_CREDENTIALS`
+- `PGSSLMODE=require`
+- `PGHOST=<>`
+- `PGPORT=<>`
+- `PGUSER=<>` - this should be the database accounts created above
+- `PGDATABASE=<>`
+- `CODEINTEL_PGSSLMODE=require`
+- `CODEINTEL_PGPORT=<>`
+- `CODEINTEL_PGUSER=<>` this should be the database accounts created above
+- `CODEINTEL_PGDATABASE=<>`
+- `CODEINSIGHTS_PGSSLMODE=require`
+- `CODEINSIGHTS_PGHOST=<>`
+- `CODEINSIGHTS_PGPORT=<>`
+- `CODEINSIGHTS_PGUSER=<>` this should be the database accounts created above
+- `CODEINSIGHTS_PGDATABASE=<>`
+
 ## Usage with PgBouncer
 
 [PgBouncer] is a lightweight connections pooler for PostgreSQL. It allows more clients to connect with the PostgreSQL database without running into connection limits.
@@ -154,7 +193,7 @@ When [PgBouncer] is used, we need to include `statement_cache_mode=describe` in 
 
 Add the following to your `docker run` command:
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGDATASOURCE="postgres://username:password@sourcegraph-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> -e CODEINSIGHTS_PGDATASOURCE="postgres://username:password@sourcegraph-codeintel-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> sourcegraph/server:4.4.2</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGDATASOURCE="postgres://username:password@sourcegraph-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> -e CODEINSIGHTS_PGDATASOURCE="postgres://username:password@sourcegraph-codeintel-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> sourcegraph/server:4.5.1</code></pre>
 
 ### Docker Compose
 

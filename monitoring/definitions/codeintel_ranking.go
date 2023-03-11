@@ -6,6 +6,14 @@ import (
 )
 
 func CodeIntelRanking() *monitoring.Dashboard {
+	groups := []monitoring.Group{
+		shared.CodeIntelligence.NewRankingServiceGroup("${source:regex}"),
+		shared.CodeIntelligence.NewRankingStoreGroup("${source:regex}"),
+		shared.CodeIntelligence.NewRankingLSIFStoreGroup("${source:regex}"),
+	}
+	groups = append(groups, shared.CodeIntelligence.NewRankingPipelineTaskGroups("${source:regex}")...)
+	groups = append(groups, shared.CodeIntelligence.NewRankingJanitorTaskGroups("${source:regex}")...)
+
 	return &monitoring.Dashboard{
 		Name:        "codeintel-ranking",
 		Title:       "Code Intelligence > Ranking",
@@ -23,10 +31,6 @@ func CodeIntelRanking() *monitoring.Dashboard {
 				Multi:            false,
 			},
 		},
-		Groups: []monitoring.Group{
-			shared.CodeIntelligence.NewRankingServiceGroup("${source:regex}"),
-			shared.CodeIntelligence.NewRankingStoreGroup("${source:regex}"),
-			shared.CodeIntelligence.NewRankingPageRankGroup("${source:regex}"),
-		},
+		Groups: groups,
 	}
 }

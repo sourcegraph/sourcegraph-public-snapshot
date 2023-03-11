@@ -240,7 +240,7 @@ export const ComboboxOption = forwardRef((props, ref) => {
             <li
                 ref={mergedRef}
                 data-option-disabled={true}
-                className={classNames(className, styles.itemDisabled)}
+                className={classNames(className, styles.item, styles.itemDisabled)}
                 {...attributes}
             >
                 {typeof children === 'function' ? children(context) : children ?? value}
@@ -249,7 +249,12 @@ export const ComboboxOption = forwardRef((props, ref) => {
     }
 
     return (
-        <ReachComboboxOption ref={mergedRef} value={value} className={className} {...attributes}>
+        <ReachComboboxOption
+            ref={mergedRef}
+            value={value}
+            className={classNames(styles.item, className)}
+            {...attributes}
+        >
             {children}
         </ReachComboboxOption>
     )

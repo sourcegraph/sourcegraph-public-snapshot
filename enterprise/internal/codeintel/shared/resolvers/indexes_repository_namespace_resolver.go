@@ -1,8 +1,6 @@
 package sharedresolvers
 
 import (
-	"strings"
-
 	autoindexingShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -25,12 +23,7 @@ func (r *lsifIndexesWithRepositoryNamespaceResolver) Root() string {
 }
 
 func (r *lsifIndexesWithRepositoryNamespaceResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	// drop the tag if it exists
-	if idx, ok := types.ImageToIndexer[strings.Split(r.indexesSummary.Indexer, ":")[0]]; ok {
-		return types.NewCodeIntelIndexerResolverFrom(idx)
-	}
-
-	return types.NewCodeIntelIndexerResolver(r.indexesSummary.Indexer)
+	return types.NewCodeIntelIndexerResolver(r.indexesSummary.Indexer, "")
 }
 
 func (r *lsifIndexesWithRepositoryNamespaceResolver) Indexes() []resolverstubs.LSIFIndexResolver {

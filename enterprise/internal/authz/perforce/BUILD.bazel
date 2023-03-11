@@ -34,7 +34,7 @@ go_test(
         "perforce_test.go",
         "protects_test.go",
     ],
-    data = glob(["testdata/**"]),
+    data = ["//enterprise/internal/authz/perforce/testdata:data"],
     embed = [":perforce"],
     deps = [
         "//enterprise/internal/authz/subrepoperms",

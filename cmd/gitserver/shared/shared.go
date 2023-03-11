@@ -19,8 +19,6 @@ import (
 	"github.com/tidwall/gjson"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -40,7 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -147,11 +145,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 	}
 
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
-	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{
+	grpcServer := defaults.NewServer(logger)
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{
 		Server: &gitserver,
 	})
-	reflection.Register(grpcServer)
 
 	gitserver.RegisterMetrics(observationCtx, db)
 
@@ -503,7 +500,7 @@ func getVCSSyncer(
 			return nil, err
 		}
 		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalDoer)
-		return server.NewPythonPackagesSyncer(&c, depsSvc, cli), nil
+		return server.NewPythonPackagesSyncer(&c, depsSvc, cli, reposDir), nil
 	case extsvc.TypeRustPackages:
 		var c schema.RustPackagesConnection
 		urn, err := extractOptions(&c)

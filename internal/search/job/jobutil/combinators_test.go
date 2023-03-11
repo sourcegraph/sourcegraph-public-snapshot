@@ -3,6 +3,7 @@ package jobutil
 import (
 	"context"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -127,15 +128,18 @@ func TestTimeoutJob(t *testing.T) {
 func TestParallelJob(t *testing.T) {
 	t.Run("jobs run in parallel", func(t *testing.T) {
 		waiter := mockjob.NewMockJob()
+		// Weird pattern, but wait until we have three things blocking.
+		// This tests that all three jobs are, in fact, running concurrently.
+		var wg sync.WaitGroup
+		wg.Add(3)
 		waiter.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, _ streaming.Sender) (*search.Alert, error) {
-			time.Sleep(10 * time.Millisecond)
+			wg.Done()
+			wg.Wait()
 			return nil, nil
 		})
 		parallelJob := NewParallelJob(waiter, waiter, waiter)
-		start := time.Now()
 		_, err := parallelJob.Run(context.Background(), job.RuntimeClients{}, nil)
 		require.NoError(t, err)
-		require.WithinDuration(t, time.Now(), start.Add(20*time.Millisecond), 10*time.Millisecond)
 	})
 
 	t.Run("errors are aggregated", func(t *testing.T) {

@@ -2,7 +2,6 @@ package lsifstore
 
 import (
 	"context"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -23,10 +22,6 @@ func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int)
 
 	if len(bundleIDs) == 0 {
 		return nil
-	}
-
-	if err := s.deleteLSIFData(ctx, bundleIDs); err != nil {
-		return err
 	}
 
 	if err := s.deleteSCIPData(ctx, bundleIDs); err != nil {
@@ -50,40 +45,6 @@ WITH locked_rows AS (
 )
 DELETE FROM codeintel_last_reconcile WHERE dump_id IN (SELECT dump_id FROM locked_rows)
 `
-
-var lsifDataTables = []string{
-	"lsif_data_metadata",
-	"lsif_data_documents",
-	"lsif_data_result_chunks",
-	"lsif_data_definitions",
-	"lsif_data_references",
-	"lsif_data_implementations",
-}
-
-func (s *store) deleteLSIFData(ctx context.Context, uploadIDs []int) error {
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err = tx.Done(err)
-	}()
-
-	// Ensure ids are sorted so that we take row locks during the DELETE query
-	// in a deterministic order. This should prevent deadlocks with other queries
-	// that mass update the same table.
-	sort.Ints(uploadIDs)
-
-	for _, tableName := range lsifDataTables {
-		query := sqlf.Sprintf(`DELETE FROM %s WHERE dump_id = ANY(%s)`, sqlf.Sprintf(tableName), pq.Array(uploadIDs))
-		if err := tx.Exec(ctx, query); err != nil {
-			return err
-		}
-
-	}
-
-	return nil
-}
 
 func (s *store) deleteSCIPData(ctx context.Context, uploadIDs []int) error {
 	tx, err := s.db.Transact(ctx)

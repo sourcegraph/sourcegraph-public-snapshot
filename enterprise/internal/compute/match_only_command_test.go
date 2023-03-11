@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/grafana/regexp"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -73,7 +73,7 @@ func Test_matchOnly(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("match_only", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(c.input, c.serializer)))
+			autogold.ExpectFile(t, autogold.Raw(test(c.input, c.serializer)))
 		})
 	}
 }

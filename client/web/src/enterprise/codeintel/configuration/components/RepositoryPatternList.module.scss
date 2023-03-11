@@ -1,6 +1,6 @@
 .loading {
     align-self: center;
-    justify-self: start;
+    justify-self: flex-start;
     margin: 0 0 0 0.5rem;
 }
 
@@ -24,7 +24,7 @@
 .input-actions {
     width: 10%;
     display: flex;
-    justify-content: start;
+    justify-content: flex-start;
     align-self: stretch;
 }
 

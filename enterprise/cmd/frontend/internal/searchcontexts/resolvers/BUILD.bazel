@@ -30,6 +30,7 @@ go_test(
         "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
+        "//internal/auth",
         "//internal/database",
         "//internal/types",
         "@com_github_derision_test_go_mockgen//testutil/require",

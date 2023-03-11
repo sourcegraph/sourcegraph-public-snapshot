@@ -1,6 +1,6 @@
 import { FC, useEffect, useMemo } from 'react'
 
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -89,6 +89,10 @@ const REPOSITORY_GIT_COMMITS_QUERY = gql`
     query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
         node(id: $repo) {
             ... on Repository {
+                externalURLs {
+                    url
+                    serviceKind
+                }
                 commit(rev: $revspec) {
                     ancestors(first: $first, path: $filePath, afterCursor: $afterCursor) {
                         nodes {

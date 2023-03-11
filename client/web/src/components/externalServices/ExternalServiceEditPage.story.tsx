@@ -70,11 +70,11 @@ function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceF
 export const ViewConfig: Story<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock(externalService)}>
         <ExternalServiceEditPage
-            isLightTheme={props.isLightTheme}
             telemetryService={NOOP_TELEMETRY_SERVICE}
             autoFocusForm={false}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
+            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )
@@ -84,11 +84,11 @@ ViewConfig.storyName = 'View external service config'
 export const ConfigWithInvalidUrl: Story<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock({ ...externalService, config: '{"url": "invalid-url"}' })}>
         <ExternalServiceEditPage
-            isLightTheme={props.isLightTheme}
             telemetryService={NOOP_TELEMETRY_SERVICE}
             autoFocusForm={false}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
+            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )
@@ -98,11 +98,11 @@ ConfigWithInvalidUrl.storyName = 'External service config with invalid url'
 export const ConfigWithWarning: Story<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}>
         <ExternalServiceEditPage
-            isLightTheme={props.isLightTheme}
             telemetryService={NOOP_TELEMETRY_SERVICE}
             autoFocusForm={false}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
+            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )
@@ -112,11 +112,11 @@ ConfigWithWarning.storyName = 'External service config with warning after update
 export const EditingDisabled: Story<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}>
         <ExternalServiceEditPage
-            isLightTheme={props.isLightTheme}
             telemetryService={NOOP_TELEMETRY_SERVICE}
             autoFocusForm={false}
             externalServicesFromFile={true}
             allowEditExternalServicesWithFile={false}
+            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )

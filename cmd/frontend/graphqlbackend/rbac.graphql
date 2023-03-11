@@ -1,154 +1,3 @@
-"""
-A role
-"""
-type Role implements Node {
-    """
-    The globally unique identifier for this role.
-    """
-    id: ID!
-    """
-    The human readable name for this role.
-    """
-    name: String!
-    """
-    Indicates whether a role is a default system role, which cannot be modified or deleted, or a custom role added by a site admin.
-    """
-    system: Boolean!
-    """
-    The list of permissions that will be granted to any user with this role.
-    """
-    permissions(
-        """
-        The limit argument for forward pagination.
-        """
-        first: Int
-        """
-        The limit argument for backward pagination.
-        """
-        last: Int
-        """
-        The cursor argument for forward pagination.
-        """
-        after: String
-        """
-        The cursor argument for backward pagination.
-        """
-        before: String
-    ): PermissionConnection!
-    """
-    The date and time when the role was created.
-    """
-    createdAt: DateTime!
-}
-
-"""
-A list of roles.
-"""
-type RoleConnection {
-    """
-    A list of roles.
-    """
-    nodes: [Role!]!
-    """
-    The total count of roles in the connection.
-    """
-    totalCount: Int!
-    """
-    Pagination information.
-    """
-    pageInfo: ConnectionPageInfo!
-}
-
-"""
-A list of permissions.
-"""
-type PermissionConnection {
-    """
-    A list of permissions.
-    """
-    nodes: [Permission!]!
-    """
-    The total count of permissions in the connection.
-    """
-    totalCount: Int!
-    """
-    Pagination information.
-    """
-    pageInfo: ConnectionPageInfo!
-}
-
-"""
-A permission
-"""
-type Permission implements Node {
-    """
-    The globally unique identifier for this permission.
-    """
-    id: ID!
-    """
-    The namespace in which this permission belongs to.
-    """
-    namespace: String!
-    """
-    The unique action which is granted to a bearer of this permission.
-    """
-    action: String!
-    """
-    A unique, human-readable string used to represent a permission, taking the form: <namespace>:<object_id>#<relation>@<user_id | user_group>
-    """
-    displayName: String!
-    """
-    The date and time when the permission was created.
-    """
-    createdAt: DateTime!
-}
-
-extend type Query {
-    """
-    Roles returns all the roles in the database that matches the arguments
-    """
-    roles(
-        """
-        The limit argument for forward pagination.
-        """
-        first: Int
-        """
-        The limit argument for backward pagination.
-        """
-        last: Int
-        """
-        The cursor argument for forward pagination.
-        """
-        after: String
-        """
-        The cursor argument for backward pagination.
-        """
-        before: String
-    ): RoleConnection!
-
-    """
-    All permissions
-    """
-    permissions(
-        """
-        The limit argument for forward pagination.
-        """
-        first: Int
-        """
-        The limit argument for backward pagination.
-        """
-        last: Int
-        """
-        The cursor argument for forward pagination.
-        """
-        after: String
-        """
-        The cursor argument for backward pagination.
-        """
-        before: String
-    ): PermissionConnection!
-}
-
 extend type Mutation {
     """
     Deletes a role. This mutation targets only non-system roles.
@@ -159,50 +8,19 @@ extend type Mutation {
     """
     Creates a role.
     """
-    createRole(name: String!): Role!
-}
+    createRole(name: String!, permissions: [ID!]!): Role!
 
-extend type User {
     """
-    The list of all roles assigned to this user.
+    Set permissions for role. This updates the permissions assigned to a role based on the `permissions` passed
+    in the argument. Permissions already assigned to the role that aren't part of the arguments of this mutation
+    will be revoked for the role.
     """
-    roles(
-        """
-        The limit argument for forward pagination.
-        """
-        first: Int
-        """
-        The limit argument for backward pagination.
-        """
-        last: Int
-        """
-        The cursor argument for forward pagination.
-        """
-        after: String
-        """
-        The cursor argument for backward pagination.
-        """
-        before: String
-    ): RoleConnection!
+    setPermissions(role: ID!, permissions: [ID!]!): EmptyResponse!
+
     """
-    The list of permissions granted to this user based on their roles.
+    Set roles for a user. Similar to `setPermissions`, this updates the roles assigned to a user based on the `roles`
+    passed in the argument. Permissions already assigned to the role that aren't part of the arguments of this
+    mutation will be revoked for the role.
     """
-    permissions(
-        """
-        The limit argument for forward pagination.
-        """
-        first: Int
-        """
-        The limit argument for backward pagination.
-        """
-        last: Int
-        """
-        The cursor argument for forward pagination.
-        """
-        after: String
-        """
-        The cursor argument for backward pagination.
-        """
-        before: String
-    ): PermissionConnection!
+    setRoles(user: ID!, roles: [ID!]!): EmptyResponse!
 }

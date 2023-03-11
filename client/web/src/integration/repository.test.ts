@@ -25,6 +25,7 @@ import {
     createRepoChangesetsStatsResult,
     createFileNamesResult,
     createResolveCloningRepoRevisionResult,
+    createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants } from './utils'
@@ -47,9 +48,17 @@ export const getCommonRepositoryGraphQlResults = (
     FileNames: () => createFileNamesResult(),
     FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
     TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),
+    FileTreeEntries: () => createFileTreeEntriesResult(repositoryUrl, fileEntries),
     TreeCommits: () => ({
         node: {
             __typename: 'Repository',
+            externalURLs: [
+                {
+                    __typename: 'ExternalLink',
+                    serviceKind: ExternalServiceKind.GITHUB,
+                    url: 'https://' + repositoryName,
+                },
+            ],
             commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } } },
         },
     }),
@@ -100,6 +109,13 @@ describe('Repository', () => {
                 TreeCommits: () => ({
                     node: {
                         __typename: 'Repository',
+                        externalURLs: [
+                            {
+                                __typename: 'ExternalLink',
+                                serviceKind: ExternalServiceKind.GITHUB,
+                                url: 'https://' + repositoryName,
+                            },
+                        ],
                         commit: {
                             ancestors: {
                                 nodes: [
@@ -458,6 +474,27 @@ describe('Repository', () => {
             const directoryName = "Geoffrey's random queries.32r242442bf"
             const filePath = path.posix.join(directoryName, fileName)
 
+            const TreeEntries = {
+                repository: {
+                    commit: {
+                        tree: {
+                            isRoot: false,
+                            url: '/github.com/ggilmore/q-test/-/tree/Geoffrey%27s%20random%20queries.32r242442bf',
+                            entries: [
+                                {
+                                    name: fileName,
+                                    path: filePath,
+                                    isDirectory: false,
+                                    url: '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
+                                    submodule: null,
+                                    isSingleChild: false,
+                                },
+                            ],
+                        },
+                    },
+                },
+            }
+
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl),
@@ -467,26 +504,8 @@ describe('Repository', () => {
                             revision
                         )}/${encodeURIPathComponent(filePath)}`
                     ),
-                TreeEntries: () => ({
-                    repository: {
-                        commit: {
-                            tree: {
-                                isRoot: false,
-                                url: '/github.com/ggilmore/q-test/-/tree/Geoffrey%27s%20random%20queries.32r242442bf',
-                                entries: [
-                                    {
-                                        name: fileName,
-                                        path: filePath,
-                                        isDirectory: false,
-                                        url: '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                }),
+                TreeEntries: () => TreeEntries,
+                FileTreeEntries: () => TreeEntries,
             })
 
             await driver.page.goto(
@@ -635,6 +654,13 @@ describe('Repository', () => {
                     __typename: 'Query',
                     node: {
                         __typename: 'Repository',
+                        externalURLs: [
+                            {
+                                __typename: 'ExternalLink',
+                                serviceKind: ExternalServiceKind.GITHUB,
+                                url: 'https://' + repositoryName,
+                            },
+                        ],
                         commit: {
                             __typename: 'GitCommit',
                             ancestors: {

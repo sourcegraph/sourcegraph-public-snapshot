@@ -17,6 +17,7 @@ import { Compartment, Extension, StateEffect } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
 import { createRoot, Root } from 'react-dom/client'
+import { NavigateFunction } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, startWith } from 'rxjs/operators'
 
@@ -30,6 +31,8 @@ import { Keybindings } from '../../../components/KeyboardShortcutsHelp/KeyboardS
 import { createElement } from '../../../util/dom'
 
 import { CodeMirrorContainer } from './react-interop'
+
+import { blobPropsFacet } from '.'
 
 const searchKeybinding = <Keybindings keybindings={[{ held: ['Mod'], ordered: ['F'] }]} />
 
@@ -48,6 +51,8 @@ const searchKeybindingTooltip = (
 // Match 'from' position -> 1-based serial number (index) of this match in the document.
 type SearchMatches = Map<number, number>
 
+export const BLOB_SEARCH_CONTAINER_ID = 'blob-search-container'
+
 class SearchPanel implements Panel {
     public dom: HTMLElement
     public top = true
@@ -63,12 +68,15 @@ class SearchPanel implements Panel {
     private input: HTMLInputElement | null = null
     private searchTerm = new Subject<string>()
     private subscriptions = new Subscription()
+    private navigate: NavigateFunction
 
     constructor(private view: EditorView) {
         this.dom = createElement('div', {
             className: 'cm-sg-search-container d-flex align-items-center',
+            id: BLOB_SEARCH_CONTAINER_ID,
             onkeydown: this.onkeydown,
         })
+        this.navigate = view.state.facet(blobPropsFacet).navigate
 
         this.state = {
             searchQuery: getSearchQuery(this.view.state),
@@ -141,6 +149,7 @@ class SearchPanel implements Panel {
 
         this.root.render(
             <CodeMirrorContainer
+                navigate={this.navigate}
                 onMount={() => {
                     this.input?.focus()
                     this.input?.select()

@@ -37,10 +37,12 @@ go_library(
         "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/errcode",
         "//internal/gqlutil",
         "//internal/metrics",
         "//internal/observation",
         "//internal/search/client",
+        "//internal/search/job/jobutil",
         "//internal/search/limits",
         "//internal/search/query",
         "//internal/timeutil",
@@ -66,6 +68,10 @@ go_test(
         "resolver_test.go",
     ],
     embed = [":resolvers"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/database",
@@ -82,7 +88,7 @@ go_test(
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",
         "@com_github_graph_gophers_graphql_go//relay",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

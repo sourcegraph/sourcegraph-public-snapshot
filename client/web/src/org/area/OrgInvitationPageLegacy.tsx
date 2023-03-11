@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Navigate } from 'react-router-dom-v5-compat'
+import { Navigate } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLatestFrom } from 'rxjs/operators'
 

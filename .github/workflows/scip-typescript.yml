@@ -2,16 +2,16 @@ name: scip-typescript
 on:
   push:
     paths:
-      - '**.ts'
-      - '**.tsx'
-      - '**.js'
+      - "**.ts"
+      - "**.tsx"
+      - "**.js"
 
 jobs:
   scip-typescript:
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: pnpm/action-setup@v2
         id: pnpm-install
         with:
@@ -33,7 +33,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - run: pnpm generate
       - run: pnpm --filter ./client/web-sveltekit run sync
-      - run: pnpm dlx @sourcegraph/scip-typescript index --pnpm-workspaces
+      - run: pnpm dlx @sourcegraph/scip-typescript index --pnpm-workspaces --no-global-caches
       - run: cp index.scip dump.lsif-typed
       - name: Install src-cli
         run: |

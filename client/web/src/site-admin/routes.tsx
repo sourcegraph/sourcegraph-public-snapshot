@@ -1,5 +1,9 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
+
+import { isPackagesEnabled } from './flags'
+import { PermissionsSyncJobsPage } from './permissions-center/PermissionsSyncJobsPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 
 const AnalyticsOverviewPage = lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
@@ -40,6 +44,8 @@ const SiteAdminRepositoriesPage = lazyComponent(
 )
 const SiteAdminOrgsPage = lazyComponent(() => import('./SiteAdminOrgsPage'), 'SiteAdminOrgsPage')
 const UsersManagement = lazyComponent(() => import('./UserManagement'), 'UsersManagement')
+const AccessRequestsPage = lazyComponent(() => import('./AccessRequestsPage'), 'AccessRequestsPage')
+
 const SiteAdminCreateUserPage = lazyComponent(() => import('./SiteAdminCreateUserPage'), 'SiteAdminCreateUserPage')
 const SiteAdminTokensPage = lazyComponent(() => import('./SiteAdminTokensPage'), 'SiteAdminTokensPage')
 const SiteAdminUpdatesPage = lazyComponent(() => import('./SiteAdminUpdatesPage'), 'SiteAdminUpdatesPage')
@@ -86,6 +92,7 @@ const SiteAdminWebhookUpdatePage = lazyComponent(
     () => import('./SiteAdminWebhookUpdatePage'),
     'SiteAdminWebhookUpdatePage'
 )
+const SiteAdminPackagesPage = lazyComponent(() => import('./SiteAdminPackagesPage'), 'SiteAdminPackagesPage')
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -143,6 +150,16 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/users',
         render: () => <UsersManagement />,
+    },
+    {
+        path: '/access-requests',
+        render: () => <AccessRequestsPage />,
+        condition: context =>
+            checkRequestAccessAllowed(
+                context.isSourcegraphDotCom,
+                window.context.allowSignup,
+                window.context.experimentalFeatures
+            ),
     },
     {
         path: '/users/new',
@@ -219,5 +236,14 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/webhooks/:id/edit',
         render: props => <SiteAdminWebhookUpdatePage {...props} />,
+    },
+    {
+        path: '/packages',
+        render: props => <SiteAdminPackagesPage {...props} />,
+        condition: isPackagesEnabled,
+    },
+    {
+        path: '/permissions-syncs',
+        render: props => <PermissionsSyncJobsPage {...props} />,
     },
 ]

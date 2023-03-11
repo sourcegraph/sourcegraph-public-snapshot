@@ -20,6 +20,7 @@ go_library(
         "//enterprise/dev/ci/internal/ci/changed",
         "//enterprise/dev/ci/internal/ci/operations",
         "//internal/lazyregexp",
+        "//internal/oobmigration",
         "//lib/errors",
         "@com_github_masterminds_semver//:semver",
         "@com_github_sourcegraph_log//:log",

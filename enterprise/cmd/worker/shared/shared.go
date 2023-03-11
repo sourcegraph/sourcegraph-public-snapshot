@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
+	contextdetectionembeddings "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/contextdetection"
+	repoembeddings "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/permissions"
@@ -44,6 +46,7 @@ var additionalJobs = map[string]job.Job{
 	"export-usage-telemetry":        telemetry.NewTelemetryJob(),
 
 	"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
+	"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
 	"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
 	"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
 	"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
@@ -52,16 +55,20 @@ var additionalJobs = map[string]job.Job{
 	"codeintel-upload-backfiller":                 codeintel.NewUploadBackfillerJob(),
 	"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
 	"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
-	"codeintel-upload-graph-exporter":             codeintel.NewGraphExporterJob(),
+	"codeintel-ranking-file-reference-counter":    codeintel.NewRankingFileReferenceCounter(),
 	"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
 	"codeintel-crates-syncer":                     codeintel.NewCratesSyncerJob(),
+	"codeintel-sentinel-cve-scanner":              codeintel.NewSentinelCVEScannerJob(),
+	"codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
 
 	"auth-sourcegraph-operator-cleaner":  auth.NewSourcegraphOperatorCleaner(),
 	"auth-permission-sync-job-cleaner":   auth.NewPermissionSyncJobCleaner(),
 	"auth-permission-sync-job-scheduler": auth.NewPermissionSyncJobScheduler(),
 
-	// Note: experimental (not documented)
-	"codeintel-ranking-sourcer": codeintel.NewRankingSourcerJob(),
+	"repo-embedding-janitor":              repoembeddings.NewRepoEmbeddingJanitorJob(),
+	"repo-embedding-job":                  repoembeddings.NewRepoEmbeddingJob(),
+	"context-detection-embedding-janitor": contextdetectionembeddings.NewContextDetectionEmbeddingJanitorJob(),
+	"context-detection-embedding-job":     contextdetectionembeddings.NewContextDetectionEmbeddingJob(),
 }
 
 // SetAuthzProviders waits for the database to be initialized, then periodically refreshes the

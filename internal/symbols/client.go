@@ -11,21 +11,23 @@ import (
 	"time"
 
 	"github.com/gobwas/glob"
-	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -45,7 +47,7 @@ func LoadConfig() {
 	DefaultClient = &Client{
 		Endpoints:           defaultEndpoints(),
 		HTTPClient:          defaultDoer,
-		HTTPLimiter:         parallel.NewRun(500),
+		HTTPLimiter:         limiter.New(500),
 		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
 	}
 }
@@ -71,7 +73,7 @@ type Client struct {
 	HTTPClient httpcli.Doer
 
 	// Limits concurrency of outstanding HTTP posts
-	HTTPLimiter *parallel.Run
+	HTTPLimiter limiter.Limiter
 
 	// SubRepoPermsChecker is function to return the checker to use. It needs to be a
 	// function since we expect the client to be set at runtime once we have a
@@ -93,7 +95,7 @@ func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_
 	c.langMappingOnce.Do(func() {
 		var mappings map[string][]string
 
-		if c.isGRPCEnabled(ctx) {
+		if internalgrpc.IsGRPCEnabled(ctx) {
 			mappings, err = c.listLanguageMappingsGRPC(ctx, repo)
 		} else {
 			mappings, err = c.listLanguageMappingsJSON(ctx, repo)
@@ -192,7 +194,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 
 	var response search.SymbolsResponse
 
-	if c.isGRPCEnabled(ctx) {
+	if internalgrpc.IsGRPCEnabled(ctx) {
 		response, err = c.searchGRPC(ctx, args)
 	} else {
 		response, err = c.searchJSON(ctx, args)
@@ -298,7 +300,7 @@ func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) 
 	span.SetTag("Repo", args.Repo)
 	span.SetTag("CommitID", args.Commit)
 
-	if c.isGRPCEnabled(ctx) {
+	if internalgrpc.IsGRPCEnabled(ctx) {
 		return c.localCodeIntelGRPC(ctx, args)
 	}
 
@@ -321,11 +323,17 @@ func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPa
 	protoArgs := proto.LocalCodeIntelRequest{RepoCommitPath: &rcp}
 	protoResponse, err := grpcClient.LocalCodeIntel(ctx, &protoArgs)
 	if err != nil {
+		if status.Code(err) == codes.Unimplemented {
+			// This ignores errors from LocalCodeIntel to match the behavior found here:
+			// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a1631d58604815917096acc3356447c55baebf22/-/blob/cmd/symbols/squirrel/http_handlers.go?L57-57
+			//
+			// This is weird, and maybe not intentional, but things break if we return an error.
+			return nil, nil
+		}
 		return nil, err
 	}
 
-	response := protoResponse.ToInternal()
-	return &response, nil
+	return protoResponse.ToInternal(), nil
 }
 
 func (c *Client) localCodeIntelJSON(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
@@ -365,7 +373,7 @@ func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint)
 	span.SetTag("Repo", args.Repo)
 	span.SetTag("CommitID", args.Commit)
 
-	if c.isGRPCEnabled(ctx) {
+	if internalgrpc.IsGRPCEnabled(ctx) {
 		result, err = c.symbolInfoGRPC(ctx, args)
 	} else {
 		result, err = c.symbolInfoJSON(ctx, args)
@@ -425,6 +433,11 @@ func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPo
 
 	protoResponse, err := client.SymbolInfo(ctx, &protoArgs)
 	if err != nil {
+		if status.Code(err) == codes.Unimplemented {
+			// This ignores unimplemented errors from SymbolInfo to match the behavior here:
+			// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b039aa70fbd155b5b1eddc4b5deede739626a978/-/blob/cmd/symbols/squirrel/http_handlers.go?L114-114
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -493,12 +506,10 @@ func (c *Client) httpPost(
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(ctx)
 
-	if c.HTTPLimiter != nil {
-		span.LogKV("event", "Waiting on HTTP limiter")
-		c.HTTPLimiter.Acquire()
-		defer c.HTTPLimiter.Release()
-		span.LogKV("event", "Acquired HTTP limiter")
-	}
+	span.LogKV("event", "Waiting on HTTP limiter")
+	c.HTTPLimiter.Acquire()
+	defer c.HTTPLimiter.Release()
+	span.LogKV("event", "Acquired HTTP limiter")
 
 	req, ht := nethttp.TraceRequest(span.Tracer(), req,
 		nethttp.OperationName("Symbols Client"),
@@ -521,14 +532,10 @@ func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.C
 		return nil, errors.Wrap(err, "parsing symbols service URL")
 	}
 
-	conn, err := grpc.DialContext(ctx, u.Host, defaults.DialOptions()...)
+	conn, err := defaults.DialContext(ctx, u.Host)
 	if err != nil {
 		return nil, errors.Wrap(err, "dialing symbols GRPC service")
 	}
 
 	return conn, nil
-}
-
-func (c *Client) isGRPCEnabled(ctx context.Context) bool {
-	return featureflag.FromContext(ctx).GetBoolOr("grpc", false)
 }

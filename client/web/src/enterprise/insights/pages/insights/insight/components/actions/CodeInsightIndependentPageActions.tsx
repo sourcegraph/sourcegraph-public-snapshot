@@ -2,7 +2,7 @@ import { FunctionComponent, useRef, useState } from 'react'
 
 import { mdiLinkVariant } from '@mdi/js'
 import { escapeRegExp } from 'lodash'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'

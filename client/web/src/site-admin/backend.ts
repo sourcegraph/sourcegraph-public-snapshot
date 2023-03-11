@@ -577,16 +577,16 @@ export function createUser(username: string, email: string | undefined): Observa
     )
 }
 
-export function deleteOrganization(organization: Scalars['ID'], hard?: boolean): Promise<void> {
+export function deleteOrganization(organization: Scalars['ID']): Promise<void> {
     return requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>(
         gql`
-            mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-                deleteOrganization(organization: $organization, hard: $hard) {
+            mutation DeleteOrganization($organization: ID!) {
+                deleteOrganization(organization: $organization) {
                     alwaysNil
                 }
             }
         `,
-        { organization, hard: hard ?? null }
+        { organization }
     )
         .pipe(
             map(dataOrThrowErrors),
@@ -620,6 +620,20 @@ export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']
         map(data => data.site)
     )
 }
+
+export const SITE_UPGRADE_READINESS = gql`
+    query SiteUpgradeReadiness {
+        site {
+            upgradeReadiness {
+                schemaDrift
+                requiredOutOfBandMigrations {
+                    id
+                    description
+                }
+            }
+        }
+    }
+`
 
 /**
  * Fetches all out-of-band migrations.
@@ -836,7 +850,7 @@ export const useWebhookPageHeader = (): { loading: boolean; totalErrors: number;
     return { loading, totalErrors, totalNoEvents }
 }
 
-export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhookFields> =>
+export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhooksListResult, WebhookFields> =>
     useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
         variables: {},
@@ -855,7 +869,7 @@ export const useWebhookLogsConnection = (
     webhookID: string,
     first: number,
     onlyErrors: boolean
-): UseShowMorePaginationResult<WebhookLogFields> =>
+): UseShowMorePaginationResult<WebhookLogsByWebhookIDResult, WebhookLogFields> =>
     useShowMorePagination<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
         query: WEBHOOK_LOGS_BY_ID,
         variables: {
@@ -888,4 +902,54 @@ export const UPDATE_WEBHOOK_QUERY = gql`
             id
         }
     }
+`
+
+export const EXTERNAL_SERVICE_KINDS = gql`
+    query ExternalServiceKinds {
+        externalServices {
+            nodes {
+                kind
+            }
+        }
+    }
+`
+
+const siteAdminPackageFieldsFragment = gql`
+    ${mirrorRepositoryInfoFieldsFragment}
+    ${externalRepositoryFieldsFragment}
+
+    fragment SiteAdminPackageFields on PackageRepoReference {
+        id
+        name
+        kind
+        blocked
+        repository {
+            id
+            name
+            url
+            mirrorInfo {
+                ...MirrorRepositoryInfoFields
+            }
+            externalRepository {
+                ...ExternalRepositoryFields
+            }
+        }
+    }
+`
+
+export const PACKAGES_QUERY = gql`
+    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
+        packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
+            nodes {
+                ...SiteAdminPackageFields
+            }
+            totalCount
+            pageInfo {
+                hasNextPage
+                endCursor
+            }
+        }
+    }
+
+    ${siteAdminPackageFieldsFragment}
 `

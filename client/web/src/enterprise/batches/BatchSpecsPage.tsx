@@ -3,7 +3,6 @@ import React, { FC, useCallback, useMemo } from 'react'
 import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, PageHeader, H3, H5, Icon } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
@@ -18,7 +17,12 @@ import { BatchSpecNode, BatchSpecNodeProps } from './BatchSpecNode'
 
 import styles from './BatchSpecsPage.module.scss'
 
-export interface BatchSpecsPageProps extends Omit<BatchSpecListProps, 'currentSpecID'> {}
+export interface BatchSpecsPageProps {
+    queryBatchSpecs?: typeof _queryBatchSpecs
+
+    /** For testing purposes only. Sets the current date */
+    now?: () => Date
+}
 
 export const BatchSpecsPage: FC<BatchSpecsPageProps> = props => (
     <>
@@ -30,7 +34,7 @@ export const BatchSpecsPage: FC<BatchSpecsPageProps> = props => (
             className="mb-3"
         />
         <Container>
-            <BatchSpecList {...props} />
+            <BatchSpecList queryBatchSpecs={props.queryBatchSpecs} now={props.now} />
         </Container>
     </>
 )
@@ -43,13 +47,13 @@ export interface BatchChangeBatchSpecListProps extends Omit<BatchSpecListProps, 
 
 export const BatchChangeBatchSpecList: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeBatchSpecListProps>
-> = ({ batchChangeID, currentSpecID, isLightTheme, queryBatchChangeBatchSpecs = _queryBatchChangeBatchSpecs, now }) => {
+> = ({ batchChangeID, currentSpecID, queryBatchChangeBatchSpecs = _queryBatchChangeBatchSpecs, now }) => {
     const query = useMemo(() => queryBatchChangeBatchSpecs(batchChangeID), [queryBatchChangeBatchSpecs, batchChangeID])
 
-    return <BatchSpecList queryBatchSpecs={query} isLightTheme={isLightTheme} currentSpecID={currentSpecID} now={now} />
+    return <BatchSpecList queryBatchSpecs={query} currentSpecID={currentSpecID} now={now} />
 }
 
-export interface BatchSpecListProps extends ThemeProps {
+export interface BatchSpecListProps {
     currentSpecID?: Scalars['ID']
     queryBatchSpecs?: typeof _queryBatchSpecs
     /** For testing purposes only. Sets the current date */
@@ -58,7 +62,6 @@ export interface BatchSpecListProps extends ThemeProps {
 
 export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<BatchSpecListProps>> = ({
     currentSpecID,
-    isLightTheme,
     queryBatchSpecs = _queryBatchSpecs,
     now,
 }) => {
@@ -77,7 +80,7 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
     return (
         <FilteredConnection<BatchSpecListFields, Omit<BatchSpecNodeProps, 'node'>>
             nodeComponent={BatchSpecNode}
-            nodeComponentProps={{ currentSpecID, isLightTheme, now }}
+            nodeComponentProps={{ currentSpecID, now }}
             queryConnection={query}
             hideSearch={true}
             defaultFirst={20}

@@ -1,10 +1,10 @@
 import { FC, useContext } from 'react'
 
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { useExperimentalFeatures } from '../../../../../stores'
 import { CodeInsightsBackendContext, CreationInsightInput } from '../../../core'
 import { useQueryParameters } from '../../../hooks'
 import { encodeDashboardIdQueryParam } from '../../../routers.constant'
@@ -36,7 +36,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const { createInsight } = useContext(CodeInsightsBackendContext)
     const { dashboardId } = useQueryParameters(['dashboardId'])
 
-    const { codeInsightsCompute } = useExperimentalFeatures()
+    const codeInsightsCompute = useExperimentalFeatures(features => features.codeInsightsCompute)
 
     const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<unknown> => {
         const { insight } = event

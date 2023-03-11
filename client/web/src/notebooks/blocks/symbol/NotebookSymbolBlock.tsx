@@ -10,15 +10,14 @@ import { CodeExcerpt } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Alert, Icon, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlock, SymbolBlockInput, SymbolBlockOutput } from '../..'
-import { useExperimentalFeatures } from '../../../stores'
 import { focusEditor } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
@@ -32,7 +31,6 @@ import styles from './NotebookSymbolBlock.module.scss'
 
 interface NotebookSymbolBlockProps
     extends BlockProps<SymbolBlock>,
-        ThemeProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'> {
     isSourcegraphDotCom: boolean
@@ -57,7 +55,6 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
             isSelected,
             showMenu,
             isReadOnly,
-            isLightTheme,
             onRunBlock,
             onBlockInputChange,
             ...props
@@ -181,7 +178,6 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
                         <NotebookSymbolBlockInput
                             id={id}
                             queryInput={symbolQueryInput}
-                            isLightTheme={isLightTheme}
                             onEditorCreated={setEditor}
                             setQueryInput={debouncedSetSymbolQueryInput}
                             onSymbolSelected={onSymbolSelected}

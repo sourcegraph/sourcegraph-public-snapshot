@@ -3,13 +3,14 @@ package linters
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/buf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/proto"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -31,6 +32,10 @@ var bufFormat = &linter{
 		protoFiles, err := buf.ProtoFiles()
 		if err != nil {
 			return errors.Wrapf(err, "finding .proto files")
+		}
+
+		if len(protoFiles) == 0 {
+			return errors.New("no .proto files found")
 		}
 
 		bufArgs := []string{
@@ -117,11 +122,6 @@ var bufLint = &linter{
 			return errors.Wrap(err, "getting repository root")
 		}
 
-		err = os.Chdir(rootDir)
-		if err != nil {
-			return errors.Wrap(err, "changing directory to repository root")
-		}
-
 		err = buf.InstallDependencies(ctx, out)
 		if err != nil {
 			return errors.Wrap(err, "installing buf dependencies")
@@ -130,6 +130,10 @@ var bufLint = &linter{
 		bufModules, err := buf.ModuleFiles()
 		if err != nil {
 			return errors.Wrapf(err, "finding buf module files")
+		}
+
+		if len(bufModules) == 0 {
+			return errors.New("no buf modules found")
 		}
 
 		for _, file := range bufModules {
@@ -158,5 +162,75 @@ var bufLint = &linter{
 		}
 
 		return nil
+	},
+}
+
+var bufGenerate = &linter{
+	Name: "Buf Generate",
+	Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
+		if args.Dirty {
+			return errors.New("cannot run 'buf generate' with uncommitted changes")
+		}
+
+		rootDir, err := root.RepositoryRoot()
+		if err != nil {
+			return errors.Wrap(err, "getting repository root")
+		}
+
+		err = buf.InstallDependencies(ctx, out)
+		if err != nil {
+			return errors.Wrap(err, "installing buf dependencies")
+		}
+
+		report := proto.Generate(ctx, false)
+		if report.Err != nil {
+			return report.Err
+		}
+
+		generatedFiles, err := buf.CodegenFiles()
+		if err != nil {
+			return errors.Wrap(err, "finding generated Protobuf files")
+		}
+
+		if len(generatedFiles) == 0 {
+			return errors.New("no generated files found")
+		}
+
+		gitArgs := []string{
+			"diff",
+			"--exit-code",
+			"--color=always",
+			"--",
+		}
+
+		for _, file := range generatedFiles {
+			f, err := filepath.Rel(rootDir, file)
+			if err != nil {
+				return errors.Wrapf(err, "getting relative path for file %q (base %q)", file, rootDir)
+			}
+
+			gitArgs = append(gitArgs, f)
+		}
+
+		// Check if there are any changes to the generated files.
+
+		output, err := run.GitCmd(gitArgs...)
+		if err != nil && output != "" {
+			out.WriteWarningf("Uncommitted changes found after running buf generate:")
+			out.Write(strings.TrimSpace(output))
+			// Reset repo state
+			if _, resetErr := run.GitCmd("reset", "HEAD", "--hard"); resetErr != nil {
+				return errors.Wrap(resetErr, "resetting repository state")
+			}
+
+			return err
+		}
+
+		return nil
+	},
+
+	Fix: func(ctx context.Context, cio check.IO, args *repo.State) error {
+		report := proto.Generate(ctx, false)
+		return report.Err
 	},
 }

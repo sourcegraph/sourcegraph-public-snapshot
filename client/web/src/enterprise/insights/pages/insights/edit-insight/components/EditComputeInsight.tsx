@@ -1,12 +1,8 @@
 import { FC, useMemo } from 'react'
 
-import {
-    CodeInsightCreationMode,
-    CodeInsightsCreationActions,
-    createDefaultEditSeries,
-    FORM_ERROR,
-    SubmissionErrors,
-} from '../../../../components'
+import { FORM_ERROR, SubmissionErrors } from '@sourcegraph/wildcard'
+
+import { CodeInsightCreationMode, CodeInsightsCreationActions, createDefaultEditSeries } from '../../../../components'
 import { ComputeInsight, MinimalComputeInsightData } from '../../../../core'
 import { ComputeInsightCreationContent } from '../../creation/compute/components/ComputeInsightCreationContent'
 import { CreateComputeInsightFormFields } from '../../creation/compute/types'

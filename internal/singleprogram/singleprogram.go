@@ -1,13 +1,17 @@
-// Package singleprogram contains runtime utilities for the single-program (Go static binary)
+// Package singleprogram contains runtime utilities for the single-binary
 // distribution of Sourcegraph.
 package singleprogram
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
+	"github.com/fatih/color"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -30,7 +34,6 @@ func Init(logger log.Logger) {
 
 	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
 	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")
-	setDefaultEnv(logger, "REPO_UPDATER_URL", "http://127.0.0.1:3182")
 	setDefaultEnv(logger, "BLOBSTORE_URL", "http://127.0.0.1:9000")
 
 	// The syntax-highlighter might not be running, but this is a better default than an internal
@@ -66,7 +69,8 @@ func Init(logger log.Logger) {
 
 	setDefaultEnv(logger, "SRC_REPOS_DIR", filepath.Join(cacheDir, "repos"))
 	setDefaultEnv(logger, "BLOBSTORE_DATA_DIR", filepath.Join(cacheDir, "blobstore"))
-	setDefaultEnv(logger, "CACHE_DIR", filepath.Join(cacheDir, "cache"))
+	setDefaultEnv(logger, "SYMBOLS_CACHE_DIR", filepath.Join(cacheDir, "symbols"))
+	setDefaultEnv(logger, "SEARCHER_CACHE_DIR", filepath.Join(cacheDir, "searcher"))
 
 	configDir, err := os.UserConfigDir()
 	if err == nil {
@@ -98,7 +102,7 @@ func Init(logger log.Logger) {
 	siteConfigPath := filepath.Join(configDir, "site-config.json")
 	setDefaultEnv(logger, "SITE_CONFIG_FILE", siteConfigPath)
 	setDefaultEnv(logger, "SITE_CONFIG_ALLOW_EDITS", "true")
-	writeFileIfNotExists(siteConfigPath, []byte(confdefaults.SingleProgram.Site))
+	writeFileIfNotExists(siteConfigPath, []byte(confdefaults.App.Site))
 
 	globalSettingsPath := filepath.Join(configDir, "global-settings.json")
 	setDefaultEnv(logger, "GLOBAL_SETTINGS_FILE", globalSettingsPath)
@@ -111,7 +115,7 @@ func Init(logger log.Logger) {
 	// We disable the use of executors passwords, because executors only listen on `localhost` this
 	// is safe to do.
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_URL", "http://localhost:3080")
-	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", confdefaults.SingleProgramInMemoryExecutorPassword)
+	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", confdefaults.AppInMemoryExecutorPassword)
 
 	// TODO(single-binary): HACK: This is a hack to workaround the fact that the 2nd time you run `sourcegraph`
 	// OOB migration validation fails:
@@ -121,7 +125,7 @@ func Init(logger log.Logger) {
 	setDefaultEnv(logger, "SRC_DISABLE_OOBMIGRATION_VALIDATION", "1")
 
 	setDefaultEnv(logger, "EXECUTOR_USE_FIRECRACKER", "false")
-	// TODO(sqs): TODO(single-binary): Make it so we can run multiple executors in single-program mode. Right now, you
+	// TODO(sqs): TODO(single-binary): Make it so we can run multiple executors in app mode. Right now, you
 	// need to change this to "batches" to use batch changes executors.
 	setDefaultEnv(logger, "EXECUTOR_QUEUE_NAME", "codeintel")
 
@@ -133,11 +137,81 @@ func Init(logger log.Logger) {
 	}
 
 	setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
-	// Write script that invokes universal-ctags via Docker.
-	// TODO(sqs): TODO(single-binary): stop relying on a ctags Docker image
-	ctagsPath := filepath.Join(cacheDir, "universal-ctags-dev")
-	writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
-	setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+
+	haveDocker := isDockerAvailable()
+	if !haveDocker {
+		printStatusCheckError(
+			"Docker is unavailable",
+			"Sourcegraph is better when Docker is available; some features may not work:",
+			"- Batch changes",
+			"- Symbol search",
+			"- Symbols overview tab (on repository pages)",
+		)
+	}
+
+	if _, err := exec.LookPath("src"); err != nil {
+		printStatusCheckError(
+			"src-cli is unavailable",
+			"Sourcegraph is better when src-cli is available; batch changes may not work.",
+			"Installation: https://github.com/sourcegraph/src-cli",
+		)
+	}
+
+	// generate a shell script to run a ctags Docker image
+	// unless the environment is already set up to find ctags
+	ctagsPath := os.Getenv("CTAGS_COMMAND")
+	if stat, err := os.Stat(ctagsPath); err != nil || stat.IsDir() {
+		// Write script that invokes universal-ctags via Docker, if Docker is available.
+		// TODO(single-binary): stop relying on a ctags Docker image
+		if haveDocker {
+			ctagsPath = filepath.Join(cacheDir, "universal-ctags-dev")
+			writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
+			setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+		}
+	}
+}
+
+func printStatusCheckError(title, description string, details ...string) {
+	pad := func(s string, n int) string {
+		spaces := n - len(s)
+		if spaces < 0 {
+			spaces = 0
+		}
+		return s + strings.Repeat(" ", spaces)
+	}
+
+	newLine := "\033[0m\n"
+	titleRed := color.New(color.FgRed, color.BgYellow, color.Bold)
+	titleRed.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
+	titleRed.Fprintf(os.Stderr, "| %s |"+newLine, pad(title, 76))
+	titleRed.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
+
+	subline := func(s string) string {
+		return color.RedString("%s %s %s"+newLine, titleRed.Sprint("|"), pad(s, 76), titleRed.Sprint("|"))
+	}
+	msg := subline(description)
+	msg += subline("")
+	for _, detail := range details {
+		msg += subline(detail)
+	}
+	msg += subline("")
+	fmt.Fprintf(os.Stderr, "%s", msg)
+	titleRed.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
+}
+
+func isDockerAvailable() bool {
+	if _, err := exec.LookPath("docker"); err != nil {
+		return false
+	}
+
+	cmd := exec.Command("docker", "stats", "--no-stream")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	if err := cmd.Run(); err != nil {
+		return false
+	}
+	return true
 }
 
 // universalCtagsDevScript is copied from cmd/symbols/universal-ctags-dev.
@@ -148,6 +222,7 @@ const universalCtagsDevScript = `#!/usr/bin/env bash
 exec docker run --rm -i \
     -a stdin -a stdout -a stderr \
     --user guest \
+    --platform=linux/amd64 \
     --name=universal-ctags-$$ \
     --entrypoint /usr/local/bin/universal-ctags \
     slimsag/ctags:latest@sha256:dd21503a3ae51524ab96edd5c0d0b8326d4baaf99b4238dfe8ec0232050af3c7 "$@"

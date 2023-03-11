@@ -6,28 +6,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-type indexerConfig struct {
+type rankingConfig struct {
 	env.BaseConfig
 
-	Interval time.Duration
+	SymbolExporterInterval       time.Duration
+	SymbolExporterReadBatchSize  int
+	SymbolExporterWriteBatchSize int
+	MapperBatchSize              int
+	ReducerBatchSize             int
 }
 
-var IndexerConfigInst = &indexerConfig{}
+var ConfigInst = &rankingConfig{}
 
-func (c *indexerConfig) Load() {
-	c.Interval = c.GetInterval("CODEINTEL_RANKING_INDEXER_INTERVAL", "10s", "The frequency with which to run periodic codeintel rank indexing tasks.")
-}
-
-type loaderConfig struct {
-	env.BaseConfig
-
-	LoadInterval  time.Duration
-	MergeInterval time.Duration
-}
-
-var LoaderConfigInst = &loaderConfig{}
-
-func (c *loaderConfig) Load() {
-	c.LoadInterval = c.GetInterval("CODEINTEL_RANKING_LOADER_INTERVAL", "10s", "The frequency with which to run periodic codeintel rank loading tasks.")
-	c.MergeInterval = c.GetInterval("CODEINTEL_RANKING_MERGER_INTERVAL", "1s", "The frequency with which to run periodic codeintel rank merging tasks.")
+func (c *rankingConfig) Load() {
+	c.SymbolExporterInterval = c.GetInterval("CODEINTEL_RANKING_SYMBOL_EXPORTER_INTERVAL", "1s", "How frequently to serialize a batch of the code intel graph for ranking.")
+	c.SymbolExporterReadBatchSize = c.GetInt("CODEINTEL_RANKING_SYMBOL_EXPORTER_READ_BATCH_SIZE", "16", "How many uploads to process at once.")
+	c.SymbolExporterWriteBatchSize = c.GetInt("CODEINTEL_RANKING_SYMBOL_EXPORTER_WRITE_BATCH_SIZE", "10000", "The number of definitions and references to populate the ranking graph per batch.")
+	c.MapperBatchSize = c.GetInt("CODEINTEL_RANKING_MAPPER_BATCH_SIZE", "1000", "How many definitions and references to map at once.")
+	c.ReducerBatchSize = c.GetInt("CODEINTEL_RANKING_REDUCER_BATCH_SIZE", "1000", "How many path counts to reduce at once.")
 }

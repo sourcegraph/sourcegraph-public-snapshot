@@ -1,105 +1,132 @@
 import {
-    useRef,
-    Ref,
     createContext,
+    ComponentType,
     FC,
-    ReactNode,
     HTMLAttributes,
     useMemo,
     useContext,
     useCallback,
     useEffect,
+    useState,
+    ReactNode,
+    PropsWithChildren,
 } from 'react'
 
+import { ApolloClient, useApolloClient } from '@apollo/client'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import { createPortal } from 'react-dom'
-import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SetupSteps.module.scss'
+
+interface StepComponentProps extends TelemetryProps {
+    className?: string
+}
 
 export interface StepConfiguration {
     id: string
     path: string
     name: string
-    render: () => ReactNode
+    nextURL?: string
+    component: ComponentType<StepComponentProps>
+    onNext?: (client: ApolloClient<{}>) => void
 }
 
 interface SetupStepsContextData {
     steps: StepConfiguration[]
-    nextButtonPortalElement: HTMLDivElement | null
+    activeStepIndex: number
+    footerPortal: HTMLDivElement | null
+    nextButtonPortal: HTMLDivElement | null
+    setFooterPortal: (container: HTMLDivElement | null) => void
+    setNextButtonPortal: (container: HTMLDivElement | null) => void
+    onSkip: () => void
+    onPrevStep: () => void
     onNextStep: () => void
 }
 
 const SetupStepsContext = createContext<SetupStepsContextData>({
     steps: [],
-    nextButtonPortalElement: null,
-    onNextStep: () => {},
+    activeStepIndex: 0,
+    footerPortal: null,
+    nextButtonPortal: null,
+    setFooterPortal: noop,
+    setNextButtonPortal: noop,
+    onSkip: noop,
+    onPrevStep: noop,
+    onNextStep: noop,
 })
 
 interface SetupStepsProps {
     initialStepId: string | undefined
     steps: StepConfiguration[]
+    children?: ReactNode
+    onSkip: () => void
     onStepChange: (nextStep: StepConfiguration) => void
 }
 
 interface SetupStepURLContext {
-    currentStep: StepConfiguration
     activeStepIndex: number
 }
 
 export const SetupStepsRoot: FC<SetupStepsProps> = props => {
-    const { initialStepId, steps, onStepChange } = props
+    const { initialStepId, steps, children, onSkip, onStepChange } = props
 
     const navigate = useNavigate()
     const location = useLocation()
-    const nextButtonPortalRef = useRef<HTMLDivElement>(null)
+    const client = useApolloClient()
+
+    const [nextButtonPortal, setNextButtonPortal] = useState<HTMLDivElement | null>(null)
+    const [footerPortal, setFooterPortal] = useState<HTMLDivElement | null>(null)
 
     // Resolve current setup step and its index by URL matches
-    const { currentStep, activeStepIndex } = useMemo<SetupStepURLContext>(() => {
+    const { activeStepIndex } = useMemo<SetupStepURLContext>(() => {
         // Try to find step by URL based on available steps
         const urlStepIndex = steps.findIndex(step => matchPath(step.path, location.pathname) !== null)
 
         if (urlStepIndex !== -1) {
-            return {
-                activeStepIndex: urlStepIndex,
-                currentStep: steps[urlStepIndex],
-            }
+            return { activeStepIndex: urlStepIndex }
         }
 
         // Try to find step by pre-saved settings if URL doesn't resolve any step
         const savedStepIndex = steps.findIndex(step => step.id === initialStepId)
 
         if (savedStepIndex !== -1) {
-            return {
-                activeStepIndex: savedStepIndex,
-                currentStep: steps[savedStepIndex],
-            }
+            return { activeStepIndex: savedStepIndex }
         }
 
         // Fallback on the first available step if URL doesn't match any step, and we
         // don't have any pre-saved step
-        return {
-            activeStepIndex: 0,
-            currentStep: steps[0],
-        }
+        return { activeStepIndex: 0 }
     }, [location, initialStepId, steps])
+
+    const currentStep = steps[activeStepIndex]
 
     useEffect(() => {
         onStepChange(currentStep)
     }, [currentStep, onStepChange])
 
     const handleGoToNextStep = useCallback(() => {
+        const activeStep = steps[activeStepIndex]
         const nextStepIndex = activeStepIndex + 1
+
+        activeStep.onNext?.(client)
+
+        if (activeStep.nextURL) {
+            navigate(activeStep.nextURL)
+            return
+        }
 
         if (nextStepIndex < steps.length) {
             const nextStep = steps[nextStepIndex]
 
             navigate(nextStep.path)
         }
-    }, [activeStepIndex, steps, navigate])
+    }, [activeStepIndex, steps, navigate, client])
 
     const handleGoToPrevStep = useCallback(() => {
         const prevStepIndex = activeStepIndex - 1
@@ -114,33 +141,41 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     const cachedContext = useMemo(
         () => ({
             steps,
-            nextButtonPortalElement: nextButtonPortalRef.current,
+            activeStepIndex,
+            footerPortal,
+            nextButtonPortal,
+            setFooterPortal,
+            setNextButtonPortal,
+            onSkip,
+            onPrevStep: handleGoToPrevStep,
             onNextStep: handleGoToNextStep,
         }),
-        [handleGoToNextStep, steps]
+        [steps, activeStepIndex, footerPortal, nextButtonPortal, onSkip, handleGoToPrevStep, handleGoToNextStep]
     )
 
+    return <SetupStepsContext.Provider value={cachedContext}>{children}</SetupStepsContext.Provider>
+}
+
+interface SetupStepsContentProps extends TelemetryProps, HTMLAttributes<HTMLElement> {}
+
+export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
+    const { className, telemetryService, ...attributes } = props
+    const { steps, activeStepIndex } = useContext(SetupStepsContext)
+
     return (
-        <SetupStepsContext.Provider value={cachedContext}>
-            <div className={styles.root}>
-                <SetupStepsHeader steps={steps} activeStepIndex={activeStepIndex} />
-                <div className={styles.content}>
-                    <Routes>
-                        {steps.map(step => (
-                            <Route key="hardcoded-key" path={step.path} element={step.render()} />
-                        ))}
-                        <Route path="*" element={<Navigate to={currentStep.path} />} />
-                    </Routes>
-                </div>
-                <SetupStepsFooter
-                    steps={steps}
-                    activeStepIndex={activeStepIndex}
-                    nextButtonPortalRef={nextButtonPortalRef}
-                    onPrevStep={handleGoToPrevStep}
-                    onNextStep={handleGoToNextStep}
-                />
-            </div>
-        </SetupStepsContext.Provider>
+        <div {...attributes} className={classNames(styles.root, className)}>
+            <SetupStepsHeader steps={steps} activeStepIndex={activeStepIndex} />
+            <Routes>
+                {steps.map(({ path, component: Component }) => (
+                    <Route
+                        key="hardcoded-key"
+                        path={`${path}/*`}
+                        element={<Component className={styles.content} telemetryService={telemetryService} />}
+                    />
+                ))}
+                <Route path="*" element={<Navigate to={steps[activeStepIndex].path} replace={true} />} />
+            </Routes>
+        </div>
     )
 }
 
@@ -164,60 +199,92 @@ export const SetupStepsHeader: FC<SetupStepsHeaderProps> = props => {
                     >
                         {index + 1}
                     </span>
-                    <small className={styles.headerStepLabel}>{step.name}</small>
+                    <small
+                        data-label-text={step.name}
+                        className={classNames(styles.headerStepLabel, {
+                            [styles.headerStepLabelActive]: index === activeStepIndex,
+                        })}
+                    >
+                        {step.name}
+                    </small>
                 </div>
             ))}
         </header>
     )
 }
 
-interface SetupStepsFooterProps {
-    steps: StepConfiguration[]
-    activeStepIndex: number
-    nextButtonPortalRef: Ref<HTMLDivElement>
-    onPrevStep: () => void
-    onNextStep: () => void
-}
+export const SetupStepsFooter: FC<HTMLAttributes<HTMLElement>> = props => {
+    const { className, ...attributes } = props
 
-export const SetupStepsFooter: FC<SetupStepsFooterProps> = props => {
-    const { steps, activeStepIndex, nextButtonPortalRef, onPrevStep, onNextStep } = props
+    const { steps, activeStepIndex, setNextButtonPortal, setFooterPortal, onSkip, onPrevStep, onNextStep } =
+        useContext(SetupStepsContext)
 
     return (
-        <footer className={styles.navigation}>
-            <div className={styles.navigationInner}>
-                {activeStepIndex > 0 && (
-                    <Button variant="secondary" onClick={onPrevStep}>
-                        <Icon svgPath={mdiChevronLeft} aria-hidden={true} /> Go to previous step
+        <footer {...attributes} className={classNames(styles.footer, className)}>
+            <div className={styles.footerWidget}>
+                <div ref={setFooterPortal} className={styles.footerInnerWidget} />
+            </div>
+            <div className={styles.footerNavigation}>
+                <div className={styles.footerInnerNavigation}>
+                    <Button variant="link" className={styles.footerSkip} onClick={onSkip}>
+                        Skip setup
                     </Button>
-                )}
 
-                <div ref={nextButtonPortalRef} className={styles.navigationNextPortal} />
-                <Button variant="primary" className={styles.navigationNext} onClick={onNextStep}>
-                    {activeStepIndex < steps.length - 1 ? 'Next' : 'Finish'}{' '}
-                    <Icon svgPath={mdiChevronRight} aria-hidden={true} />
-                </Button>
+                    {activeStepIndex > 0 && (
+                        <Button variant="secondary" onClick={onPrevStep}>
+                            <Icon svgPath={mdiChevronLeft} aria-hidden={true} /> Previous
+                        </Button>
+                    )}
+
+                    <div ref={setNextButtonPortal} className={styles.footerNextPortal} />
+                    <Button variant="primary" className={styles.footerNext} onClick={onNextStep}>
+                        {activeStepIndex < steps.length - 1 ? 'Next' : 'Finish'}{' '}
+                        <Icon svgPath={mdiChevronRight} aria-hidden={true} />
+                    </Button>
+                </div>
             </div>
         </footer>
     )
 }
 
-interface CustomNextButtonProps {
-    label: string
-    disabled: boolean
-}
+export const FooterWidget: FC<PropsWithChildren<{}>> = props => {
+    const { children } = props
+    const { footerPortal } = useContext(SetupStepsContext)
 
-export const CustomNextButton: FC<CustomNextButtonProps> = props => {
-    const { label, disabled } = props
-    const { nextButtonPortalElement, onNextStep } = useContext(SetupStepsContext)
-
-    if (!nextButtonPortalElement) {
+    if (!footerPortal) {
         return null
     }
 
+    return createPortal(children, footerPortal)
+}
+
+interface CustomNextButtonProps {
+    label: string
+    disabled?: boolean
+    tooltip?: string
+    onClick?: () => void
+}
+
+export const CustomNextButton: FC<CustomNextButtonProps> = props => {
+    const { label, disabled, tooltip, onClick } = props
+    const { nextButtonPortal, onNextStep } = useContext(SetupStepsContext)
+
+    if (!nextButtonPortal) {
+        return null
+    }
+
+    const handleNextClick = (): void => {
+        onClick?.()
+        onNextStep()
+    }
+
     return createPortal(
-        <Button variant="primary" disabled={disabled} onClick={onNextStep}>
-            {label}
-        </Button>,
-        nextButtonPortalElement
+        <Tooltip content={tooltip}>
+            <Button variant="primary" disabled={disabled} onClick={handleNextClick}>
+                {label}
+                <Icon svgPath={mdiChevronRight} aria-hidden={true} />
+            </Button>
+        </Tooltip>,
+        nextButtonPortal
     )
 }

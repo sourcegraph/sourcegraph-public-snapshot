@@ -8,12 +8,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	bstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func QueueOptions(observationCtx *observation.Context, db database.DB, _ func() string) handler.QueueOptions[*btypes.BatchSpecWorkspaceExecutionJob] {
+func QueueHandler(observationCtx *observation.Context, db database.DB, _ func() string) handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob] {
 	logger := log.Scoped("executor-queue.batches", "The executor queue handlers for the batches queue")
 	recordTransformer := func(ctx context.Context, version string, record *btypes.BatchSpecWorkspaceExecutionJob, _ handler.ResourceMetadata) (apiclient.Job, error) {
 		batchesStore := bstore.New(db, observationCtx, nil)
@@ -21,7 +21,7 @@ func QueueOptions(observationCtx *observation.Context, db database.DB, _ func() 
 	}
 
 	store := bstore.NewBatchSpecWorkspaceExecutionWorkerStore(observationCtx, db.Handle())
-	return handler.QueueOptions[*btypes.BatchSpecWorkspaceExecutionJob]{
+	return handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{
 		Name:              "batches",
 		Store:             store,
 		RecordTransformer: recordTransformer,

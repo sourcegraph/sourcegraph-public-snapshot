@@ -1,49 +1,61 @@
+<style>
+.socials {
+  display: flex;
+  flex-direction: row;
+}
+.socials a {
+  padding: 0.25rem;
+  margin: 1rem;
+  background: #dddddd;
+  border-radius: 0.25rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+}
+.socials a:hover {
+  filter: brightness(0.75);
+}
+</style>
+
 # Sourcegraph App
 
-## ⚠️ Experimental ⚠️
+Sourcegraph App is a lightweight single-binary version of Sourcegraph for your local machine.
 
-Sourcegraph App is **highly experimental** and early-stages-**we do not advise you try it yet.** If you're interested, reach out to us on [Twitter](https://twitter.com/sourcegraph) or [Discord](https://discord.com/invite/s2qDtYGnAE) and we'll let you know when it's ready to try out!
+It runs alongside your IDE, to provide a better way to understand, browse, and search both the local you're working on as well as remote code on GitHub, GitLab, etc. - bringing Sourcegraph's powerful code search and IDE navigation straight to your laptop.
 
-<span class="badge badge-warning">The following is intended primarily for Sourcegraph employees</span>
+<div class="socials">
+  <a href="https://discord.com/invite/s2qDtYGnAE"><img alt="Discord" src="discord.svg"></img></a>
+  <a href="https://twitter.com/sourcegraph"><img alt="Twitter" src="twitter.svg"></img></a>
+  <a href="https://github.com/sourcegraph/app"><img alt="GitHub" src="github.svg"></img></a>
+</div>
 
-## What is it?
+## Pre-release
 
-Sourcegraph App runs alongside your IDE and provides a better way to understand, browse, and search both your local and remote code. It is lightweight, and provides IDE-like code navigation, powerful regexp/commit/diff search, etc. all on your local machine.
+This is a pre-release / early access version of what will be presented at our Starship event on Mar 23rd. We're still improving things, so [let us know if you encounter any issues](https://github.com/sourcegraph/app/issues/new).
 
-We're still working out all the details, this is a **very early-stages version** which doesn't live up to that vision yet. Still, we'd love if you try it out and let us know how it goes and what you think!
-
-Learn more about [how this fits into our product strategy](https://handbook.sourcegraph.com/departments/engineering/teams/growth/app/)
+For news and updates, be sure to [follow us on Twitter](https://twitter.com/sourcegraph) and [join our Discord](https://discord.com/invite/s2qDtYGnAE).
 
 ## Installation
+
+Ensure you have `git` installed / on your path, then install.
 
 **macOS:** via homebrew:
 
 ```sh
-brew install sourcegraph/sourcegraph-app/sourcegraph
+brew install sourcegraph/app/sourcegraph
 ```
 
-**Linux:** via [deb pkg](https://storage.googleapis.com/sourcegraph-app-releases/0.0.196391-snapshot+20230131-f10a97/sourcegraph_0.0.196391-snapshot+20230131-f10a97_linux_amd64.deb) installer:
+**Linux:** via <a data-download-name="app-download-linux-deb" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_linux_amd64.deb">deb pkg</a> installer:
 
 ```sh
-dpkg -i sourcegraph_0.0.196391-snapshot+20230131-f10a97_linux_amd64.deb
+dpkg -i <file>.deb
 ```
 
 **Single-binary zip download:**
 
-* [macOS (universal)](https://storage.googleapis.com/sourcegraph-app-releases/0.0.196391-snapshot+20230131-f10a97/sourcegraph_0.0.196391-snapshot+20230131-f10a97_darwin_all.zip)
-* [linux (x64)](https://storage.googleapis.com/sourcegraph-app-releases/0.0.196391-snapshot+20230131-f10a97/sourcegraph_0.0.196391-snapshot+20230131-f10a97_linux_amd64.zip)
-
-## Prerequisites
-
-Ensure you have the following:
-
-1. `src` CLI available on your PATH ([installation](https://github.com/sourcegraph/src-cli))
-2. `docker` is installed and on your PATH
-3. Redis is running, e.g. via Docker:
-
-```sh
-docker run -p 127.0.0.1:6379:6379 -d redis redis-server --save 60 1 --loglevel warning
-```
+- <a data-download-name="app-download-mac-zip" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_darwin_all.zip">macOS (universal)</a>
+- <a data-download-name="app-download-linux-zip" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_linux_amd64.zip" >linux (x64)</a>
 
 ## Usage
 
@@ -53,33 +65,39 @@ Start Sourcegraph by running the following in a terminal:
 sourcegraph
 ```
 
-Navigate to http://localhost:3080 and you can add your remote repositories from there (we're still working on ability to add local code.)
+**Sourcegraph will automatically add any repositories found below the directory you run `sourcegraph` in.**
+
+Your browser should automatically open to http://localhost:3080 - this is the address of the Sourcegraph app.
+
+## Optional - batch changes & precise code intel
+
+Batch changes and precise code intel require the following optional dependencies be installed and on your PATH:
+
+- The `src` CLI ([installation](https://github.com/sourcegraph/src-cli))
+- `docker`
 
 ### Troubleshooting
 
-If it doesn't start, make sure:
-
-* Redis is running on port 6379
-* `docker` and `git` are installed and on your path
-* `src` is installed and on your path 
-
-### What works
-
-* Adding repositories from GitHub, GitLab, etc.
-* Code navigation
-* Search
-* Batch changes
-* Precise code intel
+Since the Sourcegraph app is early-stages, you may run into issues. If you do, please [let us know](https://github.com/sourcegraph/app/issues/new)!
 
 ### Known issues
 
-* Can't add local code yet, only remote code
-* Syntax highlighting is broken
-* We're working on eliminating the Redis, `src` CLI, and Docker dependencies
-* macOS binaries are not code-signed yet, so you may need to right-click -> open the binary if you do not use Homebrew.
+#### macOS .zip download issues
+
+macOS binaries are not yet code-signed, so you may need to right click on it -> open. If you use Homebrew, this is not an issue.
+
+### Upgrading
+
+**On macOS:** upgrade using Homebrew:
+
+```
+brew update && brew upgrade sourcegraph/app/sourcegraph
+```
+
+**On Linux:** we do not have a PPA yet, so you will need to rerun the installation steps above to get the latest .deb version.
 
 ## Feedback
 
-You can provide feedback and get help in our [Discord](https://discord.com/invite/s2qDtYGnAE) or tweet [@sourcegraph](https://twitter.com/sourcegraph).
+Please let us know what you think in our [Discord](https://discord.com/invite/s2qDtYGnAE) or tweet [@sourcegraph](https://twitter.com/sourcegraph)!
 
-_Sourcegraph employees:_ join `#app` in Slack!
+_Sourcegraph employees:_ join `#dogfood-app` in Slack!

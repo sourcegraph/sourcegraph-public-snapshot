@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 
@@ -24,29 +25,17 @@ type SqliteConfig struct {
 	MaxConcurrentlyIndexing int
 }
 
-func aliasEnvVar(oldName, newName string) {
-	if os.Getenv(newName) != "" {
-		return // prefer using the new name
-	}
-	oldValue := os.Getenv(oldName)
-	if oldValue == "" {
-		return // old name was not set
-	}
-	// New name not in use, but old name is, so update the env.
-	_ = os.Setenv(newName, oldValue)
-}
-
 func LoadSqliteConfig(baseConfig env.BaseConfig, ctags CtagsConfig, repositoryFetcher RepositoryFetcherConfig) SqliteConfig {
 	// Variable was renamed to have SYMBOLS_ prefix to avoid a conflict with the same env var name
 	// in searcher when running as a single binary. The old name is treated as an alias to prevent
 	// customer environments from breaking if they still use it, because we have no way of migrating
 	// environment variables today.
-	aliasEnvVar("CACHE_DIR", "SYMBOLS_CACHE_DIR")
+	cacheDirName := env.ChooseFallbackVariableName("SYMBOLS_CACHE_DIR", "CACHE_DIR")
 
 	return SqliteConfig{
 		Ctags:                   ctags,
 		RepositoryFetcher:       repositoryFetcher,
-		CacheDir:                baseConfig.Get("SYMBOLS_CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols"),
+		CacheDir:                baseConfig.Get(cacheDirName, "/tmp/symbols-cache", "directory in which to store cached symbols"),
 		CacheSizeMB:             baseConfig.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)"),
 		NumCtagsProcesses:       baseConfig.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run"),
 		RequestBufferSize:       baseConfig.GetInt("REQUEST_BUFFER_SIZE", "8192", "maximum size of buffered parser request channel"),
@@ -70,8 +59,13 @@ func LoadCtagsConfig(baseConfig env.BaseConfig) CtagsConfig {
 		logCtagsErrorsDefault = "true"
 	}
 
+	ctagsCommandDefault := "universal-ctags"
+	if deploy.IsSingleBinary() {
+		ctagsCommandDefault = ""
+	}
+
 	return CtagsConfig{
-		Command:            baseConfig.Get("CTAGS_COMMAND", "universal-ctags", "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)"),
+		Command:            baseConfig.Get("CTAGS_COMMAND", ctagsCommandDefault, "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)"),
 		PatternLengthLimit: baseConfig.GetInt("CTAGS_PATTERN_LENGTH_LIMIT", "250", "the maximum length of the patterns output by ctags"),
 		LogErrors:          baseConfig.GetBool("LOG_CTAGS_ERRORS", logCtagsErrorsDefault, "log ctags errors"),
 		DebugLogs:          false,
@@ -100,10 +94,10 @@ func LoadRepositoryFetcherConfig(baseConfig env.BaseConfig) RepositoryFetcherCon
 	// in searcher when running as a single binary. The old name is treated as an alias to prevent
 	// customer environments from breaking if they still use it, because we have no way of migrating
 	// environment variables today.
-	aliasEnvVar("MAX_TOTAL_PATHS_LENGTH", "SYMBOLS_MAX_TOTAL_PATHS_LENGTH")
+	maxTotalPathsLengthName := env.ChooseFallbackVariableName("SYMBOLS_MAX_TOTAL_PATHS_LENGTH", "MAX_TOTAL_PATHS_LENGTH")
 
 	return RepositoryFetcherConfig{
-		MaxTotalPathsLength: baseConfig.GetInt("SYMBOLS_MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive"),
+		MaxTotalPathsLength: baseConfig.GetInt(maxTotalPathsLengthName, "100000", "maximum sum of lengths of all paths in a single call to git archive"),
 		MaxFileSizeKb:       baseConfig.GetInt("MAX_FILE_SIZE_KB", "1000", "maximum file size in KB, the contents of bigger files are ignored"),
 	}
 }

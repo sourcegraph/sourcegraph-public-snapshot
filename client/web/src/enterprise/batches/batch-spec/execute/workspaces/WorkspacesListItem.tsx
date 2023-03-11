@@ -1,6 +1,6 @@
 import { FC, useCallback } from 'react'
 
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { DiffStat } from '../../../../../components/diff/DiffStat'
 import {

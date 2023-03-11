@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -24,7 +25,7 @@ func TestRedisLoggerMiddleware(t *testing.T) {
 	complexReq, _ := http.NewRequest("PATCH", "http://test.aa?a=2", strings.NewReader("graph"))
 	complexReq.Header.Set("Cache-Control", "no-cache")
 
-	for _, tc := range []struct {
+	testCases := []struct {
 		req  *http.Request
 		name string
 		cli  Doer
@@ -67,12 +68,14 @@ func TestRedisLoggerMiddleware(t *testing.T) {
 			}),
 			err: "oh no",
 		},
-	} {
+	}
+
+	// Enable feature
+	setOutboundRequestLogLimit(t, 1)
+
+	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			// Enable the feature
-			setOutboundRequestLogLimit(t, 1)
-
 			// Build client with middleware
 			cli := redisLoggerMiddleware()(tc.cli)
 
@@ -82,31 +85,31 @@ func TestRedisLoggerMiddleware(t *testing.T) {
 				t.Fatalf("have error: %q\nwant error: %q", have, want)
 			}
 
-			// Check logged request
-			logged, err := GetOutboundRequestLogItems(context.Background(), "")
-			if err != nil {
-				t.Fatalf("couldnt get logged requests: %s", err)
-			}
-			if len(logged) != 1 {
-				t.Fatalf("request was not logged")
-			}
+			assert.Eventually(t, func() bool {
+				// Check logged request
+				logged, err := GetOutboundRequestLogItems(context.Background(), "")
+				if err != nil {
+					t.Fatalf("couldnt get logged requests: %s", err)
+				}
 
-			if tc.want == nil {
-				return
-			}
-
-			if diff := cmp.Diff(tc.want, logged[0], cmpopts.IgnoreFields(
-				types.OutboundRequestLogItem{},
-				"ID",
-				"StartedAt",
-				"Duration",
-				"CreationStackFrame",
-				"CallStackFrame",
-			)); diff != "" {
-				t.Fatalf("wrong request logged: %s", diff)
-			}
+				return len(logged) == 1 && equal(tc.want, logged[0])
+			}, 5*time.Second, 100*time.Millisecond)
 		})
 	}
+}
+
+func equal(a, b *types.OutboundRequestLogItem) bool {
+	if a == nil || b == nil {
+		return true
+	}
+	return cmp.Diff(a, b, cmpopts.IgnoreFields(
+		types.OutboundRequestLogItem{},
+		"ID",
+		"StartedAt",
+		"Duration",
+		"CreationStackFrame",
+		"CallStackFrame",
+	)) == ""
 }
 
 func TestRedisLoggerMiddleware_multiple(t *testing.T) {

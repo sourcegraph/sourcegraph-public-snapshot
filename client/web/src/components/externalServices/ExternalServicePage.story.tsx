@@ -130,12 +130,12 @@ function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceF
 export const ExternalServiceWithRepos: Story<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock(externalService)}>
         <ExternalServicePage
-            isLightTheme={props.isLightTheme}
             queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
             afterDeleteRoute="/site-admin/after-delete"
             telemetryService={NOOP_TELEMETRY_SERVICE}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
+            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )

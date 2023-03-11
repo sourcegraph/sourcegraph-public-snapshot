@@ -1,12 +1,11 @@
 import * as React from 'react'
 
-import { Location, NavigateFunction } from 'react-router-dom-v5-compat'
+import { Location, NavigateFunction } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
 import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
@@ -73,7 +72,7 @@ function queryRepositoryComparison(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, ThemeProps {
+interface Props extends RepositoryCompareAreaPageProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: Scalars['ID']; revision?: string | null }
 

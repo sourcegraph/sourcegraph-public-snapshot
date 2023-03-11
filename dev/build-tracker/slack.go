@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/team"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const JobShowLimit = 5
@@ -111,7 +112,7 @@ func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, 
 
 func (c *NotificationClient) sendUpdatedMessage(build *Build, previous *SlackNotification) (*SlackNotification, error) {
 	if previous == nil {
-		return nil, fmt.Errorf("cannot update message with nil notification")
+		return nil, errors.New("cannot update message with nil notification")
 	}
 	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
 	logger.Debug("creating slack json")
@@ -183,7 +184,7 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 
 	jobSection := ""
 	for group, groupJobs := range filteredJobs {
-		jobSection := fmt.Sprintf("*%s jobs:*\n\n", group)
+		jobSection = fmt.Sprintf("*%s jobs:*\n\n", group)
 		// if there are more than JobShowLimit of failed jobs, we cannot print all of it
 		// since the message will to big and slack will reject the message with "invalid_blocks"
 		if len(groupJobs) > JobShowLimit {

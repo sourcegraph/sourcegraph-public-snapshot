@@ -11,7 +11,6 @@ import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@source
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { IEditor, LazyQueryInput, LazyQueryInputProps } from './LazyQueryInput'
 import { SearchButton } from './SearchButton'
@@ -24,7 +23,6 @@ import styles from './SearchBox.module.scss'
 
 export interface SearchBoxProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'submitSearch'>,
-        ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'>,
@@ -185,7 +183,6 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         fetchStreamSuggestions={props.fetchStreamSuggestions}
                         globbing={props.globbing}
                         interpretComments={props.interpretComments}
-                        isLightTheme={props.isLightTheme}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         onChange={props.onChange}
                         onCompletionItemSelected={props.onCompletionItemSelected}

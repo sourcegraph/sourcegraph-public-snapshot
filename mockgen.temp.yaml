@@ -13,6 +13,7 @@
     - EnterpriseDB
     - PermsStore
     - SubRepoPermsStore
+    - CodeownersStore
 - filename: enterprise/internal/insights/discovery/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
   interfaces:
@@ -35,6 +36,7 @@
 - filename: internal/database/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/database
   interfaces:
+    - AccessRequestStore
     - AccessTokenStore
     - AuthzStore
     - BitbucketProjectPermissionsStore
@@ -72,6 +74,10 @@
     - ZoektReposStore
     - PermissionSyncJobStore
     - TeamStore
+    - RoleStore
+    - UserRoleStore
+    - PermissionStore
+    - RolePermissionStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:
@@ -110,3 +116,11 @@
   interfaces:
     - UserEmailsService
     - ReposService
+- filename: enterprise/internal/embeddings/background/repo/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo
+  interfaces:
+    - RepoEmbeddingJobsStore
+- filename: enterprise/internal/executor/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store
+  interfaces:
+    - JobTokenStore

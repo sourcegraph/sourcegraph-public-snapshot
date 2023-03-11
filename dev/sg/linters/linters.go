@@ -95,6 +95,7 @@ var Targets = []Target{
 		Description: "Check protobuf code for linting errors, formatting, etc",
 		Checks: []*linter{
 			bufFormat,
+			bufGenerate,
 			bufLint,
 		},
 	},

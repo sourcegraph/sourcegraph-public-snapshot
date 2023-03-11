@@ -44,7 +44,7 @@ type ExecutorStore interface {
 	// the Sourcegraph instance in at least the given duration.
 	DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error
 
-	// ExecutorByHostname returns an executor resolver for the given hostname, or
+	// GetByHostname returns an executor resolver for the given hostname, or
 	// nil when there is no executor record matching the given hostname.
 	//
 	// 🚨 SECURITY: This always returns nil for non-site admins.

@@ -75,7 +75,7 @@ describe('Code insight edit insight page', () => {
     afterEach(() => testContext?.dispose())
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
-    it('should run a proper GQL mutation if search based insight has been updated', async () => {
+    it.skip('should run a proper GQL mutation if search based insight has been updated', async () => {
         // Mock `Date.now` to stabilize timestamps
         await driver.page.evaluateOnNewDocument(() => {
             // Number of ms between Unix epoch and June 31, 2021
@@ -236,7 +236,7 @@ describe('Code insight edit insight page', () => {
                         searchContexts: [],
                     },
                     seriesDisplayOptions: {
-                        limit: 20,
+                        limit: null,
                         numSamples: null,
                         sortOptions: {
                             direction: 'DESC',

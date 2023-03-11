@@ -1467,8 +1467,7 @@ func ExternalRepoSpec(repo *Repository, baseURL *url.URL) api.ExternalRepoSpec {
 }
 
 func githubBaseURLDefault() string {
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
+	if deploy.IsSingleBinary() {
 		return ""
 	}
 	return "http://github-proxy"
@@ -1760,6 +1759,9 @@ type Repository struct {
 	// depending on which token was used to fetch it
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
 
+	// a list of topics the repository is tagged with
+	RepositoryTopics RepositoryTopics `json:",omitempty"`
+
 	// Metadata retained for ranking
 	StargazerCount int `json:",omitempty"`
 	ForkCount      int `json:",omitempty"`
@@ -1768,6 +1770,18 @@ type Repository struct {
 	// to identify if a repository is public or private or internal.
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
 	Visibility Visibility `json:",omitempty"`
+}
+
+type RepositoryTopics struct {
+	Nodes []RepositoryTopic `json:",omitempty"`
+}
+
+type RepositoryTopic struct {
+	Topic Topic `json:",omitempty"`
+}
+
+type Topic struct {
+	Name string `json:",omitempty"`
 }
 
 type restRepositoryPermissions struct {
@@ -1791,6 +1805,7 @@ type restRepository struct {
 	Stars       int                       `json:"stargazers_count"`
 	Forks       int                       `json:"forks_count"`
 	Visibility  string                    `json:"visibility"`
+	Topics      []string                  `json:"topics"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1812,6 +1827,10 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 // convertRestRepo converts repo information returned by the rest API
 // to a standard format.
 func convertRestRepo(restRepo restRepository) *Repository {
+	topics := make([]RepositoryTopic, 0, len(restRepo.Topics))
+	for _, topic := range restRepo.Topics {
+		topics = append(topics, RepositoryTopic{Topic{Name: topic}})
+	}
 	repo := Repository{
 		ID:               restRepo.ID,
 		DatabaseID:       restRepo.DatabaseID,
@@ -1826,6 +1845,7 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
+		RepositoryTopics: RepositoryTopics{topics},
 	}
 
 	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
@@ -1957,8 +1977,9 @@ type UserEmail struct {
 }
 
 type Org struct {
-	ID    int    `json:"id,omitempty"`
-	Login string `json:"login,omitempty"`
+	ID     int    `json:"id,omitempty"`
+	Login  string `json:"login,omitempty"`
+	NodeID string `json:"node_id,omitempty"`
 }
 
 // OrgDetails describes the more detailed Org data you can only get from the

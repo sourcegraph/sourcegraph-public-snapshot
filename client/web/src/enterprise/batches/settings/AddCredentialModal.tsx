@@ -52,9 +52,14 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
             <Code>pipeline:read</Code> permissions.
         </span>
     ),
-
+    [ExternalServiceKind.AZUREDEVOPS]: (
+        <span>
+            with <Code>Organization:All accessible organizations</Code>, <Code>Code:Full</Code>,{' '}
+            <Code>Code:Status</Code>, <Code>Pull Request Threads:Read & Write</Code>, and <Code>User Profile:Read</Code>{' '}
+            permissions.
+        </span>
+    ),
     // These are just for type completeness and serve as placeholders for a bright future.
-    [ExternalServiceKind.AZUREDEVOPS]: <span>Unsupported</span>,
     [ExternalServiceKind.GERRIT]: <span>Unsupported</span>,
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
     [ExternalServiceKind.GOMODULES]: <span>Unsupported</span>,

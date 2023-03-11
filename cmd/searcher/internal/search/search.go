@@ -66,8 +66,6 @@ type Service struct {
 // ServeHTTP handles HTTP based search requests
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	metricRunning.Inc()
-	defer metricRunning.Dec()
 
 	var p protocol.Request
 	dec := json.NewDecoder(r.Body)
@@ -141,6 +139,9 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
+	metricRunning.Inc()
+	defer metricRunning.Dec()
+
 	var tr *trace.Trace
 	tr, ctx = trace.New(ctx, "search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	defer tr.Finish()

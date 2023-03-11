@@ -7,9 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-
-	"github.com/sourcegraph/log/logtest"
-
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -22,17 +19,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"google.golang.org/grpc"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -40,6 +31,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -281,55 +275,6 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 	return dir
 }
 
-func TestAddrForRepo(t *testing.T) {
-	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
-	pinned := map[string]string{
-		"repo2": "gitserver-1",
-	}
-
-	testCases := []struct {
-		name string
-		repo api.RepoName
-		want string
-	}{
-		{
-			name: "repo1",
-			repo: api.RepoName("repo1"),
-			want: "gitserver-3",
-		},
-		{
-			name: "check we normalise",
-			repo: api.RepoName("repo1.git"),
-			want: "gitserver-3",
-		},
-		{
-			name: "another repo",
-			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
-			want: "gitserver-2",
-		},
-		{
-			name: "pinned repo", // different server address that the hashing function would normally yield
-			repo: api.RepoName("repo2"),
-			want: "gitserver-1",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := gitserver.AddrForRepo(context.Background(), "gitserver", tc.repo, gitserver.GitServerAddresses{
-				Addresses:     addrs,
-				PinnedServers: pinned,
-			})
-			if err != nil {
-				t.Fatal("Error during getting gitserver address")
-			}
-			if got != tc.want {
-				t.Fatalf("Want %q, got %q", tc.want, got)
-			}
-		})
-	}
-}
-
 func TestClient_P4Exec(t *testing.T) {
 	_ = gitserver.CreateRepoDir(t)
 	tests := []struct {
@@ -349,6 +294,12 @@ func TestClient_P4Exec(t *testing.T) {
 			password: "pa$$word",
 			args:     []string{"protects"},
 			handler: func(w http.ResponseWriter, r *http.Request) {
+				if r.ProtoMajor == 2 {
+					// Ignore attempted gRPC connections
+					w.WriteHeader(http.StatusNotImplemented)
+					return
+				}
+
 				body, err := io.ReadAll(r.Body)
 				if err != nil {
 					t.Fatal(err)
@@ -368,6 +319,12 @@ func TestClient_P4Exec(t *testing.T) {
 		{
 			name: "error response",
 			handler: func(w http.ResponseWriter, r *http.Request) {
+				if r.ProtoMajor == 2 {
+					// Ignore attempted gRPC connections
+					w.WriteHeader(http.StatusNotImplemented)
+					return
+				}
+
 				w.WriteHeader(http.StatusBadRequest)
 				_, _ = w.Write([]byte("example error"))
 			},
@@ -455,8 +412,8 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		DB: db,
 	}
 
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logtest.Scoped(t))...)
-	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
+	grpcServer := defaults.NewServer(logtest.Scoped(t))
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 	srv := httptest.NewServer(handler)
@@ -483,39 +440,6 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		})
 	}
 
-}
-
-func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	ctx := context.Background()
-	client := gitserver.NewTestClient(&http.Client{}, []string{"gitserver1", "gitserver2"})
-	setPinnedRepos(map[string]string{
-		"repo1": "gitserver2",
-	})
-
-	addr, err := client.AddrForRepo(ctx, "repo1")
-	if err != nil {
-		t.Fatal("Error during getting gitserver address")
-	}
-	require.Equal(t, "gitserver2", addr)
-
-	// simulate config change - site admin manually changes the pinned repo config
-	setPinnedRepos(map[string]string{
-		"repo1": "gitserver1",
-	})
-
-	addr, err = client.AddrForRepo(ctx, "repo1")
-	if err != nil {
-		t.Fatal("Error during getting gitserver address")
-	}
-	require.Equal(t, "gitserver1", addr)
-}
-
-func setPinnedRepos(pinned map[string]string) {
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			GitServerPinnedRepos: pinned,
-		},
-	}})
 }
 
 func TestClient_BatchLog(t *testing.T) {

@@ -5,11 +5,9 @@ import { Subscription } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
-import { globalHistory } from '../util/globalHistory'
 
 import { EditorAction, EditorActionsGroup } from './EditorActionsGroup'
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor'
@@ -21,9 +19,9 @@ const disposableToFunc = (disposable: _monaco.IDisposable) => () => disposable.d
 
 interface Props<T extends object>
     extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'language'>,
-        ThemeProps,
         TelemetryProps {
     value: string
+    isLightTheme: boolean
 
     actions?: EditorAction[]
 
@@ -31,6 +29,7 @@ interface Props<T extends object>
     saving?: boolean
 
     canEdit?: boolean
+    controlled?: boolean
 
     className?: string
 
@@ -76,34 +75,23 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
     private monaco: typeof _monaco | null = null
     private configEditor?: _monaco.editor.ICodeEditor
 
-    public componentDidMount(): void {
-        if (this.props.blockNavigationIfDirty !== false) {
-            // TODO(valery): RR6
-            // https://github.com/remix-run/react-router/blob/0ce0e4c728129efe214521a22fb902fa652bac70/decisions/0001-use-blocker.md
-            // Prevent navigation when dirty.
-            this.subscriptions.add(
-                globalHistory.block((location, action) => {
-                    if (action === 'REPLACE') {
-                        return undefined
-                    }
-                    if (this.props.loading || this.isDirty) {
-                        return 'Discard changes?'
-                    }
-                    return undefined // allow navigation
-                })
-            )
-        }
-    }
-
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
 
     private get effectiveValue(): string {
+        if (this.props.controlled) {
+            return this.props.value
+        }
+
         return this.state.value === undefined ? this.props.value : this.state.value
     }
 
     private get isDirty(): boolean {
+        if (this.props.controlled) {
+            return true
+        }
+
         return this.effectiveValue !== this.props.value
     }
 
@@ -130,14 +118,19 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
             )
         }
 
+        const { className, blockNavigationIfDirty, ...otherProps } = this.props
+
         return (
-            <div className={this.props.className || ''}>
+            <div className={className || ''}>
+                {blockNavigationIfDirty && (
+                    <BeforeUnloadPrompt when={this.props.loading || this.isDirty} message="Discard changes?" />
+                )}
                 {this.props.actions && (
                     <EditorActionsGroup actions={this.props.actions} onClick={this.runAction.bind(this)} />
                 )}
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
-                        {...this.props}
+                        {...otherProps}
                         onDidSave={this.onSave}
                         onChange={this.onChange}
                         value={effectiveValue}

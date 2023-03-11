@@ -1,11 +1,8 @@
 import { useMemo, FC } from 'react'
 
-import {
-    CodeInsightCreationMode,
-    CodeInsightsCreationActions,
-    FORM_ERROR,
-    SubmissionErrors,
-} from '../../../../components'
+import { FORM_ERROR, SubmissionErrors } from '@sourcegraph/wildcard'
+
+import { CodeInsightCreationMode, CodeInsightsCreationActions } from '../../../../components'
 import { MinimalCaptureGroupInsightData, CaptureGroupInsight } from '../../../../core'
 import { CaptureGroupFormFields } from '../../creation/capture-group'
 import { CaptureGroupCreationContent } from '../../creation/capture-group/components/CaptureGroupCreationContent'

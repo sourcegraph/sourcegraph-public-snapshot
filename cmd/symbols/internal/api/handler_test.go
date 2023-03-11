@@ -3,10 +3,11 @@ package api
 import (
 	"context"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
@@ -135,8 +136,8 @@ func TestHandler(t *testing.T) {
 				if testCase.expected != nil {
 					t.Errorf("unexpected search result. want=%+v, have=nil", testCase.expected)
 				}
-			} else if !reflect.DeepEqual(resultSymbols, testCase.expected) {
-				t.Errorf("unexpected search result. want=%+v, have=%+v", testCase.expected, resultSymbols)
+			} else if diff := cmp.Diff(resultSymbols, testCase.expected, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("unexpected search result. diff: %s", diff)
 			}
 		})
 	}

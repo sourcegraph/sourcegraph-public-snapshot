@@ -5,20 +5,44 @@ authors = [
     "TJ DeVries <devries.timothyj@gmail.com>",
     "Stephen Gutekanst <stephen.gutekanst@gmail.com>"
 ]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 
 [dependencies]
-syntect = { git = "https://github.com/sourcegraph/syntect" }
-rocket = { version = "0.5.0-rc.1", features = ["json"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-sg-syntax = { path = "./crates/sg-syntax" }
+rocket.workspace = true
+scip.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+syntect.workspace = true
+
 rustyline = "9.1.2"
-scip = { git = "https://github.com/sourcegraph/scip" }
+
+sg-syntax = { path = "./crates/sg-syntax" }
 
 [workspace]
 members = [
-    "crates/sg-macros",
     "crates/sg-syntax",
+
+    # later, these will be pulled out to a separate repo
+    "crates/scip-macros",
+    "crates/scip-syntax",
+    "crates/scip-treesitter",
+    "crates/scip-treesitter-languages",
+    # "crates/ctags",
 ]
+
+[workspace.dependencies]
+anyhow = "1"
+rocket = { version = "0.5.0-rc.1", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+syntect = { git = "https://github.com/sourcegraph/syntect", branch = "main" }
+tree-sitter = "0.20.9"
+
+scip = { git = "https://github.com/sourcegraph/scip" }
+protobuf = "3"
+
+[profile.release]
+# Enabled debug symbols in release build, so if we have a crash
+# we can inspect the coredump.
+debug = true

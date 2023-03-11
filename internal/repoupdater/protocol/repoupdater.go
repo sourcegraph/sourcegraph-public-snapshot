@@ -14,7 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type RepoUpdateSchedulerInfoArgs struct {
@@ -25,6 +27,52 @@ type RepoUpdateSchedulerInfoArgs struct {
 type RepoUpdateSchedulerInfoResult struct {
 	Schedule *RepoScheduleState `json:",omitempty"`
 	Queue    *RepoQueueState    `json:",omitempty"`
+}
+
+func (r *RepoUpdateSchedulerInfoResult) ToProto() *proto.RepoUpdateSchedulerInfoResponse {
+	res := &proto.RepoUpdateSchedulerInfoResponse{}
+	if r.Schedule != nil {
+		res.Schedule = &proto.RepoScheduleState{
+			Index:           int64(r.Schedule.Index),
+			Total:           int64(r.Schedule.Total),
+			IntervalSeconds: int64(r.Schedule.IntervalSeconds),
+			Due:             timestamppb.New(r.Schedule.Due),
+		}
+	}
+
+	if r.Queue != nil {
+		res.Queue = &proto.RepoQueueState{
+			Index:    int64(r.Queue.Index),
+			Total:    int64(r.Queue.Total),
+			Updating: r.Queue.Updating,
+			Priority: int64(r.Queue.Priority),
+		}
+	}
+	return res
+}
+
+func RepoUpdateSchedulerInfoResultFromProto(p *proto.RepoUpdateSchedulerInfoResponse) *RepoUpdateSchedulerInfoResult {
+	r := &RepoUpdateSchedulerInfoResult{}
+
+	if p.Schedule != nil {
+		r.Schedule = &RepoScheduleState{
+			Index:           int(p.Schedule.GetIndex()),
+			Total:           int(p.Schedule.GetTotal()),
+			IntervalSeconds: int(p.Schedule.GetIntervalSeconds()),
+			Due:             p.Schedule.GetDue().AsTime(),
+		}
+	}
+
+	if p.Queue != nil {
+		r.Queue = &RepoQueueState{
+			Index:    int(p.Queue.GetIndex()),
+			Total:    int(p.Queue.GetTotal()),
+			Updating: p.Queue.GetUpdating(),
+			Priority: int(p.Queue.GetPriority()),
+		}
+	}
+
+	return r
 }
 
 type RepoScheduleState struct {
@@ -51,6 +99,13 @@ type RepoLookupArgs struct {
 	Update bool
 }
 
+func (r *RepoLookupArgs) ToProto() *proto.RepoLookupRequest {
+	return &proto.RepoLookupRequest{
+		Repo:   string(r.Repo),
+		Update: r.Update,
+	}
+}
+
 func (a *RepoLookupArgs) String() string {
 	return fmt.Sprintf("RepoLookupArgs{Repo: %s, Update: %t}", a.Repo, a.Update)
 }
@@ -63,6 +118,24 @@ type RepoLookupResult struct {
 	ErrorNotFound               bool // the repository host reported that the repository was not found
 	ErrorUnauthorized           bool // the repository host rejected the client's authorization
 	ErrorTemporarilyUnavailable bool // the repository host was temporarily unavailable (e.g., rate limit exceeded)
+}
+
+func (r *RepoLookupResult) ToProto() *proto.RepoLookupResponse {
+	return &proto.RepoLookupResponse{
+		Repo:                        r.Repo.ToProto(),
+		ErrorNotFound:               r.ErrorNotFound,
+		ErrorUnauthorized:           r.ErrorUnauthorized,
+		ErrorTemporarilyUnavailable: r.ErrorTemporarilyUnavailable,
+	}
+}
+
+func RepoLookupResultFromProto(p *proto.RepoLookupResponse) *RepoLookupResult {
+	return &RepoLookupResult{
+		Repo:                        RepoInfoFromProto(p.GetRepo()),
+		ErrorNotFound:               p.GetErrorNotFound(),
+		ErrorUnauthorized:           p.GetErrorUnauthorized(),
+		ErrorTemporarilyUnavailable: p.GetErrorTemporarilyUnavailable(),
+	}
 }
 
 func (r *RepoLookupResult) String() string {
@@ -102,6 +175,49 @@ type RepoInfo struct {
 	// ExternalRepo specifies this repository's ID on the external service where it resides (and the external
 	// service itself).
 	ExternalRepo api.ExternalRepoSpec
+}
+
+func (ri *RepoInfo) ToProto() *proto.RepoInfo {
+	if ri == nil {
+		return nil
+	}
+
+	return &proto.RepoInfo{
+		Id:          int32(ri.ID),
+		Name:        string(ri.Name),
+		Description: ri.Description,
+		Fork:        ri.Fork,
+		Archived:    ri.Archived,
+		Private:     ri.Private,
+		VcsInfo:     ri.VCS.ToProto(),
+		Links:       ri.Links.ToProto(),
+		ExternalRepo: &proto.ExternalRepoSpec{
+			Id:          ri.ExternalRepo.ID,
+			ServiceType: ri.ExternalRepo.ServiceType,
+			ServiceId:   ri.ExternalRepo.ServiceID,
+		},
+	}
+}
+
+func RepoInfoFromProto(p *proto.RepoInfo) *RepoInfo {
+	if p == nil {
+		return nil
+	}
+	return &RepoInfo{
+		ID:          api.RepoID(p.GetId()),
+		Name:        api.RepoName(p.GetName()),
+		Description: p.GetDescription(),
+		Fork:        p.GetFork(),
+		Archived:    p.GetArchived(),
+		Private:     p.GetPrivate(),
+		VCS:         VCSInfoFromProto(p.GetVcsInfo()),
+		Links:       RepoLinksFromProto(p.GetLinks()),
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          p.GetExternalRepo().GetId(),
+			ServiceType: p.GetExternalRepo().GetServiceType(),
+			ServiceID:   p.GetExternalRepo().GetServiceId(),
+		},
+	}
 }
 
 func NewRepoInfo(r *types.Repo) *RepoInfo {
@@ -204,12 +320,48 @@ type VCSInfo struct {
 	URL string // the Git remote URL
 }
 
+func (i *VCSInfo) ToProto() *proto.VCSInfo {
+	return &proto.VCSInfo{
+		Url: i.URL,
+	}
+}
+
+func VCSInfoFromProto(p *proto.VCSInfo) VCSInfo {
+	return VCSInfo{
+		URL: p.GetUrl(),
+	}
+}
+
 // RepoLinks contains URLs and URL patterns for objects in this repository.
 type RepoLinks struct {
 	Root   string // the repository's main (root) page URL
 	Tree   string // the URL to a tree, with {rev} and {path} substitution variables
 	Blob   string // the URL to a blob, with {rev} and {path} substitution variables
 	Commit string // the URL to a commit, with {commit} substitution variable
+}
+
+func (rl *RepoLinks) ToProto() *proto.RepoLinks {
+	if rl == nil {
+		return nil
+	}
+	return &proto.RepoLinks{
+		Root:   rl.Root,
+		Tree:   rl.Tree,
+		Blob:   rl.Blob,
+		Commit: rl.Commit,
+	}
+}
+
+func RepoLinksFromProto(p *proto.RepoLinks) *RepoLinks {
+	if p == nil {
+		return nil
+	}
+	return &RepoLinks{
+		Root:   p.GetRoot(),
+		Tree:   p.GetTree(),
+		Blob:   p.GetBlob(),
+		Commit: p.GetCommit(),
+	}
 }
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
@@ -229,6 +381,13 @@ type RepoUpdateResponse struct {
 	Name string `json:"name"`
 }
 
+func RepoUpdateResponseFromProto(p *proto.EnqueueRepoUpdateResponse) *RepoUpdateResponse {
+	return &RepoUpdateResponse{
+		ID:   api.RepoID(p.GetId()),
+		Name: p.GetName(),
+	}
+}
+
 func (a *RepoUpdateResponse) String() string {
 	return fmt.Sprintf("RepoUpdateResponse{ID: %d Name: %s}", a.ID, a.Name)
 }
@@ -246,12 +405,29 @@ type ChangesetSyncResponse struct {
 // PermsSyncRequest is a request to sync permissions. The provided options are used to
 // sync all provided users and repos - to use different options, make a separate request.
 type PermsSyncRequest struct {
-	UserIDs           []int32                          `json:"user_ids"`
-	RepoIDs           []api.RepoID                     `json:"repo_ids"`
-	Options           authz.FetchPermsOptions          `json:"options"`
-	Reason            database.PermissionSyncJobReason `json:"reason"`
-	TriggeredByUserID int32                            `json:"triggered_by_user_id"`
-	ProcessAfter      time.Time                        `json:"process_after"`
+	UserIDs           []int32                           `json:"user_ids"`
+	RepoIDs           []api.RepoID                      `json:"repo_ids"`
+	Options           authz.FetchPermsOptions           `json:"options"`
+	Reason            database.PermissionsSyncJobReason `json:"reason"`
+	TriggeredByUserID int32                             `json:"triggered_by_user_id"`
+	ProcessAfter      time.Time                         `json:"process_after"`
+}
+
+func (p *PermsSyncRequest) ToProto() *proto.SchedulePermsSyncRequest {
+	repoIDs := make([]int32, len(p.RepoIDs))
+	for i, id := range p.RepoIDs {
+		repoIDs[i] = int32(id)
+	}
+	return &proto.SchedulePermsSyncRequest{
+		UserIds: p.UserIDs,
+		RepoIds: repoIDs,
+		Options: &proto.FetchPermsOptions{
+			InvalidateCaches: p.Options.InvalidateCaches,
+		},
+		Reason:            string(p.Reason),
+		TriggeredByUserId: p.TriggeredByUserID,
+		ProcessAfter:      timestamppb.New(p.ProcessAfter),
+	}
 }
 
 // PermsSyncResponse is a response to sync permissions.
@@ -271,4 +447,93 @@ type ExternalServiceSyncRequest struct {
 // ExternalServiceSyncResult is a result type of an external service's sync request.
 type ExternalServiceSyncResult struct {
 	Error string
+}
+
+type ExternalServiceNamespacesArgs struct {
+	ExternalServiceID *int64
+	Kind              string
+	Config            string
+}
+
+func (e *ExternalServiceNamespacesArgs) ToProto() *proto.ExternalServiceNamespacesRequest {
+	return &proto.ExternalServiceNamespacesRequest{
+		ExternalServiceId: e.ExternalServiceID,
+		Kind:              e.Kind,
+		Config:            e.Config,
+	}
+}
+
+func ExternalServiceNamespacesArgsFromProto(p *proto.ExternalServiceNamespacesRequest) *ExternalServiceNamespacesArgs {
+	return &ExternalServiceNamespacesArgs{
+		ExternalServiceID: p.ExternalServiceId,
+		Kind:              p.GetKind(),
+		Config:            p.GetConfig(),
+	}
+}
+
+type ExternalServiceNamespacesResult struct {
+	Namespaces []*types.ExternalServiceNamespace
+	Error      string
+}
+
+func ExternalServiceNamespacesResultFromProto(p *proto.ExternalServiceNamespacesResponse) *ExternalServiceNamespacesResult {
+	namespaces := make([]*types.ExternalServiceNamespace, 0, len(p.GetNamespaces()))
+	for _, ns := range p.GetNamespaces() {
+		namespaces = append(namespaces, &types.ExternalServiceNamespace{
+			ID:         int(ns.GetId()),
+			Name:       ns.GetName(),
+			ExternalID: ns.GetExternalId(),
+		})
+	}
+	return &ExternalServiceNamespacesResult{
+		Namespaces: namespaces,
+	}
+}
+
+type ExternalServiceRepositoriesArgs struct {
+	ExternalServiceID *int64
+	Kind              string
+	Query             string
+	Config            string
+	First             int32
+	ExcludeRepos      []string
+}
+
+func (a *ExternalServiceRepositoriesArgs) ToProto() *proto.ExternalServiceRepositoriesRequest {
+	return &proto.ExternalServiceRepositoriesRequest{
+		ExternalServiceId: a.ExternalServiceID,
+		Kind:              a.Kind,
+		Query:             a.Query,
+		Config:            a.Config,
+		First:             a.First,
+		ExcludeRepos:      a.ExcludeRepos,
+	}
+}
+
+func ExternalServiceRepositoriesArgsFromProto(p *proto.ExternalServiceRepositoriesRequest) *ExternalServiceRepositoriesArgs {
+	return &ExternalServiceRepositoriesArgs{
+		ExternalServiceID: p.ExternalServiceId,
+		Kind:              p.Kind,
+		Query:             p.Query,
+		Config:            p.Config,
+		First:             p.First,
+		ExcludeRepos:      p.ExcludeRepos,
+	}
+}
+
+type ExternalServiceRepositoriesResult struct {
+	Repos []*types.ExternalServiceRepository
+	Error string
+}
+
+func ExternalServiceRepositoriesResultFromProto(p *proto.ExternalServiceRepositoriesResponse) *ExternalServiceRepositoriesResult {
+	repos := make([]*types.ExternalServiceRepository, 0, len(p.GetRepos()))
+	for _, repo := range p.GetRepos() {
+		repos = append(repos, &types.ExternalServiceRepository{
+			ID:         api.RepoID(repo.GetId()),
+			Name:       api.RepoName(repo.GetName()),
+			ExternalID: repo.GetExternalId(),
+		})
+	}
+	return &ExternalServiceRepositoriesResult{Repos: repos}
 }

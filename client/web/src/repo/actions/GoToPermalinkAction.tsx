@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { mdiLink } from '@mdi/js'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 

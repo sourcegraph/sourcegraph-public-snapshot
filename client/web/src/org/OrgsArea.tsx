@@ -1,11 +1,10 @@
 import * as React from 'react'
 
-import { Routes, Route, useParams, useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { Routes, Route, useParams, useLocation, useNavigate } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
@@ -23,7 +22,6 @@ import { OrgSettingsSidebarItems } from './settings/OrgSettingsSidebar'
 export interface Props
     extends PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps,
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
@@ -35,6 +33,7 @@ export interface Props
 
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
@@ -47,7 +46,7 @@ const AuthenticatedOrgsArea: React.FunctionComponent<React.PropsWithChildren<Pro
         )}
         <Route path="invitation/:token" element={<OrgInvitationPage {...props} />} />
         <Route path=":orgName/*" element={<OrgAreaWithRouteProps {...props} />} />
-        <Route element={<NotFoundPage pageType="organization" />} />
+        <Route path="*" element={<NotFoundPage pageType="organization" />} />
     </Routes>
 )
 

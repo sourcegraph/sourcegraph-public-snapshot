@@ -24,7 +24,7 @@ func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Tr
 
 	var otelSpan oteltrace.Span
 	ctx, otelSpan = t.TracerProvider.
-		Tracer("internal/trace").
+		Tracer("sourcegraph/internal/trace").
 		Start(ctx, family,
 			oteltrace.WithAttributes(attribute.String("title", title)),
 			oteltrace.WithAttributes(tagSet(tags).toAttributes()...))

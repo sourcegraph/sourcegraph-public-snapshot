@@ -1,12 +1,12 @@
 import React, { FC, useCallback, useMemo, useState } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Icon, LoadingSpinner, H3, H4, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
@@ -42,7 +42,7 @@ import { WorkspacesPreviewPanel } from './workspaces-preview/WorkspacesPreviewPa
 import layoutStyles from '../Layout.module.scss'
 import styles from './EditBatchSpecPage.module.scss'
 
-export interface EditBatchSpecPageProps extends NamespaceProps, SettingsCascadeProps<Settings>, ThemeProps {
+export interface EditBatchSpecPageProps extends NamespaceProps, SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -97,7 +97,7 @@ export const EditBatchSpecPage: FC<EditBatchSpecPageProps> = props => {
     )
 }
 
-interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings>, ThemeProps {
+interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -124,7 +124,6 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<MemoizedEditBatchSpecPageContentProps>
 > = React.memo(function MemoizedEditBatchSpecPageContent({
     settingsCascade,
-    isLightTheme,
     batchChange,
     batchSpec,
     editor,
@@ -132,7 +131,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     authenticatedUser,
 }) {
     const navigate = useNavigate()
-
+    const isLightTheme = useIsLightTheme()
     const { insightTitle } = useInsightTemplates(settingsCascade)
     const { searchQuery } = useSearchTemplate()
 

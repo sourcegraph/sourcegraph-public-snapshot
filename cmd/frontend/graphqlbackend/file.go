@@ -29,7 +29,7 @@ type FileResolver interface {
 }
 
 func richHTML(content, ext string) (string, error) {
-	switch ext {
+	switch strings.ToLower(ext) {
 	case ".md", ".mdown", ".markdown", ".markdn":
 		break
 	default:

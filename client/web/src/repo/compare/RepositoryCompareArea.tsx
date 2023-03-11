@@ -1,9 +1,8 @@
 import { FC } from 'react'
 
 import classNames from 'classnames'
-import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -14,7 +13,7 @@ import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
 import styles from './RepositoryCompareArea.module.scss'
 
-interface RepositoryCompareAreaProps extends ThemeProps, BreadcrumbSetters {
+interface RepositoryCompareAreaProps extends BreadcrumbSetters {
     repo?: RepositoryFields
 }
 
@@ -38,7 +37,7 @@ const BREADCRUMB = { key: 'compare', element: <>Compare</> }
  * Renders pages related to a repository comparison.
  */
 export const RepositoryCompareArea: FC<RepositoryCompareAreaProps> = props => {
-    const { repo, useBreadcrumb, isLightTheme } = props
+    const { repo, useBreadcrumb } = props
 
     const { '*': splat } = useParams<{ '*': string }>()
     const location = useLocation()
@@ -71,13 +70,7 @@ export const RepositoryCompareArea: FC<RepositoryCompareAreaProps> = props => {
             {spec === null ? (
                 <Alert variant="danger">Invalid comparison specifier</Alert>
             ) : (
-                <RepositoryCompareOverviewPage
-                    {...commonProps}
-                    path={path}
-                    isLightTheme={isLightTheme}
-                    location={location}
-                    navigate={navigate}
-                />
+                <RepositoryCompareOverviewPage {...commonProps} path={path} location={location} navigate={navigate} />
             )}
         </div>
     )

@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "database",
     srcs = [
+        "access_requests.go",
         "access_tokens.go",
         "authenticator.go",
         "authz.go",
@@ -37,6 +38,7 @@ go_library(
         "outbound_webhook_jobs.go",
         "outbound_webhook_logs.go",
         "outbound_webhooks.go",
+        "permission_sync_code_host_state.go",
         "permission_sync_jobs.go",
         "permissions.go",
         "phabricator.go",
@@ -143,6 +145,7 @@ go_library(
 go_test(
     name = "database_test",
     srcs = [
+        "access_requests_test.go",
         "access_tokens_test.go",
         "authenticator_test.go",
         "bitbucket_project_permissions_test.go",
@@ -198,6 +201,10 @@ go_test(
         "zoekt_repos_test.go",
     ],
     embed = [":database"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
@@ -243,6 +250,8 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@com_github_tidwall_gjson//:gjson",
+        "@io_k8s_utils//pointer",
+        "@org_golang_x_exp//maps",
         "@org_golang_x_sync//errgroup",
     ],
 )

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
@@ -31,7 +31,7 @@ func TestNewGenerator(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("rule application", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(`go commit yikes derp`, c[0], c[1])))
+			autogold.ExpectFile(t, autogold.Raw(test(`go commit yikes derp`, c[0], c[1])))
 		})
 	}
 }
@@ -48,7 +48,7 @@ func TestSkippedRules(t *testing.T) {
 	c := `type:diff foo bar`
 
 	t.Run("do not apply rules for type_diff", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(c)))
+		autogold.ExpectFile(t, autogold.Raw(test(c)))
 	})
 }
 

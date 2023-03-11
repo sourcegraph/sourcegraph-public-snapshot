@@ -185,11 +185,11 @@ func PartitionRepos(
 ) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
-		return nil, repos, nil
+		return &IndexedRepoRevs{}, repos, nil
 	}
 	// Fallback to Unindexed if index:no
 	if useIndex == query.No {
-		return nil, repos, nil
+		return &IndexedRepoRevs{}, repos, nil
 	}
 
 	tr, ctx := trace.New(ctx, "PartitionRepos", string(typ))
@@ -220,7 +220,7 @@ func PartitionRepos(
 			logger.Warn("zoektIndexedRepos failed", log.Error(err))
 		}
 
-		return nil, repos, ctx.Err()
+		return &IndexedRepoRevs{}, repos, ctx.Err()
 	}
 
 	// Note: We do not need to handle list.Crashes since we will fallback to

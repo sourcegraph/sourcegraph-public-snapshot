@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 
 import { Panel, useBuiltinTabbedPanelViews } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
@@ -12,30 +12,34 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { Text } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanel } from '../../../codeintel/ReferencesPanel'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
+import { OwnConfigProps } from '../../../own/OwnConfigProps'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
+import { FileOwnershipPanel } from '../own/FileOwnershipPanel'
 
 interface Props
     extends AbsoluteRepoFile,
         ModeSpec,
         SettingsCascadeProps,
         ExtensionsControllerProps,
-        ThemeProps,
         PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
+        OwnConfigProps,
         TelemetryProps {
     repoID: Scalars['ID']
+    isPackage: boolean
     repoName: string
     commitID: string
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
-export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history'
+export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history' | 'ownership'
 
 /**
  * A React hook that registers panel views for the blob.
@@ -45,12 +49,13 @@ function useBlobPanelViews({
     revision,
     filePath,
     repoID,
+    isPackage,
     settingsCascade,
-    isLightTheme,
     platformContext,
     useCodeIntel,
     telemetryService,
     fetchHighlightedFileLineRanges,
+    ownEnabled,
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
 
@@ -65,6 +70,8 @@ function useBlobPanelViews({
             ? { line: parsedHash.line, character: parsedHash.character || 0 }
             : undefined
     }, [location.hash, location.search])
+
+    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
 
     useBuiltinTabbedPanelViews(
         useMemo(() => {
@@ -81,7 +88,6 @@ function useBlobPanelViews({
                               <ReferencesPanel
                                   settingsCascade={settingsCascade}
                                   platformContext={platformContext}
-                                  isLightTheme={isLightTheme}
                                   extensionsController={extensionsController}
                                   telemetryService={telemetryService}
                                   key="references"
@@ -91,30 +97,60 @@ function useBlobPanelViews({
                           ),
                       }
                     : null,
-                {
-                    id: 'history',
-                    title: 'History',
-                    element: (
-                        <PanelContent>
-                            <RepoRevisionSidebarCommits
-                                key="commits"
-                                repoID={repoID}
-                                revision={revision}
-                                filePath={filePath}
-                                preferAbsoluteTimestamps={preferAbsoluteTimestamps}
-                                defaultPageSize={defaultPageSize}
-                            />
-                        </PanelContent>
-                    ),
-                },
+
+                isPackage
+                    ? {
+                          id: 'history',
+                          title: 'History',
+                          element: (
+                              <PanelContent>
+                                  {/* Instead of removing the "History" tab, explain why it's not available */}
+                                  <Text>Git history is not available when browsing packages</Text>
+                              </PanelContent>
+                          ),
+                      }
+                    : {
+                          id: 'history',
+                          title: 'History',
+                          element: (
+                              <PanelContent>
+                                  <RepoRevisionSidebarCommits
+                                      key="commits"
+                                      repoID={repoID}
+                                      revision={revision}
+                                      filePath={filePath}
+                                      preferAbsoluteTimestamps={preferAbsoluteTimestamps}
+                                      defaultPageSize={defaultPageSize}
+                                  />
+                              </PanelContent>
+                          ),
+                      },
+                ownEnabled && ownFeatureFlagEnabled
+                    ? {
+                          id: 'ownership',
+                          title: 'Ownership',
+                          productStatus: 'experimental' as const,
+                          element: (
+                              <PanelContent>
+                                  <FileOwnershipPanel
+                                      key="ownership"
+                                      repoID={repoID}
+                                      revision={revision}
+                                      filePath={filePath}
+                                      telemetryService={telemetryService}
+                                  />
+                              </PanelContent>
+                          ),
+                      }
+                    : null,
             ].filter(isDefined)
 
             return panelDefinitions
         }, [
+            isPackage,
             position,
             settingsCascade,
             platformContext,
-            isLightTheme,
             extensionsController,
             telemetryService,
             fetchHighlightedFileLineRanges,
@@ -124,6 +160,8 @@ function useBlobPanelViews({
             filePath,
             preferAbsoluteTimestamps,
             defaultPageSize,
+            ownEnabled,
+            ownFeatureFlagEnabled,
         ])
     )
 

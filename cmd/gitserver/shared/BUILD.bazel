@@ -29,7 +29,7 @@ go_library(
         "//internal/extsvc/npm",
         "//internal/extsvc/pypi",
         "//internal/extsvc/rubygems",
-        "//internal/gitserver/proto",
+        "//internal/gitserver/v1:gitserver",
         "//internal/goroutine",
         "//internal/grpc",
         "//internal/grpc/defaults",
@@ -49,8 +49,6 @@ go_library(
         "@com_github_json_iterator_go//:go",
         "@com_github_sourcegraph_log//:log",
         "@com_github_tidwall_gjson//:gjson",
-        "@org_golang_google_grpc//:go_default_library",
-        "@org_golang_google_grpc//reflection",
         "@org_golang_x_sync//semaphore",
         "@org_golang_x_time//rate",
     ],
@@ -60,6 +58,9 @@ go_test(
     name = "shared_test",
     srcs = ["shared_test.go"],
     embed = [":shared"],
+    # This test loads coursier as a side effect, so we ensure the
+    # path is sandboxed properly.
+    env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
         "//cmd/gitserver/server",
         "//internal/api",

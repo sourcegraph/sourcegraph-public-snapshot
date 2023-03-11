@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { Route, Routes } from 'react-router-dom-v5-compat'
+import { Route, Routes } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -24,6 +24,6 @@ export const ExecutorsSiteAdminArea: FC = () => (
     <Routes>
         <Route index={true} element={<ExecutorsListPage />} />
         <Route path="secrets" element={<GlobalExecutorSecretsListPage />} />
-        <Route element={<NotFoundPage pageType="settings" />} />
+        <Route path="*" element={<NotFoundPage pageType="settings" />} />
     </Routes>
 )

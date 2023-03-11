@@ -12,6 +12,7 @@ import (
 	symbols_shared "github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
 	worker_shared "github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
 )
 
 // services is a list of services to run in the OSS build.
@@ -24,6 +25,7 @@ var services = []service.Service{
 	symbols_shared.Service,
 	worker_shared.Service,
 	githubproxy_shared.Service,
+	servegit.Service,
 }
 
 func main() {

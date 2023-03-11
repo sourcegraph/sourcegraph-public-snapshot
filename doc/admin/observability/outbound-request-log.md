@@ -10,7 +10,7 @@ This document assumes you are a [site admin](../index.md).
 
 ## Enabling the logs
 
-This feature is off by default. You can enable it by setting `outboundRequestLogLimit` to a non-zero value in the [site config](../config/site_config#outboundRequestLogLimit). The recommended value is `50`.
+This feature is off by default. You can enable it by setting `outboundRequestLogLimit` to a non-zero value in the [site config](../config/site_config.md#outboundRequestLogLimit). The recommended value is `50`.
 
 You can later disable it by setting `outboundRequestLogLimit` to `0`, or by removing the setting entirely.
 
@@ -40,4 +40,9 @@ To recreate a request for debugging, you can copy the cURL command for any reque
 
 Keep in mind that some headers might be redacted (you'll see the word "REDACTED" in their place), in which case you'll need to add the missing pieces manually.
 
-Note: You can set the `redactOutboundRequestHeaders` [site config](../config/site_config#redactOutboundRequestHeaders) option to `false` to disable the redaction of headers and make the "Copy curl" function more convenient. But for security reasons, this setting is only respected in development environments. 
+Note: You can set the `redactOutboundRequestHeaders` [site config](../config/site_config.md#redactOutboundRequestHeaders) option to `false` to disable the redaction of headers and make the "Copy curl" function more convenient. But for security reasons, this setting is only respected in development environments. 
+
+## Trouble Shooting
+
+### Page failing to load, or loading slowly
+If the Outbound Request Log page is failing to load, or loading slowly, you may need to allocate more resources to Redis. To confirm, please check the charts for Redis under the `provisioning indicators` dropdown in grafana. If these charts show that your CPU usage is consistently over the threshold,  allocate more resources to Redis. You can use our [resource estimator](../deploy/resource_estimator.md) as a guide.

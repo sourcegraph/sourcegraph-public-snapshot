@@ -1,8 +1,16 @@
-import { Navigate } from 'react-router-dom-v5-compat'
+import { FC } from 'react'
 
+import { Navigate } from 'react-router-dom'
+
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../auth'
+import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 
 import { UserSettingsAreaRoute } from './UserSettingsArea'
@@ -17,32 +25,7 @@ const UserSettingsSecurityPage = lazyComponent(
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '',
-        render: props => {
-            if (props.isSourcegraphDotCom && props.authenticatedUser && props.user.id !== props.authenticatedUser.id) {
-                return (
-                    <SiteAdminAlert className="sidebar__alert" variant="danger">
-                        Only the user may access their individual settings.
-                    </SiteAdminAlert>
-                )
-            }
-            return (
-                <SettingsArea
-                    {...props}
-                    subject={props.user}
-                    isLightTheme={props.isLightTheme}
-                    extraHeader={
-                        <>
-                            {props.authenticatedUser && props.user.id !== props.authenticatedUser.id && (
-                                <SiteAdminAlert className="sidebar__alert">
-                                    Viewing settings for <strong>{props.user.username}</strong>
-                                </SiteAdminAlert>
-                            )}
-                            <Text>User settings override global and organization settings.</Text>
-                        </>
-                    }
-                />
-            )
-        },
+        render: props => <UserSettingAreaIndexPage {...props} />,
     },
     {
         path: 'profile',
@@ -76,3 +59,41 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: lazyComponent(() => import('./aboutOrganization/AboutOrganizationPage'), 'AboutOrganizationPage'),
     },
 ]
+
+interface UserSettingAreaIndexPageProps extends PlatformContextProps, SettingsCascadeProps, TelemetryProps {
+    isSourcegraphDotCom: boolean
+    authenticatedUser: AuthenticatedUser
+    user: UserSettingsAreaUserFields
+    extraHeader?: JSX.Element
+    className?: string
+}
+
+const UserSettingAreaIndexPage: FC<UserSettingAreaIndexPageProps> = props => {
+    const { isSourcegraphDotCom, authenticatedUser, user } = props
+    const isLightTheme = useIsLightTheme()
+
+    if (isSourcegraphDotCom && authenticatedUser && user.id !== authenticatedUser.id) {
+        return (
+            <SiteAdminAlert className="sidebar__alert" variant="danger">
+                Only the user may access their individual settings.
+            </SiteAdminAlert>
+        )
+    }
+    return (
+        <SettingsArea
+            {...props}
+            subject={props.user}
+            isLightTheme={isLightTheme}
+            extraHeader={
+                <>
+                    {authenticatedUser && user.id !== authenticatedUser.id && (
+                        <SiteAdminAlert className="sidebar__alert">
+                            Viewing settings for <strong>{user.username}</strong>
+                        </SiteAdminAlert>
+                    )}
+                    <Text>User settings override global and organization settings.</Text>
+                </>
+            }
+        />
+    )
+}

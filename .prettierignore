@@ -16,6 +16,7 @@ vendor/
 .nyc_output/
 out/
 dist/
+dist-types/
 client/shared/src/schema/*.d.ts
 ts-node-*
 testdata
@@ -37,10 +38,10 @@ cmd/symbols/squirrel/language-file-extensions.json
 client/jetbrains/build
 client/jetbrains/.idea
 client/jetbrains/.gradle
+client/backstage-common/node_modules
 .browserslistrc
 code-intel-extensions.json
 .direnv
 pnpm-lock.yaml
-client/plugin-backstage/
 node_modules/
 client/web-sveltekit/.svelte-kit

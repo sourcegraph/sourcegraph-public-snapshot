@@ -270,7 +270,7 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
         <p
           class="d-inline"
         >
-          Thank you for your help.
+          Thank you.
         </p>
       </div>
     </div>

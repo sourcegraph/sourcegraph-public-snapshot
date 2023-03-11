@@ -1,16 +1,16 @@
 .root {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1rem;
     flex-grow: 1;
     justify-content: center;
 }
 
 .header {
     display: flex;
-    justify-content: space-between;
     gap: 2rem;
-    margin: -1.5rem auto 0;
+    justify-content: space-between;
+    margin: -1.5rem auto 0.5rem;
 
     &-step {
         display: flex;
@@ -63,34 +63,80 @@
 
     &-step-label {
         font-weight: normal;
+
+        // Font normal and font bold have different text size, in order to
+        // avoid text layout jumps we reserve element width based on bold version
+        // of label.
+        &::before {
+            content: attr(data-label-text);
+            display: block;
+            font-weight: bold;
+            height: 0;
+            visibility: hidden;
+        }
+
+        &--active {
+            font-weight: bold;
+        }
     }
 }
 
 .content {
+    width: 100%;
     flex-grow: 1;
     margin: auto;
+    max-width: 55rem;
+    padding: 0 0.5rem 0.5rem;
 }
 
 .actions {
     width: 100%;
 }
 
-.navigation {
+.footer {
     display: flex;
-    padding: 0.5rem;
+    flex-direction: column;
+    position: sticky;
+    bottom: 0;
     background-color: var(--gray-02);
-    border-top: 1px solid var(--border-color);
+
+    $self: &;
 
     :global(.theme-dark) & {
         background-color: var(--color-bg-2);
     }
 
-    &-inner {
+    &-navigation {
+        display: flex;
+        border-top: 1px solid var(--border-color);
+    }
+
+    &-inner-navigation {
         display: flex;
         flex-grow: 1;
-        gap: 0.5rem;
-        max-width: 40rem;
+        gap: 0.25rem;
+        padding: 0.5rem;
+        width: 100%;
+        max-width: 55rem;
         margin: auto;
+    }
+
+    &-widget {
+        display: flex;
+        width: 100%;
+        background-color: var(--color-bg-1);
+        border-top: 1px solid var(--border-color);
+
+        &:has(> #{$self}-inner-widget:empty) {
+            display: none;
+        }
+    }
+
+    &-inner-widget {
+        max-width: 55rem;
+        margin: auto;
+        flex-grow: 1;
+        padding: 0.25rem 0.5rem;
     }
 
     // Hide default next button if the custom button is rendered
@@ -98,8 +144,7 @@
         display: none;
     }
 
-    &-next-portal,
-    &-next {
-        margin-left: auto;
+    &-skip {
+        margin-right: auto;
     }
 }

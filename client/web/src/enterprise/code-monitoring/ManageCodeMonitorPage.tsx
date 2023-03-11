@@ -1,12 +1,11 @@
 import React, { useEffect } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { startWith, catchError, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -24,7 +23,7 @@ import {
 } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface ManageCodeMonitorPageProps extends ThemeProps {
+interface ManageCodeMonitorPageProps {
     authenticatedUser: AuthenticatedUser
 
     fetchCodeMonitor?: typeof _fetchCodeMonitor
@@ -41,7 +40,6 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
     fetchCodeMonitor = _fetchCodeMonitor,
     updateCodeMonitor = _updateCodeMonitor,
     deleteCodeMonitor = _deleteCodeMonitor,
-    isLightTheme,
     isSourcegraphDotCom,
 }) => {
     const LOADING = 'loading' as const
@@ -134,7 +132,6 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                         codeMonitor={codeMonitorState}
                         submitButtonLabel="Save"
                         showDeleteButton={true}
-                        isLightTheme={isLightTheme}
                         isSourcegraphDotCom={isSourcegraphDotCom}
                     />
                 </>

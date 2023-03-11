@@ -1,5 +1,5 @@
 import { History } from 'history'
-import { NavigateFunction, NavigateOptions, To } from 'react-router-dom-v5-compat'
+import { NavigateFunction, NavigateOptions, To } from 'react-router-dom'
 
 export type HistoryOrNavigate = History | NavigateFunction
 

@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
     LoadingSpinner,
@@ -19,11 +19,12 @@ import {
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 
+import { ExternalServiceEditingAppLimitInPlaceAlert } from './ExternalServiceEditingAppLimitInPlaceAlert'
 import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { AddExternalServiceOptions } from './externalServices'
 
-interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
+interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, TelemetryProps {
     input: AddExternalServiceInput
     externalServiceID?: string
     error?: ErrorLike
@@ -37,13 +38,14 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
     autoFocus?: boolean
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isAppLocalFileService: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
  * Form for submitting a new or updated external service.
  */
 export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    isLightTheme,
     telemetryService,
     jsonSchema,
     editorActions,
@@ -60,7 +62,10 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
     autoFocus = true,
+    isSourcegraphApp,
+    isAppLocalFileService,
 }) => {
+    const isLightTheme = useIsLightTheme()
     const onDisplayNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         event => {
             onChange({ ...input, displayName: event.currentTarget.value })
@@ -87,6 +92,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
             )}
 
             {disabled && <ExternalServiceEditingDisabledAlert />}
+            {isSourcegraphApp && !isAppLocalFileService && <ExternalServiceEditingAppLimitInPlaceAlert />}
             {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
 
             {hideDisplayNameField || (

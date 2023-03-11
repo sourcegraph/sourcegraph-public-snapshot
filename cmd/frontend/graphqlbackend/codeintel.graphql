@@ -61,8 +61,8 @@ extend type Mutation {
     If a configuration is supplied, that configuration is used to determine what jobs to
     schedule. If no configuration is supplied, it will go through the regular index scheduling
     rules: first read any in-repo configuration (e.g., sourcegraph.yaml), then look for any
-    existing in-database configuration, finally falling back to the automatically infered
-    connfiguration based on the repo contents at the target commit.
+    existing in-database configuration, finally falling back to the automatically inferred
+    configuration based on the repo contents at the target commit.
     """
     queueAutoIndexJobsForRepo(repository: ID!, rev: String, configuration: String): [LSIFIndex!]!
 
@@ -275,6 +275,16 @@ extend type Query {
     ): CodeIntelligenceConfigurationPolicyConnection!
 
     """
+    A list of unique indexer keys queryable via the `preciseIndexes.indexerKey` filter.
+    """
+    indexerKeys(
+        """
+        If supplied, only indexers associated with the given repository will be returned.
+        """
+        repo: ID
+    ): [String!]!
+
+    """
     Query precise code intelligence indexes.
     """
     preciseIndexes(
@@ -293,6 +303,11 @@ extend type Query {
         If supplied, only precise indexes in one of the provided states are returned.
         """
         states: [PreciseIndexState!]
+
+        """
+        If supplied, only precise indexes created by an indexer with the given key are returned.
+        """
+        indexerKey: String
 
         """
         If supplied, only precise indexes that are a dependency of the specified index are returned.
@@ -318,6 +333,11 @@ extend type Query {
         """
         after: String
     ): PreciseIndexConnection!
+
+    """
+    Provides a summary of code intelligence on the instance.
+    """
+    codeIntelSummary: CodeIntelSummary!
 
     """
     The repository's LSIF uploads.
@@ -431,6 +451,41 @@ extend type Query {
     only the value set via UI/GraphQL.
     """
     codeIntelligenceInferenceScript: String!
+
+    """
+    Return (but do not enqueue) descriptions of auto indexing jobs at the current revision.
+    """
+    inferAutoIndexJobsForRepo(repository: ID!, rev: String, script: String): [AutoIndexJobDescription!]!
+
+    """
+    Return known vulnerabilities.
+    """
+    vulnerabilities(
+        """
+        The maximum number of results to return.
+        """
+        first: Int
+
+        """
+        If supplied, indicates which results to skip over during pagination.
+        """
+        after: String
+    ): VulnerabilityConnection!
+
+    """
+    Return known vulnerability matches.
+    """
+    vulnerabilityMatches(
+        """
+        The maximum number of results to return.
+        """
+        first: Int
+
+        """
+        If supplied, indicates which results to skip over during pagination.
+        """
+        after: String
+    ): VulnerabilityMatchConnection!
 }
 
 """
@@ -693,7 +748,7 @@ extend type Repository {
     ): LSIFIndexConnection!
 
     """
-    Provides a summary of the most reecent upload and index status.
+    Provides a summary of the most recent upload and index status.
     """
     codeIntelSummary: CodeIntelRepositorySummary!
 
@@ -864,7 +919,146 @@ type LineRange {
 }
 
 """
-A summary of the most reecent upload and index status.
+A summary of code intelligence on the instance.
+"""
+type CodeIntelSummary {
+    """
+    The number of repositories with precise index records.
+    """
+    numRepositoriesWithCodeIntelligence: Int!
+
+    """
+    A list of repositories with precise index errors.
+    """
+    repositoriesWithErrors(
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+
+        A future request can be made for more results by passing in the
+        'CodeIntelRepositoryWithErrorConnection.pageInfo.endCursor'
+        that is returned.
+        """
+        after: String
+    ): CodeIntelRepositoryWithErrorConnection!
+
+    """
+    A list of repositories with configurable auto-indexing jobs.
+    """
+    repositoriesWithConfiguration(
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+
+        A future request can be made for more results by passing in the
+        'CodeIntelRepositoryWithErrorConnection.pageInfo.endCursor'
+        that is returned.
+        """
+        after: String
+    ): CodeIntelRepositoryWithConfigurationConnection
+}
+
+"""
+A list of repositories paired with a count of precise indexing errors (used by CodeIntelSummary).
+"""
+type CodeIntelRepositoryWithErrorConnection {
+    """
+    The repository and error count.
+    """
+    nodes: [CodeIntelRepositoryWithError!]!
+
+    """
+    The total number of results (over all pages) in this list.
+    """
+    totalCount: Int
+
+    """
+    Metadata about the current page of results.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A repository paired with a count of precise indexing errors (used by CodeIntelSummary).
+"""
+type CodeIntelRepositoryWithError {
+    """
+    The repository.
+    """
+    repository: CodeIntelRepository!
+
+    """
+    The number of precise indexing errors in the repository.
+    """
+    count: Int!
+}
+
+"""
+A list of repositories paired with a list of precise indexers (used by CodeIntelSummary).
+"""
+type CodeIntelRepositoryWithConfigurationConnection {
+    """
+    The repository and indexer count.
+    """
+    nodes: [CodeIntelRepositoryWithConfiguration!]!
+
+    """
+    The total number of results (over all pages) in this list.
+    """
+    totalCount: Int
+
+    """
+    Metadata about the current page of results.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A repository paired with a list of precise indexers (used by CodeIntelSummary).
+"""
+type CodeIntelRepositoryWithConfiguration {
+    """
+    The repository.
+    """
+    repository: CodeIntelRepository!
+
+    """
+    The precise indexers available for the repository.
+    """
+    indexers: [IndexerWithCount!]!
+}
+
+"""
+A precise indexer paired with a count of indexable projects in the repository (used by CodeIntelSummary).
+"""
+type IndexerWithCount {
+    """
+    The repository.
+    """
+    indexer: CodeIntelIndexer
+
+    """
+    The count of projects that could utilize the indexer in this repository.
+    """
+    count: Int!
+}
+
+"""
+A summary of the most recent upload and index status.
 """
 type CodeIntelRepositorySummary {
     """
@@ -882,6 +1076,13 @@ type CodeIntelRepositorySummary {
     recentIndexes: [LSIFIndexesWithRepositoryNamespace!]!
 
     """
+    A list of recent precise indexes for a specific repository. This list contains processing,
+    recently queued, and the most recently processed precise indexes for each distinct indexer
+    and root.
+    """
+    recentActivity: [PreciseIndex!]!
+
+    """
     The last time uploads of this repository were checked against data retention policies.
     """
     lastUploadRetentionScan: DateTime
@@ -895,6 +1096,11 @@ type CodeIntelRepositorySummary {
     The additionally available indexers that could be indexed but haven't been indexed.
     """
     availableIndexers: [InferredAvailableIndexers!]!
+
+    """
+    If inference of the repository contents hit a limit its error description will available here.
+    """
+    limitError: String
 }
 
 """
@@ -902,17 +1108,37 @@ The additionally available indexers that have been inferred from jobs and job hi
 """
 type InferredAvailableIndexers {
     """
-    The indexer name.
+    The indexer.
     """
-    index: String!
+    indexer: CodeIntelIndexer!
+
     """
     The list of roots that could be indexed.
     """
     roots: [String!]!
+
     """
-    The url of the index repository.
+    The list of roots that could be indexed.
     """
-    url: String!
+    rootsWithKeys: [RootWithKey!]!
+}
+
+"""
+Pairs a root directory with comparison key used to match index configurations for the same repository "project".
+"""
+type RootWithKey {
+    """
+    The root.
+    """
+    root: String!
+
+    """
+    A hash of the root and indexer values.
+
+    This value can be used to quickly compare whether or not explicit configuration and inferred configuration
+    refer to the same "project" in a given repository. See `AutoIndexJobDescription.comparisonKey`.
+    """
+    comparisonKey: String!
 }
 
 """
@@ -1782,6 +2008,11 @@ The configuration and execution summary of the indexer.
 """
 type IndexStep {
     """
+    Commands to run in the same image as the indexer but before the indexer is invoked.
+    """
+    commands: [String!]!
+
+    """
     The arguments to supply to the indexer container.
     """
     indexerArgs: [String!]!
@@ -1790,6 +2021,11 @@ type IndexStep {
     The path to the index file relative to the root directory (dump.lsif by default).
     """
     outfile: String
+
+    """
+    A list of environment variables (VAR=VAL) that should be made available to the indexer.
+    """
+    requestedEnvVars: [String!]
 
     """
     The execution summary (if completed or errored) of the index command.
@@ -1827,9 +2063,34 @@ type IndexConfiguration {
     configuration: String
 
     """
-    The raw JSON-encoded index configuration as infered by the auto-indexer.
+    The parsed index configuration (decoded from the raw JSON version).
     """
-    inferredConfiguration: String
+    parsedConfiguration: [AutoIndexJobDescription!]
+
+    """
+    The raw JSON-encoded index configuration as inferred by the auto-indexer.
+    """
+    inferredConfiguration: InferredConfiguration
+}
+
+"""
+A wrapper around inferred configuration and a possible limit error.
+"""
+type InferredConfiguration {
+    """
+    The raw JSON-encoded inferred index configuration.
+    """
+    configuration: String!
+
+    """
+    The parsed index configuration (decoded from the raw JSON version).
+    """
+    parsedConfiguration: [AutoIndexJobDescription!]
+
+    """
+    If inference of the repository contents hit a limit its error description will available here.
+    """
+    limitError: String
 }
 
 """
@@ -1844,7 +2105,7 @@ type GitTreeCodeIntelInfo {
     Precise coverage based on inference derived from the directory
     structure and its files.
     """
-    preciseSupport: [GitTreePreciseCoverage!]
+    preciseSupport: GitTreePreciseCoverageError
 }
 
 """
@@ -1853,7 +2114,7 @@ Search-based code-intel support coverage grouped by related files.
 type GitTreeSearchBasedCoverage {
     """
     The files comprising this grouping of search-based support.
-    Each grouping consists of all the files of the same langauge e.g.
+    Each grouping consists of all the files of the same language e.g.
     all .go files in one group, all .kt and .kts files in another.
     """
     coveredPaths: [String!]!
@@ -1861,6 +2122,22 @@ type GitTreeSearchBasedCoverage {
     Overview of the level of support for this group of files.
     """
     support: SearchBasedCodeIntelSupport!
+}
+
+"""
+A wrapper around inference coverage and a possible limit error.
+"""
+type GitTreePreciseCoverageError {
+    """
+    Precise coverage based on inference derived from the directory
+    structure and its files.
+    """
+    coverage: [GitTreePreciseCoverage!]!
+
+    """
+    If inference of the repository contents hit a limit its error description will available here.
+    """
+    limitError: String
 }
 
 """
@@ -1941,13 +2218,24 @@ Describes a precise code-intel indexer.
 """
 type CodeIntelIndexer {
     """
+    The language ecosystem that this indexer supports.
+    """
+    key: String!
+
+    """
     Name of the precise code-intel indexer.
     """
     name: String!
+
     """
     URL to the source of the indexer e.g. https://github.com/sourcegraph/lsif-go
     """
     url: String!
+
+    """
+    A Docker image name used to distribute the indexer to the executor for via auto-indexing.
+    """
+    imageName: String
 }
 
 """
@@ -1997,4 +2285,242 @@ enum SearchBasedSupportLevel {
     Universal-ctags is used for indexing this language.
     """
     BASIC
+}
+
+"""
+A description of an auto-indexing job inferred by the instance.
+"""
+type AutoIndexJobDescription {
+    """
+    The project root.
+    """
+    root: String!
+
+    """
+    The target indexer.
+    """
+    indexer: CodeIntelIndexer
+
+    """
+    A hash of the root and indexer values.
+
+    This value can be used to quickly compare whether or not explicit configuration and inferred configuration
+    refer to the same "project" in a given repository. See `RootWithKey.comparisonKey`.
+    """
+    comparisonKey: String!
+
+    """
+    The particular steps inferred for indexing.
+    """
+    steps: IndexSteps!
+}
+
+"""
+Vulnerabilities synced from the GitHub Advisory Database.
+"""
+type Vulnerability implements Node {
+    """
+    The ID of the vulnerability.
+    """
+    id: ID!
+
+    """
+    The CVE identifier of the vulnerability (e.g., CVE-2023-123).
+    """
+    sourceID: String!
+
+    """
+    A short summary of the vulnerability.
+    """
+    summary: String!
+
+    """
+    A longer description of the vulnerability.
+    """
+    details: String!
+
+    """
+    Common Platform Enumeration identifiers related to this vulnerability.
+    """
+    cpes: [String!]!
+
+    """
+    Common Weakness Enumeration identifiers related to this vulnerability.
+    """
+    cwes: [String!]!
+
+    """
+    Other names this vulnerability is known by.
+    """
+    aliases: [String!]!
+
+    """
+    Names of related vulnerabilities.
+    """
+    related: [String!]!
+
+    """
+    The data source of this vulnerability.
+    """
+    dataSource: String!
+
+    """
+    URLs indicating the source of this vulnerability.
+    """
+    urls: [String!]!
+
+    """
+    A human-readable severity string.
+    """
+    severity: String!
+
+    """
+    The Common Vulnerability Scoring System severity vector.
+    """
+    cvssVector: String!
+
+    """
+    The Common Vulnerability Scoring System severity score.
+    """
+    cvssScore: String!
+
+    """
+    The time this vulnerability was published.
+    """
+    published: DateTime!
+
+    """
+    The last time this vulnerability was modified.
+    """
+    modified: DateTime
+
+    """
+    The time this vulnerability was withdrawn.
+    """
+    withdrawn: DateTime
+
+    """
+    A list of packages that are affected by this vulnerability.
+    """
+    affectedPackages: [VulnerabilityAffectedPackage!]!
+}
+
+"""
+A package affected by a vulnerability.
+"""
+type VulnerabilityAffectedPackage {
+    """
+    The name of the package.
+    """
+    packageName: String!
+
+    """
+    The language ecosystem.
+    """
+    language: String!
+
+    """
+    A package namespace.
+    """
+    namespace: String!
+
+    """
+    A list of constraints that identify affected versions of the package.
+    """
+    versionConstraint: [String!]!
+
+    """
+    Whether or not there is a known fix.
+    """
+    fixed: Boolean!
+
+    """
+    The version in which the fix was applied.
+    """
+    fixedIn: String
+
+    """
+    A list of specific symbols affected by the vulnerability.
+    """
+    affectedSymbols: [VulnerabilityAffectedSymbol!]!
+}
+
+"""
+A specific symbol affected by a vulnerability.
+"""
+type VulnerabilityAffectedSymbol {
+    """
+    A path to the document within the package source.
+    """
+    path: String!
+
+    """
+    A list of symbols defined in that path.
+    """
+    symbols: [String!]!
+}
+
+"""
+A use of a known vulnerable-affected package.e
+"""
+type VulnerabilityMatch implements Node {
+    """
+    The match ID.
+    """
+    id: ID!
+
+    """
+    The vulnerability.
+    """
+    vulnerability: Vulnerability!
+
+    """
+    The affected package that is used by the associated index.
+    """
+    affectedPackage: VulnerabilityAffectedPackage!
+
+    """
+    The index record that contains a direct use of the affected package.
+    """
+    preciseIndex: PreciseIndex!
+}
+
+"""
+A page of vulnerabilities.
+"""
+type VulnerabilityConnection {
+    """
+    The vulnerabilities on the page.
+    """
+    nodes: [Vulnerability!]!
+
+    """
+    The total number of vulnerabilities across all pages.
+    """
+    totalCount: Int
+
+    """
+    Information on how to fetch the next page.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A page of vulnerability matches.
+"""
+type VulnerabilityMatchConnection {
+    """
+    The vulnerability matches on the page.
+    """
+    nodes: [VulnerabilityMatch!]!
+
+    """
+    The total number of vulnerability matches across all pages.
+    """
+    totalCount: Int
+
+    """
+    Information on how to fetch the next page.
+    """
+    pageInfo: PageInfo!
 }

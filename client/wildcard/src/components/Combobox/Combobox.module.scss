@@ -45,6 +45,8 @@
 }
 
 .item {
+    border-radius: 3px;
+
     &--disabled {
         cursor: not-allowed;
     }

@@ -12,11 +12,12 @@ type Feature interface {
 	FeatureName() string
 	// Check checks whether the feature is activated on the provided license info.
 	// If applicable, it is recommended that Check modifies the feature in-place
-	// to reflect the license info (e.g., to set a limit on the number of changesets)
+	// to reflect the license info (e.g., to set a limit on the number of changesets).
 	Check(*Info) error
 }
 
-// BasicFeature is a product feature that is selectively activated based on the current license key.
+// BasicFeature is a product feature that is selectively activated based on the
+// current license key.
 type BasicFeature string
 
 func (f BasicFeature) FeatureName() string {
@@ -32,7 +33,7 @@ func (f BasicFeature) Check(info *Info) error {
 
 	// Check if the feature is explicitly allowed via license tag.
 	hasFeature := func(want Feature) bool {
-		// if license is expired, do not look at tags anymore
+		// If license is expired, do not look at tags anymore.
 		if info.IsExpired() {
 			return false
 		}
@@ -53,11 +54,84 @@ func (f BasicFeature) Check(info *Info) error {
 	return nil
 }
 
-// Check checks whether the feature is activated based on the current license. If it is
-// disabled, it returns a non-nil error.
+// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
+type FeatureBatchChanges struct {
+	// If true, there is no limit to the number of changesets that can be created.
+	Unrestricted bool
+	// Maximum number of changesets that can be created per batch change.
+	// If Unrestricted is true, this is ignored.
+	MaxNumChangesets int
+}
+
+func (*FeatureBatchChanges) FeatureName() string {
+	return "batch-changes"
+}
+
+func (f *FeatureBatchChanges) Check(info *Info) error {
+	if info == nil {
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
+	}
+
+	// If the deprecated campaigns are enabled, use unrestricted batch changes.
+	if FeatureCampaigns.Check(info) == nil {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// If the batch changes tag exists on the license, use unrestricted batch
+	// changes.
+	if info.HasTag(f.FeatureName()) {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// Otherwise, check the default batch changes feature.
+	if info.Plan().HasFeature(f, info.IsExpired()) {
+		return nil
+	}
+
+	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+}
+
+type FeaturePrivateRepositories struct {
+	// If true, there is no limit to the number of private repositories that can be
+	// added.
+	Unrestricted bool
+	// Maximum number of private repositories that can be added. If Unrestricted is
+	// true, this is ignored.
+	MaxNumPrivateRepos int
+}
+
+func (*FeaturePrivateRepositories) FeatureName() string {
+	return "private-repositories"
+}
+
+func (f *FeaturePrivateRepositories) Check(info *Info) error {
+	if info == nil {
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
+	}
+
+	// If the private repositories tag exists on the license, use unrestricted
+	// private repositories.
+	if info.HasTag(f.FeatureName()) {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// Otherwise, check the default private repositories feature.
+	if info.Plan().HasFeature(f, info.IsExpired()) {
+		return nil
+	}
+
+	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+}
+
+// Check checks whether the feature is activated based on the current license. If
+// it is disabled, it returns a non-nil error.
 //
-// The returned error may implement errcode.PresentationError to indicate that it can be displayed
-// directly to the user. Use IsFeatureNotActivated to distinguish between the error reasons.
+// The returned error may implement errcode.PresentationError to indicate that it
+// can be displayed directly to the user. Use IsFeatureNotActivated to
+// distinguish between the error reasons.
 func Check(feature Feature) error {
 	if MockCheckFeature != nil {
 		return MockCheckFeature(feature)
@@ -70,25 +144,31 @@ func Check(feature Feature) error {
 	return feature.Check(info)
 }
 
-func MockCheckFeatureError(expectedError string) {
+// MockCheckFeatureError is for tests that want to mock Check to return a
+// specific error or nil (in case of empty string argument).
+//
+// It returns a cleanup func so callers can use
+// `t.Cleanup(licensing.TestingSkipFeatureChecks())` in a test body.
+func MockCheckFeatureError(expectedError string) func() {
 	MockCheckFeature = func(feature Feature) error {
 		if expectedError == "" {
 			return nil
 		}
 		return errors.New(expectedError)
 	}
+	return func() { MockCheckFeature = nil }
 }
 
 // MockCheckFeature is for mocking Check in tests.
 var MockCheckFeature func(feature Feature) error
 
-// TestingSkipFeatureChecks is for tests that want to mock Check to always return nil (i.e.,
-// behave as though the current license enables all features).
+// TestingSkipFeatureChecks is for tests that want to mock Check to always return
+// nil (i.e., behave as though the current license enables all features).
 //
-// It returns a cleanup func so callers can use `defer TestingSkipFeatureChecks()()` in a test body.
+// It returns a cleanup func so callers can use
+// `t.Cleanup(licensing.TestingSkipFeatureChecks())` in a test body.
 func TestingSkipFeatureChecks() func() {
-	MockCheckFeature = func(feature Feature) error { return nil }
-	return func() { MockCheckFeature = nil }
+	return MockCheckFeatureError("")
 }
 
 func NewFeatureNotActivatedError(message string) featureNotActivatedError {
@@ -98,23 +178,24 @@ func NewFeatureNotActivatedError(message string) featureNotActivatedError {
 
 type featureNotActivatedError struct{ errcode.PresentationError }
 
-// IsFeatureNotActivated reports whether err indicates that the license is valid but does not
-// activate the feature.
+// IsFeatureNotActivated reports whether err indicates that the license is valid
+// but does not activate the feature.
 //
-// It is used to distinguish between the multiple reasons for errors from Check: either
-// failed license verification, or a valid license that does not activate a feature (e.g.,
-// Enterprise Starter not including an Enterprise-only feature).
+// It is used to distinguish between the multiple reasons for errors from Check:
+// either failed license verification, or a valid license that does not activate
+// a feature (e.g., Enterprise Starter not including an Enterprise-only feature).
 func IsFeatureNotActivated(err error) bool {
 	// Also check for the pointer type to guard against stupid mistakes.
 	return errors.HasType(err, featureNotActivatedError{}) || errors.HasType(err, &featureNotActivatedError{})
 }
 
-// IsFeatureEnabledLenient reports whether the current license enables the given feature. If there
-// is an error reading the license, it is lenient and returns true.
+// IsFeatureEnabledLenient reports whether the current license enables the given
+// feature. If there is an error reading the license, it is lenient and returns
+// true.
 //
-// This is useful for callers who don't want to handle errors (usually because the user would be
-// prevented from getting to this point if license verification had failed, so it's not necessary to
-// handle license verification errors here).
+// This is useful for callers who don't want to handle errors (usually because
+// the user would be prevented from getting to this point if license verification
+// had failed, so it's not necessary to handle license verification errors here).
 func IsFeatureEnabledLenient(feature Feature) bool {
 	return !IsFeatureNotActivated(Check(feature))
 }

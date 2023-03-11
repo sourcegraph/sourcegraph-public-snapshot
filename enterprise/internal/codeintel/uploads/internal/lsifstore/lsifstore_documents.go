@@ -23,8 +23,6 @@ func (s *store) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pat
 		documentsCountQuery,
 		bundleID,
 		pathPattern,
-		bundleID,
-		pathPattern,
 	)))
 	if err != nil {
 		return nil, 0, err
@@ -32,8 +30,6 @@ func (s *store) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pat
 
 	documents, err := basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(
 		documentsQuery,
-		bundleID,
-		pathPattern,
 		bundleID,
 		pathPattern,
 		documentsLimit,
@@ -46,29 +42,17 @@ func (s *store) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pat
 }
 
 const documentsCountQuery = `
-SELECT SUM(count) FROM ((
-	SELECT COUNT(*) AS count
-	FROM codeintel_scip_document_lookup sid
-	JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
-	WHERE sid.upload_id = %s AND sid.document_path ILIKE %s
-) UNION (
-	SELECT COUNT(*) AS count
-	FROM lsif_data_documents
-	WHERE dump_id = %s AND path ILIKE %s
-)) s
+SELECT COUNT(*)
+FROM codeintel_scip_document_lookup sid
+JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
+WHERE sid.upload_id = %s AND sid.document_path ILIKE %s
 `
 
 const documentsQuery = `
-SELECT path FROM ((
-	SELECT sid.document_path AS path
-	FROM codeintel_scip_document_lookup sid
-	JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
-	WHERE sid.upload_id = %s AND sid.document_path ILIKE %s
-) UNION (
-	SELECT path
-	FROM lsif_data_documents
-	WHERE dump_id = %s AND path ILIKE %s
-)) s
+SELECT sid.document_path AS path
+FROM codeintel_scip_document_lookup sid
+JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
+WHERE sid.upload_id = %s AND sid.document_path ILIKE %s
 ORDER BY path
 LIMIT %s
 `

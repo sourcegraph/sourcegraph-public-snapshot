@@ -2,12 +2,12 @@ import { FC, ReactNode } from 'react'
 
 import { noop } from 'rxjs'
 
+import { FormChangeEvent, SubmissionErrors } from '@sourcegraph/wildcard'
+
 import {
     CreationUiLayout,
     CreationUIForm,
     CreationUIPreview,
-    FormChangeEvent,
-    SubmissionErrors,
     createDefaultEditSeries,
     EditableDataSeries,
     getSanitizedSeries,

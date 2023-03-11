@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "fakedb",
+    srcs = [
+        "fakedb.go",
+        "teams.go",
+        "users.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/fakedb",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/database",
+        "//internal/types",
+        "//lib/errors",
+    ],
+)

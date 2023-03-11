@@ -18,7 +18,7 @@ var allGenerateTargets = generateTargets{
 		Help:   "Re-generate protocol buffer bindings using buf",
 		Runner: generateProtoRunner,
 		Completer: func() (options []string) {
-			options, _ = buf.FindCodegenFiles()
+			options, _ = buf.CodegenFiles()
 			return
 		},
 	},

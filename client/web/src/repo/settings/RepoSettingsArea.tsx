@@ -3,13 +3,12 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MinusCircleIcon from 'mdi-react/MinusCircleIcon'
-import { Routes, Route } from 'react-router-dom-v5-compat'
+import { Routes, Route } from 'react-router-dom'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -23,13 +22,13 @@ import { RepoSettingsSidebar, RepoSettingsSideBarGroups } from './RepoSettingsSi
 
 import styles from './RepoSettingsArea.module.scss'
 
-export interface RepoSettingsAreaRouteContext extends ThemeProps, TelemetryProps {
+export interface RepoSettingsAreaRouteContext extends TelemetryProps {
     repo: SettingsAreaRepositoryFields
 }
 
 export interface RepoSettingsAreaRoute extends RouteV6Descriptor<RepoSettingsAreaRouteContext> {}
 
-interface Props extends BreadcrumbSetters, ThemeProps, TelemetryProps {
+interface Props extends BreadcrumbSetters, TelemetryProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     repoName: string
@@ -82,7 +81,6 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
 
     const context: RepoSettingsAreaRouteContext = {
         repo: repoOrError,
-        isLightTheme: props.isLightTheme,
         telemetryService: props.telemetryService,
     }
 
@@ -95,7 +93,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
                         ({ render, path, condition = () => true }) =>
                             condition(context) && <Route key="hardcoded-key" path={path} element={render(context)} />
                     )}
-                    <Route element={<NotFoundPage pageType="repository" />} />
+                    <Route path="*" element={<NotFoundPage pageType="repository" />} />
                 </Routes>
             </div>
         </div>

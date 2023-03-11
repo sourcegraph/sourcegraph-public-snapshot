@@ -254,7 +254,7 @@ export const EXTERNAL_SERVICE_IDS_AND_NAMES = gql`
 
 export const useExternalServicesConnection = (
     vars: ExternalServicesVariables
-): UseShowMorePaginationResult<ListExternalServiceFields> =>
+): UseShowMorePaginationResult<ExternalServicesResult, ListExternalServiceFields> =>
     useShowMorePagination<ExternalServicesResult, ExternalServicesVariables, ListExternalServiceFields>({
         query: EXTERNAL_SERVICES,
         variables: { after: vars.after, first: vars.first ?? 10 },

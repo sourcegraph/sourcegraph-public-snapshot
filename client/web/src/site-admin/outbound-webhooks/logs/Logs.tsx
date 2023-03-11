@@ -2,7 +2,7 @@ import { FC, useMemo } from 'react'
 
 import { mdiAlertCircle, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Button, H3, Icon } from '@sourcegraph/wildcard'
 

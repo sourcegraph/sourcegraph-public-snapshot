@@ -1,10 +1,9 @@
 import React, { useCallback } from 'react'
 
 import { mdiSourceBranch, mdiFileDocument } from '@mdi/js'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/wildcard'
 
 import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
@@ -21,7 +20,7 @@ import { PreviewList } from './list/PreviewList'
 
 import styles from './BatchChangePreviewTabs.module.scss'
 
-export interface BatchChangePreviewProps extends ThemeProps, TelemetryProps {
+export interface BatchChangePreviewProps extends TelemetryProps {
     batchSpecID: string
     authenticatedUser: PreviewPageAuthenticatedUser
 
@@ -43,7 +42,6 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
     authenticatedUser,
     batchSpecID,
     expandChangesetDescriptions,
-    isLightTheme,
     queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     spec,
@@ -112,7 +110,6 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                         <BatchSpec
                             name={spec.description.name}
                             originalInput={spec.originalInput}
-                            isLightTheme={isLightTheme}
                             className={styles.batchSpec}
                         />
                     </Container>

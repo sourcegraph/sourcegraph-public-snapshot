@@ -9,10 +9,14 @@ import (
 	"testing"
 	"time"
 
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -94,7 +98,7 @@ func TestCheckEmailFormat(t *testing.T) {
 		"toolong": {email: "a012345678901234567890123456789012345678901234567890123456789@0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.comeeeeqwqwwe", err: errors.Newf("maximum email length is 320, got 326")},
 	} {
 		t.Run(name, func(t *testing.T) {
-			err := checkEmailFormat(test.email)
+			err := CheckEmailFormat(test.email)
 			if test.err == nil {
 				if err != nil {
 					t.Fatalf("err: want nil but got %v", err)
@@ -321,4 +325,220 @@ func TestHandleAccount_UnlockByAdmin(t *testing.T) {
 			assert.Equal(t, test.body, resp.Body.String())
 		})
 	}
+}
+
+func TestHandleSignUp(t *testing.T) {
+	t.Run("signup not allowed by provider", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{
+					{
+						Builtin: &schema.BuiltinAuthProvider{
+							Type: providerType,
+						},
+					},
+				},
+			},
+		})
+		defer conf.Mock(nil)
+
+		db := database.NewMockDB()
+		logger := logtest.NoOp(t)
+		if testing.Verbose() {
+			logger = logtest.Scoped(t)
+		}
+
+		h := HandleSignUp(logger, db)
+
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+
+		assert.Equal(t, http.StatusNotFound, resp.Code)
+		assert.Equal(t, "Signup is not enabled (builtin auth provider allowSignup site configuration option)\n", resp.Body.String())
+	})
+
+	t.Run("unsupported request method", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{
+					{
+						Builtin: &schema.BuiltinAuthProvider{
+							Type:        providerType,
+							AllowSignup: true,
+						},
+					},
+				},
+			},
+		})
+		defer conf.Mock(nil)
+
+		db := database.NewMockDB()
+		logger := logtest.NoOp(t)
+		if testing.Verbose() {
+			logger = logtest.Scoped(t)
+		}
+
+		h := HandleSignUp(logger, db)
+
+		req, err := http.NewRequest(http.MethodGet, "/", strings.NewReader(`{}`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+
+		assert.Equal(t, http.StatusBadRequest, resp.Code)
+		assert.Equal(t, fmt.Sprintf("unsupported method %s\n", http.MethodGet), resp.Body.String())
+	})
+
+	t.Run("success", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{
+					{
+						Builtin: &schema.BuiltinAuthProvider{
+							Type:        providerType,
+							AllowSignup: true,
+						},
+					},
+				},
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EventLogging: "disabled",
+				},
+			},
+		})
+		defer conf.Mock(nil)
+
+		cleanup := session.ResetMockSessionStore(t)
+		defer cleanup()
+
+		users := database.NewMockUserStore()
+		users.CreateFunc.SetDefaultHook(func(ctx context.Context, nu database.NewUser) (*types.User, error) {
+			if nu.EmailIsVerified == true {
+				t.Fatal("expected newUser.EmailIsVerified to be false but got true")
+			}
+			if nu.EmailVerificationCode == "" {
+				t.Fatal("expected newUser.EmailVerficationCode to be non-empty")
+			}
+			return &types.User{ID: 1, SiteAdmin: false, CreatedAt: time.Now()}, nil
+		})
+
+		authz := database.NewMockAuthzStore()
+		authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
+
+		eventLogs := database.NewMockEventLogStore()
+		eventLogs.BulkInsertFunc.SetDefaultReturn(nil)
+
+		db := database.NewMockDB()
+		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			return f(db)
+		})
+		db.UsersFunc.SetDefaultReturn(users)
+		db.AuthzFunc.SetDefaultReturn(authz)
+		db.EventLogsFunc.SetDefaultReturn(eventLogs)
+
+		logger := logtest.NoOp(t)
+		if testing.Verbose() {
+			logger = logtest.Scoped(t)
+		}
+
+		h := HandleSignUp(logger, db)
+
+		body := strings.NewReader(`{
+			"email": "test@test.com",
+			"username": "test-user",
+			"password": "somerandomhardtoguesspassword123456789"
+		}`)
+		req, err := http.NewRequest(http.MethodPost, "/", body)
+		require.NoError(t, err)
+		req.Header.Set("User-Agent", "test")
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+
+		assert.Equal(t, http.StatusOK, resp.Code)
+		assert.Equal(t, "", resp.Body.String())
+
+		mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
+		mockrequire.CalledOnce(t, users.CreateFunc)
+	})
+}
+
+func TestHandleSiteInit(t *testing.T) {
+	t.Run("unsupported request method", func(t *testing.T) {
+		db := database.NewMockDB()
+		logger := logtest.NoOp(t)
+		if testing.Verbose() {
+			logger = logtest.Scoped(t)
+		}
+
+		h := HandleSiteInit(logger, db)
+
+		req, err := http.NewRequest(http.MethodGet, "/", strings.NewReader(`{}`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+
+		assert.Equal(t, http.StatusBadRequest, resp.Code)
+		assert.Equal(t, fmt.Sprintf("unsupported method %s\n", http.MethodGet), resp.Body.String())
+	})
+
+	t.Run("success", func(t *testing.T) {
+		cleanup := session.ResetMockSessionStore(t)
+		defer cleanup()
+
+		users := database.NewMockUserStore()
+		users.CreateFunc.SetDefaultHook(func(ctx context.Context, nu database.NewUser) (*types.User, error) {
+			if nu.EmailIsVerified == false {
+				t.Fatal("expected newUser.EmailIsVerified to be true but got false")
+			}
+			if nu.EmailVerificationCode != "" {
+				t.Fatalf("expected newUser.EmailVerficationCode to be empty, got %s", nu.EmailVerificationCode)
+			}
+			return &types.User{ID: 1, SiteAdmin: true, CreatedAt: time.Now()}, nil
+		})
+
+		authz := database.NewMockAuthzStore()
+		authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
+
+		eventLogs := database.NewMockEventLogStore()
+		eventLogs.BulkInsertFunc.SetDefaultReturn(nil)
+
+		db := database.NewMockDB()
+		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			return f(db)
+		})
+		db.UsersFunc.SetDefaultReturn(users)
+		db.AuthzFunc.SetDefaultReturn(authz)
+		db.EventLogsFunc.SetDefaultReturn(eventLogs)
+
+		logger := logtest.NoOp(t)
+		if testing.Verbose() {
+			logger = logtest.Scoped(t)
+		}
+
+		h := HandleSiteInit(logger, db)
+
+		body := strings.NewReader(`{
+			"email": "test@test.com",
+			"username": "test-user",
+			"password": "somerandomhardtoguesspassword123456789"
+		}`)
+		req, err := http.NewRequest(http.MethodPost, "/", body)
+		require.NoError(t, err)
+		req.Header.Set("User-Agent", "test")
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+
+		assert.Equal(t, http.StatusOK, resp.Code)
+		assert.Equal(t, "", resp.Body.String())
+
+		mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
+		mockrequire.CalledOnce(t, users.CreateFunc)
+		mockrequire.CalledOnce(t, eventLogs.BulkInsertFunc)
+	})
 }

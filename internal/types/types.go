@@ -136,6 +136,14 @@ func (r *Repo) ExternalServiceIDs() []int64 {
 	return ids
 }
 
+func (r *Repo) ToExternalServiceRepository() *ExternalServiceRepository {
+	return &ExternalServiceRepository{
+		ID:         r.ID,
+		Name:       r.Name,
+		ExternalID: r.ExternalRepo.ID,
+	}
+}
+
 // BlockedRepoError is returned by a Repo IsBlocked method.
 type BlockedRepoError struct {
 	Name   api.RepoName
@@ -263,10 +271,9 @@ func (r *Repo) Update(n *Repo) (modified RepoModified) {
 		modified |= RepoModifiedStars
 	}
 
-	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
-		r.Metadata = n.Metadata
-		modified |= RepoModifiedMetadata
-	}
+	// We don't compare the Metadata fields to determine whether or not a repo
+	// has been modified. The reflect.DeepEqual always returns false for
+	// some code hosts (i.e. GitHub).
 
 	for urn, info := range n.Sources {
 		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqual(info, old) {
@@ -622,6 +629,20 @@ type ExternalServiceSyncJob struct {
 	ReposUnmodified int32
 }
 
+// ExternalServiceNamespace represents a namespace on an external service that can have ownership over repositories
+type ExternalServiceNamespace struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	ExternalID string `json:"external_id"`
+}
+
+// ExternalServiceRepository represents a repository on an external service that may not necessarily be sync'd with sourcegraph
+type ExternalServiceRepository struct {
+	ID         api.RepoID   `json:"id"`
+	Name       api.RepoName `json:"name"`
+	ExternalID string       `json:"external_id"`
+}
+
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {
@@ -803,19 +824,25 @@ type User struct {
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	Searchable            bool
+	SCIMControlled        bool
 }
 
 // UserForSCIM extends user with email addresses and SCIM external ID.
 type UserForSCIM struct {
 	User
-	Emails         []string
-	SCIMExternalID string
+	Emails          []string
+	SCIMExternalID  string
+	SCIMAccountData string
 }
 
 type SystemRole string
 
-var (
-	UserSystemRole              SystemRole = "USER"
+const (
+	// UserSystemRole represents the role associated with all users on a Sourcegraph instance.
+	UserSystemRole SystemRole = "USER"
+
+	// SiteAdministratorSystemRole represents the role associated with Site Administrators
+	// on a sourcegraph instance.
 	SiteAdministratorSystemRole SystemRole = "SITE_ADMINISTRATOR"
 )
 
@@ -826,9 +853,30 @@ type Role struct {
 	CreatedAt time.Time
 }
 
+// A PermissionNamespace represents a distinct context within which permission policies
+// are defined and enforced.
+type PermissionNamespace string
+
+func (n PermissionNamespace) String() string {
+	return string(n)
+}
+
+// Valid checks if a namespace is valid and supported by the Sourcegraph RBAC system.
+func (n PermissionNamespace) Valid() bool {
+	switch n {
+	case BatchChangesNamespace:
+		return true
+	default:
+		return false
+	}
+}
+
+// BatchChangesNamespace represents the Batch Changes namespace.
+const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
+
 type Permission struct {
 	ID        int32
-	Namespace string
+	Namespace PermissionNamespace
 	Action    string
 	CreatedAt time.Time
 }
@@ -854,17 +902,16 @@ type UserRole struct {
 
 type NamespacePermission struct {
 	ID         int64
-	Namespace  string
+	Namespace  PermissionNamespace
 	ResourceID int64
-	Action     string
 	UserID     int32
 	CreatedAt  time.Time
 }
 
 func (n *NamespacePermission) DisplayName() string {
 	// Based on the zanzibar representation for data relations:
-	// <namespace>:<object_id>#<relation>@<user_id | user_group>
-	return fmt.Sprintf("%s:%d#%s@%d", n.Namespace, n.ResourceID, n.Action, n.UserID)
+	// <namespace>:<object_id>#@<user_id | user_group>
+	return fmt.Sprintf("%s:%d@%d", n.Namespace, n.ResourceID, n.UserID)
 }
 
 type OrgMemberAutocompleteSearchItem struct {
@@ -1310,11 +1357,14 @@ type Event struct {
 // GrowthStatistics represents the total users that were created,
 // deleted, resurrected, churned and retained over the current month.
 type GrowthStatistics struct {
-	DeletedUsers     int32
-	CreatedUsers     int32
-	ResurrectedUsers int32
-	ChurnedUsers     int32
-	RetainedUsers    int32
+	DeletedUsers           int32
+	CreatedUsers           int32
+	ResurrectedUsers       int32
+	ChurnedUsers           int32
+	RetainedUsers          int32
+	PendingAccessRequests  int32
+	ApprovedAccessRequests int32
+	RejectedAccessRequests int32
 }
 
 // IDEExtensionsUsage represents the daily, weekly and monthly numbers
@@ -1375,9 +1425,6 @@ type MigratedExtensionsUsageStatistics struct {
 	SearchExportPerformedUniqueUsers *int32
 	SearchExportFailed               *int32
 	SearchExportFailedUniqueUsers    *int32
-
-	GoImportsSearchQueryTransformed            *int32
-	GoImportsSearchQueryTransformedUniqueUsers *int32
 
 	OpenInEditor []*MigratedExtensionsOpenInEditorUsageStatistics
 }
@@ -1531,6 +1578,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
 	WeeklyGroupResultsSearches                     []GroupResultSearchPing
 	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
+	WeeklyDataExportClicks                         *int32
 }
 
 type GroupResultPing struct {
@@ -1677,6 +1725,49 @@ type NotebooksUsageStatistics struct {
 	NotebookAddedQueryBlocksCount    *int32
 	NotebookAddedFileBlocksCount     *int32
 	NotebookAddedSymbolBlocksCount   *int32
+}
+
+type OwnershipUsageStatistics struct {
+	// Whether the `search-ownership` feature flag is on anywhere on the instance.
+	FeatureFlagOn *bool `json:"feature_flag_on,omitempty"`
+
+	// Statistics about ownership data in repositories
+	ReposCount *OwnershipUsageReposCounts `json:"repos_count,omitempty"`
+
+	// Activity of selecting owners as search results using
+	// `select:file.owners`.
+	SelectFileOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"select_file_owners_search,omitempty"`
+
+	// Activity of using a `file:has.owner` predicate in search.
+	FileHasOwnerSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owner_search,omitempty"`
+
+	// Opening ownership panel.
+	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`
+}
+
+type OwnershipUsageReposCounts struct {
+	// Total number of repositories. Can be used in computing adoption
+	// ratio as denominator to number of repos with ownership.
+	Total *int32 `json:"total,omitempty"`
+
+	// Number of repos in an instance that have ownership
+	// data (of any source, either CODEOWNERS file or API).
+	WithOwnership *int32 `json:"with_ownership,omitempty"`
+
+	// Number of repos in an instance that have ownership
+	// data ingested through the API.
+	WithIngestedOwnership *int32 `json:"with_ingested_ownership,omitempty"`
+}
+
+type OwnershipUsageStatisticsActiveUsers struct {
+	// Daily-Active Users
+	DAU *int32 `json:"dau,omitempty"`
+
+	// Weekly-Active Users
+	WAU *int32 `json:"wau,omitempty"`
+
+	// Monthly-Active Users
+	MAU *int32 `json:"mau,omitempty"`
 }
 
 // Secret represents the secrets table
@@ -1835,3 +1926,22 @@ type TeamMember struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+type AccessRequestStatus string
+
+type AccessRequest struct {
+	ID               int32
+	Name             string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	Email            string
+	AdditionalInfo   string
+	Status           AccessRequestStatus
+	DecisionByUserID *int32
+}
+
+const (
+	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
+	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
+	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
+)

@@ -74,7 +74,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 		assert func(t *testing.T, uid int32, db database.DB)
 	}{
 		{
-			name: "user is not a side admin",
+			name: "user is not a site admin",
 			setup: func(t *testing.T) (int32, database.DB) {
 				providers.MockProviders = []providers.Provider{soap}
 				t.Cleanup(func() { providers.MockProviders = nil })
@@ -127,6 +127,12 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 
 				logger := logtest.NoOp(t)
 				db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+				// We ensure the GlobalState is initialized so that the first user isn't
+				// a site administrator.
+				_, err := db.GlobalState().EnsureInitialized(ctx)
+				require.NoError(t, err)
+
 				u, err := db.Users().Create(
 					ctx,
 					database.NewUser{
@@ -134,8 +140,10 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 					},
 				)
 				require.NoError(t, err)
+
 				err = db.Users().SetIsSiteAdmin(ctx, u.ID, true)
 				require.NoError(t, err)
+
 				return u.ID, db
 			},
 			accountDetails: &accountDetailsBody{
@@ -174,6 +182,12 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 
 				logger := logtest.NoOp(t)
 				db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+				// We ensure the GlobalState is initialized so that the first user isn't
+				// a site administrator.
+				_, err := db.GlobalState().EnsureInitialized(ctx)
+				require.NoError(t, err)
+
 				u, err := db.Users().Create(
 					ctx,
 					database.NewUser{

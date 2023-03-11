@@ -23,9 +23,8 @@ func TestCreateNamespacePermission(t *testing.T) {
 
 	t.Run("missing resource id", func(t *testing.T) {
 		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-			Namespace: "TestNamespace",
+			Namespace: types.BatchChangesNamespace,
 			UserID:    user.ID,
-			Action:    "READ",
 		})
 		require.Nil(t, np)
 		require.Error(t, err)
@@ -34,21 +33,42 @@ func TestCreateNamespacePermission(t *testing.T) {
 
 	t.Run("missing user id", func(t *testing.T) {
 		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-			Namespace:  "TestNamespace",
+			Namespace:  types.BatchChangesNamespace,
 			ResourceID: 1,
-			Action:     "READ",
 		})
 		require.Nil(t, np)
 		require.Error(t, err)
 		require.ErrorContains(t, err, "user id is required")
 	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("missing namespace", func(t *testing.T) {
 		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-			Namespace:  "TestNamespace",
 			ResourceID: 1,
 			UserID:     user.ID,
-			Action:     "READ",
+		})
+
+		require.Nil(t, np)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "valid namespace is required")
+	})
+
+	t.Run("invalid namespace", func(t *testing.T) {
+		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
+			Namespace:  types.PermissionNamespace("TEST_NAMESPACE"),
+			ResourceID: 1,
+			UserID:     user.ID,
+		})
+
+		require.Nil(t, np)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "valid namespace is required")
+	})
+
+	t.Run("success", func(t *testing.T) {
+		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
+			Namespace:  types.BatchChangesNamespace,
+			ResourceID: 1,
+			UserID:     user.ID,
 		})
 		require.NoError(t, err)
 		require.Equal(t, np.UserID, user.ID)
@@ -81,10 +101,9 @@ func TestDeleteNamespacePermission(t *testing.T) {
 
 	t.Run("existing namespace permissions", func(t *testing.T) {
 		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-			Namespace:  "TestNamespace",
+			Namespace:  types.BatchChangesNamespace,
 			ResourceID: 1,
 			UserID:     user.ID,
-			Action:     "READ",
 		})
 		require.NoError(t, err)
 
@@ -120,10 +139,9 @@ func TestGetNamespacePermission(t *testing.T) {
 	user := createUserForNamespacePermission(ctx, t, db, "user1")
 
 	np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-		Namespace:  "TESTNAMESPACE",
+		Namespace:  types.BatchChangesNamespace,
 		ResourceID: 1,
 		UserID:     user.ID,
-		Action:     "READ",
 	})
 	require.NoError(t, err)
 
@@ -137,7 +155,6 @@ func TestGetNamespacePermission(t *testing.T) {
 
 	t.Run("missing namespace", func(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{
-			Action:     "READ",
 			UserID:     user.ID,
 			ResourceID: 1,
 		})
@@ -147,11 +164,11 @@ func TestGetNamespacePermission(t *testing.T) {
 		require.Equal(t, err.Error(), "missing namespace permission query")
 	})
 
-	t.Run("missing action", func(t *testing.T) {
+	t.Run("invalid namespace", func(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{
-			Namespace:  "BATCH_CHANGES",
 			UserID:     user.ID,
 			ResourceID: 1,
+			Namespace:  types.PermissionNamespace("TEST-NAMESPACE"),
 		})
 
 		require.Nil(t, n)
@@ -161,9 +178,8 @@ func TestGetNamespacePermission(t *testing.T) {
 
 	t.Run("missing resource id", func(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{
-			Namespace: "BATCH_CHANGES",
+			Namespace: types.BatchChangesNamespace,
 			UserID:    user.ID,
-			Action:    "READ",
 		})
 
 		require.Nil(t, n)
@@ -173,9 +189,8 @@ func TestGetNamespacePermission(t *testing.T) {
 
 	t.Run("missing user id", func(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{
-			Namespace:  "BATCH_CHANGES",
+			Namespace:  types.BatchChangesNamespace,
 			ResourceID: 1,
-			Action:     "READ",
 		})
 
 		require.Nil(t, n)
@@ -189,7 +204,6 @@ func TestGetNamespacePermission(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, n.ID, np.ID)
 		require.Equal(t, n.Namespace, np.Namespace)
-		require.Equal(t, n.Action, np.Action)
 		require.Equal(t, n.ResourceID, np.ResourceID)
 		require.Equal(t, n.UserID, np.UserID)
 	})
@@ -197,7 +211,6 @@ func TestGetNamespacePermission(t *testing.T) {
 	t.Run("existing namespace permission", func(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{
 			Namespace:  np.Namespace,
-			Action:     np.Action,
 			ResourceID: np.ResourceID,
 			UserID:     np.UserID,
 		})
@@ -205,7 +218,6 @@ func TestGetNamespacePermission(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, n.ID, np.ID)
 		require.Equal(t, n.Namespace, np.Namespace)
-		require.Equal(t, n.Action, np.Action)
 		require.Equal(t, n.ResourceID, np.ResourceID)
 		require.Equal(t, n.UserID, np.UserID)
 	})

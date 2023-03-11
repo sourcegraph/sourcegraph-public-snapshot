@@ -17,4 +17,5 @@ const (
 	RoutePasswordReset      = "password-reset"
 	RouteRaw                = "raw"
 	RoutePingFromSelfHosted = "ping-from-self-hosted"
+	RouteRequestAccess      = "request-access"
 )

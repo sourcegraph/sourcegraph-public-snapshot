@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { NEVER } from 'rxjs'
 import { catchError, startWith, tap } from 'rxjs/operators'
 
@@ -32,6 +32,7 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' |
      * Called when a new access token is created and should be temporarily displayed to the user.
      */
     onDidCreateAccessToken: (value: CreateAccessTokenResult['createAccessToken']) => void
+    isSourcegraphDotCom: boolean
 }
 interface TokenRequester {
     /** The name of the source */
@@ -50,6 +51,10 @@ interface TokenRequester {
     callbackType?: 'open' | 'new-tab'
     /** Show button to redirect URL on click */
     showRedirectButton?: boolean
+    /** If set, the requester is only allowed on dotcom */
+    onlyDotCom?: boolean
+    /** If true, it will forward the `destination` param to the redirect URL if it starts with / */
+    forwardDestination?: boolean
 }
 // SECURITY: Only accept callback requests from requesters on this allowed list
 const REQUESTERS: Record<string, TokenRequester> = {
@@ -64,6 +69,17 @@ const REQUESTERS: Record<string, TokenRequester> = {
         callbackType: 'new-tab',
         showRedirectButton: true,
     },
+    APP: {
+        name: 'Sourcegraph App',
+        redirectURL: 'http://localhost:3080/app/auth/callback?code=$TOKEN',
+        description: 'Authenticate Sourcegraph App',
+        successMessage: 'Click on the link bellow to continue in Sourcegraph App',
+        infoMessage: 'You will be redirected to Sourcegraph App',
+        callbackType: 'open',
+        showRedirectButton: true,
+        onlyDotCom: true,
+        forwardDestination: true,
+    },
 }
 /**
  * This page acts as a callback URL after the authentication process has been completed by a user.
@@ -74,10 +90,11 @@ const REQUESTERS: Record<string, TokenRequester> = {
  * in as a new URL param, using the redirect URL associated with the allowlisted requester The token should then be processed by the extension's
  * URL handler (For example, "vscode://sourcegraph/sourcegraph?code=$TOKEN" for the VS Code extension)
  */
-export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     telemetryService,
     onDidCreateAccessToken,
     user,
+    isSourcegraphDotCom,
 }) => {
     const navigate = useNavigate()
     const location = useLocation()
@@ -94,17 +111,37 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
     const [newToken, setNewToken] = useState('')
     // Check and Match URL Search Prams
     useEffect((): void => {
+        // If a requester is already set, we don't need to run this effect
+        if (requester) {
+            return
+        }
+
         // SECURITY: Verify if the request is coming from an allowlisted source
         const isRequestValid = requestFrom && requestFrom in REQUESTERS
-        if (requestFrom && requester === undefined) {
-            setRequester(isRequestValid ? REQUESTERS[requestFrom] : null)
-            setNote(isRequestValid ? REQUESTERS[requestFrom].name : '')
-        }
-        // Redirect users back to tokens page if none or invalid url params provided
-        if (!requestFrom || (!requester && requester !== undefined)) {
+        if (!isRequestValid || !requestFrom || requester !== undefined) {
             navigate('../..', { relative: 'path' })
+            return
         }
-    }, [navigate, requestFrom, requester])
+
+        if (REQUESTERS[requestFrom].onlyDotCom && !isSourcegraphDotCom) {
+            navigate('../..', { relative: 'path' })
+            return
+        }
+
+        const nextRequester = { ...REQUESTERS[requestFrom] }
+
+        if (nextRequester.forwardDestination) {
+            const destination = new URLSearchParams(location.search).get('destination')
+            // SECURITY: only destinations starting with a "/" are allowed to prevent an open redirect vulnerability.
+            if (destination?.startsWith('/')) {
+                const redirectURL = new URL(nextRequester.redirectURL)
+                redirectURL.searchParams.set('destination', destination)
+                nextRequester.redirectURL = redirectURL.toString()
+            }
+        }
+        setRequester(nextRequester)
+        setNote(REQUESTERS[requestFrom].name)
+    }, [isSourcegraphDotCom, location.search, navigate, requestFrom, requester])
     /**
      * We use this to handle token creation request from redirections.
      * Don't create token if this page wasn't linked to from a valid
@@ -120,7 +157,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                         if (requester) {
                             onDidCreateAccessToken(result)
                             setNewToken(result.token)
-                            const uri = requester?.redirectURL.replace('$TOKEN', result.token)
+                            const uri = replaceToken(requester?.redirectURL, result.token)
                             switch (requester.callbackType) {
                                 case 'new-tab':
                                     window.open(uri, '_blank')
@@ -176,7 +213,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                         {requester.showRedirectButton && (
                             <Button
                                 className="mr-2"
-                                to={requester.redirectURL.replace('$TOKEN', newToken)}
+                                to={replaceToken(requester.redirectURL, newToken)}
                                 disabled={creationOrError === 'loading'}
                                 variant="primary"
                                 as={Link}
@@ -198,4 +235,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
             {isErrorLike(creationOrError) && <ErrorAlert className="my-3" error={creationOrError} />}
         </div>
     )
+}
+
+function replaceToken(url: string, token: string): string {
+    // %24 is the URL encoded version of $
+    return url.replace('$TOKEN', token).replace('%24TOKEN', token)
 }

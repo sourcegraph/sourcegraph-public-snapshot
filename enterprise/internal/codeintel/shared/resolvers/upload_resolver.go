@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -19,13 +20,15 @@ type UploadResolver struct {
 	uploadsSvc       UploadsService
 	autoindexingSvc  AutoIndexingService
 	policySvc        PolicyService
+	siteAdminChecker SiteAdminChecker
+	repoStore        database.RepoStore
 	upload           types.Upload
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 	traceErrs        *observation.ErrCollector
 }
 
-func NewUploadResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, upload types.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, traceErrs *observation.ErrCollector) resolverstubs.LSIFUploadResolver {
+func NewUploadResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, siteAdminChecker SiteAdminChecker, repoStore database.RepoStore, upload types.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, traceErrs *observation.ErrCollector) resolverstubs.LSIFUploadResolver {
 	if upload.AssociatedIndexID != nil {
 		// Request the next batch of index fetches to contain the record's associated
 		// index id, if one exists it exists. This allows the prefetcher.GetIndexByID
@@ -38,6 +41,8 @@ func NewUploadResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingSe
 		uploadsSvc:       uploadsSvc,
 		autoindexingSvc:  autoindexingSvc,
 		policySvc:        policySvc,
+		siteAdminChecker: siteAdminChecker,
+		repoStore:        repoStore,
 		upload:           upload,
 		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
@@ -98,7 +103,7 @@ func (r *UploadResolver) AssociatedIndex(ctx context.Context) (_ resolverstubs.L
 		return nil, err
 	}
 
-	return NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, index, r.prefetcher, r.locationResolver, r.traceErrs), nil
+	return NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, r.siteAdminChecker, r.repoStore, index, r.prefetcher, r.locationResolver, r.traceErrs), nil
 }
 
 func (r *UploadResolver) ProjectRoot(ctx context.Context) (_ resolverstubs.GitTreeEntryResolver, err error) {
@@ -139,17 +144,11 @@ func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *reso
 		return nil, err
 	}
 
-	return NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(r.autoindexingSvc, matches, totalCount, r.traceErrs), nil
+	return NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(r.repoStore, matches, totalCount, r.traceErrs), nil
 }
 
 func (r *UploadResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	for _, indexer := range types.AllIndexers {
-		if indexer.Name == r.upload.Indexer {
-			return types.NewCodeIntelIndexerResolverFrom(indexer)
-		}
-	}
-
-	return types.NewCodeIntelIndexerResolver(r.upload.Indexer)
+	return types.NewCodeIntelIndexerResolver(r.upload.Indexer, "")
 }
 
 func (r *UploadResolver) DocumentPaths(ctx context.Context, args *resolverstubs.LSIFUploadDocumentPathsQueryArgs) (resolverstubs.LSIFUploadDocumentPathsConnectionResolver, error) {

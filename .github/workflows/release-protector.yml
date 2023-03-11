@@ -7,9 +7,16 @@ on:
       - main
 
 jobs:
-  validate_release_branch:
+  disable_release_protector:
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'sourcegraph/sourcegraph' && !github.event.pull_request.draft }}
+    steps:
+      - name: Disable workflow
+        run: exit 0
+
+  validate_release_branch:
+    needs: disable_release_protector
+    runs-on: ubuntu-latest
+    if: ${{ failure() && github.repository == 'sourcegraph/sourcegraph' && !github.event.pull_request.draft }}
     outputs:
       releaseBranchExists: ${{ steps.checkout.outputs.exists }}
     steps:
@@ -112,6 +119,8 @@ jobs:
             else
               echo "❌ Label 'i-acknowledge-this-goes-into-the-release' is absent"
               echo "👉 We're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with 'i-acknowledge-this-goes-into-the-release'"
+              echo "❓ The code freeze is active until ${release_date} at 23:59 UTC."
+              echo "release_date=${release_date}" >> $GITHUB_ENV
               exit 1
             fi
           else
@@ -150,7 +159,7 @@ jobs:
             let d = new Date()
             d.setHours(d.getHours() -1) // Yes, this handles properly midnight.
 
-            let body = "❌ **Problem**: the label `i-acknowledge-this-goes-into-the-release` is absent.\n👉 **What to do**: we're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with `i-acknowledge-this-goes-into-the-release`."
+            let body = `❌ **Problem**: the label \`i-acknowledge-this-goes-into-the-release\` is absent.\n👉 **What to do**: we're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with \`i-acknowledge-this-goes-into-the-release\`.\n❓ **When does the freeze end?** The code freeze is active until ${process.env.release_date} at 23:59 UTC.`
             let skip = false
 
             const { data: comments } = await github.rest.issues.listComments({

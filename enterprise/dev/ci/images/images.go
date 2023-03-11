@@ -90,6 +90,8 @@ var DeploySourcegraphDockerImages = []string{
 	"executor-vm",
 	"batcheshelper",
 	"opentelemetry-collector",
+	"embeddings",
+	"dind",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.
@@ -100,8 +102,23 @@ func CandidateImageTag(commit string, buildNumber int) string {
 	return fmt.Sprintf("%s_%d_candidate", commit, buildNumber)
 }
 
-// MainBranchImageTag provides the tag for all commits built on main, which are used for
-// continuous deployment.
-func MainBranchImageTag(now time.Time, commit string, buildNumber int) string {
-	return fmt.Sprintf("%05d_%10s_%.12s", buildNumber, now.Format("2006-01-02"), commit)
+// BranchImageTag provides the tag for all commits built outside of a tagged release.
+//
+// Example: `(ef-feat_)?12345_2006-01-02-1.2-deadbeefbabe`
+//
+// Notes:
+// - latest tag omitted if empty
+// - branch name omitted when `main`
+func BranchImageTag(now time.Time, commit string, buildNumber int, branchName, latestTag string) string {
+	commitSuffix := fmt.Sprintf("%.12s", commit)
+	if latestTag != "" {
+		commitSuffix = latestTag + "-" + commitSuffix
+	}
+
+	tag := fmt.Sprintf("%05d_%10s_%s", buildNumber, now.Format("2006-01-02"), commitSuffix)
+	if branchName != "main" {
+		tag = branchName + "_" + tag
+	}
+
+	return tag
 }

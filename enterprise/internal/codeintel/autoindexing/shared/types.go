@@ -9,6 +9,7 @@ type GetIndexesOptions struct {
 	State         string
 	States        []string
 	Term          string
+	IndexerNames  []string
 	WithoutUpload bool
 	Limit         int
 	Offset        int
@@ -45,4 +46,14 @@ type ReindexIndexesOptions struct {
 	Term          string
 	RepositoryID  int
 	WithoutUpload bool
+}
+
+type RepositoryWithCount struct {
+	RepositoryID int
+	Count        int
+}
+
+type RepositoryWithAvailableIndexers struct {
+	RepositoryID      int
+	AvailableIndexers map[string]AvailableIndexer
 }

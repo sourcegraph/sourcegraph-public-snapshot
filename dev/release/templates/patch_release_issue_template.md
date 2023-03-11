@@ -27,7 +27,12 @@ This release is scheduled for **$RELEASE_DATE**.
 
 <!-- Keep in sync with release_issue_template's "Setup" section -->
 
-- [ ] Ensure release configuration in [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) on `main` is up-to-date with the parameters for the current release.
+- [ ] Ensure release configuration in [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) on `main` has version $MAJOR.$MINOR.$PATCH selected by using the command:
+
+```shell
+pnpm run release release:activate-release
+```
+
 - [ ] Ensure you have the latest version of the release tooling and configuration by checking out and updating `sourcegraph@main`.
 - [ ] Create a `Security release approval issue` and post a message in the [#security](https://sourcegraph.slack.com/archives/C1JH2BEHZ) channel tagging @security-support.
 
@@ -109,14 +114,16 @@ Create and test the first release candidate:
 - [ ] Finalize and announce that the release is live:
   ```sh
   pnpm run release release:announce
-  pnpm run release release:close
   ```
 
 ## Post-release
 
-- [ ] Open a PR to update [`dev/release/release-config.jsonc`](https://github.com/sourcegraph/sourcegraph/edit/main/dev/release/release-config.jsonc) with the parameters for the current release.
-- [ ] Ensure you have the latest version of the release tooling and configuration by checking out and updating `sourcegraph@main`.
-- [ ] Let the #cloud team know about the managed instances upgrade issue.
-- [ ] Close this issue.
+- [ ] Close the release:
+
+```shell
+  pnpm run release release:close
+```
+
+- [ ] Open a PR to update [`dev/release/release-config.jsonc`](https://github.com/sourcegraph/sourcegraph/edit/main/dev/release/release-config.jsonc) after the auto-generated changes above if any.
 
 **Note:** If another patch release is requested after the release, ask that a [patch request issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md) be filled out and approved first.

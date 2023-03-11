@@ -2,7 +2,7 @@ import { FC } from 'react'
 
 import { mdiFile } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'

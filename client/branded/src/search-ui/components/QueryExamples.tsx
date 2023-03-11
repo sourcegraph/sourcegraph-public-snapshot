@@ -2,12 +2,23 @@ import React, { useCallback, useState } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } from '@sourcegraph/wildcard'
+import {
+    Button,
+    H2,
+    Link,
+    Icon,
+    Tabs,
+    TabList,
+    TabPanels,
+    TabPanel,
+    Tab,
+    ProductStatusBadge,
+} from '@sourcegraph/wildcard'
 
 import { exampleQueryColumns } from './QueryExamples.constants'
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
@@ -20,6 +31,7 @@ export interface QueryExamplesProps extends TelemetryProps {
     queryState?: QueryState
     setQueryState: (newState: QueryState) => void
     isSourcegraphDotCom?: boolean
+    enableOwnershipSearch?: boolean
 }
 
 type Tip = 'rev' | 'lang' | 'before'
@@ -46,13 +58,18 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     queryState = { query: '' },
     setQueryState,
     isSourcegraphDotCom = false,
+    enableOwnershipSearch = false,
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
     const [queryExampleTabActive, setQueryExampleTabActive] = useState<boolean>(false)
     const navigate = useNavigate()
 
-    const exampleSyntaxColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
+    const exampleSyntaxColumns = useQueryExamples(
+        selectedSearchContextSpec ?? 'global',
+        isSourcegraphDotCom,
+        enableOwnershipSearch
+    )
 
     const handleTabChange = (selectedTab: number): void => {
         setQueryExampleTabActive(!!selectedTab)
@@ -185,10 +202,11 @@ export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> =
     <div className={styles.queryExamplesSectionsColumns}>
         {queryColumns.map((column, index) => (
             <div key={`column-${queryColumns[index][0].title}`}>
-                {column.map(({ title, queryExamples }) => (
+                {column.map(({ title, productStatus, queryExamples }) => (
                     <ExamplesSection
                         key={title}
                         title={title}
+                        productStatus={productStatus}
                         queryExamples={queryExamples}
                         onQueryExampleClick={onQueryExampleClick}
                     />
@@ -213,11 +231,20 @@ interface ExamplesSection extends QueryExamplesSection {
 
 export const ExamplesSection: React.FunctionComponent<ExamplesSection> = ({
     title,
+    productStatus,
     queryExamples,
     onQueryExampleClick,
 }) => (
     <div className={styles.queryExamplesSection}>
-        <H2 className={styles.queryExamplesSectionTitle}>{title}</H2>
+        <H2 className={styles.queryExamplesSectionTitle}>
+            {title}
+            {productStatus && (
+                <>
+                    {' '}
+                    <ProductStatusBadge status={productStatus} />
+                </>
+            )}
+        </H2>
         <ul className={classNames('list-unstyled', styles.queryExamplesItems)}>
             {queryExamples
                 .filter(({ query }) => query.length > 0)

@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { Routes, Route } from 'react-router-dom-v5-compat'
+import { Routes, Route } from 'react-router-dom'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { NotFoundPage } from '../../components/HeroPage'
@@ -40,7 +40,7 @@ export const RepositoryBranchesArea: FC<Props> = props => {
             <Routes>
                 <Route path="all" element={<RepositoryBranchesAllPage repo={repo} />} />
                 <Route path="" element={<RepositoryBranchesOverviewPage repo={repo} />} />
-                <Route element={<NotFoundPage pageType="repository branches" />} />
+                <Route path="*" element={<NotFoundPage pageType="repository branches" />} />
             </Routes>
         </div>
     )

@@ -127,24 +127,48 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
 	}
 
+	if len(opts.IndexerNames) != 0 {
+		var indexerConds []*sqlf.Query
+		for _, indexerName := range opts.IndexerNames {
+			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+		}
+
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
+	}
+
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx.db))
 	if err != nil {
 		return nil, 0, err
 	}
 	conds = append(conds, authzConds)
 
-	indexes, totalCount, err := scanIndexesWithCount(tx.db.Query(ctx, sqlf.Sprintf(getIndexesQuery, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset)))
+	indexes, err := scanIndexes(tx.db.Query(ctx, sqlf.Sprintf(
+		getIndexesSelectQuery,
+		sqlf.Join(conds, " AND "),
+		opts.Limit,
+		opts.Offset,
+	)))
+	if err != nil {
+		return nil, 0, err
+	}
+	trace.AddEvent("scanIndexesWithCount",
+		attribute.Int("numIndexes", len(indexes)))
+
+	totalCount, _, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
+		getIndexesCountQuery,
+		sqlf.Join(conds, " AND "),
+	)))
 	if err != nil {
 		return nil, 0, err
 	}
 	trace.AddEvent("scanIndexesWithCount",
 		attribute.Int("totalCount", totalCount),
-		attribute.Int("numIndexes", len(indexes)))
+	)
 
 	return indexes, totalCount, nil
 }
 
-const getIndexesQuery = `
+const getIndexesSelectQuery = `
 SELECT
 	u.id,
 	u.commit,
@@ -168,13 +192,27 @@ SELECT
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
 	u.should_reindex,
-	u.requested_envvars,
-	COUNT(*) OVER() AS count
+	u.requested_envvars
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE repo.deleted_at IS NULL AND %s ORDER BY queued_at DESC, u.id LIMIT %d OFFSET %d
+WHERE
+	repo.deleted_at IS NULL AND
+	repo.blocked IS NULL AND
+	%s
+ORDER BY queued_at DESC, u.id
+LIMIT %d OFFSET %d
+`
+
+const getIndexesCountQuery = `
+SELECT COUNT(*) AS count
+FROM lsif_indexes u
+JOIN repo ON repo.id = u.repository_id
+WHERE
+	repo.deleted_at IS NULL AND
+	repo.blocked IS NULL AND
+	%s
 `
 
 // DeleteIndexes deletes indexes matching the given filter criteria.
@@ -525,21 +563,21 @@ const DeletedRepositoryGracePeriod = time.Minute * 30
 // DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
 // that were removed for that repository.
-func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (totalCount int, deletedCount int, err error) {
 	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return 0, 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
 	// a similar one on this index, but only for uploads that are completed or visible at tip.
-	repositories, err := scanCounts(tx.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+	totalCount, repositories, err := scanCountsAndTotalCount(tx.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
 	if err != nil {
-		return nil, err
+		return 0, 0, err
 	}
 
 	count := 0
@@ -550,7 +588,7 @@ func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Tim
 		attribute.Int("count", count),
 		attribute.Int("numRepositories", len(repositories)))
 
-	return repositories, nil
+	return totalCount, count, nil
 }
 
 const deleteIndexesWithoutRepositoryQuery = `
@@ -559,7 +597,9 @@ candidates AS (
 	SELECT u.id
 	FROM repo r
 	JOIN lsif_indexes u ON u.repository_id = r.id
-	WHERE %s - r.deleted_at >= %s * interval '1 second'
+	WHERE
+		%s - r.deleted_at >= %s * interval '1 second' OR
+		r.blocked IS NOT NULL
 
 	-- Lock these rows in a deterministic order so that we don't
 	-- deadlock with other processes updating the lsif_indexes table.
@@ -570,7 +610,7 @@ deleted AS (
 	WHERE id IN (SELECT id FROM candidates)
 	RETURNING u.id, u.repository_id
 )
-SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
+SELECT (SELECT COUNT(*) FROM candidates), d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
 `
 
 // IsQueued returns true if there is an index or an upload for the repository and commit.

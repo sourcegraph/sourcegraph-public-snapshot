@@ -17,6 +17,7 @@ import {
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../graphql-operations'
@@ -83,6 +84,9 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 }) => {
     const authState = authenticatedUser !== null ? 'success' : 'failure'
 
+    /**
+     * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
+     */
     const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
         args =>
             requestGraphQLCommon({
@@ -233,56 +237,62 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         [lastSearch, matches, onOpen, onPreviewChange, onPreviewClear, settingsCascade]
     )
 
+    const themeValue = useMemo(
+        () => ({ themeSetting: isDarkTheme ? ThemeSetting.Dark : ThemeSetting.Light }),
+        [isDarkTheme]
+    )
+
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <GlobalKeyboardListeners />
-            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-            <div className={styles.root} onMouseDown={preventAll}>
-                <div className={styles.searchBoxContainer}>
-                    {/* eslint-disable-next-line react/forbid-elements */}
-                    <form
-                        className="d-flex m-0"
-                        onSubmit={event => {
-                            event.preventDefault()
-                            onSubmit()
-                        }}
-                    >
-                        <JetBrainsSearchBox
-                            caseSensitive={lastSearch.caseSensitive}
-                            setCaseSensitivity={caseSensitive => onSubmit({ caseSensitive })}
-                            patternType={lastSearch.patternType}
-                            setPatternType={patternType => onSubmit({ patternType })}
-                            isSourcegraphDotCom={isSourcegraphDotCom}
-                            structuralSearchDisabled={false}
-                            queryState={userQueryState}
-                            onChange={setUserQueryState}
-                            onSubmit={onSubmit}
-                            authenticatedUser={authenticatedUser}
-                            searchContextsEnabled={true}
-                            showSearchContext={true}
-                            showSearchContextManagement={false}
-                            setSelectedSearchContextSpec={contextSpec => onSubmit({ contextSpec })}
-                            selectedSearchContextSpec={lastSearch.selectedSearchContextSpec}
-                            fetchSearchContexts={fetchSearchContexts}
-                            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                            fetchStreamSuggestions={fetchStreamSuggestionsWithStaticUrl}
-                            settingsCascade={settingsCascade}
-                            globbing={isGlobbingEnabled}
-                            isLightTheme={!isDarkTheme}
-                            telemetryService={telemetryService}
-                            platformContext={platformContext}
-                            className=""
-                            containerClassName=""
-                            autoFocus={true}
-                            hideHelpButton={true}
-                        />
-                    </form>
+            <ThemeContext.Provider value={themeValue}>
+                <GlobalKeyboardListeners />
+                {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+                <div className={styles.root} onMouseDown={preventAll}>
+                    <div className={styles.searchBoxContainer}>
+                        {/* eslint-disable-next-line react/forbid-elements */}
+                        <form
+                            className="d-flex m-0"
+                            onSubmit={event => {
+                                event.preventDefault()
+                                onSubmit()
+                            }}
+                        >
+                            <JetBrainsSearchBox
+                                caseSensitive={lastSearch.caseSensitive}
+                                setCaseSensitivity={caseSensitive => onSubmit({ caseSensitive })}
+                                patternType={lastSearch.patternType}
+                                setPatternType={patternType => onSubmit({ patternType })}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                structuralSearchDisabled={false}
+                                queryState={userQueryState}
+                                onChange={setUserQueryState}
+                                onSubmit={onSubmit}
+                                authenticatedUser={authenticatedUser}
+                                searchContextsEnabled={true}
+                                showSearchContext={true}
+                                showSearchContextManagement={false}
+                                setSelectedSearchContextSpec={contextSpec => onSubmit({ contextSpec })}
+                                selectedSearchContextSpec={lastSearch.selectedSearchContextSpec}
+                                fetchSearchContexts={fetchSearchContexts}
+                                getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                                fetchStreamSuggestions={fetchStreamSuggestionsWithStaticUrl}
+                                settingsCascade={settingsCascade}
+                                globbing={isGlobbingEnabled}
+                                telemetryService={telemetryService}
+                                platformContext={platformContext}
+                                className=""
+                                containerClassName=""
+                                autoFocus={true}
+                                hideHelpButton={true}
+                            />
+                        </form>
+                    </div>
+
+                    {statusBar}
+
+                    {searchResultList}
                 </div>
-
-                {statusBar}
-
-                {searchResultList}
-            </div>
+            </ThemeContext.Provider>
         </WildcardThemeContext.Provider>
     )
 }

@@ -10,7 +10,7 @@ import {
 
 import { ConnectionPopoverContainer, ConnectionPopoverForm, ConnectionPopoverList } from './components'
 
-interface RevisionsPopoverTabProps extends UseShowMorePaginationResult<unknown> {
+interface RevisionsPopoverTabProps extends UseShowMorePaginationResult<unknown, unknown> {
     inputValue: string
     onInputChange: (value: string) => void
     query: string

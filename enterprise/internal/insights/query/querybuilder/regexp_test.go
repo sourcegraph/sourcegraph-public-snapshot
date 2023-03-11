@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -97,31 +97,31 @@ func Test_replaceCaptureGroupsWithString(t *testing.T) {
 		{
 			pattern: `(\w+)-(\w+)`,
 			text:    `cat-cow dog-bat`,
-			want:    autogold.Want("1", "(?:cat)-(\\w+)"),
+			want:    autogold.Expect("(?:cat)-(\\w+)"),
 		},
 		{
 			pattern: `(\w+)-(?:\w+)-(\w+)`,
 			text:    `cat-cow-camel`,
-			want:    autogold.Want("middle non-capturing group", "(?:cat)-(?:\\w+)-(\\w+)"),
+			want:    autogold.Expect("(?:cat)-(?:\\w+)-(\\w+)"),
 		},
 		{
 			pattern: `(\w+)-(?:\w+)-(\w+)`,
 			text:    `cat-cow-camel`,
-			want:    autogold.Want("ensure non-capturing groups don't count towards group numbers", "(?:cat)-(?:\\w+)-(\\w+)"),
+			want:    autogold.Expect("(?:cat)-(?:\\w+)-(\\w+)"),
 		},
 		{
 			pattern: `(.*)`,
 			text:    `\w`,
-			want:    autogold.Want("ensure literal values are escaped in the new pattern", "(?:\\\\w)"),
+			want:    autogold.Expect("(?:\\\\w)"),
 		},
 		{
 			pattern: `\w{3}(.{3})\w{3}`,
 			text:    `foobardog`,
-			want:    autogold.Want("fixed repeat pattern", "\\w{3}(?:bar)\\w{3}"),
+			want:    autogold.Expect("\\w{3}(?:bar)\\w{3}"),
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
+		t.Run(test.pattern, func(t *testing.T) {
 			reg, err := regexp.Compile(test.pattern)
 			if err != nil {
 				return
@@ -158,89 +158,90 @@ func TestReplace_Valid(t *testing.T) {
 		{
 			query:       "/replaceme/",
 			replacement: "replace",
-			want:        autogold.Want("replace_1", BasicQuery("/replace/")),
+			want:        autogold.Expect(BasicQuery("/replace/")),
 			searchType:  query.SearchTypeStandard,
 		},
 		{
 			query:       "/replace(me)/",
 			replacement: "you",
-			want:        autogold.Want("replace_2", BasicQuery("/replace(?:you)/")),
+			want:        autogold.Expect(BasicQuery("/replace(?:you)/")),
 			searchType:  query.SearchTypeStandard,
 		},
 		{
 			query:       "/replaceme/",
 			replacement: "replace",
-			want:        autogold.Want("replace_3", BasicQuery("/replace/")),
+			want:        autogold.Expect(BasicQuery("/replace/")),
 			searchType:  query.SearchTypeLucky,
 		},
 		{
 			query:       "/replace(me)/",
 			replacement: "you",
-			want:        autogold.Want("replace_4", BasicQuery("/replace(?:you)/")),
+			want:        autogold.Expect(BasicQuery("/replace(?:you)/")),
 			searchType:  query.SearchTypeLucky,
 		},
 		{
 			query:       "/b(u)tt(er)/",
 			replacement: "e",
-			want:        autogold.Want("ensure only one group is replaced", BasicQuery("/b(?:e)tt(er)/")),
+			want:        autogold.Expect(BasicQuery("/b(?:e)tt(er)/")),
 			searchType:  query.SearchTypeStandard,
 		},
 		{
 			query:       "/b(?:u)(tt)(er)/",
 			replacement: "dd",
-			want:        autogold.Want("ensure only one group is replaced after non-capturing group", BasicQuery("/b(?:u)(?:dd)(er)/")),
+			want:        autogold.Expect(BasicQuery("/b(?:u)(?:dd)(er)/")),
 			searchType:  query.SearchTypeStandard,
 		},
 		{
 			query:       "replaceme",
 			replacement: "replace",
-			want:        autogold.Want("regexp_type_1", BasicQuery("/replace/")),
+			want:        autogold.Expect(BasicQuery("/replace/")),
 			searchType:  query.SearchTypeRegex,
 		},
 		{
 			query:       "replace(me)",
 			replacement: "you",
-			want:        autogold.Want("regexp_type_2", BasicQuery("/replace(?:you)/")),
+			want:        autogold.Expect(BasicQuery("/replace(?:you)/")),
 			searchType:  query.SearchTypeRegex,
 		},
 		{
 			query:       `\/insight[s]\/`,
 			replacement: "you",
-			want:        autogold.Want("escaped slashes in regexp without group", BasicQuery("/you/")),
+			want:        autogold.Expect(BasicQuery("/you/")),
 			searchType:  query.SearchTypeRegex,
 		},
 		{
 			query:       `\/insi(g)ht[s]\/`,
 			replacement: "ggg",
-			want:        autogold.Want("ensure queries from type regex to type standard with preescaped slashes", BasicQuery(`/\/insi(?:ggg)ht[s]\//`)),
+			want:        autogold.Expect(BasicQuery(`/\/insi(?:ggg)ht[s]\//`)),
 			searchType:  query.SearchTypeRegex,
 		},
 		{
 			query:       `<title>(.*)</title>`,
 			replacement: "findme",
-			want:        autogold.Want("ensure queries from type regex to type standard work (slashes are escaped)", BasicQuery(`/<title>(?:findme)<\/title>/`)),
+			want:        autogold.Expect(BasicQuery(`/<title>(?:findme)<\/title>/`)),
 			searchType:  query.SearchTypeRegex,
 		},
 		{
 			query:       `(/\w+/)`,
 			replacement: `/sourcegraph/`,
-			want:        autogold.Want("ensure queries from type regex to type standard work with replacement special characters (slashes are escaped)", BasicQuery(`/(?:\/sourcegraph\/)/`)),
+			want:        autogold.Expect(BasicQuery(`/(?:\/sourcegraph\/)/`)),
 			searchType:  query.SearchTypeRegex,
 		},
 		{
 			query:       `/<title>(.*)<\/title>/`,
 			replacement: "findme",
-			want:        autogold.Want("ensure queries from type standard slashes are escaped properly", BasicQuery(`/<title>(?:findme)<\/title>/`)),
+			want:        autogold.Expect(BasicQuery(`/<title>(?:findme)<\/title>/`)),
 			searchType:  query.SearchTypeStandard,
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
+		t.Run(test.query, func(t *testing.T) {
 			replacer, err := NewPatternReplacer(BasicQuery(test.query), test.searchType)
 			require.NoError(t, err)
 
 			got, err := replacer.Replace(test.replacement)
 			test.want.Equal(t, got)
+			require.NoError(t, err)
 		})
 	}
 }

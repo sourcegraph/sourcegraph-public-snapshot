@@ -100,3 +100,7 @@ func (r *PersonResolver) User(ctx context.Context) (*UserResolver, error) {
 	}
 	return NewUserResolver(r.db, user), nil
 }
+
+func (r *PersonResolver) OwnerField() string {
+	return EnterpriseResolvers.ownResolver.PersonOwnerField(r)
+}

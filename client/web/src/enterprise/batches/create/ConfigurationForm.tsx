@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { mdiInformationOutline, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { UserSettingFields, OrgSettingFields } from '@sourcegraph/shared/src/graphql-operations'

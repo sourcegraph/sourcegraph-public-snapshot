@@ -10,6 +10,7 @@ go_test(
         "site_admin_test.go",
     ],
     deps = [
+        "//internal/auth",
         "//internal/extsvc",
         "//internal/gqltestutil",
         "//schema",

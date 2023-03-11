@@ -3,10 +3,10 @@ import React, { FC, useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { noop } from 'lodash'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { Alert, Button, ButtonLink, H2, Input, Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonLink, ErrorAlert, Form, H2, Input, Select } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { defaultExternalServices } from '../components/externalServices/externalServices'
@@ -213,25 +213,22 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
                                 <Input
                                     className={classNames(styles.first, 'flex-1 mb-0')}
                                     message={
-                                        webhook.codeHostKind &&
-                                        webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD ? (
-                                            <small>Bitbucket Cloud doesn't support secrets.</small>
+                                        webhook.codeHostKind && !codeHostSupportsSecretes(webhook.codeHostKind) ? (
+                                            <small>Code Host doesn't support secrets.</small>
                                         ) : (
                                             <small>Randomly generated. Alter as required.</small>
                                         )
                                     }
                                     label={<span className="small">Secret</span>}
                                     disabled={
-                                        webhook.codeHostKind !== null &&
-                                        webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
+                                        webhook.codeHostKind !== null && !codeHostSupportsSecretes(webhook.codeHostKind)
                                     }
                                     pattern="^[a-zA-Z0-9]+$"
                                     onChange={event => {
                                         onSecretChange(event.target.value)
                                     }}
                                     value={
-                                        webhook.codeHostKind &&
-                                        webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
+                                        webhook.codeHostKind && !codeHostSupportsSecretes(webhook.codeHostKind)
                                             ? ''
                                             : webhook.secret || ''
                                     }
@@ -298,6 +295,8 @@ function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
             return true
         case ExternalServiceKind.GITLAB:
             return true
+        case ExternalServiceKind.AZUREDEVOPS:
+            return true
         default:
             return false
     }
@@ -305,9 +304,7 @@ function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
 
 function buildUpdateWebhookVariables(webhook: Webhook, id?: string): UpdateWebhookVariables {
     const secret =
-        webhook.codeHostKind !== null && webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
-            ? null
-            : webhook.secret
+        webhook.codeHostKind !== null && !codeHostSupportsSecretes(webhook.codeHostKind) ? null : webhook.secret
 
     return {
         // should not happen when update is called
@@ -321,13 +318,18 @@ function buildUpdateWebhookVariables(webhook: Webhook, id?: string): UpdateWebho
 
 function convertWebhookToCreateWebhookVariables(webhook: Webhook): CreateWebhookVariables {
     const secret =
-        webhook.codeHostKind !== null && webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
-            ? null
-            : webhook.secret
+        webhook.codeHostKind !== null && !codeHostSupportsSecretes(webhook.codeHostKind) ? null : webhook.secret
     return {
         name: webhook.name,
         codeHostKind: webhook.codeHostKind || ExternalServiceKind.OTHER,
         codeHostURN: webhook.codeHostURN,
         secret,
     }
+}
+
+function codeHostSupportsSecretes(codeHostKind: ExternalServiceKind): boolean {
+    if (codeHostKind === ExternalServiceKind.BITBUCKETCLOUD || codeHostKind === ExternalServiceKind.AZUREDEVOPS) {
+        return false
+    }
+    return true
 }

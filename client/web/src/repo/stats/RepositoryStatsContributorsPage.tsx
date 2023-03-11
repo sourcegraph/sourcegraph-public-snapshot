@@ -3,11 +3,12 @@ import { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
@@ -41,7 +42,6 @@ import {
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
-import { UserAvatar } from '../../user/UserAvatar'
 
 import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
 

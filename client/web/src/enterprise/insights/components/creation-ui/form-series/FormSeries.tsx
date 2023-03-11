@@ -2,10 +2,10 @@ import { FC, ReactNode } from 'react'
 
 import classNames from 'classnames'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useFieldAPI } from '@sourcegraph/wildcard'
 
 import { useUiFeatures } from '../../../hooks'
-import { LimitedAccessLabel, useFieldAPI } from '../../index'
+import { LimitedAccessLabel } from '../../index'
 
 import { FormSeriesInput } from './components/form-series-input/FormSeriesInput'
 import { SeriesCard } from './components/series-card/SeriesCard'

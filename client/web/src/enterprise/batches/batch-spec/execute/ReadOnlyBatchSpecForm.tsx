@@ -1,9 +1,8 @@
 import React, { FC, useMemo, useState } from 'react'
 
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, H3, H4, Link, Text } from '@sourcegraph/wildcard'
 
 import {
@@ -23,16 +22,15 @@ import { ReadOnlyBatchSpecAlert } from './ReadOnlyBatchSpecAlert'
 
 import editorStyles from '../edit/EditBatchSpecPage.module.scss'
 
-interface ReadOnlyBatchSpecFormProps extends ThemeProps {}
+interface ReadOnlyBatchSpecFormProps {}
 
-export const ReadOnlyBatchSpecForm: React.FunctionComponent<React.PropsWithChildren<ReadOnlyBatchSpecFormProps>> = ({
-    isLightTheme,
-}) => {
+export const ReadOnlyBatchSpecForm: React.FunctionComponent<
+    React.PropsWithChildren<ReadOnlyBatchSpecFormProps>
+> = () => {
     const { batchChange, batchSpec, setActionsError } = useBatchSpecContext<BatchSpecExecutionFields>()
 
     return (
         <MemoizedReadOnlyBatchSpecForm
-            isLightTheme={isLightTheme}
             batchChange={batchChange}
             batchSpec={batchSpec}
             setActionsError={setActionsError}
@@ -44,7 +42,7 @@ type MemoizedReadOnlyBatchSpecFormProps = ReadOnlyBatchSpecFormProps &
     Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'setActionsError'>
 
 const MemoizedReadOnlyBatchSpecForm: FC<MemoizedReadOnlyBatchSpecFormProps> = React.memo(
-    function MemoizedReadOnlyBatchSpecForm({ isLightTheme, batchChange, batchSpec, setActionsError }) {
+    function MemoizedReadOnlyBatchSpecForm({ batchChange, batchSpec, setActionsError }) {
         const navigate = useNavigate()
 
         const [showCancelModal, setShowCancelModal] = useState(false)
@@ -122,7 +120,6 @@ const MemoizedReadOnlyBatchSpecForm: FC<MemoizedReadOnlyBatchSpecFormProps> = Re
                     <BatchSpec
                         name={batchChange.name}
                         className={editorStyles.editor}
-                        isLightTheme={isLightTheme}
                         originalInput={batchSpec.originalInput}
                     />
                 </div>

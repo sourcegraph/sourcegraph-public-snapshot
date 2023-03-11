@@ -174,14 +174,18 @@ func (x *LocalCodeIntelResponse) FromInternal(p *types.LocalCodeIntelPayload) {
 	}
 }
 
-func (x *LocalCodeIntelResponse) ToInternal() types.LocalCodeIntelPayload {
+func (x *LocalCodeIntelResponse) ToInternal() *types.LocalCodeIntelPayload {
+	if x == nil {
+		return nil
+	}
+
 	symbols := make([]types.Symbol, 0, len(x.GetSymbols()))
 
 	for _, s := range x.GetSymbols() {
 		symbols = append(symbols, s.ToInternal())
 	}
 
-	return types.LocalCodeIntelPayload{
+	return &types.LocalCodeIntelPayload{
 		Symbols: symbols,
 	}
 }

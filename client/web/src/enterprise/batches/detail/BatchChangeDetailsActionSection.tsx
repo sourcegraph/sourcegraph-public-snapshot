@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import { mdiInformation, mdiClose, mdiDelete, mdiPencil } from '@mdi/js'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'

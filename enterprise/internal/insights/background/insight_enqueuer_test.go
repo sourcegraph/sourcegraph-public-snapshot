@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -108,7 +108,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("0", `[
+	autogold.Expect(`[
   {
     "SeriesID": "series1",
     "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query1",

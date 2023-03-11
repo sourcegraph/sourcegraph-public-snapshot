@@ -3,7 +3,7 @@ import { FC, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 're
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import { isEqual } from 'lodash'
-import { useLocation, useNavigate, createPath } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate, createPath } from 'react-router-dom'
 import {
     BehaviorSubject,
     combineLatest,
@@ -130,7 +130,6 @@ const domFunctions = {
  */
 export const LegacyBlob: FC<BlobProps> = props => {
     const {
-        isLightTheme,
         extensionsController,
         blobInfo,
         platformContext,
@@ -197,10 +196,19 @@ export const LegacyBlob: FC<BlobProps> = props => {
         (lineOrPositionOrRange: LineOrPositionOrRange) => locationPositions.next(lineOrPositionOrRange),
         [locationPositions]
     )
-    const parsedHash = useMemo(
-        () => parseQueryAndHash(location.search, location.hash),
-        [location.search, location.hash]
-    )
+    const parsedHash = useMemo(() => {
+        // When an activeURL is passed, it takes presedence over the react
+        // router location API.
+        //
+        // This is needed to support the reference panel
+        if (props.activeURL) {
+            const url = new URL(props.activeURL, window.location.href)
+            return parseQueryAndHash(url.search, url.hash)
+        }
+
+        return parseQueryAndHash(location.search, location.hash)
+    }, [location.search, location.hash, props.activeURL])
+
     useDeepCompareEffect(() => {
         nextLocationPosition(parsedHash)
     }, [parsedHash])
@@ -668,7 +676,6 @@ export const LegacyBlob: FC<BlobProps> = props => {
                     isBlameVisible={props.isBlameVisible}
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
-                    isLightTheme={isLightTheme}
                 />
             </div>
         </>

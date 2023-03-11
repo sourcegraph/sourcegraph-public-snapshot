@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react'
-import type { useNavigate } from 'react-router-dom-v5-compat'
+import type { useNavigate } from 'react-router-dom'
 import sinon from 'sinon'
 
 import { useURLSyncedState } from './useUrlSyncedState'

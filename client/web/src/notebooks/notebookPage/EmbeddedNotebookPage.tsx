@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import { noop } from 'lodash'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
@@ -23,7 +23,7 @@ import { NotebookContent, NotebookContentProps } from './NotebookContent'
 interface EmbeddedNotebookPageProps
     extends Pick<
             NotebookContentProps,
-            'isLightTheme' | 'searchContextsEnabled' | 'isSourcegraphDotCom' | 'authenticatedUser' | 'settingsCascade'
+            'searchContextsEnabled' | 'isSourcegraphDotCom' | 'authenticatedUser' | 'settingsCascade' | 'ownEnabled'
         >,
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {}
 

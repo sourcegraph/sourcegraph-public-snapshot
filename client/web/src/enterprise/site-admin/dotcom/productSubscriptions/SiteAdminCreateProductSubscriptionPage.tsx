@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { Navigate } from 'react-router-dom-v5-compat'
+import { Navigate } from 'react-router-dom'
 import { merge, of, Observable } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 

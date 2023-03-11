@@ -21,7 +21,7 @@ import {
 } from '@mdi/js'
 import classNames from 'classnames'
 import type { LocationDescriptorObject } from 'history'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 import * as uuid from 'uuid'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'

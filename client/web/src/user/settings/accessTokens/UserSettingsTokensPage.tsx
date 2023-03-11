@@ -79,7 +79,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
                 description="Access tokens may be used to access the Sourcegraph API."
                 actions={
                     !siteAdminViewingOtherUser && (
-                        <Button to="tokens/new" variant="primary" as={Link}>
+                        <Button to="new" variant="primary" as={Link}>
                             <Icon role="img" aria-hidden={true} svgPath={mdiPlus} /> Generate new token
                         </Button>
                     )

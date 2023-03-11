@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -32,10 +33,13 @@ func (n *noopBackfillRunner) Run(ctx context.Context, req pipeline.BackfillReque
 }
 
 type delegateBackfillRunner struct {
+	mu          sync.Mutex
 	doSomething func(ctx context.Context, req pipeline.BackfillRequest) error
 }
 
 func (e *delegateBackfillRunner) Run(ctx context.Context, req pipeline.BackfillRequest) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 	return e.doSomething(ctx, req)
 }
 
@@ -104,7 +108,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 		t.Fatal(errors.New("found record that should not be visible to the new backfill store"))
 	}
 
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateCompleted {
 		t.Fatal(errors.New("backfill should be state COMPLETED after success"))
@@ -116,7 +120,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 	}
 }
 
-func Test_PullsByPriorityGroupAge(t *testing.T) {
+func Test_PullsByEstimatedCostAge(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
@@ -163,7 +167,7 @@ func Test_PullsByPriorityGroupAge(t *testing.T) {
 		return backfill
 	}
 
-	bf1 := addBackfillToState(series, []int32{1, 2}, 5, BackfillStateProcessing)
+	bf1 := addBackfillToState(series, []int32{1, 2}, 3, BackfillStateProcessing)
 	bf2 := addBackfillToState(series, []int32{1, 2}, 3, BackfillStateProcessing)
 	bf3 := addBackfillToState(series, []int32{1, 2}, 40, BackfillStateProcessing)
 	bf4 := addBackfillToState(series, []int32{1, 2}, 10, BackfillStateProcessing)
@@ -173,9 +177,6 @@ func Test_PullsByPriorityGroupAge(t *testing.T) {
 	dequeue3, _, _ := monitor.inProgressStore.Dequeue(ctx, "test3", nil)
 	dequeue4, _, _ := monitor.inProgressStore.Dequeue(ctx, "test4", nil)
 
-	// cost split is in 4 equal buckets based on 0 - max(cost)
-
-	// 1st job is bf1 it has higher cost but it's grouped in same cost and is older
 	assert.Equal(t, bf1.Id, dequeue1.backfillId)
 	assert.Equal(t, bf2.Id, dequeue2.backfillId)
 	assert.Equal(t, bf4.Id, dequeue3.backfillId)
@@ -229,6 +230,7 @@ func Test_BackfillWithRetry(t *testing.T) {
 	attemptCounts := make(map[int]int)
 	runner := &delegateBackfillRunner{
 		doSomething: func(ctx context.Context, req pipeline.BackfillRequest) error {
+
 			val := attemptCounts[int(req.Repo.ID)]
 			attemptCounts[int(req.Repo.ID)] += 1
 			if val > 2 {
@@ -253,7 +255,7 @@ func Test_BackfillWithRetry(t *testing.T) {
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
 
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateProcessing {
 		t.Fatal(errors.New("backfill should be state in progress"))
@@ -336,7 +338,7 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
 
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateCompleted {
 		t.Fatal(errors.New("backfill should be state completed"))
@@ -371,7 +373,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 		SeriesID:            "series1",
 		Query:               "asdf",
 		SampleIntervalUnit:  string(types.Month),
-		Repositories:        []string{"repo1", "repo2"},
+		Repositories:        []string{"repo1", "repo2", "repo3", "repo4"},
 		SampleIntervalValue: 1,
 		GenerationMethod:    types.Search,
 	})
@@ -379,7 +381,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 
 	backfill, err := bfs.NewBackfill(ctx, series)
 	require.NoError(t, err)
-	backfill, err = backfill.SetScope(ctx, bfs, []int32{1, 2}, 0)
+	backfill, err = backfill.SetScope(ctx, bfs, []int32{1, 2, 3, 4}, 0)
 	require.NoError(t, err)
 	err = backfill.setState(ctx, bfs, BackfillStateProcessing)
 	require.NoError(t, err)
@@ -404,12 +406,13 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 		clock:              clock,
 	}
 	handler.config.interruptAfter = time.Second * 5
+	handler.config.pageSize = 2 // setting the page size to only complete 1/2 repos in 1 iteration
 
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
 
 	// we will check that it was interrupted by verifying the backfill has progress, but is not completed yet
-	reloaded, err := bfs.loadBackfill(ctx, backfill.Id)
+	reloaded, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	require.Equal(t, BackfillStateProcessing, reloaded.State)
 	itr, err := iterator.LoadWithClock(ctx, basestore.NewWithHandle(insightsDB.Handle()), reloaded.repoIteratorId, clock)
@@ -420,7 +423,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
 
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateCompleted {
 		t.Fatal(errors.New("backfill should be state completed"))
@@ -498,7 +501,7 @@ func Test_BackfillCrossingErrorThreshold(t *testing.T) {
 	require.NoError(t, err)
 
 	// we will check that it was interrupted by verifying the backfill has progress, but is not completed yet
-	reloaded, err := bfs.loadBackfill(ctx, backfill.Id)
+	reloaded, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	require.Equal(t, BackfillStateFailed, reloaded.State)
 	itr, err := iterator.LoadWithClock(ctx, basestore.NewWithHandle(insightsDB.Handle()), reloaded.repoIteratorId, clock)

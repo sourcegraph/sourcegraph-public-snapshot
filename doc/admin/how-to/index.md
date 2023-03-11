@@ -27,3 +27,5 @@
 - [How to identify and resolve index corruption in postgres 14](postgres14-index-corruption.md)
 - [How to use a static endpoint for updates and pings](static-ip-for-updates-and-pings.md)
 - [Migrating code intelligence data from LSIF to SCIP (Sourcegraph 4.5 -> 4.6)](lsif_scip_migration.md)
+- [How to export search results](export-search-results.md)
+- [How to debug / confirm blobstore is healthy](blobstore_debugging.md)

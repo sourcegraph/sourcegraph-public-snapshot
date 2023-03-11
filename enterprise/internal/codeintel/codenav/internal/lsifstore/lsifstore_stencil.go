@@ -24,68 +24,30 @@ func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []
 		stencilQuery,
 		bundleID,
 		path,
-		bundleID,
-		path,
 	)))
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	if documentData.SCIPData != nil {
-		trace.AddEvent("TODO Domain Owner", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
 
-		ranges := make([]types.Range, 0, len(documentData.SCIPData.Occurrences))
-		for _, occurrence := range documentData.SCIPData.Occurrences {
-			ranges = append(ranges, translateRange(scip.NewRange(occurrence.Range)))
-		}
-
-		return ranges, nil
-	}
-
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numRanges", len(documentData.LSIFData.Ranges)))
-
-	ranges := make([]types.Range, 0, len(documentData.LSIFData.Ranges))
-	for _, r := range documentData.LSIFData.Ranges {
-		ranges = append(ranges, newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter))
+	ranges := make([]types.Range, 0, len(documentData.SCIPData.Occurrences))
+	for _, occurrence := range documentData.SCIPData.Occurrences {
+		ranges = append(ranges, translateRange(scip.NewRange(occurrence.Range)))
 	}
 
 	return ranges, nil
 }
 
 const stencilQuery = `
-(
-	SELECT
-		sd.id,
-		sid.document_path,
-		NULL AS data,
-		NULL AS ranges,
-		NULL AS hovers,
-		NULL AS monikers,
-		NULL AS packages,
-		NULL AS diagnostics,
-		sd.raw_scip_payload AS scip_document
-	FROM codeintel_scip_document_lookup sid
-	JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
-	WHERE
-		sid.upload_id = %s AND
-		sid.document_path = %s
-	LIMIT 1
-) UNION (
-	SELECT
-		dump_id,
-		path,
-		data,
-		ranges,
-		hovers,
-		NULL AS monikers,
-		NULL AS packages,
-		NULL AS diagnostics,
-		NULL AS scip_document
-	FROM
-		lsif_data_documents
-	WHERE
-		dump_id = %s AND
-		path = %s
-	LIMIT 1
-)
+SELECT
+	sd.id,
+	sid.document_path,
+	sd.raw_scip_payload
+FROM codeintel_scip_document_lookup sid
+JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
+WHERE
+	sid.upload_id = %s AND
+	sid.document_path = %s
+LIMIT 1
 `

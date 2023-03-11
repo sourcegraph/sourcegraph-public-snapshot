@@ -8,7 +8,6 @@ import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'r
 
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import jsonSchemaMetaSchema from '../../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../../schema/settings.schema.json'
@@ -23,10 +22,11 @@ interface JSONSchema {
     $id: string
 }
 
-export interface Props extends ThemeProps {
+export interface Props {
     id?: string
     className?: string
     value: string | undefined
+    isLightTheme: boolean
     onChange?: (newValue: string) => void
     readOnly?: boolean | undefined
     height?: number
@@ -265,14 +265,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
 
 function setDiagnosticsOptions(editor: typeof monaco, jsonSchema: JSONSchema | undefined): void {
     const schema = { ...settingsSchema, properties: { ...settingsSchema.properties } }
-    if (!window.context.enableLegacyExtensions) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- we need to remove this key conditionally, but not from the schema
-        // @ts-ignore
-        delete schema.properties.extensions
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- we need to remove this key conditionally, but not from the schema
-        // @ts-ignore
-        delete schema.properties['extensions.activeLoggers']
-    }
     editor.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
         allowComments: true,

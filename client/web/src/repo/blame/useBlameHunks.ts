@@ -335,11 +335,13 @@ const addDisplayInfoForHunk = (hunk: Omit<BlameHunk, 'displayInfo'>, sourcegraph
  */
 export const useBlameHunks = (
     {
+        isPackage,
         repoName,
         revision,
         filePath,
         enableCodeMirror,
     }: {
+        isPackage: boolean
         repoName: string
         revision: string
         filePath: string
@@ -349,7 +351,7 @@ export const useBlameHunks = (
 ): BlameHunkData => {
     const [enableStreamingGitBlame, status] = useFeatureFlag('enable-streaming-git-blame')
 
-    const [isBlameVisible] = useBlameVisibility()
+    const [isBlameVisible] = useBlameVisibility(isPackage)
     const shouldFetchBlame = isBlameVisible && status !== 'initial'
 
     const hunks = useObservable(

@@ -1,11 +1,10 @@
 import { FC } from 'react'
 
-import { Routes, Route } from 'react-router-dom-v5-compat'
+import { Routes, Route } from 'react-router-dom'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-
-import { useExperimentalFeatures } from '../../../../../stores'
 
 import { InsightCreationPageType } from './InsightCreationPage'
 
@@ -21,7 +20,7 @@ interface CreationRoutesProps extends TelemetryProps {}
 export const CreationRoutes: FC<CreationRoutesProps> = props => {
     const { telemetryService } = props
 
-    const { codeInsightsCompute } = useExperimentalFeatures()
+    const codeInsightsCompute = useExperimentalFeatures(settings => settings.codeInsightsCompute)
 
     return (
         <Routes>

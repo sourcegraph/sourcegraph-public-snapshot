@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -34,7 +35,9 @@ func TestCreateWebhook(t *testing.T) {
 
 	ws := NewWebhookService(db, keyring.Default())
 
-	ghURN, err := extsvc.NewCodeHostBaseURL("https://github.com")
+	rawURN := "https://github.com"
+	// ghURN should be normalized and now include the trailing slash
+	ghURN, err := extsvc.NewCodeHostBaseURL(rawURN)
 	require.NoError(t, err)
 	testSecret := "mysecret"
 	tests := []struct {
@@ -50,7 +53,7 @@ func TestCreateWebhook(t *testing.T) {
 			label:        "basic",
 			name:         "webhook name",
 			codeHostKind: extsvc.KindGitHub,
-			codeHostURN:  ghURN.String(),
+			codeHostURN:  rawURN,
 			secret:       &testSecret,
 			expected: types.Webhook{
 				ID:              1,
@@ -63,9 +66,25 @@ func TestCreateWebhook(t *testing.T) {
 			},
 		},
 		{
+			label:        "basic with trailing slash",
+			name:         "webhook name 2",
+			codeHostKind: extsvc.KindGitHub,
+			codeHostURN:  rawURN + "/",
+			secret:       &testSecret,
+			expected: types.Webhook{
+				ID:              2,
+				Name:            "webhook name 2",
+				UUID:            whUUID,
+				CodeHostKind:    extsvc.KindGitHub,
+				CodeHostURN:     ghURN,
+				Secret:          nil,
+				CreatedByUserID: 0,
+			},
+		},
+		{
 			label:        "invalid code host",
 			codeHostKind: "InvalidKind",
-			codeHostURN:  ghURN.String(),
+			codeHostURN:  rawURN,
 			expectedErr:  errors.New("webhooks are not supported for code host kind InvalidKind"),
 		},
 		{

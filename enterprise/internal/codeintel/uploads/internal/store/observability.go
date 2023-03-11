@@ -33,6 +33,7 @@ type operations struct {
 	hasRepository                           *observation.Operation
 
 	// Uploads
+	getIndexers                          *observation.Operation
 	getUploads                           *observation.Operation
 	getUploadByID                        *observation.Operation
 	getUploadsByIDs                      *observation.Operation
@@ -127,6 +128,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		hasRepository:                           op("HasRepository"),
 
 		// Uploads
+		getIndexers:                          op("GetIndexers"),
 		getUploads:                           op("GetUploads"),
 		getUploadByID:                        op("GetUploadByID"),
 		getUploadsByIDs:                      op("GetUploadsByIDs"),

@@ -1,6 +1,7 @@
 import { within } from '@testing-library/dom'
-import { Route, Routes } from 'react-router-dom-v5-compat'
+import { Route, Routes } from 'react-router-dom'
 
+import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../auth'
@@ -32,6 +33,8 @@ describe('SignInPage', () => {
             authProviders?: AuthProvider[]
             authenticatedUser?: AuthenticatedUser
             sourcegraphDotComMode?: boolean
+            experimentalFeatures?: SiteConfiguration['experimentalFeatures']
+            allowSignup?: boolean
         }
     ) =>
         renderWithBrandedContext(
@@ -42,11 +45,12 @@ describe('SignInPage', () => {
                         <SignInPage
                             authenticatedUser={props.authenticatedUser ?? null}
                             context={{
-                                allowSignup: true,
+                                allowSignup: props.allowSignup ?? true,
                                 sourcegraphDotComMode: props.sourcegraphDotComMode ?? false,
                                 authProviders: props.authProviders ?? authProviders,
                                 resetPasswordEnabled: true,
                                 xhrHeaders: {},
+                                experimentalFeatures: props.experimentalFeatures ?? {},
                             }}
                             isSourcegraphDotCom={false}
                         />
@@ -63,6 +67,11 @@ describe('SignInPage', () => {
                 .queryByText(txt => txt.includes('Continue with Email'))
                 ?.closest('a')
         ).toHaveAttribute('href', '/sign-in?email=1&')
+        expect(
+            within(rendered.baseElement)
+                .queryByText(txt => txt.includes('Sign up'))
+                ?.closest('a')
+        ).toHaveAttribute('href', '/sign-up')
 
         expect(rendered.asFragment()).toMatchSnapshot()
     })
@@ -72,6 +81,17 @@ describe('SignInPage', () => {
         expect(
             within(rendered.baseElement).queryByText(txt => txt.includes('Continue with Email'))
         ).not.toBeInTheDocument()
+        expect(rendered.asFragment()).toMatchSnapshot()
+    })
+
+    it('renders sign in page (server) with request access link', () => {
+        const rendered = render('/sign-in', { allowSignup: false })
+        expect(
+            within(rendered.baseElement)
+                .queryByText(txt => txt.includes('Request access'))
+                ?.closest('a')
+        ).toHaveAttribute('href', '/request-access')
+
         expect(rendered.asFragment()).toMatchSnapshot()
     })
 

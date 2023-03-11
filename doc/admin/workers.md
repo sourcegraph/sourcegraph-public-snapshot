@@ -32,6 +32,10 @@ This job periodically updates the set of code graph data indexes that are visibl
 
 This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
 
+#### `codeintel-autoindexing-summary-builder`
+
+This job periodically checks for auto-indexability on repositories in the background. This is used to populate the global code intelligence dashboard.
+
 #### `codeintel-autoindexing-dependency-scheduler`
 
 This job periodically checks for dependency packages that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
@@ -51,6 +55,18 @@ This job periodically updates an index of policy repository patterns to matching
 #### `codeintel-crates-syncer`
 
 This job periodically updates the crates.io packages on the instance by syncing the crates.io index.
+
+#### `codeintel-ranking-file-reference-counter`
+
+This job periodically calculates a global reference count of text documents within a repo from other text documents on the instance.
+
+#### `codeintel-uploadstore-expirer`
+
+This job periodically compares index records against retention policies and marks them as expired if they are unprotected.
+
+#### `codeintel-package-filter-applicator`
+
+This job periodically updates the blocked status of package repo references and versions when package repo fitlers are updated or deleted.
 
 #### `insights-job`
 

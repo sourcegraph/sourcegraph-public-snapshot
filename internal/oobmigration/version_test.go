@@ -17,7 +17,11 @@ func TestNewVersionFromString(t *testing.T) {
 		{"v3.50.3", NewVersion(3, 50), 3, true},
 		{"v3.50", NewVersion(3, 50), 0, true},
 		{"3.50.3", NewVersion(3, 50), 3, true},
+		{"3.50.3+dev", newDevVersion(3, 50), 3, true},
 		{"350", Version{}, 0, false},
+		{"350+dev", Version{}, 0, false},
+		{"2023.03.23+204874.db2922", NewVersion(2023, 03), 23, true},          // Sourcegraph App
+		{"2023.03.23-insiders+204874.db2922", NewVersion(2023, 03), 23, true}, // Sourcegraph App
 	}
 
 	for _, testCase := range testCases {
@@ -65,11 +69,11 @@ func TestUpgradeRange(t *testing.T) {
 		expected []Version
 		err      bool
 	}{
-		{from: Version{3, 12}, to: Version{3, 10}, err: true},
-		{from: Version{3, 12}, to: Version{3, 12}, err: true},
-		{from: Version{3, 12}, to: Version{3, 13}, expected: []Version{{3, 12}, {3, 13}}},
-		{from: Version{3, 12}, to: Version{3, 16}, expected: []Version{{3, 12}, {3, 13}, {3, 14}, {3, 15}, {3, 16}}},
-		{from: Version{3, 42}, to: Version{4, 2}, expected: []Version{{3, 42}, {3, 43}, {4, 0}, {4, 1}, {4, 2}}},
+		{from: Version{Major: 3, Minor: 12}, to: Version{Major: 3, Minor: 10}, err: true},
+		{from: Version{Major: 3, Minor: 12}, to: Version{Major: 3, Minor: 12}, err: true},
+		{from: Version{Major: 3, Minor: 12}, to: Version{Major: 3, Minor: 13}, expected: []Version{{Major: 3, Minor: 12}, {Major: 3, Minor: 13}}},
+		{from: Version{Major: 3, Minor: 12}, to: Version{Major: 3, Minor: 16}, expected: []Version{{Major: 3, Minor: 12}, {Major: 3, Minor: 13}, {Major: 3, Minor: 14}, {Major: 3, Minor: 15}, {Major: 3, Minor: 16}}},
+		{from: Version{Major: 3, Minor: 42}, to: Version{Major: 4, Minor: 2}, expected: []Version{{Major: 3, Minor: 42}, {Major: 3, Minor: 43}, {Major: 4}, {Major: 4, Minor: 1}, {Major: 4, Minor: 2}}},
 	}
 
 	for _, testCase := range testCases {

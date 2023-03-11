@@ -89,7 +89,7 @@ func InitGitRepository(t *testing.T, cmds ...string) string {
 	// setting git repo which is needed for successful run of git command against local file system
 	ClientMocks.LocalGitCommandReposDir = remotes
 
-	cmds = append([]string{"git init"}, cmds...)
+	cmds = append([]string{"git init --initial-branch=master"}, cmds...)
 	for _, cmd := range cmds {
 		out, err := CreateGitCommand(dir, "bash", "-c", cmd).CombinedOutput()
 		if err != nil {

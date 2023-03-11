@@ -93,7 +93,7 @@ export const useCodeIntelStatus = ({ variables }: UseCodeIntelStatusParameters):
                     ? {
                           ...common,
                           searchBasedSupport: (info.searchBasedSupport || []).map(wrapper => wrapper.support),
-                          preciseSupport: (info.preciseSupport || []).map(wrapper => ({
+                          preciseSupport: (info.preciseSupport?.coverage || []).map(wrapper => ({
                               ...wrapper.support,
                               confidence: wrapper.confidence,
                           })),
@@ -172,7 +172,7 @@ export function massageIndexerSupportMetadata(data: UseCodeIntelStatusPayload): 
     const recentIndexes = data.recentIndexes.flatMap(indexes => indexes.indexes)
     const indexesByIndexerName = groupBy<LsifIndexFields, string>(recentIndexes, getIndexerName)
     const availableIndexers = data.availableIndexers.reduce<Record<string, { roots: string[]; url: string }>>(
-        (acc, { index, roots, url }) => ({ ...acc, [index]: { roots, url } }),
+        (acc, { indexer: { name, url }, roots }) => ({ ...acc, [name]: { roots, url } }),
         {}
     )
 
@@ -191,11 +191,14 @@ export function massageIndexerSupportMetadata(data: UseCodeIntelStatusPayload): 
         ).values(),
     ].map(indexers => indexers[0])
 
-    const allIndexers = [...allRecentIndexers, ...data.availableIndexers.map(({ index: name, url }) => ({ name, url }))]
+    const allIndexers = [
+        ...allRecentIndexers,
+        ...data.availableIndexers.map(({ indexer: { name, url } }) => ({ name, url })),
+    ]
     const indexerNames = [
         ...new Set([
             ...allRecentIndexers.map(indexer => indexer.name),
-            ...data.availableIndexers.map(({ index: name }) => name),
+            ...data.availableIndexers.map(({ indexer: { name } }) => name),
         ]),
     ].sort()
 
