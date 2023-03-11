@@ -745,7 +745,7 @@ unique_users_by_dwm AS (
     ` + makeDateTruncExpression("day", "timestamp") + ` AS day_period,
 	` + makeDateTruncExpression("week", "timestamp") + ` AS week_period,
 	` + makeDateTruncExpression("month", "timestamp") + ` AS month_period,
-	(` + makeDateTruncExpression("day", "timestamp") + ` - INTERVAL '30 days') AS rolling_month_period,
+	` + makeDateTruncExpression("day", "timestamp") + ` - '30 days'::interval AS rolling_month_period,
 	event_logs.user_id > 0 AS registered,
 	` + aggregatedUserIDQueryFragment + ` as aggregated_user_id
   FROM event_logs
