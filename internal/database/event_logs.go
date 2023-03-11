@@ -739,7 +739,7 @@ WITH all_periods AS (
   UNION ALL
   SELECT generate_series((%s)::timestamp, (%s)::timestamp, ('1 month')::interval) AS period, 'month' AS type
   UNION ALL
-  SELECT generate_series((%s)::timestamp, (%s)::timestamp, ('30 day')::interval) AS period, 'rolling_month' AS type)
+  SELECT generate_series((%s)::timestamp, (%s)::timestamp, ('30 day')::interval) AS period, 'rolling_month' AS type),
 unique_users_by_dwm AS (
   SELECT
     ` + makeDateTruncExpression("day", "timestamp") + ` AS day_period,
