@@ -1,19 +1,15 @@
 #!/usr/bin/env bash
 
 # clear out the child pid variables to ensure that there is no channel for outside interference in killing pids
-unset ZPID RPID SPID UPID
+unset ZPID RPID UPID
 
 cleanup() {
-  # kill any background/child processes
-  [ ${SPID:-0} -gt 0 ] && {
-    echo "$(date) CONTROL KILLING sourcegraph process ${SPID}" | tee -a "${sgdir}/sourcegraph.log"
-    kill "${SPID}"
-  }
   # App no longer uses the same syntax highlighter, but leave this in place in case it's brought back
   [ ${RPID:-0} -gt 0 ] && {
     echo "$(date) CONTROL KILLING syntect_server process ${RPID}" | tee -a "${sgdir}/sourcegraph.log"
     kill "${RPID}"
   }
+  # zoekt is not currently used, but if/when we bring it back, we'll kill its processes here
   [ ${ZPID:-0} -gt 0 ] && {
     echo "$(date) CONTROL KILLING zoekt process ${ZPID}" | tee -a "${sgdir}/sourcegraph.log"
     kill "${ZPID}"
@@ -140,43 +136,4 @@ EOF
 # launch app
 # send it to background so that I can also open the webpage
 echo "$(date) CONTROL START" | tee "${sgdir}/sourcegraph.log"
-"${DIR}"/sourcegraph 2>&1 | tee -a "${sgdir}/sourcegraph.log" &
-SPID=$!
-
-# give it a bit of time to start up
-# TODO: parse sourcegraph.log to see when it outputs that it's ready for connections
-# TODO: or use curl to tell when it's listening
-# TODO: or use netstat -an | grep LISTEN | grep 3080
-if command -v curl 2>/dev/null 1>&2; then
-  # if curl is available, use it to check for the website being ready
-  ## get two success (http code 200) responses before counting it as successful
-  unset now
-  count=0
-  until=$(($(date +%s) + 30))
-  while [ ${now:-0} -le ${until:-0} ]; do
-    # wait a bit before checking
-    sleep 1
-    now=$(date +%s)
-    echo "$(date) CONTROL CHECK RUNNING" | tee -a "${sgdir}/sourcegraph.log"
-    x=$(curl -s -L -o /dev/null -w "%{http_code}" http://localhost:3080 2>>"${sgdir}/sourcegraph.log")
-    [ "${x:-0}" -eq 200 ] && {
-      count=$((count + 1))
-      # add 5 seconds to the timeout to make sure there's time to get multiple success responses
-      until=$((until + 5))
-    }
-    # after two success responses, quit checking
-    [ ${count:-0} -ge 2 ] && break
-  done
-else
-  # curl not available, so just wait for a good long time
-  sleep 10
-fi
-
-# launch the web interface
-open http://localhost:3080
-
-# and wait for the app to exit
-wait
-
-# make sure to exit cleanly
-exit 0
+"${DIR}"/sourcegraph 2>&1 | tee -a "${sgdir}/sourcegraph.log"
