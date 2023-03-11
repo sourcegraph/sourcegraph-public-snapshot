@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/go-ctags"
+	"github.com/sourcegraph/log/logtest"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
@@ -73,7 +74,7 @@ func TestHandler(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
-	connectionCache := internalgrpc.NewConnectionCache()
+	connectionCache := internalgrpc.NewConnectionCache(logtest.Scoped(t))
 	t.Cleanup(connectionCache.Shutdown)
 
 	client := symbolsclient.Client{

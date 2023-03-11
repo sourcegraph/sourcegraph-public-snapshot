@@ -2,8 +2,10 @@ package defaults
 
 import (
 	"net/url"
+	"sync"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/ttlcache"
@@ -11,52 +13,53 @@ import (
 )
 
 // ConnectionCache is a cache of gRPC connections. It is safe for concurrent use.
+//
+// When the cache is no longer needed, Shutdown should be called to release resources associated
+// with the cache.
 type ConnectionCache struct {
 	connections *ttlcache.Cache[string, connAndError]
 
-	started chan struct{}
+	startOnce sync.Once
 }
 
-// NewConnectionCache creates a new ConnectionCache. The cache must be started with Start before
-// it can be used.
+// NewConnectionCache creates a new ConnectionCache. When the cache is no longer needed, Shutdown
+// should be called to release resources associated with the cache.
 //
 // This cache will close gRPC connections after 10 minutes of inactivity.
-func NewConnectionCache() *ConnectionCache {
+func NewConnectionCache(l log.Logger) *ConnectionCache {
 	options := []ttlcache.Option[string, connAndError]{
 		ttlcache.WithExpirationFunc[string, connAndError](closeGRPCConnection),
+
 		ttlcache.WithReapInterval[string, connAndError](1 * time.Minute),
 		ttlcache.WithExpirationTime[string, connAndError](10 * time.Minute),
+
+		ttlcache.WithLogger[string, connAndError](l),
+
+		// 1000 connections is a lot. If we ever hit this, we should probably
+		// warn so we can investigate.
+		ttlcache.WithSizeWarningThreshold[string, connAndError](1000),
 	}
 
 	return &ConnectionCache{
 		connections: ttlcache.New[string, connAndError](newGRPCConnection, options...),
-		started:     make(chan struct{}),
 	}
 }
 
-// Start starts the routines that reap expired connections. This must be called before
-// GetConnection can be used.
-func (c *ConnectionCache) Start() {
-	select {
-	case <-c.started:
-		return
-	default:
-		c.connections.StartReaper()
-		close(c.started)
-	}
+// ensureStarted starts the routines that reap expired connections.
+func (c *ConnectionCache) ensureStarted() {
+	c.startOnce.Do(c.connections.StartReaper)
 }
 
-// Shutdown closes the cache. This must be called when the cache is no longer needed.
+// Shutdown tears down the background goroutines that maintain the cache.
+// This should be called when the cache is no longer needed.
 func (c *ConnectionCache) Shutdown() {
 	c.connections.Shutdown()
 }
 
 // GetConnection returns a gRPC connection to the given address. If the connection is not in the
 // cache, a new connection will be created.
-//
-// GetConnection will block until the cache is started with Start.
 func (c *ConnectionCache) GetConnection(address string) (*grpc.ClientConn, error) {
-	<-c.started
+	c.ensureStarted()
 
 	ce := c.connections.Get(address)
 	return ce.conn, ce.dialErr

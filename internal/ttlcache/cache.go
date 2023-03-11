@@ -5,6 +5,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/sourcegraph/log"
 )
 
 // Cache is a cache that expires entries after a given expiration time.
@@ -19,6 +21,10 @@ type Cache[K comparable, V any] struct {
 
 	newEntryFunc   func(K) V  // newEntryFunc is the routine that runs when a cache miss occurs.
 	expirationFunc func(K, V) // expirationFunc is the callback to be called when an entry expires in the cache.
+
+	logger log.Logger // logger is the logger used by the cache.
+
+	sizeWarningThreshold uint // sizeWarningThreshold is the number of entries in the cache before a warning is logged.
 
 	mu      sync.RWMutex
 	entries map[K]*entry[V] // entries is the map of entries in the cache.
@@ -50,6 +56,10 @@ func New[K comparable, V any](newEntryFunc func(K) V, options ...Option[K, V]) *
 
 		newEntryFunc:   newEntryFunc,
 		expirationFunc: func(k K, v V) {},
+
+		logger: log.Scoped("ttlcache", "cache"),
+
+		sizeWarningThreshold: 0,
 
 		entries: make(map[K]*entry[V]),
 
@@ -84,6 +94,20 @@ func WithExpirationTime[K comparable, V any](expiration time.Duration) Option[K,
 func WithExpirationFunc[K comparable, V any](onExpiration func(K, V)) Option[K, V] {
 	return func(c *Cache[K, V]) {
 		c.expirationFunc = onExpiration
+	}
+}
+
+// WithLogger sets the logger to be used by the cache.
+func WithLogger[K comparable, V any](logger log.Logger) Option[K, V] {
+	return func(c *Cache[K, V]) {
+		c.logger = logger
+	}
+}
+
+// WithSizeWarningThreshold sets the number of entries that can be in the cache before a warning is logged.
+func WithSizeWarningThreshold[K comparable, V any](threshold uint) Option[K, V] {
+	return func(c *Cache[K, V]) {
+		c.sizeWarningThreshold = threshold
 	}
 }
 
@@ -131,6 +155,10 @@ func (c *Cache[K, V]) Get(key K) V {
 
 	c.entries[key] = e
 
+	if c.sizeWarningThreshold > 0 && (len(c.entries) > int(c.sizeWarningThreshold)) {
+		c.logger.Warn("cache is large", log.Int("size", len(c.entries)))
+	}
+
 	return e.value
 }
 
@@ -141,6 +169,10 @@ func (c *Cache[K, V]) Get(key K) V {
 // reaper will not be restarted.
 func (c *Cache[K, V]) StartReaper() {
 	c.reapOnce.Do(func() {
+		c.logger.Info("starting reaper",
+			log.Duration("reapInterval", c.reapInterval),
+			log.Duration("expirationTime", c.expirationTime))
+
 		go func() {
 			for {
 				select {
@@ -160,8 +192,8 @@ func (c *Cache[K, V]) reap() {
 	now := c.clock.Now()
 	earliestAllowed := now.Add(-c.expirationTime)
 
-	getExpiredKeys := func() []K {
-		var expired []K
+	getExpiredEntries := func() map[K]V {
+		expired := make(map[K]V)
 
 		for key, entry := range c.entries {
 			lastUsed := entry.lastUsed.Load()
@@ -170,7 +202,7 @@ func (c *Cache[K, V]) reap() {
 			}
 
 			if (*lastUsed).Before(earliestAllowed) {
-				expired = append(expired, key)
+				expired[key] = entry.value
 			}
 		}
 
@@ -181,14 +213,12 @@ func (c *Cache[K, V]) reap() {
 	// We do this under a read lock to avoid blocking other goroutines
 	// from accessing the cache.
 
-	var maybeDelete []K
-
 	c.mu.RLock()
-	maybeDelete = getExpiredKeys()
+	possiblyExpired := getExpiredEntries()
 	c.mu.RUnlock()
 
 	// If there are no entries to delete, we're done.
-	if len(maybeDelete) == 0 {
+	if len(possiblyExpired) == 0 {
 		return
 	}
 
@@ -196,17 +226,39 @@ func (c *Cache[K, V]) reap() {
 	// the write lock to delete them.
 
 	c.mu.Lock()
-	defer c.mu.Unlock()
+
+	beforeLength := len(c.entries)
 
 	// We need to check again to make sure that the entries are still
 	// expired. It's possible that another goroutine has updated the
-	// entry since we released the read lock.
+	// entries in between releasing an acquiring the locks.
 
-	for _, key := range getExpiredKeys() {
-		entry := c.entries[key]
+	actuallyExpired := getExpiredEntries()
 
-		c.expirationFunc(key, entry.value)
-		delete(c.entries, key)
+	// Go through the list of expired entries and delete them from the cache.
+	for k := range actuallyExpired {
+		delete(c.entries, k)
+	}
+
+	afterLength := len(c.entries)
+
+	removedEntries := beforeLength - afterLength
+	if removedEntries > 0 {
+		c.logger.Debug("reaped entries",
+			log.Int("removedEntries", removedEntries),
+			log.Int("remainingEntries", afterLength))
+	}
+
+	c.mu.Unlock()
+
+	// Call the expiration function for each entry that was deleted.
+	// We do this outside of the lock to avoid blocking other goroutines
+	// from accessing the cache.
+	//
+	// This is safe because these entries are no longer visible in the cache.
+
+	for k, v := range actuallyExpired {
+		c.expirationFunc(k, v)
 	}
 }
 

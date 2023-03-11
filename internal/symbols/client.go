@@ -14,6 +14,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
+	"github.com/sourcegraph/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,12 +44,9 @@ func defaultEndpoints() *endpoint.Map {
 }
 
 func LoadConfig() {
-	cache := defaults.NewConnectionCache()
-	cache.Start()
-
 	DefaultClient = &Client{
 		Endpoints:           defaultEndpoints(),
-		GRPCConnectionCache: cache,
+		GRPCConnectionCache: defaults.NewConnectionCache(log.Scoped("symbolsConnectionCache", "grpc connection cache for clients of the symbols service")),
 		HTTPClient:          defaultDoer,
 		HTTPLimiter:         limiter.New(500),
 		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
