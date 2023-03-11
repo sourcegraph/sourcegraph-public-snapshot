@@ -75,5 +75,9 @@ docker run --rm \
   }
 }
 
-# buildkite support: if an output location is defined, copy the signed app bundle there
-[ -n "${signature}" ] && cp -R "${app_bundle_path}" "${signature}" || exit 1
+# goreleaser support: if an output location is defined, copy the signed app bundle there
+[ -n "${signature}" ] && {
+  cp -R "${app_bundle_path}" "${signature}" || exit 1
+}
+
+exit 0
