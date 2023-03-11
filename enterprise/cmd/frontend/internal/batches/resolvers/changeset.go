@@ -365,7 +365,23 @@ func (r *changesetResolver) CheckState() *string {
 	return &checkState
 }
 
-func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage }
+// Error: `FailureMessage` is set by the reconciler worker if it fails when processing
+// a changeset job. However, for most reconciler operations, we automatically retry the
+// operation a number of times. When the reconciler worker picks up a failed changeset job
+// to restart processing, it clears out the `FailureMessage`, resulting in the error
+// disappearing in the UI where we use this resolver field. To retain this context even as
+// we retry to process the changeset, we copy over the error to `PreviousFailureMessage`
+// when re-enqueueing a changeset and clearing its original `FailureMessage`. Only when a
+// changeset is successfully processed will the `PreviousFailureMessage` be cleared.
+//
+// When resolving this field, we still prefer the latest `FailureMessage` we have, but if
+// there's not a `FailureMessage` and there is a `Previous` one, we return that.
+func (r *changesetResolver) Error() *string {
+	if r.changeset.FailureMessage != nil {
+		return r.changeset.FailureMessage
+	}
+	return r.changeset.PreviousFailureMessage
+}
 
 func (r *changesetResolver) SyncerError() *string { return r.changeset.SyncErrorMessage }
 
