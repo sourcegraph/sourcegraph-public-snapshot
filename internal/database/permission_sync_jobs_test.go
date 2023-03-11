@@ -286,18 +286,20 @@ func TestPermissionSyncJobs_GetLatestSyncJob(t *testing.T) {
 		}
 	}
 
-	finishJobWithState := func(t *testing.T, id int, finishedAt time.Time, state PermissionsSyncJobState) {
+	finishJobWithCancel := func(t *testing.T, id int, finishedAt time.Time, cancel bool) {
 		t.Helper()
-		query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s WHERE id = %d", finishedAt, state, id)
+
+		defaultState := PermissionsSyncJobStateCompleted
+		query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s, cancel = %s WHERE id = %d", finishedAt, defaultState, cancel, id)
 
 		_, err = db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 		require.NoError(t, err)
 	}
-	defaultState := PermissionsSyncJobStateCompleted
+
 	finishJob := func(t *testing.T, id int, finishedAt time.Time) {
 		t.Helper()
 
-		finishJobWithState(t, id, finishedAt, defaultState)
+		finishJobWithCancel(t, id, finishedAt, false)
 	}
 
 	cleanupJobs := func(t *testing.T) {
@@ -353,9 +355,8 @@ func TestPermissionSyncJobs_GetLatestSyncJob(t *testing.T) {
 		createJob(t, user2.ID, 0) // id = 2
 		createJob(t, 0, repo1.ID) // id = 3
 
-		canceledState := PermissionsSyncJobStateCanceled
 		finishJob(t, 1, clock.Now().Add(-1*time.Hour))
-		finishJobWithState(t, 2, clock.Now().Add(-1*time.Minute), canceledState)
+		finishJobWithCancel(t, 2, clock.Now().Add(-1*time.Minute), true)
 		finishJob(t, 3, clock.Now().Add(-10*time.Minute))
 
 		job, err := store.GetLatestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{
