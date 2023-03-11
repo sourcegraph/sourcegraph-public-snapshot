@@ -472,7 +472,7 @@ func calcEndDate(startDate time.Time, periodType PeriodType, periods int) (time.
 	case Monthly:
 		return startDate.AddDate(0, periodsAgo, 0), nil
 	case RollingMonthly:
-		return startDate.AddDate(0, 0, 0), nil //rolling monthly end date is always current date
+		return startDate.AddDate(0, 0, periodsAgo), nil //rolling monthly end date is always current day
 	}
 	return time.Time{}, errors.Wrapf(ErrInvalidPeriodType, "%q is not a valid PeriodType", periodType)
 }
