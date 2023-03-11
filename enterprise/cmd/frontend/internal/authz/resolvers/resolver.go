@@ -479,22 +479,19 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 		return nil, err
 	}
 
-	p := &authz.RepoPermissions{
-		RepoID: int32(repoID),
-		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-	}
-	err = r.db.Perms().LoadRepoPermissions(ctx, p)
-	if err != nil && err != authz.ErrPermsNotFound {
+	p, err := r.db.Perms().LoadRepoPermissions(ctx, int32(repoID))
+	if err != nil {
 		return nil, err
 	}
-	// If no row is found, we return an empty list to the consumer.
-	if err == authz.ErrPermsNotFound {
-		p.UserIDs = map[int32]struct{}{}
+	ids := make([]int32, len(p))
+	for i, perm := range p {
+		ids[i] = perm.UserID
 	}
+	slices.Sort(ids)
 
 	return &userConnectionResolver{
 		db:    r.db,
-		ids:   p.GenerateSortedIDsSlice(),
+		ids:   ids,
 		first: args.First,
 		after: args.After,
 	}, nil
@@ -581,23 +578,42 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 		return nil, err
 	}
 
-	p := &authz.RepoPermissions{
-		RepoID: int32(repoID),
-		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-	}
-	err = r.db.Perms().LoadRepoPermissions(ctx, p)
-	if err != nil && err != authz.ErrPermsNotFound {
+	p, err := r.db.Perms().LoadRepoPermissions(ctx, int32(repoID))
+	if err != nil {
 		return nil, err
+	}
+	// If there's exactly 1 item and the user ID is 0, it means the repository is unrestricted.
+	unrestricted := (len(p) == 1 && p[0].UserID == 0)
+
+	// get max updated_at time from the permissions
+	updatedAt := time.Time{}
+	for _, permission := range p {
+		if permission.UpdatedAt.After(updatedAt) {
+			updatedAt = permission.UpdatedAt
+		}
+	}
+
+	// get sync time from the sync jobs table
+	latestSyncJob, err := r.db.PermissionSyncJobs().GetLatestFinishedSyncJob(ctx, database.ListPermissionSyncJobOpts{
+		RepoID:      int(repoID),
+		NotCanceled: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	syncedAt := time.Time{}
+	if latestSyncJob != nil {
+		syncedAt = latestSyncJob.FinishedAt
 	}
 
 	return &permissionsInfoResolver{
 		db:           r.db,
 		ossDB:        r.ossDB,
 		repoID:       repoID,
-		perms:        p.Perm,
-		syncedAt:     p.SyncedAt,
-		updatedAt:    p.UpdatedAt,
-		unrestricted: p.Unrestricted,
+		perms:        authz.Read,
+		syncedAt:     syncedAt,
+		updatedAt:    updatedAt,
+		unrestricted: unrestricted,
 	}, nil
 }
 

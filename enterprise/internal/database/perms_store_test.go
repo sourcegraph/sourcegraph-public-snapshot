@@ -218,14 +218,27 @@ func TestPermsStore_LoadUserPermissions(t *testing.T) {
 	})
 }
 
-func testPermsStore_LoadRepoPermissions(db database.DB) func(*testing.T) {
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
+func TestPermsStore_LoadRepoPermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+	ctx := context.Background()
+
+	runTests := func(t *testing.T) {
+		t.Helper()
 		t.Run("no matching", func(t *testing.T) {
 			s := perms(logger, db, time.Now)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
+				cleanupUsersTable(t, s)
+				cleanupReposTable(t, s)
 			})
+
+			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
 
 			up := &authz.UserPermissions{
 				UserID: 2,
@@ -233,26 +246,26 @@ func testPermsStore_LoadRepoPermissions(db database.DB) func(*testing.T) {
 				Type:   authz.PermRepos,
 				IDs:    toMapset(1),
 			}
-			if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
+			if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}); err != nil {
+				t.Fatal(err)
+			} else if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
 			}
 
-			rp := &authz.RepoPermissions{
-				RepoID: 2,
-				Perm:   authz.Read,
-			}
-			err := s.LoadRepoPermissions(context.Background(), rp)
-			if err != authz.ErrPermsNotFound {
-				t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
-			}
-			equal(t, "rp.UserIDs", []int{}, mapsetToArray(rp.UserIDs))
+			rp, err := s.LoadRepoPermissions(context.Background(), 2)
+			require.NoError(t, err)
+			require.Equal(t, 0, len(rp))
 		})
 
 		t.Run("found matching", func(t *testing.T) {
 			s := perms(logger, db, time.Now)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
+				cleanupUsersTable(t, s)
+				cleanupReposTable(t, s)
 			})
+
+			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
 
 			up := &authz.UserPermissions{
 				UserID: 2,
@@ -260,24 +273,40 @@ func testPermsStore_LoadRepoPermissions(db database.DB) func(*testing.T) {
 				Type:   authz.PermRepos,
 				IDs:    toMapset(1),
 			}
-			if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
+			if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}); err != nil {
+				t.Fatal(err)
+			} else if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
 			}
 
-			rp := &authz.RepoPermissions{
-				RepoID: 1,
-				Perm:   authz.Read,
+			rp, err := s.LoadRepoPermissions(context.Background(), 1)
+			require.NoError(t, err)
+			gotIDs := make([]int32, len(rp))
+			for i, perm := range rp {
+				gotIDs[i] = perm.UserID
 			}
-			if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
-				t.Fatal(err)
-			}
-			equal(t, "rp.UserIDs", []int{2}, mapsetToArray(rp.UserIDs))
 
-			if !rp.SyncedAt.IsZero() {
-				t.Fatal("SyncedAt was updated but not supposed to")
-			}
+			equal(t, "permissions UserIDs", []int32{2}, gotIDs)
 		})
 	}
+
+	t.Run("With legacy perms tables", func(t *testing.T) {
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		mockUnifiedPermsConfig(false)
+
+		runTests(t)
+	})
+
+	t.Run("With unified perms tables", func(t *testing.T) {
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		mockUnifiedPermsConfig(true)
+
+		runTests(t)
+	})
 }
 
 func testPermsStore_FetchReposByUserAndExternalService(db database.DB) func(*testing.T) {
@@ -950,15 +979,14 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 
 	legacyUnrestricted := func(t *testing.T, id int32, want bool) {
 		t.Helper()
-		p := &authz.RepoPermissions{
-			RepoID: id,
-			Perm:   authz.Read,
-		}
-		if err := s.LoadRepoPermissions(ctx, p); err != nil {
-			t.Fatalf("loading permissions for %d: %v", id, err)
-		}
-		if p.Unrestricted != want {
-			t.Fatalf("Want %v, got %v for %d", want, p.Unrestricted, id)
+
+		p, err := s.LoadRepoPermissions(ctx, id)
+		require.NoErrorf(t, err, "loading permissions for %d", id)
+
+		unrestricted := (len(p) == 1 && p[0].UserID == 0)
+
+		if unrestricted != want {
+			t.Fatalf("Want %v, got %v for %d", want, unrestricted, id)
 		}
 	}
 
@@ -1234,18 +1262,14 @@ func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
 				t.Fatal(err)
 			}
 
-			rp = &authz.RepoPermissions{
-				RepoID: 1,
-				Perm:   authz.Read,
+			perms, err := s.LoadRepoPermissions(context.Background(), 1)
+			require.NoError(t, err)
+			gotIDs := make([]int32, len(perms))
+			for i, perm := range perms {
+				gotIDs[i] = perm.RepoID
 			}
-			if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
-				t.Fatal(err)
-			}
-			equal(t, "rp.UserIDs", []int{2}, mapsetToArray(rp.UserIDs))
 
-			if rp.SyncedAt.IsZero() {
-				t.Fatal("SyncedAt was not updated but supposed to")
-			}
+			equal(t, "rp.UserIDs", []int{2}, gotIDs)
 		})
 
 		t.Run("unrestricted columns should be set", func(t *testing.T) {
@@ -1266,11 +1290,11 @@ func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
 				RepoID: 1,
 				Perm:   authz.Read,
 			}
-			if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
-				t.Fatal(err)
-			}
-			if rp.Unrestricted != true {
-				t.Fatal("Want true")
+			perms, err := s.LoadRepoPermissions(context.Background(), 1)
+			require.NoError(t, err)
+
+			if len(perms) != 1 || perms[0].UserID != 0 {
+				t.Fatal("Want unrestricted, got %v", perms)
 			}
 		})
 

@@ -484,9 +484,10 @@ func TestHandleUnrestricted(t *testing.T) {
 	perms := db.Perms()
 
 	for _, repoID := range []int32{1, 2, 3, 4, 5, 6} {
-		p := authz.RepoPermissions{RepoID: repoID, Perm: authz.Read}
-		err = perms.LoadRepoPermissions(ctx, &p)
+		p, err := perms.LoadRepoPermissions(ctx, repoID)
 		require.NoError(t, err)
-		require.True(t, p.Unrestricted)
+		// if there's only 1 item and userID is 0, it means that the repo is unrestricted
+		require.Equal(t, 1, len(p))
+		require.Equal(t, 0, p[0].UserID)
 	}
 }
