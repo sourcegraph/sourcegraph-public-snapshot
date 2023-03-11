@@ -70,8 +70,8 @@ export function useChangeTeamDisplayName(): MutationTuple<ChangeTeamDisplayNameR
 export function useChangeTeamParent(): MutationTuple<ChangeTeamParentResult, ChangeTeamParentVariables> {
     return useMutation<ChangeTeamParentResult, ChangeTeamParentVariables>(
         gql`
-            mutation ChangeTeamParent($id: ID!, $parentId: ID) {
-                updateTeam(id: $id, parentTeam: $parentId) {
+            mutation ChangeTeamParent($id: ID!, $parentName: String!) {
+                updateTeam(id: $id, parentTeamName: $parentName) {
                     id
                 }
             }

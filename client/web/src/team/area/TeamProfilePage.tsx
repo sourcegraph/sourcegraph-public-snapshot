@@ -78,7 +78,7 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
                     <Text className="d-flex align-items-center">
                         {team.parentTeam === null && <span className="text-muted">No parent team</span>}
                         {team.viewerCanAdminister && (
-                            <Button variant="link" onClick={onEditDisplayName} className="ml-2" size="sm">
+                            <Button variant="link" onClick={onEditParent} className="ml-2" size="sm">
                                 <Icon inline={true} aria-label="Edit team display name" svgPath={mdiPencil} />
                             </Button>
                         )}
@@ -97,12 +97,12 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
             )}
 
             {openModal === 'edit-parent' && (
-                <EditTeamDisplayNameModal
+                <EditTeamParentModal
                     onCancel={closeModal}
                     afterEdit={afterAction}
-                    teamID={team.id}
+                    teamId={team.id}
                     teamName={team.name}
-                    displayName={team.displayName}
+                    parentName={team.parentTeam?.name ?? null}
                 />
             )}
         </>
@@ -195,7 +195,7 @@ const EditTeamDisplayNameModal: React.FunctionComponent<React.PropsWithChildren<
 interface EditTeamParentModalProps {
     teamId: Scalars['ID']
     teamName: string
-    parentId: Scalars['ID'] | null
+    parentName: string | null
     onCancel: () => void
     afterEdit: () => void
 }
@@ -203,15 +203,18 @@ interface EditTeamParentModalProps {
 const EditTeamParentModal: React.FunctionComponent<React.PropsWithChildren<EditTeamParentModalProps>> = ({
     teamId,
     teamName,
-    parentId: currentParentId,
+    parentName: currentParentName,
     onCancel,
     afterEdit,
 }) => {
-    const labelId = 'editDisplayName'
+    const labelId = 'editParentTeam'
 
-    const [parentId, setParentId] = useState<Scalars['ID'] | null>(currentParentId)
-    const onParentIdChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        setParentId(event.currentTarget.value)
+    const [parentName, setParentName] = useState<string | null>(currentParentName)
+    const onParentNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+        if (event.currentTarget.value === '') {
+            setParentName(null)
+        }
+        setParentName(event.currentTarget.value)
     }
 
     const [editTeam, { loading, error }] = useChangeTeamParent()
@@ -219,43 +222,42 @@ const EditTeamParentModal: React.FunctionComponent<React.PropsWithChildren<EditT
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
         async event => {
             event.preventDefault()
-
             if (!event.currentTarget.checkValidity()) {
                 return
             }
-
             try {
-                await editTeam({ variables: { id: teamID, parentId } })
-
+                await editTeam({
+                    variables: {
+                        id: teamId,
+                        parentName: parentName ?? '',
+                    },
+                })
                 afterEdit()
             } catch (error) {
                 // Non-request error. API errors will be available under `error` above.
                 logger.error(error)
             }
         },
-        [afterEdit, teamID, parentId, editTeam]
+        [afterEdit, teamId, parentName, editTeam]
     )
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
-            <H3 id={labelId}>Modify team {teamName} display name</H3>
-
+            <H3 id={labelId}>Modify parent team of {teamName}</H3>
             {error && <ErrorAlert error={error} />}
-
             <Form onSubmit={onSubmit}>
                 <Label htmlFor="edit-team--displayname" className="mt-2">
                     Display name
                 </Label>
                 <Input
                     id="edit-team--displayname"
-                    placeholder="Engineering Team"
+                    placeholder="parent-team"
                     maxLength={TEAM_DISPLAY_NAME_MAX_LENGTH}
                     autoCorrect="off"
-                    value={displayName}
-                    onChange={onDisplayNameChange}
+                    value={parentName ?? ''}
+                    onChange={onParentNameChange}
                     disabled={loading}
                 />
-
                 <div className="d-flex justify-content-end pt-1">
                     <Button disabled={loading} className="mr-2" onClick={onCancel} outline={true} variant="secondary">
                         Cancel
