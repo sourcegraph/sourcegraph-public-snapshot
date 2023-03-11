@@ -201,7 +201,7 @@ func (c *Cache[K, V]) reap() {
 				lastUsed = &time.Time{}
 			}
 
-			if (*lastUsed).Before(earliestAllowed) {
+			if lastUsed.Before(earliestAllowed) {
 				expired[key] = entry.value
 			}
 		}
