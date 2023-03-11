@@ -661,5 +661,3 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.
 
 	return NewPermissionsSyncJobsResolver(r.db, args)
 }
-
-func strPtr(s string) *string { return &s }

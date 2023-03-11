@@ -156,12 +156,16 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 
 	featureFlags := database.NewMockFeatureFlagStore()
 
+	syncJobs := database.NewMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
