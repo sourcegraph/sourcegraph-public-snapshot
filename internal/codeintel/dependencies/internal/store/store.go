@@ -701,7 +701,7 @@ SELECT EXISTS (
 `
 
 func (s *store) UpdateAllBlockedStatuses(ctx context.Context, pkgs []shared.PackageRepoReference, startTime time.Time) (pkgsUpdated, versionsUpdated int, err error) {
-	ctx, _, endObservation := s.operations.shouldRefilterPackageRepoRefs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.updateAllBlockedStatuses.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numPackages", len(pkgs)),
 		log.String("startTime", startTime.Format(time.RFC3339)),
 	}})
