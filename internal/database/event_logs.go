@@ -709,7 +709,7 @@ func (l *eventLogStore) siteUsageMultiplePeriodsBySQL(ctx context.Context, start
 				IntegrationUserCount: 0,
 			})
 		}
-		if v.Type == "rolling month" {
+		if v.Type == "rollingmonth" {
 			rmauCounts = append(rmauCounts, &types.SiteActivityPeriod{
 				StartTime:           v.Start,
 				UserCount:           int32(v.Count),
