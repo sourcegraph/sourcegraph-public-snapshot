@@ -447,7 +447,10 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 			needsUpdate = true
 			t.DisplayName = *args.DisplayName
 		}
-		if args.ParentTeam != nil || args.ParentTeamName != nil {
+		if args.ParentTeamName != nil && *args.ParentTeamName == "" && t.ParentTeamID != 0 {
+			needsUpdate = true
+			t.ParentTeamID = 0
+		} else if args.ParentTeam != nil || args.ParentTeamName != nil {
 			parentTeam, err := findTeam(ctx, tx.Teams(), args.ParentTeam, args.ParentTeamName)
 			if err != nil {
 				return errors.Wrap(err, "cannot find parent team")

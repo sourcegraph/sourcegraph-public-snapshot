@@ -76,7 +76,8 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
                     </Text>
                     <H3>Parent team</H3>
                     <Text className="d-flex align-items-center">
-                        {team.parentTeam === null && <span className="text-muted">No parent team</span>}
+                        {team.parentTeam && <span>{team.parentTeam.name}</span>}
+                        {!team.parentTeam && <span className="text-muted">No parent team</span>}
                         {team.viewerCanAdminister && (
                             <Button variant="link" onClick={onEditParent} className="ml-2" size="sm">
                                 <Icon inline={true} aria-label="Edit team display name" svgPath={mdiPencil} />

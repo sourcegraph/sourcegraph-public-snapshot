@@ -9697,7 +9697,7 @@ extend type Mutation {
     To unset the display name, pass an empty string. Null will make it ignore updates.
 
     Either parentTeam XOR parentTeamName can be specified to make the team a child
-    team of the given parent.
+    team of the given parent. In order to make team top-level (no parent), specify parentTeamName as "".
     The user has to be a team-member of both the child and parent team for that, and
     neither can be read-only. Site-admin can modify all teams without constraints.
     """
