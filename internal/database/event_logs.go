@@ -668,9 +668,9 @@ func (l *eventLogStore) siteUsageMultiplePeriodsBySQL(ctx context.Context, start
 	}
 	defer rows.Close()
 
-	dauCounts  := []*types.SiteActivityPeriod{}
-	wauCounts  := []*types.SiteActivityPeriod{}
-	mauCounts  := []*types.SiteActivityPeriod{}
+	dauCounts := []*types.SiteActivityPeriod{}
+	wauCounts := []*types.SiteActivityPeriod{}
+	mauCounts := []*types.SiteActivityPeriod{}
 	rmauCounts := []*types.SiteActivityPeriod{}
 	for rows.Next() {
 		var v UsageValue
@@ -724,9 +724,9 @@ func (l *eventLogStore) siteUsageMultiplePeriodsBySQL(ctx context.Context, start
 		return nil, err
 	}
 	return &types.SiteUsageStatistics{
-		DAUs: dauCounts,
-		WAUs: wauCounts,
-		MAUs: mauCounts,
+		DAUs:  dauCounts,
+		WAUs:  wauCounts,
+		MAUs:  mauCounts,
 		RMAUs: rmauCounts,
 	}, nil
 }
