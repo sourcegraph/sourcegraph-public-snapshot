@@ -606,7 +606,7 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 			IntegrationUserCount: 0,
 		},
 		{
-			StartTime:           time.Date(2018, 1, 30, 0, 0, 0, 0, time.UTC),
+			StartTime:           time.Date(2018, 2, 1, 0, 0, 0, 0, time.UTC),
 			UserCount:           3,
 			RegisteredUserCount: 1,
 			AnonymousUserCount:  2,
@@ -743,7 +743,7 @@ func siteActivityCompare(got, want *types.SiteUsageStatistics) error {
 		return nil
 	}
 	if len(got.DAUs) != len(want.DAUs) || len(got.WAUs) != len(want.WAUs) || len(got.MAUs) != len(want.MAUs) || len(got.RMAUs) != len(want.RMAUs) {
-		return errors.Errorf("site activities must be same length, got %d want %d (DAUs), got %d want %d (WAUs), got %d want %d (RMAUs), got %d want %d (RMAUs)", len(got.DAUs), len(want.DAUs), len(got.WAUs), len(want.WAUs), len(got.MAUs), len(want.MAUs), len(got.RMAUs), len(want.RMAUs))
+		return errors.Errorf("site activities must be same length, got %d want %d (DAUs), got %d want %d (WAUs), got %d want %d (MAUs), got %d want %d (RMAUs)", len(got.DAUs), len(want.DAUs), len(got.WAUs), len(want.WAUs), len(got.MAUs), len(want.MAUs), len(got.RMAUs), len(want.RMAUs))
 	}
 	if err := siteActivityPeriodSliceCompare("DAUs", got.DAUs, want.DAUs); err != nil {
 		return err
