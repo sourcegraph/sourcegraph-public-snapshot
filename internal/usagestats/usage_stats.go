@@ -235,8 +235,8 @@ func GetSiteUsageStatistics(ctx context.Context, db database.DB, opt *SiteUsageS
 }
 
 // activeUsers returns counts of active (non-SG) users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
-func activeUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, monthPeriods int) (*types.SiteUsageStatistics, error) {
-	if dayPeriods == 0 && weekPeriods == 0 && monthPeriods == 0 {
+func activeUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, monthPeriods, rollingMonthPeriods int) (*types.SiteUsageStatistics, error) {
+	if dayPeriods == 0 && weekPeriods == 0 && monthPeriods == 0 && rollingMonthPeriods == 0 {
 		return &types.SiteUsageStatistics{
 			DAUs:  []*types.SiteActivityPeriod{},
 			WAUs:  []*types.SiteActivityPeriod{},
