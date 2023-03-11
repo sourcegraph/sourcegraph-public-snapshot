@@ -1033,7 +1033,7 @@ func (c *Changeset) ResetReconcilerState(state ReconcilerState) {
 	c.ReconcilerState = state
 	c.NumResets = 0
 	c.NumFailures = 0
-    // Copy over and reset the previous failure message
+	// Copy over and reset the previous failure message
 	c.PreviousFailureMessage = c.FailureMessage
 	c.FailureMessage = nil
 	// The reconciler syncs where needed, so we reset this message.
