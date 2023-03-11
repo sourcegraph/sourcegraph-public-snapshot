@@ -1082,7 +1082,16 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 	})
 }
 
-func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
+func TestPermsStore_SetRepoPermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+
 	tests := []struct {
 		name            string
 		updates         []*authz.RepoPermissions
@@ -1245,96 +1254,89 @@ func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
 		},
 	}
 
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		t.Run("repo-centric update should set synced_at", func(t *testing.T) {
+	t.Run("repo-centric update should set synced_at", func(t *testing.T) {
+		s := perms(logger, db, clock)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
+
+		rp := &authz.RepoPermissions{
+			RepoID:  1,
+			Perm:    authz.Read,
+			UserIDs: toMapset(2),
+		}
+		if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+
+		perms, err := s.LoadRepoPermissions(context.Background(), 1)
+		require.NoError(t, err)
+		gotIDs := make([]int32, len(perms))
+		for i, perm := range perms {
+			gotIDs[i] = perm.UserID
+		}
+
+		equal(t, "rp.UserIDs", []int32{2}, gotIDs)
+	})
+
+	t.Run("unrestricted columns should be set", func(t *testing.T) {
+		// TOOD: Use this in other tests
+		s := setupTestPerms(t, db, clock)
+
+		rp := &authz.RepoPermissions{
+			RepoID:       1,
+			Perm:         authz.Read,
+			UserIDs:      toMapset(2),
+			Unrestricted: true,
+		}
+		if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+
+		perms, err := s.LoadRepoPermissions(context.Background(), 1)
+		require.NoError(t, err)
+
+		if len(perms) != 1 || perms[0].UserID != 0 {
+			t.Fatalf("Want unrestricted, got %v", perms)
+		}
+	})
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			s := perms(logger, db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
 			})
 
-			rp := &authz.RepoPermissions{
-				RepoID:  1,
-				Perm:    authz.Read,
-				UserIDs: toMapset(2),
-			}
-			if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-				t.Fatal(err)
-			}
+			for index, p := range test.updates {
+				tmp := &authz.RepoPermissions{
+					RepoID:    p.RepoID,
+					Perm:      p.Perm,
+					UpdatedAt: p.UpdatedAt,
+				}
+				if p.UserIDs != nil {
+					tmp.UserIDs = p.UserIDs
+				}
+				result, err := s.SetRepoPermissions(context.Background(), tmp)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			perms, err := s.LoadRepoPermissions(context.Background(), 1)
-			require.NoError(t, err)
-			gotIDs := make([]int32, len(perms))
-			for i, perm := range perms {
-				gotIDs[i] = perm.RepoID
-			}
-
-			equal(t, "rp.UserIDs", []int{2}, gotIDs)
-		})
-
-		t.Run("unrestricted columns should be set", func(t *testing.T) {
-			// TOOD: Use this in other tests
-			s := setupTestPerms(t, db, clock)
-
-			rp := &authz.RepoPermissions{
-				RepoID:       1,
-				Perm:         authz.Read,
-				UserIDs:      toMapset(2),
-				Unrestricted: true,
-			}
-			if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-				t.Fatal(err)
+				if diff := cmp.Diff(test.expectedResult[index], result); diff != "" {
+					t.Fatal(diff)
+				}
 			}
 
-			rp = &authz.RepoPermissions{
-				RepoID: 1,
-				Perm:   authz.Read,
+			err := checkRegularPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
+			if err != nil {
+				t.Fatal("user_permissions:", err)
 			}
-			perms, err := s.LoadRepoPermissions(context.Background(), 1)
-			require.NoError(t, err)
 
-			if len(perms) != 1 || perms[0].UserID != 0 {
-				t.Fatal("Want unrestricted, got %v", perms)
+			err = checkRegularPermsTable(s, `SELECT repo_id, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
+			if err != nil {
+				t.Fatal("repo_permissions:", err)
 			}
 		})
-
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				s := perms(logger, db, clock)
-				t.Cleanup(func() {
-					cleanupPermsTables(t, s)
-				})
-
-				for index, p := range test.updates {
-					tmp := &authz.RepoPermissions{
-						RepoID:    p.RepoID,
-						Perm:      p.Perm,
-						UpdatedAt: p.UpdatedAt,
-					}
-					if p.UserIDs != nil {
-						tmp.UserIDs = p.UserIDs
-					}
-					result, err := s.SetRepoPermissions(context.Background(), tmp)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if diff := cmp.Diff(test.expectedResult[index], result); diff != "" {
-						t.Fatal(diff)
-					}
-				}
-
-				err := checkRegularPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
-				if err != nil {
-					t.Fatal("user_permissions:", err)
-				}
-
-				err = checkRegularPermsTable(s, `SELECT repo_id, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
-				if err != nil {
-					t.Fatal("repo_permissions:", err)
-				}
-			})
-		}
 	}
 }
 

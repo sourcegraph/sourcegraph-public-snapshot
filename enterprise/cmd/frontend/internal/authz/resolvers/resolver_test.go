@@ -1252,9 +1252,16 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
-		p.UserIDs = map[int32]struct{}{1: {}, 2: {}, 3: {}, 4: {}, 5: {}}
-		return nil
+	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
+		permissions := make([]authz.Permission, 5)
+		for i, userID := range []int32{1, 2, 3, 4, 5} {
+			permissions[i] = authz.Permission{
+				UserID: userID,
+				RepoID: repoID,
+			}
+		}
+
+		return permissions, nil
 	})
 
 	db := edb.NewStrictMockEnterpriseDB()
@@ -1428,19 +1435,21 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
-		p.UpdatedAt = clock()
-		p.SyncedAt = clock()
-		return nil
+	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
+		return []authz.Permission{{RepoID: repoID, UserID: 42, UpdatedAt: clock()}}, nil
 	})
 	perms.IsRepoUnrestrictedFunc.SetDefaultHook(func(_ context.Context, _ api.RepoID) (bool, error) {
 		return false, nil
 	})
 
+	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: clock()}, nil)
+
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.PermsFunc.SetDefaultReturn(perms)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	tests := []struct {
 		name     string
