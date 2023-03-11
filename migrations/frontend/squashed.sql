@@ -1201,6 +1201,7 @@ CREATE TABLE changesets (
     detached_at timestamp with time zone,
     computed_state text NOT NULL,
     external_fork_name citext,
+    previous_failure_message text,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -3626,7 +3627,8 @@ CREATE VIEW reconciler_changesets AS
     c.last_heartbeat_at,
     c.external_fork_name,
     c.external_fork_namespace,
-    c.detached_at
+    c.detached_at,
+    c.previous_failure_message
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -78,7 +79,7 @@ func assertCommandOutput(t *testing.T, cmd *exec.Cmd, workingDir, expectedOut st
 }
 
 func coursierScript(t *testing.T, dir string) string {
-	coursierPath, err := os.OpenFile(path.Join(dir, "coursier"), os.O_CREATE|os.O_RDWR, 07777)
+	coursierPath, err := os.OpenFile(path.Join(dir, "coursier"), os.O_CREATE|os.O_RDWR, 0o7777)
 	assert.Nil(t, err)
 	defer coursierPath.Close()
 	script := fmt.Sprintf(`#!/usr/bin/env bash
@@ -129,7 +130,8 @@ func TestNoMaliciousFiles(t *testing.T) {
 	assert.Nil(t, os.Mkdir(extractPath, os.ModePerm))
 
 	s := jvmPackagesSyncer{
-		config: &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		coursier: coursier.NewCoursierHandle(&observation.TestContext),
+		config:   &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
 		fetch: func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error) {
 			jarPath := path.Join(dir, "sampletext.zip")
 			createMaliciousJar(t, jarPath)

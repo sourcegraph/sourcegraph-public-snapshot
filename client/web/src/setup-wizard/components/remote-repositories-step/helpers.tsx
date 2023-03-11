@@ -135,3 +135,15 @@ export const getNextButtonLogEvent = (data?: GetCodeHostsResult): string | null 
 
     return null
 }
+
+export const getRemoteCodeHostCount = (data?: GetCodeHostsResult): number => {
+    if (!data) {
+        return 0
+    }
+
+    const nonOtherExternalServices = data.externalServices.nodes.filter(
+        service => service.kind !== ExternalServiceKind.OTHER
+    )
+
+    return nonOtherExternalServices.length
+}

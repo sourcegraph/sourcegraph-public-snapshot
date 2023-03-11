@@ -21,7 +21,7 @@ type UserData =
 
 export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) => {
     const primaryEmail = user.emails?.find(email => email.isPrimary)?.email
-    const roles = user.roles.nodes.map(role => toTitleCase(role.name))
+    const roles = user.roles?.nodes.map(role => toTitleCase(role.name))
 
     const userData: UserData[] = [
         {
@@ -50,8 +50,8 @@ export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) =>
         },
         {
             name: 'Roles',
-            value: roles,
-            visible: true,
+            value: roles || ['Not set'],
+            visible: !!roles,
             isList: true,
         },
     ]

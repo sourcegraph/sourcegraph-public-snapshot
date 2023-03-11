@@ -16,7 +16,8 @@ import {
     UpdateRemoteCodeHostResult,
     UpdateRemoteCodeHostVariables,
 } from '../../../../../graphql-operations'
-import { GET_CODE_HOST_BY_ID, UPDATE_CODE_HOST } from '../../queries'
+import { UPDATE_CODE_HOST } from '../../../../queries'
+import { GET_CODE_HOST_BY_ID } from '../../queries'
 
 import { CodeHostConnectFormFields, CodeHostJSONForm, CodeHostJSONFormState } from './common'
 import { GithubConnectView } from './github/GithubConnectView'
