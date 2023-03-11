@@ -421,18 +421,22 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	}
 
 	expectedSummary := types.SiteUsageSummary{
-		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-		Day:                     now.Truncate(time.Hour * 24),
-		UniquesMonth:            11,
-		UniquesWeek:             7,
-		UniquesDay:              5,
-		RegisteredUniquesMonth:  10,
-		RegisteredUniquesWeek:   6,
-		RegisteredUniquesDay:    5,
-		IntegrationUniquesMonth: 11,
-		IntegrationUniquesWeek:  7,
-		IntegrationUniquesDay:   5,
+		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).add(0, 0, -30),
+		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                            now.Truncate(time.Hour * 24),
+		UniquesRollingMonth:            11,
+		UniquesMonth:                   11,
+		UniquesWeek:                    7,
+		UniquesDay:                     5,
+		RegisteredUniquesRollingMonth:  10,
+		RegisteredUniquesMonth:         10,
+		RegisteredUniquesWeek:          6,
+		RegisteredUniquesDay:           5,
+		IntegrationUniquesRollingMonth: 11,
+		IntegrationUniquesMonth:        11,
+		IntegrationUniquesWeek:         7,
+		IntegrationUniquesDay:          5,
 	}
 	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
 		t.Fatal(diff)
