@@ -421,7 +421,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	}
 
 	expectedSummary := types.SiteUsageSummary{
-		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).add(0, 0, -30),
+		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30),
 		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
 		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
 		Day:                            now.Truncate(time.Hour * 24),
