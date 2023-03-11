@@ -372,7 +372,7 @@ func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Cont
 		return tx.create(ctx, job)
 	}
 	// Database constraint guarantees that we have at most 1 job with NULL
-	// `process_after` value.
+	// `process_after` value for the same user/repo ID.
 	existingJob := syncJobs[0]
 
 	// Existing job with higher priority should not be overridden. Existing

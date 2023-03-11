@@ -371,14 +371,14 @@ func TestPermissionSyncJobs_GetLatestSyncJob(t *testing.T) {
 		t.Cleanup(func() { cleanupJobs(t) })
 
 		createJob(t, user1.ID, 0) // id = 1
-		createJob(t, user1.ID, 0) // id = 2
-		createJob(t, user2.ID, 0) // id = 3
-		createJob(t, user2.ID, 0) // id = 4
-
+		createJob(t, user2.ID, 0) // id = 2
 		finishJob(t, 1, clock.Now().Add(-1*time.Hour))
-		finishJob(t, 2, clock.Now().Add(-1*time.Minute))
-		finishJob(t, 3, clock.Now())
-		finishJob(t, 4, clock.Now().Add(-10*time.Minute))
+		finishJob(t, 2, clock.Now().Add(-10*time.Minute))
+
+		createJob(t, user2.ID, 0) // id = 3
+		createJob(t, user1.ID, 0) // id = 4
+		finishJob(t, 3, clock.Now().Add(-1*time.Minute))
+		finishJob(t, 4, clock.Now())
 
 		job, err := store.GetLatestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{
 			UserID: int(user2.ID),
