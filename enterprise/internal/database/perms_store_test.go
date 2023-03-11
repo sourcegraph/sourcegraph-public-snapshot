@@ -78,113 +78,143 @@ func TestPermsStore_LoadUserPermissions(t *testing.T) {
 	db := database.NewDB(logger, testDb)
 	ctx := context.Background()
 
-	t.Run("no matching", func(t *testing.T) {
-		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
-			cleanupUsersTable(t, s)
-			cleanupReposTable(t, s)
+	runTests := func(t *testing.T) {
+		t.Helper()
+
+		t.Run("no matching", func(t *testing.T) {
+			s := perms(logger, db, clock)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+				cleanupUsersTable(t, s)
+				cleanupReposTable(t, s)
+			})
+
+			rp := &authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toMapset(2),
+			}
+			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
+
+			if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}); err != nil {
+				t.Fatal(err)
+			} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+
+			up, err := s.LoadUserPermissions(context.Background(), 1)
+			require.NoError(t, err)
+
+			equal(t, "IDs", 0, len(up))
 		})
 
-		rp := &authz.RepoPermissions{
-			RepoID:  1,
-			Perm:    authz.Read,
-			UserIDs: toMapset(2),
-		}
-		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
+		t.Run("found matching", func(t *testing.T) {
+			s := perms(logger, db, clock)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+				cleanupUsersTable(t, s)
+				cleanupReposTable(t, s)
+			})
 
-		if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}); err != nil {
-			t.Fatal(err)
-		} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-			t.Fatal(err)
-		}
+			rp := &authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toMapset(2),
+			}
+			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
 
-		up, err := s.LoadUserPermissions(context.Background(), 1)
-		require.NoError(t, err)
+			if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}); err != nil {
+				t.Fatal(err)
+			} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
 
-		equal(t, "IDs", 0, len(up))
+			up, err := s.LoadUserPermissions(context.Background(), 2)
+			require.NoError(t, err)
+
+			gotIDs := make([]int32, len(up))
+			for i, perm := range up {
+				gotIDs[i] = perm.RepoID
+			}
+
+			equal(t, "IDs", []int32{1}, gotIDs)
+		})
+
+		t.Run("add and change", func(t *testing.T) {
+			s := perms(logger, db, clock)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+				cleanupUsersTable(t, s)
+				cleanupReposTable(t, s)
+			})
+
+			rp := &authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toMapset(1, 2),
+			}
+			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 1, RepoID: 1}, {UserID: 2, RepoID: 1}, {UserID: 3, RepoID: 1}})
+
+			if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 1}, {UserID: 2}}); err != nil {
+				t.Fatal(err)
+			} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+
+			rp = &authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toMapset(2, 3),
+			}
+			if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}, {UserID: 3}}); err != nil {
+				t.Fatal(err)
+			} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+
+			up1, err := s.LoadUserPermissions(context.Background(), 1)
+			require.NoError(t, err)
+
+			equal(t, "No IDs", 0, len(up1))
+
+			up2, err := s.LoadUserPermissions(context.Background(), 2)
+			require.NoError(t, err)
+			gotIDs := make([]int32, len(up2))
+			for i, perm := range up2 {
+				gotIDs[i] = perm.RepoID
+			}
+
+			equal(t, "IDs", []int32{1}, gotIDs)
+
+			up3, err := s.LoadUserPermissions(context.Background(), 3)
+			require.NoError(t, err)
+			gotIDs = make([]int32, len(up3))
+			for i, perm := range up3 {
+				gotIDs[i] = perm.RepoID
+			}
+
+			equal(t, "IDs", []int32{1}, gotIDs)
+		})
+	}
+
+	t.Run("With legacy perms tables", func(t *testing.T) {
+		mockUnifiedPermsConfig(false)
+
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+
+		runTests(t)
 	})
 
-	t.Run("found matching", func(t *testing.T) {
-		s := perms(logger, db, clock)
+	t.Run("With unified perms table", func(t *testing.T) {
+		mockUnifiedPermsConfig(true)
+
 		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
+			conf.Mock(nil)
 		})
 
-		rp := &authz.RepoPermissions{
-			RepoID:  1,
-			Perm:    authz.Read,
-			UserIDs: toMapset(2),
-		}
-		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
-
-		if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}); err != nil {
-			t.Fatal(err)
-		} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-			t.Fatal(err)
-		}
-
-		up, err := s.LoadUserPermissions(context.Background(), 2)
-		require.NoError(t, err)
-
-		gotIDs := make([]int32, len(up))
-		for i, perm := range up {
-			gotIDs[i] = perm.RepoID
-		}
-
-		equal(t, "IDs", []int32{1}, gotIDs)
-	})
-
-	t.Run("add and change", func(t *testing.T) {
-		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
-		})
-
-		rp := &authz.RepoPermissions{
-			RepoID:  1,
-			Perm:    authz.Read,
-			UserIDs: toMapset(1, 2),
-		}
-		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 1, RepoID: 1}, {UserID: 2, RepoID: 1}})
-
-		if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 1}, {UserID: 2}}); err != nil {
-			t.Fatal(err)
-		} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-			t.Fatal(err)
-		}
-
-		rp = &authz.RepoPermissions{
-			RepoID:  1,
-			Perm:    authz.Read,
-			UserIDs: toMapset(2, 3),
-		}
-		if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-			t.Fatal(err)
-		}
-
-		up1, err := s.LoadUserPermissions(context.Background(), 1)
-		require.NoError(t, err)
-
-		equal(t, "No IDs", 0, len(up1))
-
-		up2, err := s.LoadUserPermissions(context.Background(), 2)
-		require.NoError(t, err)
-		gotIDs := make([]int32, len(up2))
-		for i, perm := range up2 {
-			gotIDs[i] = perm.RepoID
-		}
-
-		equal(t, "IDs", []int32{1}, gotIDs)
-
-		up3, err := s.LoadUserPermissions(context.Background(), 3)
-		require.NoError(t, err)
-		gotIDs = make([]int32, len(up3))
-		for i, perm := range up3 {
-			gotIDs[i] = perm.RepoID
-		}
-
-		equal(t, "IDs", []int32{1}, gotIDs)
+		runTests(t)
 	})
 }
 

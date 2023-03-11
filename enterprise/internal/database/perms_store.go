@@ -1538,7 +1538,7 @@ func (s *permsStore) execute(ctx context.Context, q *sqlf.Query, vs ...any) (err
 
 var ScanPermissions = basestore.NewSliceScanner(func(s dbutil.Scanner) (authz.Permission, error) {
 	p := authz.Permission{}
-	err := s.Scan(&p.UserID, &p.ExternalAccountID, &p.RepoID, &p.CreatedAt, &p.UpdatedAt, &p.Source)
+	err := s.Scan(&dbutil.NullInt32{N: &p.UserID}, &dbutil.NullInt32{N: &p.ExternalAccountID}, &p.RepoID, &p.CreatedAt, &p.UpdatedAt, &p.Source)
 	return p, err
 })
 
