@@ -796,6 +796,7 @@ SELECT
       THEN unique_users_by_month.count
       ELSE unique_users_by_rolling_month.count
     END
+  END
   END, 0) count,
   COALESCE(CASE WHEN all_periods.type = 'day'
     THEN unique_users_by_day.count_registered
@@ -805,6 +806,7 @@ SELECT
       THEN unique_users_by_month.count_registered
       ELSE unique_users_by_rolling_month.count_registered
 	END
+  END
   END, 0) count_registered
 FROM all_periods
 LEFT OUTER JOIN unique_users_by_day ON all_periods.type = 'day' AND all_periods.period = (unique_users_by_day.day_period)::timestamp
