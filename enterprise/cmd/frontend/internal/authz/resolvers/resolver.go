@@ -617,21 +617,27 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 		return nil, err
 	}
 
-	// TODO: refactor this to get the syncedAt times from jobs table instead
 	perms, err := r.db.Perms().LoadUserPermissions(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
+	// get max updated_at time from the permissions
 	updatedAt := time.Time{}
-	syncedAt := time.Time{}
 	for _, p := range perms {
-		if p.UpdatedAt.After(updatedAt) && p.Source == authz.SourceRepoSync {
+		if p.UpdatedAt.After(updatedAt) {
 			updatedAt = p.UpdatedAt
 		}
-		if p.UpdatedAt.After(syncedAt) && p.Source == authz.SourceUserSync {
-			syncedAt = p.UpdatedAt
-		}
+	}
+
+	// get sync time from the sync jobs table
+	latestSyncJob, err := r.db.PermissionSyncJobs().GetLatestFinishedSyncJob(ctx, database.ListPermissionSyncJobOpts{
+		UserID:      int(userID),
+		NotCanceled: true,
+	})
+	syncedAt := time.Time{}
+	if latestSyncJob != nil {
+		syncedAt = latestSyncJob.FinishedAt
 	}
 
 	return &permissionsInfoResolver{
