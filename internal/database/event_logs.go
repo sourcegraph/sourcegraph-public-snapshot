@@ -967,7 +967,7 @@ FROM (
   WHERE (timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `) AND (%s)
 ) events
 
-GROUP BY rolling_month, current_month, current_week, current_day
+GROUP BY current_rolling_month, rolling_month, current_month, current_week, current_day
 `
 
 func (l *eventLogStore) CodeIntelligencePreciseWAUs(ctx context.Context) (int, error) {
