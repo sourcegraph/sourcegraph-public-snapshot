@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiChevronUp, mdiChevronDown, mdiDelete } from '@mdi/js'
-import { startCase, isEqual, noop } from 'lodash'
+import { startCase, noop } from 'lodash'
 import { animated, useSpring } from 'react-spring'
 
 import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
