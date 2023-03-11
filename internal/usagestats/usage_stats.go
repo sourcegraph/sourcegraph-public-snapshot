@@ -226,7 +226,7 @@ func GetSiteUsageStatistics(ctx context.Context, db database.DB, opt *SiteUsageS
 		}
 	}
 
-	usage, err := activeUsers(ctx, db, dayPeriods, weekPeriods, monthPeriods)
+	usage, err := activeUsers(ctx, db, dayPeriods, weekPeriods, monthPeriods, rollingMonthPeriods)
 	if err != nil {
 		return nil, err
 	}
