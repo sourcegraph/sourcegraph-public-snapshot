@@ -40,7 +40,7 @@ workdir=$(dirname "${app_bundle_path}")
 
 # Paranoid cleanup of the api key file that may be left in workdir because of Docker bind mounts.
 # When in buildkite, the whole workdir will get cleaned up; setting that trap will replace this one
-trap "rm -rf \"${workdir}/private_keys" EXIT
+trap "rm -rf \"${workdir}/private_keys\"" EXIT
 
 [ -n "${BUILDKITE-}" ] && {
   # In Buildkite, we're running in a Docker container, so `docker run -v` needs to refer to a

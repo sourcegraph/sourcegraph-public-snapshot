@@ -41,13 +41,14 @@ while IFS= read -r gcs_file; do
   sha256sum "${zip_file_name}.zip" >>checksums.txt.2
   mv checksums.txt.2 checksums.txt
   # keep the macOS universal binary around because it'll also be copied into the app bundle
-  [[ ${zip_file_name} = sourcegraph_${VERSION}_darwin_all.zip ]] || rm -rf "${zip_file_name:-?}/"
+  [[ ${zip_file_name} = sourcegraph_${VERSION}_darwin_all ]] && mv "sourcegraph_${VERSION}_darwin_all/sourcegraph" sourcegraph
+  rm -rf "${zip_file_name:-?}/"
   gsutil cp "${zip_file_name}.zip" checksums.txt "gs://sourcegraph-app-releases/${VERSION}/" || exit 1
   rm -f "${zip_file_name}.zip"
 done < <(gsutil ls "gs://sourcegraph-app-releases/${VERSION}/*darwin*.zip")
 
 # the macOS universal binary should have been left by the binary signing process
-[ -f "sourcegraph_${VERSION}_darwin_all/sourcegraph" ] || {
+[ -f "sourcegraph" ] || {
   echo "unable to download sourcegraph binary from GCS" 1>&2
   exit 1
 }
@@ -71,9 +72,9 @@ artifact="${PWD}/Sourcegraph App.app" \
 # we really want to package in a dmg container, but that will take automation on macOS,
 # which could work in GH actions, but not in buildkite
 # Instead, compress into a zip archive for now
-zip -r9 "Sourcegraph App.app.zip" "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip"
+zip -r9 "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip" "Sourcegraph App.app"
 sha256sum "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip" >>checksums.txt
-gsutils cp "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip" checksums.txt "gs://sourcegraph-app-releases/${VERSION}/"
+gsutil cp "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip" checksums.txt "gs://sourcegraph-app-releases/${VERSION}/" || exit 1
 
 # replicate the artifacts in a "latest" bucket
 while IFS= read -r gcs_file; do
