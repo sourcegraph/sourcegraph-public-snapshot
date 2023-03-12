@@ -90,4 +90,15 @@ func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEven
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+
+	event := &database.Event{
+		Name:      name,
+		URL:       r.URL.Host,
+		UserID:    uint32(a.UID),
+		Argument:  marshalled,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }

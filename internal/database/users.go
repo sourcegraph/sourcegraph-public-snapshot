@@ -1522,7 +1522,7 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 
 	event := &Event{
 		Name:      name,
-		URL:       "",
+		URL:       r.URL.Host,
 		UserID:    uint32(userID),
 		Argument:  args,
 		Source:    "BACKEND",
