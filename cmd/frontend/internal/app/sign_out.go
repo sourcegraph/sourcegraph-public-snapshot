@@ -92,7 +92,7 @@ func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEven
 	db.SecurityEventLogs().LogEvent(ctx, event)
 
 	event := &database.Event{
- 		Name:      name,
+ 		Name:      string(name),
  		URL:       r.URL.Host,
  		UserID:    uint32(a.UID),
  		Argument:  marshalled,

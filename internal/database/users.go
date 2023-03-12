@@ -456,7 +456,7 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 	db.SecurityEventLogs().LogEvent(ctx, event)
 
 	logEvent := &Event{
-		Name:            SecurityEventNameAccountCreated,
+		Name:            string(SecurityEventNameAccountCreated),
 		URL:             "",
 		UserID:          uint32(u.ID),
 		AnonymousUserID: "",
@@ -1521,7 +1521,7 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	db.SecurityEventLogs().LogEvent(ctx, event)
 
 	logEvent := &Event{
-		Name:      name,
+		Name:      string(name),
 		URL:       r.URL.Host,
 		UserID:    uint32(userID),
 		Argument:  args,
