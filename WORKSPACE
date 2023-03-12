@@ -250,11 +250,10 @@ crates_repository(
     manifests = [
         "//docker-images/syntax-highlighter:Cargo.toml",
         "//docker-images/syntax-highlighter:crates/scip-macros/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-syntax/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/scip-treesitter/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-syntax/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
-        "//docker-images/syntax-highlighter:Cargo.toml",
     ],
 )
 
