@@ -456,7 +456,7 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 	db.SecurityEventLogs().LogEvent(ctx, event)
 
 	event := &Event{
-		Name:            SecurityEventNameAccountCreated
+		Name:            SecurityEventNameAccountCreated,
 		URL:             "",
 		UserID:          uint32(u.ID),
 		AnonymousUserID: "",
@@ -853,7 +853,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				Role:         types.SiteAdministratorSystemRole,
 			})
 			event := &Event{
-				Name:            "RoleChangeGranted"
+				Name:            "RoleChangeGranted",
 				URL:             "",
 				UserID:          uint32(u.ID),
 				AnonymousUserID: "",
