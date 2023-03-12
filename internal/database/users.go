@@ -435,10 +435,12 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
 		Creator     int32  `json:"creator"`
+		Created     int32  `json:"created"`
 		SiteAdmin   bool   `json:"site_admin"`
 		ServiceType string `json:"service_type"`
 	}{
 		Creator:     a.UID,
+		Created:     u.ID,
 		SiteAdmin:   u.SiteAdmin,
 		ServiceType: serviceType,
 	})
@@ -458,7 +460,7 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 	logEvent := &Event{
 		Name:            string(SecurityEventNameAccountCreated),
 		URL:             "",
-		UserID:          uint32(u.ID),
+		UserID:          "",
 		AnonymousUserID: "backend",
 		Argument:        arg,
 		Source:          "BACKEND",
@@ -728,12 +730,19 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 
 	logEvents := make([]*Event, len(ids))
 	for index, id := range ids {
+		eArg, _ := json.Marshal(struct {
+			Deleter int32 `json:"deleter"`
+			Deleted int32 `json:"deleted"`
+		}{
+			Deleter: a.UID,
+			Deleted: id,
+		})
 		logEvents[index] = &Event{
 			Name:            string(name),
 			URL:             "",
-			UserID:          uint32(id),
+			UserID:          "",
 			AnonymousUserID: "backend",
-			Argument:        arg,
+			Argument:        eArg,
 			Source:          "BACKEND",
 			Timestamp:       now,
 		}
@@ -855,7 +864,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 			logEvent := &Event{
 				Name:            "RoleChangeGranted",
 				URL:             "",
-				UserID:          uint32(id),
+				UserID:          "",
 				AnonymousUserID: "backend",
 				Argument:        arg,
 				Source:          "BACKEND",
@@ -1519,12 +1528,19 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
 
+	eArgs, _ := json.Marshal(struct {
+		Requester int32 `json:"requester"`
+		Requestee int32 `json:"requestee"`
+	}{
+		Requester: a.UID,
+		Requestee: userID,
+	})
 	logEvent := &Event{
 		Name:            string(name),
 		URL:             r.URL.Host,
-		UserID:          uint32(userID),
+		UserID:          "",
 		AnonymousUserID: "backend",
-		Argument:        args,
+		Argument:        eArgs,
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
