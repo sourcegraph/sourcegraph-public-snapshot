@@ -246,7 +246,9 @@ crates_repository(
     # the target is ran.
     # To regenerate this file run: CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
     lockfile = "//docker-images/syntax-highlighter:Cargo.Bazel.lock",
+    # glob doesn't work in WORKSPACE files: https://github.com/bazelbuild/bazel/issues/11935
     manifests = [
+        "//docker-images/syntax-highlighter:Cargo.toml",
         "//docker-images/syntax-highlighter:crates/scip-macros/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/scip-treesitter/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
