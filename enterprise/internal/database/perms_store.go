@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
+	"github.com/sourcegraph/sourcegraph/internal/collections/slices"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -514,13 +514,8 @@ RETURNING updated_at;
 
 	// we split into chunks, so that we don't exceed the maximum number of parameters
 	// we supply 6 parameters per row, so we can only have 65535/6 = 10922 rows per chunk
-	slicedPermissions, err := collections.SplitIntoChunks(permissions, 65535/6)
-	if err != nil {
-		return nil, err
-	}
-
 	output := make([]time.Time, 0, len(permissions))
-	for _, permissionSlice := range slicedPermissions {
+	for _, permissionSlice := range slices.Chunk(permissions, 65535/6) {
 		values := make([]*sqlf.Query, 0, len(permissionSlice))
 		for _, p := range permissionSlice {
 			values = append(values, sqlf.Sprintf("(NULLIF(%s::integer, 0), NULLIF(%s::integer, 0), %s::integer, %s::timestamptz, %s::timestamptz, %s::text)",
