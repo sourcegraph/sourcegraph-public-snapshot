@@ -19,9 +19,9 @@ import {
     MultiComboboxOption,
 } from '@sourcegraph/wildcard'
 
+import { LoaderButton } from '../../../../components/LoaderButton'
 import { RoleFields } from '../../../../graphql-operations'
 import { useGetUserRolesAndAllRoles, useSetRoles } from '../backend'
-import { LoaderButton } from '../../../../components/LoaderButton'
 
 export interface RoleAssignmentModalProps {
     onCancel: () => void
