@@ -10,7 +10,7 @@ import {
 } from 'react'
 
 import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
-import { Compartment, EditorState, Extension, Prec } from '@codemirror/state'
+import { Compartment, EditorSelection, EditorState, Extension, Prec } from '@codemirror/state'
 import { EditorView, keymap, drawSelection } from '@codemirror/view'
 import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -171,7 +171,34 @@ function configureQueryExtensions({
 
 // Creates extensions that don't depend on props
 function createStaticExtensions({ popoverID }: { popoverID: string }): Extension {
+    const position0 = EditorSelection.single(0)
     return [
+        EditorState.transactionFilter.of(transaction => {
+            // This is a hacky way to "fix" the cursor position when the input receives
+            // focus by clicking outside of it in Chrome.
+            // Debugging has revealed that in such a case the transaction has a user event
+            // 'select', the new selection is set to `0` and 'scrollIntoView' is 'false'.
+            // This is different from other events that change the cursor position:
+            // - Clicking on text inside the input (whether focused or not) will be a 'select.pointer'
+            //   user event.
+            // - Moving the cursor with arrow keys will be a 'select' user event but will also set
+            //   'scrollIntoView' to 'true'
+            // - Entering new characters will be of user type 'input'
+            // - Selecting a text range will be of user type 'select.pointer'
+            // - Tabbing to the input seems to only trigger a 'select' user event transaction when
+            //   the user clicked outside the input (also only in Chrome, this transaction doesn't
+            //   occur in Firefox)
+
+            if (
+                !transaction.isUserEvent('select.pointer') &&
+                transaction.isUserEvent('select') &&
+                !transaction.scrollIntoView &&
+                transaction.selection?.eq(position0)
+            ) {
+                return [transaction, { selection: EditorSelection.single(transaction.newDoc.length) }]
+            }
+            return transaction
+        }),
         singleLine,
         drawSelection(),
         EditorView.contentAttributes.of({
@@ -216,7 +243,7 @@ function createStaticExtensions({ popoverID }: { popoverID: string }): Extension
             '.cm-line': {
                 padding: 0,
             },
-            '.cm-selectionLayer .cm-selectionBackground': {
+            '.theme-dark .cm-selectionLayer .cm-selectionBackground': {
                 backgroundColor: 'var(--gray-08)',
             },
             '.sg-decorated-token-hover': {
