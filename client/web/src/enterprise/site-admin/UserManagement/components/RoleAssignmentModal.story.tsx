@@ -81,7 +81,7 @@ export const RoleAssignmentModalStory: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={mocks}>
-                <RoleAssignmentModal onCancel={noop} onSuccess={noop} />
+                <RoleAssignmentModal onCancel={noop} onSuccess={noop} user='user-1' />
             </MockedTestProvider>
         )}
     </WebStory>
