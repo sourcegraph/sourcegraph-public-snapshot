@@ -4,12 +4,15 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-// Min returns the minimum of two variables.
-func Min[T constraints.Ordered](a T, b T) T {
-	if a < b {
-		return a
+// Min returns the minimum value in a list.
+func Min[T constraints.Ordered](first T, rest ...T) T {
+	min := first
+	for _, val := range rest {
+		if val < min {
+			min = val
+		}
 	}
-	return b
+	return min
 }
 
 // Chunk splits the slice into chunks of size `size`. Returns a slice of slices.
