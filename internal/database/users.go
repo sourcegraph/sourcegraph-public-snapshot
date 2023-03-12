@@ -460,7 +460,6 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 	logEvent := &Event{
 		Name:            string(SecurityEventNameAccountCreated),
 		URL:             "",
-		UserID:          "",
 		AnonymousUserID: "backend",
 		Argument:        arg,
 		Source:          "BACKEND",
@@ -740,7 +739,6 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 		logEvents[index] = &Event{
 			Name:            string(name),
 			URL:             "",
-			UserID:          "",
 			AnonymousUserID: "backend",
 			Argument:        eArg,
 			Source:          "BACKEND",
@@ -864,7 +862,6 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 			logEvent := &Event{
 				Name:            "RoleChangeGranted",
 				URL:             "",
-				UserID:          "",
 				AnonymousUserID: "backend",
 				Argument:        arg,
 				Source:          "BACKEND",
@@ -1538,7 +1535,6 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	logEvent := &Event{
 		Name:            string(name),
 		URL:             r.URL.Host,
-		UserID:          "",
 		AnonymousUserID: "backend",
 		Argument:        eArgs,
 		Source:          "BACKEND",
