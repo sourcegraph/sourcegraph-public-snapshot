@@ -459,7 +459,7 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		Name:            string(SecurityEventNameAccountCreated),
 		URL:             "",
 		UserID:          uint32(u.ID),
-		AnonymousUserID: "",
+		AnonymousUserID: "backend",
 		Argument:        arg,
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
@@ -732,7 +732,7 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 			Name:            string(name),
 			URL:             "",
 			UserID:          uint32(id),
-			AnonymousUserID: "",
+			AnonymousUserID: "backend",
 			Argument:        arg,
 			Source:          "BACKEND",
 			Timestamp:       now,
@@ -856,7 +856,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				Name:            "RoleChangeGranted",
 				URL:             "",
 				UserID:          uint32(id),
-				AnonymousUserID: "",
+				AnonymousUserID: "backend",
 				Argument:        arg,
 				Source:          "BACKEND",
 				Timestamp:       time.Now(),
@@ -1520,12 +1520,13 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	db.SecurityEventLogs().LogEvent(ctx, event)
 
 	logEvent := &Event{
-		Name:      string(name),
-		URL:       r.URL.Host,
-		UserID:    uint32(userID),
-		Argument:  args,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
+		Name:            string(name),
+		URL:             r.URL.Host,
+		UserID:          uint32(userID),
+		AnonymousUserID: "backend",
+		Argument:        args,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
 	}
 
 	db.EventLogs().Insert(ctx, logEvent)
