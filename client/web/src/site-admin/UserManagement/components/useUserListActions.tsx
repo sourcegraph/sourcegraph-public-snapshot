@@ -229,9 +229,10 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
         [onError, createOnSuccess]
     )
 
-    const handleRoleAssignment = useCallback(([user]: SiteUser[]) => {
-        console.log(user)
-    }, [])
+    const handleDisplayNotification = (text: string): void => {
+        setNotification({ text })
+    }
+    setNotification
 
     return {
         notification,
@@ -244,6 +245,6 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
         handleRevokeSiteAdmin,
         handleResetUserPassword,
         handleDismissNotification,
-        handleRoleAssignment,
+        handleDisplayNotification,
     }
 }

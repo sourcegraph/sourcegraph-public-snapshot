@@ -13,7 +13,7 @@ import {
     mdiLockReset,
     mdiLogoutVariant,
     mdiSecurity,
-    mdiCogOutline
+    mdiCogOutline,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { endOfDay, formatDistanceToNowStrict, startOfDay } from 'date-fns'
@@ -58,6 +58,8 @@ const LIMIT = 25
 
 interface UsersListProps {
     onActionEnd?: () => void
+    isEnterprise: boolean
+    renderAssignmentModal: (onCancel: () => void, onSuccess: () => void) => React.ReactNode
 }
 
 interface DateRangeQueryParameter {
@@ -123,7 +125,11 @@ const dateRangeQueryParameterToVariable = (
     }
 }
 
-export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd }) => {
+export const UsersList: React.FunctionComponent<UsersListProps> = ({
+    onActionEnd,
+    renderAssignmentModal,
+    isEnterprise,
+}) => {
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const debouncedSearchText = useDebounce(filters.searchText, 300)
 
@@ -171,7 +177,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
 
     const [showRoleAssignmentModal, setShowRoleAssignmentModal] = useState<boolean>(false)
     const toggleRoleAssignmentModal = () => {
-        setShowRoleAssignmentModal((isOpen) => !isOpen)
+        setShowRoleAssignmentModal(isOpen => !isOpen)
     }
 
     const {
@@ -185,7 +191,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         handleResetUserPassword,
         notification,
         handleDismissNotification,
-        handleRoleAssignment,
+        handleDisplayNotification,
     } = useUserListActions(handleActionEnd)
 
     const setFiltersWithOffset = useCallback(
@@ -208,11 +214,17 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         }
     }, [limit, offset, setFilters, users?.totalCount])
 
-
+    const onRoleAssignmentSuccess = () => {
+        handleDisplayNotification('Role(s) successfully assigned to user')
+        toggleRoleAssignmentModal()
+    }
 
     return (
         <div className="position-relative">
             <H2 className="my-4 ml-2">Users</H2>
+            {showRoleAssignmentModal &&
+                isEnterprise &&
+                renderAssignmentModal(toggleRoleAssignmentModal, onRoleAssignmentSuccess)}
             {notification && (
                 <Alert
                     className="mt-2 d-flex justify-content-between align-items-center"
@@ -307,7 +319,8 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 key: 'assign-role',
                                 label: 'Assign role',
                                 icon: mdiCogOutline,
-                                onClick: handleRoleAssignment,
+                                onClick: toggleRoleAssignmentModal,
+                                condition: ([user]) => isEnterprise && !user?.deletedAt,
                             },
                             {
                                 key: 'unlock-user',
@@ -593,7 +606,7 @@ export interface UseUserListActionReturnType {
     notification: { text: React.ReactNode; isError?: boolean } | undefined
     handleDismissNotification: () => void
     handleResetUserPassword: ActionHandler
-    handleRoleAssignment: ActionHandler
+    handleDisplayNotification: (text: string) => void
 }
 
 export const getUsernames = (users: SiteUser[]): string => users.map(user => user.username).join(', ')

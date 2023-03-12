@@ -2,11 +2,12 @@ import { Navigate, useLocation, useParams } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { siteAdminAreaRoutes } from '../../site-admin/routes'
+import { otherSiteAdminRoutes, UsersManagement } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import { SiteAdminRolesPageProps } from '../rbac/SiteAdminRolesPage'
+import { RoleAssignmentModalProps } from './UserManagement/components/RoleAssignmentModal'
 
 const SiteAdminProductSubscriptionPage = lazyComponent(
     () => import('./productSubscription/SiteAdminProductSubscriptionPage'),
@@ -80,13 +81,29 @@ const SiteAdminRolesPage = lazyComponent<SiteAdminRolesPageProps, 'SiteAdminRole
     'SiteAdminRolesPage'
 )
 
+const RoleAssignmentModal = lazyComponent<RoleAssignmentModalProps, 'RoleAssignmentModal'>(
+    () => import('./UserManagement/components/RoleAssignmentModal'),
+    'RoleAssignmentModal'
+)
+
 const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/CodeInsightsJobs'), 'CodeInsightsJobs')
 
 const SiteAdminCodyPage = lazyComponent(() => import('./cody/SiteAdminCodyPage'), 'SiteAdminCodyPage')
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
-        ...siteAdminAreaRoutes,
+        ...otherSiteAdminRoutes,
+        {
+            path: '/users',
+            render: () => (
+                <UsersManagement
+                    isEnterprise={true}
+                    renderAssignmentModal={(onCancel, onSuccess) => (
+                        <RoleAssignmentModal onCancel={onCancel} onSuccess={onSuccess} />
+                    )}
+                />
+            ),
+        },
         {
             path: '/license',
             render: () => <SiteAdminProductSubscriptionPage />,
