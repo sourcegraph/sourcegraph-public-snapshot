@@ -844,13 +844,13 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 			})
 			a := actor.FromContext(ctx)
 			arg, _ := json.Marshal(struct {
-				Assigner     int32  `json:"assigner"`
-				Assignee     int32  `json:"assignee"`
-				Role         string `json:"role"`
+				Assigner int32  `json:"assigner"`
+				Assignee int32  `json:"assignee"`
+				Role     string `json:"role"`
 			}{
-				Assigner:     a.UID,
-				Assignee:     id,
-				Role:         string(types.SiteAdministratorSystemRole),
+				Assigner: a.UID,
+				Assignee: id,
+				Role:     string(types.SiteAdministratorSystemRole),
 			})
 			logEvent := &Event{
 				Name:            "RoleChangeGranted",
