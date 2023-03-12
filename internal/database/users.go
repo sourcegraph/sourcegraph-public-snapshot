@@ -455,7 +455,7 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
 
-	event := &Event{
+	logEvent := &Event{
 		Name:            SecurityEventNameAccountCreated,
 		URL:             "",
 		UserID:          uint32(u.ID),
@@ -464,7 +464,7 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
-	db.EventLogs().LogEvent(ctx, event)
+	db.EventLogs().LogEvent(ctx, logEvent)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -852,7 +852,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				Assignee:     id,
 				Role:         types.SiteAdministratorSystemRole,
 			})
-			event := &Event{
+			logEvent := &Event{
 				Name:            "RoleChangeGranted",
 				URL:             "",
 				UserID:          uint32(u.ID),
@@ -861,7 +861,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				Source:          "BACKEND",
 				Timestamp:       time.Now(),
 			}
-			db.EventLogs().LogEvent(ctx, event)
+			db.EventLogs().LogEvent(ctx, logEvent)
 			//TODO: log promote to site admin
 			return err
 		}
@@ -1520,7 +1520,7 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
 
-	event := &Event{
+	logEvent := &Event{
 		Name:      name,
 		URL:       r.URL.Host,
 		UserID:    uint32(userID),
@@ -1529,7 +1529,7 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 		Timestamp: time.Now(),
 	}
 
-	db.EventLogs().LogEvent(ctx, event)
+	db.EventLogs().LogEvent(ctx, logEvent)
 }
 
 func hashPassword(password string) (sql.NullString, error) {
