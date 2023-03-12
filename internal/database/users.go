@@ -855,7 +855,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 			logEvent := &Event{
 				Name:            "RoleChangeGranted",
 				URL:             "",
-				UserID:          uint32(u.ID),
+				UserID:          id,
 				AnonymousUserID: "",
 				Argument:        arg,
 				Source:          "BACKEND",
