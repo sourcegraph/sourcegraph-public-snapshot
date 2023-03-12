@@ -5,30 +5,30 @@ rust_library(
     name = "scip-treesitter",
     srcs = glob(["src/*.rs"]),
     aliases = aliases(),
-    deps = all_crate_deps(
-        normal = True,
-    ),
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
     visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
+    deps = all_crate_deps(
+        normal = True,
+    ),
 )
 
 rust_test(
     name = "unit_test",
-    crate = ":scip-treesitter",
+    size = "small",
     aliases = aliases(
         normal_dev = True,
+        proc_macro_dev = True,
+    ),
+    crate = ":scip-treesitter",
+    env = {
+        "RUST_BACKTRACE": "1",
+    },
+    proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),
     deps = all_crate_deps(
         normal_dev = True,
     ),
-    proc_macro_deps = all_crate_deps(
-        proc_macro_dev = True,
-    ),
-    size = "small",
-    env = {
-        "RUST_BACKTRACE": "1",
-    },
 )
