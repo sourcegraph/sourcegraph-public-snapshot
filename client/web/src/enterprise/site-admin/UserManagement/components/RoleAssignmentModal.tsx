@@ -1,7 +1,7 @@
 import React, { useId, useState, useMemo, useCallback } from 'react'
 
 import { mdiCogOutline } from '@mdi/js'
-import { differenceBy } from 'lodash'
+import { differenceBy, noop } from 'lodash'
 
 import {
     Button,
@@ -19,10 +19,9 @@ import {
     MultiComboboxOption,
 } from '@sourcegraph/wildcard'
 
+import { RoleFields } from '../../../../graphql-operations'
 import { useGetUserRolesAndAllRoles, useSetRoles } from '../backend'
 import { LoaderButton } from '../../../../components/LoaderButton'
-
-import { RoleFields } from '../../../../graphql-operations'
 
 export interface RoleAssignmentModalProps {
     onCancel: () => void
@@ -90,7 +89,7 @@ export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalPro
                 user,
                 roles: roleIDs,
             },
-        })
+        }).catch(noop)
     }
 
     const error = getUserRolesError || setRolesError

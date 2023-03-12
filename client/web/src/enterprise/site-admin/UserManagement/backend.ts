@@ -1,3 +1,5 @@
+import { MutationTuple, QueryResult } from '@apollo/client'
+
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 
 import {
@@ -39,10 +41,13 @@ export const SET_ROLES_FOR_USER = gql`
     }
 `
 
-export const useSetRoles = (onCompleted: () => void) =>
+export const useSetRoles = (onCompleted: () => void): MutationTuple<SetRolesForUserResult, SetRolesForUserVariables> =>
     useMutation<SetRolesForUserResult, SetRolesForUserVariables>(SET_ROLES_FOR_USER, { onCompleted })
 
-export const useGetUserRolesAndAllRoles = (user: string, onCompleted: (data: GetAllRolesAndUserRolesResult) => void) =>
+export const useGetUserRolesAndAllRoles = (
+    user: string,
+    onCompleted: (data: GetAllRolesAndUserRolesResult) => void
+): QueryResult<GetAllRolesAndUserRolesResult, GetAllRolesAndUserRolesVariables> =>
     useQuery<GetAllRolesAndUserRolesResult, GetAllRolesAndUserRolesVariables>(GET_ALL_ROLES_AND_USER_ROLES, {
         fetchPolicy: 'no-cache',
         variables: { user },

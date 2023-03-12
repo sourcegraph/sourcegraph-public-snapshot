@@ -177,12 +177,12 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
 
     const [showRoleAssignmentModal, setShowRoleAssignmentModal] = useState<boolean>(false)
     const [selectedUser, setSelectedUser] = useState<string>('')
-    const openRoleAssignmentModal = (selectedUsers: SiteUser[]) => {
+    const openRoleAssignmentModal = (selectedUsers: SiteUser[]): void => {
         const [user] = selectedUsers
         setSelectedUser(user.id)
         setShowRoleAssignmentModal(true)
     }
-    const closeRoleAssignmentModal = () => setShowRoleAssignmentModal(false)
+    const closeRoleAssignmentModal = (): void => setShowRoleAssignmentModal(false)
 
     const {
         handleDeleteUsers,
@@ -218,7 +218,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
         }
     }, [limit, offset, setFilters, users?.totalCount])
 
-    const onRoleAssignmentSuccess = () => {
+    const onRoleAssignmentSuccess = (): void => {
         handleDisplayNotification('Role(s) successfully assigned to user')
         closeRoleAssignmentModal()
     }
