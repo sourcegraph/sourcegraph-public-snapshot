@@ -862,7 +862,6 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				Timestamp:       time.Now(),
 			}
 			db.EventLogs().Insert(ctx, logEvent)
-			//TODO: log promote to site admin
 			return err
 		}
 

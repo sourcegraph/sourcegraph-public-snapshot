@@ -91,7 +91,7 @@ func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEven
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
 
-	event := &database.Event{
+	logEvent := &database.Event{
  		Name:      string(name),
  		URL:       r.URL.Host,
  		UserID:    uint32(a.UID),
@@ -100,5 +100,5 @@ func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEven
  		Timestamp: time.Now(),
  	}
 
- 	db.EventLogs().Insert(ctx, event)
+ 	db.EventLogs().Insert(ctx, logEvent)
 }
