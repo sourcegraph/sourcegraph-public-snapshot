@@ -1794,7 +1794,7 @@ ts_project(
     tsconfig = ":tsconfig",
     # TODO(bazel): type-only #keep imports
     deps = [
-        ":code_intel_schema",  #keep
+        ":code_intel_schema",
         ":graphql_operations",
         ":module_style_typings",
         ":node_modules/@sourcegraph/common",
