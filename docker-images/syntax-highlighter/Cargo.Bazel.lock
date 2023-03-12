@@ -1,5 +1,5 @@
 {
-  "checksum": "b0704e706e83e4a03dad8b7926878014b8148ec00211d3e7523ed30bc0a1e2b3",
+  "checksum": "c0972bb068dff14f1241997e5bcc4a1d087567db7766f00ddae594b168acb7be",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -5572,13 +5572,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "protobuf 3.1.0": {
+    "protobuf 3.2.0": {
       "name": "protobuf",
-      "version": "3.1.0",
+      "version": "3.2.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/protobuf/3.1.0/download",
-          "sha256": "4ee4a7d8b91800c8f167a6268d1a1026607368e1adc84e98fe044aeb905302f7"
+          "url": "https://crates.io/api/v1/crates/protobuf/3.2.0/download",
+          "sha256": "b55bad9126f378a853655831eb7363b7b01b81d19f8cb1218861086ca4a1a61e"
         }
       },
       "targets": [
@@ -5616,11 +5616,11 @@
               "target": "once_cell"
             },
             {
-              "id": "protobuf 3.1.0",
+              "id": "protobuf 3.2.0",
               "target": "build_script_build"
             },
             {
-              "id": "protobuf-support 3.1.0",
+              "id": "protobuf-support 3.2.0",
               "target": "protobuf_support"
             },
             {
@@ -5631,7 +5631,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "3.1.0"
+        "version": "3.2.0"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -5640,13 +5640,13 @@
       },
       "license": "MIT"
     },
-    "protobuf-support 3.1.0": {
+    "protobuf-support 3.2.0": {
       "name": "protobuf-support",
-      "version": "3.1.0",
+      "version": "3.2.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/protobuf-support/3.1.0/download",
-          "sha256": "8ca157fe12fc7ee2e315f2f735e27df41b3d97cdd70ea112824dac1ffb08ee1c"
+          "url": "https://crates.io/api/v1/crates/protobuf-support/3.2.0/download",
+          "sha256": "a5d4d7b8601c814cfb36bcebb79f0e61e45e1e93640cf778837833bbed05c372"
         }
       },
       "targets": [
@@ -5675,7 +5675,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "3.1.0"
+        "version": "3.2.0"
       },
       "license": "MIT"
     },
@@ -7120,14 +7120,14 @@
       },
       "license": "Unlicense/MIT"
     },
-    "scip 0.1.0": {
+    "scip 0.1.1": {
       "name": "scip",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "repository": {
         "Git": {
           "remote": "https://github.com/sourcegraph/scip",
           "commitish": {
-            "Rev": "7ff845ef5b78772f65463542d5f384967d329b2c"
+            "Branch": "master"
           },
           "strip_prefix": "bindings/rust"
         }
@@ -7151,16 +7151,16 @@
         "deps": {
           "common": [
             {
-              "id": "protobuf 3.1.0",
+              "id": "protobuf 3.2.0",
               "target": "protobuf"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.0"
+        "version": "0.1.1"
       },
-      "license": null
+      "license": "Apache-2.0"
     },
     "scip-macros 0.1.0": {
       "name": "scip-macros",
@@ -7231,7 +7231,7 @@
               "target": "insta"
             },
             {
-              "id": "protobuf 3.1.0",
+              "id": "protobuf 3.2.0",
               "target": "protobuf"
             },
             {
@@ -7239,7 +7239,7 @@
               "target": "rustc_hash"
             },
             {
-              "id": "scip 0.1.0",
+              "id": "scip 0.1.1",
               "target": "scip"
             },
             {
@@ -7305,15 +7305,6 @@
               "**/*.rs"
             ]
           }
-        },
-        {
-          "BuildScript": {
-            "crate_name": "build_script_build",
-            "crate_root": "build.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
         }
       ],
       "library_target_name": "scip_treesitter_languages",
@@ -7328,12 +7319,8 @@
               "target": "lazy_static"
             },
             {
-              "id": "scip 0.1.0",
+              "id": "scip 0.1.1",
               "target": "scip"
-            },
-            {
-              "id": "scip-treesitter-languages 0.1.0",
-              "target": "build_script_build"
             },
             {
               "id": "tree-sitter 0.20.9",
@@ -7425,11 +7412,6 @@
           "selects": {}
         },
         "version": "0.1.0"
-      },
-      "build_script_attrs": {
-        "data_glob": [
-          "**"
-        ]
       },
       "license": null
     },
@@ -7788,15 +7770,6 @@
               "**/*.rs"
             ]
           }
-        },
-        {
-          "BuildScript": {
-            "crate_name": "build_script_build",
-            "crate_root": "build.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
         }
       ],
       "library_target_name": "sg_syntax",
@@ -7827,7 +7800,7 @@
               "target": "once_cell"
             },
             {
-              "id": "protobuf 3.1.0",
+              "id": "protobuf 3.2.0",
               "target": "protobuf"
             },
             {
@@ -7835,7 +7808,7 @@
               "target": "rocket"
             },
             {
-              "id": "scip 0.1.0",
+              "id": "scip 0.1.1",
               "target": "scip"
             },
             {
@@ -7845,10 +7818,6 @@
             {
               "id": "serde_json 1.0.79",
               "target": "serde_json"
-            },
-            {
-              "id": "sg-syntax 0.1.0",
-              "target": "build_script_build"
             },
             {
               "id": "syntect 4.7.0",
@@ -7889,11 +7858,6 @@
           "selects": {}
         },
         "version": "0.1.0"
-      },
-      "build_script_attrs": {
-        "data_glob": [
-          "**"
-        ]
       },
       "license": "MIT"
     },
@@ -8900,7 +8864,7 @@
               "target": "rustyline"
             },
             {
-              "id": "scip 0.1.0",
+              "id": "scip 0.1.1",
               "target": "scip"
             },
             {
