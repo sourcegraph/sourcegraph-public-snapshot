@@ -21,7 +21,7 @@ import {
 import { mdiClose } from '@mdi/js'
 import { useComboboxContext } from '@reach/combobox'
 import classNames from 'classnames'
-import { noop } from 'lodash'
+import { noop, sortBy } from 'lodash'
 import { Key } from 'ts-key-enum'
 import { useMergeRefs } from 'use-callback-ref'
 
@@ -175,7 +175,10 @@ interface MultiComboboxInputProps extends InputHTMLAttributes<HTMLInputElement> 
     status?: InputStatus | `${InputStatus}`
 }
 
-export const MultiComboboxInput = forwardRef<HTMLInputElement, MultiComboboxInputProps>((props, reference) => {
+export const MultiComboboxInput = forwardRef<HTMLInputElement, MultiComboboxInputProps>(function MultiComboboxInput(
+    props,
+    reference
+) {
     const { value = '', ...attributes } = props
 
     return (
@@ -198,7 +201,7 @@ interface MultiValueInputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 // Forward ref doesn't support function components with generic,
 // so we have to cast a proper FC types with generic props
-const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLInputElement>) => {
+const MultiValueInput = forwardRef(function MultiValueInput(props: MultiValueInputProps, ref: Ref<HTMLInputElement>) {
     const { onKeyDown, onFocus, onBlur, byPassValue, value, className, ...attributes } = props
 
     const {
@@ -212,12 +215,27 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
     } = useContext(MultiComboboxContext)
     const { navigationValue } = useComboboxContext()
 
+    // Permanent items should be always first in the list, so that the user can still use
+    // the backspace key to delete items up until these ones.
+    const orderedSelectedItems = useMemo(
+        () =>
+            sortBy(selectedItems, item =>
+                Object.hasOwn(item, 'permanent') && (item as { permanent: boolean }).permanent ? 1 : 2
+            ),
+        [selectedItems]
+    )
+
     const inputRef = useMergeRefs<HTMLInputElement>([ref])
     const listRef = useMergeRefs<HTMLUListElement>([setInputElement])
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
         if (byPassValue === '' && event.key === Key.Backspace) {
-            onSelectedItemsChange(selectedItems.slice(0, -1))
+            // If the next item is permanent, stop removing items.
+            const nextItem = orderedSelectedItems[orderedSelectedItems.length - 1]
+            if (Object.hasOwn(nextItem, 'permanent') && (nextItem as { permanent: boolean }).permanent) {
+                return
+            }
+            onSelectedItemsChange(orderedSelectedItems.slice(0, -1))
 
             // Prevent any single combobox UI state machine updates
             return
@@ -237,8 +255,8 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
     }
 
     const handleItemDelete = (deletedItem: unknown, index: number): void => {
-        const isLastElementDeleted = index === selectedItems.length - 1
-        const newSelectedItems = selectedItems.filter(item => getItemKey(item) !== getItemKey(deletedItem))
+        const isLastElementDeleted = index === orderedSelectedItems.length - 1
+        const newSelectedItems = orderedSelectedItems.filter(item => getItemKey(item) !== getItemKey(deletedItem))
 
         if (isLastElementDeleted) {
             // If it was the last element pill move focus to the editor
@@ -265,18 +283,20 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
 
     return (
         <ul ref={listRef} className={styles.root}>
-            {selectedItems.map((item, index) => (
+            {orderedSelectedItems.map((item, index) => (
                 <li key={getItemKey(item)} data-multibox-pill={true} className={styles.pill}>
                     <span className={styles.pillText}>{getItemName(item)}</span>
-                    <Button
-                        type="button"
-                        variant="icon"
-                        className={styles.removePill}
-                        onClick={() => handleItemDelete(item, index)}
-                        onMouseDown={event => event.preventDefault()}
-                    >
-                        <Icon svgPath={mdiClose} aria-label="deselect item" />
-                    </Button>
+                    {Object.hasOwn(item, 'permanent') && (item as { permanent: boolean }).permanent ? null : (
+                        <Button
+                            type="button"
+                            variant="icon"
+                            className={styles.removePill}
+                            onClick={() => handleItemDelete(item, index)}
+                            onMouseDown={event => event.preventDefault()}
+                        >
+                            <Icon svgPath={mdiClose} aria-label="deselect item" />
+                        </Button>
+                    )}
                 </li>
             ))}
             <Input

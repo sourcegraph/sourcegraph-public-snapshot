@@ -36,12 +36,12 @@ interface Item {
 }
 
 const DEMO_CONTACT_SUGGESTIONS = [
-    { id: 'item_001', name: 'Joan of Arc' },
-    { id: 'item_002', name: 'Ludwig van Beethoven' },
+    { id: 'item_001', name: 'Albert Einstein' },
+    { id: 'item_002', name: 'Charles Darwin' },
     { id: 'item_003', name: 'James Cook' },
-    { id: 'item_004', name: 'Charles Darwin' },
-    { id: 'item_005', name: 'Albert Einstein' },
-    { id: 'item_006', name: 'Looooooong looooooooooooooooooooong laaaaaaaast naaaaaaameeeeeeeeee' },
+    { id: 'item_004', name: 'Joan of Arc' },
+    { id: 'item_005', name: 'Looooooong looooooooooooooooooooong laaaaaaaast naaaaaaameeeeeeeeee' },
+    { id: 'item_006', name: 'Ludwig van Beethoven' },
     { id: 'item_007', name: 'Mahatma Gandhi' },
 ]
 
@@ -50,6 +50,7 @@ export const MultiComboboxDemo = () => (
         <H1>MultiCombobox UI</H1>
         <Grid columnCount={2}>
             <MultiComboboxWithPopover />
+            <MultiComboboxWithPermanentItems />
             <MultiComboboxWithPlainList />
             <MultiComboboxWithAsyncSearch />
             <MultiComboboxWithCustomOptionUI />
@@ -59,8 +60,8 @@ export const MultiComboboxDemo = () => (
 
 function MultiComboboxWithPopover() {
     const [selectedItems, setSelectedItems] = useState<Item[]>([
-        { id: 'item_001', name: 'Joan of Arc' },
-        { id: 'item_002', name: 'Ludwig van Beethoven' },
+        { id: 'item_004', name: 'Joan of Arc' },
+        { id: 'item_006', name: 'Ludwig van Beethoven' },
     ])
 
     const suggestions = DEMO_CONTACT_SUGGESTIONS.filter(
@@ -73,6 +74,7 @@ function MultiComboboxWithPopover() {
             getItemKey={item => item.id}
             getItemName={item => item.name}
             onSelectedItemsChange={setSelectedItems}
+            className="mb-4"
         >
             <MultiComboboxInput placeholder="Search assignee" />
             <small className="text-muted pl-2">Focus the field in order to see option list with suggestions</small>
@@ -90,10 +92,52 @@ function MultiComboboxWithPopover() {
     )
 }
 
+interface MaybePermanentItem extends Item {
+    permanent?: boolean
+}
+
+function MultiComboboxWithPermanentItems() {
+    const [selectedItems, setSelectedItems] = useState<MaybePermanentItem[]>([
+        { id: 'item_001', name: 'Albert Einstein' },
+        { id: 'item_002', name: 'Charles Darwin' },
+        { id: 'item_003', name: 'James Cook', permanent: true },
+        { id: 'item_007', name: 'Mahatma Gandhi', permanent: true },
+    ])
+
+    const suggestions = DEMO_CONTACT_SUGGESTIONS.filter(
+        item => !selectedItems.find(selectedItem => selectedItem.id === item.id)
+    )
+
+    return (
+        <MultiCombobox
+            selectedItems={selectedItems}
+            getItemKey={item => item.id}
+            getItemName={item => item.name}
+            onSelectedItemsChange={setSelectedItems}
+            className="mb-4"
+        >
+            <MultiComboboxInput placeholder="Search assignee" />
+            <small className="text-muted pl-2">
+                Selected items can be made permanent. These items will always appear at the beginning of the input list.
+            </small>
+
+            <MultiComboboxPopover>
+                <MultiComboboxList items={suggestions}>
+                    {items =>
+                        items.map((item, index) => (
+                            <MultiComboboxOption key={item.id} value={item.name} index={index} />
+                        ))
+                    }
+                </MultiComboboxList>
+            </MultiComboboxPopover>
+        </MultiCombobox>
+    )
+}
+
 function MultiComboboxWithPlainList() {
     const [selectedItems, setSelectedItems] = useState<Item[]>([
-        { id: 'item_001', name: 'Joan of Arc' },
-        { id: 'item_002', name: 'Ludwig van Beethoven' },
+        { id: 'item_004', name: 'Joan of Arc' },
+        { id: 'item_006', name: 'Ludwig van Beethoven' },
     ])
 
     const suggestions = DEMO_CONTACT_SUGGESTIONS.filter(
@@ -126,15 +170,15 @@ interface ExtendedItem {
 const DEMO_CONTACT_SUGGESTIONS_WITH_DESCRIPTION: ExtendedItem[] = [
     {
         id: 'item_001',
-        name: 'Joan of Arc',
-        description: `Joan of Arc is a patron saint of France, honored as a defender of the French
-                      nation for her role in the siege of Orléans and her insistence on the coronation of Charles
-                      VII of France during the Hundred Years' War.`,
+        name: 'Albert Einstein',
+        description:
+            'Albert Einstein was a German-born theoretical physicist, widely acknowledged to be one of the greatest and most influential physicists of all time',
     },
     {
         id: 'item_002',
-        name: 'Ludwig van Beethoven',
-        description: 'German composer and pianist',
+        name: 'Charles Darwin',
+        description:
+            'Charles Robert Darwin FRS FRGS FLS FZS JP was an English naturalist, geologist, and biologist, widely known for his contributions to evolutionary biology',
     },
     {
         id: 'item_003',
@@ -144,15 +188,15 @@ const DEMO_CONTACT_SUGGESTIONS_WITH_DESCRIPTION: ExtendedItem[] = [
     },
     {
         id: 'item_004',
-        name: 'Charles Darwin',
-        description:
-            'Charles Robert Darwin FRS FRGS FLS FZS JP was an English naturalist, geologist, and biologist, widely known for his contributions to evolutionary biology',
+        name: 'Joan of Arc',
+        description: `Joan of Arc is a patron saint of France, honored as a defender of the French
+                      nation for her role in the siege of Orléans and her insistence on the coronation of Charles
+                      VII of France during the Hundred Years' War.`,
     },
     {
         id: 'item_005',
-        name: 'Albert Einstein',
-        description:
-            'Albert Einstein was a German-born theoretical physicist, widely acknowledged to be one of the greatest and most influential physicists of all time',
+        name: 'Ludwig van Beethoven',
+        description: 'German composer and pianist',
     },
     {
         id: 'item_006',
