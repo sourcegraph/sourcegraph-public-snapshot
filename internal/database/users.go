@@ -464,7 +464,7 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
-	db.EventLogs().LogEvent(ctx, logEvent)
+	db.EventLogs().Insert(ctx, logEvent)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -861,7 +861,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				Source:          "BACKEND",
 				Timestamp:       time.Now(),
 			}
-			db.EventLogs().LogEvent(ctx, logEvent)
+			db.EventLogs().Insert(ctx, logEvent)
 			//TODO: log promote to site admin
 			return err
 		}
@@ -1529,7 +1529,7 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 		Timestamp: time.Now(),
 	}
 
-	db.EventLogs().LogEvent(ctx, logEvent)
+	db.EventLogs().Insert(ctx, logEvent)
 }
 
 func hashPassword(password string) (sql.NullString, error) {

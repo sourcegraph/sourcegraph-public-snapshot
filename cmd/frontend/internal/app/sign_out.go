@@ -100,5 +100,5 @@ func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEven
  		Timestamp: time.Now(),
  	}
 
- 	db.EventLogs().LogEvent(ctx, event)
+ 	db.EventLogs().Insert(ctx, event)
 }
