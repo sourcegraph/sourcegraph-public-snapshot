@@ -73,41 +73,48 @@ func TestCanUpdate(t *testing.T) {
 		name                string
 		now                 time.Time
 		clientVersionString string
-		latestReleaseBuild  build
+		latestReleaseBuild  pingResponse
+		deployType          string
 		hasUpdate           bool
 		err                 error
 	}{
 		{
 			name:                "no version update",
 			clientVersionString: "v1.2.3",
-			latestReleaseBuild:  newBuild("1.2.3"),
+			latestReleaseBuild:  newPingResponse("1.2.3"),
 			hasUpdate:           false,
 		},
 		{
 			name:                "version update",
 			clientVersionString: "v1.2.3",
-			latestReleaseBuild:  newBuild("1.2.4"),
+			latestReleaseBuild:  newPingResponse("1.2.4"),
 			hasUpdate:           true,
 		},
 		{
 			name:                "no date update clock skew",
 			now:                 time.Date(2018, time.August, 1, 0, 0, 0, 0, time.UTC),
 			clientVersionString: "19272_2018-08-02_f7dec47",
-			latestReleaseBuild:  newBuild("1.2.3"),
+			latestReleaseBuild:  newPingResponse("1.2.3"),
 			hasUpdate:           false,
 		},
 		{
 			name:                "no date update",
 			now:                 time.Date(2018, time.September, 1, 0, 0, 0, 0, time.UTC),
 			clientVersionString: "19272_2018-08-01_f7dec47",
-			latestReleaseBuild:  newBuild("1.2.3"),
+			latestReleaseBuild:  newPingResponse("1.2.3"),
 			hasUpdate:           false,
 		},
 		{
 			name:                "date update",
 			now:                 time.Date(2018, time.August, 42, 0, 0, 0, 0, time.UTC),
 			clientVersionString: "19272_2018-08-01_f7dec47",
-			latestReleaseBuild:  newBuild("1.2.3"),
+			latestReleaseBuild:  newPingResponse("1.2.3"),
+			hasUpdate:           true,
+		},
+		{
+			name:                "app version update",
+			clientVersionString: "2023.03.23+205275.dd37e7",
+			latestReleaseBuild:  newPingResponse("2023.03.24+205301.ca3646"),
 			hasUpdate:           true,
 		},
 	}
@@ -123,7 +130,10 @@ func TestCanUpdate(t *testing.T) {
 				timeNow = time.Now
 			}()
 
-			hasUpdate, err := canUpdate(test.clientVersionString, test.latestReleaseBuild)
+			if test.deployType == "" {
+				test.deployType = "kubernetes"
+			}
+			hasUpdate, err := canUpdate(test.clientVersionString, test.latestReleaseBuild, test.deployType)
 			if err != test.err {
 				t.Fatalf("expected error %s; got %s", test.err, err)
 			}
