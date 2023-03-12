@@ -115,7 +115,7 @@ export const usersGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/users',
         },
         {
-            label: 'Access requests',
+            label: 'Account requests',
             to: '/site-admin/access-requests',
             condition: context =>
                 checkRequestAccessAllowed(
