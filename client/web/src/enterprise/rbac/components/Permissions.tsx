@@ -2,8 +2,8 @@ import React, { ChangeEvent, FocusEventHandler } from 'react'
 
 import { Text, Checkbox, Grid } from '@sourcegraph/wildcard'
 
+import { prettifyAction, prettifyNamespace } from '../../../util/settings'
 import { PermissionsMap, allNamespaces } from '../backend'
-import { prettifyAction, prettifyNamespace } from '../util'
 
 interface PermissionListProps {
     allPermissions: PermissionsMap
