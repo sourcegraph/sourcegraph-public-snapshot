@@ -21,6 +21,7 @@ import {
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import { RoleFields } from '../../../../graphql-operations'
+import { prettifySystemRole } from '../../../../util/settings'
 import { useGetUserRolesAndAllRoles, useSetRoles } from '../backend'
 
 export interface RoleAssignmentModalProps {
@@ -29,7 +30,7 @@ export interface RoleAssignmentModalProps {
     user: string
 }
 
-type Role = Pick<RoleFields, 'id' | 'system' | 'name'>
+type Role = Pick<RoleFields, 'id' | 'system' | 'name'> & { permanent: boolean }
 
 export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalProps> = ({
     onCancel,
@@ -47,8 +48,16 @@ export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalPro
         if (data.node?.__typename !== 'User') {
             throw new Error('User not found')
         }
-        const { nodes: userRoles } = data.node.roles
-        const { nodes: allRoles } = data.roles
+        const userRoles = data.node.roles.nodes.map(role => ({
+            ...role,
+            permanent: role.system,
+            name: role.system ? prettifySystemRole(role.name) : role.name,
+        }))
+        const allRoles = data.roles.nodes.map(role => ({
+            ...role,
+            permanent: role.system,
+            name: role.system ? prettifySystemRole(role.name) : role.name,
+        }))
         setSelectedRoles(userRoles)
         setAllRoles(allRoles)
     })

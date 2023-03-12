@@ -44,12 +44,12 @@ const mocks = new WildcardMockLink([
                         },
                         {
                             id: 'role-2',
-                            name: 'OPERATOR',
+                            name: 'Operator',
                             system: false,
                         },
                         {
                             id: 'role-3',
-                            name: 'TECH OPRS',
+                            name: 'Tech Ops',
                             system: false,
                         },
                     ],
@@ -65,7 +65,7 @@ const mocks = new WildcardMockLink([
                             },
                             {
                                 id: 'role-2',
-                                name: 'OPERATOR',
+                                name: 'Operator',
                                 system: false,
                             },
                         ],
