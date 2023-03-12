@@ -233,7 +233,7 @@ rust_register_toolchains(
     edition = "2021",
     # Keep in sync with docker-images/syntax-highlighter/Dockerfile
     versions = [
-        "1.67.1",
+        "1.68.0",
     ],
 )
 
@@ -241,6 +241,7 @@ load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 
 crates_repository(
     name = "crate_index",
+    cargo_config = "//docker-images/syntax-highlighter:.cargo/config.toml",
     cargo_lockfile = "//docker-images/syntax-highlighter:Cargo.lock",
     # this file has to be manually created and it will be filled when
     # the target is ran.
