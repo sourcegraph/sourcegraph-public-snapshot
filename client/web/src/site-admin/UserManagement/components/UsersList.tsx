@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import {
     mdiAccountReactivate,
     mdiArchive,
+    mdiBadgeAccount,
     mdiChevronDown,
     mdiClipboardMinus,
     mdiClipboardPlus,
@@ -13,7 +14,6 @@ import {
     mdiLockReset,
     mdiLogoutVariant,
     mdiSecurity,
-    mdiCogOutline,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { endOfDay, formatDistanceToNowStrict, startOfDay } from 'date-fns'
@@ -320,9 +320,9 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
                                 condition: ([user]) => !user?.siteAdmin && !user?.deletedAt,
                             },
                             {
-                                key: 'assign-role',
-                                label: 'Assign role',
-                                icon: mdiCogOutline,
+                                key: 'manage-roles',
+                                label: 'Manage roles',
+                                icon: mdiBadgeAccount,
                                 onClick: openRoleAssignmentModal,
                                 condition: ([user]) => isEnterprise && !user?.deletedAt,
                             },
@@ -335,7 +335,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
                             },
                             {
                                 key: 'view-permissions',
-                                label: 'View Permissions',
+                                label: 'View permissions',
                                 icon: mdiSecurity,
                                 href: ([user]) => `/users/${user.username}/settings/permissions`,
                                 target: '_blank',
