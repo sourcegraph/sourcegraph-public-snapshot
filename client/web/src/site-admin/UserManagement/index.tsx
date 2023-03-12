@@ -17,7 +17,7 @@ import styles from './index.module.scss'
 
 export interface UsersManagementProps {
     isEnterprise: boolean
-    renderAssignmentModal: (onCancel: () => void, onSuccess: () => void) => React.ReactNode
+    renderAssignmentModal: (onCancel: () => void, onSuccess: () => void, user: string) => React.ReactNode
 }
 
 export const UsersManagement: React.FunctionComponent<UsersManagementProps> = ({

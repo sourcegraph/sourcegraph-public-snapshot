@@ -59,7 +59,7 @@ const LIMIT = 25
 interface UsersListProps {
     onActionEnd?: () => void
     isEnterprise: boolean
-    renderAssignmentModal: (onCancel: () => void, onSuccess: () => void) => React.ReactNode
+    renderAssignmentModal: (onCancel: () => void, onSuccess: () => void, user: string) => React.ReactNode
 }
 
 interface DateRangeQueryParameter {
@@ -176,9 +176,13 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
     )
 
     const [showRoleAssignmentModal, setShowRoleAssignmentModal] = useState<boolean>(false)
-    const toggleRoleAssignmentModal = () => {
-        setShowRoleAssignmentModal(isOpen => !isOpen)
+    const [selectedUser, setSelectedUser] = useState<string>('')
+    const openRoleAssignmentModal = (selectedUsers: SiteUser[]) => {
+        const [user] = selectedUsers
+        setSelectedUser(user.id)
+        setShowRoleAssignmentModal(true)
     }
+    const closeRoleAssignmentModal = () => setShowRoleAssignmentModal(false)
 
     const {
         handleDeleteUsers,
@@ -216,7 +220,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
 
     const onRoleAssignmentSuccess = () => {
         handleDisplayNotification('Role(s) successfully assigned to user')
-        toggleRoleAssignmentModal()
+        closeRoleAssignmentModal()
     }
 
     return (
@@ -224,7 +228,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
             <H2 className="my-4 ml-2">Users</H2>
             {showRoleAssignmentModal &&
                 isEnterprise &&
-                renderAssignmentModal(toggleRoleAssignmentModal, onRoleAssignmentSuccess)}
+                renderAssignmentModal(closeRoleAssignmentModal, onRoleAssignmentSuccess, selectedUser)}
             {notification && (
                 <Alert
                     className="mt-2 d-flex justify-content-between align-items-center"
@@ -319,7 +323,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
                                 key: 'assign-role',
                                 label: 'Assign role',
                                 icon: mdiCogOutline,
-                                onClick: toggleRoleAssignmentModal,
+                                onClick: openRoleAssignmentModal,
                                 condition: ([user]) => isEnterprise && !user?.deletedAt,
                             },
                             {

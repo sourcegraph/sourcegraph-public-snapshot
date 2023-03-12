@@ -26,7 +26,7 @@ const mocks = new WildcardMockLink([
             variables: MATCH_ANY_PARAMETERS,
         },
         result: { data: { setRoles: { alwaysNil: true } } },
-        nMatches: Number.POSITIVE_INFINITY
+        nMatches: Number.POSITIVE_INFINITY,
     },
     {
         request: {
@@ -40,19 +40,19 @@ const mocks = new WildcardMockLink([
                         {
                             id: 'role-1',
                             name: 'USER',
-                            system: true
+                            system: true,
                         },
                         {
                             id: 'role-2',
                             name: 'OPERATOR',
-                            system: false
+                            system: false,
                         },
                         {
                             id: 'role-3',
                             name: 'TECH OPRS',
-                            system: false
+                            system: false,
                         },
-                    ]
+                    ],
                 },
                 node: {
                     __typename: 'User',
@@ -61,19 +61,19 @@ const mocks = new WildcardMockLink([
                             {
                                 id: 'role-1',
                                 name: 'USER',
-                                system: true
+                                system: true,
                             },
                             {
                                 id: 'role-2',
                                 name: 'OPERATOR',
-                                system: false
+                                system: false,
                             },
-                        ]
-                    }
-                }
-            }
+                        ],
+                    },
+                },
+            },
         },
-        nMatches: Number.POSITIVE_INFINITY
+        nMatches: Number.POSITIVE_INFINITY,
     },
 ])
 

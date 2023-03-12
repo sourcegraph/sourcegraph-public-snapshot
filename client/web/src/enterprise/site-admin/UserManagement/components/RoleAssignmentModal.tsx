@@ -27,20 +27,24 @@ import { RoleFields } from '../../../../graphql-operations'
 export interface RoleAssignmentModalProps {
     onCancel: () => void
     onSuccess: () => void
+    user: string
 }
 
 type Role = Pick<RoleFields, 'id' | 'system' | 'name'>
 
-export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalProps> = ({ onCancel, onSuccess }) => {
+export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalProps> = ({
+    onCancel,
+    onSuccess,
+    user,
+}) => {
     const labelID = 'RoleAssignment'
-    const userID = 'VXNlcjoy'
 
     const id = useId()
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedRoles, setSelectedRoles] = useState<Role[]>([])
     const [allRoles, setAllRoles] = useState<Role[]>([])
 
-    const { loading, error: getUserRolesError } = useGetUserRolesAndAllRoles(userID, data => {
+    const { loading, error: getUserRolesError } = useGetUserRolesAndAllRoles(user, data => {
         if (data.node?.__typename !== 'User') {
             throw new Error('User not found')
         }
@@ -83,7 +87,7 @@ export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalPro
         const roleIDs = selectedRoles.map(role => role.id)
         setRoles({
             variables: {
-                user: userID,
+                user,
                 roles: roleIDs,
             },
         })
