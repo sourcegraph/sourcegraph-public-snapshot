@@ -4,7 +4,7 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-// Returns minimum of 2 numbers
+// Min returns the minimum of two variables.
 func Min[T constraints.Ordered](a T, b T) T {
 	if a < b {
 		return a
