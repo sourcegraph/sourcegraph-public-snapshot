@@ -121,7 +121,7 @@ info "uploading macOS App bundle"
 # we really want to package in a dmg container, but that will take automation on macOS,
 # which could work in GH actions, but not in buildkite
 # Instead, compress into a zip archive for now
-zip -r9 "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip" "Sourcegraph App.app"
+zip -ry9 "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip" "Sourcegraph App.app"
 sha256sum "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip" >>checksums.txt
 gsutil cp "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip" checksums.txt "gs://sourcegraph-app-releases/${VERSION}/" || {
   error "failed uploading the macOS app bundle"
