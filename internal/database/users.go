@@ -726,10 +726,10 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 	}
 	db.SecurityEventLogs().LogEventList(ctx, events)
 
-	events := make([]*Event, len(ids))
+	logEvents := make([]*Event, len(ids))
 	for index, id := range ids {
-		events[index] = &Event{
-			Name:            name,
+		logEvents[index] = &Event{
+			Name:            string(name),
 			URL:             "",
 			UserID:          uint32(id),
 			AnonymousUserID: "",
