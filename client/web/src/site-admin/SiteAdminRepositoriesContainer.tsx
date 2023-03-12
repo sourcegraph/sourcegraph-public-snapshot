@@ -167,26 +167,25 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             return FILTERS
         }
 
-        const values = [
-            {
-                label: 'All',
-                value: 'all',
-                tooltip: 'Show all repositories',
-                args: {},
-            },
-        ]
-
-        for (const extSvc of extSvcs.externalServices.nodes) {
-            values.push({
-                label: extSvc.displayName,
-                value: extSvc.id,
-                tooltip: `Show all repositories discovered on ${extSvc.displayName}`,
-                args: { externalService: extSvc.id },
-            })
-        }
-
         const filtersWithExternalServices = FILTERS.slice() // use slice to copy array
         if (location.pathname !== PageRoutes.SetupWizard) {
+            const values = [
+                {
+                    label: 'All',
+                    value: 'all',
+                    tooltip: 'Show all repositories',
+                    args: {},
+                },
+            ]
+
+            for (const extSvc of extSvcs.externalServices.nodes) {
+                values.push({
+                    label: extSvc.displayName,
+                    value: extSvc.id,
+                    tooltip: `Show all repositories discovered on ${extSvc.displayName}`,
+                    args: { externalService: extSvc.id },
+                })
+            }
             filtersWithExternalServices.push({
                 id: 'codeHost',
                 label: 'Code Host',
@@ -200,6 +199,10 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
     const [filterValues, setFilterValues] = useState<Map<string, FilteredConnectionFilterValue>>(() =>
         getFilterFromURL(new URLSearchParams(location.search), filters)
     )
+
+    useEffect(() => {
+        setFilterValues(getFilterFromURL(new URLSearchParams(location.search), filters))
+    }, [filters, location])
 
     const [searchQuery, setSearchQuery] = useState<string>(
         () => new URLSearchParams(location.search).get('query') || ''
@@ -296,7 +299,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             {
                 value: data.repositoryStats.cloning,
                 description: 'Cloning',
-                color: data.repositoryStats.cloning > 0 ? 'var(--success)' : 'var(--body-color)',
+                color: data.repositoryStats.cloning > 0 ? 'var(--primary)' : 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that are currently being cloned.',
                 onClick: () =>
@@ -373,7 +376,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
 
     return (
         <>
-            <Container className="py-3 mb-3">
+            <Container className="py-3 mb-1">
                 {error && !loading && <ErrorAlert error={error} />}
                 {legends && <ValueLegendList items={legends} />}
             </Container>

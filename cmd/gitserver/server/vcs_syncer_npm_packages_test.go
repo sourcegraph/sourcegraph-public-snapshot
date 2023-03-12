@@ -104,7 +104,7 @@ func TestNpmCloneCommand(t *testing.T) {
 		},
 	}
 
-	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)), nil)
+	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},

@@ -56,7 +56,21 @@ func (m *migrator) Routines(startupCtx context.Context, observationCtx *observat
 		}
 	}
 
+	version, err := currentVersion(observationCtx.Logger)
+	if err != nil {
+		return nil, err
+	}
+
 	return []goroutine.BackgroundRoutine{
-		outOfBandMigrationRunner,
+		&outOfBandMigrationRunnerWrapper{Runner: outOfBandMigrationRunner, version: version},
 	}, nil
+}
+
+type outOfBandMigrationRunnerWrapper struct {
+	*oobmigration.Runner
+	version oobmigration.Version
+}
+
+func (w *outOfBandMigrationRunnerWrapper) Start() {
+	w.Runner.Start(w.version)
 }

@@ -159,10 +159,22 @@ Follow the steps to [create an app password](https://support.atlassian.com/bitbu
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/bb-cloud-app-password.png" alt="The Bitbucket Cloud app password creation page">
 
+### Azure DevOps
+
+Follow the steps to [create a PAT](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows#create-a-pat) on Azure DevOps. Batch Changes requires the following scopes:
+
+- `Organization:All accessible organizations`
+- `Code:Full`
+- `Code:Status`
+- `Pull Request Thread:Read & Write`
+- `User Profile:Read`
+
+> NOTE: Click "Show all scopes" at the bottom of the "Create a new PAT" popup to get the full list of available scopes.
+
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/ado-create-pat.png" alt="The Azure DevOps PAT creation page">
+
 ### SSH access to code host
 
 When Sourcegraph is configured to [clone repositories using SSH via the `gitURLType` setting](../../admin/repo/auth.md), an SSH keypair will be generated for you and the public key needs to be added to the code host to allow push access. In the process of adding your personal access token you will be given that public key. You can also come back later and copy it to paste it in your code hosts SSH access settings page.
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/create-credential-ssh-key.png" alt="Credentials setup process, showing the SSH public key to be copied">
-
-

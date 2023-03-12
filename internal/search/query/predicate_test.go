@@ -3,6 +3,8 @@ package query
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestRepoContainsFilePredicate(t *testing.T) {
@@ -124,6 +126,22 @@ func TestRepoHasDescriptionPredicate(t *testing.T) {
 				}
 			})
 		}
+	})
+}
+
+func TestRepoHasTopicPredicate(t *testing.T) {
+	t.Run("errors on empty", func(t *testing.T) {
+		var p RepoHasTopicPredicate
+		err := p.Unmarshal("", false)
+		require.Error(t, err)
+	})
+
+	t.Run("sets negated and topic", func(t *testing.T) {
+		var p RepoHasTopicPredicate
+		err := p.Unmarshal("topic1", true)
+		require.NoError(t, err)
+		require.Equal(t, "topic1", p.Topic)
+		require.True(t, p.Negated)
 	})
 }
 

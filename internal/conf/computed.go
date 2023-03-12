@@ -21,7 +21,7 @@ import (
 func init() {
 	deployType := deploy.Type()
 	if !deploy.IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.SingleProgram, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.App, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
@@ -36,17 +36,16 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.DockerContainer
 	case deploy.IsDeployTypeKubernetes(deployType), deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return confdefaults.KubernetesOrDockerComposeOrPureDocker
-	case deploy.IsDeployTypeSingleProgram(deployType):
-		return confdefaults.SingleProgram
+	case deploy.IsDeployTypeApp(deployType):
+		return confdefaults.App
 	default:
 		panic("deploy type did not register default configuration")
 	}
 }
 
 func ExecutorsAccessToken() string {
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
-		return confdefaults.SingleProgramInMemoryExecutorPassword
+	if deploy.IsApp() {
+		return confdefaults.AppInMemoryExecutorPassword
 	}
 	return Get().ExecutorsAccessToken
 }
@@ -266,6 +265,39 @@ func CodeIntelAutoIndexingPolicyRepositoryMatchLimit() int {
 	return *val
 }
 
+func CodeIntelRankingDocumentReferenceCountsEnabled() bool {
+	if enabled := Get().CodeIntelRankingDocumentReferenceCountsEnabled; enabled != nil {
+		return *enabled
+	}
+	return false
+}
+
+func CodeIntelRankingDocumentReferenceCountsGraphKey() string {
+	if val := Get().CodeIntelRankingDocumentReferenceCountsGraphKey; val != "" {
+		return val
+	}
+	return "dev"
+}
+
+func CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix() string {
+	if val := Get().CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix; val != "" {
+		return val
+	}
+	return ""
+}
+
+func CodeIntelRankingStaleResultAge() time.Duration {
+	if val := Get().CodeIntelRankingStaleResultsAge; val > 0 {
+		return time.Duration(val) * time.Hour
+	}
+	return 72 * time.Hour
+}
+
+func EmbeddingsEnabled() bool {
+	embeddingsConfig := Get().Embeddings
+	return embeddingsConfig != nil && embeddingsConfig.Enabled
+}
+
 func ProductResearchPageEnabled() bool {
 	if enabled := Get().ProductResearchPageEnabled; enabled != nil {
 		return *enabled
@@ -294,6 +326,12 @@ func IsBuiltinSignupAllowed() bool {
 		}
 	}
 	return false
+}
+
+// IsAccessRequestEnabled returns whether request access experimental feature is enabled or not.
+func IsAccessRequestEnabled() bool {
+	experimentalFeatures := Get().ExperimentalFeatures
+	return experimentalFeatures == nil || experimentalFeatures.AccessRequestEnabled == nil || *experimentalFeatures.AccessRequestEnabled
 }
 
 // SearchSymbolsParallelism returns 20, or the site config

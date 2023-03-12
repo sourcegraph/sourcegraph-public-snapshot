@@ -10,6 +10,7 @@ import (
 
 func TestTransformPattern(t *testing.T) {
 	patterns := []string{
+		"compute",
 		"K",
 		"Means",
 		"Clustering",
@@ -23,19 +24,28 @@ func TestTransformPattern(t *testing.T) {
 		"using",
 		"a",
 		"timer",
+		"computing",
 	}
 	wantPatterns := []string{
+		"compute",
+		"comput",
 		"k",
+		"means",
 		"mean",
+		"clustering",
 		"cluster",
 		"convert",
 		"int",
 		"string",
+		"finding",
 		"find",
 		"time",
+		"elapsed",
 		"elaps",
 		"using",
+		"use",
 		"timer",
+		"computing",
 	}
 
 	gotPatterns := transformPatterns(patterns)
@@ -65,8 +75,8 @@ func TestQueryStringToKeywordQuery(t *testing.T) {
 		},
 		{
 			query:        "K MEANS CLUSTERING in python",
-			wantQuery:    autogold.Expect("count:99999999 type:file lang:Python (k OR mean OR cluster)"),
-			wantPatterns: autogold.Expect([]string{"k", "mean", "cluster"}),
+			wantQuery:    autogold.Expect("count:99999999 type:file lang:Python (k OR means OR mean OR clustering OR cluster)"),
+			wantPatterns: autogold.Expect([]string{"k", "means", "mean", "clustering", "cluster"}),
 		},
 	}
 

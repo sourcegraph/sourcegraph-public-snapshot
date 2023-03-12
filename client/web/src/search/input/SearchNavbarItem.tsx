@@ -1,24 +1,21 @@
-import React, { useCallback, useRef, useMemo } from 'react'
+import React, { useCallback, useRef, useEffect } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
 import { SearchBox, Toggles } from '@sourcegraph/branded'
-// The experimental search input should be shown in the navbar
-// eslint-disable-next-line no-restricted-imports
-import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
+import { useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 
-import { useLazyCreateSuggestions, useLazyHistoryExtension } from './lazy'
+import { LazyExperimentalSearchInput } from './LazyExperimentalSearchInput'
 import { useRecentSearches } from './useRecentSearches'
 
 interface Props
@@ -61,8 +58,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const { recentSearches } = useRecentSearches()
-    const recentSearchesRef = useRef(recentSearches)
-    recentSearchesRef.current = recentSearches
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -77,41 +72,14 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         [submitSearch, navigate, location, props.selectedSearchContextSpec]
     )
     const submitSearchOnChangeRef = useRef(submitSearchOnChange)
-    submitSearchOnChangeRef.current = submitSearchOnChange
+    useEffect(() => {
+        submitSearchOnChangeRef.current = submitSearchOnChange
+    }, [submitSearchOnChange])
 
-    const onSubmit = useCallback(
-        (event?: React.FormEvent): void => {
-            event?.preventDefault()
-            submitSearchOnChangeRef.current()
-        },
-        [submitSearchOnChangeRef]
-    )
-
-    const suggestionSource = useLazyCreateSuggestions(
-        experimentalQueryInput,
-        useMemo(
-            () => ({
-                platformContext: props.platformContext,
-                authenticatedUser: props.authenticatedUser,
-                fetchSearchContexts: props.fetchSearchContexts,
-                getUserSearchContextNamespaces: props.getUserSearchContextNamespaces,
-                isSourcegraphDotCom: props.isSourcegraphDotCom,
-            }),
-            [
-                props.platformContext,
-                props.authenticatedUser,
-                props.fetchSearchContexts,
-                props.getUserSearchContextNamespaces,
-                props.isSourcegraphDotCom,
-            ]
-        )
-    )
-
-    const experimentalExtensions = useLazyHistoryExtension(
-        experimentalQueryInput,
-        recentSearchesRef,
-        submitSearchOnChangeRef
-    )
+    const onSubmit = useCallback((event?: React.FormEvent): void => {
+        event?.preventDefault()
+        submitSearchOnChangeRef.current()
+    }, [])
 
     // TODO (#48103): Remove/simplify when new search input is released
     if (experimentalQueryInput) {
@@ -120,16 +88,21 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
                 onSubmit={onSubmit}
             >
-                <LazyCodeMirrorQueryInput
+                <LazyExperimentalSearchInput
+                    telemetryService={props.telemetryService}
                     patternType={searchPatternType}
                     interpretComments={false}
                     queryState={queryState}
                     onChange={setQueryState}
                     onSubmit={onSubmit}
                     isLightTheme={props.isLightTheme}
-                    placeholder="Search for code or files..."
-                    suggestionSource={suggestionSource}
-                    extensions={experimentalExtensions}
+                    platformContext={props.platformContext}
+                    authenticatedUser={props.authenticatedUser}
+                    fetchSearchContexts={props.fetchSearchContexts}
+                    getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    submitSearch={submitSearchOnChange}
+                    selectedSearchContextSpec={props.selectedSearchContextSpec}
                 >
                     <Toggles
                         patternType={searchPatternType}
@@ -141,7 +114,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                         settingsCascade={props.settingsCascade}
                         navbarSearchQuery={queryState.query}
                     />
-                </LazyCodeMirrorQueryInput>
+                </LazyExperimentalSearchInput>
             </Form>
         )
     }

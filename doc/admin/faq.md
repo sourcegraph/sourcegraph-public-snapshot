@@ -43,14 +43,10 @@ Docker image, you can deploy a reverse proxy such as [Caddy](https://caddyserver
 If you are running Sourcegraph as a Kubernetes cluster, you have two additional options:
 
 1. If you are using [NGINX
-   ingress](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md#ingress-controller-recommended)
+   ingress](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md#ingress-controller)
    (`kubectl get ingress | grep sourcegraph-frontend`), modify
    [`sourcegraph-frontend.Ingress.yaml`](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml)
    by [adding a rewrite rule](https://kubernetes.github.io/ingress-nginx/examples/rewrite/).
-1. If you are using the [NGINX
-   service](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md#nginx-service),
-   modify
-   [`nginx.ConfigMap.yaml`](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/nginx-svc/nginx.ConfigMap.yaml).
    
 ## What external HTTP checks are configured?
 

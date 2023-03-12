@@ -107,7 +107,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			},
 		}
 
-		mockListAffiliatedRepositories = func(_ context.Context, _ github.Visibility, page int, _ ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
+		mockListAffiliatedRepositories = func(_ context.Context, _ github.Visibility, page int, perPage int, _ ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
 			switch page {
 			case 1:
 				return []*github.Repository{
@@ -172,11 +172,11 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	t.Run("cache disabled", func(t *testing.T) {
 		mockClient := newMockClientWithTokenMock()
 		mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(
-			func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+			func(ctx context.Context, visibility github.Visibility, page int, perPage int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 				if len(affiliations) != 0 {
 					t.Fatalf("Expected 0 affiliations, got %+v", affiliations)
 				}
-				return mockListAffiliatedRepositories(ctx, visibility, page, affiliations...)
+				return mockListAffiliatedRepositories(ctx, visibility, page, perPage, affiliations...)
 			})
 
 		p := NewProvider("", ProviderOptions{

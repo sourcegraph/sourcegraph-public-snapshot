@@ -8,4 +8,4 @@ export const BADGE_VARIANTS = [
     'merged',
     'outlineSecondary',
 ] as const
-export const PRODUCT_STATUSES = ['beta', 'prototype', 'experimental', 'wip', 'new'] as const
+export const PRODUCT_STATUSES = ['beta', 'experimental', 'wip', 'new'] as const

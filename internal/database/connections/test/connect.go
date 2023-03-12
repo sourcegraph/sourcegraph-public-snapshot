@@ -43,7 +43,7 @@ func NewTestDB(t testing.TB, logger log.Logger, dsn string, schemas ...*schemas.
 	}
 
 	migrationLogger := logtest.ScopedWith(t, logtest.LoggerOptions{Level: log.LevelError})
-	if err := runner.NewRunner(migrationLogger, newStoreFactoryMap(db, schemas)).Run(context.Background(), options); err != nil {
+	if err := runner.NewRunnerWithSchemas(migrationLogger, newStoreFactoryMap(db, schemas), schemas).Run(context.Background(), options); err != nil {
 		return nil, err
 	}
 

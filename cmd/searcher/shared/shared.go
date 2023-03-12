@@ -17,8 +17,6 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -29,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	grpcdefaults "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
@@ -40,7 +38,9 @@ import (
 )
 
 var (
-	cacheDir    = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
+	cacheDirName = env.ChooseFallbackVariableName("SEARCHER_CACHE_DIR", "CACHE_DIR")
+
+	cacheDir    = env.Get(cacheDirName, "/tmp", "directory to store cached archives.")
 	cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
 
 	// Same environment variable name (and default value) used by symbols.
@@ -182,9 +182,8 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions(logger)...)
-	reflection.Register(grpcServer)
-	grpcServer.RegisterService(&proto.SearcherService_ServiceDesc, &search.Server{
+	grpcServer := defaults.NewServer(logger)
+	proto.RegisterSearcherServiceServer(grpcServer, &search.Server{
 		Service: sService,
 	})
 

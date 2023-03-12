@@ -32,6 +32,7 @@ import { AuthenticatedUser } from '../../auth'
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { PageTitle } from '../../components/PageTitle'
 import { NotebookFields, NotebookInput } from '../../graphql-operations'
+import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { SearchStreamingProps } from '../../search'
 import { NotepadIcon } from '../../search/Notepad'
 import {
@@ -53,8 +54,12 @@ import styles from './NotebookPage.module.scss'
 interface NotebookPageProps
     extends SearchStreamingProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {
+        Omit<
+            StreamingSearchResultsListProps,
+            'allExpanded' | 'platformContext' | 'executedQuery' | 'enableOwnershipSearch'
+        >,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     fetchNotebook?: typeof _fetchNotebook
@@ -82,6 +87,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     streamSearch,
     telemetryService,
     searchContextsEnabled,
+    ownEnabled,
     isSourcegraphDotCom,
     fetchHighlightedFileLineRanges,
     authenticatedUser,
@@ -309,6 +315,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                 streamSearch={streamSearch}
                                 telemetryService={telemetryService}
                                 searchContextsEnabled={searchContextsEnabled}
+                                ownEnabled={ownEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 authenticatedUser={authenticatedUser}

@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -266,9 +265,9 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 
 func (sr *SearchResultsResolver) Sparkline(ctx context.Context) (sparkline []int32, err error) {
 	var (
-		days     = 30                 // number of days the sparkline represents
-		maxBlame = 100                // maximum number of file results to blame for date/time information.
-		run      = parallel.NewRun(8) // number of concurrent blame ops
+		days     = 30  // number of days the sparkline represents
+		maxBlame = 100 // maximum number of file results to blame for date/time information.
+		p        = pool.New().WithMaxGoroutines(8)
 	)
 
 	var (
@@ -318,12 +317,8 @@ loop:
 				continue loop
 			}
 
-			run.Acquire()
-			goroutine.Go(func() {
-				defer run.Release()
-
+			p.Go(func() {
 				// Blame the file match in order to retrieve date informatino.
-				var err error
 				t, err := sr.blameFileMatch(ctx, m)
 				if err != nil {
 					log15.Warn("failed to blame fileMatch during sparkline generation", "error", err)
@@ -335,6 +330,7 @@ loop:
 			panic("SearchResults.Sparkline unexpected union type state")
 		}
 	}
+	p.Wait()
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		span.SetTag("blame_ops", blameOps)
 	}
@@ -492,7 +488,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		j, err := jobutil.NewBasicJob(r.SearchInputs, b)
+		j, err := jobutil.NewBasicJob(r.SearchInputs, b, r.enterpriseJobs)
 		if err != nil {
 			return nil, err
 		}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 
 import { defaultKeymap, indentWithTab, history, historyKeymap } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
@@ -10,11 +10,10 @@ import { mdiPlayCircleOutline, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 
 import { changeListener } from '@sourcegraph/branded'
-import { useCodeMirror, editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { CodeMirrorEditor, Editor, editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Icon, Markdown } from '@sourcegraph/wildcard'
 
 import { BlockProps, MarkdownBlock } from '../..'
-import { focusEditor } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
@@ -100,7 +99,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChild
             ...props
         }) => {
             const [isEditing, setIsEditing] = useState(!isReadOnly && input.initialFocusInput)
-            const [container, setContainer] = useState<HTMLDivElement | null>(null)
+            const editorRef = useRef<Editor | null>(null)
 
             const runBlock = useCallback(() => {
                 onRunBlock(id)
@@ -120,7 +119,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChild
                 [id, onBlockInputChange]
             )
 
-            const extensions: Extension[] = useMemo(
+            const editorExtensions: Extension[] = useMemo(
                 () => [
                     keymap.of([
                         {
@@ -138,8 +137,6 @@ export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChild
                 [runBlock, onInputChange, newBlock]
             )
 
-            const editor = useCodeMirror(container, input.text, extensions)
-
             const editMarkdown = useCallback(() => {
                 if (!isReadOnly) {
                     setIsEditing(true)
@@ -147,10 +144,8 @@ export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChild
             }, [isReadOnly, setIsEditing])
 
             useEffect(() => {
-                if (editor) {
-                    focusEditor(editor)
-                }
-            }, [isEditing, editor])
+                editorRef.current?.focus()
+            }, [isEditing])
 
             const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, onNewBlock, ...props })
 
@@ -187,10 +182,10 @@ export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChild
                     'aria-label': 'Notebook markdown block',
                     isInputVisible: isEditing,
                     setIsInputVisible: setIsEditing,
-                    focusInput: () => editor && focusEditor(editor),
+                    focusInput: () => editorRef.current?.focus(),
                     ...props,
                 }),
-                [id, isEditing, isReadOnly, isSelected, menuActions, onBlockInputChange, onRunBlock, editor, props]
+                [id, isEditing, isReadOnly, isSelected, menuActions, onBlockInputChange, onRunBlock, editorRef, props]
             )
 
             const isInputFocused = useIsBlockInputFocused(id)
@@ -213,8 +208,9 @@ export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChild
                     className={classNames(styles.input, (isInputFocused || isSelected) && blockStyles.selected)}
                     {...notebookBlockProps}
                 >
-                    <div ref={setContainer} />
+                    <CodeMirrorEditor ref={editorRef} value={input.text} extensions={editorExtensions} />
                 </NotebookBlock>
             )
         }
     )
+NotebookMarkdownBlock.displayName = 'NotebookMarkdownBlock'

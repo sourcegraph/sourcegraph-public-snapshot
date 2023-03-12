@@ -229,7 +229,7 @@ func CanonicalizeQuery(query string) string {
 	)
 }
 
-var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
+var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
 
 func parseIndexMetadata(queryText string) (*IndexMetadata, bool) {
 	matches := createIndexConcurrentlyPattern.FindStringSubmatch(queryText)

@@ -10,26 +10,25 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 const (
@@ -196,7 +195,6 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 	}
 
 	itrLoop := func(pageSize, concurrency int, nextFunc nextNFunc) (interrupted bool, _ error) {
-		g := group.New().WithContext(ctx).WithMaxConcurrency(concurrency)
 		mu := sync.Mutex{}
 		for {
 			repoIds, more, finish := nextFunc(pageSize, itrConfig)
@@ -207,11 +205,12 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 			case <-timeExpired:
 				return true, nil
 			default:
+				p := pool.New().WithContext(ctx).WithMaxGoroutines(concurrency)
 				repoErrors := map[int32]error{}
 				startPage := time.Now()
 				for i := 0; i < len(repoIds); i++ {
 					repoId := repoIds[i]
-					g.Go(func(ctx context.Context) error {
+					p.Go(func(ctx context.Context) error {
 						repo, repoErr := h.repoStore.Get(ctx, repoId)
 						if repoErr != nil {
 							mu.Lock()
@@ -233,7 +232,7 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 
 				}
 				// The groups functions don't return errors so not checking for them
-				g.Wait()
+				p.Wait()
 				execution.logger.Debug("page complete", log.Duration("page duration", time.Since(startPage)), log.Int("page size", pageSize), log.Int("number repos", len(repoIds)))
 				err = finish(ctx, h.backfillStore.Store, repoErrors)
 				if err != nil {

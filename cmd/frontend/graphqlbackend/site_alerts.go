@@ -90,7 +90,7 @@ var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", 
 
 func init() {
 	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
+		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
 			return nil
 		}
 		if c.SiteConfig().ExternalURL == "" {
@@ -202,6 +202,12 @@ func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
 }
 
 func updateAvailableAlert(args AlertFuncArgs) []*Alert {
+	// TODO(app): App Update Messaging
+	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
+	if deploy.IsApp() {
+		return nil
+	}
+
 	// We only show update alerts to admins. This is not for security reasons, as we already
 	// expose the version number of the instance to all users via the user settings page.
 	if !args.IsSiteAdmin {
@@ -214,6 +220,10 @@ func updateAvailableAlert(args AlertFuncArgs) []*Alert {
 	}
 	// ensure the user has opted in to receiving notifications for minor updates and there is one available
 	if !args.ViewerFinalSettings.AlertsShowPatchUpdates && !isMinorUpdateAvailable(version.Version(), globalUpdateStatus.UpdateVersion) {
+		return nil
+	}
+	// for major/minor updates, ensure banner is hidden if they have opted out
+	if !args.ViewerFinalSettings.AlertsShowMajorMinorUpdates && isMinorUpdateAvailable(version.Version(), globalUpdateStatus.UpdateVersion) {
 		return nil
 	}
 	message := fmt.Sprintf("An update is available: [Sourcegraph v%s](https://about.sourcegraph.com/blog) - [changelog](https://about.sourcegraph.com/changelog)", globalUpdateStatus.UpdateVersion)
@@ -241,7 +251,7 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 }
 
 func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
-	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
+	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
 		return nil
 	}
 	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
@@ -262,6 +272,12 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 }
 
 func outOfDateAlert(args AlertFuncArgs) []*Alert {
+	// TODO(app): App Update Messaging
+	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
+	if deploy.IsApp() {
+		return nil
+	}
+
 	globalUpdateStatus := updatecheck.Last()
 	if globalUpdateStatus == nil || updatecheck.IsPending() {
 		return nil

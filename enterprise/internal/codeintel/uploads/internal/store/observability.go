@@ -80,13 +80,6 @@ type operations struct {
 
 	reindexUploads    *observation.Operation
 	reindexUploadByID *observation.Operation
-
-	// Ranking
-	insertDefinitionsAndReferencesForDocument *observation.Operation
-	insertDefintionsForRanking                *observation.Operation
-	insertReferencesForRanking                *observation.Operation
-	insertPathCountInputs                     *observation.Operation
-	insertPathRanks                           *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -183,12 +176,5 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 		reindexUploads:    op("ReindexUploads"),
 		reindexUploadByID: op("ReindexUploadByID"),
-
-		// Ranking
-		insertDefinitionsAndReferencesForDocument: op("InsertDefinitionsAndReferencesForDocument"),
-		insertDefintionsForRanking:                op("InsertDefintionsForRanking"),
-		insertReferencesForRanking:                op("InsertReferencesForRanking"),
-		insertPathCountInputs:                     op("InsertPathCountInputs"),
-		insertPathRanks:                           op("InsertPathRanks"),
 	}
 }

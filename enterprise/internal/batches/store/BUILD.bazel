@@ -28,6 +28,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/batches/search",
+        "//enterprise/internal/batches/sources/azuredevops",
         "//enterprise/internal/batches/sources/bitbucketcloud",
         "//enterprise/internal/batches/store/author",
         "//enterprise/internal/batches/types",
@@ -41,6 +42,7 @@ go_library(
         "//internal/executor",
         "//internal/extsvc",
         "//internal/extsvc/auth",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/github",
@@ -88,6 +90,10 @@ go_test(
         "worker_workspace_execution_test.go",
     ],
     embed = [":store"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/batches/search",
         "//enterprise/internal/batches/testing",

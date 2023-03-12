@@ -90,6 +90,8 @@ var DeploySourcegraphDockerImages = []string{
 	"executor-vm",
 	"batcheshelper",
 	"opentelemetry-collector",
+	"embeddings",
+	"dind",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.
@@ -102,7 +104,7 @@ func CandidateImageTag(commit string, buildNumber int) string {
 
 // BranchImageTag provides the tag for all commits built outside of a tagged release.
 //
-// Example: `(ef/feat_)?12345_2006-01-02-1.2.2-deadbeefbabe(_patch)?`
+// Example: `(ef-feat_)?12345_2006-01-02-1.2-deadbeefbabe`
 //
 // Notes:
 // - latest tag omitted if empty

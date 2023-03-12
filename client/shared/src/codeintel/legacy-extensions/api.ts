@@ -1,4 +1,3 @@
-/* eslint-disable etc/no-deprecated */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Observable, Unsubscribable } from 'rxjs'
 
@@ -78,54 +77,6 @@ export interface DocumentFilter {
  * @example let sel: DocumentSelector = [{ language: 'typescript' }, { language: 'json', pattern: '**∕tsconfig.json' }];
  */
 export type DocumentSelector = (string | DocumentFilter)[]
-
-/**
- * Options for an input box displayed as a result of calling {@link Window#showInputBox}.
- */
-export interface InputBoxOptions {
-    /**
-     * The text that describes what input the user should provide.
-     */
-    prompt?: string
-
-    /**
-     * The pre-filled input value for the input box.
-     */
-    value?: string
-}
-
-export interface ProgressOptions {
-    title?: string
-}
-
-export interface Progress {
-    /** Optional message. If not set, the previous message is still shown. */
-    message?: string
-
-    /** Integer from 0 to 100. If not set, the previous percentage is still shown. */
-    percentage?: number
-}
-
-export interface ProgressReporter {
-    /**
-     * Updates the progress display with a new message and/or percentage.
-     */
-    next(status: Progress): void
-
-    /**
-     * Turns the progress display into an error display for the given error or message.
-     * Use if the operation failed.
-     * No further progress updates can be sent after this.
-     */
-    error(error: any): void
-
-    /**
-     * Completes the progress bar and hides the display.
-     * Sending a percentage of 100 has the same effect.
-     * No further progress updates can be sent after this.
-     */
-    complete(): void
-}
 
 export interface Directory {
     /**
@@ -472,32 +423,6 @@ export interface MarkupContent {
     kind?: MarkupKind
 }
 
-/**
- * The type of a notification shown through {@link Window.showNotification}.
- */
-export enum NotificationType {
-    /**
-     * An error message.
-     */
-    Error = 1,
-    /**
-     * A warning message.
-     */
-    Warning = 2,
-    /**
-     * An info message.
-     */
-    Info = 3,
-    /**
-     * A log message.
-     */
-    Log = 4,
-    /**
-     * A success message.
-     */
-    Success = 5,
-}
-
 /** A badge holds the extra fields that can be attached to a providable type T via Badged<T>. */
 export interface Badge {
     /**
@@ -546,41 +471,6 @@ export interface Hover {
      * position or the current position itself.
      */
     range?: Range
-
-    /**
-     * Alerts that should be shown in this hover.
-     */
-    alerts?: HoverAlert[]
-}
-
-export interface HoverAlert {
-    /**
-     * Text content to be shown on hovers. Since the alert is displayed inline,
-     * multiparagraph content will be rendered on one line. It's recommended to
-     * provide a brief message here, and place futher details in the badge or
-     * provide a link.
-     */
-    summary: MarkupContent
-
-    /**
-     * When an alert has a dismissal type, dismissing it will prevent all alerts
-     * of that type from being shown. If no type is provided, the alert is not
-     * dismissible.
-     */
-    type?: string
-
-    /** Predefined icons to display next ot the summary. */
-    iconKind?: 'info' | 'error' | 'warning'
-
-    /**
-     * When set, this renders a row of button underneath the content. Note
-     * that this was added after the extension deprecation and will only
-     * work with newer clients.
-     *
-     * When buttons are rendered this way, an eventual dismiss button is
-     * appended to this list.
-     */
-    buttons?: React.ReactNode[]
 }
 
 export interface HoverProvider {
@@ -725,12 +615,10 @@ export function requestGraphQL<T>(query: string, vars?: { [name: string]: unknow
             )
         )
     }
-    return (
-        context
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            .requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true })
-            .toPromise()
-    )
+    return context
+
+        .requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true })
+        .toPromise()
 }
 
 export function getSetting<T>(key: string): T | undefined {

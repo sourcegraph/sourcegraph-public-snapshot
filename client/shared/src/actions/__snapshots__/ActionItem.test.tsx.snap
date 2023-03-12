@@ -177,22 +177,6 @@ exports[`ActionItem run command with error 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ActionItem run command with error with showInlineError 1`] = `
-<DocumentFragment>
-  <button
-    aria-label="Error: x"
-    class="test-action-item"
-    type="button"
-  >
-    <img
-      alt="d"
-      src="u"
-    />
-     g: t 
-  </button>
-</DocumentFragment>
-`;
-
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 <DocumentFragment>
   <button

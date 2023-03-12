@@ -252,7 +252,7 @@ func (r *roleStore) Create(ctx context.Context, name string, isSystemRole bool) 
 	role, err := scanRole(r.QueryRow(ctx, q))
 	if err != nil {
 		var e *pgconn.PgError
-		if errors.As(err, &e) && e.ConstraintName == "roles_name" {
+		if errors.As(err, &e) && e.ConstraintName == "unique_role_name" {
 			return nil, errCannotCreateRole{errorCodeRoleNameExists}
 		}
 		return nil, errors.Wrap(err, "scanning role")

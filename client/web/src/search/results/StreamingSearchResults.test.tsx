@@ -13,7 +13,6 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     COLLAPSABLE_SEARCH_RESULT,
-    extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
@@ -33,7 +32,6 @@ describe('StreamingSearchResults', () => {
     const streamingSearchResult = MULTIPLE_SEARCH_RESULT
 
     const defaultProps: StreamingSearchResultsProps = {
-        extensionsController,
         telemetryService: NOOP_TELEMETRY_SERVICE,
 
         authenticatedUser: null,
@@ -51,6 +49,7 @@ describe('StreamingSearchResults', () => {
         searchContextsEnabled: true,
         searchAggregationEnabled: false,
         codeMonitoringEnabled: true,
+        ownEnabled: true,
     }
 
     const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')
@@ -80,9 +79,6 @@ describe('StreamingSearchResults', () => {
             searchCaseSensitivity: false,
             searchQueryFromURL: 'r:golang/oauth2 test f:travis',
         })
-        window.context = {
-            enableLegacyExtensions: false,
-        } as any
     })
 
     it('should call streaming search API with the right parameters from URL', async () => {
@@ -183,7 +179,7 @@ describe('StreamingSearchResults', () => {
         sinon.assert.calledWith(logSpy, 'SearchResultsFetched')
     })
 
-    it('should log event when clicking on search result', () => {
+    it('should log events when clicking on search result', () => {
         const logSpy = sinon.spy()
         const telemetryService = {
             ...NOOP_TELEMETRY_SERVICE,
@@ -194,6 +190,21 @@ describe('StreamingSearchResults', () => {
 
         userEvent.click(screen.getAllByTestId('result-container')[0])
         sinon.assert.calledWith(logSpy, 'SearchResultClicked')
+        sinon.assert.calledWith(logSpy, 'search.ranking.result-clicked', {
+            index: 0,
+            type: 'fileMatch',
+            ranked: false,
+            resultsLength: 3,
+        })
+
+        userEvent.click(screen.getAllByTestId('result-container')[2])
+        sinon.assert.calledWith(logSpy, 'SearchResultClicked')
+        sinon.assert.calledWith(logSpy, 'search.ranking.result-clicked', {
+            index: 2,
+            type: 'fileMatch',
+            ranked: false,
+            resultsLength: 3,
+        })
     })
 
     it('should not show saved search modal on first load', () => {

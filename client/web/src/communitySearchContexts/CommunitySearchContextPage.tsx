@@ -19,8 +19,8 @@ import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 import { submitSearch } from '../search/helpers'
-import { SearchPageInput } from '../search/home/SearchPageInput'
 import { useNavbarQueryState } from '../stores'
+import { SearchPageInput } from '../storm/pages/SearchPage/SearchPageInput'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { CommunitySearchContextMetadata } from './types'
@@ -117,23 +117,12 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                 )}
             </div>
             <div className={styles.container}>
-                {props.communitySearchContextMetadata.lowProfile ? (
-                    <SearchPageInput
-                        {...props}
-                        queryState={queryState}
-                        setQueryState={setQueryState}
-                        selectedSearchContextSpec={props.communitySearchContextMetadata.spec}
-                        source="communitySearchContextPage"
-                    />
-                ) : (
-                    <SearchPageInput
-                        {...props}
-                        queryState={queryState}
-                        setQueryState={setQueryState}
-                        selectedSearchContextSpec={props.communitySearchContextMetadata.spec}
-                        source="communitySearchContextPage"
-                    />
-                )}
+                <SearchPageInput
+                    {...props}
+                    queryState={queryState}
+                    setQueryState={setQueryState}
+                    hardCodedSearchContextSpec={props.communitySearchContextMetadata.spec}
+                />
             </div>
             {!props.communitySearchContextMetadata.lowProfile && (
                 <div className="row">

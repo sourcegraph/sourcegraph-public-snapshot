@@ -92,7 +92,7 @@ export const FUZZY_REPOS_MOCK: MockedResponse<FuzzyFinderRepoResult> = {
 export const FUZZY_SYMBOLS_MOCK: MockedResponse<FuzzyFinderSymbolsResult> = {
     request: {
         query: getDocumentNode(FUZZY_SYMBOLS_QUERY),
-        variables: { query: 'repo:github.com/sourcegraph/sourcegraph@main type:symbol count:10' },
+        variables: { query: 'repo:^github\\.com/sourcegraph/sourcegraph$@main type:symbol count:10' },
     },
     result: {
         data: {

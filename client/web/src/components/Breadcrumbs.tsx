@@ -82,7 +82,7 @@ export interface BreadcrumbSetters {
     setBreadcrumb: (breadcrumb: NullableBreadcrumb) => BreadcrumbSetters & Unsubscribable
 }
 
-interface BreadcrumbAtDepth {
+export interface BreadcrumbAtDepth {
     /**
      * The position of the breadcrumb in the sequence of breadcrumbs
      */

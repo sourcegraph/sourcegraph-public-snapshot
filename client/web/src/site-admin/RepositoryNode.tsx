@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { mdiCog, mdiClose, mdiFileDocumentOutline } from '@mdi/js'
+import { mdiCog, mdiClose, mdiFileDocumentOutline, mdiBrain } from '@mdi/js'
 import classNames from 'classnames'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
@@ -62,9 +62,9 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
         >
             <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex col-7 pl-0">
-                    <div className={classNames('d-flex col-2 px-0 justify-content-between h-100', styles.badgeWrapper)}>
+                    <div className={classNames('col-2 px-0 my-auto h-100', styles.badgeWrapper)}>
                         <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
-                        {node.mirrorInfo.cloneInProgress && <LoadingSpinner />}
+                        {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
                     </div>
 
                     <div className="d-flex flex-column ml-2">
@@ -83,6 +83,19 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                             <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                         </Button>
                     )}{' '} */}
+                    {!window.location.pathname.includes('/setup') && (
+                        <Tooltip content="Repository code graph data">
+                            <Button
+                                to={`/${node.name}/-/code-graph`}
+                                variant="secondary"
+                                size="sm"
+                                className="mr-1"
+                                as={Link}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph data
+                            </Button>
+                        </Tooltip>
+                    )}
                     {node.mirrorInfo.cloned && !node.mirrorInfo.lastError && !node.mirrorInfo.cloneInProgress && (
                         <Tooltip content="Repository settings">
                             <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>

@@ -8,6 +8,7 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildCloudTrialURL, addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -23,6 +24,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
+import { LimitedAccessBanner } from '../../../components/LimitedAccessBanner'
 import { Page } from '../../../components/Page'
 import {
     ListBatchChange,
@@ -35,6 +37,7 @@ import {
     GetLicenseAndUsageInfoVariables,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_NAMESPACE } from '../utils'
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
 import { BatchChangeListFilters } from './BatchChangeListFilters'
@@ -48,10 +51,14 @@ import { useBatchChangeListFilters } from './useBatchChangeListFilters'
 import styles from './BatchChangeListPage.module.scss'
 
 export interface BatchChangeListPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {
-    canCreate: boolean
+    // canCreate indicates whether or not the currently-authenticated user has sufficient
+    // permissions to create a batch change in whatever context this list page is being
+    // presented. If not, canCreate will be a string reason why the user cannot create.
+    canCreate: true | string
     headingElement: 'h1' | 'h2'
     namespaceID?: Scalars['ID']
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     authenticatedUser: AuthenticatedUser | null
     /** For testing only. */
     openTab?: SelectedTab
@@ -72,6 +79,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     settingsCascade,
     telemetryService,
     isSourcegraphDotCom,
+    isSourcegraphApp,
     authenticatedUser,
 }) => {
     const location = useLocation()
@@ -151,9 +159,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             <PageHeader
                 className="test-batches-list-page mb-3"
                 actions={
-                    canCreate ? (
-                        <NewBatchChangeButton to={`${location.pathname}/create`} />
-                    ) : (
+                    isSourcegraphDotCom ? (
                         <Button
                             as={Link}
                             to="https://about.sourcegraph.com"
@@ -162,6 +168,8 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                         >
                             Get Sourcegraph Enterprise
                         </Button>
+                    ) : (
+                        <NewBatchChangeButton to={`${location.pathname}/create`} canCreate={canCreate} />
                     )
                 }
                 headingElement={headingElement}
@@ -171,6 +179,23 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <PageHeader.Breadcrumb icon={BatchChangesIcon}>Batch Changes</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
+            {isSourcegraphApp && (
+                <LimitedAccessBanner dismissableTemporarySettingsKey="app.limitedAccessBannerDismissed.batchChanges">
+                    Batch Changes is currently available to try for free, up to 10 changesets, while Sourcegraph App is
+                    in beta. Pricing and availability for Batch Changes is subject to change in future releases.{' '}
+                    <strong>
+                        For unlimited access to Batch Changes,{' '}
+                        <Link
+                            to={addSourcegraphAppOutboundUrlParameters(
+                                buildCloudTrialURL(authenticatedUser),
+                                'batch-changes'
+                            )}
+                        >
+                            sign up for a Cloud Trial.
+                        </Link>
+                    </strong>
+                </LimitedAccessBanner>
+            )}
             <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
             <BatchChangeListTabHeader
                 selectedTab={selectedTab}
@@ -178,11 +203,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 isSourcegraphDotCom={isSourcegraphDotCom}
             />
             {selectedTab === 'gettingStarted' && (
-                <GettingStarted
-                    isSourcegraphDotCom={isSourcegraphDotCom}
-                    authenticatedUser={authenticatedUser}
-                    className="mb-4"
-                />
+                <GettingStarted canCreate={canCreate} isSourcegraphDotCom={isSourcegraphDotCom} className="mb-4" />
             )}
             {selectedTab === 'batchChanges' && (
                 <>
@@ -256,14 +277,24 @@ export interface NamespaceBatchChangeListPageProps extends Omit<BatchChangeListP
 export const NamespaceBatchChangeListPage: React.FunctionComponent<
     React.PropsWithChildren<NamespaceBatchChangeListPageProps>
 > = ({ authenticatedUser, namespaceID, ...props }) => {
-    // A user should only see the button to create a batch change in a namespace if it is
-    // their namespace (user namespace), or they belong to it (organization namespace)
-    const canCreateInThisNamespace = useMemo(
-        () =>
+    // A user should only see the button to create a batch change in a namespace if they
+    // have permission to create batch changes and either they are looking at their user
+    // namespace or the namespace of one of the organizations they are a member of.
+    const canCreateInThisNamespace: true | string = useMemo(() => {
+        if (authenticatedUser.siteAdmin) {
+            return true
+        }
+        if (!canWriteBatchChanges(authenticatedUser)) {
+            return NO_ACCESS_BATCH_CHANGES_WRITE
+        }
+        if (
             authenticatedUser.id === namespaceID ||
-            authenticatedUser.organizations.nodes.map(org => org.id).includes(namespaceID),
-        [authenticatedUser, namespaceID]
-    )
+            authenticatedUser.organizations.nodes.map(org => org.id).includes(namespaceID)
+        ) {
+            return true
+        }
+        return NO_ACCESS_NAMESPACE
+    }, [authenticatedUser, namespaceID])
 
     return (
         <BatchChangeListPage
@@ -286,7 +317,7 @@ const BatchChangeListEmptyElement: React.FunctionComponent<
             <Text>
                 <strong>No batch changes have been created.</strong>
             </Text>
-            {canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
+            <NewBatchChangeButton to={`${location.pathname}/create`} canCreate={canCreate} />
         </div>
     )
 }

@@ -86,32 +86,57 @@
     flex-grow: 1;
     margin: auto;
     max-width: 55rem;
-    padding: 0.5rem;
+    padding: 0 0.5rem 0.5rem;
 }
 
 .actions {
     width: 100%;
 }
 
-.navigation {
+.footer {
     display: flex;
+    flex-direction: column;
     position: sticky;
     bottom: 0;
     background-color: var(--gray-02);
-    border-top: 1px solid var(--border-color);
+
+    $self: &;
 
     :global(.theme-dark) & {
         background-color: var(--color-bg-2);
     }
 
-    &-inner {
+    &-navigation {
+        display: flex;
+        border-top: 1px solid var(--border-color);
+    }
+
+    &-inner-navigation {
         display: flex;
         flex-grow: 1;
-        gap: 0.5rem;
+        gap: 0.25rem;
+        padding: 0.5rem;
         width: 100%;
         max-width: 55rem;
         margin: auto;
-        padding: 0.5rem;
+    }
+
+    &-widget {
+        display: flex;
+        width: 100%;
+        background-color: var(--color-bg-1);
+        border-top: 1px solid var(--border-color);
+
+        &:has(> #{$self}-inner-widget:empty) {
+            display: none;
+        }
+    }
+
+    &-inner-widget {
+        max-width: 55rem;
+        margin: auto;
+        flex-grow: 1;
+        padding: 0.25rem 0.5rem;
     }
 
     // Hide default next button if the custom button is rendered
@@ -119,8 +144,7 @@
         display: none;
     }
 
-    &-next-portal,
-    &-next {
-        margin-left: auto;
+    &-skip {
+        margin-right: auto;
     }
 }

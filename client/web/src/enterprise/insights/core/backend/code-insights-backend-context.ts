@@ -25,8 +25,6 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public deleteDashboard = errorMockMethod('deleteDashboard')
     public updateDashboard = errorMockMethod('updateDashboard')
     public assignInsightsToDashboard = errorMockMethod('assignInsightsToDashboard')
-
-    public getFirstExampleRepository = errorMockMethod('getFirstExampleRepository')
 }
 
 export const CodeInsightsBackendContext = React.createContext<CodeInsightsBackend>(new FakeDefaultCodeInsightsBackend())

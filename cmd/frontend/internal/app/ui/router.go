@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -45,6 +46,7 @@ const (
 	routeRepoTags                = "repo-tags"
 	routeRepoCompare             = "repo-compare"
 	routeRepoStats               = "repo-stats"
+	routeRepoOwn                 = "repo-own"
 	routeInsights                = "insights"
 	routeSetup                   = "setup"
 	routeBatchChanges            = "batch-changes"
@@ -56,6 +58,7 @@ const (
 	routeBlob                    = "blob"
 	routeRaw                     = "raw"
 	routeOrganizations           = "org"
+	routeTeams                   = "team"
 	routeSettings                = "settings"
 	routeSiteAdmin               = "site-admin"
 	routeAPIConsole              = "api-console"
@@ -78,6 +81,7 @@ const (
 	routeDevToolTime             = "devtooltime"
 	routeEmbed                   = "embed"
 	routeCody                    = "cody"
+	routeOwn                     = "own"
 
 	routeSearchStream  = "search.stream"
 	routeSearchConsole = "search.console"
@@ -119,9 +123,9 @@ func Router() *mux.Router {
 // InitRouter create the router that serves pages for our web app
 // and assigns it to uirouter.Router.
 // The router can be accessed by calling Router().
-func InitRouter(db database.DB) {
+func InitRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) {
 	router := newRouter()
-	initRouter(db, router)
+	initRouter(db, enterpriseJobs, router)
 }
 
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
@@ -144,6 +148,7 @@ func newRouter() *mux.Router {
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
+	r.PathPrefix("/request-access").Methods("GET").Name(uirouter.RouteRequestAccess)
 	r.Path("/unlock-account/{token}").Methods("GET").Name(uirouter.RouteUnlockAccount)
 	r.Path("/welcome").Methods("GET").Name(routeWelcome)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
@@ -153,6 +158,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/contexts").Methods("GET").Name(routeContexts)
 	r.PathPrefix("/notebooks").Methods("GET").Name(routeNotebooks)
 	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
+	r.PathPrefix("/teams").Methods("GET").Name(routeTeams)
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
 	r.Path("/password-reset").Methods("GET").Name(uirouter.RoutePasswordReset)
@@ -171,6 +177,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
 	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
 	r.PathPrefix("/cody").Methods("GET").Name(routeCody)
+	r.PathPrefix("/own").Methods("GET").Name(routeOwn)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
@@ -214,6 +221,7 @@ func newRouter() *mux.Router {
 	repo.PathPrefix("/tags").Methods("GET").Name(routeRepoTags)
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
 	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
+	repo.PathPrefix("/own").Methods("GET").Name(routeRepoOwn)
 
 	// legacy redirects
 	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
@@ -230,7 +238,7 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter(db database.DB, router *mux.Router) {
+func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *mux.Router) {
 	uirouter.Router = router // make accessible to other packages
 
 	brandedIndex := func(titles string) http.Handler {
@@ -250,10 +258,12 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeCodeMonitoring).Handler(brandedIndex("Code Monitoring"))
 	router.Get(routeContexts).Handler(brandedNoIndex("Search Contexts"))
 	router.Get(uirouter.RouteSignIn).Handler(handler(db, serveSignIn(db)))
+	router.Get(uirouter.RouteRequestAccess).Handler(brandedIndex("Request access"))
 	router.Get(uirouter.RouteSignUp).Handler(brandedIndex("Sign up"))
 	router.Get(uirouter.RouteUnlockAccount).Handler(brandedNoIndex("Unlock Your Account"))
 	router.Get(routeWelcome).Handler(brandedNoIndex("Welcome"))
 	router.Get(routeOrganizations).Handler(brandedNoIndex("Organization"))
+	router.Get(routeTeams).Handler(brandedNoIndex("Team"))
 	router.Get(routeSettings).Handler(brandedNoIndex("Settings"))
 	router.Get(routeSiteAdmin).Handler(brandedNoIndex("Admin"))
 	router.Get(uirouter.RoutePasswordReset).Handler(brandedNoIndex("Reset password"))
@@ -267,21 +277,21 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeRepoTags).Handler(brandedNoIndex("Tags"))
 	router.Get(routeRepoCompare).Handler(brandedNoIndex("Compare"))
 	router.Get(routeRepoStats).Handler(brandedNoIndex("Stats"))
+	router.Get(routeRepoOwn).Handler(brandedNoIndex("Ownership"))
 	router.Get(routeSurvey).Handler(brandedNoIndex("Survey"))
 	router.Get(routeSurveyScore).Handler(brandedNoIndex("Survey"))
 	router.Get(routeRegistry).Handler(brandedNoIndex("Registry"))
-	if ShouldRedirectLegacyExtensionEndpoints() {
+	if envvar.SourcegraphDotComMode() {
 		router.Get(routeExtensions).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/", http.StatusMovedPermanently)
 		})
-	} else {
-		router.Get(routeExtensions).Handler(brandedIndex("Extensions"))
 	}
 	router.Get(routeHelp).HandlerFunc(serveHelp)
 	router.Get(routeSnippets).Handler(brandedNoIndex("Snippets"))
 	router.Get(routeSubscriptions).Handler(brandedNoIndex("Subscriptions"))
 	router.Get(routeViews).Handler(brandedNoIndex("View"))
 	router.Get(routeCody).Handler(brandedNoIndex("Cody"))
+	router.Get(routeOwn).Handler(brandedNoIndex("Own"))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
@@ -318,7 +328,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	}, nil, index)))
 
 	// streaming search
-	router.Get(routeSearchStream).Handler(search.StreamHandler(db))
+	router.Get(routeSearchStream).Handler(search.StreamHandler(db, enterpriseJobs))
 
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler())

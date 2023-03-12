@@ -8,13 +8,14 @@ import (
 )
 
 type operations struct {
-	deleteLsifDataByUploadIds   *observation.Operation
-	idsWithMeta                 *observation.Operation
-	reconcileCandidates         *observation.Operation
-	getUploadDocumentsForPath   *observation.Operation
-	scanDocuments               *observation.Operation
-	insertMetadata              *observation.Operation
-	deleteUnreferencedDocuments *observation.Operation
+	deleteLsifDataByUploadIds                 *observation.Operation
+	idsWithMeta                               *observation.Operation
+	reconcileCandidates                       *observation.Operation
+	getUploadDocumentsForPath                 *observation.Operation
+	scanDocuments                             *observation.Operation
+	insertMetadata                            *observation.Operation
+	deleteUnreferencedDocuments               *observation.Operation
+	insertDefinitionsAndReferencesForDocument *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -38,12 +39,13 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		deleteLsifDataByUploadIds:   op("DeleteLsifDataByUploadIds"),
-		idsWithMeta:                 op("IDsWithMeta"),
-		reconcileCandidates:         op("ReconcileCandidates"),
-		getUploadDocumentsForPath:   op("GetUploadDocumentsForPath"),
-		scanDocuments:               op("ScanDocuments"),
-		insertMetadata:              op("InsertMetadata"),
-		deleteUnreferencedDocuments: op("DeleteUnreferencedDocuments"),
+		deleteLsifDataByUploadIds:                 op("DeleteLsifDataByUploadIds"),
+		idsWithMeta:                               op("IDsWithMeta"),
+		reconcileCandidates:                       op("ReconcileCandidates"),
+		getUploadDocumentsForPath:                 op("GetUploadDocumentsForPath"),
+		scanDocuments:                             op("ScanDocuments"),
+		insertMetadata:                            op("InsertMetadata"),
+		deleteUnreferencedDocuments:               op("DeleteUnreferencedDocuments"),
+		insertDefinitionsAndReferencesForDocument: op("InsertDefinitionsAndReferencesForDocument"),
 	}
 }

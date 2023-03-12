@@ -326,6 +326,10 @@ function mockCommonGraphQLResponses(
                 builtinAuth: true,
                 tags: [],
                 createdAt: '2020-04-10T21:11:42Z',
+                roles: {
+                    __typename: 'RoleConnection',
+                    nodes: [],
+                },
             },
         }),
         UserSettingsAreaUserProfile: () => ({
@@ -346,6 +350,11 @@ function mockCommonGraphQLResponses(
                 organizations: { nodes: [] },
                 permissionsInfo: null,
                 tags: [],
+                scimControlled: false,
+                roles: {
+                    __typename: 'RoleConnection',
+                    nodes: [],
+                },
             },
         }),
         BatchChangeByNamespace: () => ({
@@ -362,6 +371,8 @@ function mockCommonGraphQLResponses(
                     archived: 18,
                     unpublished: 3,
                     draft: 2,
+                    isCompleted: false,
+                    percentComplete: 27,
                 },
                 state: BatchChangeState.OPEN,
                 closedAt: null,

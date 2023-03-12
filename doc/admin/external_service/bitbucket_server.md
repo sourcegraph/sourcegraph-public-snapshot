@@ -38,14 +38,77 @@ Please consult [this page](../config/webhooks.md) in order to configure webhooks
 
 ## Repository permissions
 
-By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use Bitbucket Server / Bitbucket Data Center's repository permissions, see [Repository permissions](../repo/permissions.md#bitbucket_server).
+Enforcing Bitbucket Server / Bitbucket Data Center permissions can be configured via the `authorization` setting in its configuration.
+
+> NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
+
+### Prerequisites
+
+1. You have the exact same user accounts, **with matching usernames**, in Sourcegraph and Bitbucket Server / Bitbucket Data Center. This can be accomplished by configuring an [external authentication provider](../auth/index.md) that mirrors user accounts from a central directory like LDAP or Active Directory. The same should be done on Bitbucket Server / Bitbucket Data Center with [external user directories](https://confluence.atlassian.com/bitbucketserver/external-user-directories-776640394.html).
+1. Ensure you have set `auth.enableUsernameChanges` to **`false`** in the [site config](../config/site_config.md) to prevent users from changing their usernames and **escalating their privileges**.
+
+
+### Setup
+
+This section walks you through the process of setting up an *Application Link between Sourcegraph and Bitbucket Server / Bitbucket Data Center* and configuring the Sourcegraph Bitbucket Server / Bitbucket Data Center configuration with `authorization` settings. It assumes the above prerequisites are met.
+
+As an admin user, go to the "Application Links" page. You can use the sidebar navigation in the admin dashboard, or go directly to [https://bitbucketserver.example.com/plugins/servlet/applinks/listApplicationLinks](https://bitbucketserver.example.com/plugins/servlet/applinks/listApplicationLinks).
+
+<img src="https://imgur.com/Hg4bzOf.png" width="800">
+
+Write Sourcegraph's external URL in the text area (e.g. `https://sourcegraph.example.com`) and click **Create new link**. Click **Continue** even if Bitbucket Server / Bitbucket Data Center warns you about the given URL not responding.
+
+<img src="https://imgur.com/x6vFKIL.png" width="800">
+
+Write `Sourcegraph` as the *Application Name* and select `Generic Application` as the *Application Type*. Leave everything else unset and click **Continue**.
+
+<img src="https://imgur.com/161rbB9.png" width="800">
+
+Now click the edit button in the `Sourcegraph` Application Link that you just created and select the `Incoming Authentication` panel.
+
+<img src="https://imgur.com/sMGmzhH.png" width="800">
+
+Generate a *Consumer Key* in your terminal with `echo sourcegraph$(openssl rand -hex 16)`. Copy this command's output and paste it in the *Consumer Key* field. Write `Sourcegraph` in the *Consumer Name* field.
+
+<img src="https://imgur.com/1kK2Y5x.png" width="800">
+
+Generate an RSA key pair in your terminal with `openssl genrsa -out sourcegraph.pem 4096 && openssl rsa -in sourcegraph.pem -pubout > sourcegraph.pub`. Copy the contents of `sourcegraph.pub` and paste them in the *Public Key* field.
+
+<img src="https://imgur.com/YHm1uSr.png" width="800">
+
+Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write your admin account's username in the *Execute as* field and, lastly, check the *Allow user impersonation through 2-Legged OAuth* checkbox. Press **Save**.
+
+<img src="https://imgur.com/1qxEAye.png" width="800">
+
+Go to your Sourcegraph's *Manage code hosts* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server / Bitbucket Data Center* connection. Add the following settings:
+
+```json
+{
+	// Other config goes here
+	"authorization": {
+		"identityProvider": {
+			"type": "username"
+		},
+		"oauth": {
+			"consumerKey": "<KEY GOES HERE>",
+			"signingKey": "<KEY GOES HERE>"
+		}
+	}
+}
+```
+
+Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field. Finally, **save the configuration**. You're done!
+
+### Fast permission sync with Bitbucket Server plugin
+
+By installing the [Bitbucket Server plugin](../../../integration/bitbucket_server.md), you can make use of the fast permission sync feature that allows using Bitbucket Server / Bitbucket Data Center permissions on larger instances.
 
 ### Fast permission syncing
 
 With the [Sourcegraph Bitbucket Server](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) you can enable fast permission syncing:
 
 1. Connect Bitbucket Server / Bitbucket Data Center to Sourcegraph (_see instructions above_).
-1. Follow the [instructions to set up repository permissions](../repo/permissions.md#bitbucket_server) with Bitbucket Server / Bitbucket Data Center.
+1. Follow the [instructions to set up repository permissions](#repository-permissions) with Bitbucket Server / Bitbucket Data Center.
 1. Install the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) on your Bitbucket Server / Bitbucket Data Center instance.
 1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the Bitbucket Server / Bitbucket Data Center configuration.
 1. Add the `"plugin.permissions"` property:

@@ -137,16 +137,16 @@ type schedule struct {
 
 // scheduledUser contains information for scheduling a user.
 type scheduledUser struct {
-	reason   database.PermissionSyncJobReason
-	priority database.PermissionSyncJobPriority
+	reason   database.PermissionsSyncJobReason
+	priority database.PermissionsSyncJobPriority
 	userID   int32
 	noPerms  bool
 }
 
 // scheduledRepo contains for scheduling a repository.
 type scheduledRepo struct {
-	reason   database.PermissionSyncJobReason
-	priority database.PermissionSyncJobPriority
+	reason   database.PermissionsSyncJobReason
+	priority database.PermissionsSyncJobPriority
 	repoID   api.RepoID
 	noPerms  bool
 }
@@ -201,7 +201,7 @@ func scheduleUsersWithNoPerms(ctx context.Context, store edb.PermsStore) ([]sche
 		users[i] = scheduledUser{
 			userID:   id,
 			reason:   database.ReasonUserNoPermissions,
-			priority: database.MediumPriorityPermissionSync,
+			priority: database.MediumPriorityPermissionsSync,
 			noPerms:  true,
 		}
 	}
@@ -221,7 +221,7 @@ func scheduleReposWithNoPerms(ctx context.Context, store edb.PermsStore) ([]sche
 		repositories[i] = scheduledRepo{
 			repoID:   id,
 			reason:   database.ReasonRepoNoPermissions,
-			priority: database.MediumPriorityPermissionSync,
+			priority: database.MediumPriorityPermissionsSync,
 			noPerms:  true,
 		}
 	}
@@ -241,7 +241,7 @@ func scheduleUsersWithOldestPerms(ctx context.Context, store edb.PermsStore, lim
 		users = append(users, scheduledUser{
 			userID:   id,
 			reason:   database.ReasonUserOutdatedPermissions,
-			priority: database.LowPriorityPermissionSync,
+			priority: database.LowPriorityPermissionsSync,
 		})
 	}
 	return users, nil
@@ -260,7 +260,7 @@ func scheduleReposWithOldestPerms(ctx context.Context, store edb.PermsStore, lim
 		repositories = append(repositories, scheduledRepo{
 			repoID:   id,
 			reason:   database.ReasonRepoOutdatedPermissions,
-			priority: database.LowPriorityPermissionSync,
+			priority: database.LowPriorityPermissionsSync,
 		})
 	}
 	return repositories, nil

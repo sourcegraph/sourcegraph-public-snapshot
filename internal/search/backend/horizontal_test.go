@@ -32,12 +32,12 @@ func TestHorizontalSearcher(t *testing.T) {
 			var rle zoekt.RepoListEntry
 			rle.Repository.Name = endpoint
 			rle.Repository.ID = uint32(repoID)
-			client := &FakeSearcher{
-				Result: &zoekt.SearchResult{
+			client := &FakeStreamer{
+				Results: []*zoekt.SearchResult{{
 					Files: []zoekt.FileMatch{{
 						Repository: endpoint,
 					}},
-				},
+				}},
 				Repos: []*zoekt.RepoListEntry{&rle},
 			}
 			// Return metered searcher to test that codepath
@@ -136,13 +136,13 @@ func TestHorizontalSearcherWithFileRanks(t *testing.T) {
 			var rle zoekt.RepoListEntry
 			rle.Repository.Name = endpoint
 			rle.Repository.ID = uint32(repoID)
-			return &FakeSearcher{
-				Result: &zoekt.SearchResult{
+			return &FakeStreamer{
+				Results: []*zoekt.SearchResult{{
 					Files: []zoekt.FileMatch{{
 						Score:      float64(repoID),
 						Repository: endpoint,
 					}},
-				},
+				}},
 				Repos: []*zoekt.RepoListEntry{&rle},
 			}
 		},
@@ -211,7 +211,7 @@ func TestDoStreamSearch(t *testing.T) {
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
 		Dial: func(endpoint string) zoekt.Streamer {
-			client := &FakeSearcher{
+			client := &FakeStreamer{
 				SearchError: errors.Errorf("test error"),
 			}
 			// Return metered searcher to test that codepath
@@ -242,7 +242,7 @@ func TestSyncSearchers(t *testing.T) {
 	endpoints.Store(prefixMap{"a"})
 
 	type mock struct {
-		FakeSearcher
+		FakeStreamer
 		dialNum int
 	}
 
@@ -282,7 +282,7 @@ func TestZoektRolloutErrors(t *testing.T) {
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
 		Dial: func(endpoint string) zoekt.Streamer {
-			var client *FakeSearcher
+			var client *FakeStreamer
 			switch endpoint {
 			case "dns-not-found":
 				err := &net.DNSError{
@@ -290,7 +290,7 @@ func TestZoektRolloutErrors(t *testing.T) {
 					Name:       "down",
 					IsNotFound: true,
 				}
-				client = &FakeSearcher{
+				client = &FakeStreamer{
 					SearchError: err,
 					ListError:   err,
 				}
@@ -302,7 +302,7 @@ func TestZoektRolloutErrors(t *testing.T) {
 					Addr: fakeAddr("10.164.42.39:6070"),
 					Err:  &timeoutError{},
 				}
-				client = &FakeSearcher{
+				client = &FakeStreamer{
 					SearchError: err,
 					ListError:   err,
 				}
@@ -314,7 +314,7 @@ func TestZoektRolloutErrors(t *testing.T) {
 					Addr: fakeAddr("10.164.51.47:6070"),
 					Err:  errors.New("connect: connection refused"),
 				}
-				client = &FakeSearcher{
+				client = &FakeStreamer{
 					SearchError: err,
 					ListError:   err,
 				}
@@ -328,7 +328,7 @@ func TestZoektRolloutErrors(t *testing.T) {
 						Err:     syscall.EINTR,
 					},
 				}
-				client = &FakeSearcher{
+				client = &FakeStreamer{
 					SearchError: err,
 					ListError:   err,
 				}
@@ -336,16 +336,16 @@ func TestZoektRolloutErrors(t *testing.T) {
 				var rle zoekt.RepoListEntry
 				rle.Repository.Name = "repo"
 
-				client = &FakeSearcher{
-					Result: &zoekt.SearchResult{
+				client = &FakeStreamer{
+					Results: []*zoekt.SearchResult{{
 						Files: []zoekt.FileMatch{{
 							Repository: "repo",
 						}},
-					},
+					}},
 					Repos: []*zoekt.RepoListEntry{&rle},
 				}
 			case "error":
-				client = &FakeSearcher{
+				client = &FakeStreamer{
 					SearchError: errors.New("boom"),
 					ListError:   errors.New("boom"),
 				}

@@ -51,6 +51,8 @@ const searchKeybindingTooltip = (
 // Match 'from' position -> 1-based serial number (index) of this match in the document.
 type SearchMatches = Map<number, number>
 
+export const BLOB_SEARCH_CONTAINER_ID = 'blob-search-container'
+
 class SearchPanel implements Panel {
     public dom: HTMLElement
     public top = true
@@ -71,6 +73,7 @@ class SearchPanel implements Panel {
     constructor(private view: EditorView) {
         this.dom = createElement('div', {
             className: 'cm-sg-search-container d-flex align-items-center',
+            id: BLOB_SEARCH_CONTAINER_ID,
             onkeydown: this.onkeydown,
         })
         this.navigate = view.state.facet(blobPropsFacet).navigate

@@ -1,15 +1,16 @@
 import { FC, Suspense, useEffect, useLayoutEffect, useMemo } from 'react'
 
+import { ApolloProvider } from '@apollo/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
-import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
+import { GraphQLClient } from '@sourcegraph/http-client'
+import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { useTheme, Theme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Alert, LoadingSpinner, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import '../../SourcegraphWebApp.scss'
 
-import { GlobalContributions } from '../../contributions'
 import { createPlatformContext } from '../../platform/context'
 
 import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
@@ -32,7 +33,10 @@ const EmbeddedNotebookPage = lazyComponent(
 
 const EMPTY_SETTINGS_CASCADE = { final: {}, subjects: [] }
 
-export const EmbeddedWebApp: FC = () => {
+interface Props {
+    graphqlClient: GraphQLClient
+}
+export const EmbeddedWebApp: FC<Props> = ({ graphqlClient }) => {
     const { theme, setThemeSetting } = useTheme()
 
     useLayoutEffect(() => {
@@ -52,7 +56,6 @@ export const EmbeddedWebApp: FC = () => {
     }, [setThemeSetting])
 
     const platformContext = useMemo(() => createPlatformContext(), [])
-    const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
 
     // 🚨 SECURITY: The `EmbeddedWebApp` is intended to be embedded into 3rd party sites where we do not have total control.
     // That is why it is essential to be mindful when adding new routes that may be vulnerable to clickjacking or similar exploits.
@@ -62,45 +65,46 @@ export const EmbeddedWebApp: FC = () => {
     // IMPORTANT: Please consult with the security team if you are unsure whether your changes could introduce security exploits.
     return (
         <BrowserRouter>
-            <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-                <div className={styles.body}>
-                    <Suspense
-                        fallback={
-                            <div className="d-flex justify-content-center p-3">
-                                <LoadingSpinner />
-                            </div>
-                        }
-                    >
-                        <Routes>
-                            <Route
-                                path="/embed/notebooks/:notebookId"
-                                element={
-                                    <EmbeddedNotebookPage
-                                        searchContextsEnabled={true}
-                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                        authenticatedUser={null}
-                                        settingsCascade={EMPTY_SETTINGS_CASCADE}
-                                        platformContext={platformContext}
+            <ApolloProvider client={graphqlClient}>
+                <WildcardThemeContext.Provider value={WILDCARD_THEME}>
+                    <SettingsProvider settingsCascade={EMPTY_SETTINGS_CASCADE}>
+                        <div className={styles.body}>
+                            <Suspense
+                                fallback={
+                                    <div className="d-flex justify-content-center p-3">
+                                        <LoadingSpinner />
+                                    </div>
+                                }
+                            >
+                                <Routes>
+                                    <Route
+                                        path="/embed/notebooks/:notebookId"
+                                        element={
+                                            <EmbeddedNotebookPage
+                                                searchContextsEnabled={true}
+                                                ownEnabled={false}
+                                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                                authenticatedUser={null}
+                                                settingsCascade={EMPTY_SETTINGS_CASCADE}
+                                                platformContext={platformContext}
+                                            />
+                                        }
                                     />
-                                }
-                            />
-                            Ï
-                            <Route
-                                path="*"
-                                element={
-                                    <Alert variant="danger">
-                                        Invalid embedding route, please check the embedding URL.
-                                    </Alert>
-                                }
-                            />
-                        </Routes>
-                    </Suspense>
-                    <GlobalContributions
-                        extensionsController={extensionsController}
-                        platformContext={platformContext}
-                    />
-                </div>
-            </WildcardThemeContext.Provider>
+                                    Ï
+                                    <Route
+                                        path="*"
+                                        element={
+                                            <Alert variant="danger">
+                                                Invalid embedding route, please check the embedding URL.
+                                            </Alert>
+                                        }
+                                    />
+                                </Routes>
+                            </Suspense>
+                        </div>
+                    </SettingsProvider>
+                </WildcardThemeContext.Provider>
+            </ApolloProvider>
         </BrowserRouter>
     )
 }

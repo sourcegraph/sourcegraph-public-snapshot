@@ -26,9 +26,9 @@ const (
 )
 
 func MakePermsSyncerWorker(observationCtx *observation.Context, syncer permsSyncer, syncType syncType, jobsStore database.PermissionSyncJobStore) *permsSyncerWorker {
-	logger := observationCtx.Logger.Scoped("RepoPermsSyncerWorkerRepo", "Repository permission sync worker")
+	logger := observationCtx.Logger.Scoped("RepoPermsSyncerWorkerRepo", "Repository permissions sync worker")
 	if syncType == SyncTypeUser {
-		logger = observationCtx.Logger.Scoped("UserPermsSyncerWorker", "User permission sync worker")
+		logger = observationCtx.Logger.Scoped("UserPermsSyncerWorker", "User permissions sync worker")
 	}
 	return &permsSyncerWorker{
 		logger:    logger,
@@ -70,7 +70,7 @@ func (h *permsSyncerWorker) Handle(ctx context.Context, _ log.Logger, record *da
 	}
 
 	h.logger.Debug(
-		"Handling permission sync job",
+		"Handling permissions sync job",
 		log.String("type", reqType.String()),
 		log.Int32("id", reqID),
 		log.Int("priority", int(record.Priority)),
@@ -116,9 +116,9 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 }
 
 func MakeStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle, syncType syncType) dbworkerstore.Store[*database.PermissionSyncJob] {
-	name := "repo_permission_sync_job_worker_store"
+	name := "repo_permissions_sync_job_worker_store"
 	if syncType == SyncTypeUser {
-		name = "user_permission_sync_job_worker_store"
+		name = "user_permissions_sync_job_worker_store"
 	}
 
 	return dbworkerstore.New(observationCtx, dbHandle, dbworkerstore.Options[*database.PermissionSyncJob]{
@@ -140,9 +140,9 @@ func MakeWorker(ctx context.Context, observationCtx *observation.Context, worker
 	handler := MakePermsSyncerWorker(observationCtx, permsSyncer, syncType, jobsStore)
 	// Number of handlers depends on a type of perms sync jobs this worker processes.
 	numHandlers := 1
-	name := "repo_permission_sync_job_worker"
+	name := "repo_permissions_sync_job_worker"
 	if syncType == SyncTypeUser {
-		name = "user_permission_sync_job_worker"
+		name = "user_permissions_sync_job_worker"
 		numHandlers = syncUsersMaxConcurrency()
 	}
 
@@ -157,8 +157,8 @@ func MakeWorker(ctx context.Context, observationCtx *observation.Context, worker
 
 func MakeResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob]) *dbworker.Resetter[*database.PermissionSyncJob] {
 	return dbworker.NewResetter(observationCtx.Logger, workerStore, dbworker.ResetterOptions{
-		Name:     "permission_sync_job_worker_resetter",
+		Name:     "permissions_sync_job_worker_resetter",
 		Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds
-		Metrics:  dbworker.NewResetterMetrics(observationCtx, "permission_sync_job_worker"),
+		Metrics:  dbworker.NewResetterMetrics(observationCtx, "permissions_sync_job_worker"),
 	})
 }

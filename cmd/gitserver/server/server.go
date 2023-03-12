@@ -51,7 +51,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -340,8 +340,8 @@ type Server struct {
 	// cloneLimiter and cloneableLimiter limits the number of concurrent
 	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
 	// s.acquireClonableLimiter() instead of using these directly.
-	cloneLimiter     *mutablelimiter.Limiter
-	cloneableLimiter *mutablelimiter.Limiter
+	cloneLimiter     *limiter.MutableLimiter
+	cloneableLimiter *limiter.MutableLimiter
 
 	// rpsLimiter limits the remote code host git operations done per second
 	// per gitserver instance
@@ -517,8 +517,8 @@ func (s *Server) Handler() http.Handler {
 	// so ideally this logic could be removed here; however, ensureRevision can also
 	// cause an update to happen and it is called on every exec command.
 	maxConcurrentClones := conf.GitMaxConcurrentClones()
-	s.cloneLimiter = mutablelimiter.New(maxConcurrentClones)
-	s.cloneableLimiter = mutablelimiter.New(maxConcurrentClones)
+	s.cloneLimiter = limiter.NewMutable(maxConcurrentClones)
+	s.cloneableLimiter = limiter.NewMutable(maxConcurrentClones)
 
 	conf.Watch(func() {
 		limit := conf.GitMaxConcurrentClones()
@@ -574,7 +574,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
 	mux.HandleFunc("/repo-clone", trace.WithRouteName("repo-clone", s.handleRepoClone))
 	mux.HandleFunc("/create-commit-from-patch-binary", trace.WithRouteName("create-commit-from-patch-binary", s.handleCreateCommitFromPatchBinary))
-	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -996,7 +995,16 @@ func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, 
 // This directory is cleaned up by gitserver and will be ignored by repository
 // listing operations.
 func (s *Server) tempDir(prefix string) (name string, err error) {
-	dir := filepath.Join(s.ReposDir, tempDirName)
+	return tempDir(s.ReposDir, prefix)
+}
+
+// tempDir is a wrapper around os.MkdirTemp, but using the given reposDir
+// temporary directory filepath.Join(s.ReposDir, tempDirName).
+//
+// This directory is cleaned up by gitserver and will be ignored by repository
+// listing operations.
+func tempDir(reposDir, prefix string) (name string, err error) {
+	dir := filepath.Join(reposDir, tempDirName)
 
 	// Create tmpdir directory if doesn't exist yet.
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -1924,7 +1932,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Make sure credentials are valid before heavier operation
-	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	err := p4testWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

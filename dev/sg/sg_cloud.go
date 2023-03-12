@@ -60,6 +60,12 @@ var cloudCommand = &cli.Command{
 					return errors.Wrap(err, "GitHub CLI (https://cli.github.com/) is required for installation")
 				}
 
+				version, err := run.Cmd(c.Context, "gh", "version").Run().String()
+				if err != nil {
+					return errors.Wrap(err, "get gh version")
+				}
+				std.Out.WriteNoticef("Using GitHub CLI version %q", strings.Split(version, "\n")[0])
+
 				start := time.Now()
 				pending := std.Out.Pending(output.Styledf(output.StylePending, "Downloading %q to %q... (hang tight, this might take a while!)",
 					executable, locationDir))

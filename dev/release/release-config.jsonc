@@ -4,11 +4,19 @@
     "slackAnnounceChannel": "announce-engineering"
   },
   "scheduledReleases": {
-    "4.5.0": {
-      "codeFreezeDate": "2023-02-15T10:00:00.000-08:00",
-      "securityApprovalDate": "2023-02-15T10:00:00.000-08:00",
-      "releaseDate": "2023-02-22T10:00:00.000-08:00",
-      "current": "4.5.0",
+    "5.0.0": {
+      "codeFreezeDate": "2023-03-13T10:00:00.000-07:00",
+      "securityApprovalDate": "2023-03-15T10:00:00.000-07:00",
+      "releaseDate": "2023-03-22T10:00:00.000-07:00",
+      "patches": [
+        "2023-04-05T10:00:00.000-07:00",
+        "2023-04-19T10:00:00.000-07:00",
+        "2023-05-03T10:00:00.000-07:00",
+        "2023-05-17T10:00:00.000-07:00",
+        "2023-05-31T10:00:00.000-07:00",
+        "2023-06-14T10:00:00.000-07:00"
+      ],
+      "current": "5.0.0",
       "captainGitHubUsername": "coury-clark",
       "captainSlackUsername": "coury"
     }

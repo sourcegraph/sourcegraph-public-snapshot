@@ -205,14 +205,20 @@ type UploadLog struct {
 	Operation         string
 }
 
-type RankingDefintions struct {
+type RankingDefinitions struct {
 	UploadID     int
 	SymbolName   string
-	Repository   string
 	DocumentPath string
 }
 
 type RankingReferences struct {
 	UploadID    int
 	SymbolNames []string
+}
+
+type ExportedUpload struct {
+	ID           int
+	Repo         string
+	Root         string
+	ObjectPrefix string
 }

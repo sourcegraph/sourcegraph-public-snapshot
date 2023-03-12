@@ -5,14 +5,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/derision-test/glock"
-	"google.golang.org/api/option"
-
 	"github.com/sourcegraph/log"
+	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	policiesEnterprise "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
@@ -37,7 +34,7 @@ func NewService(
 	store := uploadsstore.New(scopedContext("uploadsstore", observationCtx), db)
 	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient())
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
-	policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
+	policyMatcher := policies.NewMatcher(gsc, policies.RetentionExtractor, true, false)
 	ciLocker := locker.NewWith(db, "codeintel")
 
 	rankingBucket := func() *storage.BucketHandle {
@@ -77,10 +74,6 @@ func NewService(
 
 var (
 	bucketName                   = env.Get("CODEINTEL_UPLOADS_RANKING_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
-	rankingMapReduceBatchSize    = env.MustGetInt("CODEINTEL_UPLOADS_MAP_REDUCE_RANKING_BATCH_SIZE", 10000, "How many references, definitions, and path counts to map and reduce at once.")
-	rankingGraphKey              = env.Get("CODEINTEL_UPLOADS_RANKING_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new export in the configured bucket.")
-	rankingGraphBatchSize        = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_BATCH_SIZE", 16, "How many uploads to process at once.")
-	rankingGraphDeleteBatchSize  = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_DELETE_BATCH_SIZE", 32, "How many stale uploads to delete at once.")
 	rankingBucketCredentialsFile = env.Get("CODEINTEL_UPLOADS_RANKING_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
 )
 
@@ -130,30 +123,82 @@ func NewCommittedAtBackfillerJob(uploadSvc *Service) []goroutine.BackgroundRouti
 
 func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserverClient GitserverClient) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewJanitor(
+		background.NewDeletedRepositoryJanitor(
 			uploadSvc.store,
-			uploadSvc.lsifstore,
+			ConfigJanitorInst.Interval,
+			observationCtx,
+		),
+
+		background.NewUnknownCommitJanitor(
+			uploadSvc.store,
 			gitserverClient,
 			ConfigJanitorInst.Interval,
-			background.JanitorConfig{
-				UploadTimeout:                  ConfigJanitorInst.UploadTimeout,
-				AuditLogMaxAge:                 ConfigJanitorInst.AuditLogMaxAge,
-				UnreferencedDocumentBatchSize:  ConfigJanitorInst.UnreferencedDocumentBatchSize,
-				UnreferencedDocumentMaxAge:     ConfigJanitorInst.UnreferencedDocumentMaxAge,
-				MinimumTimeSinceLastCheck:      ConfigJanitorInst.MinimumTimeSinceLastCheck,
-				CommitResolverBatchSize:        ConfigJanitorInst.CommitResolverBatchSize,
-				CommitResolverMaximumCommitLag: ConfigJanitorInst.CommitResolverMaximumCommitLag,
-			},
-			glock.NewRealClock(),
-			observationCtx.Logger,
-			background.NewJanitorMetrics(observationCtx),
+			ConfigJanitorInst.CommitResolverBatchSize,
+			ConfigJanitorInst.MinimumTimeSinceLastCheck,
+			ConfigJanitorInst.CommitResolverMaximumCommitLag,
+			observationCtx,
+		),
+
+		background.NewAbandonedUploadJanitor(
+			uploadSvc.store,
+			ConfigJanitorInst.Interval,
+			ConfigJanitorInst.UploadTimeout,
+			observationCtx,
+		),
+
+		background.NewExpiredUploadJanitor(
+			uploadSvc.store,
+			ConfigJanitorInst.Interval,
+			observationCtx,
+		),
+
+		background.NewExpiredUploadTraversalJanitor(
+			uploadSvc.store,
+			ConfigJanitorInst.Interval,
+			observationCtx,
+		),
+
+		background.NewHardDeleter(
+			uploadSvc.store,
+			uploadSvc.lsifstore,
+			ConfigJanitorInst.Interval,
+			observationCtx,
+		),
+
+		background.NewAuditLogJanitor(
+			uploadSvc.store,
+			ConfigJanitorInst.Interval,
+			ConfigJanitorInst.AuditLogMaxAge,
+			observationCtx,
+		),
+
+		background.NewSCIPExpirationTask(
+			uploadSvc.lsifstore,
+			ConfigJanitorInst.Interval,
+			ConfigJanitorInst.UnreferencedDocumentBatchSize,
+			ConfigJanitorInst.UnreferencedDocumentMaxAge,
+			observationCtx,
 		),
 	}
 }
 
 func NewReconciler(observationCtx *observation.Context, uploadSvc *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewReconciler(observationCtx, uploadSvc.store, uploadSvc.lsifstore, ConfigJanitorInst.Interval, ConfigJanitorInst.ReconcilerBatchSize),
+		background.NewFrontendDBReconciler(
+			uploadSvc.store,
+			uploadSvc.lsifstore,
+			ConfigJanitorInst.Interval,
+			ConfigJanitorInst.ReconcilerBatchSize,
+			observationCtx,
+		),
+
+		background.NewCodeIntelDBReconciler(
+			uploadSvc.store,
+			uploadSvc.lsifstore,
+			ConfigJanitorInst.Interval,
+			ConfigJanitorInst.ReconcilerBatchSize,
+			observationCtx,
+		),
 	}
 }
 
@@ -195,33 +240,6 @@ func NewExpirationTasks(observationCtx *observation.Context, uploadSvc *Service)
 				CommitBatchSize:        ConfigExpirationInst.CommitBatchSize,
 				PolicyBatchSize:        ConfigExpirationInst.PolicyBatchSize,
 			},
-		),
-	}
-}
-
-func NewGraphExporters(observationCtx *observation.Context, uploadSvc *Service) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewRankingGraphExporter(
-			observationCtx,
-			uploadSvc,
-			ConfigExportInst.NumRankingRoutines,
-			ConfigExportInst.RankingInterval,
-			ConfigExportInst.RankingBatchSize,
-			ConfigExportInst.RankingJobsEnabled,
-		),
-		background.NewRankingGraphMapper(
-			observationCtx,
-			uploadSvc,
-			ConfigExportInst.NumRankingRoutines,
-			ConfigExportInst.RankingInterval,
-			ConfigExportInst.RankingJobsEnabled,
-		),
-		background.NewRankingGraphReducer(
-			observationCtx,
-			uploadSvc,
-			ConfigExportInst.NumRankingRoutines,
-			ConfigExportInst.RankingInterval,
-			ConfigExportInst.RankingJobsEnabled,
 		),
 	}
 }

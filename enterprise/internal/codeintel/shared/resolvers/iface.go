@@ -9,15 +9,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type AutoIndexingService interface {
 	GetIndexes(ctx context.Context, opts autoindexingShared.GetIndexesOptions) (_ []types.Index, _ int, err error)
-	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
 	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
-	GetUnsafeDB() database.DB
 	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
 
 	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)

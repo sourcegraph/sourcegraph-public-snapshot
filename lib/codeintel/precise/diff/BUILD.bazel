@@ -21,6 +21,6 @@ go_test(
     deps = [
         "//lib/codeintel/lsif/conversion",
         "//lib/codeintel/precise",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

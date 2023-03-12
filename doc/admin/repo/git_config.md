@@ -5,7 +5,7 @@ Sourcegraph supports customising [git-config](https://git-scm.com/docs/git-confi
 This guide documents how to configure git-config. To set up SSH and authentication for repositories, see [Repository authentication](auth.md).
 
 - [Sourcegraph with Docker Compose](../deploy/docker-compose/index.md): See [the Docker Compose git configuration guide](../deploy/docker-compose/index.md#git-configuration).
-- [Sourcegraph with Kubernetes](../deploy/kubernetes/index.md): See [Configure repository cloning via SSH](../deploy/kubernetes/configure.md#configure-repository-cloning-via-ssh).
+- [Sourcegraph with Kubernetes](../deploy/kubernetes/index.md): See [Configure repository cloning via SSH](../deploy/kubernetes/configure.md#ssh-for-cloning).
 - [Single-container Sourcegraph](../deploy/docker-single-container/index.md): See [the single-container git configuration guide](../deploy/docker-single-container/index.md#git-configuration-and-authentication).
 
 ## Example: alternate clone URL for repos

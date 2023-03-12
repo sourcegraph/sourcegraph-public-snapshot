@@ -55,6 +55,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Configuration](admin/config/index.md)
   - [Code hosts](admin/external_service/index.md)
   - [User authentication](admin/auth/index.md)
+  - [Repository permissions](admin/permissions/index.md)
   - [Observability](admin/observability/index.md)
   - [Analytics](admin/analytics.md)
   - [FAQ](admin/faq.md)
@@ -69,6 +70,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Contributing](dev/contributing.md)
 - [Dotcom](dotcom/index.md)
 - [App (experimental)](app/index.md)
+- [Cody (experimental)](cody/index.md)
 - <br/>
 - [★ Search query syntax](code_search/reference/queries.md)
 - [★ Sourcegraph API](api/index.md)
