@@ -140,6 +140,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             isSourcegraphDotCom={isSourcegraphDotCom}
             submitSearch={submitSearchOnChange}
             selectedSearchContextSpec={selectedSearchContextSpec}
+            className="flex-grow-1"
         >
             <Toggles
                 patternType={patternType}

@@ -12,7 +12,7 @@ export const filterDecoration = [
     EditorView.baseTheme({
         '.sg-query-token-filter-context': {
             borderRadius: '3px',
-            padding: '1px 0',
+            padding: '1px 4px',
             backgroundColor: '#eff2f5a0', // --gray-02 with transparency to make selection visible
         },
         '&dark .sg-query-token-filter-context': {

@@ -1,8 +1,11 @@
 import {
+    FC,
     forwardRef,
+    MutableRefObject,
     PropsWithChildren,
     useCallback,
     useEffect,
+    useId,
     useImperativeHandle,
     useMemo,
     useRef,
@@ -16,8 +19,6 @@ import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
 import inRange from 'lodash/inRange'
 import { useNavigate } from 'react-router-dom'
-import useResizeObserver from 'use-resize-observer'
-import * as uuid from 'uuid'
 
 import { HistoryOrNavigate } from '@sourcegraph/common'
 import { Editor, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
@@ -84,7 +85,7 @@ function showWhenEmptyWithoutContext(state: EditorState): boolean {
     )
 }
 
-// For simplicity we will recompute all extensions when input changes using
+// For simplicity, we will recompute all extensions when input changes using
 // this compartment
 const extensionsCompartment = new Compartment()
 
@@ -101,7 +102,7 @@ function configureExtensions({
     historyOrNavigate,
 }: ExtensionConfig): Extension {
     const extensions = [
-        EditorView.darkTheme.of(isLightTheme === false),
+        EditorView.darkTheme.of(!isLightTheme),
         EditorView.updateListener.of(update => {
             if (update.docChanged) {
                 onChange({
@@ -271,6 +272,11 @@ function updateQueryExtensions(editor: EditorView | null, extensions: Extension)
 
 const empty: any[] = []
 
+export enum QueryInputVisualMode {
+    Standard = 'standard',
+    Compact = 'compact',
+}
+
 export interface CodeMirrorQueryInputWrapperProps {
     queryState: QueryState
     onChange: (queryState: QueryState) => void
@@ -281,6 +287,8 @@ export interface CodeMirrorQueryInputWrapperProps {
     placeholder: string
     suggestionSource?: Source
     extensions?: Extension
+    visualMode?: QueryInputVisualMode | `${QueryInputVisualMode}`
+    className?: string
 }
 
 export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<CodeMirrorQueryInputWrapperProps>>(
@@ -295,29 +303,31 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             placeholder,
             suggestionSource,
             extensions: externalExtensions = empty,
+            visualMode = QueryInputVisualMode.Standard,
+            className,
             children,
         },
         ref
     ) => {
+        // Global params
+        const popoverID = useId()
         const navigate = useNavigate()
+
+        // References
+        const editorRef = useRef<EditorView | null>(null)
         const editorContainerRef = useRef<HTMLDivElement | null>(null)
-        const focusContainerRef = useRef<HTMLDivElement | null>(null)
-        const [suggestionsContainer, setSuggestionsContainer] = useState<HTMLDivElement | null>(null)
-        const popoverID = useMemo(() => uuid.v4(), [])
+
+        // Local state
         const [mode, setMode, modeNotifierExtension] = useInputMode()
+        const [suggestionsContainer, setSuggestionsContainer] = useState<HTMLDivElement | null>(null)
 
-        const onSubmitRef = useRef(onSubmit)
-        useEffect(() => {
-            onSubmitRef.current = onSubmit
-        }, [onSubmit])
+        // Handlers
+        const onSubmitRef = useMutableValue(onSubmit)
+        const onChangeRef = useMutableValue(onChange)
+
         const hasSubmitHandler = !!onSubmit
-
-        const onChangeRef = useRef(onChange)
-        useEffect(() => {
-            onChangeRef.current = onChange
-        }, [onChange])
-
         const staticExtensions = useMemo(() => createStaticExtensions({ popoverID }), [popoverID])
+
         // Update extensions whenever any of these props change
         const dynamicExtensions = useMemo(
             () => [
@@ -351,6 +361,8 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                 navigate,
                 externalExtensions,
                 modeNotifierExtension,
+                onChangeRef,
+                onSubmitRef,
             ]
         )
 
@@ -359,8 +371,6 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             () => configureQueryExtensions({ patternType, interpretComments }),
             [patternType, interpretComments]
         )
-
-        const editorRef = useRef<EditorView | null>(null)
 
         // Update editor state whenever query state changes
         useUpdateEditorFromQueryState(editorRef, queryState, startCompletion)
@@ -420,31 +430,48 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             }
         }, [setMode])
 
-        const { ref: spacerRef, height: spacerHeight } = useResizeObserver({
-            ref: focusContainerRef,
-        })
-
         return (
-            <div className={styles.container}>
-                {/* eslint-disable-next-line react/forbid-dom-props */}
-                <div className={styles.spacer} style={{ height: `${spacerHeight}px` }} />
-                <div className={styles.root}>
-                    <div ref={spacerRef} className={styles.focusContainer}>
-                        <div className={classNames(styles.modeSection, !!mode && styles.active)}>
-                            <Tooltip content="Recent searches">
-                                <Button variant="icon" onClick={toggleHistoryMode} aria-label="Open search history">
-                                    <Icon svgPath={mdiClockOutline} aria-hidden="true" />
-                                </Button>
-                            </Tooltip>
-                            {mode && <span className="ml-1">{mode}:</span>}
-                        </div>
-                        <div ref={editorContainerRef} className={styles.input} />
-                        {!mode && children}
-                    </div>
-                    <div ref={setSuggestionsContainer} className={styles.suggestions} />
+            <div
+                className={classNames(styles.container, className, {
+                    [styles.containerCompact]: visualMode === QueryInputVisualMode.Compact,
+                })}
+            >
+                <div className={styles.focusContainer}>
+                    <SearchModeSwitcher mode={mode} onModeChange={toggleHistoryMode} />
+                    <div ref={editorContainerRef} className={styles.input} />
+                    {!mode && children}
                 </div>
+                <div ref={setSuggestionsContainer} className={styles.suggestions} />
                 <Shortcut ordered={['/']} onMatch={focus} />
             </div>
         )
     }
 )
+
+interface SearchModeSwitcherProps {
+    mode: string | null
+    className?: string
+    onModeChange: () => void
+}
+
+const SearchModeSwitcher: FC<SearchModeSwitcherProps> = props => {
+    const { mode, className, onModeChange } = props
+
+    return (
+        <div className={classNames(className, styles.mode, !!mode && styles.modeActive)}>
+            <Tooltip content="Recent searches">
+                <Button variant="icon" aria-label="Open search history" onClick={onModeChange}>
+                    <Icon svgPath={mdiClockOutline} aria-hidden="true" />
+                </Button>
+            </Tooltip>
+            {mode && <span className="ml-1">{mode}:</span>}
+        </div>
+    )
+}
+
+function useMutableValue<T>(value: T): MutableRefObject<T> {
+    const valueRef = useRef(value)
+    valueRef.current = value
+
+    return valueRef
+}
