@@ -232,7 +232,6 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
     const handleDisplayNotification = (text: string): void => {
         setNotification({ text })
     }
-    setNotification
 
     return {
         notification,
