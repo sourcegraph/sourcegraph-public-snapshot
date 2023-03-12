@@ -738,7 +738,7 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 			Timestamp:       now,
 		}
 	}
-	db.EventLogs().BulkInsert(ctx, events)
+	db.EventLogs().BulkInsert(ctx, logEvents)
 }
 
 // RecoverList recovers a list of users by their IDs.
@@ -850,7 +850,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 			}{
 				Assigner:     a.UID,
 				Assignee:     id,
-				Role:         types.SiteAdministratorSystemRole,
+				Role:         string(types.SiteAdministratorSystemRole),
 			})
 			logEvent := &Event{
 				Name:            "RoleChangeGranted",
