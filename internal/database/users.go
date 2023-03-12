@@ -454,6 +454,17 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 	}
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+
+	event := &Event{
+		Name:            SecurityEventNameAccountCreated
+		URL:             "",
+		UserID:          uint32(u.ID),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+	db.EventLogs().LogEvent(ctx, event)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -714,6 +725,20 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 		}
 	}
 	db.SecurityEventLogs().LogEventList(ctx, events)
+
+	events := make([]*Event, len(ids))
+	for index, id := range ids {
+		events[index] = &Event{
+			Name:            name,
+			URL:             "",
+			UserID:          uint32(id),
+			AnonymousUserID: "",
+			Argument:        arg,
+			Source:          "BACKEND",
+			Timestamp:       now,
+		}
+	}
+	db.EventLogs().BulkInsert(ctx, events)
 }
 
 // RecoverList recovers a list of users by their IDs.
@@ -817,6 +842,27 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				UserID: id,
 				Role:   types.SiteAdministratorSystemRole,
 			})
+			a := actor.FromContext(ctx)
+			arg, _ := json.Marshal(struct {
+				Assigner     int32  `json:"assigner"`
+				Assignee     int32  `json:"assignee"`
+				Role         string `json:"role"`
+			}{
+				Assigner:     a.UID,
+				Assignee:     id,
+				Role:         types.SiteAdministratorSystemRole,
+			})
+			event := &Event{
+				Name:            "RoleChangeGranted"
+				URL:             "",
+				UserID:          uint32(u.ID),
+				AnonymousUserID: "",
+				Argument:        arg,
+				Source:          "BACKEND",
+				Timestamp:       time.Now(),
+			}
+			db.EventLogs().LogEvent(ctx, event)
+			//TODO: log promote to site admin
 			return err
 		}
 
@@ -1473,6 +1519,17 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+
+	event := &Event{
+		Name:      name,
+		URL:       r.URL.Host,
+		UserID:    uint32(userID),
+		Argument:  args,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+
+	db.EventLogs().LogEvent(ctx, event)
 }
 
 func hashPassword(password string) (sql.NullString, error) {
