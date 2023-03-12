@@ -1518,8 +1518,18 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	}
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
-	//TODO: log password events
 	db.SecurityEventLogs().LogEvent(ctx, event)
+
+	event := &Event{
+		Name:      name,
+		URL:       "",
+		UserID:    uint32(userID),
+		Argument:  args,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+
+	db.EventLogs().LogEvent(ctx, event)
 }
 
 func hashPassword(password string) (sql.NullString, error) {
