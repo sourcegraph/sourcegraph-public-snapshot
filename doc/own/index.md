@@ -30,14 +30,18 @@ A person can be ...
 A team is ... 
 For team owners, we added a new feature to [manage teams in Sourcegraph](../admin/teams). See the docs on how to set them up.
 
-## Codeownership
+## Code ownership
 
-Codeownership is defined as a strict ruleset. Files can be assigned owners.
+Code ownership is defined as a strict ruleset. Files can be assigned owners. 
 To define rulesets for codeownership, we make use of the CODEOWNERS format.
 
 ### The CODEOWNERS format
 
-Owners can be defined by a username/team name or an email address. Using email addresses is generally recommended, as email addresses are most likely the same across different platforms, and are independent of a user having registered yet. In Sourcegraph, a user can add multiple email addresses to their profile. All of those would match to the same user.
+Owners can be defined by a username/team name or an email address. 
+
+Using email addresses is generally recommended, as email addresses are most likely the same across different platforms, and are independent of a user having registered yet. 
+In Sourcegraph, a user can add multiple email addresses to their profile. All of those would match to the same user.
+
 For committed CODEOWNERS files, the usernames are usually the username **on the code host**, so they don't necessarily match with the Sourcegraph username. This is a known limitation, and in the future we will provide ways to map external code host names to Sourcegraph users. For now, you can search for a user by their code host username, or switch to using emails in the codeowners files, which will work across both Sourcegraph and the code host.
 
 ```
@@ -53,12 +57,23 @@ To configure ownership in Sourcegraph, you have two options:
 
 ### Committing a CODEOWNERS file to your repositories
 
-> Use this approach, if you prefer versioned ownership data.
+> Use this approach if you prefer versioned ownership data.
 
-Read more on how to [ingest CODEOWNERS data](codeowners_ingestion.md) into your Sourcegraph instance.
+You can simply commit a CODEOWNERS file at any of the following locations for it to be picked up automatically by Own:
+
+```
+CODEOWNERS
+.github/CODEOWNERS
+.gitlab/CODEOWNERS
+docs/CODEOWNERS
+```
+
+Searches at specific commits will return any CODEOWNERS data that exists at that specific commit.
 
 ### Uploading a CODEOWNERS file to Sourcegraph
 
-> Use this approach, if you don't want to commit CODEOWNERS files to your repos, or if you have an existing system that tracks ownership data and want to sync that data with Sourcegraph.
+> Use this approach if you don't want to commit CODEOWNERS files to your repos, or if you have an existing system that tracks ownership data and want to sync that data with Sourcegraph.
 
-See here how to use the UI or `src-cli` to upload CODEOWNERS files to Sourcegraph.
+Read more on how to [manually ingest CODEOWNERS data](codeowners_ingestion.md) into your Sourcegraph instance.
+
+The docs detail how to use the UI or `src-cli` to upload CODEOWNERS files to Sourcegraph.
