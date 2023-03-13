@@ -9,7 +9,7 @@ on:
 jobs:
   validate_release_branch:
     runs-on: ubuntu-latest
-    if: ${{ failure() && github.repository == 'sourcegraph/sourcegraph' && !github.event.pull_request.draft }}
+    if: ${{ github.repository == 'sourcegraph/sourcegraph' && !github.event.pull_request.draft }}
     outputs:
       releaseBranchExists: ${{ steps.checkout.outputs.exists }}
     steps:
