@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiAccountMultiple } from '@mdi/js'
 import { NavLink } from 'react-router-dom'
 
-import { Alert, Badge, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
+import {Alert, Badge, Link, PageHeader, ProductStatusBadge} from '@sourcegraph/wildcard'
 
 import { TeamAreaRouteContext } from './TeamArea'
 
@@ -43,7 +43,7 @@ export const TeamHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                         {team.readonly && (
                             <Alert variant="info" className="mb-3">
                                 This team is managed externally and cannot be modified from the UI except by
-                                site admins.
+                                site admins. <Link to="/help/admin/teams#configuring-teams">Read more about configuring teams.</Link>
                             </Alert>
                         )}
 
