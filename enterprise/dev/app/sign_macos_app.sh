@@ -95,6 +95,7 @@ done
 
 # goreleaser support: if an output location is defined, copy the signed app bundle there
 [ -n "${signature}" ] && {
+  [ -d "${signature}" ] && rm -rf "${signature}"
   cp -R "${app_bundle_path}" "${signature}" || exit 1
 }
 

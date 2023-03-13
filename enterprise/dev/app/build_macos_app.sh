@@ -32,7 +32,7 @@ else
 fi
 
 # do all work in the temp dir
-pushd "${tempdir}" 1>/dev/null || return 1
+pushd "${tempdir}" 1>/dev/null || exit 1
 
 #make sure to exit the temp dir and unlink it when done
 trap "popd 1>/dev/null && rm -rf \"${tempdir}\"" EXIT
@@ -43,13 +43,13 @@ binary_file_path=${artifact}
 
 # grab the binary file from GCS if not running in goreleaser
 [ -n "${binary_file_path}" ] || {
-  gsutil cp "gs://sourcegraph-app-releases/${VERSION}/sourcegraph_${VERSION}_darwin_all.zip" . &&
-    unzip "sourcegraph_${VERSION}_darwin_all.zip"
+  gsutil cp "gs://sourcegraph-app-releases/${VERSION}/sourcegraph_${VERSION}_darwin_all.zip" . || exit 1
+  unzip "sourcegraph_${VERSION}_darwin_all.zip" || exit 1
   binary_file_path="${PWD}/sourcegraph"
 }
 
 [ -f "${binary_file_path}" ] || {
-  echo "no binary file to put in the app" 1>&2
+  echo "missing the binary file to put in the app" 1>&2
   exit 1
 }
 
@@ -66,8 +66,8 @@ app_name="$(basename "${app_name:-Sourcegraph App}" .app).app"
 if [ -n "${app_template_path}" ]; then
   cp -R "${app_template_path}" "${app_name}" || exit 1
 else
-  gsutil cp "gs://sourcegraph_app_macos_dependencies/${app_name}-template.tar.gz" . &&
-    tar -xzf "${app_name}-template.tar.gz" || exit 1
+  gsutil cp "gs://sourcegraph_app_macos_dependencies/${app_name}-template.tar.gz" . || exit 1
+  tar -xzf "${app_name}-template.tar.gz" || exit 1
 fi
 
 # copy in the launcher shell script
@@ -85,6 +85,7 @@ chmod 555 "${app_name}/Contents/Resources/sourcegraph" || exit 1
 # by using the "signature" name template
 destination_file_path="${signature:-${workdir}/${app_name}}"
 
+[ -d "${destination_file_path}" ] && rm -rf "${destination_file_path}"
 mv "${app_name}" "${destination_file_path}" || exit 1
 
 exit 0
