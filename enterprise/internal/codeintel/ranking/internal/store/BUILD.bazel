@@ -11,6 +11,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/codeintel/ranking/internal/shared",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/database",
@@ -40,6 +41,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//enterprise/internal/codeintel/ranking/internal/shared",
         "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",

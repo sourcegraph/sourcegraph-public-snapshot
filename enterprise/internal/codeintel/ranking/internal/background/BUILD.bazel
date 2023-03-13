@@ -4,7 +4,6 @@ go_library(
     name = "background",
     srcs = [
         "job_graph_exporter.go",
-        "metrics.go",
         "observabililty.go",
         "ranking.go",
     ],
@@ -12,13 +11,14 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/ranking/internal/lsifstore",
+        "//enterprise/internal/codeintel/ranking/internal/shared",
         "//enterprise/internal/codeintel/ranking/internal/store",
+        "//enterprise/internal/codeintel/shared/background",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/conf",
         "//internal/goroutine",
         "//internal/observation",
         "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_scip//bindings/go/scip",
     ],

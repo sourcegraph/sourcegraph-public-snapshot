@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 
@@ -109,6 +110,13 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		UserIDs: userIDs,
 	}
 
+	perms := make([]authz.UserIDWithExternalAccountID, 0, len(userIDs))
+	for userID := range userIDs {
+		perms = append(perms, authz.UserIDWithExternalAccountID{
+			UserID: userID,
+		})
+	}
+
 	txs, err := r.db.Perms().Transact(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "start transaction")
@@ -121,7 +129,9 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		AccountIDs:  pendingBindIDs,
 	}
 
-	if _, err = txs.SetRepoPermissions(ctx, p); err != nil {
+	if err = txs.SetRepoPerms(ctx, p.RepoID, perms); err != nil {
+		return nil, errors.Wrap(err, "set user repo permissions")
+	} else if _, err = txs.SetRepoPermissions(ctx, p); err != nil {
 		return nil, errors.Wrap(err, "set repository permissions")
 	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
 		return nil, errors.Wrap(err, "set repository pending permissions")

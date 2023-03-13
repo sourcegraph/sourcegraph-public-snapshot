@@ -15,7 +15,7 @@ import (
 // AppReady is called once the frontend has reported it is ready to serve
 // requests. It contains tasks related to Sourcegraph App (single binary).
 func AppReady(logger log.Logger) {
-	if !deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+	if !deploy.IsApp() {
 		return
 	}
 

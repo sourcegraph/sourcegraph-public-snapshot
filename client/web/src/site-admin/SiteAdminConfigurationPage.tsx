@@ -214,6 +214,7 @@ const quickConfigureActions: {
 interface Props extends TelemetryProps {
     isLightTheme: boolean
     client: ApolloClient<{}>
+    isSourcegraphApp: boolean
 }
 
 interface State {
@@ -229,7 +230,7 @@ interface State {
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
-export const SiteAdminConfigurationPage: FC<TelemetryProps> = props => {
+export const SiteAdminConfigurationPage: FC<TelemetryProps & { isSourcegraphApp: boolean }> = props => {
     const client = useApolloClient()
     return <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} client={client} />
 }
@@ -430,7 +431,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                                 height={600}
                                 isLightTheme={this.props.isLightTheme}
                                 onSave={this.onSave}
-                                actions={quickConfigureActions}
+                                actions={this.props.isSourcegraphApp ? [] : quickConfigureActions}
                                 telemetryService={this.props.telemetryService}
                                 explanation={
                                     <Text className="form-text text-muted">

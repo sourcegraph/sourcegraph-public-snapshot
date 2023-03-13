@@ -2159,7 +2159,7 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 	}
 
 	reposQuery := sqlf.Sprintf(
-		reposPermissionsInfoQueryFmt,
+		getReposPermissionsInfoQueryFmt(conf.ExperimentalFeatures().UnifiedPermissions),
 		sqlf.Join(conds, " AND "),
 		order,
 		limit,
@@ -2198,8 +2198,7 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 	return perms, nil
 }
 
-// TODO(milan): need to update read path for new data model
-const reposPermissionsInfoQueryFmt = `
+const baseReposPermissionsInfoQueryFmt = `
 WITH accessible_repos AS (
 	SELECT
 		repo.id,
@@ -2211,7 +2210,26 @@ WITH accessible_repos AS (
 	ORDER BY %s
 	%s -- Limit
 )
+`
 
+func getReposPermissionsInfoQueryFmt(unifiedPermsEnabled bool) string {
+	if unifiedPermsEnabled {
+		return baseReposPermissionsInfoQueryFmt + `
+SELECT
+	ar.*,
+	urp.updated_at AS permission_updated_at,
+	CASE
+		WHEN urp.user_id IS NOT NULL THEN 'Permissions Sync'
+		ELSE 'Unrestricted'
+	END AS permission_reason
+FROM
+	accessible_repos AS ar
+	LEFT JOIN user_repo_permissions AS urp ON urp.user_id = %d
+		AND urp.repo_id = ar.id
+`
+	}
+
+	return baseReposPermissionsInfoQueryFmt + `
 SELECT
 	ar.*,
 	up.updated_at AS permission_updated_at,
@@ -2224,6 +2242,7 @@ FROM
 	LEFT JOIN user_permissions AS up ON up.user_id = %d
 		AND up.object_ids_ints @> INTSET (ar.id)
 `
+}
 
 var defaultPageSize = 100
 
@@ -2253,6 +2272,7 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 
 	permsQueryConditions := []*sqlf.Query{}
 	unrestricted := false
+	unifiedPermissionsEnabled := conf.ExperimentalFeatures().UnifiedPermissions
 
 	if authzParams.BypassAuthzReasons.NoAuthzProvider {
 		// return all users as auth is bypassed for everyone
@@ -2274,9 +2294,11 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 				permsQueryConditions = append(permsQueryConditions, sqlf.Sprintf("users.site_admin"))
 			}
 
-			// TODO(milan): need to update read path for new data model
-			// load user who have access via permissions syncing
-			permsQueryConditions = append(permsQueryConditions, sqlf.Sprintf(`user_permissions.object_ids_ints @> INTSET(repo.id)`))
+			if !unifiedPermissionsEnabled {
+				permsQueryConditions = append(permsQueryConditions, sqlf.Sprintf(`user_permissions.object_ids_ints @> INTSET(repo.id)`))
+			} else {
+				permsQueryConditions = append(permsQueryConditions, sqlf.Sprintf(`urp.repo_id = %d`, repoID))
+			}
 		}
 	}
 
@@ -2300,7 +2322,7 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 		where = append(where, pa.Where)
 	}
 
-	query := sqlf.Sprintf(usersPermissionsInfoQueryFmt, repoID, sqlf.Join(where, " AND "))
+	query := sqlf.Sprintf(getUsersPermissionsInfoQueryFmt(unifiedPermissionsEnabled), repoID, sqlf.Join(where, " AND "))
 	query = pa.AppendOrderToQuery(query)
 	query = pa.AppendLimitToQuery(query)
 
@@ -2320,7 +2342,7 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 		if unrestricted {
 			reason = UserRepoPermissionReasonUnrestricted
 			updatedAt = time.Time{}
-		} else if user.SiteAdmin {
+		} else if user.SiteAdmin && !authzParams.AuthzEnforceForSiteAdmins {
 			reason = UserRepoPermissionReasonSiteAdmin
 			updatedAt = time.Time{}
 		}
@@ -2361,7 +2383,7 @@ func (s *permsStore) scanUsersPermissionsInfo(rows dbutil.Scanner) (*types.User,
 	return &u, updatedAt, nil
 }
 
-const usersPermissionsInfoQueryFmt = `
+const baseUsersPermissionsInfoQueryFmt = `
 SELECT
 	users.id,
 	users.username,
@@ -2375,6 +2397,22 @@ SELECT
 	users.invalidated_sessions_at,
 	users.tos_accepted,
 	users.searchable,
+`
+
+func getUsersPermissionsInfoQueryFmt(unifiedPermsEnabled bool) string {
+	if unifiedPermsEnabled {
+		return baseUsersPermissionsInfoQueryFmt + `
+	urp.updated_at AS permissions_updated_at
+FROM
+	users
+	LEFT JOIN user_repo_permissions urp ON urp.user_id = users.id AND urp.repo_id = %d
+WHERE
+	users.deleted_at IS NULL
+	AND %s
+`
+	}
+
+	return baseUsersPermissionsInfoQueryFmt + `
 	CASE
 		WHEN user_permissions.object_ids_ints @> INTSET(repo.id) THEN user_permissions.updated_at
 		ELSE NULL
@@ -2388,6 +2426,7 @@ WHERE
 	AND repo.id = %d
 	AND %s
 `
+}
 
 func (s *permsStore) IsRepoUnrestricted(ctx context.Context, repoID api.RepoID) (bool, error) {
 	authzParams, err := database.GetAuthzQueryParameters(context.Background(), s.ossDB)

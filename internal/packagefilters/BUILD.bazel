@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "packagefilters",
+    srcs = ["package_filters.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/packagefilters",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/dependencies/shared",
+        "//internal/conf/reposource",
+        "//lib/errors",
+        "@com_github_gobwas_glob//:glob",
+    ],
+)

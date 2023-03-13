@@ -8,6 +8,7 @@ import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
@@ -38,7 +39,7 @@ type MinimalAuthenticatedUser = Pick<
     'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
 >
 
-export interface UserNavItemProps {
+export interface UserNavItemProps extends TelemetryProps {
     authenticatedUser: MinimalAuthenticatedUser
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
@@ -61,6 +62,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         menuButtonRef,
         showFeedbackModal,
         showKeyboardShortcutsHelp,
+        telemetryService,
     } = props
 
     const { themeSetting, setThemeSetting } = useTheme()
@@ -86,6 +88,14 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const organizations = authenticatedUser.organizations.nodes
     const searchQueryInputFeature = useExperimentalFeatures(features => features.searchQueryInput)
     const [experimentalQueryInputEnabled, setExperimentalQueryInputEnabled] = useExperimentalQueryInput()
+
+    const onExperimentalQueryInputChange = useCallback(
+        (enabled: boolean) => {
+            telemetryService.log(`SearchInputToggle${enabled ? 'On' : 'Off'}`)
+            setExperimentalQueryInputEnabled(enabled)
+        },
+        [telemetryService, setExperimentalQueryInputEnabled]
+    )
 
     return (
         <>
@@ -127,6 +137,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                 Saved searches
                             </MenuLink>
+                            {isSourcegraphApp && (
+                                <MenuLink as={Link} to="/setup">
+                                    Setup wizard
+                                </MenuLink>
+                            )}
                             {enableTeams && !isSourcegraphDotCom && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams
@@ -169,12 +184,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
                                         <div className="mr-2">
-                                            New Search Input{' '}
-                                            <ProductStatusBadge status="experimental" className="ml-1" />
+                                            New search input <ProductStatusBadge status="beta" className="ml-1" />
                                         </div>
                                         <Toggle
                                             value={experimentalQueryInputEnabled}
-                                            onToggle={setExperimentalQueryInputEnabled}
+                                            onToggle={onExperimentalQueryInputChange}
                                         />
                                     </div>
                                 </div>
@@ -197,7 +211,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 </>
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
-                            {authenticatedUser.siteAdmin && (
+                            {authenticatedUser.siteAdmin && !isSourcegraphApp && (
                                 <MenuLink as={Link} to="/site-admin">
                                     Site admin
                                 </MenuLink>

@@ -115,10 +115,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
 			ClientLintOnlyChangedFiles: false,
 			CreateBundleSizeDiff:       true,
+			ForceBazel:                 c.MessageFlags.ForceBazel,
 		}))
 
 		// At this stage, we don't break builds because of a Bazel failure.
-		// TODO(JH) Disabled until we fix database isolation
+		// TODO(JH) Disabled until re-enabled with flag
 		// ops.Merge(BazelOperations(true))
 
 		// Now we set up conditional operations that only apply to pull requests.
@@ -278,6 +279,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			triggerAsync(buildOptions)))
 
 		// At this stage, we don't break builds because of a Bazel failure.
+		// TODO(JH) disabled until I re-enable this with a flag
 		// ops.Merge(BazelOperations(true))
 
 		// Slow image builds
@@ -314,6 +316,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
+			// Do not enable this on main
+			// ForceBazel:                c.MessageFlags.ForceBazel,
 		}))
 
 		// Integration tests

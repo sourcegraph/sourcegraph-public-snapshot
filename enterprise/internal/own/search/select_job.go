@@ -36,21 +36,28 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	defer finish(alert, err)
 
 	var (
-		mu   sync.Mutex
-		errs error
+		mu                    sync.Mutex
+		hasResultWithNoOwners bool
+		errs                  error
 	)
+
 	dedup := result.NewDeduper()
+	var maxAlerter search.MaxAlerter
 
 	rules := NewRulesCache(clients.Gitserver, clients.DB)
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		event.Results, err = getCodeOwnersFromMatches(ctx, &rules, event.Results)
+		var ok bool
+		event.Results, ok, err = getCodeOwnersFromMatches(ctx, &rules, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
 			mu.Unlock()
 		}
 		mu.Lock()
+		if ok {
+			hasResultWithNoOwners = true
+		}
 		results := event.Results[:0]
 		for _, m := range event.Results {
 			if !dedup.Seen(m) {
@@ -67,7 +74,13 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	if err != nil {
 		errs = errors.Append(errs, err)
 	}
-	return alert, errs
+	maxAlerter.Add(alert)
+
+	if hasResultWithNoOwners {
+		maxAlerter.Add(search.AlertForUnownedResult())
+	}
+
+	return maxAlerter.Alert, errs
 }
 
 func (s *selectOwnersJob) Name() string {
@@ -92,11 +105,13 @@ func getCodeOwnersFromMatches(
 	ctx context.Context,
 	rules *RulesCache,
 	matches []result.Match,
-) ([]result.Match, error) {
-	var errs error
-	var ownerMatches []result.Match
+) ([]result.Match, bool, error) {
+	var (
+		errs                  error
+		ownerMatches          []result.Match
+		hasResultWithNoOwners bool
+	)
 
-matchesLoop:
 	for _, m := range matches {
 		mm, ok := m.(*result.FileMatch)
 		if !ok {
@@ -105,18 +120,21 @@ matchesLoop:
 		rs, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
-			continue matchesLoop
+			continue
 		}
 		rule := rs.Match(mm.File.Path)
 		// No match.
-		if rule == nil {
-			continue matchesLoop
+		if rule == nil || len(rule.GetOwner()) == 0 {
+			hasResultWithNoOwners = true
+			continue
 		}
+
 		resolvedOwners, err := rules.ownService.ResolveOwnersWithType(ctx, rule.GetOwner())
 		if err != nil {
 			errs = errors.Append(errs, err)
-			continue matchesLoop
+			continue
 		}
+
 		for _, o := range resolvedOwners {
 			ownerMatch := &result.OwnerMatch{
 				ResolvedOwner: ownerToResult(o),
@@ -127,14 +145,14 @@ matchesLoop:
 			ownerMatches = append(ownerMatches, ownerMatch)
 		}
 	}
-	return ownerMatches, errs
+	return ownerMatches, hasResultWithNoOwners, errs
 }
 
 func ownerToResult(o codeowners.ResolvedOwner) result.Owner {
 	if v, ok := o.(*codeowners.Person); ok {
 		return &result.OwnerPerson{
 			Handle: v.Handle,
-			Email:  v.Email,
+			Email:  v.GetEmail(),
 			User:   v.User,
 		}
 	}

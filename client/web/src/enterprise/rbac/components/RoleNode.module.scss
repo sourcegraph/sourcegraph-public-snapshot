@@ -5,7 +5,7 @@
 
     &__collapsible-header {
         display: grid;
-        grid-template-columns: auto 1fr auto;
+        grid-template-columns: auto 1fr;
         width: 100%;
 
         &:hover,
@@ -19,7 +19,7 @@
         padding: 0.5rem;
         border-radius: 0.5rem;
         grid-column: 1 / -1;
-        margin-top: 1rem;
+        margin-top: 0.5rem;
     }
 
     &__system-text {

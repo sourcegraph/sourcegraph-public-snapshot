@@ -1,11 +1,12 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { noop } from 'lodash'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
 import { mockPermissionsMap, mockRoles } from '../mock'
 
-import { PermissionList } from './Permissions'
+import { PermissionsList } from './Permissions'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
@@ -16,13 +17,26 @@ const config: Meta = {
 
 export default config
 
-const [systemRole, roleWithOnePermission, roleWithNoPermission] = mockRoles.roles.nodes
+const [roleWithAllPermissions, roleWithOnePermission, roleWithNoPermission] = mockRoles.roles.nodes
+
+const isChecked = (role: typeof roleWithAllPermissions): ((value: string) => boolean) => {
+    const rolePermissions = role.permissions.nodes.reduce<Record<string, boolean>>((acc, node) => {
+        acc[node.id] = true
+        return acc
+    }, {})
+    return (value: string): boolean => rolePermissions[value]
+}
 
 export const NoPermissions: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider>
-                <PermissionList role={roleWithNoPermission} allPermissions={mockPermissionsMap} />
+                <PermissionsList
+                    allPermissions={mockPermissionsMap}
+                    onChange={noop}
+                    onBlur={noop}
+                    isChecked={isChecked(roleWithNoPermission)}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -34,7 +48,12 @@ export const OnePermissionAssigned: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider>
-                <PermissionList role={roleWithOnePermission} allPermissions={mockPermissionsMap} />
+                <PermissionsList
+                    allPermissions={mockPermissionsMap}
+                    onChange={noop}
+                    onBlur={noop}
+                    isChecked={isChecked(roleWithOnePermission)}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -46,7 +65,12 @@ export const AllPermissionsAssigned: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider>
-                <PermissionList role={systemRole} allPermissions={mockPermissionsMap} />
+                <PermissionsList
+                    allPermissions={mockPermissionsMap}
+                    onChange={noop}
+                    onBlur={noop}
+                    isChecked={isChecked(roleWithAllPermissions)}
+                />
             </MockedTestProvider>
         )}
     </WebStory>

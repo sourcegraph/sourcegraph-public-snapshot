@@ -24,8 +24,7 @@ import (
 var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", defaultFrontendInternal(), "HTTP address for internal frontend HTTP API.")
 
 func defaultFrontendInternal() string {
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
+	if deploy.IsApp() {
 		return "localhost:3090"
 	}
 	return "sourcegraph-frontend-internal"

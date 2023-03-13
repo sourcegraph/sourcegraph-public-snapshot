@@ -228,6 +228,10 @@ type MessageFlags struct {
 	// ForceReadyForReview, if true will skip the draft pull request check and run the Chromatic steps.
 	// This allows a user to run the job without marking their PR as ready for review
 	ForceReadyForReview bool
+
+	// ForceBazel, if true replaces jobs with their bazel equivalent when possible, and make then non
+	// soft-failing.
+	ForceBazel bool
 }
 
 // parseMessageFlags gets MessageFlags from the given commit message.
@@ -236,6 +240,7 @@ func parseMessageFlags(msg string) MessageFlags {
 		ProfilingEnabled:    strings.Contains(msg, "[buildkite-enable-profiling]"),
 		SkipHashCompare:     strings.Contains(msg, "[skip-hash-compare]"),
 		ForceReadyForReview: strings.Contains(msg, "[review-ready]"),
+		ForceBazel:          strings.Contains(msg, "[force-bazel]"),
 	}
 }
 

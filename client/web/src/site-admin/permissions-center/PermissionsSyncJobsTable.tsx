@@ -110,15 +110,21 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 repoID,
             } as PermissionsSyncJobsVariables,
             getConnection: ({ data }) => data?.permissionsSyncJobs || undefined,
+            // always do polling if minimal
+            options: { pollInterval: minimal ? PERMISSIONS_SYNC_JOBS_POLL_INTERVAL : undefined },
         })
 
     useEffect(() => {
+        if (minimal) {
+            return
+        }
+
         if (polling) {
             startPolling(PERMISSIONS_SYNC_JOBS_POLL_INTERVAL)
         } else {
             stopPolling()
         }
-    }, [polling, stopPolling, startPolling])
+    }, [polling, stopPolling, startPolling, minimal])
 
     const setReason = useCallback(
         (reasonGroup: PermissionsSyncJobReasonGroup | null) => setFilters({ reason: reasonGroup?.toString() || '' }),
