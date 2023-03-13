@@ -9,8 +9,9 @@ import (
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/scim2/filter-parser/v2"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -52,8 +53,6 @@ func makeEmail(userID int32, address string, primary, verified bool) *database.U
 }
 
 func Test_UserResourceHandler_Patch(t *testing.T) {
-	t.Parallel()
-
 	db := getMockDB([]*types.UserForSCIM{
 		{User: types.User{ID: 1}},
 		{User: types.User{ID: 2, Username: "test-user2", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id2"},
@@ -298,8 +297,6 @@ func Test_UserResourceHandler_Patch(t *testing.T) {
 }
 
 func Test_UserResourceHandler_Patch_ReplaceStrategies(t *testing.T) {
-	t.Parallel()
-
 	db := getMockDB([]*types.UserForSCIM{
 		{User: types.User{ID: 1, Username: "test-user1"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id1", SCIMAccountData: sampleAccountData},
 		{User: types.User{ID: 2, Username: "test-user2"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id1", SCIMAccountData: sampleAccountData},
