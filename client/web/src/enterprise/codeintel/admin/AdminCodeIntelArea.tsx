@@ -54,12 +54,10 @@ export const codeIntelAreaRoutes: readonly AdminCodeIntelAreaRoute[] = (
     [
         // Code intelligence dashboard routes
         {
-            exact: true,
             path: '/',
             render: () => <Navigate to="./code-graph/dashboard" replace={true} />,
         },
         {
-            exact: true,
             path: '/dashboard',
             render: props => <GlobalDashboardPage {...props} />,
         },
