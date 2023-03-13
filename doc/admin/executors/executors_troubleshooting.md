@@ -5,7 +5,7 @@ This page compiles a list of common troubleshooting steps found during developme
 ## Disabling the auto-deletion of Executor VMs
 > NOTE: These instructions are for users using the VMs deployed via the [Terraform Modules](https://docs.sourcegraph.com/admin/deploy_executors_terraform)
 
-The Executor host VMs are configured to automatically tear themselves down once all jobs in the queue are completed. This is very inconvenient when trying to debug issues in the executor configuration or connections. To prevent the VMs from automatically stopping:
+The Executor host VMs are configured to automatically tear themselves down once all jobs in the queue are completed. While this is desired behaviour under regular circumstances, it complicates debugging issues in the executor configuration or connections. To prevent the VMs from automatically stopping:
 1. `ssh` into the VM
 1. `sudo su` to become the `root` user
 1. Remove (or rename) the `/shutdown_executor.sh` file
@@ -22,10 +22,10 @@ To create a temporary Firecracker VM for debugging purposes:
 1. `systemctl stop executor` to stop the `executor` service
 1. `export $(cat /etc/systemd/system/executor.env | xargs)` to load the executor environment into your shell
 1. Run `executor test-vm` to generate a test firecracker VM. The command will output a line like:
-  ```
-  Success! Connect to the VM using
+    ```
+    Success! Connect to the VM using
     $ ignite attach executor-test-vm-0160f53f-e765-4481-a81e-aa3c704d07bd
-  ```
+    ```
 1. Execute the generated `ignite attach <vm>` command to gain a shell to the Firecracker VM
 
 ## Recreating a Firecracker VM 
@@ -42,7 +42,7 @@ If a server-side batch change fails unexpectedly, it's possible to recreate the 
 1. `sudo su` to become the `root` user
 1. `systemctl stop executor` to stop the `executor` service
 1. `export $(cat /etc/systemd/system/executor.env | xargs)` to load the executor environment into your shell
-1. Paste in the command copied from the batch change. You may need to remove the `--copy-files` and `--volumes` directives as those volumes and files may not exist on the VM any longer. Surround the `--kernal-args` arguments in quotes as well.
+1. Paste in the command copied from the batch change. You may need to remove the `--copy-files` and `--volumes` directives as those volumes and files may not exist on the VM any longer. Surround the `--kernel-args` arguments in quotes as well
 1. Execute the command and wait for the VM to start
 1. Run `ignite ps` to list all currently running VMs
 1. Run `ignite attach <vm id>` to get a shell to the running VM
