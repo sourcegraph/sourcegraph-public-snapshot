@@ -51,8 +51,9 @@ type PermsStore interface {
 	// FetchReposByUserAndExternalService fetches repo ids that the given user can
 	// read and that originate from the given external service.
 	FetchReposByUserAndExternalService(ctx context.Context, userID int32, serviceType, serviceID string) ([]api.RepoID, error)
-	// LoadRepoPermissions loads stored repository permissions into p. An
-	// ErrPermsNotFound is returned when there are no valid permissions available.
+	// LoadRepoPermissions returns stored repository permissions.
+	// Empty slice is returned when there are no valid permissions available.
+	// Slice with length 1 and userID == 0 is returned for unrestricted repo.
 	LoadRepoPermissions(ctx context.Context, repoID int32) ([]authz.Permission, error)
 	// SetUserExternalAccountPerms sets the users permissions for repos in the database. Uses setUserRepoPermissions internally.
 	SetUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32) error
