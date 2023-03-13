@@ -33,7 +33,7 @@ Navigating to any repository page, clicking the Ownership button will surface in
 
 ### Ingesting a file with src-cli
 
-There is the option to ingest data with the Sourcegraph [src-cli](../cli/quickstart.md). 
+There is the option to ingest data with the Sourcegraph [src-cli](../cli/quickstart.md).
 The CLI provides `add`, `update`, `delete`, and `list` functionality.
 
 ```bash
