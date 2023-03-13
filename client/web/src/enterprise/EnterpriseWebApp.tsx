@@ -17,7 +17,6 @@ import { routes } from '../storm/routes'
 
 import { CodeIntelligenceBadgeContent } from './codeintel/badge/components/CodeIntelligenceBadgeContent'
 import { CodeIntelligenceBadgeMenu } from './codeintel/badge/components/CodeIntelligenceBadgeMenu'
-import { useCodeIntel } from './codeintel/useCodeIntel'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
 import { enterpriseOrgSettingsAreaRoutes } from './organizations/settings/routes'
@@ -61,7 +60,6 @@ const injectedValuesConfig = {
     /**
      * Per feature injections
      */
-    useCodeIntel,
     codeIntelligenceBadgeMenu: CodeIntelligenceBadgeMenu,
     codeIntelligenceBadgeContent: CodeIntelligenceBadgeContent,
 } satisfies StaticInjectedAppConfig
