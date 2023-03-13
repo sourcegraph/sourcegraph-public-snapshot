@@ -8,6 +8,7 @@ import (
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 
 	"github.com/sourcegraph/log"
 
@@ -139,6 +140,11 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 			})
 		}
 	}
+
+	// Email user to ask to set up a password
+	// This internally checks whether username/password login is enabled, whether we have an SMTP in place, etc.
+	_, err = auth.ResetPasswordURL(r.Context(), h.db, h.observationCtx.Logger, user, primaryEmail, true)
+
 	var now = time.Now()
 	// Attempt to send welcome email in the background.
 	goroutine.Go(func() {
