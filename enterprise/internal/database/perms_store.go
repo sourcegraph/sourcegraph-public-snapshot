@@ -1926,7 +1926,7 @@ func (s *permsStore) Metrics(ctx context.Context, staleDur time.Duration) (*Perm
 SELECT COUNT(*)
 FROM (
 	SELECT user_id, MAX(finished_at) AS finished_at FROM permission_sync_jobs
-	LEFT JOIN users ON users.id = user_id
+	INNER JOIN users ON users.id = user_id
 	WHERE user_id IS NOT NULL
 		AND users.deleted_at IS NULL
 	GROUP BY user_id
@@ -1952,7 +1952,7 @@ SELECT EXTRACT(EPOCH FROM (MAX(finished_at) - MIN(finished_at)))
 FROM (
 	SELECT user_id, MAX(finished_at) AS finished_at
 	FROM permission_sync_jobs
-	LEFT JOIN users ON users.id = user_id
+	INNER JOIN users ON users.id = user_id
 	WHERE users.deleted_at IS NULL AND user_id IS NOT NULL
 	GROUP BY user_id
 ) AS up
@@ -1980,7 +1980,7 @@ WHERE perms.user_id IN
 SELECT COUNT(*)
 FROM (
 	SELECT repository_id, MAX(finished_at) AS finished_at FROM permission_sync_jobs
-	LEFT JOIN repo ON repo.id = repository_id
+	INNER JOIN repo ON repo.id = repository_id
 	WHERE repository_id IS NOT NULL
 		AND repo.deleted_at IS NULL
 		AND repo.private = TRUE
@@ -2008,7 +2008,7 @@ SELECT EXTRACT(EPOCH FROM (MAX(finished_at) - MIN(finished_at)))
 FROM (
 	SELECT repository_id, MAX(finished_at) AS finished_at
 	FROM permission_sync_jobs
-	LEFT JOIN repo ON repo.id = repository_id
+	INNER JOIN repo ON repo.id = repository_id
 	WHERE repo.deleted_at IS NULL
 		AND repository_id IS NOT NULL
 		AND repo.private = TRUE
