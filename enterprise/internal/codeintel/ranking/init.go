@@ -37,7 +37,12 @@ func NewSymbolExporter(observationCtx *observation.Context, rankingService *Serv
 
 func NewSymbolJanitor(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewSymbolJanitor(
+		background.NewSymbolDefinitionsJanitor(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
+		),
+		background.NewSymbolReferencesJanitor(
 			observationCtx,
 			rankingService.store,
 			ConfigInst.SymbolExporterInterval,

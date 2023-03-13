@@ -119,7 +119,7 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
             }
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.site || !data.site.externalAccounts) {
+                if (!data?.site?.externalAccounts) {
                     throw createAggregateError(errors)
                 }
                 return data.site.externalAccounts

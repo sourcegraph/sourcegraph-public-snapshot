@@ -38,4 +38,5 @@ export enum EnterprisePageRoutes {
     Notebooks = '/notebooks',
     SearchNotebook = '/search/notebook',
     Cody = '/cody/*',
+    Own = '/own',
 }

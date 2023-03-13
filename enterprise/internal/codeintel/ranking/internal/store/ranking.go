@@ -401,41 +401,36 @@ const vacuumBatchSize = 1000
 // TODO - configure via envvar
 var threshold = time.Duration(1) * time.Hour
 
-func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
+func (s *store) VacuumStaleDefinitions(ctx context.Context, graphKey string) (
 	numDefinitionRecordsScanned int,
-	numReferenceRecordsScanned int,
 	numStaleDefinitionRecordsDeleted int,
-	numStaleReferenceRecordsDeleted int,
 	err error,
 ) {
-	ctx, _, endObservation := s.operations.vacuumStaleDefinitionsAndReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.vacuumStaleDefinitions.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
-		vacuumStaleDefinitionsAndReferencesQuery,
-		graphKey, int(threshold/time.Hour), vacuumBatchSize,
+		vacuumStaleDefinitionsQuery,
 		graphKey, int(threshold/time.Hour), vacuumBatchSize,
 	))
 	if err != nil {
-		return 0, 0, 0, 0, err
+		return 0, 0, err
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		if err := rows.Scan(
 			&numDefinitionRecordsScanned,
-			&numReferenceRecordsScanned,
 			&numStaleDefinitionRecordsDeleted,
-			&numStaleReferenceRecordsDeleted,
 		); err != nil {
-			return 0, 0, 0, 0, err
+			return 0, 0, err
 		}
 	}
 
-	return numDefinitionRecordsScanned, numReferenceRecordsScanned, numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, nil
+	return numDefinitionRecordsScanned, numStaleDefinitionRecordsDeleted, nil
 }
 
-const vacuumStaleDefinitionsAndReferencesQuery = `
+const vacuumStaleDefinitionsQuery = `
 WITH
 locked_definitions AS (
 	SELECT
@@ -459,7 +454,43 @@ deleted_definitions AS (
 	DELETE FROM codeintel_ranking_definitions
 	WHERE id IN (SELECT ld.id FROM locked_definitions ld WHERE NOT ld.safe)
 	RETURNING 1
-),
+)
+SELECT
+	(SELECT COUNT(*) FROM locked_definitions),
+	(SELECT COUNT(*) FROM deleted_definitions)
+`
+
+func (s *store) VacuumStaleReferences(ctx context.Context, graphKey string) (
+	numReferenceRecordsScanned int,
+	numStaleReferenceRecordsDeleted int,
+	err error,
+) {
+	ctx, _, endObservation := s.operations.vacuumStaleReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
+		vacuumStaleReferencesQuery,
+		graphKey, int(threshold/time.Hour), vacuumBatchSize,
+	))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&numReferenceRecordsScanned,
+			&numStaleReferenceRecordsDeleted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return numReferenceRecordsScanned, numStaleReferenceRecordsDeleted, nil
+}
+
+const vacuumStaleReferencesQuery = `
+WITH
 locked_references AS (
 	SELECT
 		rr.id,
@@ -484,9 +515,7 @@ deleted_references AS (
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM locked_definitions),
 	(SELECT COUNT(*) FROM locked_references),
-	(SELECT COUNT(*) FROM deleted_definitions),
 	(SELECT COUNT(*) FROM deleted_references)
 `
 

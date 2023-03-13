@@ -1,178 +1,25 @@
-use paste::paste;
-use protobuf::Message;
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::fmt::Write as _; // import without risk of name clashing
-use tree_sitter_highlight::Error;
-use tree_sitter_highlight::{Highlight, HighlightEvent};
 
-use rocket::serde::json::serde_json::json;
-use rocket::serde::json::Value as JsonValue;
-use tree_sitter_highlight::{HighlightConfiguration, Highlighter as TSHighlighter};
+use anyhow::Result;
+use protobuf::Message;
+use rocket::serde::json::{serde_json::json, Value as JsonValue};
+use scip::types::{Document, Occurrence, SyntaxKind};
+use scip_treesitter_languages::highlights::{
+    get_highlighting_configuration, get_syntax_kind_for_hl,
+};
+use tree_sitter_highlight::{
+    Error, Highlight, HighlightConfiguration, HighlightEvent, Highlighter as TSHighlighter,
+};
 
 use crate::SourcegraphQuery;
-use scip::types::{Document, Occurrence, SyntaxKind};
-use sg_macros::include_project_file_optional;
-
-#[rustfmt::skip]
-// Table of (@CaptureGroup, SyntaxKind) mapping.
-//
-// Any capture defined in a query will be mapped to the following SyntaxKind via the highlighter.
-//
-// To extend what types of captures are included, simply add a line below that takes a particular
-// match group that you're interested in and map it to a new SyntaxKind.
-//
-// We can also define our own new capture types that we want to use and add to queries to provide
-// particular highlights if necessary.
-//
-// (I can also add per-language mappings for these if we want, but you could also just do that with
-//  unique match groups. For example `@rust-bracket`, or similar. That doesn't need any
-//  particularly new rust code to be written. You can just modify queries for that)
-const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
-    ("boolean",                 SyntaxKind::BooleanLiteral),
-    ("character",               SyntaxKind::CharacterLiteral),
-    ("comment",                 SyntaxKind::Comment),
-    ("conditional",             SyntaxKind::IdentifierKeyword),
-    ("constant",                SyntaxKind::IdentifierConstant),
-    ("identifier.constant",     SyntaxKind::IdentifierConstant),
-    ("constant.builtin",        SyntaxKind::IdentifierBuiltin),
-    ("constant.null",           SyntaxKind::IdentifierNull),
-    ("float",                   SyntaxKind::NumericLiteral),
-    ("function",                SyntaxKind::IdentifierFunction),
-    ("identifier.function",     SyntaxKind::IdentifierFunction),
-    ("function.builtin",        SyntaxKind::IdentifierBuiltin),
-    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
-    ("identifier",              SyntaxKind::Identifier),
-    ("identifier.attribute",    SyntaxKind::IdentifierAttribute),
-    ("tag.attribute",           SyntaxKind::TagAttribute),
-    ("include",                 SyntaxKind::IdentifierKeyword),
-    ("keyword",                 SyntaxKind::IdentifierKeyword),
-    ("keyword.function",        SyntaxKind::IdentifierKeyword),
-    ("keyword.return",          SyntaxKind::IdentifierKeyword),
-    ("method",                  SyntaxKind::IdentifierFunction),
-    ("number",                  SyntaxKind::NumericLiteral),
-    ("operator",                SyntaxKind::IdentifierOperator),
-    ("identifier.operator",     SyntaxKind::IdentifierOperator),
-    ("property",                SyntaxKind::Identifier),
-    ("punctuation",             SyntaxKind::UnspecifiedSyntaxKind),
-    ("punctuation.bracket",     SyntaxKind::UnspecifiedSyntaxKind),
-    ("punctuation.delimiter",   SyntaxKind::PunctuationDelimiter),
-    ("string",                  SyntaxKind::StringLiteral),
-    ("string.special",          SyntaxKind::StringLiteral),
-    ("string.escape",           SyntaxKind::StringLiteralEscape),
-    ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
-    ("type",                    SyntaxKind::IdentifierType),
-    ("identifier.type",         SyntaxKind::IdentifierType),
-    ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
-    ("regex.delimiter",         SyntaxKind::RegexDelimiter),
-    ("regex.join",              SyntaxKind::RegexJoin),
-    ("regex.escape",            SyntaxKind::RegexEscape),
-    ("regex.repeated",          SyntaxKind::RegexRepeated),
-    ("regex.wildcard",          SyntaxKind::RegexWildcard),
-    ("identifier",              SyntaxKind::Identifier),
-    ("variable",                SyntaxKind::Identifier),
-    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
-    ("variable.builtin",        SyntaxKind::IdentifierBuiltin),
-    ("identifier.parameter",    SyntaxKind::IdentifierParameter),
-    ("variable.parameter",      SyntaxKind::IdentifierParameter),
-    ("identifier.module",       SyntaxKind::IdentifierModule),
-    ("variable.module",         SyntaxKind::IdentifierModule),
-];
-
-/// Maps a highlight to a syntax kind.
-/// This only works if you've correctly used the highlight_names from MATCHES_TO_SYNTAX_KINDS
-fn get_syntax_kind_for_hl(hl: Highlight) -> SyntaxKind {
-    MATCHES_TO_SYNTAX_KINDS[hl.0].1
-}
-
-/// Add a language highlight configuration to the CONFIGURATIONS global.
-///
-/// This makes it so you don't have to understand how configurations are added,
-/// just add the name of filetype that you want.
-macro_rules! create_configurations {
-    ( $($name: tt),* ) => {{
-        let mut m = HashMap::new();
-        let highlight_names = MATCHES_TO_SYNTAX_KINDS.iter().map(|hl| hl.0).collect::<Vec<&str>>();
-
-        $(
-            {
-                // Create HighlightConfiguration language
-                let mut lang = HighlightConfiguration::new(
-                    paste! { [<tree_sitter_ $name>]::language() },
-                    include_project_file_optional!("queries/", $name, "/highlights.scm"),
-                    include_project_file_optional!("queries/", $name, "/injections.scm"),
-                    include_project_file_optional!("queries/", $name, "/locals.scm"),
-                ).expect(stringify!("parser for '{}' must be compiled", $name));
-
-                // Associate highlights with configuration
-                lang.configure(&highlight_names);
-
-                // Insert into configurations, so we only create once at startup.
-                m.insert(stringify!($name), lang);
-            }
-        )*
-
-        // Manually insert the typescript and tsx languages because the
-        // tree-sitter-typescript crate doesn't have a language() function.
-        {
-            let highlights = vec![
-                include_project_file_optional!("queries/typescript/highlights.scm"),
-                include_project_file_optional!("queries/javascript/highlights.scm"),
-            ];
-            let mut lang = HighlightConfiguration::new(
-                paste! { tree_sitter_typescript::language_typescript() },
-                &highlights.join("\n"),
-                include_project_file_optional!("queries/", "typescript", "/injections.scm"),
-                include_project_file_optional!("queries/", "typescript", "/locals.scm"),
-            ).expect("parser for 'typescript' must be compiled");
-            lang.configure(&highlight_names);
-            m.insert("typescript", lang);
-        }
-        {
-            let highlights = vec![
-                include_project_file_optional!("queries/tsx/highlights.scm"),
-                include_project_file_optional!("queries/typescript/highlights.scm"),
-                include_project_file_optional!("queries/javascript/highlights.scm"),
-            ];
-            let mut lang = HighlightConfiguration::new(
-                paste! { tree_sitter_typescript::language_tsx() },
-                &highlights.join("\n"),
-                include_project_file_optional!("queries/tsx/injections.scm"),
-                include_project_file_optional!("queries/tsx/locals.scm"),
-            ).expect("parser for 'tsx' must be compiled");
-            lang.configure(&highlight_names);
-            m.insert("tsx", lang);
-        }
-
-        m
-    }}
-}
-
-lazy_static::lazy_static! {
-    static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!(
-            c,
-            cpp,
-            c_sharp,
-            go,
-            java,
-            javascript,
-            jsonnet,
-            python,
-            ruby,
-            rust,
-            scala,
-            sql,
-            xlsg
-        )
-    };
-}
 
 // Handle special cases where syntect language names don't match treesitter names.
 pub fn treesitter_language(syntect_language: &str) -> &str {
-    return match syntect_language {
+    match syntect_language {
         "c++" => "cpp",
         _ => syntect_language,
-    };
+    }
 }
 
 pub fn jsonify_err(e: impl ToString) -> JsonValue {
@@ -187,11 +34,11 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
         .ok_or_else(|| json!({"error": "Must pass a filetype for /lsif" }))?
         .to_lowercase();
 
-    match index_language(&filetype, &q.code) {
+    match index_language(&filetype, &q.code, false) {
         Ok(document) => {
             let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 
-            Ok(json!({"data": base64::encode(&encoded), "plaintext": false}))
+            Ok(json!({"data": base64::encode(encoded), "plaintext": false}))
         }
         Err(Error::InvalidLanguage) => Err(json!({
             "error": format!("{} is not a valid filetype for treesitter", filetype)
@@ -200,35 +47,20 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
     }
 }
 
-pub fn index_language(filetype: &str, code: &str) -> Result<Document, Error> {
-    match CONFIGURATIONS.get(filetype) {
-        Some(lang_config) => index_language_with_config(code, lang_config),
+pub fn index_language(filetype: &str, code: &str, include_locals: bool) -> Result<Document, Error> {
+    match get_highlighting_configuration(filetype) {
+        Some(lang_config) => {
+            index_language_with_config(filetype, code, lang_config, include_locals)
+        }
         None => Err(Error::InvalidLanguage),
     }
 }
 
-pub fn make_highlight_config(name: &str, highlights: &str) -> Option<HighlightConfiguration> {
-    let config = CONFIGURATIONS.get(name)?;
-
-    // Create HighlightConfiguration language
-    let mut lang = match HighlightConfiguration::new(config.language, highlights, "", "") {
-        Ok(lang) => lang,
-        Err(_) => return None,
-    };
-
-    // Associate highlights with configuration
-    let highlight_names = MATCHES_TO_SYNTAX_KINDS
-        .iter()
-        .map(|hl| hl.0)
-        .collect::<Vec<&str>>();
-    lang.configure(&highlight_names);
-
-    Some(lang)
-}
-
 pub fn index_language_with_config(
+    filetype: &str,
     code: &str,
     lang_config: &HighlightConfiguration,
+    include_locals: bool,
 ) -> Result<Document, Error> {
     // Normalize string to be always only \n endings.
     //  We don't care that the byte offsets are "incorrect" now for this
@@ -242,11 +74,60 @@ pub fn index_language_with_config(
     // we are iterating in the higlighter.
     let mut highlighter = TSHighlighter::new();
     let highlights = highlighter.highlight(lang_config, code.as_bytes(), None, |l| {
-        CONFIGURATIONS.get(l)
+        get_highlighting_configuration(l)
     })?;
 
     let mut emitter = ScipEmitter::new();
-    emitter.render(highlights, &code, &get_syntax_kind_for_hl)
+    let mut doc = emitter.render(highlights, &code, &get_syntax_kind_for_hl)?;
+    doc.occurrences.sort_by_key(|a| (a.range[0], a.range[1]));
+
+    if include_locals {
+        let parser = scip_treesitter_languages::parsers::BundledParser::get_parser(filetype);
+        if let Some(parser) = parser {
+            // TODO: Could probably write this in a much better way.
+            let mut local_occs = scip_syntax::get_locals(parser, code.as_bytes())
+                .unwrap_or(Ok(vec![]))
+                .unwrap_or(vec![]);
+
+            // Get ranges in reverse order, because we're going to pop off the back of the list.
+            //  (that's why we're sorting the opposite way of the document occurrences above).
+            local_occs.sort_by_key(|a| (-a.range[0], -a.range[1]));
+
+            let mut next_doc_idx = 0;
+            while let Some(local) = local_occs.pop() {
+                // We *should* be able to assume that all these ranges are valid ranges
+                // but for now we'll skip if they aren't.
+                //
+                // We can add some observability stuff to this later, and/or make
+                // certain builds fail or something to test this out better (but
+                // not have syntax highlighting completely fall apart from one
+                // bad range)
+                let local_range = match PackedRange::from_vec(&local.range) {
+                    Ok(range) => range,
+                    Err(_) => continue,
+                };
+
+                let (matching_idx, matching_occ) = match doc
+                    .occurrences
+                    .iter_mut()
+                    .enumerate()
+                    .skip(next_doc_idx)
+                    .find(|(_, occ)| local_range.eq_vec(&occ.range))
+                {
+                    Some(found) => found,
+                    None => continue,
+                };
+
+                next_doc_idx = matching_idx;
+
+                // Update occurrence with new information from locals
+                matching_occ.symbol = local.symbol;
+                matching_occ.symbol_roles = local.symbol_roles;
+            }
+        }
+    }
+
+    Ok(doc)
 }
 
 struct OffsetManager {
@@ -321,7 +202,10 @@ impl OffsetManager {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+// TODO: I think we could either put this directly in the `scip` bindings OR
+// we can put this in `scip-treesitter` since it's one of the structs we'll
+// be using quite reguarly when comparing and encoding ranges
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct PackedRange {
     pub start_line: i32,
     pub start_col: i32,
@@ -330,23 +214,45 @@ pub struct PackedRange {
 }
 
 impl PackedRange {
-    pub fn from_vec(v: &[i32]) -> Self {
+    // TODO: I don't know how much I love just returning an error here...
+    //       Maybe we should make an infallible version too. It's just a bit annoying
+    //       to pack and unpack all of these for effectively no reason.
+    //       But for now it's good.
+    pub fn from_vec(v: &[i32]) -> Result<Self> {
         match v.len() {
-            3 => Self {
+            3 => Ok(Self {
                 start_line: v[0],
                 start_col: v[1],
                 end_line: v[0],
                 end_col: v[2],
-            },
-            4 => Self {
+            }),
+            4 => Ok(Self {
                 start_line: v[0],
                 start_col: v[1],
                 end_line: v[2],
                 end_col: v[3],
-            },
-            _ => {
-                panic!("Unexpected vector length: {:?}", v);
+            }),
+            _ => Err(anyhow::anyhow!("Invalid range: {:?}", v)),
+        }
+    }
+
+    /// Checks if the range is equal to the given vector.
+    /// If the other vector is not a valid PackedRange then it returns false
+    pub fn eq_vec(&self, v: &[i32]) -> bool {
+        match v.len() {
+            3 => {
+                self.start_line == v[0]
+                    && self.start_col == v[1]
+                    && self.end_line == v[0]
+                    && self.end_col == v[2]
             }
+            4 => {
+                self.start_line == v[0]
+                    && self.start_col == v[1]
+                    && self.end_line == v[2]
+                    && self.end_col == v[3]
+            }
+            _ => false,
         }
     }
 }
@@ -436,7 +342,7 @@ pub struct FileRange {
 
 pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<FileRange>) -> String {
     let mut occurrences = doc.occurrences.clone();
-    occurrences.sort_by_key(|o| PackedRange::from_vec(&o.range));
+    occurrences.sort_by_key(|o| PackedRange::from_vec(&o.range).unwrap_or_default());
     let mut occurrences = VecDeque::from(occurrences);
 
     let mut result = String::new();
@@ -462,7 +368,11 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
                 continue;
             }
 
-            let range = PackedRange::from_vec(&occ.range);
+            let range = match PackedRange::from_vec(&occ.range) {
+                Ok(range) => range,
+                Err(_) => continue,
+            };
+
             let is_single_line = range.start_line == range.end_line;
             let end_col = if is_single_line {
                 range.end_col
@@ -514,14 +424,13 @@ mod test {
         io::Read,
     };
 
-    use crate::determine_filetype;
-
     use super::*;
+    use crate::determine_filetype;
 
     #[test]
     fn test_highlights_one_comment() -> Result<(), Error> {
         let src = "// Hello World";
-        let document = index_language("go", src)?;
+        let document = index_language("go", src, false)?;
         insta::assert_snapshot!(dump_document(&document, src));
 
         Ok(())
@@ -536,7 +445,7 @@ SELECT * FROM my_table
 `
 "#;
 
-        let document = index_language("go", src)?;
+        let document = index_language("go", src, false)?;
         insta::assert_snapshot!(dump_document(&document, src));
 
         Ok(())
@@ -545,7 +454,7 @@ SELECT * FROM my_table
     #[test]
     fn test_highlight_csharp_file() -> Result<(), Error> {
         let src = "using System;";
-        let document = index_language("c_sharp", src)?;
+        let document = index_language("c_sharp", src, false)?;
         insta::assert_snapshot!(dump_document(&document, src));
 
         Ok(())
@@ -556,6 +465,8 @@ SELECT * FROM my_table
         let crate_root: std::path::PathBuf = std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
         let input_dir = crate_root.join("src").join("snapshots").join("files");
         let dir = read_dir(&input_dir).unwrap();
+
+        let mut failed_tests = vec![];
         for entry in dir {
             let entry = entry?;
             let filepath = entry.path();
@@ -573,16 +484,31 @@ SELECT * FROM my_table
                 code: contents.clone(),
             });
 
-            let indexed = index_language(filetype, &contents);
+            let indexed = index_language(filetype, &contents, true);
             if indexed.is_err() {
                 // assert failure
                 panic!("unknown filetype {:?}", filetype);
             }
             let document = indexed.unwrap();
-            insta::assert_snapshot!(
-                filepath.strip_prefix(&input_dir).unwrap().to_str().unwrap(),
-                dump_document(&document, &contents)
-            );
+
+            // TODO: I'm not sure if there's a better way to run the snapshots without
+            // panicing and then catching, but this will do for now.
+            match std::panic::catch_unwind(|| {
+                insta::assert_snapshot!(
+                    filepath.strip_prefix(&input_dir).unwrap().to_str().unwrap(),
+                    dump_document(&document, &contents)
+                );
+            }) {
+                Ok(_) => println!("{}: OK", filepath.to_str().unwrap()),
+                Err(err) => failed_tests.push(err),
+            }
+        }
+
+        if !failed_tests.is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("{} tests failed", failed_tests.len()),
+            ));
         }
 
         Ok(())

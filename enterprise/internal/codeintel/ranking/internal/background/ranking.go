@@ -123,14 +123,22 @@ func setDefinitionsAndReferencesForUpload(
 	return len(definitions), len(references), nil
 }
 
-func vacuumStaleDefinitionsAndReferences(ctx context.Context, store store.Store) (int, int, error) {
+func vacuumStaleDefinitions(ctx context.Context, store store.Store) (int, int, error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
-	// TODO - split these for better metrics
-	numDefinitionRecordsScanned, numReferenceRecordsScanned, numDefinitionRecordsRemoved, numReferenceRecordsRemoved, err := store.VacuumStaleDefinitionsAndReferences(ctx, rankingshared.GraphKey())
-	return numDefinitionRecordsScanned + numReferenceRecordsScanned, numDefinitionRecordsRemoved + numReferenceRecordsRemoved, err
+	numDefinitionRecordsScanned, numDefinitionRecordsRemoved, err := store.VacuumStaleDefinitions(ctx, rankingshared.GraphKey())
+	return numDefinitionRecordsScanned, numDefinitionRecordsRemoved, err
+}
+
+func vacuumStaleReferences(ctx context.Context, store store.Store) (int, int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, 0, nil
+	}
+
+	numReferenceRecordsScanned, numReferenceRecordsRemoved, err := store.VacuumStaleReferences(ctx, rankingshared.GraphKey())
+	return numReferenceRecordsScanned, numReferenceRecordsRemoved, err
 }
 
 func vacuumStaleGraphs(ctx context.Context, store store.Store) (int, int, error) {

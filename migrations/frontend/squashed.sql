@@ -1201,6 +1201,7 @@ CREATE TABLE changesets (
     detached_at timestamp with time zone,
     computed_state text NOT NULL,
     external_fork_name citext,
+    previous_failure_message text,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -3626,7 +3627,8 @@ CREATE VIEW reconciler_changesets AS
     c.last_heartbeat_at,
     c.external_fork_name,
     c.external_fork_namespace,
-    c.detached_at
+    c.detached_at,
+    c.previous_failure_message
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1
@@ -3778,13 +3780,10 @@ CREATE TABLE role_permissions (
 
 CREATE TABLE roles (
     id integer NOT NULL,
-    name text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     system boolean DEFAULT false NOT NULL,
-    CONSTRAINT name_not_blank CHECK ((name <> ''::text))
+    name citext NOT NULL
 );
-
-COMMENT ON COLUMN roles.name IS 'The uniquely identifying name of the role.';
 
 COMMENT ON COLUMN roles.system IS 'This is used to indicate whether a role is read-only or can be modified.';
 
@@ -4896,9 +4895,6 @@ ALTER TABLE ONLY role_permissions
     ADD CONSTRAINT role_permissions_pkey PRIMARY KEY (permission_id, role_id);
 
 ALTER TABLE ONLY roles
-    ADD CONSTRAINT roles_name UNIQUE (name);
-
-ALTER TABLE ONLY roles
     ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY saved_searches
@@ -5404,6 +5400,8 @@ CREATE INDEX sub_repo_perms_user_id ON sub_repo_permissions USING btree (user_id
 CREATE UNIQUE INDEX teams_name ON teams USING btree (name);
 
 CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, user_id);
+
+CREATE UNIQUE INDEX unique_role_name ON roles USING btree (name);
 
 CREATE INDEX user_credentials_credential_idx ON user_credentials USING btree (((encryption_key_id = ANY (ARRAY[''::text, 'previously-migrated'::text]))));
 
@@ -6014,7 +6012,7 @@ INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retenti
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
 
-INSERT INTO roles VALUES (1, 'USER', '2023-01-04 16:29:41.195966+00', true);
-INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', true);
+INSERT INTO roles VALUES (1, '2023-01-04 16:29:41.195966+00', true, 'USER');
+INSERT INTO roles VALUES (2, '2023-01-04 16:29:41.195966+00', true, 'SITE_ADMINISTRATOR');
 
 SELECT pg_catalog.setval('roles_id_seq', 3, true);

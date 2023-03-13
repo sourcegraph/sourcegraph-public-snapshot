@@ -379,13 +379,19 @@ func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
 	// make upload 2 visible at tip (1 and 3 are not)
 	insertVisibleAtTip(t, db, 50, 2)
 
-	// remove definitions and references for non-visible uploads
-	_, _, numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := store.VacuumStaleDefinitionsAndReferences(ctx, mockRankingGraphKey)
+	// remove definitions for non-visible uploads
+	_, numStaleDefinitionRecordsDeleted, err := store.VacuumStaleDefinitions(ctx, mockRankingGraphKey)
 	if err != nil {
-		t.Fatalf("unexpected error vacuuming stale definitions and references: %s", err)
+		t.Fatalf("unexpected error vacuuming stale definitions: %s", err)
 	}
 	if expected := 3; numStaleDefinitionRecordsDeleted != expected {
 		t.Fatalf("unexpected number of definition records deleted. want=%d have=%d", expected, numStaleDefinitionRecordsDeleted)
+	}
+
+	// remove references for non-visible uploads
+	_, numStaleReferenceRecordsDeleted, err := store.VacuumStaleReferences(ctx, mockRankingGraphKey)
+	if err != nil {
+		t.Fatalf("unexpected error vacuuming stale eferences: %s", err)
 	}
 	if expected := 4; numStaleReferenceRecordsDeleted != expected {
 		t.Fatalf("unexpected number of reference records deleted. want=%d have=%d", expected, numStaleReferenceRecordsDeleted)

@@ -40,7 +40,7 @@ func TestCodeownersIngestionGuarding(t *testing.T) {
 	ctx := context.Background()
 	adminUser := fs.AddUser(types.User{SiteAdmin: false})
 
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: New(db, git, svc, logtest.NoOp(t))})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: NewWithService(db, git, svc, logtest.NoOp(t))})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -32,6 +32,10 @@ const USER: UserSettingsAreaUserFields = {
     organizations: { nodes: [] },
     tags: [],
     scimControlled: false,
+    roles: {
+        __typename: 'RoleConnection',
+        nodes: [],
+    },
 }
 describe('User profile page', () => {
     let driver: Driver
@@ -151,6 +155,10 @@ describe('User Different Settings Page', () => {
                     builtinAuth: true,
                     tags: [],
                     createdAt: '2020-03-02T11:52:15Z',
+                    roles: {
+                        __typename: 'RoleConnection',
+                        nodes: [],
+                    },
                 },
             }),
             UserSettingsAreaUserProfile: () => ({
@@ -172,6 +180,10 @@ describe('User Different Settings Page', () => {
                     permissionsInfo: null,
                     tags: [],
                     scimControlled: false,
+                    roles: {
+                        __typename: 'RoleConnection',
+                        nodes: [],
+                    },
                 },
             }),
         })

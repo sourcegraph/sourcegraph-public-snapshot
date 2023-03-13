@@ -57,11 +57,11 @@ export const queryGitBranches = memoizeObservable(
             { ...args, withBehindAhead: true }
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node) {
+                if (!data?.node) {
                     throw createAggregateError(errors)
                 }
                 const repo = data.node as RepositoryGitBranchesOverviewRepository
-                if (!repo.gitRefs || !repo.gitRefs.nodes) {
+                if (!repo.gitRefs?.nodes) {
                     throw createAggregateError(errors)
                 }
                 return {
