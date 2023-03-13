@@ -9,12 +9,7 @@ const config = {
      */
     {
       path: path.join(STATIC_ASSETS_PATH, 'scripts/app.bundle.js.br'),
-      /**
-       * Note: Temporary increase from 400kb.
-       * Primary cause is due to multiple ongoing migrations that mean we are duplicating similar dependencies.
-       * Issue to track: https://github.com/sourcegraph/sourcegraph/issues/37845
-       */
-      maxSize: '500kb',
+      maxSize: '400kb',
       compression: 'none',
     },
     {
