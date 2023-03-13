@@ -80,7 +80,7 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
     return (
         <>
             <Button className={styles.close} onClick={onClose}>
-                <Icon inline={false} svgPath={mdiClose} className={styles.icon} aria-label="Close" />
+                <Icon inline={false} svgPath={mdiClose} className={styles.icon} aria-label="Closeeee" />
             </Button>
             {submitResponse?.isHappinessFeedback ? (
                 <div className={styles.success}>
