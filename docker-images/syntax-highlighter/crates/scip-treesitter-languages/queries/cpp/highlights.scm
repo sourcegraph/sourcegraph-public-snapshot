@@ -34,7 +34,11 @@
   function: (field_expression
              field: (field_identifier) @identifier.function))
 (function_declarator
-  declarator: (identifier) @identifier.function)
+  declarator: [
+    (identifier)
+    (field_identifier)
+  ] @identifier.function)
+(destructor_name (identifier) @identifier.function)
 (preproc_function_def
   name: (identifier) @identifier.function)
 
@@ -43,16 +47,14 @@
 (type_identifier) @type
 (static_assert_declaration ("static_assert") @identifier.builtin)
 (primitive_type) @type.builtin
-(sized_type_specifier) @type
-
-((identifier) @constant
- (#match? @constant "^[A-Z][A-Z\\d_]*$"))
+(sized_type_specifier) @type.builtin
 
 (identifier) @identifier
 (namespace_identifier) @identifier.module
 
 (this) @constant.builtin
 (comment) @comment
+(operator_name "operator" @keyword)
 (operator_name) @identifier.operator
 (auto) @keyword
 

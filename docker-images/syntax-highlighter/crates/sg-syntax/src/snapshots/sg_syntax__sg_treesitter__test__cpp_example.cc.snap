@@ -86,7 +86,7 @@ expression: "dump_document(&document, &contents)"
 //                                 ^^^^ Identifier 
 //                                     ^^ IdentifierOperator 
 //                                       ^^^^^^ IdentifierAttribute 
-//                                               ^^^^^ Identifier 
+//                                               ^^^^^ IdentifierFunction 
       case Rule::CharacterSetType: return rule->character_set_.~CharacterSet();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
@@ -95,7 +95,7 @@ expression: "dump_document(&document, &contents)"
 //                                        ^^^^ Identifier 
 //                                            ^^ IdentifierOperator 
 //                                              ^^^^^^^^^^^^^^ IdentifierAttribute 
-//                                                              ^^^^^^^^^^^^ Identifier 
+//                                                              ^^^^^^^^^^^^ IdentifierFunction 
       case Rule::StringType: return rule->string_ .~String();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
@@ -104,7 +104,7 @@ expression: "dump_document(&document, &contents)"
 //                                  ^^^^ Identifier 
 //                                      ^^ IdentifierOperator 
 //                                        ^^^^^^^ IdentifierAttribute 
-//                                                  ^^^^^^ Identifier 
+//                                                  ^^^^^^ IdentifierFunction 
       case Rule::PatternType: return rule->pattern_ .~Pattern();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
@@ -113,7 +113,7 @@ expression: "dump_document(&document, &contents)"
 //                                   ^^^^ Identifier 
 //                                       ^^ IdentifierOperator 
 //                                         ^^^^^^^^ IdentifierAttribute 
-//                                                    ^^^^^^^ Identifier 
+//                                                    ^^^^^^^ IdentifierFunction 
       case Rule::NamedSymbolType: return rule->named_symbol_.~NamedSymbol();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
@@ -122,7 +122,7 @@ expression: "dump_document(&document, &contents)"
 //                                       ^^^^ Identifier 
 //                                           ^^ IdentifierOperator 
 //                                             ^^^^^^^^^^^^^ IdentifierAttribute 
-//                                                            ^^^^^^^^^^^ Identifier 
+//                                                            ^^^^^^^^^^^ IdentifierFunction 
       case Rule::SymbolType: return rule->symbol_ .~Symbol();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
@@ -131,7 +131,7 @@ expression: "dump_document(&document, &contents)"
 //                                  ^^^^ Identifier 
 //                                      ^^ IdentifierOperator 
 //                                        ^^^^^^^ IdentifierAttribute 
-//                                                  ^^^^^^ Identifier 
+//                                                  ^^^^^^ IdentifierFunction 
       case Rule::ChoiceType: return rule->choice_ .~Choice();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
@@ -140,7 +140,7 @@ expression: "dump_document(&document, &contents)"
 //                                  ^^^^ Identifier 
 //                                      ^^ IdentifierOperator 
 //                                        ^^^^^^^ IdentifierAttribute 
-//                                                  ^^^^^^ Identifier 
+//                                                  ^^^^^^ IdentifierFunction 
       case Rule::MetadataType: return rule->metadata_ .~Metadata();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
@@ -149,7 +149,7 @@ expression: "dump_document(&document, &contents)"
 //                                    ^^^^ Identifier 
 //                                        ^^ IdentifierOperator 
 //                                          ^^^^^^^^^ IdentifierAttribute 
-//                                                      ^^^^^^^^ Identifier 
+//                                                      ^^^^^^^^ IdentifierFunction 
       case Rule::RepeatType: return rule->repeat_ .~Repeat();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
@@ -158,7 +158,7 @@ expression: "dump_document(&document, &contents)"
 //                                  ^^^^ Identifier 
 //                                      ^^ IdentifierOperator 
 //                                        ^^^^^^^ IdentifierAttribute 
-//                                                  ^^^^^^ Identifier 
+//                                                  ^^^^^^ IdentifierFunction 
       case Rule::SeqType: return rule->seq_ .~Seq();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
@@ -167,7 +167,7 @@ expression: "dump_document(&document, &contents)"
 //                               ^^^^ Identifier 
 //                                   ^^ IdentifierOperator 
 //                                     ^^^^ IdentifierAttribute 
-//                                            ^^^ Identifier 
+//                                            ^^^ IdentifierFunction 
     }
   }
   
@@ -175,7 +175,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^ IdentifierType 
 //     ^ IdentifierOperator 
 //      ^^^^ IdentifierNamespace 
-//            ^^^^^^^^ IdentifierOperator 
+//            ^^^^^^^^ Keyword 
 //                    ^ IdentifierOperator 
 //                      ^^^^^ Keyword 
 //                            ^^^^ IdentifierType 
@@ -323,7 +323,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^ IdentifierType 
 //     ^ IdentifierOperator 
 //      ^^^^ IdentifierNamespace 
-//            ^^^^^^^^ IdentifierOperator 
+//            ^^^^^^^^ Keyword 
 //                    ^ IdentifierOperator 
 //                      ^^^^ IdentifierType 
 //                           ^^ IdentifierOperator 
@@ -489,7 +489,7 @@ expression: "dump_document(&document, &contents)"
   
   Rule::~Rule() noexcept {
 //^^^^ IdentifierNamespace 
-//       ^^^^ Identifier 
+//       ^^^^ IdentifierFunction 
 //              ^^^^^^^^ Keyword 
     destroy_value(this);
 //  ^^^^^^^^^^^^^ IdentifierFunction 
@@ -499,7 +499,7 @@ expression: "dump_document(&document, &contents)"
   bool Rule::operator==(const Rule &other) const {
 //^^^^ IdentifierBuiltinType 
 //     ^^^^ IdentifierNamespace 
-//           ^^^^^^^^ IdentifierOperator 
+//           ^^^^^^^^ Keyword 
 //                   ^^ IdentifierOperator 
 //                      ^^^^^ Keyword 
 //                            ^^^^ IdentifierType 
@@ -894,7 +894,8 @@ expression: "dump_document(&document, &contents)"
 //           ^ IdentifierOperator 
 //            ^^^^^^ IdentifierType 
 //                  ^ IdentifierOperator 
-//                     ^^^^^^^^^^ IdentifierOperator 
+//                     ^^^^^^^^ Keyword 
+//                             ^^ IdentifierOperator 
 //                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
 //                                             ^ IdentifierOperator 
@@ -931,7 +932,8 @@ expression: "dump_document(&document, &contents)"
 //           ^ IdentifierOperator 
 //            ^^^^^^^^^^^ IdentifierType 
 //                       ^ IdentifierOperator 
-//                          ^^^^^^^^^^ IdentifierOperator 
+//                          ^^^^^^^^ Keyword 
+//                                  ^^ IdentifierOperator 
 //                                     ^^^^^ Keyword 
 //                                           ^^^^^^^^^^^ IdentifierType 
 //                                                       ^ IdentifierOperator 
@@ -953,7 +955,8 @@ expression: "dump_document(&document, &contents)"
 //           ^ IdentifierOperator 
 //            ^^^^^^^ IdentifierType 
 //                   ^ IdentifierOperator 
-//                      ^^^^^^^^^^ IdentifierOperator 
+//                      ^^^^^^^^ Keyword 
+//                              ^^ IdentifierOperator 
 //                                 ^^^^^ Keyword 
 //                                       ^^^^^^^ IdentifierType 
 //                                               ^ IdentifierOperator 
@@ -975,7 +978,8 @@ expression: "dump_document(&document, &contents)"
 //           ^ IdentifierOperator 
 //            ^^^^^^ IdentifierType 
 //                  ^ IdentifierOperator 
-//                     ^^^^^^^^^^ IdentifierOperator 
+//                     ^^^^^^^^ Keyword 
+//                             ^^ IdentifierOperator 
 //                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
 //                                             ^ IdentifierOperator 
@@ -997,7 +1001,8 @@ expression: "dump_document(&document, &contents)"
 //           ^ IdentifierOperator 
 //            ^^^^^^^^^^^^ IdentifierType 
 //                        ^ IdentifierOperator 
-//                           ^^^^^^^^^^ IdentifierOperator 
+//                           ^^^^^^^^ Keyword 
+//                                   ^^ IdentifierOperator 
 //                                      ^^^^^ Keyword 
 //                                            ^^^^^^^^^^^^ IdentifierType 
 //                                                         ^ IdentifierOperator 
@@ -1063,7 +1068,8 @@ expression: "dump_document(&document, &contents)"
 //           ^ IdentifierOperator 
 //            ^^^^^ IdentifierType 
 //                 ^ IdentifierOperator 
-//                    ^^^^^^^^^^ IdentifierOperator 
+//                    ^^^^^^^^ Keyword 
+//                            ^^ IdentifierOperator 
 //                               ^^^^^ Keyword 
 //                                     ^^^^^ IdentifierType 
 //                                           ^ IdentifierOperator 
@@ -1080,7 +1086,8 @@ expression: "dump_document(&document, &contents)"
 //           ^ IdentifierOperator 
 //            ^^^^^^ IdentifierType 
 //                  ^ IdentifierOperator 
-//                     ^^^^^^^^^^ IdentifierOperator 
+//                     ^^^^^^^^ Keyword 
+//                             ^^ IdentifierOperator 
 //                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
 //                                             ^ IdentifierOperator 
@@ -1116,7 +1123,8 @@ expression: "dump_document(&document, &contents)"
 //           ^ IdentifierOperator 
 //            ^^^^^^ IdentifierType 
 //                  ^ IdentifierOperator 
-//                     ^^^^^^^^^^ IdentifierOperator 
+//                     ^^^^^^^^ Keyword 
+//                             ^^ IdentifierOperator 
 //                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
 //                                             ^ IdentifierOperator 
@@ -1145,7 +1153,8 @@ expression: "dump_document(&document, &contents)"
 //           ^ IdentifierOperator 
 //            ^^^ IdentifierType 
 //               ^ IdentifierOperator 
-//                  ^^^^^^^^^^ IdentifierOperator 
+//                  ^^^^^^^^ Keyword 
+//                          ^^ IdentifierOperator 
 //                             ^^^^^ Keyword 
 //                                   ^^^ IdentifierType 
 //                                       ^ IdentifierOperator 
@@ -1181,7 +1190,8 @@ expression: "dump_document(&document, &contents)"
 //           ^ IdentifierOperator 
 //            ^^^^^^^^ IdentifierType 
 //                    ^ IdentifierOperator 
-//                       ^^^^^^^^^^ IdentifierOperator 
+//                       ^^^^^^^^ Keyword 
+//                               ^^ IdentifierOperator 
 //                                  ^^^^^ Keyword 
 //                                        ^^^^^^^^ IdentifierType 
 //                                                 ^ IdentifierOperator 
@@ -1269,7 +1279,8 @@ expression: "dump_document(&document, &contents)"
 //           ^ IdentifierOperator 
 //            ^^^^ IdentifierType 
 //                ^ IdentifierOperator 
-//                   ^^^^^^^^^^ IdentifierOperator 
+//                   ^^^^^^^^ Keyword 
+//                           ^^ IdentifierOperator 
 //                              ^^^^^ Keyword 
 //                                    ^^^^ IdentifierType 
 //                                         ^ IdentifierOperator 
@@ -1526,7 +1537,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^^ Keyword 
     void markContextIllegal(std::string forItem) {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^^^^^^^^^^^^^^^ IdentifierAttribute 
+//       ^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                          ^^^ IdentifierNamespace 
 //                               ^^^^^^ IdentifierType 
 //                                      ^^^^^^^ Identifier 
@@ -1610,7 +1621,7 @@ expression: "dump_document(&document, &contents)"
 //                ^^^ IdentifierNamespace 
 //                     ^^^^^^ IdentifierType 
 //                           ^ IdentifierOperator 
-//                             ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierAttribute 
+//                             ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                                                         ^^^^^ Keyword 
       std::vector<std::string> missingKeys;
 //    ^^^ IdentifierNamespace 
@@ -1732,7 +1743,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^ Keyword 
     bool Null() {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^ IdentifierAttribute 
+//       ^^^^ IdentifierFunction 
       this->errorMessage = "unexpected null";
 //    ^^^^ IdentifierBuiltin 
 //        ^^ IdentifierOperator 
@@ -1745,7 +1756,7 @@ expression: "dump_document(&document, &contents)"
     }
     bool Bool(bool b) {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^ IdentifierAttribute 
+//       ^^^^ IdentifierFunction 
 //            ^^^^ IdentifierBuiltinType 
 //                 ^ Identifier 
       this->errorMessage = fmt::format("unexpected bool {}", b);
@@ -1763,7 +1774,7 @@ expression: "dump_document(&document, &contents)"
     }
     bool Int(int i) {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^ IdentifierAttribute 
+//       ^^^ IdentifierFunction 
 //           ^^^ IdentifierBuiltinType 
 //               ^ Identifier 
       this->errorMessage = fmt::format("unexpected int {}", i);
@@ -1781,8 +1792,8 @@ expression: "dump_document(&document, &contents)"
     }
     bool Uint(unsigned i) {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^ IdentifierAttribute 
-//            ^^^^^^^^ IdentifierType 
+//       ^^^^ IdentifierFunction 
+//            ^^^^^^^^ IdentifierBuiltinType 
 //                     ^ Identifier 
       this->errorMessage = fmt::format("unexpected unsigned int {}", i);
 //    ^^^^ IdentifierBuiltin 
@@ -1799,7 +1810,7 @@ expression: "dump_document(&document, &contents)"
     }
     bool Int64(int64_t i) {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^^ IdentifierAttribute 
+//       ^^^^^ IdentifierFunction 
 //             ^^^^^^^ IdentifierBuiltinType 
 //                     ^ Identifier 
       this->errorMessage = fmt::format("unexpected int64_t {}", i);
@@ -1817,7 +1828,7 @@ expression: "dump_document(&document, &contents)"
     }
     bool Uint64(uint64_t i) {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^^^ IdentifierAttribute 
+//       ^^^^^^ IdentifierFunction 
 //              ^^^^^^^^ IdentifierBuiltinType 
 //                       ^ Identifier 
       this->errorMessage = fmt::format("unexpected uint64_t {}", i);
@@ -1835,7 +1846,7 @@ expression: "dump_document(&document, &contents)"
     }
     bool Double(double d) {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^^^ IdentifierAttribute 
+//       ^^^^^^ IdentifierFunction 
 //              ^^^^^^ IdentifierBuiltinType 
 //                     ^ Identifier 
       this->errorMessage = fmt::format("unexpected double {}", d);
@@ -1853,7 +1864,7 @@ expression: "dump_document(&document, &contents)"
     }
     bool RawNumber(const char *str, rapidjson::SizeType length, bool /*copy*/) {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^^^^^^ IdentifierAttribute 
+//       ^^^^^^^^^ IdentifierFunction 
 //                 ^^^^^ Keyword 
 //                       ^^^^ IdentifierBuiltinType 
 //                            ^ IdentifierOperator 
@@ -1882,7 +1893,7 @@ expression: "dump_document(&document, &contents)"
     }
     bool String(const char *str, rapidjson::SizeType length, bool copy) {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^^^ IdentifierAttribute 
+//       ^^^^^^ IdentifierFunction 
 //              ^^^^^ Keyword 
 //                    ^^^^ IdentifierBuiltinType 
 //                         ^ IdentifierOperator 
@@ -2005,7 +2016,7 @@ expression: "dump_document(&document, &contents)"
     }
     bool StartObject() {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^^^^^^^^ IdentifierAttribute 
+//       ^^^^^^^^^^^ IdentifierFunction 
       switch (this->context) {
 //    ^^^^^^ Keyword 
 //            ^^^^ IdentifierBuiltin 
@@ -2056,7 +2067,7 @@ expression: "dump_document(&document, &contents)"
     }
     bool Key(const char *str, rapidjson::SizeType length, bool copy) {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^ IdentifierAttribute 
+//       ^^^ IdentifierFunction 
 //           ^^^^^ Keyword 
 //                 ^^^^ IdentifierBuiltinType 
 //                      ^ IdentifierOperator 
@@ -2236,7 +2247,7 @@ expression: "dump_document(&document, &contents)"
     }
     bool EndObject(rapidjson::SizeType memberCount) {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^^^^^^ IdentifierAttribute 
+//       ^^^^^^^^^ IdentifierFunction 
 //                 ^^^^^^^^^ IdentifierNamespace 
 //                            ^^^^^^^^ IdentifierType 
 //                                     ^^^^^^^^^^^ Identifier 
@@ -2312,7 +2323,7 @@ expression: "dump_document(&document, &contents)"
     }
     bool StartArray() {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^^^^^^^ IdentifierAttribute 
+//       ^^^^^^^^^^ IdentifierFunction 
       switch (this->context) {
 //    ^^^^^^ Keyword 
 //            ^^^^ IdentifierBuiltin 
@@ -2374,7 +2385,7 @@ expression: "dump_document(&document, &contents)"
     }
     bool EndArray(rapidjson::SizeType elementCount) {
 //  ^^^^ IdentifierBuiltinType 
-//       ^^^^^^^^ IdentifierAttribute 
+//       ^^^^^^^^ IdentifierFunction 
 //                ^^^^^^^^^ IdentifierNamespace 
 //                           ^^^^^^^^ IdentifierType 
 //                                    ^^^^^^^^^^^^ Identifier 

@@ -1,0 +1,931 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+assertion_line: 497
+expression: "dump_document(&document, &contents)"
+---
+  //===- llvm/ADT/SmallSet.h - 'Normally small' sets --------------*- C++ -*-===//
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  //
+//^^ Comment 
+  // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  // See https://llvm.org/LICENSE.txt for license information.
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  //
+//^^ Comment 
+  //===----------------------------------------------------------------------===//
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  ///
+//^^^ Comment 
+  /// \file
+//^^^^^^^^^ Comment 
+  /// This file defines the SmallSet class.
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  ///
+//^^^ Comment 
+  //===----------------------------------------------------------------------===//
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  
+  #ifndef LLVM_ADT_SMALLSET_H
+//^^^^^^^ Keyword 
+//        ^^^^^^^^^^^^^^^^^^^ Identifier 
+  #define LLVM_ADT_SMALLSET_H
+//^^^^^^^ Keyword 
+//        ^^^^^^^^^^^^^^^^^^^ Identifier 
+  
+  #include "llvm/ADT/SmallPtrSet.h"
+//^^^^^^^^ Keyword 
+//         ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+  #include "llvm/ADT/SmallVector.h"
+//^^^^^^^^ Keyword 
+//         ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+  #include "llvm/ADT/STLExtras.h"
+//^^^^^^^^ Keyword 
+//         ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+  #include "llvm/ADT/iterator.h"
+//^^^^^^^^ Keyword 
+//         ^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+  #include "llvm/Support/Compiler.h"
+//^^^^^^^^ Keyword 
+//         ^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+  #include "llvm/Support/type_traits.h"
+//^^^^^^^^ Keyword 
+//         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+  #include <cstddef>
+//^^^^^^^^ Keyword 
+//         ^^^^^^^^^ StringLiteral 
+  #include <functional>
+//^^^^^^^^ Keyword 
+//         ^^^^^^^^^^^^ StringLiteral 
+  #include <set>
+//^^^^^^^^ Keyword 
+//         ^^^^^ StringLiteral 
+  #include <type_traits>
+//^^^^^^^^ Keyword 
+//         ^^^^^^^^^^^^^ StringLiteral 
+  #include <utility>
+//^^^^^^^^ Keyword 
+//         ^^^^^^^^^ StringLiteral 
+  
+  namespace llvm {
+//^^^^^^^^^ Keyword 
+//          ^^^^ Identifier 
+  
+  /// SmallSetIterator - This class implements a const_iterator for SmallSet by
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  /// delegating to the underlying SmallVector or Set iterators.
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  template <typename T, unsigned N, typename C>
+//^^^^^^^^ Keyword 
+//         ^ IdentifierOperator 
+//          ^^^^^^^^ Keyword 
+//                   ^ IdentifierType 
+//                      ^^^^^^^^ IdentifierBuiltinType 
+//                               ^ Identifier 
+//                                  ^^^^^^^^ Keyword 
+//                                           ^ IdentifierType 
+//                                            ^ IdentifierOperator 
+  class SmallSetIterator
+//^^^^^ Keyword 
+//      ^^^^^^^^^^^^^^^^ IdentifierType 
+      : public iterator_facade_base<SmallSetIterator<T, N, C>,
+//      ^^^^^^ Keyword 
+//             ^^^^^^^^^^^^^^^^^^^^ IdentifierType 
+//                                 ^ IdentifierOperator 
+//                                  ^^^^^^^^^^^^^^^^ IdentifierType 
+//                                                  ^ IdentifierOperator 
+//                                                   ^ IdentifierType 
+//                                                      ^ IdentifierType 
+//                                                         ^ IdentifierType 
+//                                                          ^ IdentifierOperator 
+                                    std::forward_iterator_tag, T> {
+//                                  ^^^ IdentifierNamespace 
+//                                       ^^^^^^^^^^^^^^^^^^^^ IdentifierType 
+//                                                             ^ IdentifierType 
+//                                                              ^ IdentifierOperator 
+  private:
+//^^^^^^^ Keyword 
+    using SetIterTy = typename std::set<T, C>::const_iterator;
+//  ^^^^^ Keyword 
+//        ^^^^^^^^^ IdentifierType 
+//                  ^ IdentifierOperator 
+//                    ^^^^^^^^ Keyword 
+//                             ^^^ IdentifierNamespace 
+//                                  ^^^ IdentifierType 
+//                                     ^ IdentifierOperator 
+//                                      ^ IdentifierType 
+//                                         ^ IdentifierType 
+//                                          ^ IdentifierOperator 
+//                                             ^^^^^^^^^^^^^^ IdentifierType 
+    using VecIterTy = typename SmallVector<T, N>::const_iterator;
+//  ^^^^^ Keyword 
+//        ^^^^^^^^^ IdentifierType 
+//                  ^ IdentifierOperator 
+//                    ^^^^^^^^ Keyword 
+//                             ^^^^^^^^^^^ IdentifierType 
+//                                        ^ IdentifierOperator 
+//                                         ^ IdentifierType 
+//                                            ^ IdentifierType 
+//                                             ^ IdentifierOperator 
+//                                                ^^^^^^^^^^^^^^ IdentifierType 
+    using SelfTy = SmallSetIterator<T, N, C>;
+//  ^^^^^ Keyword 
+//        ^^^^^^ IdentifierType 
+//               ^ IdentifierOperator 
+//                 ^^^^^^^^^^^^^^^^ IdentifierType 
+//                                 ^ IdentifierOperator 
+//                                  ^ IdentifierType 
+//                                     ^ IdentifierType 
+//                                        ^ IdentifierType 
+//                                         ^ IdentifierOperator 
+  
+    /// Iterators to the parts of the SmallSet containing the data. They are set
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    /// depending on isSmall.
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    union {
+//  ^^^^^ Keyword 
+      SetIterTy SetIter;
+//    ^^^^^^^^^ IdentifierType 
+//              ^^^^^^^ IdentifierAttribute 
+      VecIterTy VecIter;
+//    ^^^^^^^^^ IdentifierType 
+//              ^^^^^^^ IdentifierAttribute 
+    };
+  
+    bool isSmall;
+//  ^^^^ IdentifierBuiltinType 
+//       ^^^^^^^ IdentifierAttribute 
+  
+  public:
+//^^^^^^ Keyword 
+    SmallSetIterator(SetIterTy SetIter) : SetIter(SetIter), isSmall(false) {}
+//  ^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                   ^^^^^^^^^ IdentifierType 
+//                             ^^^^^^^ Identifier 
+//                                        ^^^^^^^ IdentifierAttribute 
+//                                                ^^^^^^^ Identifier 
+//                                                          ^^^^^^^ IdentifierAttribute 
+//                                                                  ^^^^^ BooleanLiteral 
+  
+    SmallSetIterator(VecIterTy VecIter) : VecIter(VecIter), isSmall(true) {}
+//  ^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                   ^^^^^^^^^ IdentifierType 
+//                             ^^^^^^^ Identifier 
+//                                        ^^^^^^^ IdentifierAttribute 
+//                                                ^^^^^^^ Identifier 
+//                                                          ^^^^^^^ IdentifierAttribute 
+//                                                                  ^^^^ BooleanLiteral 
+  
+    // Spell out destructor, copy/move constructor and assignment operators for
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    // MSVC STL, where set<T>::const_iterator is not trivially copy constructible.
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    ~SmallSetIterator() {
+//   ^^^^^^^^^^^^^^^^ IdentifierFunction 
+      if (isSmall)
+//    ^^ Keyword 
+//        ^^^^^^^ Identifier 
+        VecIter.~VecIterTy();
+//      ^^^^^^^ Identifier 
+//               ^^^^^^^^^ IdentifierFunction 
+      else
+//    ^^^^ Keyword 
+        SetIter.~SetIterTy();
+//      ^^^^^^^ Identifier 
+//               ^^^^^^^^^ IdentifierFunction 
+    }
+  
+    SmallSetIterator(const SmallSetIterator &Other) : isSmall(Other.isSmall) {
+//  ^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                   ^^^^^ Keyword 
+//                         ^^^^^^^^^^^^^^^^ IdentifierType 
+//                                          ^ IdentifierOperator 
+//                                           ^^^^^ Identifier 
+//                                                    ^^^^^^^ IdentifierAttribute 
+//                                                            ^^^^^ Identifier 
+//                                                                  ^^^^^^^ IdentifierAttribute 
+      if (isSmall)
+//    ^^ Keyword 
+//        ^^^^^^^ Identifier 
+        VecIter = Other.VecIter;
+//      ^^^^^^^ Identifier 
+//              ^ IdentifierOperator 
+//                ^^^^^ Identifier 
+//                      ^^^^^^^ IdentifierAttribute 
+      else
+//    ^^^^ Keyword 
+        // Use placement new, to make sure SetIter is properly constructed, even
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+        // if it is not trivially copy-able (e.g. in MSVC).
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+        new (&SetIter) SetIterTy(Other.SetIter);
+//      ^^^ Keyword 
+//           ^ IdentifierOperator 
+//            ^^^^^^^ Identifier 
+//                     ^^^^^^^^^ IdentifierType 
+//                               ^^^^^ Identifier 
+//                                     ^^^^^^^ IdentifierAttribute 
+    }
+  
+    SmallSetIterator(SmallSetIterator &&Other) : isSmall(Other.isSmall) {
+//  ^^^^^^^^^^^^^^^^ IdentifierFunction 
+//                   ^^^^^^^^^^^^^^^^ IdentifierType 
+//                                    ^^ IdentifierOperator 
+//                                      ^^^^^ Identifier 
+//                                               ^^^^^^^ IdentifierAttribute 
+//                                                       ^^^^^ Identifier 
+//                                                             ^^^^^^^ IdentifierAttribute 
+      if (isSmall)
+//    ^^ Keyword 
+//        ^^^^^^^ Identifier 
+        VecIter = std::move(Other.VecIter);
+//      ^^^^^^^ Identifier 
+//              ^ IdentifierOperator 
+//                ^^^ IdentifierNamespace 
+//                     ^^^^ Identifier 
+//                          ^^^^^ Identifier 
+//                                ^^^^^^^ IdentifierAttribute 
+      else
+//    ^^^^ Keyword 
+        // Use placement new, to make sure SetIter is properly constructed, even
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+        // if it is not trivially copy-able (e.g. in MSVC).
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+        new (&SetIter) SetIterTy(std::move(Other.SetIter));
+//      ^^^ Keyword 
+//           ^ IdentifierOperator 
+//            ^^^^^^^ Identifier 
+//                     ^^^^^^^^^ IdentifierType 
+//                               ^^^ IdentifierNamespace 
+//                                    ^^^^ Identifier 
+//                                         ^^^^^ Identifier 
+//                                               ^^^^^^^ IdentifierAttribute 
+    }
+  
+    SmallSetIterator& operator=(const SmallSetIterator& Other) {
+//  ^^^^^^^^^^^^^^^^ IdentifierType 
+//                  ^ IdentifierOperator 
+//                    ^^^^^^^^ Keyword 
+//                            ^ IdentifierOperator 
+//                              ^^^^^ Keyword 
+//                                    ^^^^^^^^^^^^^^^^ IdentifierType 
+//                                                    ^ IdentifierOperator 
+//                                                      ^^^^^ Identifier 
+      // Call destructor for SetIter, so it gets properly destroyed if it is
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      // not trivially destructible in case we are setting VecIter.
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      if (!isSmall)
+//    ^^ Keyword 
+//         ^^^^^^^ Identifier 
+        SetIter.~SetIterTy();
+//      ^^^^^^^ Identifier 
+//               ^^^^^^^^^ IdentifierFunction 
+  
+      isSmall = Other.isSmall;
+//    ^^^^^^^ Identifier 
+//            ^ IdentifierOperator 
+//              ^^^^^ Identifier 
+//                    ^^^^^^^ IdentifierAttribute 
+      if (isSmall)
+//    ^^ Keyword 
+//        ^^^^^^^ Identifier 
+        VecIter = Other.VecIter;
+//      ^^^^^^^ Identifier 
+//              ^ IdentifierOperator 
+//                ^^^^^ Identifier 
+//                      ^^^^^^^ IdentifierAttribute 
+      else
+//    ^^^^ Keyword 
+        new (&SetIter) SetIterTy(Other.SetIter);
+//      ^^^ Keyword 
+//           ^ IdentifierOperator 
+//            ^^^^^^^ Identifier 
+//                     ^^^^^^^^^ IdentifierType 
+//                               ^^^^^ Identifier 
+//                                     ^^^^^^^ IdentifierAttribute 
+      return *this;
+//    ^^^^^^ Keyword 
+//           ^ IdentifierOperator 
+//            ^^^^ IdentifierBuiltin 
+    }
+  
+    SmallSetIterator& operator=(SmallSetIterator&& Other) {
+//  ^^^^^^^^^^^^^^^^ IdentifierType 
+//                  ^ IdentifierOperator 
+//                    ^^^^^^^^ Keyword 
+//                            ^ IdentifierOperator 
+//                              ^^^^^^^^^^^^^^^^ IdentifierType 
+//                                              ^^ IdentifierOperator 
+//                                                 ^^^^^ Identifier 
+      // Call destructor for SetIter, so it gets properly destroyed if it is
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      // not trivially destructible in case we are setting VecIter.
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      if (!isSmall)
+//    ^^ Keyword 
+//         ^^^^^^^ Identifier 
+        SetIter.~SetIterTy();
+//      ^^^^^^^ Identifier 
+//               ^^^^^^^^^ IdentifierFunction 
+  
+      isSmall = Other.isSmall;
+//    ^^^^^^^ Identifier 
+//            ^ IdentifierOperator 
+//              ^^^^^ Identifier 
+//                    ^^^^^^^ IdentifierAttribute 
+      if (isSmall)
+//    ^^ Keyword 
+//        ^^^^^^^ Identifier 
+        VecIter = std::move(Other.VecIter);
+//      ^^^^^^^ Identifier 
+//              ^ IdentifierOperator 
+//                ^^^ IdentifierNamespace 
+//                     ^^^^ Identifier 
+//                          ^^^^^ Identifier 
+//                                ^^^^^^^ IdentifierAttribute 
+      else
+//    ^^^^ Keyword 
+        new (&SetIter) SetIterTy(std::move(Other.SetIter));
+//      ^^^ Keyword 
+//           ^ IdentifierOperator 
+//            ^^^^^^^ Identifier 
+//                     ^^^^^^^^^ IdentifierType 
+//                               ^^^ IdentifierNamespace 
+//                                    ^^^^ Identifier 
+//                                         ^^^^^ Identifier 
+//                                               ^^^^^^^ IdentifierAttribute 
+      return *this;
+//    ^^^^^^ Keyword 
+//           ^ IdentifierOperator 
+//            ^^^^ IdentifierBuiltin 
+    }
+  
+    bool operator==(const SmallSetIterator &RHS) const {
+//  ^^^^ IdentifierBuiltinType 
+//       ^^^^^^^^ Keyword 
+//               ^^ IdentifierOperator 
+//                  ^^^^^ Keyword 
+//                        ^^^^^^^^^^^^^^^^ IdentifierType 
+//                                         ^ IdentifierOperator 
+//                                          ^^^ Identifier 
+//                                               ^^^^^ Keyword 
+      if (isSmall != RHS.isSmall)
+//    ^^ Keyword 
+//        ^^^^^^^ Identifier 
+//                ^^ IdentifierOperator 
+//                   ^^^ Identifier 
+//                       ^^^^^^^ IdentifierAttribute 
+        return false;
+//      ^^^^^^ Keyword 
+//             ^^^^^ BooleanLiteral 
+      if (isSmall)
+//    ^^ Keyword 
+//        ^^^^^^^ Identifier 
+        return VecIter == RHS.VecIter;
+//      ^^^^^^ Keyword 
+//             ^^^^^^^ Identifier 
+//                     ^^ IdentifierOperator 
+//                        ^^^ Identifier 
+//                            ^^^^^^^ IdentifierAttribute 
+      return SetIter == RHS.SetIter;
+//    ^^^^^^ Keyword 
+//           ^^^^^^^ Identifier 
+//                   ^^ IdentifierOperator 
+//                      ^^^ Identifier 
+//                          ^^^^^^^ IdentifierAttribute 
+    }
+  
+    SmallSetIterator &operator++() { // Preincrement
+//  ^^^^^^^^^^^^^^^^ IdentifierType 
+//                   ^ IdentifierOperator 
+//                    ^^^^^^^^ Keyword 
+//                            ^^ IdentifierOperator 
+//                                   ^^^^^^^^^^^^^^^ Comment 
+      if (isSmall)
+//    ^^ Keyword 
+//        ^^^^^^^ Identifier 
+        VecIter++;
+//      ^^^^^^^ Identifier 
+//             ^^ IdentifierOperator 
+      else
+//    ^^^^ Keyword 
+        SetIter++;
+//      ^^^^^^^ Identifier 
+//             ^^ IdentifierOperator 
+      return *this;
+//    ^^^^^^ Keyword 
+//           ^ IdentifierOperator 
+//            ^^^^ IdentifierBuiltin 
+    }
+  
+    const T &operator*() const { return isSmall ? *VecIter : *SetIter; }
+//  ^^^^^ Keyword 
+//        ^ IdentifierType 
+//          ^ IdentifierOperator 
+//           ^^^^^^^^ Keyword 
+//                   ^ IdentifierOperator 
+//                       ^^^^^ Keyword 
+//                               ^^^^^^ Keyword 
+//                                      ^^^^^^^ Identifier 
+//                                                ^ IdentifierOperator 
+//                                                 ^^^^^^^ Identifier 
+//                                                           ^ IdentifierOperator 
+//                                                            ^^^^^^^ Identifier 
+  };
+  
+  /// SmallSet - This maintains a set of unique values, optimizing for the case
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  /// when the set is small (less than N).  In this case, the set can be
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  /// maintained with no mallocs.  If the set gets large, we expand to using an
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  /// std::set to maintain reasonable lookup times.
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  template <typename T, unsigned N, typename C = std::less<T>>
+//^^^^^^^^ Keyword 
+//         ^ IdentifierOperator 
+//          ^^^^^^^^ Keyword 
+//                   ^ IdentifierType 
+//                      ^^^^^^^^ IdentifierBuiltinType 
+//                               ^ Identifier 
+//                                  ^^^^^^^^ Keyword 
+//                                           ^ IdentifierType 
+//                                             ^ IdentifierOperator 
+//                                               ^^^ IdentifierNamespace 
+//                                                    ^^^^ IdentifierType 
+//                                                        ^ IdentifierOperator 
+//                                                         ^ IdentifierType 
+//                                                          ^ IdentifierOperator 
+//                                                           ^ IdentifierOperator 
+  class SmallSet {
+//^^^^^ Keyword 
+//      ^^^^^^^^ IdentifierType 
+    /// Use a SmallVector to hold the elements here (even though it will never
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    /// reach its 'large' stage) to avoid calling the default ctors of elements
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    /// we will never use.
+//  ^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    SmallVector<T, N> Vector;
+//  ^^^^^^^^^^^ IdentifierType 
+//             ^ IdentifierOperator 
+//              ^ IdentifierType 
+//                 ^ IdentifierType 
+//                  ^ IdentifierOperator 
+//                    ^^^^^^ IdentifierAttribute 
+    std::set<T, C> Set;
+//  ^^^ IdentifierNamespace 
+//       ^^^ IdentifierType 
+//          ^ IdentifierOperator 
+//           ^ IdentifierType 
+//              ^ IdentifierType 
+//               ^ IdentifierOperator 
+//                 ^^^ IdentifierAttribute 
+  
+    using VIterator = typename SmallVector<T, N>::const_iterator;
+//  ^^^^^ Keyword 
+//        ^^^^^^^^^ IdentifierType 
+//                  ^ IdentifierOperator 
+//                    ^^^^^^^^ Keyword 
+//                             ^^^^^^^^^^^ IdentifierType 
+//                                        ^ IdentifierOperator 
+//                                         ^ IdentifierType 
+//                                            ^ IdentifierType 
+//                                             ^ IdentifierOperator 
+//                                                ^^^^^^^^^^^^^^ IdentifierType 
+    using SIterator = typename std::set<T, C>::const_iterator;
+//  ^^^^^ Keyword 
+//        ^^^^^^^^^ IdentifierType 
+//                  ^ IdentifierOperator 
+//                    ^^^^^^^^ Keyword 
+//                             ^^^ IdentifierNamespace 
+//                                  ^^^ IdentifierType 
+//                                     ^ IdentifierOperator 
+//                                      ^ IdentifierType 
+//                                         ^ IdentifierType 
+//                                          ^ IdentifierOperator 
+//                                             ^^^^^^^^^^^^^^ IdentifierType 
+    using mutable_iterator = typename SmallVector<T, N>::iterator;
+//  ^^^^^ Keyword 
+//        ^^^^^^^^^^^^^^^^ IdentifierType 
+//                         ^ IdentifierOperator 
+//                           ^^^^^^^^ Keyword 
+//                                    ^^^^^^^^^^^ IdentifierType 
+//                                               ^ IdentifierOperator 
+//                                                ^ IdentifierType 
+//                                                   ^ IdentifierType 
+//                                                    ^ IdentifierOperator 
+//                                                       ^^^^^^^^ IdentifierType 
+  
+    // In small mode SmallPtrSet uses linear search for the elements, so it is
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    // not a good idea to choose this value too high. You may consider using a
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    // DenseSet<> instead if you expect many elements in the set.
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    static_assert(N <= 32, "N should be small");
+//  ^^^^^^^^^^^^^ IdentifierBuiltin 
+//                ^ Identifier 
+//                     ^^ NumericLiteral 
+//                         ^^^^^^^^^^^^^^^^^^^ StringLiteral 
+  
+  public:
+//^^^^^^ Keyword 
+    using size_type = size_t;
+//  ^^^^^ Keyword 
+//        ^^^^^^^^^ IdentifierType 
+//                  ^ IdentifierOperator 
+//                    ^^^^^^ IdentifierBuiltinType 
+    using const_iterator = SmallSetIterator<T, N, C>;
+//  ^^^^^ Keyword 
+//        ^^^^^^^^^^^^^^ IdentifierType 
+//                       ^ IdentifierOperator 
+//                         ^^^^^^^^^^^^^^^^ IdentifierType 
+//                                         ^ IdentifierOperator 
+//                                          ^ IdentifierType 
+//                                             ^ IdentifierType 
+//                                                ^ IdentifierType 
+//                                                 ^ IdentifierOperator 
+  
+    SmallSet() = default;
+//  ^^^^^^^^ IdentifierFunction 
+//             ^ IdentifierOperator 
+//               ^^^^^^^ Keyword 
+  
+    [[nodiscard]] bool empty() const { return Vector.empty() && Set.empty(); }
+//    ^^^^^^^^^ Identifier 
+//                ^^^^ IdentifierBuiltinType 
+//                     ^^^^^ IdentifierFunction 
+//                             ^^^^^ Keyword 
+//                                     ^^^^^^ Keyword 
+//                                            ^^^^^^ Identifier 
+//                                                   ^^^^^ IdentifierFunction 
+//                                                           ^^ IdentifierOperator 
+//                                                              ^^^ Identifier 
+//                                                                  ^^^^^ IdentifierFunction 
+  
+    size_type size() const {
+//  ^^^^^^^^^ IdentifierType 
+//            ^^^^ IdentifierFunction 
+//                   ^^^^^ Keyword 
+      return isSmall() ? Vector.size() : Set.size();
+//    ^^^^^^ Keyword 
+//           ^^^^^^^ IdentifierFunction 
+//                       ^^^^^^ Identifier 
+//                              ^^^^ IdentifierFunction 
+//                                       ^^^ Identifier 
+//                                           ^^^^ IdentifierFunction 
+    }
+  
+    /// count - Return 1 if the element is in the set, 0 otherwise.
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    size_type count(const T &V) const {
+//  ^^^^^^^^^ IdentifierType 
+//            ^^^^^ IdentifierFunction 
+//                  ^^^^^ Keyword 
+//                        ^ IdentifierType 
+//                          ^ IdentifierOperator 
+//                           ^ Identifier 
+//                              ^^^^^ Keyword 
+      if (isSmall()) {
+//    ^^ Keyword 
+//        ^^^^^^^ IdentifierFunction 
+        // Since the collection is small, just do a linear search.
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+        return vfind(V) == Vector.end() ? 0 : 1;
+//      ^^^^^^ Keyword 
+//             ^^^^^ IdentifierFunction 
+//                   ^ Identifier 
+//                      ^^ IdentifierOperator 
+//                         ^^^^^^ Identifier 
+//                                ^^^ IdentifierFunction 
+//                                        ^ NumericLiteral 
+//                                            ^ NumericLiteral 
+      } else {
+//      ^^^^ Keyword 
+        return Set.count(V);
+//      ^^^^^^ Keyword 
+//             ^^^ Identifier 
+//                 ^^^^^ IdentifierFunction 
+//                       ^ Identifier 
+      }
+    }
+  
+    /// insert - Insert an element into the set if it isn't already there.
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    /// Returns a pair. The first value of it is an iterator to the inserted
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    /// element or the existing element in the set. The second value is true
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    /// if the element is inserted (it was not in the set before).
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    std::pair<const_iterator, bool> insert(const T &V) {
+//  ^^^ IdentifierNamespace 
+//       ^^^^ IdentifierType 
+//           ^ IdentifierOperator 
+//            ^^^^^^^^^^^^^^ IdentifierType 
+//                            ^^^^ IdentifierBuiltinType 
+//                                ^ IdentifierOperator 
+//                                  ^^^^^^ IdentifierFunction 
+//                                         ^^^^^ Keyword 
+//                                               ^ IdentifierType 
+//                                                 ^ IdentifierOperator 
+//                                                  ^ Identifier 
+      if (!isSmall()) {
+//    ^^ Keyword 
+//         ^^^^^^^ IdentifierFunction 
+        auto [I, Inserted] = Set.insert(V);
+//      ^^^^ Keyword 
+//            ^ Identifier 
+//               ^^^^^^^^ Identifier 
+//                         ^ IdentifierOperator 
+//                           ^^^ Identifier 
+//                               ^^^^^^ IdentifierFunction 
+//                                      ^ Identifier 
+        return std::make_pair(const_iterator(I), Inserted);
+//      ^^^^^^ Keyword 
+//             ^^^ IdentifierNamespace 
+//                  ^^^^^^^^^ Identifier 
+//                            ^^^^^^^^^^^^^^ IdentifierFunction 
+//                                           ^ Identifier 
+//                                               ^^^^^^^^ Identifier 
+      }
+  
+      VIterator I = vfind(V);
+//    ^^^^^^^^^ IdentifierType 
+//              ^ Identifier 
+//                ^ IdentifierOperator 
+//                  ^^^^^ IdentifierFunction 
+//                        ^ Identifier 
+      if (I != Vector.end())    // Don't reinsert if it already exists.
+//    ^^ Keyword 
+//        ^ Identifier 
+//          ^^ IdentifierOperator 
+//             ^^^^^^ Identifier 
+//                    ^^^ IdentifierFunction 
+//                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+        return std::make_pair(const_iterator(I), false);
+//      ^^^^^^ Keyword 
+//             ^^^ IdentifierNamespace 
+//                  ^^^^^^^^^ Identifier 
+//                            ^^^^^^^^^^^^^^ IdentifierFunction 
+//                                           ^ Identifier 
+//                                               ^^^^^ BooleanLiteral 
+      if (Vector.size() < N) {
+//    ^^ Keyword 
+//        ^^^^^^ Identifier 
+//               ^^^^ IdentifierFunction 
+//                      ^ IdentifierOperator 
+//                        ^ Identifier 
+        Vector.push_back(V);
+//      ^^^^^^ Identifier 
+//             ^^^^^^^^^ IdentifierFunction 
+//                       ^ Identifier 
+        return std::make_pair(const_iterator(std::prev(Vector.end())), true);
+//      ^^^^^^ Keyword 
+//             ^^^ IdentifierNamespace 
+//                  ^^^^^^^^^ Identifier 
+//                            ^^^^^^^^^^^^^^ IdentifierFunction 
+//                                           ^^^ IdentifierNamespace 
+//                                                ^^^^ Identifier 
+//                                                     ^^^^^^ Identifier 
+//                                                            ^^^ IdentifierFunction 
+//                                                                     ^^^^ BooleanLiteral 
+      }
+  
+      // Otherwise, grow from vector to set.
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      while (!Vector.empty()) {
+//    ^^^^^ Keyword 
+//            ^^^^^^ Identifier 
+//                   ^^^^^ IdentifierFunction 
+        Set.insert(Vector.back());
+//      ^^^ Identifier 
+//          ^^^^^^ IdentifierFunction 
+//                 ^^^^^^ Identifier 
+//                        ^^^^ IdentifierFunction 
+        Vector.pop_back();
+//      ^^^^^^ Identifier 
+//             ^^^^^^^^ IdentifierFunction 
+      }
+      return std::make_pair(const_iterator(Set.insert(V).first), true);
+//    ^^^^^^ Keyword 
+//           ^^^ IdentifierNamespace 
+//                ^^^^^^^^^ Identifier 
+//                          ^^^^^^^^^^^^^^ IdentifierFunction 
+//                                         ^^^ Identifier 
+//                                             ^^^^^^ IdentifierFunction 
+//                                                    ^ Identifier 
+//                                                       ^^^^^ IdentifierAttribute 
+//                                                               ^^^^ BooleanLiteral 
+    }
+  
+    template <typename IterT>
+//  ^^^^^^^^ Keyword 
+//           ^ IdentifierOperator 
+//            ^^^^^^^^ Keyword 
+//                     ^^^^^ IdentifierType 
+//                          ^ IdentifierOperator 
+    void insert(IterT I, IterT E) {
+//  ^^^^ IdentifierBuiltinType 
+//       ^^^^^^ IdentifierFunction 
+//              ^^^^^ IdentifierType 
+//                    ^ Identifier 
+//                       ^^^^^ IdentifierType 
+//                             ^ Identifier 
+      for (; I != E; ++I)
+//    ^^^ Keyword 
+//           ^ Identifier 
+//             ^^ IdentifierOperator 
+//                ^ Identifier 
+//                   ^^ IdentifierOperator 
+//                     ^ Identifier 
+        insert(*I);
+//      ^^^^^^ IdentifierFunction 
+//             ^ IdentifierOperator 
+//              ^ Identifier 
+    }
+  
+    bool erase(const T &V) {
+//  ^^^^ IdentifierBuiltinType 
+//       ^^^^^ IdentifierFunction 
+//             ^^^^^ Keyword 
+//                   ^ IdentifierType 
+//                     ^ IdentifierOperator 
+//                      ^ Identifier 
+      if (!isSmall())
+//    ^^ Keyword 
+//         ^^^^^^^ IdentifierFunction 
+        return Set.erase(V);
+//      ^^^^^^ Keyword 
+//             ^^^ Identifier 
+//                 ^^^^^ IdentifierFunction 
+//                       ^ Identifier 
+      for (mutable_iterator I = Vector.begin(), E = Vector.end(); I != E; ++I)
+//    ^^^ Keyword 
+//         ^^^^^^^^^^^^^^^^ IdentifierType 
+//                          ^ Identifier 
+//                            ^ IdentifierOperator 
+//                              ^^^^^^ Identifier 
+//                                     ^^^^^ IdentifierFunction 
+//                                              ^ Identifier 
+//                                                ^ IdentifierOperator 
+//                                                  ^^^^^^ Identifier 
+//                                                         ^^^ IdentifierFunction 
+//                                                                ^ Identifier 
+//                                                                  ^^ IdentifierOperator 
+//                                                                     ^ Identifier 
+//                                                                        ^^ IdentifierOperator 
+//                                                                          ^ Identifier 
+        if (*I == V) {
+//      ^^ Keyword 
+//          ^ IdentifierOperator 
+//           ^ Identifier 
+//             ^^ IdentifierOperator 
+//                ^ Identifier 
+          Vector.erase(I);
+//        ^^^^^^ Identifier 
+//               ^^^^^ IdentifierFunction 
+//                     ^ Identifier 
+          return true;
+//        ^^^^^^ Keyword 
+//               ^^^^ BooleanLiteral 
+        }
+      return false;
+//    ^^^^^^ Keyword 
+//           ^^^^^ BooleanLiteral 
+    }
+  
+    void clear() {
+//  ^^^^ IdentifierBuiltinType 
+//       ^^^^^ IdentifierFunction 
+      Vector.clear();
+//    ^^^^^^ Identifier 
+//           ^^^^^ IdentifierFunction 
+      Set.clear();
+//    ^^^ Identifier 
+//        ^^^^^ IdentifierFunction 
+    }
+  
+    const_iterator begin() const {
+//  ^^^^^^^^^^^^^^ IdentifierType 
+//                 ^^^^^ IdentifierFunction 
+//                         ^^^^^ Keyword 
+      if (isSmall())
+//    ^^ Keyword 
+//        ^^^^^^^ IdentifierFunction 
+        return {Vector.begin()};
+//      ^^^^^^ Keyword 
+//              ^^^^^^ Identifier 
+//                     ^^^^^ IdentifierFunction 
+      return {Set.begin()};
+//    ^^^^^^ Keyword 
+//            ^^^ Identifier 
+//                ^^^^^ IdentifierFunction 
+    }
+  
+    const_iterator end() const {
+//  ^^^^^^^^^^^^^^ IdentifierType 
+//                 ^^^ IdentifierFunction 
+//                       ^^^^^ Keyword 
+      if (isSmall())
+//    ^^ Keyword 
+//        ^^^^^^^ IdentifierFunction 
+        return {Vector.end()};
+//      ^^^^^^ Keyword 
+//              ^^^^^^ Identifier 
+//                     ^^^ IdentifierFunction 
+      return {Set.end()};
+//    ^^^^^^ Keyword 
+//            ^^^ Identifier 
+//                ^^^ IdentifierFunction 
+    }
+  
+    /// Check if the SmallSet contains the given element.
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+    bool contains(const T &V) const {
+//  ^^^^ IdentifierBuiltinType 
+//       ^^^^^^^^ IdentifierFunction 
+//                ^^^^^ Keyword 
+//                      ^ IdentifierType 
+//                        ^ IdentifierOperator 
+//                         ^ Identifier 
+//                            ^^^^^ Keyword 
+      if (isSmall())
+//    ^^ Keyword 
+//        ^^^^^^^ IdentifierFunction 
+        return vfind(V) != Vector.end();
+//      ^^^^^^ Keyword 
+//             ^^^^^ IdentifierFunction 
+//                   ^ Identifier 
+//                      ^^ IdentifierOperator 
+//                         ^^^^^^ Identifier 
+//                                ^^^ IdentifierFunction 
+      return Set.find(V) != Set.end();
+//    ^^^^^^ Keyword 
+//           ^^^ Identifier 
+//               ^^^^ IdentifierFunction 
+//                    ^ Identifier 
+//                       ^^ IdentifierOperator 
+//                          ^^^ Identifier 
+//                              ^^^ IdentifierFunction 
+    }
+  
+  private:
+//^^^^^^^ Keyword 
+    bool isSmall() const { return Set.empty(); }
+//  ^^^^ IdentifierBuiltinType 
+//       ^^^^^^^ IdentifierFunction 
+//                 ^^^^^ Keyword 
+//                         ^^^^^^ Keyword 
+//                                ^^^ Identifier 
+//                                    ^^^^^ IdentifierFunction 
+  
+    VIterator vfind(const T &V) const {
+//  ^^^^^^^^^ IdentifierType 
+//            ^^^^^ IdentifierFunction 
+//                  ^^^^^ Keyword 
+//                        ^ IdentifierType 
+//                          ^ IdentifierOperator 
+//                           ^ Identifier 
+//                              ^^^^^ Keyword 
+      for (VIterator I = Vector.begin(), E = Vector.end(); I != E; ++I)
+//    ^^^ Keyword 
+//         ^^^^^^^^^ IdentifierType 
+//                   ^ Identifier 
+//                     ^ IdentifierOperator 
+//                       ^^^^^^ Identifier 
+//                              ^^^^^ IdentifierFunction 
+//                                       ^ Identifier 
+//                                         ^ IdentifierOperator 
+//                                           ^^^^^^ Identifier 
+//                                                  ^^^ IdentifierFunction 
+//                                                         ^ Identifier 
+//                                                           ^^ IdentifierOperator 
+//                                                              ^ Identifier 
+//                                                                 ^^ IdentifierOperator 
+//                                                                   ^ Identifier 
+        if (*I == V)
+//      ^^ Keyword 
+//          ^ IdentifierOperator 
+//           ^ Identifier 
+//             ^^ IdentifierOperator 
+//                ^ Identifier 
+          return I;
+//        ^^^^^^ Keyword 
+//               ^ Identifier 
+      return Vector.end();
+//    ^^^^^^ Keyword 
+//           ^^^^^^ Identifier 
+//                  ^^^ IdentifierFunction 
+    }
+  };
+  
+  #endif // LLVM_ADT_SMALLSET_H
+//^^^^^^ Keyword 
+//      ^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+
