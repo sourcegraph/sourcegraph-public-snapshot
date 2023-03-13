@@ -31,9 +31,13 @@ export interface WebviewMessage {
 		| 'reset'
 		| 'settings'
 		| 'initialized'
+		| 'feedback'
 	value?: string
 	text?: string
 	recipeID?: string
 	accessToken?: string
 	serverURL?: string
+	feedback?: {
+		sentiment: 'good' | 'bad'
+	}
 }

@@ -117,6 +117,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 			case 'removeToken':
 				await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
 				break
+			case 'links':
+				await vscode.env.openExternal(vscode.Uri.parse(message.value))
+				break
 			default:
 				console.error('Invalid request type from Webview')
 		}
@@ -170,7 +173,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		feedback.displayMessages = this.prompt.getDisplayMessages()
 		feedback.transcript = this.prompt.getTranscript()
 		feedback.feedbackVersion = 'v0'
-		const resp = await fetch(`${this.serverUrl}/feedback`, {
+		const uri = new URL('/feedback', this.serverUrl)
+		const resp = await fetch(uri, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',

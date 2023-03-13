@@ -7,16 +7,26 @@
 }
 
 .bubble-footer {
-	display: flex;
-	flex-direction: column;
-	margin-top: 4px;
+	flex-direction: row;
+	margin-top: 0.5em;
 	font-size: var(--vscode-editor-font-size);
 	color: var(--vscode-descriptionForeground);
+	align-content: center;
+	justify-content: space-between;
+}
+
+.bubble-footer-timestamp {
+	margin-top: 0.5em;
+	align-self: center;
 }
 
 .human-bubble-footer .bubble-footer-timestamp {
 	display: flex;
 	justify-content: end;
+}
+
+.bot-bubble-footer {
+	display: flex;
 }
 
 .bubble-content {
@@ -72,7 +82,7 @@
 
 .bubble-row {
 	display: flex;
-	padding: 8px 16px;
+	padding: 1rem;
 }
 
 .bubble-row:first-child {
@@ -120,7 +130,7 @@
 
 .input-row {
 	display: flex;
-	margin: 16px;
+	margin: 1rem;
 	align-items: flex-start;
 	position: relative;
 	border-top: 1px solid var(--vscode-sideBarSectionHeader-border);
@@ -161,9 +171,7 @@
 
 .feedback-container {
 	display: flex;
-	align-items: center;
 	font-size: small;
-	margin-top: 8px;
 }
 
 .context-files-collapsed {
@@ -177,7 +185,7 @@
 
 .context-files-toggle-icon {
 	cursor: pointer;
-	margin-right: 4px;
+	margin-right: 1em;
 }
 
 .context-files-list-title {

@@ -4,10 +4,10 @@ import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 
 import { Tips } from './Tips'
 import { DownArrowSvg, RightArrowSvg, SubmitSvg } from './utils/icons'
-import { ChatMessage } from './utils/types'
 import { WebviewMessage, vscodeAPI } from './utils/vscodeAPI'
 
 import './Chat.css'
+import { ChatMessage } from '@sourcegraph/cody-common'
 
 interface ChatboxProps {
 	messageInProgress: ChatMessage | null
@@ -62,6 +62,35 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 		setFormInput('')
 	}, [formInput, setTranscript, setMessageInProgress, transcript])
 
+	const onFeedbackSubmit = useCallback((sentiment: string) => {
+		const feedback = { sentiment }
+		vscodeAPI.postMessage({
+			command: 'feedback',
+			feedback,
+		} as WebviewMessage)
+	}, [])
+
+	const FeedbackContainer = React.memo(() => (
+		<div className="feedback-container">
+			<div className="feedback-container-emojis">
+				<VSCodeButton
+					data-feedbacksentiment="good"
+					onClick={() => onFeedbackSubmit('good')}
+					className="feedback-button"
+				>
+					&#128077;
+				</VSCodeButton>{' '}
+				<VSCodeButton
+					data-feedbacksentiment="bad"
+					onClick={() => onFeedbackSubmit('bad')}
+					className="feedback-button"
+				>
+					&#128078;
+				</VSCodeButton>
+			</div>
+		</div>
+	))
+
 	const bubbleClassName = (speaker: string): string => (speaker === 'you' ? 'human' : 'bot')
 
 	return (
@@ -73,7 +102,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 					<div className="bubble-container">
 						{transcript.map((message, index) => (
 							<div
-								key={message.timestamp}
+								key={`message-${index}`}
 								className={`bubble-row ${bubbleClassName(message.speaker)}-bubble-row`}
 							>
 								<div className={`bubble ${bubbleClassName(message.speaker)}-bubble`}>
@@ -88,12 +117,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 										)}
 									</div>
 									<div className={`bubble-footer ${bubbleClassName(message.speaker)}-bubble-footer`}>
-										<span className="bubble-footer-timestamp">{`${
+										<div className="bubble-footer-timestamp">{`${
 											message.speaker === 'bot' ? 'Cody' : 'Me'
-										} · ${message.timestamp}`}</span>
+										} · ${message.timestamp}`}</div>
 										{/* Only show feedback for the last message. */}
-										{message.speaker === 'bot' && index === transcript.length - 1 && devMode && (
-											<FeedbackContainer />
+										{message.speaker === 'bot' && index === transcript.length - 1 && (
+											<FeedbackContainer key={`feedback-${index}`} />
 										)}
 									</div>
 								</div>
@@ -193,20 +222,6 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
 		</p>
 	)
 }
-
-const FeedbackContainer = React.memo(() => (
-	<div className="feedback-container">
-		<div className="feedback-container-title">Was the response helpful?</div>
-		<div className="feedback-container-emojis">
-			<VSCodeButton data-feedbacksentiment="good" className="feedback-button">
-				&#128077;
-			</VSCodeButton>{' '}
-			<VSCodeButton data-feedbacksentiment="bad" className="feedback-button">
-				&#128078;
-			</VSCodeButton>
-		</div>
-	</div>
-))
 
 export function getShortTimestamp(): string {
 	const date = new Date()
