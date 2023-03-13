@@ -5,15 +5,34 @@ import { mdiPencil } from '@mdi/js'
 import { logger } from '@sourcegraph/common'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { Button, ErrorAlert, Form, H3, Icon, Input, Label, Link, Modal, Text } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Combobox,
+    ComboboxInput,
+    ComboboxList,
+    ComboboxOption,
+    ComboboxPopover,
+    ErrorAlert,
+    Form,
+    H3,
+    Icon,
+    Input,
+    Label,
+    Link,
+    Modal,
+    Text,
+} from '@sourcegraph/wildcard'
 
 import { TEAM_DISPLAY_NAME_MAX_LENGTH } from '..'
 import { LoaderButton } from '../../components/LoaderButton'
 import { Page } from '../../components/Page'
 import { Scalars, TeamAreaTeamFields } from '../../graphql-operations'
+import { useTeams } from '../list/backend'
 
 import { useChangeTeamDisplayName, useChangeTeamParent } from './backend'
 import { TeamHeader } from './TeamHeader'
+
+import styles from './TeamProfilePage.module.scss'
 
 export interface TeamProfilePageProps {
     /** The team that is the subject of the page. */
@@ -242,23 +261,36 @@ const EditTeamParentModal: React.FunctionComponent<React.PropsWithChildren<EditT
         [afterEdit, teamId, parentName, editTeam]
     )
 
+    const suggestedTeams = useTeams(parentName)
+
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <H3 id={labelId}>Modify parent team of {teamName}</H3>
             {error && <ErrorAlert error={error} />}
             <Form onSubmit={onSubmit}>
-                <Label htmlFor="edit-team--displayname" className="mt-2">
-                    Display name
-                </Label>
-                <Input
-                    id="edit-team--displayname"
-                    placeholder="parent-team"
-                    maxLength={TEAM_DISPLAY_NAME_MAX_LENGTH}
-                    autoCorrect="off"
-                    value={parentName ?? ''}
-                    onChange={onParentNameChange}
-                    disabled={loading}
-                />
+                <Combobox aria-label="Choose a repo" style={{ maxWidth: '20rem' }}>
+                    <ComboboxInput
+                        label="Parent team name"
+                        placeholder="parent-team"
+                        maxLength={TEAM_DISPLAY_NAME_MAX_LENGTH}
+                        autoCorrect="off"
+                        autocomplete={false}
+                        value={parentName ?? ''}
+                        onChange={onParentNameChange}
+                        disabled={loading}
+                        message="You need to specify repo name (github.com/sg/sg) and then pick one of the suggestions items."
+                    />
+                    <ComboboxPopover>
+                        <ComboboxList>
+                            {(suggestedTeams?.connection?.nodes ?? []).map(node => (
+                                <ComboboxOption key={node.id} value={node.name} className={styles.item}>
+                                    <small className={styles.itemName}>{node.name}</small>
+                                    <small className={styles.itemDescription}>{node.displayName}</small>
+                                </ComboboxOption>
+                            ))}
+                        </ComboboxList>
+                    </ComboboxPopover>
+                </Combobox>
                 <div className="d-flex justify-content-end pt-1">
                     <Button disabled={loading} className="mr-2" onClick={onCancel} outline={true} variant="secondary">
                         Cancel

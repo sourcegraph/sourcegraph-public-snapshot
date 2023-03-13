@@ -1,0 +1,26 @@
+.item {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 1rem;
+
+    &-name {
+        width: 10rem;
+        margin-right: 0.25rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 0;
+        white-space: nowrap;
+
+        [data-suggested-value] {
+            font-weight: 500;
+        }
+    }
+
+    &-description {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-grow: 1;
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+}
