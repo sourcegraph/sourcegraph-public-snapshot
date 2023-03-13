@@ -8,9 +8,9 @@ import (
 // It will panic if no arguments are provided.
 func Min[T constraints.Ordered](list ...T) T {
 	min := list[0]
-	for _, val := range list {
-		if val < min {
-			min = val
+	for i := 1; i < len(list); i++ {
+		if list[i] < min {
+			min = list[i]
 		}
 	}
 	return min
