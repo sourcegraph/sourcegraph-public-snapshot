@@ -456,6 +456,29 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
+func logAccountModifiedEvent(ctx context.Context, db DB, userID int32, serviceType string) {
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Modifier    int32  `json:"modifier"`
+		ServiceType string `json:"service_type"`
+	}{
+		Modifier:    a.UID,
+		ServiceType: serviceType,
+	})
+
+	event := &SecurityEvent{
+		Name:            SecurityEventNameAccountModified,
+		URL:             "",
+		UserID:          uint32(userID),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	db.SecurityEventLogs().LogEvent(ctx, event)
+}
+
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
 // is a list of errors encountered while generating this list. Note that even if errors are returned, the first
 // return value is still valid.
