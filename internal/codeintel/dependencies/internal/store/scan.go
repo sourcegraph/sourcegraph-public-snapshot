@@ -90,6 +90,9 @@ func scanPackageFilter(s dbutil.Scanner) (shared.PackageRepoFilter, error) {
 	d.DisallowUnknownFields()
 
 	if err := d.Decode(&filter.NameFilter); err != nil {
+		// d.Decode will set NameFilter to != nil even if theres an error, meaning we potentially
+		// have both NameFilter and VersionFilter set to nil
+		filter.NameFilter = nil
 		b.Seek(0, 0)
 		return filter, d.Decode(&filter.VersionFilter)
 	}
