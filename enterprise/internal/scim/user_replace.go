@@ -41,16 +41,16 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 		userRes.Meta.Created = &user.CreatedAt
 		userRes.Meta.LastModified = &user.UpdatedAt
 
-		// If nothing changed, we still wanted to update userRes, but now we can return
-		if !changed {
+		// If nothing changed or if we'll hard delete the user, we still wanted to update userRes,
+		// but now we can return
+		if !changed || attributes[AttrActive] == false {
 			return nil
 		}
 
 		// Save user
 		return updateUser(r.Context(), tx, user, userRes.Attributes, true)
 	})
-	// Only return error if the user is not being deleted
-	if err != nil && attributes[AttrActive] != false {
+	if err != nil {
 		return scim.Resource{}, err
 	}
 
