@@ -899,18 +899,22 @@ func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Ti
 		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
 	}
 
-	query := sqlf.Sprintf(siteUsageCurrentPeriodsQuery, now, now, now, now, sqlf.Join(conds, ") AND ("))
+	query := sqlf.Sprintf(siteUsageCurrentPeriodsQuery, now, now, now, now, now, now, sqlf.Join(conds, ") AND ("))
 
 	err = l.QueryRow(ctx, query).Scan(
+		&summary.RollingMonth,
 		&summary.Month,
 		&summary.Week,
 		&summary.Day,
+		&summary.UniquesRollingMonth,
 		&summary.UniquesMonth,
 		&summary.UniquesWeek,
 		&summary.UniquesDay,
+		&summary.RegisteredUniquesRollingMonth,
 		&summary.RegisteredUniquesMonth,
 		&summary.RegisteredUniquesWeek,
 		&summary.RegisteredUniquesDay,
+		&summary.IntegrationUniquesRollingMonth,
 		&summary.IntegrationUniquesMonth,
 		&summary.IntegrationUniquesWeek,
 		&summary.IntegrationUniquesDay,
@@ -921,16 +925,21 @@ func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Ti
 
 var siteUsageCurrentPeriodsQuery = `
 SELECT
+  current_rolling_month,
   current_month,
   current_week,
   current_day,
 
+  COUNT(DISTINCT user_id) FILTER (WHERE rolling_month = current_rolling_month) AS uniques_rolling_month,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE rolling_month = current_rolling_month AND registered) AS registered_uniques_rolling_month,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND registered) AS registered_uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND registered) AS registered_uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND registered) AS registered_uniques_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE rolling_month = current_rolling_month AND source = 'CODEHOSTINTEGRATION')
+  	AS integration_uniques_rolling_month,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND source = 'CODEHOSTINTEGRATION')
   	AS integration_uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND source = 'CODEHOSTINTEGRATION')
@@ -939,23 +948,26 @@ SELECT
   	AS integration_uniques_day
 FROM (
   -- This sub-query is here to avoid re-doing this work above on each aggregation.
+  -- rolling_month will always be the current_rolling_month, but is retained for clarity of the CTE
   SELECT
     name,
     user_id != 0 as registered,
     ` + aggregatedUserIDQueryFragment + ` AS user_id,
     source,
+    ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + ` as rolling_month,
     ` + makeDateTruncExpression("month", "timestamp") + ` as month,
     ` + makeDateTruncExpression("week", "timestamp") + ` as week,
     ` + makeDateTruncExpression("day", "timestamp") + ` as day,
+    ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + ` as current_rolling_month,
     ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
     ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   LEFT OUTER JOIN users ON users.id = event_logs.user_id
-  WHERE (timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `) AND (%s)
+  WHERE (timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `) AND (%s)
 ) events
 
-GROUP BY current_month, current_week, current_day
+GROUP BY current_rolling_month, rolling_month, current_month, current_week, current_day
 `
 
 func (l *eventLogStore) CodeIntelligencePreciseWAUs(ctx context.Context) (int, error) {
@@ -1518,12 +1530,15 @@ CASE WHEN user_id = 0
 END
 `
 
-// makeDateTruncExpression returns an expresson that converts the given
+// makeDateTruncExpression returns an expression that converts the given
 // SQL expression into the start of the containing date container specified
-// by the unit parameter (e.g. day, week, month, or).
+// by the unit parameter (e.g. day, week, month, or rolling month [prior 30 days]).
 func makeDateTruncExpression(unit, expr string) string {
 	if unit == "week" {
 		return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval`, unit, expr)
+	}
+	if unit == "rolling_month" {
+		return fmt.Sprintf(`DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '30 day'::interval`, expr)
 	}
 
 	return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s))`, unit, expr)
