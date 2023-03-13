@@ -873,6 +873,7 @@ SELECT
   COUNT(*) FILTER (WHERE event_logs.name ='SearchResultsQueried') as search_count,
   COUNT(*) FILTER (WHERE event_logs.name LIKE '%codeintel%') as codeintel_count
 FROM event_logs
+WHERE anonymous_user_id != 'backend'
 GROUP BY 1, 2
 ORDER BY 1 DESC, 2 ASC;
 `
