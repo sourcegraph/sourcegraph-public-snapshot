@@ -11,12 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func addUser(t *testing.T, ctx context.Context, store *basestore.Store, userName string) *extsvc.Account {
@@ -159,10 +161,8 @@ func TestUnifiedPermissionsMigrator(t *testing.T) {
 		require.Equal(t, float64(1), progress)
 	})
 
-	t.Run("Migrates data correctly", func(t *testing.T) {
-		t.Cleanup(func() {
-			require.NoError(t, cleanUpTables(ctx, store))
-		})
+	runDataCheckTest := func(t *testing.T, source authz.PermsSource) {
+		t.Helper()
 
 		// Set up test data
 		alice, bob := addUser(t, ctx, store, "alice"), addUser(t, ctx, store, "bob")
@@ -201,6 +201,7 @@ func TestUnifiedPermissionsMigrator(t *testing.T) {
 		bobPerms := make([]*authz.Permission, 0, 3)
 		aliceRepos := make(map[int32]struct{})
 		for _, p := range permissions {
+			assert.Equal(t, source, p.Source, "unexpected source for permission")
 			if p.UserID == alice.UserID {
 				alicePerms = append(alicePerms, p)
 				assert.Equal(t, alice.ID, p.ExternalAccountID, "unexpected external account id for alice")
@@ -222,5 +223,25 @@ func TestUnifiedPermissionsMigrator(t *testing.T) {
 		}
 
 		assert.Equal(t, 2, commonCount, "unexpected number of common permissions between alice and bob")
+	}
+
+	t.Run("Migrates data correctly for synced perms", func(t *testing.T) {
+		t.Cleanup(func() {
+			require.NoError(t, cleanUpTables(ctx, store))
+		})
+
+		runDataCheckTest(t, authz.SourceUserSync)
+	})
+
+	t.Run("Migrates data correctly for explicit API perms", func(t *testing.T) {
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+
+		t.Cleanup(func() {
+			require.NoError(t, cleanUpTables(ctx, store))
+			globals.SetPermissionsUserMapping(before)
+		})
+
+		runDataCheckTest(t, authz.SourceAPI)
 	})
 }
