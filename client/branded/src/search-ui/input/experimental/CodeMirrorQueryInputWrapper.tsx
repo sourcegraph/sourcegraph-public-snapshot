@@ -480,7 +480,10 @@ const SearchModeSwitcher: FC<SearchModeSwitcherProps> = props => {
 
 function useMutableValue<T>(value: T): MutableRefObject<T> {
     const valueRef = useRef(value)
-    valueRef.current = value
+
+    useEffect(() => {
+        valueRef.current = value
+    }, [value])
 
     return valueRef
 }
