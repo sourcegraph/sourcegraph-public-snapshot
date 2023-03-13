@@ -175,14 +175,14 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
         [onActionEnd, refetch, variables]
     )
 
-    const [showRoleAssignmentModal, setShowRoleAssignmentModal] = useState<boolean>(false)
-    const [selectedUser, setSelectedUser] = useState<string>('')
+    const [roleAssignmentModal, setRoleAssignmentModal] = useState<React.ReactNode>(null)
+
     const openRoleAssignmentModal = (selectedUsers: SiteUser[]): void => {
-        const [user] = selectedUsers
-        setSelectedUser(user.id)
-        setShowRoleAssignmentModal(true)
+        setRoleAssignmentModal(
+            renderAssignmentModal(closeRoleAssignmentModal, onRoleAssignmentSuccess, selectedUsers[0])
+        )
     }
-    const closeRoleAssignmentModal = (): void => setShowRoleAssignmentModal(false)
+    const closeRoleAssignmentModal = (): void => setRoleAssignmentModal(null)
 
     const {
         handleDeleteUsers,
@@ -226,9 +226,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
     return (
         <div className="position-relative">
             <H2 className="my-4 ml-2">Users</H2>
-            {showRoleAssignmentModal &&
-                isEnterprise &&
-                renderAssignmentModal(closeRoleAssignmentModal, onRoleAssignmentSuccess, selectedUser)}
+            {roleAssignmentModal}
             {notification && (
                 <Alert
                     className="mt-2 d-flex justify-content-between align-items-center"
