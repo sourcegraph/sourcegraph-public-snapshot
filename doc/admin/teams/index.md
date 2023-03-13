@@ -126,6 +126,9 @@ Using the GitHub CLI, you can ingest teams data from GitHub into Sourcegraph. Yo
 
 set -e
 
+ORG=<YOUR_ORG_NAME>
+export ORG 
+
 if [[ -z "${ORG}" ]]; then
   echo "ORG environment variable is required."
   exit 1
