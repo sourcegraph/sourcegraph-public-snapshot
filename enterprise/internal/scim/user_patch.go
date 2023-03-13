@@ -129,8 +129,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 						if arrayItemMatchesFilter(attrName, item, validator) {
 							// Note that we found a matching item so we dont' need to take additional actions
 							filterMatched = true
-							var newlyChanged bool
-							newlyChanged = applyAttributeChange(item, attributeToSet, v, op.Op)
+							newlyChanged := applyAttributeChange(item, attributeToSet, v, op.Op)
 							if newlyChanged {
 								attributeItems[i] = item //attribute items are updated
 							}

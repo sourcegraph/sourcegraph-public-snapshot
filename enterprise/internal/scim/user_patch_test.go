@@ -247,7 +247,7 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 		},
 		{
 			name:   "Move existing unverified email to primary with filter",
-			userId: "11",
+			userId: "10",
 			operations: []scim.PatchOperation{
 				{Op: "replace", Path: parseStringPath("emails[value eq \"primary@work.com\"].primary"), Value: false},
 				{Op: "replace", Path: parseStringPath("emails[value eq \"secondary@work.com\"].primary"), Value: true},
