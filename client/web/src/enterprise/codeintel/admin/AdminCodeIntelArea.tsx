@@ -6,7 +6,6 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { NotFoundPage } from '../../../components/HeroPage'
 import { SiteAdminAreaRouteContext } from '../../../site-admin/SiteAdminArea'
 import { RouteV6Descriptor } from '../../../util/contributions'
 import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'
@@ -117,8 +116,6 @@ export const AdminCodeIntelArea: FC<AdminCodeIntelAreaPageProps> = props => (
                     />
                 )
         )}
-
-        <Route path="*" element={<NotFoundPage pageType="repository" />} />
     </Routes>
 )
 
