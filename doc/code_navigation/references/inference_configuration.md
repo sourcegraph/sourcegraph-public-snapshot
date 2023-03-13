@@ -9,7 +9,7 @@
 </p>
 </aside>
 
-This document details how a site administrator can supply a Lua script to customize the way [Sourcegraph detects precise code intelligence indexing jobs from repository contents](http://localhost:5080/code_navigation/explanations/auto_indexing_inference).
+This document details how a site administrator can supply a Lua script to customize the way [Sourcegraph detects precise code intelligence indexing jobs from repository contents](../explanations/auto_indexing_inference).
 
 By default, Sourcegraph will attempt to infer (or hint) index jobs for the following languages:
 
@@ -27,11 +27,11 @@ Inference logic can be disabled or altered in the case when the target repositor
 
 ## Example
 
-The **Lua override script** ultimately must return an _auto-indexing config object_. An empty configuration does not change the default behavior.
+The **Lua override script** ultimately must return an _auto-indexing config object_. A configuration that neither disables or adds new recognizers does not change the default inference behavior.
 
 ```lua
 return require("sg.autoindex.config").new({
-  -- Empty configuration
+  -- Empty configuration (see below for usage)
 })
 ```
 
@@ -55,7 +55,8 @@ local recognizer = require("sg.autoindex.recognizer")
 
 local snek_recognizer = recognizer.new_path_recognizer {
   patterns = {
-    -- Look for Snek.module files
+    -- Look for Snek.module files 
+    -- (would match Snek.module; proj/Snek.module, proj/sub/Snek.module, etc)
     pattern.new_path_basename("Snek.module"),
 
     -- Ignore any files in test or vendor directories
@@ -98,22 +99,22 @@ There are a number of specific and general-purpose Lua libraries made accessible
 This auto-indexing-specific library defines the following two functions.
 
 <!-- TODO - document paths_for_content;api.register -->
-- `new_path_recognizer` creates a recognizer from a config object containing `patterns` and `generate` fields. See the [example](#example) above for basic usage.
-- `new_fallback_recognizer` creates a recognizer from an ordered list of recognizers. Each recognizer is called sequentially, and halts after the recognizer emitting the first non-empty set of results.
+- `new_path_recognizer` creates a `recognizer` from a config object containing `patterns` and `generate` fields. See the [example](#example) above for basic usage.
+- `new_fallback_recognizer` creates a `recognizer` from an ordered list of `recognizer`s. Each `recognizer` is called sequentially, until one of them emits non-empty results.
 
 ### `sg.autoindex.patterns`
 
 This auto-indexing-specific library defines the following four path pattern constructors.
 
-- `new_path_literal(pattern)` creates a pattern that matches an exact filepath.
-- `new_path_segment(pattern)` creates a pattern that matches a directory name.
-- `new_path_basename(pattern)` creates a pattern that matches a basename exactly.
-- `new_path_extension(ext_no_dot)` creates a pattern that matches files with a given extension.
+- `new_path_literal(pattern)` creates a `pattern` that matches an exact filepath.
+- `new_path_segment(pattern)` creates a `pattern` that matches a directory name.
+- `new_path_basename(pattern)` creates a `pattern` that matches a basename exactly.
+- `new_path_extension(ext_no_dot)` creates a `pattern` that matches files with a given extension.
 
 This library also defines the following two pattern collection constructors.
 
-- `new_path_combine(patterns)` creates a pattern collection object (to be used with [recognizers](#sg-autoindex-recognizers)) from the given set of path patterns.
-- `new_path_exclude(patterns)` creates a new _inverted_ pattern collection object. Paths matching these patterns are filtered out from the set of matching filepaths given to a recognizer's `generate` function.
+- `new_path_combine(patterns)` creates a pattern collection object (to be used with [recognizers](#sg-autoindex-recognizers)) from the given set of path `pattern`s.
+- `new_path_exclude(patterns)` creates a new _inverted_ pattern collection object. Paths matching these `pattern`s are filtered out from the set of matching filepaths given to a recognizer's `generate` function.
 
 ### `paths`
 
