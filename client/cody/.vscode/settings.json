@@ -1,0 +1,27 @@
+{
+	"search.exclude": {
+		"**/node_modules": true,
+		"**/out": true
+	},
+	"files.exclude": {
+		"**/node_modules": true,
+		"**/out": true,
+		"**/*.tsbuildinfo": true
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[javascript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"npm.packageManager": "pnpm",
+	"eslint.packageManager": "pnpm",
+	"editor.formatOnSave": true,
+	"eslint.validate": ["javascript", "typescript"],
+	"editor.codeActionsOnSave": {},
+	"eslint.codeActionsOnSave.mode": "problems",
+	"eslint.options": {
+		"cache": true
+	},
+	"cody.codebase": "dev.cody"
+}
