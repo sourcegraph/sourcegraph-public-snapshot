@@ -316,6 +316,11 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 	skipUploads := len(uploadStates) == 0 && len(indexStates) != 0
 	skipIndexes := len(uploadStates) != 0 && len(indexStates) == 0
 
+	var indexerNames []string
+	if args.IndexerKey != nil {
+		indexerNames = types.NamesForKey(*args.IndexerKey)
+	}
+
 	repositoryID := 0
 	if args.Repository != nil {
 		repositoryID, err = resolveRepositoryID(*args.Repository)
@@ -335,6 +340,7 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 		if err := r.uploadSvc.DeleteUploads(ctx, uploadsshared.DeleteUploadsOptions{
 			RepositoryID: repositoryID,
 			States:       uploadStates,
+			IndexerNames: indexerNames,
 			Term:         term,
 			VisibleAtTip: visibleAtTip,
 		}); err != nil {
@@ -345,6 +351,7 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 		if err := r.autoindexSvc.DeleteIndexes(ctx, autoindexingshared.DeleteIndexesOptions{
 			RepositoryID:  repositoryID,
 			States:        indexStates,
+			IndexerNames:  indexerNames,
 			Term:          term,
 			WithoutUpload: true,
 		}); err != nil {
@@ -400,6 +407,11 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 	skipUploads := len(uploadStates) == 0 && len(indexStates) != 0
 	skipIndexes := len(uploadStates) != 0 && len(indexStates) == 0
 
+	var indexerNames []string
+	if args.IndexerKey != nil {
+		indexerNames = types.NamesForKey(*args.IndexerKey)
+	}
+
 	repositoryID := 0
 	if args.Repository != nil {
 		repositoryID, err = resolveRepositoryID(*args.Repository)
@@ -418,6 +430,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 	if !skipUploads {
 		if err := r.uploadSvc.ReindexUploads(ctx, uploadsshared.ReindexUploadsOptions{
 			States:       uploadStates,
+			IndexerNames: indexerNames,
 			Term:         term,
 			RepositoryID: repositoryID,
 			VisibleAtTip: visibleAtTip,
@@ -428,6 +441,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 	if !skipIndexes {
 		if err := r.autoindexSvc.ReindexIndexes(ctx, autoindexingshared.ReindexIndexesOptions{
 			States:        indexStates,
+			IndexerNames:  indexerNames,
 			Term:          term,
 			RepositoryID:  repositoryID,
 			WithoutUpload: true,
