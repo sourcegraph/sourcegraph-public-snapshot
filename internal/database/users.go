@@ -1536,7 +1536,7 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 		Name:            string(name),
 		URL:             r.URL.Host,
 		AnonymousUserID: "backend",
-		Argument:        args,
+		Argument:        eArgs,
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
