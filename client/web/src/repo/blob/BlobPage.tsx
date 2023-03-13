@@ -598,7 +598,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                         />
                     </Panel>,
-                    document.getElementById('references-panel-react-portal')!
+                    document.querySelector('#references-panel-react-portal')!
                 )}
         </div>
     )
