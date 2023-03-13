@@ -130,7 +130,7 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	// the error because they are not required.
 	if len(otherEmails) > 0 {
 		for _, email := range otherEmails {
-			h.db.WithTransact(r.Context(), func(tx database.DB) error {
+			_ = h.db.WithTransact(r.Context(), func(tx database.DB) error {
 				err := tx.UserEmails().Add(r.Context(), user.ID, email, nil)
 				if err != nil {
 					return err
