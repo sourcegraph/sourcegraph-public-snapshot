@@ -18,15 +18,15 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 
 	db := getMockDB([]*types.UserForSCIM{
 		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
-		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id2"},
-		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id3"},
-		{User: types.User{ID: 4, Username: "user4", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id4"},
+		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Last"}, Emails: []string{"b@example.com"}, SCIMExternalID: "id2"},
+		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}, Emails: []string{"c@example.com"}, SCIMExternalID: "id3"},
+		{User: types.User{ID: 4, Username: "user4", DisplayName: "First Last"}, Emails: []string{"d@example.com"}, SCIMExternalID: "id4"},
 	},
 		map[int32][]*database.UserEmail{
 			1: {&database.UserEmail{UserID: 1, Email: "a@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			2: {&database.UserEmail{UserID: 2, Email: "a@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			3: {&database.UserEmail{UserID: 3, Email: "a@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			4: {&database.UserEmail{UserID: 4, Email: "a@example.com", VerifiedAt: &verifiedDate, Primary: true}},
+			2: {&database.UserEmail{UserID: 2, Email: "b@example.com", VerifiedAt: &verifiedDate, Primary: true}},
+			3: {&database.UserEmail{UserID: 3, Email: "c@example.com", VerifiedAt: &verifiedDate, Primary: true}},
+			4: {&database.UserEmail{UserID: 4, Email: "d@example.com", VerifiedAt: &verifiedDate, Primary: true}},
 		})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 

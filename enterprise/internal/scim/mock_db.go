@@ -164,6 +164,17 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 		}
 		return toReturn, nil
 	})
+	userEmailsStore.GetVerifiedEmailsFunc.SetDefaultHook(func(ctx context.Context, emails ...string) ([]*database.UserEmail, error) {
+		toReturn := make([]*database.UserEmail, 0)
+		for _, email := range emails {
+			for _, userEmail := range userEmails {
+				if userEmail[0].Email == email && userEmail[0].VerifiedAt != nil {
+					toReturn = append(toReturn, userEmail[0])
+				}
+			}
+		}
+		return toReturn, nil
+	})
 
 	// Create DB
 	db := database.NewMockDB()

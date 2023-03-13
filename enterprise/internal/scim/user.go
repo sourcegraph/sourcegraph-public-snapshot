@@ -1,6 +1,7 @@
 package scim
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/http"
@@ -303,16 +304,27 @@ func getUniqueUsername(ctx context.Context, tx database.UserStore, requestedUser
 }
 
 // checkBodyNotEmpty checks whether the request body is empty. If it is, it returns a SCIM error.
-func checkBodyNotEmpty(r *http.Request) error {
-	// Check whether the request body is empty.
+func checkBodyNotEmpty(r *http.Request) (err error) {
 	data, err := io.ReadAll(r.Body)
+	defer func(Body io.ReadCloser) {
+		closeErr := Body.Close()
+		if closeErr != nil && err == nil {
+			err = closeErr
+		}
+
+		if err == nil {
+			// Restore the original body so that it can be read by a next handler.
+			r.Body = io.NopCloser(bytes.NewBuffer(data))
+		}
+	}(r.Body)
+
 	if err != nil {
-		return err
+		return
 	}
 	if len(data) == 0 {
 		return scimerrors.ScimErrorBadParams([]string{"request body is empty"})
 	}
-	return nil
+	return
 }
 
 // convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
