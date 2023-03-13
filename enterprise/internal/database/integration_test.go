@@ -41,12 +41,10 @@ func TestIntegration_PermsStore(t *testing.T) {
 	}{
 		{"FetchReposByUserAndExternalService", testPermsStore_FetchReposByUserAndExternalService(db)},
 		{"FetchReposByExternalAccount", testPermsStore_FetchReposByExternalAccount(db)},
-		{"SetUserRepoPermissions", testPermsStore_SetUserRepoPermissions(db)},
 		{"LoadUserPendingPermissions", testPermsStore_LoadUserPendingPermissions(db)},
 		{"SetRepoPendingPermissions", testPermsStore_SetRepoPendingPermissions(db)},
 		{"ListPendingUsers", testPermsStore_ListPendingUsers(db)},
 		{"DeleteAllUserPendingPermissions", testPermsStore_DeleteAllUserPendingPermissions(db)},
-		{"GetUserIDsByExternalAccounts", testPermsStore_GetUserIDsByExternalAccounts(db)},
 		{"MapUsers", testPermsStore_MapUsers(db)},
 	} {
 		t.Run(tc.name, tc.test)

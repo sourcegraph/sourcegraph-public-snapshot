@@ -431,6 +431,9 @@ export function useUpdateEditorFromQueryState(
             if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
                 startCompletionRef.current(editor)
             }
+            if ((queryState.hint & EditorHint.Blur) === EditorHint.Blur) {
+                editor.contentDOM.blur()
+            }
         }
     }, [editorRef, queryState])
 }
