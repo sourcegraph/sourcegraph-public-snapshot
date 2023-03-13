@@ -610,14 +610,15 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return result, providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %q (id: %d)", user.Username, user.ID)
 	}
 
-	// fetch current permissions from database
-	oldPerms := &authz.UserPermissions{
-		UserID: user.ID,
-		Perm:   authz.Read,
-		Type:   authz.PermRepos,
-		IDs:    map[int32]struct{}{},
+	// get last sync time from the database, we don't care about errors here
+	// swallowing errors was previous behavior, so keeping it for now
+	latestSyncJob, err := s.db.PermissionSyncJobs().GetLatestFinishedSyncJob(ctx, database.ListPermissionSyncJobOpts{
+		UserID:      int(userID),
+		NotCanceled: true,
+	})
+	if err != nil {
+		logger.Warn("get latest finished sync job", log.Error(err))
 	}
-	_ = s.permsStore.LoadUserPermissions(ctx, oldPerms)
 
 	// Save new permissions to database
 	p := &authz.UserPermissions{
@@ -669,8 +670,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	metricsSuccessPermsSyncs.WithLabelValues("user").Inc()
 
-	if !oldPerms.SyncedAt.IsZero() {
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
+	if latestSyncJob != nil {
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(latestSyncJob.FinishedAt).Seconds())
 	} else {
 		metricsFirstPermsSyncs.WithLabelValues("user").Inc()
 		metricsPermsFirstSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(user.CreatedAt).Seconds())

@@ -233,7 +233,7 @@ rust_register_toolchains(
     edition = "2021",
     # Keep in sync with docker-images/syntax-highlighter/Dockerfile
     versions = [
-        "1.67.1",
+        "1.68.0",
     ],
 )
 
@@ -241,15 +241,20 @@ load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 
 crates_repository(
     name = "crate_index",
+    cargo_config = "//docker-images/syntax-highlighter:.cargo/config.toml",
     cargo_lockfile = "//docker-images/syntax-highlighter:Cargo.lock",
     # this file has to be manually created and it will be filled when
     # the target is ran.
-    # To regenerate this file run: CARGO_BAZEL_REPIN=1 bazel sync --only=crates_index
+    # To regenerate this file run: CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
     lockfile = "//docker-images/syntax-highlighter:Cargo.Bazel.lock",
+    # glob doesn't work in WORKSPACE files: https://github.com/bazelbuild/bazel/issues/11935
     manifests = [
-        "//docker-images/syntax-highlighter:crates/sg-macros/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
         "//docker-images/syntax-highlighter:Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-macros/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-syntax/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-treesitter/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
     ],
 )
 
