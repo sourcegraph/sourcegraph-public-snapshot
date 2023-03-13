@@ -43,7 +43,7 @@ type PermsStore interface {
 	Transact(ctx context.Context) (PermsStore, error)
 	Done(err error) error
 
-	// LoadUserPermissions loads returns user permissions. An empty slice
+	// LoadUserPermissions returns user permissions. An empty slice
 	// is returned when there are no valid permissions available.
 	LoadUserPermissions(ctx context.Context, userID int32) (p []authz.Permission, err error)
 	// FetchReposByExternalAccount fetches repo ids that the originate from the given external account.
