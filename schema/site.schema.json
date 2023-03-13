@@ -1751,7 +1751,9 @@
       "description": "The Own service will attempt to match a Team by the last part of its handle if it contains a slash and no match is found for its full handle.",
       "type": "boolean",
       "group": "Own",
-      "!go": { "pointer": true },
+      "!go": {
+        "pointer": true
+      },
       "default": true
     },
     "htmlHeadTop": {
@@ -1832,7 +1834,10 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["key", "message"],
+            "required": [
+              "key",
+              "message"
+            ],
             "properties": {
               "key": {
                 "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
@@ -1930,7 +1935,10 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["key", "message"],
+        "required": [
+          "key",
+          "message"
+        ],
         "properties": {
           "key": {
             "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
