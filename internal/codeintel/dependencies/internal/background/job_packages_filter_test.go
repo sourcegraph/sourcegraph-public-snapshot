@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"runtime/debug"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -15,12 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestPackageRepoFilters(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			t.Fatal(r, string(debug.Stack()))
-		}
-	}()
+func TestPackageRepoFiltersBlockOnly(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -34,6 +28,7 @@ func TestPackageRepoFilters(t *testing.T) {
 		{Scheme: "npm", Name: "bar", Versions: []string{"2.0.0", "2.0.1", "3.0.0"}},
 		{Scheme: "npm", Name: "foo", Versions: []string{"1.0.0"}},
 		{Scheme: "npm", Name: "banana", Versions: []string{"2.0.0"}},
+		{Scheme: "rust-analyzer", Name: "burger", Versions: []string{"1.0.0", "1.0.1", "1.0.2"}},
 	}
 
 	if _, _, err := s.InsertPackageRepoRefs(ctx, deps); err != nil {
@@ -41,12 +36,26 @@ func TestPackageRepoFilters(t *testing.T) {
 	}
 
 	bhvr := "BLOCK"
-	if _, err := s.CreatePackageRepoFilter(ctx, shared.MinimalPackageFilter{
-		Behaviour:     &bhvr,
-		PackageScheme: "npm",
-		NameFilter:    &struct{ PackageGlob string }{PackageGlob: "ba*"},
-	}); err != nil {
-		t.Fatal(err)
+	for _, filter := range []shared.MinimalPackageFilter{
+		{
+			Behaviour:     &bhvr,
+			PackageScheme: "npm",
+			NameFilter:    &struct{ PackageGlob string }{PackageGlob: "ba*"},
+		}, {
+			Behaviour:     &bhvr,
+			PackageScheme: "rust-analyzer",
+			VersionFilter: &struct {
+				PackageName string
+				VersionGlob string
+			}{
+				PackageName: "burger",
+				VersionGlob: "1.0.[!1]",
+			},
+		},
+	} {
+		if _, err := s.CreatePackageRepoFilter(ctx, filter); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	job := packagesFilterApplicatorJob{
@@ -59,13 +68,13 @@ func TestPackageRepoFilters(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, count, hasMore, err := s.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{Scheme: "npm"})
+	have, count, hasMore, err := s.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if count != 1 {
-		t.Errorf("unexpected total count of package repos: want=%d got=%d", 1, count)
+	if count != 2 {
+		t.Errorf("unexpected total count of package repos: want=%d got=%d", 2, count)
 	}
 
 	if hasMore {
@@ -86,7 +95,8 @@ func TestPackageRepoFilters(t *testing.T) {
 	}
 
 	want := []shared.PackageRepoReference{
-		{ID: 3, Scheme: "npm", Name: "foo", Versions: []shared.PackageRepoRefVersion{{ID: 5, PackageRefID: 3, Version: "1.0.0"}}},
+		{ID: 3, Scheme: "rust-analyzer", Name: "burger", Versions: []shared.PackageRepoRefVersion{{ID: 6, PackageRefID: 3, Version: "1.0.1"}}},
+		{ID: 4, Scheme: "npm", Name: "foo", Versions: []shared.PackageRepoRefVersion{{ID: 8, PackageRefID: 4, Version: "1.0.0"}}},
 	}
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Errorf("mismatch (-want, +got): %s", diff)

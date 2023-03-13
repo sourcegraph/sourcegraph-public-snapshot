@@ -157,9 +157,11 @@ func ProvidersFromConfig(
 	}
 
 	enableGithubInternalRepoVisibility := false
+	unifiedPermissions := false
 	ef := cfg.SiteConfig().ExperimentalFeatures
 	if ef != nil {
 		enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
+		unifiedPermissions = ef.UnifiedPermissions
 	}
 
 	initResult := github.NewAuthzProviders(db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
@@ -171,8 +173,10 @@ func ProvidersFromConfig(
 	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns))
 
 	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
+	// But only if the unified permissions is disabled
 	if cfg.SiteConfig().PermissionsUserMapping != nil &&
-		cfg.SiteConfig().PermissionsUserMapping.Enabled {
+		cfg.SiteConfig().PermissionsUserMapping.Enabled &&
+		!unifiedPermissions {
 		allowAccessByDefault = false
 		if len(initResult.Providers) > 0 {
 			serviceTypes := make([]string, len(initResult.Providers))

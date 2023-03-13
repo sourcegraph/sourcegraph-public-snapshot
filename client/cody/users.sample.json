@@ -1,0 +1,8 @@
+[
+	{
+		"name": "User",
+		"email": "user@example.com",
+		"accessToken": "",
+		"accessibleCodebaseIDs": ["github.com/sourcegraph/sourcegraph"]
+	}
+]

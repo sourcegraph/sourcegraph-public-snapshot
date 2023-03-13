@@ -22,6 +22,7 @@ import { BrandHeader } from './components/BrandHeader'
 import { HomeFooter } from './components/HomeFooter'
 
 import styles from './index.module.scss'
+
 export interface SearchHomeViewProps extends WebviewPageProps {
     context: SearchHomeState['context']
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/log/logtest"
@@ -64,7 +65,7 @@ func TestAuthzQueryConds(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	t.Run("Conflict with permissions user mapping", func(t *testing.T) {
+	t.Run("Conflict with explicit perms API", func(t *testing.T) {
 		before := globals.PermissionsUserMapping()
 		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 		defer globals.SetPermissionsUserMapping(before)
@@ -77,6 +78,23 @@ func TestAuthzQueryConds(t *testing.T) {
 		if diff := cmp.Diff(errPermissionsUserMappingConflict.Error(), gotErr); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
+	})
+
+	t.Run("No conflict with explicit perms API when unified perms model is used", func(t *testing.T) {
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		mockUnifiedPermsConfig(true)
+
+		authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+
+		t.Cleanup(func() {
+			globals.SetPermissionsUserMapping(before)
+			conf.Mock(nil)
+			authz.SetProviders(true, nil)
+		})
+
+		_, err := AuthzQueryConds(context.Background(), db)
+		require.Nil(t, err, "unexpected error, should have passed without conflict")
 	})
 
 	t.Run("When permissions user mapping is enabled", func(t *testing.T) {
@@ -276,10 +294,10 @@ VALUES (NULL, %s);
 	return alice, unrestrictedRepo
 }
 
-func mockUnifiedPermsConfig() {
+func mockUnifiedPermsConfig(val bool) {
 	cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			UnifiedPermissions: true,
+			UnifiedPermissions: val,
 		},
 	}}
 	conf.Mock(cfg)
@@ -312,7 +330,7 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 	})
 
 	t.Run("Unified perms: Alice cannot see private repo, but can see unrestricted repo", func(t *testing.T) {
-		mockUnifiedPermsConfig()
+		mockUnifiedPermsConfig(true)
 		// Always reset the configuration so that it doesn't interfere with other tests
 		defer conf.Mock(nil)
 
@@ -544,7 +562,7 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 	})
 
 	t.Run("Unified permissions table should be respected if feature flag is on", func(t *testing.T) {
-		mockUnifiedPermsConfig()
+		mockUnifiedPermsConfig(true)
 		// Always reset the configuration so that it doesn't interfere with other tests
 		defer conf.Mock(nil)
 
@@ -870,7 +888,7 @@ func benchmarkAuthzQuery(b *testing.B, numRepos, numUsers, reposPerUser int) {
 	b.ResetTimer()
 
 	b.Run("list repos, using unified user_repo_permissions table", func(b *testing.B) {
-		mockUnifiedPermsConfig()
+		mockUnifiedPermsConfig(true)
 		defer conf.Mock(nil)
 
 		for i := 0; i < b.N; i++ {

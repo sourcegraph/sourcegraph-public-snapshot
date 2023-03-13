@@ -88,7 +88,7 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
             <MultiComboboxList items={filteredSuggestions} className="mt-2">
                 {items =>
                     items.map((item, index) => (
-                        <MultiComboboxOption key={item} value={item} index={index}>
+                        <MultiComboboxOption key={item} value={item} index={index} className={styles.item}>
                             <Icon aria-hidden={true} svgPath={mdiGithub} /> <MultiComboboxOptionText />
                         </MultiComboboxOption>
                     ))
@@ -191,7 +191,7 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
             >
                 {items =>
                     items.map((item, index) => (
-                        <MultiComboboxOption key={item} value={item} index={index}>
+                        <MultiComboboxOption key={item} value={item} index={index} className={styles.item}>
                             <Icon aria-hidden={true} svgPath={mdiGithub} /> <MultiComboboxOptionText />
                         </MultiComboboxOption>
                     ))

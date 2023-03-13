@@ -1031,9 +1031,9 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "3.1.0"
+version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ee4a7d8b91800c8f167a6268d1a1026607368e1adc84e98fe044aeb905302f7"
+checksum = "b55bad9126f378a853655831eb7363b7b01b81d19f8cb1218861086ca4a1a61e"
 dependencies = [
  "once_cell",
  "protobuf-support",
@@ -1042,9 +1042,9 @@ dependencies = [
 
 [[package]]
 name = "protobuf-support"
-version = "3.1.0"
+version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ca157fe12fc7ee2e315f2f735e27df41b3d97cdd70ea112824dac1ffb08ee1c"
+checksum = "a5d4d7b8601c814cfb36bcebb79f0e61e45e1e93640cf778837833bbed05c372"
 dependencies = [
  "thiserror",
 ]
@@ -1339,7 +1339,7 @@ dependencies = [
 [[package]]
 name = "scip"
 version = "0.1.1"
-source = "git+https://github.com/sourcegraph/scip#3050326a91551abf4e6f690af6a471a160581ba4"
+source = "git+https://github.com/sourcegraph/scip?branch=main#3856df76147ca4b86df7821a881594358d4ba870"
 dependencies = [
  "protobuf",
 ]
@@ -2002,7 +2002,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-jsonnet"
 version = "0.0.1"
-source = "git+https://github.com/sourcegraph/tree-sitter-jsonnet#009e6f06266f46ae07077dd6c8026ded56ab7dd8"
+source = "git+https://github.com/sourcegraph/tree-sitter-jsonnet?rev=009e6f06266f46ae07077dd6c8026ded56ab7dd8#009e6f06266f46ae07077dd6c8026ded56ab7dd8"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2011,7 +2011,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-nickel"
 version = "0.0.1"
-source = "git+https://github.com/nickel-lang/tree-sitter-nickel#d6c7eeb751038f934b5b1aa7ff236376d0235c56"
+source = "git+https://github.com/nickel-lang/tree-sitter-nickel?branch=main#d6c7eeb751038f934b5b1aa7ff236376d0235c56"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2029,7 +2029,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-pod"
 version = "0.0.1"
-source = "git+https://github.com/sourcegraph/tree-sitter-pod#f422a0dca6847c692e811f06fd92c6a75d647222"
+source = "git+https://github.com/sourcegraph/tree-sitter-pod?branch=main#f422a0dca6847c692e811f06fd92c6a75d647222"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2077,7 +2077,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-sql"
 version = "0.0.2"
-source = "git+https://github.com/sourcegraph/tree-sitter-sql#6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
+source = "git+https://github.com/sourcegraph/tree-sitter-sql?branch=main#6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
 dependencies = [
  "cc",
  "tree-sitter",

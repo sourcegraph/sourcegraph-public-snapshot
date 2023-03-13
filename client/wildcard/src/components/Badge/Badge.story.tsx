@@ -3,9 +3,8 @@ import { Meta } from '@storybook/react'
 import { H1, H2, Link, Text } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
 
-import { BADGE_VARIANTS } from './constants'
-
 import { Badge } from '.'
+import { BADGE_VARIANTS } from './constants'
 
 const config: Meta = {
     title: 'wildcard/Badge',

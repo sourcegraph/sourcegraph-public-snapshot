@@ -431,6 +431,48 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expSeriousProblems:           []string{"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when \"gitlab\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
 		},
 		{
+			description: "No conflict if unified perms is ON",
+			cfg: conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					PermissionsUserMapping: &schema.PermissionsUserMapping{
+						Enabled: true,
+						BindID:  "email",
+					},
+					AuthProviders: []schema.AuthProviders{{
+						Gitlab: &schema.GitLabAuthProvider{
+							ClientID:     "clientID",
+							ClientSecret: "clientSecret",
+							DisplayName:  "GitLab",
+							Type:         extsvc.TypeGitLab,
+							Url:          "https://gitlab.mine",
+						},
+					}},
+					ExperimentalFeatures: &schema.ExperimentalFeatures{
+						UnifiedPermissions: true,
+					},
+				},
+			},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+					},
+					Url:   "https://gitlab.mine",
+					Token: "asdf",
+				},
+			},
+			expAuthzAllowAccessByDefault: true,
+			expAuthzProviders: providersEqual(
+				gitlabAuthzProviderParams{
+					OAuthOp: gitlab.OAuthProviderOp{
+						URN:     "extsvc:gitlab:0",
+						BaseURL: mustURLParse(t, "https://gitlab.mine"),
+						Token:   "asdf",
+					},
+				},
+			),
+		},
+		{
 			description: "Conflicted configuration between Sourcegraph and Bitbucket Server authz provider",
 			cfg: conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{

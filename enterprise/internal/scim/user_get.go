@@ -64,6 +64,7 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 	}, nil
 }
 
+// getAllFromDB returns all users from the database, starting at the given index, and up to the given count.
 func (h *UserResourceHandler) getAllFromDB(r *http.Request, startIndex int, count *int) (totalCount int, resources []scim.Resource, err error) {
 	// Calculate offset
 	var offset int

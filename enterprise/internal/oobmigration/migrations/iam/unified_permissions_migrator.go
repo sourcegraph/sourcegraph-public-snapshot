@@ -8,6 +8,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -73,8 +75,13 @@ func (m *unifiedPermissionsMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
+	source := authz.SourceUserSync
+	if globals.PermissionsUserMapping().Enabled {
+		source = authz.SourceAPI
+	}
+
 	// write data to user_repo_permissions table
-	return tx.Exec(ctx, sqlf.Sprintf(unifiedPermissionsMigratorQuery, m.batchSize))
+	return tx.Exec(ctx, sqlf.Sprintf(unifiedPermissionsMigratorQuery, m.batchSize, source))
 }
 
 // The migration is based on user_permissions table, because current customer instances
@@ -97,7 +104,7 @@ s AS (
 		unnest(u.object_ids_ints) as repo_id,
 		u.updated_at as created_at,
 		u.updated_at,
-		'user_sync' as source,
+		%s as source,
 		u.permission,
 		u.object_type
 	FROM user_permissions as u
