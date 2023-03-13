@@ -134,4 +134,4 @@ This library defines the following two JSON utility functions:
 
 ### `fun`
 
-[Lua Functional](https://github.com/luafun/luafun/tree/cb6a7e25d4b55d9578fd371d1474b00e47bd29f3#lua-functional) is a high-performance functional programming library accessible via `local fun = requrie("fun")`. This library has a number of functional utilities to help make recognizer code a bit more expressive.
+[Lua Functional](https://github.com/luafun/luafun/tree/cb6a7e25d4b55d9578fd371d1474b00e47bd29f3#lua-functional) is a high-performance functional programming library accessible via `local fun = require("fun")`. This library has a number of functional utilities to help make recognizer code a bit more expressive.
