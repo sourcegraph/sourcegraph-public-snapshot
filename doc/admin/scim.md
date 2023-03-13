@@ -2,7 +2,7 @@
 
 <aside class="beta">
 <p>
-<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
+<span class="badge badge-beta">Beta</span> This feature is in beta while we're testing it with more IdPs. Our implementation complies with the SCIM 2.0 specification, and passes the validator for Okta and Azure AD. But implementations might differ on the side of IdPs and validators don't give a 100% coverage, so we can't guarantee that our solution works with all IdPs in every case.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
@@ -12,7 +12,7 @@ SCIM (System for Cross-domain Identity Management) is a standard for provisionin
 
 Sourcegraph supports SCIM 2.0 for provisioning and de-provisioning _users_.
 
-> WARNING: We’ve only tested the endpoint with Okta and Azure Active Directory. Be cautious when using our SCIM server with other IdPs.
+> NOTE: While our implementation of SCIM 2.0 is compliant with the specification, we’ve only tested it against two IdPs: Okta and Azure Active Directory. We can't guarantee it works with every IdP if the provider doesn't fully comply with the specification.
 
 ## How to use
 
