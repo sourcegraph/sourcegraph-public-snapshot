@@ -724,7 +724,7 @@ unique_users_by_dwm AS (
 	` + aggregatedUserIDQueryFragment + ` as aggregated_user_id
   FROM event_logs
   LEFT OUTER JOIN users ON users.id = event_logs.user_id
-  WHERE (%s) AND aggregated_user_id != 'backend'
+  WHERE (%s) AND anonymous_user_id != 'backend'
   GROUP BY day_period, week_period, month_period, aggregated_user_id, registered
 ),
 unique_users_by_day AS (
