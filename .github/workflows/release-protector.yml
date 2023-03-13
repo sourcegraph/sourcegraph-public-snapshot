@@ -39,7 +39,7 @@ jobs:
         id: check-backport-labels-during-code-freeze
         run: |
           # Does this PR have the acknowledgement label?
-          has_label="${{contains(github.event.pull_request.labels.*.name, 'confirm-no-backport') || contains(github.event.pull_request.labels.*.name, 'backport 5.0'}}"
+          has_label="${{contains(github.event.pull_request.labels.*.name, 'confirm-no-backport') || contains(github.event.pull_request.labels.*.name, 'backport 5.0')}}"
           
           enabled="true"
           if [ ${enabled} = "true" ]; then
