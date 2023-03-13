@@ -66,6 +66,7 @@ const CodeIntelConfigurationPolicyPage = lazyComponent<
 >(() => import('../configuration/pages/CodeIntelConfigurationPolicyPage'), 'CodeIntelConfigurationPolicyPage')
 
 export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
+    // Code intelligence dashboard routes
     {
         path: '/',
         render: () => <Navigate to="./dashboard" replace={true} />,
@@ -74,6 +75,8 @@ export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
         path: '/dashboard',
         render: props => <RepoDashboardPage {...props} />,
     },
+
+    // Precise index routes
     {
         path: '/indexes',
         render: props => <CodeIntelPreciseIndexesPage {...props} />,
@@ -82,6 +85,23 @@ export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
         path: '/indexes/:id',
         render: props => <CodeIntelPreciseIndexPage {...props} />,
     },
+
+    // Code graph configuration
+    {
+        path: '/configuration',
+        render: props => <CodeIntelConfigurationPage {...props} />,
+    },
+    {
+        path: '/configuration/:id',
+        render: props => <CodeIntelConfigurationPolicyPage {...props} />,
+    },
+    {
+        path: '/index-configuration',
+        render: props => <RepositoryIndexConfigurationPage {...props} />,
+        condition: () => window.context?.codeIntelAutoIndexingEnabled,
+    },
+
+    // Legacy routes
     {
         path: '/uploads/:id',
         render: () => (
@@ -91,22 +111,6 @@ export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
                 }
             />
         ),
-    },
-    {
-        path: '/configuration',
-        render: props => <CodeIntelConfigurationPage {...props} />,
-    },
-    {
-        path: '/index-configuration',
-        render: props => <RepositoryIndexConfigurationPage {...props} />,
-    },
-    {
-        path: '/inference-configuration',
-        render: props => <CodeIntelInferenceConfigurationPage {...props} />,
-    },
-    {
-        path: '/configuration/:id',
-        render: props => <CodeIntelConfigurationPolicyPage {...props} />,
     },
 ]
 
@@ -135,11 +139,15 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
                 to: '/configuration',
                 label: 'Configuration policies',
             },
-            {
-                to: '/index-configuration',
-                label: 'Auto-index configuration',
-                condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-            },
+
+            ...(window.context?.codeIntelAutoIndexingEnabled
+                ? [
+                      {
+                          to: '/index-configuration',
+                          label: 'Auto-index configuration',
+                      },
+                  ]
+                : []),
         ],
     },
 ]

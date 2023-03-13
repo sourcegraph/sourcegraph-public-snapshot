@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiCircleOffOutline } from '@mdi/js'
 import { Location, useLocation, useNavigate } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -10,6 +11,7 @@ import {
     Alert,
     Container,
     ErrorAlert,
+    Icon,
     Label,
     Link,
     LoadingSpinner,
@@ -30,6 +32,7 @@ export interface RepoDashboardPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     repo: { id: string; name: string }
     now?: () => Date
+    indexingEnabled?: boolean
 }
 
 type ShowFilter = 'all' | 'indexes' | 'suggestions'
@@ -69,10 +72,10 @@ export const buildParamsFromFilterState = (filterState: FilterState): URLSearchP
  * Parse search parameters and build a valid FilterState.
  * Used to manage the state of the dashboard
  */
-const buildFilterStateFromParams = ({ search }: Location): FilterState => {
+const buildFilterStateFromParams = ({ search }: Location, indexingEnabled: boolean): FilterState => {
     const queryParameters = new URLSearchParams(search)
 
-    const show = queryParameters.get('show') || 'all'
+    const show = queryParameters.get('show') || (indexingEnabled ? 'all' : 'indexes')
     const language = queryParameters.get('language') || 'all'
 
     if (show === 'suggestions') {
@@ -94,6 +97,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
     repo,
     authenticatedUser,
     now,
+    indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('CodeIntelRepoDashboard')
@@ -104,10 +108,10 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
 
     const { data, loading, error } = useRepoCodeIntelStatus({ repository: repo.name })
 
-    const [filterState, setFilterState] = useState<FilterState>(buildFilterStateFromParams(location))
+    const [filterState, setFilterState] = useState<FilterState>(buildFilterStateFromParams(location, indexingEnabled))
 
     useEffect(() => {
-        setFilterState(buildFilterStateFromParams(location))
+        setFilterState(buildFilterStateFromParams(location, indexingEnabled))
     }, [location])
 
     const handleFilterChange = useCallback(
@@ -155,7 +159,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
         return [
             {
                 label: 'Successfully indexed projects',
-                value: numCompletedIndexes,
+                value: <>{numCompletedIndexes}</>,
                 valueClassName: 'text-success',
                 to: `?${buildParamsFromFilterState({
                     show: 'indexes',
@@ -165,7 +169,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
             },
             {
                 label: 'Projects with errors',
-                value: numFailedIndexes,
+                value: <>{numFailedIndexes}</>,
                 className: styles.summaryItemThin,
                 valueClassName: 'text-danger',
                 to: `?${buildParamsFromFilterState({
@@ -174,15 +178,27 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                     language: 'all',
                 }).toString()}`,
             },
-            {
-                label: 'Configurable projects',
-                value: numUnconfiguredProjects,
-                valueClassName: 'text-primary',
-                to: `?${buildParamsFromFilterState({
-                    show: 'suggestions',
-                    language: 'all',
-                }).toString()}`,
-            },
+            ...(indexingEnabled
+                ? [
+                      {
+                          label: 'Configurable projects',
+                          value: <>{numUnconfiguredProjects}</>,
+                          valueClassName: 'text-primary',
+                          to: `?${buildParamsFromFilterState({
+                              show: 'suggestions',
+                              language: 'all',
+                          }).toString()}`,
+                      },
+                  ]
+                : [
+                      {
+                          label: `Auto-indexing is disabled`,
+                          value: (
+                              <Icon size="sm" aria-label="Auto-indexing is disabled" svgPath={mdiCircleOffOutline} />
+                          ),
+                          valueClassName: 'text-muted',
+                      },
+                  ]),
         ]
     }, [indexes, suggestedIndexers])
 
@@ -264,37 +280,39 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                     <Container className="my-3">
                         <div className="d-flex justify-content-end">
                             <div className={styles.filterContainer}>
-                                <div>
-                                    <Label className={styles.radioGroup}>
-                                        Show:
-                                        <RadioButton
-                                            name="show-filter"
-                                            id="show-all"
-                                            value="all"
-                                            checked={filterState.show === 'all'}
-                                            onChange={event => handleFilterChange(event.target.value, 'show')}
-                                            label="All"
-                                            wrapperClassName="ml-2 mr-3"
-                                        />
-                                        <RadioButton
-                                            name="show-filter"
-                                            id="show-indexes"
-                                            value="indexes"
-                                            checked={filterState.show === 'indexes'}
-                                            onChange={event => handleFilterChange(event.target.value, 'show')}
-                                            label="Indexes"
-                                            wrapperClassName="mr-3"
-                                        />
-                                        <RadioButton
-                                            name="show-filter"
-                                            id="show-suggestions"
-                                            value="suggestions"
-                                            checked={filterState.show === 'suggestions'}
-                                            onChange={event => handleFilterChange(event.target.value, 'show')}
-                                            label="Suggestions"
-                                        />
-                                    </Label>
-                                </div>
+                                {indexingEnabled && (
+                                    <div>
+                                        <Label className={styles.radioGroup}>
+                                            Show:
+                                            <RadioButton
+                                                name="show-filter"
+                                                id="show-all"
+                                                value="all"
+                                                checked={filterState.show === 'all'}
+                                                onChange={event => handleFilterChange(event.target.value, 'show')}
+                                                label="All"
+                                                wrapperClassName="ml-2 mr-3"
+                                            />
+                                            <RadioButton
+                                                name="show-filter"
+                                                id="show-indexes"
+                                                value="indexes"
+                                                checked={filterState.show === 'indexes'}
+                                                onChange={event => handleFilterChange(event.target.value, 'show')}
+                                                label="Indexes"
+                                                wrapperClassName="mr-3"
+                                            />
+                                            <RadioButton
+                                                name="show-filter"
+                                                id="show-suggestions"
+                                                value="suggestions"
+                                                checked={filterState.show === 'suggestions'}
+                                                onChange={event => handleFilterChange(event.target.value, 'show')}
+                                                label="Suggestions"
+                                            />
+                                        </Label>
+                                    </div>
+                                )}
                                 <div className="d-flex">
                                     <Select
                                         id="language-filter"
