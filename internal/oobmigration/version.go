@@ -83,6 +83,7 @@ func (v Version) GitTagWithPatch(patch int) string {
 
 var lastMinorVersionInMajorRelease = map[int]int{
 	3: 43, // 3.43.0 -> 4.0.0
+	4: 5,  // 4.5 -> 5.0.0,
 }
 
 // Next returns the next minor version immediately following the receiver.

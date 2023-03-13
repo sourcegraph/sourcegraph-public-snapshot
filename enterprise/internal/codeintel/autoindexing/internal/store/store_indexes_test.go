@@ -609,6 +609,41 @@ func TestDeleteIndexes(t *testing.T) {
 	}
 }
 
+func TestDeleteIndexesWithIndexerKey(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	insertIndexes(t, db, types.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertIndexes(t, db, types.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
+	insertIndexes(t, db, types.Index{ID: 3, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, types.Index{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+
+	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
+		IndexerNames: []string{"scip-go"},
+	}); err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+
+	// Target indexes no longer exist
+	for _, id := range []int{1, 2} {
+		if _, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
+			t.Fatalf("unexpected error getting index: %s", err)
+		} else if exists {
+			t.Fatal("unexpected record")
+		}
+	}
+
+	// Unmatched indexes remain
+	for _, id := range []int{3, 4} {
+		if _, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
+			t.Fatalf("unexpected error getting index: %s", err)
+		} else if !exists {
+			t.Fatal("expected record, got none")
+		}
+	}
+}
+
 func TestDeleteIndexByIDMissingRow(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -711,6 +746,39 @@ func TestReindexIndexByID(t *testing.T) {
 		t.Fatal("index missing")
 	} else if !index.ShouldReindex {
 		t.Fatal("index not marked for reindexing")
+	}
+}
+
+func TestReindexIndexesWithIndexerKey(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	insertIndexes(t, db, types.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertIndexes(t, db, types.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
+	insertIndexes(t, db, types.Index{ID: 3, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, types.Index{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+
+	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
+		IndexerNames: []string{"scip-go"},
+		Term:         "",
+		RepositoryID: 0,
+	}); err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+
+	// Expected indexes marked for re-indexing
+	for id, expected := range map[int]bool{
+		1: true, 2: true,
+		3: false, 4: false,
+	} {
+		if index, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
+			t.Fatalf("unexpected error getting index: %s", err)
+		} else if !exists {
+			t.Fatal("index missing")
+		} else if index.ShouldReindex != expected {
+			t.Fatalf("unexpected mark. want=%v have=%v", expected, index.ShouldReindex)
+		}
 	}
 }
 

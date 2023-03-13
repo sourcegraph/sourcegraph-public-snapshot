@@ -133,7 +133,7 @@ func (r *ownerResolver) ToPerson() (*graphqlbackend.PersonResolver, bool) {
 		return nil, false
 	}
 	includeUserInfo := true
-	return graphqlbackend.NewPersonResolver(r.db, person.Handle, person.Email, includeUserInfo), true
+	return graphqlbackend.NewPersonResolver(r.db, person.Handle, person.GetEmail(), includeUserInfo), true
 }
 
 func (r *ownerResolver) ToTeam() (*graphqlbackend.TeamResolver, bool) {

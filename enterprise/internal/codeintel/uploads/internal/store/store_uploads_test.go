@@ -725,6 +725,47 @@ func TestDeleteUploads(t *testing.T) {
 	}
 }
 
+func TestDeleteUploadsWithIndexerKey(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	// note: queued so we delete, not go to deleting state first (makes assertion simpler)
+	insertUploads(t, db, types.Upload{ID: 1, State: "queued", Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertUploads(t, db, types.Upload{ID: 2, State: "queued", Indexer: "sourcegraph/scip-go"})
+	insertUploads(t, db, types.Upload{ID: 3, State: "queued", Indexer: "sourcegraph/scip-typescript"})
+	insertUploads(t, db, types.Upload{ID: 4, State: "queued", Indexer: "sourcegraph/scip-typescript"})
+
+	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
+		IndexerNames: []string{"scip-go"},
+		Term:         "",
+		VisibleAtTip: false,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error deleting uploads: %s", err)
+	}
+
+	uploads, totalCount, err := store.GetUploads(context.Background(), shared.GetUploadsOptions{Limit: 5})
+	if err != nil {
+		t.Fatalf("unexpected error getting uploads: %s", err)
+	}
+
+	var ids []int
+	for _, upload := range uploads {
+		ids = append(ids, upload.ID)
+	}
+	sort.Ints(ids)
+
+	expectedIDs := []int{3, 4}
+
+	if totalCount != len(expectedIDs) {
+		t.Errorf("unexpected total count. want=%d have=%d", len(expectedIDs), totalCount)
+	}
+	if diff := cmp.Diff(expectedIDs, ids); diff != "" {
+		t.Errorf("unexpected upload ids (-want +got):\n%s", diff)
+	}
+}
+
 func TestHardDeleteUploadsByIDs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))

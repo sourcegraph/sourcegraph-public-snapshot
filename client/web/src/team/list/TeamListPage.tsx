@@ -47,7 +47,7 @@ export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamL
                 }
                 description={
                     <>
-                        A team is a set of users. See <Link to="/help/admin/teams/teams">Teams documentation</Link> for
+                        A team is a set of users. See the <Link to="/help/admin/teams">Teams documentation</Link> for
                         more information about configuring teams.
                     </>
                 }

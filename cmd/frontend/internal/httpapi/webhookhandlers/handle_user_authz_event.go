@@ -28,7 +28,7 @@ func handleGitHubUserAuthzEvent(logger log.Logger, opts authz.FetchPermsOptions)
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 			return nil
 		}
-		if globals.PermissionsUserMapping().Enabled {
+		if globals.PermissionsUserMapping().Enabled && !conf.ExperimentalFeatures().UnifiedPermissions {
 			return nil
 		}
 

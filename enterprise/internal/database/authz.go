@@ -136,22 +136,22 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *database.Authori
 		return args.Repos, nil
 	}
 
-	p := &authz.UserPermissions{
-		UserID: args.UserID,
-		Perm:   args.Perm,
-		Type:   args.Type,
-	}
-	if err := s.store.LoadUserPermissions(ctx, p); err != nil {
-		if err == authz.ErrPermsNotFound {
-			return []*types.Repo{}, nil
-		}
+	p, err := s.store.LoadUserPermissions(ctx, args.UserID)
+	if err != nil {
 		return nil, err
 	}
 
-	perms := p.AuthorizedRepos(args.Repos)
-	filtered := make([]*types.Repo, len(perms))
-	for i, r := range perms {
-		filtered[i] = r.Repo
+	idsMap := make(map[int32]*types.Repo)
+	for _, r := range args.Repos {
+		idsMap[int32(r.ID)] = r
+	}
+
+	filtered := []*types.Repo{}
+	for _, r := range p {
+		// add repo to filtered if the repo is in user permissions
+		if _, ok := idsMap[r.RepoID]; ok {
+			filtered = append(filtered, idsMap[r.RepoID])
+		}
 	}
 	return filtered, nil
 }

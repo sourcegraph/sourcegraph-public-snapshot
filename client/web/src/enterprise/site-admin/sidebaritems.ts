@@ -123,6 +123,7 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/code-graph/inference-configuration',
             label: 'Inference',
+            condition: () => window.context?.codeIntelAutoIndexingEnabled,
         },
     ],
 }

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -241,6 +242,26 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMakeRepo_NullCharacter(t *testing.T) {
+	r := &github.Repository{
+		Description: "Fun nulls \x00\x00\x00",
+	}
+
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindGitHub,
+		Config: extsvc.NewEmptyConfig(),
+	}
+	schema := &schema.GitHubConnection{
+		Url: "https://github.com",
+	}
+	s, err := newGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, schema, nil)
+	require.NoError(t, err)
+	repo := s.makeRepo(r)
+
+	require.Equal(t, "Fun nulls ", repo.Description)
 }
 
 func TestGithubSource_makeRepo(t *testing.T) {

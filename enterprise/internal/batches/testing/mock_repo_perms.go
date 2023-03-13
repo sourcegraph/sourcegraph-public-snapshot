@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,22 +22,27 @@ func MockRepoPermissions(t *testing.T, db database.DB, userID int32, repoIDs ...
 
 	logger := logtest.Scoped(t)
 	permsStore := edb.Perms(logger, db, time.Now)
+	ctx := context.Background()
 
-	userIDs := map[int32]struct{}{
-		userID: {},
-	}
+	repoIDMap := make(map[int32]struct{})
 	for _, id := range repoIDs {
-		_, err := permsStore.SetRepoPermissions(context.Background(),
-			&authz.RepoPermissions{
-				RepoID:  int32(id),
-				Perm:    authz.Read,
-				UserIDs: userIDs,
-			},
-		)
-		if err != nil {
-			t.Fatal(err)
-		}
+		repoIDMap[int32(id)] = struct{}{}
 	}
+
+	err := permsStore.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
+		UserID: userID,
+	}, maps.Keys(repoIDMap), authz.SourceUserSync)
+	require.NoError(t, err)
+
+	_, err = permsStore.SetUserPermissions(ctx,
+		&authz.UserPermissions{
+			UserID: userID,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+			IDs:    repoIDMap,
+		},
+	)
+	require.NoError(t, err)
 
 	authz.SetProviders(false, nil)
 	t.Cleanup(func() {

@@ -114,6 +114,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
 			ClientLintOnlyChangedFiles: false,
 			CreateBundleSizeDiff:       true,
+			ForceBazel:                 c.MessageFlags.ForceBazel,
 		}))
 
 		// Now we set up conditional operations that only apply to pull requests.
@@ -304,6 +305,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
+			// Do not enable this on main
+			// ForceBazel:                c.MessageFlags.ForceBazel,
 		}))
 
 		// Integration tests

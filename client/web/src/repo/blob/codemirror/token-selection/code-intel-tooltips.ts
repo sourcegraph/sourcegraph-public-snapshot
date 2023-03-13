@@ -439,7 +439,7 @@ function isOffsetInHoverRange(offset: number, range: { from: number; to: number 
 export const [pin, updatePin] = createUpdateableField<LineOrPositionOrRange | null>(null)
 
 const getPinnedOccurrence = (view: EditorView, pin: LineOrPositionOrRange | null): Occurrence | null => {
-    if (!pin || !pin.line || !pin.character) {
+    if (!pin?.line || !pin?.character) {
         return null
     }
     const offset = uiPositionToOffset(view.state.doc, { line: pin.line, character: pin.character })

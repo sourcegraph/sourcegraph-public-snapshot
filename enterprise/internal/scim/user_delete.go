@@ -29,14 +29,14 @@ func (h *UserResourceHandler) Delete(r *http.Request, id string) error {
 		return nil
 	}
 
-	// Save username, verified emails, and external accounts to be used for revoking user permissions after deletion
-	revokeUserPermissionsArgsList, err := getRevokeUserPermissionArgs(r.Context(), user, h.db)
-	if err != nil {
-		return err
-	}
-
 	// Delete user and revoke user permissions
 	err = h.db.WithTransact(r.Context(), func(tx database.DB) error {
+		// Save username, verified emails, and external accounts to be used for revoking user permissions after deletion
+		revokeUserPermissionsArgsList, err := getRevokeUserPermissionArgs(r.Context(), user, h.db)
+		if err != nil {
+			return err
+		}
+
 		if err := tx.Users().HardDelete(r.Context(), int32(idInt)); err != nil {
 			return err
 		}

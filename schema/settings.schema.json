@@ -138,29 +138,6 @@
             "pointer": true
           }
         },
-        "codeIntelRepositoryBadge": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "description": "Show the code intelligence badge when viewing a repository.",
-              "type": "boolean",
-              "default": false,
-              "!go": {
-                "pointer": true
-              }
-            },
-            "forNerds": {
-              "description": "Show entirely too much information.",
-              "type": "boolean",
-              "default": false,
-              "!go": {
-                "pointer": true
-              }
-            }
-          },
-          "required": ["enabled"],
-          "additionalProperties": false
-        },
         "showCodeMonitoringLogs": {
           "description": "Shows code monitoring logs tab.",
           "type": "boolean",
@@ -605,7 +582,9 @@
     "perforce.codeHostToSwarmMap": {
       "description": "Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like \"perforce.company.com:1666\". Values should look like \"https://swarm.company.com/\", with a slash at the end.",
       "type": "object",
-      "additionalProperties": { "type": "string" },
+      "additionalProperties": {
+        "type": "string"
+      },
       "default": {}
     }
   },
@@ -658,8 +637,12 @@
       "description": "Performs a filter",
       "required": ["includeRepoRegexp", "excludeRepoRegexp"],
       "properties": {
-        "includeRepoRegexp": { "type": "string" },
-        "excludeRepoRegexp": { "type": "string" },
+        "includeRepoRegexp": {
+          "type": "string"
+        },
+        "excludeRepoRegexp": {
+          "type": "string"
+        },
         "repositories": {
           "type": "array",
           "items": {

@@ -9,8 +9,11 @@
  *  - Apply fix from https://github.com/dgreene1/react-accessible-treeview/pull/81
  *  - Remove PropTypes API
  */
-import cx from 'classnames'
+
 import React, { useEffect, useReducer, useRef } from 'react'
+
+import cx from 'classnames'
+
 import {
     composeHandlers,
     difference,

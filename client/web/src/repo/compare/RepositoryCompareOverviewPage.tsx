@@ -51,17 +51,13 @@ function queryRepositoryComparison(args: {
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.node) {
+            if (!data?.node) {
                 throw createAggregateError(errors)
             }
             const repo = data.node as RepositoryComparisonFields
             if (
-                !repo.comparison ||
-                !repo.comparison.range ||
-                !repo.comparison.range.baseRevSpec ||
-                !repo.comparison.range.baseRevSpec.object ||
-                !repo.comparison.range.headRevSpec ||
-                !repo.comparison.range.headRevSpec.object ||
+                !repo.comparison?.range?.baseRevSpec?.object ||
+                !repo.comparison?.range?.headRevSpec?.object ||
                 errors
             ) {
                 throw createAggregateError(errors)

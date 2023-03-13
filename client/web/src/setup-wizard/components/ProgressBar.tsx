@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo } from 'react'
+import { FC, useMemo } from 'react'
 
 import classNames from 'classnames'
 
@@ -12,28 +12,17 @@ import { Icon, Text } from '@sourcegraph/wildcard'
 
 import { RepositoryStatsResult, RepositoryStatsVariables, StatusMessagesResult } from '../../graphql-operations'
 import { STATUS_MESSAGES } from '../../nav/StatusMessagesNavItemQueries'
-import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL } from '../../site-admin/backend'
+import { REPOSITORY_STATS } from '../../site-admin/backend'
 
 import styles from './ProgressBar.module.scss'
 
 export const ProgressBar: FC<{}> = () => {
-    const { data, startPolling, stopPolling } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(
-        REPOSITORY_STATS,
-        {}
-    )
+    const { data } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, { pollInterval: 2000 })
 
     const { data: statusData } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
         fetchPolicy: 'no-cache',
         pollInterval: 5000,
     })
-
-    useEffect(() => {
-        if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
-            startPolling(REPO_PAGE_POLL_INTERVAL)
-        } else {
-            stopPolling()
-        }
-    }, [data, startPolling, stopPolling])
 
     const formatNumber = (num: string | number): string => num.toLocaleString('en-US')
 

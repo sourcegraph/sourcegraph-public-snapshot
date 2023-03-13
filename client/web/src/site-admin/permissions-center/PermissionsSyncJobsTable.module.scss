@@ -19,3 +19,12 @@
 .search-input {
     margin-top: 0.6rem;
 }
+
+.modal {
+    &__grid {
+        display: grid;
+        grid-template-columns: max-content max-content;
+        column-gap: 1rem;
+        row-gap: 0.5rem;
+    }
+}

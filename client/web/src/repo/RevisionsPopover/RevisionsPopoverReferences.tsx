@@ -149,7 +149,7 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
             withBehindAhead: false,
         },
         getConnection: ({ data, errors }) => {
-            if (!data || !data.node || data.node.__typename !== 'Repository' || !data.node.gitRefs) {
+            if (data?.node?.__typename !== 'Repository' || !data?.node?.gitRefs) {
                 throw createAggregateError(errors)
             }
             return data.node.gitRefs

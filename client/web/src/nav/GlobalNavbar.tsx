@@ -38,11 +38,10 @@ import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/Ac
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
+import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
-
-import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
 

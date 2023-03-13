@@ -4,12 +4,16 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -20,8 +24,9 @@ import (
 // At this point only data from CODEOWNERS file is presented, if available.
 type Service interface {
 	// RulesetForRepo returns a CODEOWNERS file ruleset from a given repository at given commit ID.
+	// If a CODEOWNERS file has been manually ingested for the repository, it will prioritise returning that file.
 	// In the case the file cannot be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
-	RulesetForRepo(context.Context, api.RepoName, api.CommitID) (*codeowners.Ruleset, error)
+	RulesetForRepo(context.Context, api.RepoName, api.RepoID, api.CommitID) (*codeowners.Ruleset, error)
 
 	// ResolveOwnersWithType takes a list of codeownerspb.Owner and attempts to retrieve more information about the
 	// owner from the users and teams databases.
@@ -33,16 +38,14 @@ var _ Service = &service{}
 func NewService(g gitserver.Client, db database.DB) Service {
 	return &service{
 		gitserverClient: g,
-		userStore:       db.Users(),
-		teamStore:       db.Teams(),
+		db:              edb.NewEnterpriseDB(db),
 		ownerCache:      make(map[ownerKey]codeowners.ResolvedOwner),
 	}
 }
 
 type service struct {
 	gitserverClient gitserver.Client
-	userStore       database.UserStore
-	teamStore       database.TeamStore
+	db              edb.EnterpriseDB
 
 	mu         sync.Mutex
 	ownerCache map[ownerKey]codeowners.ResolvedOwner
@@ -66,8 +69,15 @@ var codeownersLocations = []string{
 }
 
 // RulesetForRepo makes a best effort attempt to return a CODEOWNERS file ruleset
-// from one of the possible codeownersLocations. It returns nil if no match is found.
-func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeowners.Ruleset, error) {
+// from one of the possible codeownersLocations, or the ingested codeowners files. It returns nil if no match is found.
+func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, repoID api.RepoID, commitID api.CommitID) (*codeowners.Ruleset, error) {
+	ingestedCodeowners, err := s.db.Codeowners().GetCodeownersForRepo(ctx, repoID)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, err
+	}
+	if ingestedCodeowners != nil {
+		return codeowners.NewRuleset(codeowners.IngestedRulesetSource{ID: int32(ingestedCodeowners.RepoID)}, ingestedCodeowners.Proto), nil
+	}
 	for _, path := range codeownersLocations {
 		content, err := s.gitserverClient.ReadFile(
 			ctx,
@@ -77,7 +87,11 @@ func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, com
 			path,
 		)
 		if content != nil && err == nil {
-			return codeowners.Parse(bytes.NewReader(content))
+			pbfile, err := codeowners.Parse(bytes.NewReader(content))
+			if err != nil {
+				return nil, err
+			}
+			return codeowners.NewRuleset(codeowners.GitRulesetSource{Repo: repoID, Commit: commitID, Path: path}, pbfile), nil
 		} else if os.IsNotExist(err) {
 			continue
 		}
@@ -123,13 +137,13 @@ func (s *service) resolveOwner(ctx context.Context, handle, email string) (codeo
 	var resolvedOwner codeowners.ResolvedOwner
 	var err error
 	if handle != "" {
-		resolvedOwner, err = tryGetUserThenTeam(ctx, handle, s.userStore.GetByUsername, s.teamStore.GetTeamByName)
+		resolvedOwner, err = tryGetUserThenTeam(ctx, handle, s.db.Users().GetByUsername, s.whichTeamGetter())
 		if err != nil {
 			return personOrError(handle, email, err)
 		}
 	} else if email != "" {
 		// Teams cannot be identified by emails, so we do not pass in a team getter here.
-		resolvedOwner, err = tryGetUserThenTeam(ctx, email, s.userStore.GetByVerifiedEmail, nil)
+		resolvedOwner, err = tryGetUserThenTeam(ctx, email, s.db.Users().GetByVerifiedEmail, nil)
 		if err != nil {
 			return personOrError(handle, email, err)
 		}
@@ -137,6 +151,21 @@ func (s *service) resolveOwner(ctx context.Context, handle, email string) (codeo
 		return nil, nil
 	}
 	resolvedOwner.SetOwnerData(handle, email)
+	if person, ok := resolvedOwner.(*codeowners.Person); ok && person.User != nil && !envvar.SourcegraphDotComMode() {
+		ms, err := s.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
+			UserID:       person.User.ID,
+			OnlyVerified: true,
+		})
+		if err != nil {
+			ms = nil
+		}
+		for _, m := range ms {
+			if m.Primary {
+				primaryEmail := m.Email
+				person.Email = primaryEmail
+			}
+		}
+	}
 	return resolvedOwner, nil
 }
 
@@ -158,6 +187,32 @@ func tryGetUserThenTeam(ctx context.Context, identifier string, userGetter userG
 		return nil, err
 	}
 	return &codeowners.Person{User: user}, nil
+}
+
+func (s *service) whichTeamGetter() teamGetterFunc {
+	// If the flag is set, and it is explicitly set to false, then do active matching.
+	// This makes it "on by default".
+	if conf.Get().OwnBestEffortTeamMatching != nil && !*conf.Get().OwnBestEffortTeamMatching {
+		return s.db.Teams().GetTeamByName
+	}
+	return s.bestEffortTeamGetter
+}
+
+func (s *service) bestEffortTeamGetter(ctx context.Context, teamHandle string) (*types.Team, error) {
+	// If the team handle is potentially embedded we will do best-effort matching on the last part of the team handle.
+	if strings.Contains(teamHandle, "/") {
+		return s.db.Teams().GetTeamByName(ctx, getLastPartOfTeamHandle(teamHandle))
+	}
+	return s.db.Teams().GetTeamByName(ctx, teamHandle)
+}
+
+func getLastPartOfTeamHandle(teamHandle string) string {
+	// invariant: teamHandle contains a /.
+	if len(teamHandle) <= 1 {
+		return teamHandle
+	}
+	lastSlashPos := strings.LastIndex(teamHandle, "/")
+	return teamHandle[lastSlashPos+1:]
 }
 
 func personOrError(handle, email string, err error) (*codeowners.Person, error) {

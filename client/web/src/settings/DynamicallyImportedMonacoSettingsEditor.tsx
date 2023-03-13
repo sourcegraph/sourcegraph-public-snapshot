@@ -1,6 +1,7 @@
 import * as React from 'react'
 
-import * as _monaco from 'monaco-editor' // type only
+// type only
+import * as _monaco from 'monaco-editor'
 import { Subscription } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'

@@ -106,6 +106,7 @@
     "@graphql-codegen/typescript": "2.8.5",
     "@graphql-codegen/typescript-apollo-client-helpers": "^2.2.6",
     "@graphql-codegen/typescript-operations": "2.5.10",
+    "@ianvs/prettier-plugin-sort-imports": "^3.7.1",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@jest/types": "^28.1.0",
     "@lhci/cli": "0.8.1",

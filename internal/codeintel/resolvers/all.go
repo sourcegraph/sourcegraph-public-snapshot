@@ -777,6 +777,7 @@ type DeleteLSIFIndexesArgs struct {
 type DeletePreciseIndexesArgs struct {
 	Query           *string
 	States          *[]string
+	IndexerKey      *string
 	Repository      *graphql.ID
 	IsLatestForRepo *bool
 }
@@ -784,6 +785,7 @@ type DeletePreciseIndexesArgs struct {
 type ReindexPreciseIndexesArgs struct {
 	Query           *string
 	States          *[]string
+	IndexerKey      *string
 	Repository      *graphql.ID
 	IsLatestForRepo *bool
 }

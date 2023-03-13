@@ -3,8 +3,9 @@ import React, { useCallback, useState } from 'react'
 import { mdiChevronDown, mdiChevronUp, mdiEmail } from '@mdi/js'
 import { AccordionButton, AccordionItem, AccordionPanel } from '@reach/accordion'
 
+import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { Badge, Button, ButtonLink, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, ButtonLink, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { CodeownersFileEntryFields, OwnerFields } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
@@ -12,15 +13,28 @@ import { PersonLink } from '../../../person/PersonLink'
 import styles from './FileOwnershipEntry.module.scss'
 
 interface Props {
-    person: OwnerFields
+    owner: OwnerFields
     reasons: CodeownersFileEntryFields[]
 }
 
-export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ person, reasons }) => {
+export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         setIsExpanded(!isExpanded)
     }, [isExpanded])
+
+    const findEmail = (): string | undefined => {
+        if (owner.__typename !== 'Person') {
+            return undefined
+        }
+        if (owner.user?.primaryEmail) {
+            return owner.user?.primaryEmail.email
+        }
+        return owner.email
+    }
+
+    const email = findEmail()
+
     return (
         <AccordionItem as="tbody">
             <tr>
@@ -37,19 +51,37 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ person, rea
                 </td>
                 <td>
                     <div className="d-flex">
-                        <ButtonLink
-                            variant="icon"
-                            disabled={!person.email}
-                            to={person.email ? `mailto:${person.email}` : undefined}
-                        >
-                            <Icon svgPath={mdiEmail} aria-label="email" />
-                        </ButtonLink>
+                        <Tooltip content={email ? `Email ${email}` : 'No email address'} placement="top">
+                            {email ? (
+                                <ButtonLink variant="icon" to={`mailto:${email}`}>
+                                    <Icon svgPath={mdiEmail} aria-label="email" />
+                                </ButtonLink>
+                            ) : (
+                                <Button variant="icon" disabled={true}>
+                                    <Icon svgPath={mdiEmail} aria-label="email" />
+                                </Button>
+                            )}
+                        </Tooltip>
                     </div>
                 </td>
                 <td>
                     <div className="d-flex align-items-center mr-2">
-                        <UserAvatar user={person} className="mx-2" inline={true} />
-                        <PersonLink person={person} />
+                        {owner.__typename === 'Person' && (
+                            <>
+                                <UserAvatar user={owner} className="mx-2" inline={true} />
+                                <PersonLink person={owner} />
+                            </>
+                        )}
+                        {owner.__typename === 'Team' && (
+                            <>
+                                <TeamAvatar
+                                    team={{ ...owner, displayName: owner.teamDisplayName }}
+                                    className="mx-2"
+                                    inline={true}
+                                />
+                                <Link to={`/teams/${owner.name}`}>{owner.teamDisplayName || owner.name}</Link>
+                            </>
+                        )}
                     </div>
                 </td>
                 <td>
@@ -64,9 +96,16 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ person, rea
                 <td colSpan={4}>
                     <ul className={styles.reasons}>
                         {reasons.map(reason => (
-                            <li key={reason.title}>
-                                <Badge className={styles.badge}>{reason.title}</Badge> {reason.description}
-                            </li>
+                            <>
+                                {reason.__typename === 'CodeownersFileEntry' && (
+                                    <li key={reason.title}>
+                                        <Badge className={styles.badge}>{reason.title}</Badge>{' '}
+                                        <Link to={`${reason.codeownersFile.url}?L${reason.ruleLineMatch}`}>
+                                            {reason.description}
+                                        </Link>
+                                    </li>
+                                )}
+                            </>
                         ))}
                     </ul>
                 </td>

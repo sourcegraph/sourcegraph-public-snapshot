@@ -1,4 +1,4 @@
-package own_test
+package own
 
 import (
 	"context"
@@ -6,17 +6,20 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -38,14 +41,17 @@ func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker
 }
 
 func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
-	codeownersText := codeowners.NewRuleset((&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{
-				Pattern: "README.md",
-				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+	codeownersText := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{
+					Pattern: "README.md",
+					Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+				},
 			},
 		},
-	})).Repr()
+	).Repr()
 	for name, repo := range map[string]repoFiles{
 		"top-level": {{"repo", "SHA", "CODEOWNERS"}: codeownersText},
 		".github":   {{"repo", "SHA", ".github/CODEOWNERS"}: codeownersText},
@@ -54,7 +60,13 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			git := gitserver.NewMockClient()
 			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-			got, err := own.NewService(git, database.NewMockDB()).RulesetForRepo(context.Background(), "repo", "SHA")
+
+			codeownersStore := edb.NewMockCodeownersStore()
+			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
+			db := edb.NewMockEnterpriseDB()
+			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+
+			got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
 			require.NoError(t, err)
 			assert.Equal(t, codeownersText, got.Repr())
 		})
@@ -62,28 +74,77 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 }
 
 func TestOwnersCannotFindFile(t *testing.T) {
-	codeownersFile := codeowners.NewRuleset(&codeownerspb.File{
-		Rule: []*codeownerspb.Rule{
-			{
-				Pattern: "README.md",
-				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+	codeownersFile := codeowners.NewRuleset(
+		codeowners.IngestedRulesetSource{},
+		&codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{
+					Pattern: "README.md",
+					Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+				},
 			},
 		},
-	})
+	)
 	repo := repoFiles{
 		{"repo", "SHA", "notCODEOWNERS"}: codeownersFile.Repr(),
 	}
 	git := gitserver.NewMockClient()
 	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-	got, err := own.NewService(git, database.NewMockDB()).RulesetForRepo(context.Background(), "repo", "SHA")
+
+	codeownersStore := edb.NewMockCodeownersStore()
+	codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, edb.CodeownersFileNotFoundError{})
+	db := edb.NewMockEnterpriseDB()
+	db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+
+	got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
 	require.NoError(t, err)
 	assert.Nil(t, got)
+}
+
+func TestOwnersServesIngestedFile(t *testing.T) {
+	t.Run("return manually ingested codeowners file", func(t *testing.T) {
+		codeownersProto := &codeownerspb.File{
+			Rule: []*codeownerspb.Rule{
+				{
+					Pattern: "README.md",
+					Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+				},
+			},
+		}
+		codeownersText := codeowners.NewRuleset(codeowners.IngestedRulesetSource{}, codeownersProto).Repr()
+
+		git := gitserver.NewMockClient()
+
+		codeownersStore := edb.NewMockCodeownersStore()
+		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(&types.CodeownersFile{
+			Proto: codeownersProto,
+		}, nil)
+		db := edb.NewMockEnterpriseDB()
+		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+
+		got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
+		require.NoError(t, err)
+		assert.Equal(t, codeownersText, got.Repr())
+	})
+	t.Run("file not found and codeowners file does not exist return nil", func(t *testing.T) {
+		git := gitserver.NewMockClient()
+		git.ReadFileFunc.SetDefaultReturn(nil, nil)
+
+		codeownersStore := edb.NewMockCodeownersStore()
+		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, edb.CodeownersFileNotFoundError{})
+		db := edb.NewMockEnterpriseDB()
+		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+
+		got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
+		require.NoError(t, err)
+		require.Nil(t, got)
+	})
 }
 
 func TestResolveOwnersWithType(t *testing.T) {
 	t.Run("no owners returns empty", func(t *testing.T) {
 		git := gitserver.NewMockClient()
-		got, err := own.NewService(git, database.NewMockDB()).ResolveOwnersWithType(context.Background(), nil)
+		got, err := NewService(git, database.NewMockDB()).ResolveOwnersWithType(context.Background(), nil)
 		require.NoError(t, err)
 		assert.Empty(t, got)
 	})
@@ -93,8 +154,9 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := own.NewService(git, db)
+		ownService := NewService(git, db)
 
 		mockUserStore.GetByUsernameFunc.SetDefaultReturn(nil, database.MockUserNotFoundErr)
 		mockTeamStore.GetTeamByNameFunc.SetDefaultReturn(nil, database.TeamNotFoundError{})
@@ -114,8 +176,9 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := own.NewService(git, db)
+		ownService := NewService(git, db)
 
 		handle := "person"
 		testUser := newTestUser(handle)
@@ -139,8 +202,9 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := own.NewService(gitserver.NewMockClient(), db)
+		ownService := NewService(gitserver.NewMockClient(), db)
 
 		email := "person@sourcegraph.com"
 		testUser := newTestUser("person")
@@ -163,8 +227,9 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := own.NewService(gitserver.NewMockClient(), db)
+		ownService := NewService(gitserver.NewMockClient(), db)
 
 		handle := "team"
 		testTeam := newTestTeam(handle)
@@ -183,13 +248,58 @@ func TestResolveOwnersWithType(t *testing.T) {
 			},
 		}, got)
 	})
-	t.Run("no user match from email returns unknown owner", func(t *testing.T) {
+	t.Run("team match from handle with slash", func(t *testing.T) {
 		mockUserStore := database.NewMockUserStore()
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := own.NewService(gitserver.NewMockClient(), db)
+
+		handle := "team/handle"
+		testTeam := newTestTeam("handle")
+		mockUserStore.GetByUsernameFunc.PushReturn(nil, database.MockUserNotFoundErr)
+		mockTeamStore.GetTeamByNameFunc.SetDefaultHook(func(ctx context.Context, handle string) (*itypes.Team, error) {
+			if handle == "handle" {
+				return testTeam, nil
+			}
+			return nil, database.TeamNotFoundError{}
+		})
+		owners := []*codeownerspb.Owner{
+			{Handle: handle},
+		}
+		t.Run("best effort matching", func(t *testing.T) {
+			ownService := NewService(gitserver.NewMockClient(), db)
+			got, err := ownService.ResolveOwnersWithType(context.Background(), owners)
+			require.NoError(t, err)
+			assert.Equal(t, []codeowners.ResolvedOwner{
+				&codeowners.Team{
+					Team:   testTeam,
+					Handle: handle,
+				},
+			}, got)
+		})
+		t.Run("early stop", func(t *testing.T) {
+			ownService := NewService(gitserver.NewMockClient(), db)
+			bestEffort := false
+			conf.Get().OwnBestEffortTeamMatching = &bestEffort
+			t.Cleanup(func() {
+				conf.Get().OwnBestEffortTeamMatching = nil
+			})
+			got, err := ownService.ResolveOwnersWithType(context.Background(), owners)
+			require.NoError(t, err)
+			assert.Equal(t, []codeowners.ResolvedOwner{
+				newTestUnknownOwner(handle, ""),
+			}, got)
+		})
+	})
+	t.Run("no user match from email returns unknown owner", func(t *testing.T) {
+		mockUserStore := database.NewMockUserStore()
+		mockTeamStore := database.NewMockTeamStore()
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
+		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
+		ownService := NewService(gitserver.NewMockClient(), db)
 
 		email := "superman"
 		mockUserStore.GetByVerifiedEmailFunc.PushReturn(nil, database.MockUserNotFoundErr)
@@ -208,8 +318,9 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := own.NewService(gitserver.NewMockClient(), db)
+		ownService := NewService(gitserver.NewMockClient(), db)
 
 		userHandle := "userWithHandle"
 		userEmail := "userWithEmail"
@@ -221,19 +332,19 @@ func TestResolveOwnersWithType(t *testing.T) {
 		testTeamWithHandle := newTestTeam(teamHandle)
 		testUnknownOwner := newTestUnknownOwner("", unknownOwnerEmail)
 
-		mockUserStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*types.User, error) {
+		mockUserStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*itypes.User, error) {
 			if username == userHandle {
 				return testUserWithHandle, nil
 			}
 			return nil, database.MockUserNotFoundErr
 		})
-		mockUserStore.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, email string) (*types.User, error) {
+		mockUserStore.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, email string) (*itypes.User, error) {
 			if email == userEmail {
 				return testUserWithEmail, nil
 			}
 			return nil, database.MockUserNotFoundErr
 		})
-		mockTeamStore.GetTeamByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*types.Team, error) {
+		mockTeamStore.GetTeamByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*itypes.Team, error) {
 			if name == teamHandle {
 				return testTeamWithHandle, nil
 			}
@@ -268,8 +379,9 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := own.NewService(gitserver.NewMockClient(), db)
+		ownService := NewService(gitserver.NewMockClient(), db)
 
 		email := "person@sourcegraph.com"
 		testUser := newTestUser("person")
@@ -302,8 +414,9 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := own.NewService(gitserver.NewMockClient(), db)
+		ownService := NewService(gitserver.NewMockClient(), db)
 
 		email := "person@sourcegraph.com"
 		var myError = errors.New("you shall not pass")
@@ -322,8 +435,9 @@ func TestResolveOwnersWithType(t *testing.T) {
 		mockTeamStore := database.NewMockTeamStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		ownService := own.NewService(gitserver.NewMockClient(), db)
+		ownService := NewService(gitserver.NewMockClient(), db)
 
 		owners := []*codeownerspb.Owner{
 			{},
@@ -335,8 +449,8 @@ func TestResolveOwnersWithType(t *testing.T) {
 	})
 }
 
-func newTestUser(username string) *types.User {
-	return &types.User{
+func newTestUser(username string) *itypes.User {
+	return &itypes.User{
 		ID:          1,
 		Username:    username,
 		AvatarURL:   "https://sourcegraph.com/avatar/" + username,
@@ -344,8 +458,8 @@ func newTestUser(username string) *types.User {
 	}
 }
 
-func newTestTeam(teamName string) *types.Team {
-	return &types.Team{
+func newTestTeam(teamName string) *itypes.Team {
+	return &itypes.Team{
 		ID:          1,
 		Name:        teamName,
 		DisplayName: "Team " + teamName,
@@ -357,5 +471,49 @@ func newTestUnknownOwner(handle, email string) codeowners.ResolvedOwner {
 	return &codeowners.Person{
 		Handle: handle,
 		Email:  email,
+	}
+}
+
+func Test_getLastPartOfTeamHandle(t *testing.T) {
+	testCases := []struct {
+		name   string
+		handle string
+		want   autogold.Value
+	}{
+		{
+			name:   "empty string",
+			handle: "",
+			want:   autogold.Expect(""),
+		},
+		{
+			name:   "single character",
+			handle: "x",
+			want:   autogold.Expect("x"),
+		},
+		{
+			name:   "single slash",
+			handle: "team/name",
+			want:   autogold.Expect("name"),
+		},
+		{
+			name:   "two slashes",
+			handle: "double/team/name",
+			want:   autogold.Expect("name"),
+		},
+		{
+			name:   "ends with a slash",
+			handle: "double/team/name/",
+			want:   autogold.Expect(""),
+		},
+		{
+			name:   "double slash",
+			handle: "//",
+			want:   autogold.Expect(""),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.want.Equal(t, getLastPartOfTeamHandle(tc.handle))
+		})
 	}
 }

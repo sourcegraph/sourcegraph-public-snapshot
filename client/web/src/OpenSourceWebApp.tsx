@@ -1,6 +1,7 @@
 import { FC } from 'react'
 
 import './SourcegraphWebApp.scss'
+
 import { LegacySourcegraphWebApp } from './LegacySourcegraphWebApp'
 import { orgAreaHeaderNavItems } from './org/area/navitems'
 import { orgAreaRoutes } from './org/area/routes'

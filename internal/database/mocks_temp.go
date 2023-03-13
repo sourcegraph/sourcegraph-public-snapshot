@@ -37983,6 +37983,9 @@ type MockPermissionSyncJobStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *PermissionSyncJobStoreDoneFunc
+	// GetLatestFinishedSyncJobFunc is an instance of a mock function object
+	// controlling the behavior of the method GetLatestFinishedSyncJob.
+	GetLatestFinishedSyncJobFunc *PermissionSyncJobStoreGetLatestFinishedSyncJobFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *PermissionSyncJobStoreHandleFunc
@@ -38027,6 +38030,11 @@ func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 		},
 		DoneFunc: &PermissionSyncJobStoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
+				return
+			},
+		},
+		GetLatestFinishedSyncJobFunc: &PermissionSyncJobStoreGetLatestFinishedSyncJobFunc{
+			defaultHook: func(context.Context, ListPermissionSyncJobOpts) (r0 *PermissionSyncJob, r1 error) {
 				return
 			},
 		},
@@ -38088,6 +38096,11 @@ func NewStrictMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 				panic("unexpected invocation of MockPermissionSyncJobStore.Done")
 			},
 		},
+		GetLatestFinishedSyncJobFunc: &PermissionSyncJobStoreGetLatestFinishedSyncJobFunc{
+			defaultHook: func(context.Context, ListPermissionSyncJobOpts) (*PermissionSyncJob, error) {
+				panic("unexpected invocation of MockPermissionSyncJobStore.GetLatestFinishedSyncJob")
+			},
+		},
 		HandleFunc: &PermissionSyncJobStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockPermissionSyncJobStore.Handle")
@@ -38135,6 +38148,9 @@ func NewMockPermissionSyncJobStoreFrom(i PermissionSyncJobStore) *MockPermission
 		},
 		DoneFunc: &PermissionSyncJobStoreDoneFunc{
 			defaultHook: i.Done,
+		},
+		GetLatestFinishedSyncJobFunc: &PermissionSyncJobStoreGetLatestFinishedSyncJobFunc{
+			defaultHook: i.GetLatestFinishedSyncJob,
 		},
 		HandleFunc: &PermissionSyncJobStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -38698,6 +38714,118 @@ func (c PermissionSyncJobStoreDoneFuncCall) Args() []interface{} {
 // invocation.
 func (c PermissionSyncJobStoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// PermissionSyncJobStoreGetLatestFinishedSyncJobFunc describes the behavior
+// when the GetLatestFinishedSyncJob method of the parent
+// MockPermissionSyncJobStore instance is invoked.
+type PermissionSyncJobStoreGetLatestFinishedSyncJobFunc struct {
+	defaultHook func(context.Context, ListPermissionSyncJobOpts) (*PermissionSyncJob, error)
+	hooks       []func(context.Context, ListPermissionSyncJobOpts) (*PermissionSyncJob, error)
+	history     []PermissionSyncJobStoreGetLatestFinishedSyncJobFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLatestFinishedSyncJob delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) GetLatestFinishedSyncJob(v0 context.Context, v1 ListPermissionSyncJobOpts) (*PermissionSyncJob, error) {
+	r0, r1 := m.GetLatestFinishedSyncJobFunc.nextHook()(v0, v1)
+	m.GetLatestFinishedSyncJobFunc.appendCall(PermissionSyncJobStoreGetLatestFinishedSyncJobFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetLatestFinishedSyncJob method of the parent MockPermissionSyncJobStore
+// instance is invoked and the hook queue is empty.
+func (f *PermissionSyncJobStoreGetLatestFinishedSyncJobFunc) SetDefaultHook(hook func(context.Context, ListPermissionSyncJobOpts) (*PermissionSyncJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLatestFinishedSyncJob method of the parent MockPermissionSyncJobStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *PermissionSyncJobStoreGetLatestFinishedSyncJobFunc) PushHook(hook func(context.Context, ListPermissionSyncJobOpts) (*PermissionSyncJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermissionSyncJobStoreGetLatestFinishedSyncJobFunc) SetDefaultReturn(r0 *PermissionSyncJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListPermissionSyncJobOpts) (*PermissionSyncJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermissionSyncJobStoreGetLatestFinishedSyncJobFunc) PushReturn(r0 *PermissionSyncJob, r1 error) {
+	f.PushHook(func(context.Context, ListPermissionSyncJobOpts) (*PermissionSyncJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermissionSyncJobStoreGetLatestFinishedSyncJobFunc) nextHook() func(context.Context, ListPermissionSyncJobOpts) (*PermissionSyncJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermissionSyncJobStoreGetLatestFinishedSyncJobFunc) appendCall(r0 PermissionSyncJobStoreGetLatestFinishedSyncJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermissionSyncJobStoreGetLatestFinishedSyncJobFuncCall objects describing
+// the invocations of this function.
+func (f *PermissionSyncJobStoreGetLatestFinishedSyncJobFunc) History() []PermissionSyncJobStoreGetLatestFinishedSyncJobFuncCall {
+	f.mutex.Lock()
+	history := make([]PermissionSyncJobStoreGetLatestFinishedSyncJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermissionSyncJobStoreGetLatestFinishedSyncJobFuncCall is an object that
+// describes an invocation of method GetLatestFinishedSyncJob on an instance
+// of MockPermissionSyncJobStore.
+type PermissionSyncJobStoreGetLatestFinishedSyncJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListPermissionSyncJobOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *PermissionSyncJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermissionSyncJobStoreGetLatestFinishedSyncJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermissionSyncJobStoreGetLatestFinishedSyncJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // PermissionSyncJobStoreHandleFunc describes the behavior when the Handle

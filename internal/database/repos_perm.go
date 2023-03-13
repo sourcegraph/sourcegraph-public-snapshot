@@ -44,8 +44,9 @@ func GetAuthzQueryParameters(ctx context.Context, db DB) (params *AuthzQueryPara
 
 	// 🚨 SECURITY: Blocking access to all repositories if both code host authz
 	// provider(s) and permissions user mapping are configured.
+	// But only if legacy permissions are used.
 	if params.UsePermissionsUserMapping {
-		if len(authzProviders) > 0 {
+		if len(authzProviders) > 0 && !params.UnifiedPermsEnabled {
 			return nil, errPermissionsUserMappingConflict
 		}
 		authzAllowByDefault = false

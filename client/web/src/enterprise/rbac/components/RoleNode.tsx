@@ -1,8 +1,10 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiChevronUp, mdiChevronDown, mdiDelete } from '@mdi/js'
-import { startCase } from 'lodash'
+import { noop } from 'lodash'
+import { animated, useSpring } from 'react-spring'
 
+import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
 import {
     Button,
     Icon,
@@ -13,25 +15,54 @@ import {
     CollapseHeader,
     CollapsePanel,
     H4,
+    useCheckboxes,
+    useForm,
+    Form,
+    SubmissionResult,
+    Alert,
+    useStopwatch,
 } from '@sourcegraph/wildcard'
 
+import { LoaderButton } from '../../../components/LoaderButton'
 import { RoleFields } from '../../../graphql-operations'
-import { PermissionsMap, useDeleteRole } from '../backend'
+import { prettifySystemRole } from '../../../util/settings'
+import { PermissionsMap, useDeleteRole, useSetPermissions } from '../backend'
 
 import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
-import { PermissionList } from './Permissions'
+import { PermissionsList } from './Permissions'
 
 import styles from './RoleNode.module.scss'
 
 interface RoleNodeProps {
     node: RoleFields
-    afterDelete: () => void
+    refetch: () => void
     allPermissions: PermissionsMap
 }
 
-export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDelete, allPermissions }) => {
+interface RoleNodePermissionsFormValues {
+    permissions: string[]
+}
+
+const SUCCESS_ALERT_BANNER_DURATION_S = 4
+
+export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch, allPermissions }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState<boolean>(false)
+    const [showAlert, setShowAlert] = useState<boolean>(false)
+
+    // On role update success, we show the success alert message for a few seconds, then hide it again.
+    const {
+        time: { seconds },
+        start: startTimer,
+        stop: stopTimer,
+        isRunning,
+    } = useStopwatch(false)
+    useEffect(() => {
+        if (isRunning && seconds > SUCCESS_ALERT_BANNER_DURATION_S) {
+            stopTimer()
+            setShowAlert(false)
+        }
+    }, [isRunning, stopTimer, seconds])
 
     const handleOpenChange = (isOpen: boolean): void => {
         setIsExpanded(isOpen)
@@ -44,15 +75,12 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
         setShowConfirmDeleteModal(false)
     }, [])
 
-    const [deleteRole, { loading, error }] = useDeleteRole(() => {
+    const [deleteRole, { loading: deleteRoleLoading, error: deleteRoleError }] = useDeleteRole(() => {
         closeModal()
-        afterDelete()
+        refetch()
     }, closeModal)
 
-    const roleName = useMemo(() => {
-        const lowerCaseName = node.name.replace(/_/g, ' ').toLowerCase()
-        return startCase(lowerCaseName)
-    }, [node.name])
+    const roleName = useMemo(() => (node.system ? prettifySystemRole(node.name) : node.name), [node.system, node.name])
 
     const onDelete = useCallback<React.FormEventHandler>(
         async event => {
@@ -62,6 +90,47 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
         [deleteRole, node.id]
     )
 
+    const { nodes: permissionNodes } = node.permissions
+    const rolePermissionIDs = useMemo(() => permissionNodes.map(permission => permission.id), [permissionNodes])
+
+    const [setPermissions, { loading: setPermissionsLoading, error: setPermissionsError }] = useSetPermissions(() => {
+        refetch()
+        setShowAlert(true)
+        startTimer()
+    })
+
+    const onSubmit = (values: RoleNodePermissionsFormValues): SubmissionResult => {
+        // We handle any error by destructuring the query result directly
+        setPermissions({ variables: { role: node.id, permissions: values.permissions } }).catch(noop)
+    }
+    const defaultFormValues: RoleNodePermissionsFormValues = { permissions: rolePermissionIDs }
+    const { formAPI, ref, handleSubmit } = useForm({
+        initialValues: defaultFormValues,
+        onSubmit,
+    })
+    const {
+        input: { isChecked, onBlur, onChange },
+    } = useCheckboxes('permissions', formAPI)
+
+    const { value } = formAPI.fields.permissions
+
+    const isUpdateDisabled = useMemo(() => {
+        // Compare which values were initially selected against the current values. We
+        // will disable the button if the values are the same.
+        const initialSet = new Set(rolePermissionIDs)
+        const currentSet = new Set(value)
+        if (initialSet.size !== currentSet.size) {
+            return false
+        }
+        for (const item of initialSet) {
+            if (!currentSet.has(item)) {
+                return false
+            }
+        }
+        return true
+    }, [rolePermissionIDs, value])
+
+    const error = deleteRoleError || setPermissionsError
     return (
         <li className={styles.roleNode}>
             {showConfirmDeleteModal && (
@@ -69,42 +138,44 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
             )}
 
             <Collapse isOpen={isExpanded} onOpenChange={handleOpenChange}>
-                <CollapseHeader
-                    as={Button}
-                    className={styles.roleNodeCollapsibleHeader}
-                    aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
-                    outline={true}
-                    variant="icon"
-                >
-                    <Icon
-                        data-caret={true}
-                        className="mr-1 bg-red"
-                        aria-hidden={true}
-                        svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
-                    />
+                <div className="d-flex">
+                    <CollapseHeader
+                        as={Button}
+                        className={styles.roleNodeCollapsibleHeader}
+                        aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                        outline={true}
+                        variant="icon"
+                    >
+                        <Icon
+                            data-caret={true}
+                            className="mr-1 bg-red"
+                            aria-hidden={true}
+                            svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
+                        />
 
-                    <header className="d-flex flex-column justify-content-center mr-2">
-                        <div className="d-flex align-items-center">
-                            <H4 className="m-0">{roleName}</H4>
+                        <header className="d-flex flex-column justify-content-center mr-2">
+                            <div className="d-flex align-items-center">
+                                <H4 className="m-0">{roleName}</H4>
 
-                            {node.system && (
-                                <Tooltip
-                                    content="System roles are predefined by Sourcegraph. They cannot be deleted."
-                                    placement="topStart"
-                                >
-                                    <Text className={styles.roleNodeSystemText}>System</Text>
-                                </Tooltip>
-                            )}
-                        </div>
-                        {error && <ErrorAlert className="mt-2" error={error} />}
-                    </header>
+                                {node.system && (
+                                    <Tooltip
+                                        content="System roles are predefined by Sourcegraph. They cannot be deleted."
+                                        placement="topStart"
+                                    >
+                                        <Text className={styles.roleNodeSystemText}>System</Text>
+                                    </Tooltip>
+                                )}
+                            </div>
+                            {error && <ErrorAlert className="mt-2" error={error} />}
+                        </header>
+                    </CollapseHeader>
 
                     {!node.system && (
                         <Tooltip content="Deleting a role is an irreversible action.">
                             <Button
                                 aria-label="Delete"
                                 onClick={openModal}
-                                disabled={loading}
+                                disabled={deleteRoleLoading}
                                 variant="danger"
                                 size="sm"
                                 className={styles.roleNodeDeleteBtn}
@@ -113,12 +184,55 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, afterDe
                             </Button>
                         </Tooltip>
                     )}
-                </CollapseHeader>
+                </div>
 
-                <CollapsePanel className={styles.roleNodePermissions}>
-                    <PermissionList role={node} allPermissions={allPermissions} />
+                <CollapsePanel
+                    className={styles.roleNodePermissions}
+                    forcedRender={false}
+                    as={Form}
+                    ref={ref}
+                    onSubmit={handleSubmit}
+                >
+                    <SuccessAlert visible={showAlert}>Permissions successfully updated.</SuccessAlert>
+                    <PermissionsList
+                        allPermissions={allPermissions}
+                        isChecked={isChecked}
+                        onBlur={onBlur}
+                        onChange={onChange}
+                    />
+                    <LoaderButton
+                        alwaysShowLabel={true}
+                        variant="primary"
+                        type="submit"
+                        loading={setPermissionsLoading}
+                        label="Update"
+                        disabled={isUpdateDisabled}
+                    />
                 </CollapsePanel>
             </Collapse>
         </li>
+    )
+}
+
+// The Alert banner has a 1rem bottom margin
+const ONE_REM_IN_PX = convertREMToPX(1)
+const APPROX_BANNER_HEIGHT_PX = 40
+
+const SuccessAlert: React.FunctionComponent<React.PropsWithChildren<{ visible: boolean }>> = ({
+    visible,
+    children,
+}) => {
+    const ref = useRef<HTMLDivElement>(null)
+    const style = useSpring({
+        height: visible ? `${(ref.current?.offsetHeight || APPROX_BANNER_HEIGHT_PX) + ONE_REM_IN_PX}px` : '0px',
+        opacity: visible ? 1 : 0,
+    })
+    return (
+        <animated.div style={style}>
+            {/* Keep this in sync with calculation above: mb-3 = 1rem */}
+            <Alert ref={ref} variant="success" className="mb-3">
+                {children}
+            </Alert>
+        </animated.div>
     )
 }

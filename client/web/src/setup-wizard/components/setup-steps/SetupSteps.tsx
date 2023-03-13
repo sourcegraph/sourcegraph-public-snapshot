@@ -235,7 +235,7 @@ export const FooterWidget: FC<PropsWithChildren<{}>> = props => {
 
 interface CustomNextButtonProps {
     label: string
-    disabled: boolean
+    disabled?: boolean
     tooltip?: string
 }
 

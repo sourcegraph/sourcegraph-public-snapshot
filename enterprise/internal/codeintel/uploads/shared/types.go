@@ -45,6 +45,7 @@ type GetUploadsOptions struct {
 
 type ReindexUploadsOptions struct {
 	States       []string
+	IndexerNames []string
 	Term         string
 	RepositoryID int
 	VisibleAtTip bool
@@ -53,6 +54,7 @@ type ReindexUploadsOptions struct {
 type DeleteUploadsOptions struct {
 	RepositoryID int
 	States       []string
+	IndexerNames []string
 	Term         string
 	VisibleAtTip bool
 }

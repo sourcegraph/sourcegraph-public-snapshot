@@ -25,6 +25,7 @@ import {
 import { AddExternalServiceOptions } from '../../../../../../components/externalServices/externalServices'
 import { AddExternalServiceInput } from '../../../../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../../../settings/DynamicallyImportedMonacoSettingsEditor'
+import { CodeHostRepositoriesAppLimitAlert } from '../../../../CodeHostExternalServiceAlert'
 
 import styles from './CodeHostConnection.module.scss'
 
@@ -105,6 +106,8 @@ export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): Re
     // Fragment to avoid nesting since it's rendered within TabPanel fieldset
     return (
         <>
+            <CodeHostRepositoriesAppLimitAlert className="mb-2" />
+
             <Input label="Display name" {...getDefaultInputProps(displayNameField)} />
 
             <FormGroup
