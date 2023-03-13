@@ -8,6 +8,7 @@ import (
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 
 	"github.com/sourcegraph/log"
 
@@ -130,7 +131,7 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	// the error because they are not required.
 	if len(otherEmails) > 0 {
 		for _, email := range otherEmails {
-			h.db.WithTransact(r.Context(), func(tx database.DB) error {
+			_ = h.db.WithTransact(r.Context(), func(tx database.DB) error {
 				err := tx.UserEmails().Add(r.Context(), user.ID, email, nil)
 				if err != nil {
 					return err
@@ -139,11 +140,14 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 			})
 		}
 	}
-	var now = time.Now()
-	// Attempt to send welcome email in the background.
+
+	// Attempt to send emails in the background.
 	goroutine.Go(func() {
-		sendNewUserEmail(primaryEmail, globals.ExternalURL().String(), h.getLogger())
+		_ = sendPasswordResetEmail(r.Context(), h.getLogger(), h.db, user, primaryEmail)
+		_ = sendWelcomeEmail(primaryEmail, globals.ExternalURL().String(), h.getLogger())
 	})
+
+	var now = time.Now()
 	return scim.Resource{
 		ID:         strconv.Itoa(int(user.ID)),
 		ExternalID: getOptionalExternalID(attributes),
@@ -225,7 +229,28 @@ func containsErrCannotCreateUserError(err error) (database.ErrCannotCreateUser, 
 	return database.ErrCannotCreateUser{}, false
 }
 
-func sendNewUserEmail(email, siteURL string, logger log.Logger) error {
+// sendPasswordResetEmail sends a password reset email to the given user.
+func sendPasswordResetEmail(ctx context.Context, logger log.Logger, db database.DB, user *types.User, primaryEmail string) bool {
+	// Email user to ask to set up a password
+	// This internally checks whether username/password login is enabled, whether we have an SMTP in place, etc.
+	if disableEmailInvites {
+		return true
+	}
+	if debugEmailInvitesMock {
+		if logger != nil {
+			logger.Info("password reset: mock pw reset email to Sourcegraph", log.String("sent", primaryEmail))
+		}
+		return true
+	}
+	_, err := auth.ResetPasswordURL(ctx, db, logger, user, primaryEmail, true)
+	if err != nil {
+		logger.Error("error sending password reset email", log.Error(err))
+	}
+	return false
+}
+
+// sendWelcomeEmail sends a welcome email to the given user.
+func sendWelcomeEmail(email, siteURL string, logger log.Logger) error {
 	if email != "" && conf.CanSendEmail() {
 		if disableEmailInvites {
 			return nil

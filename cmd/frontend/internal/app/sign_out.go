@@ -49,7 +49,7 @@ func serveSignOutHandler(db database.DB) http.HandlerFunc {
 			log15.Error("serveSignOutHandler", "err", err)
 		}
 
-		auth.SetSignoutCookie(w)
+		auth.SetSignOutCookie(w)
 
 		if ssoSignOutHandler != nil {
 			ssoSignOutHandler(w, r)
