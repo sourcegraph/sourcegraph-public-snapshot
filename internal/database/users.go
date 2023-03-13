@@ -435,12 +435,10 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
 		Creator     int32  `json:"creator"`
-		Created     int32  `json:"created"`
 		SiteAdmin   bool   `json:"site_admin"`
 		ServiceType string `json:"service_type"`
 	}{
 		Creator:     a.UID,
-		Created:     u.ID,
 		SiteAdmin:   u.SiteAdmin,
 		ServiceType: serviceType,
 	})
@@ -457,11 +455,22 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
 
+	eArg, _ := json.Marshal(struct {
+		Creator     int32  `json:"creator"`
+		Created     int32  `json:"created"`
+		SiteAdmin   bool   `json:"site_admin"`
+		ServiceType string `json:"service_type"`
+	}{
+		Creator:     a.UID,
+		Created:     u.ID,
+		SiteAdmin:   u.SiteAdmin,
+		ServiceType: serviceType,
+	})
 	logEvent := &Event{
 		Name:            string(SecurityEventNameAccountCreated),
 		URL:             "",
 		AnonymousUserID: "backend",
-		Argument:        arg,
+		Argument:        eArg,
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
