@@ -2,27 +2,19 @@ package auth
 
 import (
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 )
 
-const SignoutCookie = "sg-signout"
-
+// HasSignOutCookie returns true if the given request has a sign-out cookie.
 func HasSignOutCookie(r *http.Request) bool {
-	ck, err := r.Cookie(SignoutCookie)
-	if err != nil {
-		return false
-	}
-	return ck != nil
+	return session.HasSignOutCookie(r)
 }
 
-func RemoveSignOutCookieIfSet(r *http.Request, w http.ResponseWriter) {
-	if HasSignOutCookie(r) {
-		http.SetCookie(w, &http.Cookie{Name: SignoutCookie, Value: "", MaxAge: -1})
-	}
-}
-
-func SetSignoutCookie(w http.ResponseWriter) {
+// SetSignOutCookie sets a sign-out cookie on the given response.
+func SetSignOutCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
-		Name:   SignoutCookie,
+		Name:   session.SignOutCookie,
 		Value:  "true",
 		Secure: true,
 		Path:   "/",
