@@ -3,6 +3,11 @@
   "references": [
     { "path": "client/template-parser" },
     { "path": "client/build-config" },
+    { "path": "client/cody/vscode-codegen" },
+    { "path": "client/cody/common" },
+    { "path": "client/cody/server" },
+    { "path": "client/cody/embeddings" },
+    { "path": "client/cody" },
     { "path": "client/common" },
     { "path": "client/shared" },
     { "path": "client/shared/src/testing" },

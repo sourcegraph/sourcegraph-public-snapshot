@@ -8,6 +8,23 @@
       "mode": "local"
     },
     {
+      "name": "Launch Cody Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "preLaunchTask": "Build cody",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}/client/cody/vscode-codegen",
+        "--disable-extension=hpargecruos.kodj",
+        "--disable-extension=sourcegraph.cody"
+      ],
+      "sourceMaps": true,
+      "outFiles": ["${workspaceRoot}/client/cody/vscode-codegen/dist/*.js"],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    {
       "name": "Launch VS Code Extension",
       "type": "extensionHost",
       "request": "launch",

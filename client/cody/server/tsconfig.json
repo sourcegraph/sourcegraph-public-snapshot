@@ -2,6 +2,11 @@
 	"extends": "../tsconfig.base.json",
 	"compilerOptions": {
 		"rootDir": "src",
-		"outDir": "out",
+		"outDir": "out"
 	},
+	"references": [
+		{
+			"path": "../common"
+		}
+	]
 }

@@ -8,7 +8,7 @@
   },
   "main": "out/index.js",
   "types": "out/index.d.ts",
-  "devDependencies": {
-    "@types/vscode": "^1.74.0"
+  "scripts": {
+    "build": "pnpm exec tsc --build"
   }
 }
