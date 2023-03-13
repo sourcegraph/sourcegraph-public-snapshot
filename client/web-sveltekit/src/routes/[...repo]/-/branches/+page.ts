@@ -1,8 +1,8 @@
-import type { PageLoad } from './$types'
-
 import { isErrorLike } from '$lib/common'
 import { queryGitBranchesOverview } from '$lib/loader/repo'
 import { asStore } from '$lib/utils'
+
+import type { PageLoad } from './$types'
 
 export const load: PageLoad = ({ parent }) => ({
     branches: asStore(

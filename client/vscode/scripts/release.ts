@@ -7,6 +7,7 @@ import fs from 'fs'
 import * as semver from 'semver'
 
 import { version } from '../package.json'
+
 /**
  * This script updates the version number and changelog for release purpose
  */
