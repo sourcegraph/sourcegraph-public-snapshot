@@ -189,15 +189,15 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
     const closeRoleAssignmentModal = (): void => setRoleAssignmentModal(null)
 
     const {
+        notification,
+        handleForceSignOutUsers,
         handleDeleteUsers,
         handleDeleteUsersForever,
-        handleForceSignOutUsers,
-        handleRevokeSiteAdmin,
-        handleRecoverUsers,
         handlePromoteToSiteAdmin,
         handleUnlockUser,
+        handleRecoverUsers,
+        handleRevokeSiteAdmin,
         handleResetUserPassword,
-        notification,
         handleDismissNotification,
         handleDisplayNotification,
     } = useUserListActions(handleActionEnd)
@@ -223,7 +223,11 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
     }, [limit, offset, setFilters, users?.totalCount])
 
     const onRoleAssignmentSuccess = (user: { username: string }): void => {
-        handleDisplayNotification(`Role(s) successfully updated for user ${user.username}.`)
+        handleDisplayNotification(
+            <Text as="span">
+                Role(s) successfully updated for user <strong>{user.username}</strong>.
+            </Text>
+        )
         closeRoleAssignmentModal()
     }
 
@@ -602,17 +606,17 @@ function RenderUsernameAndEmail({
 type ActionHandler = (users: SiteUser[]) => void
 
 export interface UseUserListActionReturnType {
+    notification: { text: React.ReactNode; isError?: boolean } | undefined
     handleForceSignOutUsers: ActionHandler
     handleDeleteUsers: ActionHandler
     handleDeleteUsersForever: ActionHandler
     handlePromoteToSiteAdmin: ActionHandler
-    handleRevokeSiteAdmin: ActionHandler
-    handleRecoverUsers: ActionHandler
     handleUnlockUser: ActionHandler
-    notification: { text: React.ReactNode; isError?: boolean } | undefined
-    handleDismissNotification: () => void
+    handleRecoverUsers: ActionHandler
+    handleRevokeSiteAdmin: ActionHandler
     handleResetUserPassword: ActionHandler
-    handleDisplayNotification: (text: string) => void
+    handleDismissNotification: () => void
+    handleDisplayNotification: (text: React.ReactNode) => void
 }
 
 export const getUsernames = (users: SiteUser[]): string => users.map(user => user.username).join(', ')

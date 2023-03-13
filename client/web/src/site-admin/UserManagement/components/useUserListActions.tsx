@@ -20,6 +20,7 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
     const [notification, setNotification] = useState<UseUserListActionReturnType['notification']>()
 
     const handleDismissNotification = useCallback(() => setNotification(undefined), [])
+    const handleDisplayNotification = useCallback((text: React.ReactNode) => setNotification({ text }), [])
 
     const onError = useCallback(
         (error: any) => {
@@ -228,10 +229,6 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
         },
         [onError, createOnSuccess]
     )
-
-    const handleDisplayNotification = (text: string): void => {
-        setNotification({ text })
-    }
 
     return {
         notification,
