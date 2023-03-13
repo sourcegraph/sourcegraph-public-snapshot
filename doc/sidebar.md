@@ -58,6 +58,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Repository permissions](admin/permissions/index.md)
   - [Observability](admin/observability/index.md)
   - [Analytics](admin/analytics.md)
+  - [Executors](admin/executors/index.md)
   - [FAQ](admin/faq.md)
   - [Troubleshooting](admin/troubleshooting.md)
   - [How-to guides](admin/how-to/index.md)
