@@ -49,8 +49,6 @@ func cloneRepo(
 		}
 	}
 
-	fmt.Println("repoPath: ", repoPath)
-
 	proxyURL, cleanup, err := newGitProxyServer(options, job)
 	defer func() {
 		err = errors.Append(err, cleanup())
