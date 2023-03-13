@@ -585,6 +585,7 @@ function applyAction(view: EditorView, action: Action, option: Option, source: S
                 if (historyOrNavigate) {
                     notifySelectionListeners(view.state, option, action, source)
                     compatNavigate(historyOrNavigate, action.url)
+                    view.contentDOM.blur()
                 }
             }
             break

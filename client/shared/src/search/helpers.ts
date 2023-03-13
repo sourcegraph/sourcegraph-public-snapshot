@@ -44,6 +44,7 @@ export enum EditorHint {
      * Showing suggestions also implies focusing the input.
      */
     ShowSuggestions = 2 | Focus,
+    Blur = 4
 }
 
 /**
