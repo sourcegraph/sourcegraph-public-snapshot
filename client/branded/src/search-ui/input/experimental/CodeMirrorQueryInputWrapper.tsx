@@ -172,92 +172,84 @@ function configureQueryExtensions({
 }
 
 // Creates extensions that don't depend on props
-function createStaticExtensions({ popoverID }: { popoverID: string }): Extension {
-    const position0 = EditorSelection.single(0)
-    return [
-        EditorState.transactionFilter.of(transaction => {
-            // This is a hacky way to "fix" the cursor position when the input receives
-            // focus by clicking outside of it in Chrome.
-            // Debugging has revealed that in such a case the transaction has a user event
-            // 'select', the new selection is set to `0` and 'scrollIntoView' is 'false'.
-            // This is different from other events that change the cursor position:
-            // - Clicking on text inside the input (whether focused or not) will be a 'select.pointer'
-            //   user event.
-            // - Moving the cursor with arrow keys will be a 'select' user event but will also set
-            //   'scrollIntoView' to 'true'
-            // - Entering new characters will be of user type 'input'
-            // - Selecting a text range will be of user type 'select.pointer'
-            // - Tabbing to the input seems to only trigger a 'select' user event transaction when
-            //   the user clicked outside the input (also only in Chrome, this transaction doesn't
-            //   occur in Firefox)
+const position0 = EditorSelection.single(0)
+const staticExtensions: Extension = [
+    EditorState.transactionFilter.of(transaction => {
+        // This is a hacky way to "fix" the cursor position when the input receives
+        // focus by clicking outside of it in Chrome.
+        // Debugging has revealed that in such a case the transaction has a user event
+        // 'select', the new selection is set to `0` and 'scrollIntoView' is 'false'.
+        // This is different from other events that change the cursor position:
+        // - Clicking on text inside the input (whether focused or not) will be a 'select.pointer'
+        //   user event.
+        // - Moving the cursor with arrow keys will be a 'select' user event but will also set
+        //   'scrollIntoView' to 'true'
+        // - Entering new characters will be of user type 'input'
+        // - Selecting a text range will be of user type 'select.pointer'
+        // - Tabbing to the input seems to only trigger a 'select' user event transaction when
+        //   the user clicked outside the input (also only in Chrome, this transaction doesn't
+        //   occur in Firefox)
 
-            if (
-                !transaction.isUserEvent('select.pointer') &&
-                transaction.isUserEvent('select') &&
-                !transaction.scrollIntoView &&
-                transaction.selection?.eq(position0)
-            ) {
-                return [transaction, { selection: EditorSelection.single(transaction.newDoc.length) }]
-            }
-            return transaction
-        }),
-        singleLine,
-        drawSelection(),
-        EditorView.contentAttributes.of({
-            role: 'combobox',
-            'aria-controls': popoverID,
-            'aria-owns': popoverID,
-            'aria-haspopup': 'grid',
-        }),
-        keymap.of(historyKeymap),
-        keymap.of(defaultKeymap),
-        codemirrorHistory(),
-        filterPlaceholder,
-        queryDiagnostic(),
-        Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
-        EditorView.theme({
-            '&': {
-                flex: 1,
-                backgroundColor: 'var(--input-bg)',
-                borderRadius: 'var(--border-radius)',
-                borderColor: 'var(--border-color)',
-                // To ensure that the input doesn't overflow the parent
-                minWidth: 0,
-                marginRight: '0.5rem',
-            },
-            '&.cm-editor.cm-focused': {
-                outline: 'none',
-            },
-            '.cm-scroller': {
-                overflowX: 'hidden',
-            },
-            '.cm-content': {
-                caretColor: 'var(--search-query-text-color)',
-                color: 'var(--search-query-text-color)',
-                fontFamily: 'var(--code-font-family)',
-                fontSize: 'var(--code-font-size)',
-                padding: 0,
-                paddingLeft: '0.25rem',
-            },
-            '.cm-content.focus-visible': {
-                boxShadow: 'none',
-            },
-            '.cm-line': {
-                padding: 0,
-            },
-            '.theme-dark .cm-selectionLayer .cm-selectionBackground': {
-                backgroundColor: 'var(--gray-08)',
-            },
-            '.sg-decorated-token-hover': {
-                borderRadius: '3px',
-            },
-            '.sg-query-filter-placeholder': {
-                color: 'var(--text-muted)',
-                fontStyle: 'italic',
-            },
-        }),
-    ]
-}
+        if (
+            !transaction.isUserEvent('select.pointer') &&
+            transaction.isUserEvent('select') &&
+            !transaction.scrollIntoView &&
+            transaction.selection?.eq(position0)
+        ) {
+            return [transaction, { selection: EditorSelection.single(transaction.newDoc.length) }]
+        }
+        return transaction
+    }),
+    singleLine,
+    drawSelection(),
+    keymap.of(historyKeymap),
+    keymap.of(defaultKeymap),
+    codemirrorHistory(),
+    filterPlaceholder,
+    queryDiagnostic(),
+    Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
+    EditorView.theme({
+        '&': {
+            flex: 1,
+            backgroundColor: 'var(--input-bg)',
+            borderRadius: 'var(--border-radius)',
+            borderColor: 'var(--border-color)',
+            // To ensure that the input doesn't overflow the parent
+            minWidth: 0,
+            marginRight: '0.5rem',
+        },
+        '&.cm-editor.cm-focused': {
+            outline: 'none',
+        },
+        '.cm-scroller': {
+            overflowX: 'hidden',
+        },
+        '.cm-content': {
+            caretColor: 'var(--search-query-text-color)',
+            color: 'var(--search-query-text-color)',
+            fontFamily: 'var(--code-font-family)',
+            fontSize: 'var(--code-font-size)',
+            padding: 0,
+            paddingLeft: '0.25rem',
+        },
+        '.cm-content.focus-visible': {
+            boxShadow: 'none',
+        },
+        '.cm-line': {
+            padding: 0,
+        },
+        '.theme-dark .cm-selectionLayer .cm-selectionBackground': {
+            backgroundColor: 'var(--gray-08)',
+        },
+        '.sg-decorated-token-hover': {
+            borderRadius: '3px',
+        },
+        '.sg-query-filter-placeholder': {
+            color: 'var(--text-muted)',
+            fontStyle: 'italic',
+        },
+    }),
+]
 
 function updateExtensions(editor: EditorView | null, extensions: Extension): void {
     if (editor) {
@@ -327,7 +319,6 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
         const onChangeRef = useMutableValue(onChange)
 
         const hasSubmitHandler = !!onSubmit
-        const staticExtensions = useMemo(() => createStaticExtensions({ popoverID }), [popoverID])
 
         // Update extensions whenever any of these props change
         const dynamicExtensions = useMemo(
@@ -387,6 +378,12 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             queryState.query,
             useMemo(
                 () => [
+                    EditorView.contentAttributes.of({
+                        role: 'combobox',
+                        'aria-controls': popoverID,
+                        'aria-owns': popoverID,
+                        'aria-haspopup': 'grid',
+                    }),
                     staticExtensions,
                     extensionsCompartment.of(dynamicExtensions),
                     querySettingsCompartment.of(queryExtensions),
@@ -394,7 +391,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                 // Only set extensions during initialization. dynamicExtensions and queryExtensions
                 // are updated separately.
                 // eslint-disable-next-line react-hooks/exhaustive-deps
-                []
+                [popoverID]
             )
         )
 
