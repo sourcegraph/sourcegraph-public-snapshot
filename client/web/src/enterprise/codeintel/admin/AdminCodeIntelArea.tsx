@@ -51,49 +51,51 @@ const GlobalDashboardPage = lazyComponent<GlobalDashboardPageProps, 'GlobalDashb
     'GlobalDashboardPage'
 )
 
-export const codeIntelAreaRoutes: readonly AdminCodeIntelAreaRoute[] = [
-    // Code intelligence dashboard routes
-    {
-        exact: true,
-        path: '/',
-        render: () => <Navigate to="./code-graph/dashboard" replace={true} />,
-    },
-    {
-        exact: true,
-        path: '/dashboard',
-        render: props => <GlobalDashboardPage {...props} />,
-    },
+export const codeIntelAreaRoutes: readonly AdminCodeIntelAreaRoute[] = (
+    [
+        // Code intelligence dashboard routes
+        {
+            exact: true,
+            path: '/',
+            render: () => <Navigate to="./code-graph/dashboard" replace={true} />,
+        },
+        {
+            exact: true,
+            path: '/dashboard',
+            render: props => <GlobalDashboardPage {...props} />,
+        },
 
-    // Precise index routes
-    {
-        path: '/indexes',
-        render: props => <CodeIntelPreciseIndexesPage {...props} />,
-    },
-    {
-        path: '/indexes/:id',
-        render: props => <CodeIntelPreciseIndexPage {...props} />,
-    },
+        // Precise index routes
+        {
+            path: '/indexes',
+            render: props => <CodeIntelPreciseIndexesPage {...props} />,
+        },
+        {
+            path: '/indexes/:id',
+            render: props => <CodeIntelPreciseIndexPage {...props} />,
+        },
 
-    // Code graph configuration
-    {
-        path: '/configuration',
-        render: props => <CodeIntelConfigurationPage {...props} />,
-    },
-    {
-        path: '/configuration/:id',
-        render: props => <CodeIntelConfigurationPolicyPage {...props} />,
-    },
-    {
-        path: '/inference-configuration',
-        render: props => <CodeIntelInferenceConfigurationPage {...props} />,
-    },
+        // Code graph configuration
+        {
+            path: '/configuration',
+            render: props => <CodeIntelConfigurationPage {...props} />,
+        },
+        {
+            path: '/configuration/:id',
+            render: props => <CodeIntelConfigurationPolicyPage {...props} />,
+        },
+        {
+            path: '/inference-configuration',
+            render: props => <CodeIntelInferenceConfigurationPage {...props} />,
+        },
 
-    // Legacy routes
-    {
-        path: '/uploads/:id',
-        render: () => <NavigateToLegacyUploadPage />,
-    },
-].filter(Boolean) as readonly AdminCodeIntelAreaRoute[]
+        // Legacy routes
+        {
+            path: '/uploads/:id',
+            render: () => <NavigateToLegacyUploadPage />,
+        },
+    ] as readonly (AdminCodeIntelAreaRoute | undefined)[]
+).filter(Boolean) as readonly AdminCodeIntelAreaRoute[]
 
 /**
  * Properties passed to all page components in the repository code navigation area.
