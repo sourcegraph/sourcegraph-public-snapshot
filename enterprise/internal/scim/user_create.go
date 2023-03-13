@@ -144,7 +144,17 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	// Email user to ask to set up a password, in the background.
 	// This internally checks whether username/password login is enabled, whether we have an SMTP in place, etc.
 	goroutine.Go(func() {
-		_, err = auth.ResetPasswordURL(r.Context(), h.db, h.observationCtx.Logger, user, primaryEmail, true)
+		if disableEmailInvites {
+			return
+		}
+		l := h.getLogger()
+		if debugEmailInvitesMock {
+			if l != nil {
+				l.Info("email welcome: mock welcome to Sourcegraph", log.String("welcomed", primaryEmail))
+			}
+			return
+		}
+		_, err = auth.ResetPasswordURL(r.Context(), h.db, l, user, primaryEmail, true)
 		if err != nil {
 			h.getLogger().Error("error sending password reset email", log.Error(err))
 		}
