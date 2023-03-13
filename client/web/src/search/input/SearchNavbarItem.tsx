@@ -89,6 +89,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 onSubmit={onSubmit}
             >
                 <LazyExperimentalSearchInput
+                    visualMode="compact"
                     telemetryService={props.telemetryService}
                     patternType={searchPatternType}
                     interpretComments={false}
@@ -103,6 +104,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     submitSearch={submitSearchOnChange}
                     selectedSearchContextSpec={props.selectedSearchContextSpec}
+                    className="flex-grow-1"
                 >
                     <Toggles
                         patternType={searchPatternType}
