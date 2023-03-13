@@ -113,6 +113,7 @@ function MultiComboboxWithPermanentItems() {
             selectedItems={selectedItems}
             getItemKey={item => item.id}
             getItemName={item => item.name}
+            getItemIsPermanent={item => !!item.permanent}
             onSelectedItemsChange={setSelectedItems}
             className="mb-4"
         >

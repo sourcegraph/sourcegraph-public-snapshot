@@ -31,11 +31,10 @@ export interface RoleAssignmentModalProps {
     user: { id: Scalars['ID']; username: string }
 }
 
-type Role = Pick<RoleFields, 'id' | 'system' | 'name'> & { permanent: boolean }
+type Role = Pick<RoleFields, 'id' | 'system' | 'name'>
 
 const prepareDisplayRole = (role: Pick<RoleFields, 'id' | 'system' | 'name'>): Role => ({
     ...role,
-    permanent: role.system,
     name: role.system ? prettifySystemRole(role.name) : role.name,
 })
 
@@ -118,6 +117,7 @@ export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalPro
                     selectedItems={selectedRoles}
                     getItemKey={item => item.id}
                     getItemName={item => item.name}
+                    getItemIsPermanent={item => item.system}
                     onSelectedItemsChange={setSelectedRoles}
                     aria-label="Select role(s) to assign to user"
                 >

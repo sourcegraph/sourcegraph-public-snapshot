@@ -61,6 +61,7 @@ interface MultiComboboxContextData<T> {
     selectedItems: T[]
     getItemName: (item: T) => string
     getItemKey: (item: T) => string | number
+    getItemIsPermanent: (item: T) => boolean
     onSelectedItemsChange: (selectedItems: T[]) => void
 }
 
@@ -78,6 +79,7 @@ const MultiComboboxContext = createContext<MultiComboboxContextData<any>>({
     selectedItems: [],
     getItemName: () => '',
     getItemKey: () => '',
+    getItemIsPermanent: () => false,
     onSelectedItemsChange: noop,
 })
 
@@ -85,13 +87,25 @@ export interface MultiComboboxProps<T> extends Omit<ComboboxProps, 'onSelect'> {
     selectedItems: T[]
     getItemName: (item: T) => string
     getItemKey: (item: T) => string | number
+    /**
+     * Permanent items can never be unselected. They will appear first in the
+     * MultiComboboxInput list.
+     */
+    getItemIsPermanent?: (item: T) => boolean
     className?: string
     children: ReactNode | ReactNode[]
     onSelectedItemsChange: (selectedItems: T[]) => void
 }
 
 export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
-    const { selectedItems, getItemKey, getItemName, onSelectedItemsChange, ...attributes } = props
+    const {
+        selectedItems,
+        getItemKey,
+        getItemName,
+        getItemIsPermanent = () => false,
+        onSelectedItemsChange,
+        ...attributes
+    } = props
 
     const suggestItemsRef = useRef<T[]>([])
     const [tether, setTether] = useState<TetherInstanceAPI | null>(null)
@@ -145,6 +159,7 @@ export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
             selectedItems,
             getItemKey,
             getItemName,
+            getItemIsPermanent,
             onSelectedItemsChange: handleSelectedItemsChange,
             onItemSelect: handleSelectItem,
         }),
@@ -159,6 +174,7 @@ export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
             selectedItems,
             getItemKey,
             getItemName,
+            getItemIsPermanent,
             handleSelectedItemsChange,
             handleSelectItem,
         ]
@@ -210,6 +226,7 @@ const MultiValueInput = forwardRef(function MultiValueInput(props: MultiValueInp
         selectedItems,
         getItemKey,
         getItemName,
+        getItemIsPermanent,
         onSelectedItemsChange,
         onItemSelect,
     } = useContext(MultiComboboxContext)
@@ -218,11 +235,8 @@ const MultiValueInput = forwardRef(function MultiValueInput(props: MultiValueInp
     // Permanent items should be always first in the list, so that the user can still use
     // the backspace key to delete items up until these ones.
     const orderedSelectedItems = useMemo(
-        () =>
-            sortBy(selectedItems, item =>
-                Object.hasOwn(item, 'permanent') && (item as { permanent: boolean }).permanent ? 1 : 2
-            ),
-        [selectedItems]
+        () => sortBy(selectedItems, item => (getItemIsPermanent(item) ? 1 : 2)),
+        [selectedItems, getItemIsPermanent]
     )
 
     const inputRef = useMergeRefs<HTMLInputElement>([ref])
@@ -232,7 +246,7 @@ const MultiValueInput = forwardRef(function MultiValueInput(props: MultiValueInp
         if (byPassValue === '' && event.key === Key.Backspace) {
             // If the next item is permanent, stop removing items.
             const nextItem = orderedSelectedItems[orderedSelectedItems.length - 1]
-            if (Object.hasOwn(nextItem, 'permanent') && (nextItem as { permanent: boolean }).permanent) {
+            if (getItemIsPermanent(nextItem)) {
                 return
             }
             onSelectedItemsChange(orderedSelectedItems.slice(0, -1))
@@ -286,7 +300,7 @@ const MultiValueInput = forwardRef(function MultiValueInput(props: MultiValueInp
             {orderedSelectedItems.map((item, index) => (
                 <li key={getItemKey(item)} data-multibox-pill={true} className={styles.pill}>
                     <span className={styles.pillText}>{getItemName(item)}</span>
-                    {Object.hasOwn(item, 'permanent') && (item as { permanent: boolean }).permanent ? null : (
+                    {getItemIsPermanent(item) ? null : (
                         <Button
                             type="button"
                             variant="icon"
