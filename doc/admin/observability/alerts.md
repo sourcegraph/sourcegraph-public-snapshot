@@ -236,7 +236,7 @@ Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (ra
 **Descriptions**
 
 - <span class="badge badge-critical">critical</span> frontend: 5s+ 90th percentile blob load latency over 10m
-- 90% of API calls to the blob route in the frontend GraphQL API are taking 5 seconds or more to return a response. The blob API route provides the files and code snippets that the UI displays. When this alert fires, the UI will likely experience delays loading files and file snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses from the blob API route.
+- The 90th percentile of API calls to the blob route in the frontend API is at 5 seconds or more, meaning calls to the blob route, are slow to return a response. The blob API route provides the files and code snippets that the UI displays. When this alert fires, the UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.
 
 **Next steps**
 
@@ -8403,4 +8403,3 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*embeddings"})
 </details>
 
 <br />
-
