@@ -31,6 +31,7 @@ type SentinelServiceResolver interface {
 	VulnerabilityByID(ctx context.Context, id graphql.ID) (_ VulnerabilityResolver, err error)
 	VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_ VulnerabilityMatchResolver, err error)
 	VulnerabilityMatchesGroupByRepository(ctx context.Context, args GetVulnerabilityMatchGroupByRepositoryArgs) (VulnerabilityMatchGroupByRepositoryConnectionResolver, error)
+	VulnerabilityMatchesSummaryCounts(ctx context.Context) (VulnerabilityMatchesSummaryCountResolver, error)
 }
 
 type GetVulnerabilitiesArgs struct {
@@ -116,6 +117,14 @@ type VulnerabilityMatchGroupByRepositoryConnectionResolver interface {
 	Nodes() []VulnerabilityMatchGroupByRepositoryResolver
 	TotalCount() *int32
 	PageInfo() PageInfo
+}
+
+type VulnerabilityMatchesSummaryCountResolver interface {
+	Critical() int32
+	High() int32
+	Medium() int32
+	Low() int32
+	Repository() int32
 }
 
 type CodeNavServiceResolver interface {

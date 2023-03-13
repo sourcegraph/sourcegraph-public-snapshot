@@ -76,6 +76,10 @@ func (r *Resolver) VulnerabilityMatchesGroupByRepository(ctx context.Context, ar
 	return r.sentinelRootResolver.VulnerabilityMatchesGroupByRepository(ctx, args)
 }
 
+func (r *Resolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ resolverstubs.VulnerabilityMatchesSummaryCountResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityMatchesSummaryCounts(ctx)
+}
+
 func (r *Resolver) IndexerKeys(ctx context.Context, opts *resolverstubs.IndexerKeyQueryArgs) (_ []string, err error) {
 	return r.autoIndexingRootResolver.IndexerKeys(ctx, opts)
 }

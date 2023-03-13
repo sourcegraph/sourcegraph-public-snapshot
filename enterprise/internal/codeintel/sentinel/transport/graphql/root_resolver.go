@@ -240,6 +240,24 @@ func (r *rootResolver) VulnerabilityMatchesGroupByRepository(ctx context.Context
 	}, nil
 }
 
+func (r *rootResolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ resolverstubs.VulnerabilityMatchesSummaryCountResolver, err error) {
+	ctx, _, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	counts, err := r.sentinelSvc.GetVulnerabilityMatchesSummaryCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &vulnerabilityMatchesSummaryCountResolver{
+		critical:   counts.Critical,
+		high:       counts.High,
+		medium:     counts.Medium,
+		low:        counts.Low,
+		repository: counts.Repositories,
+	}, nil
+}
+
 //
 //
 
@@ -580,4 +598,23 @@ func (v *vulnerabilityMatchGroupByRepositoryConnectionResolver) PageInfo() resol
 	}
 
 	return sharedresolvers.HasNextPage(false)
+}
+
+//
+//
+
+type vulnerabilityMatchesSummaryCountResolver struct {
+	critical   int32
+	high       int32
+	medium     int32
+	low        int32
+	repository int32
+}
+
+func (v *vulnerabilityMatchesSummaryCountResolver) Critical() int32 { return v.critical }
+func (v *vulnerabilityMatchesSummaryCountResolver) High() int32     { return v.high }
+func (v *vulnerabilityMatchesSummaryCountResolver) Medium() int32   { return v.medium }
+func (v *vulnerabilityMatchesSummaryCountResolver) Low() int32      { return v.low }
+func (v *vulnerabilityMatchesSummaryCountResolver) Repository() int32 {
+	return v.repository
 }
