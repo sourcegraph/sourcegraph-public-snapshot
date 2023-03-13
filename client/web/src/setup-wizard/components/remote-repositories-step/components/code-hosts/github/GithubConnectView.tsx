@@ -34,6 +34,7 @@ import {
     ValidateAccessTokenResult,
     ValidateAccessTokenVariables,
 } from '../../../../../../graphql-operations'
+import { CodeHostRepositoriesAppLimitAlert } from '../../../../CodeHostExternalServiceAlert'
 import { CodeHostJSONFormContent, RadioGroupSection, CodeHostConnectFormFields, CodeHostJSONFormState } from '../common'
 
 import { GithubOrganizationsPicker, GithubRepositoriesPicker } from './GithubEntityPickers'
@@ -140,6 +141,7 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
                     JSONC editor
                 </Tab>
             </TabList>
+
             <TabPanels className={styles.tabPanels}>
                 <TabPanel as="fieldset" tabIndex={-1} className={styles.formView}>
                     <GithubFormView
@@ -240,6 +242,8 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
     // Fragment to avoid nesting since it's rendered within TabPanel fieldset
     return (
         <>
+            <CodeHostRepositoriesAppLimitAlert className="mb-2" />
+
             <Input label="Display name" placeholder="Github (Personal)" {...getDefaultInputProps(displayNameField)} />
 
             <Input

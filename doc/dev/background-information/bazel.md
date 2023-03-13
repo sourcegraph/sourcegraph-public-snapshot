@@ -2,6 +2,31 @@
 
 Sourcegraph is currently migrating to Bazel as its build system and this page is targeted for early adopters which are helping the [#job-fair-bazel](https://sourcegraph.slack.com/archives/C03LUEB7TJS) team to test their work.
 
+## Early adopters 
+
+If you are an early adopter, you can already get some benefits from Bazel, while we gradually roll it out.  
+
+:bulb: Please note that this is only applicable in PRs. For the `main` branch we need to ensure we use the same build steps for everyone until Bazel is fully rolled out. 
+
+- Before pushing, ensure your changes are refected in the build files (those `BUILD.bazel` files):
+  - If you changed anything to the `go.mod` file, you need to run: 
+    - `bazel run :update-gazelle-repos` 
+  - Run `bazel configure` to ensure the build files are also properly updated.
+- Run your tests locally, with `bazel test //[PATH]/...` where `PATH` refers to the package containing your changes. 
+  - If you changed things in too many places, you can always run `bazel test //...` which will test everything (or reused cached results if applicable). 
+- Include the updated build files in your commit! They are relevant to that commit after all. 
+- When commiting, add the `[force-bazel]` message flag in the description of your commit (not in the commit title, but in the description - it's nicer this way).
+  - If you commit again, remember to add that message flag again. Only the last commit is checked to determine if we want Bazel on that PR. 
+- Push your changes as usual. 
+- When browsing the CI (you can use `sg ci status --web` you'll see a `Bazel` set of jobs running both your tests and build. 
+
+You may find the build and tests to be slow, either locally or in CI. This is because to be efficient, Bazel cache needs to be warm. So inevitably, as early adopters, that will be less the case 
+than when more teammates will be using Bazel. 
+
+:warning: It's highly probable that the build files you updated will include changes that you were not responsible for. This is because not everyone is updating buildfiles. Just commit them anyway and move on. This will be get better over time. 
+
+:warning: If you find your tests to be passing normally with `go test` and on a normal CI build, but not when Bazel is enabled, please check the [FAQ](#faq) below. If you can't solve the problem, just reach us out on [#job-fair-bazel](https://sourcegraph.slack.com/archives/C03LUEB7TJS). 
+
 ## Why do we need a build system?
 
 Building Sourcegraph is a non-trivial task, as it not only ships a frontend and a backend, but also a variety of third parties and components that makes the building process complicated, not only locally but also in CI. Historically, this always have been solved with ad-hoc solutions, such as shell scripts, and caching in various point of the process.
@@ -123,7 +148,7 @@ Bazel ships with a tool named `Gazelle` whose purpose is to take a look at your 
 
 Gazelle and Go: It works almost transparently with Go, it will find all your Go code and infer your dependencies from inspecting your imports. Similarly, it will inspect the `go.mod` to lock down the third parties dependencies required. Because of how well Gazelle-go works, it means that most of the time, you can still rely on your normal Go commands to work. But it's recommended to use Bazel because that's what will be used in CI to build the app and ultimately have the final word in saying if yes or no a PR can be merged. See the [cheat sheet section](#bazel-cheat-sheet) for the commands.
 
-Gazelle and the frontend: TODO
+Gazelle and the frontend: see [Bazel for Web bundle](./bazel_web.md).
 
 ### Bazel cheat sheet
 
@@ -139,7 +164,7 @@ Gazelle and the frontend: TODO
   - ex `bazel build //lib/...` will build everything under the `/lib/...` folder in the Sourcegraph repository.
 - `bazel test [path-to-target]` tests a target.
   - ex `bazel test //lib/...` will run all tests under the `/lib/...` folder in the Sourcegraph repository.
-- `bazel run :gazelle` automatically inspect the source tree and update the buildfiles if needed.
+- `bazel configure` automatically inspect the source tree and update the buildfiles if needed.
 - `bazel run //:gazelle-update-repos` automatically inspect the `go.mod` and update the third parties dependencies if needed.
 
 #### Debugging buildfiles
@@ -178,7 +203,7 @@ So when a change is detected, `iBazel` will build the affected target and it wil
 
 ##### Caveats
 
-- You still need to run `bazel run :gazelle -- fix` if you add/remove files or packages.
+- You still need to run `bazel configure` if you add/remove files or packages.
 - Error handling is not perfect, so if a build fails, that might stop the whole thing. We'll improve this in the upcoming days, as we gather feedback.
 
 ## FAQ
@@ -215,7 +240,7 @@ INFO: 36 processes: 2 internal, 34 darwin-sandbox.
 ```
 
 
-Solution: run `bazel run //:gazelle` to update the buildfiles automatically.
+Solution: run `bazel configure` to update the buildfiles automatically.
 
 
 #### My go tests complains about missing testdata

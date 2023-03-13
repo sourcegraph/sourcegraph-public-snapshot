@@ -15,15 +15,15 @@ type PathPattern struct {
 }
 
 type GlobAndPathspecPattern struct {
-	Glob     string
-	Pathspec string
+	Glob      string
+	Pathspecs []string
 }
 
 // NewPattern returns a new path pattern instance that includes a single pattern.
-func NewPattern(glob, pathspec string) *PathPattern {
+func NewPattern(glob string, pathspecs []string) *PathPattern {
 	return &PathPattern{pattern: GlobAndPathspecPattern{
-		Glob:     glob,
-		Pathspec: pathspec,
+		Glob:      glob,
+		Pathspecs: pathspecs,
 	}}
 }
 

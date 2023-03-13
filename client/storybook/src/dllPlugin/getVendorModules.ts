@@ -11,7 +11,7 @@ export function getVendorModules(webpackStats: StatsCompilation): Set<string> {
         chunk => typeof chunk.id === 'string' && chunk.id.includes('vendors')
     )
 
-    if (!vendorsChunk || !vendorsChunk.modules) {
+    if (!vendorsChunk?.modules) {
         throw new Error('Vendors chunk not found in preview.stats.json!')
     }
 

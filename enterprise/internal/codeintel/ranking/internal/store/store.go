@@ -46,10 +46,14 @@ type Store interface {
 		err error,
 	)
 
-	VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
+	VacuumStaleDefinitions(ctx context.Context, graphKey string) (
 		numDefinitionRecordsScanned int,
-		numReferenceRecordsScanned int,
 		numStaleDefinitionRecordsDeleted int,
+		err error,
+	)
+
+	VacuumStaleReferences(ctx context.Context, graphKey string) (
+		numReferenceRecordsScanned int,
 		numStaleReferenceRecordsDeleted int,
 		err error,
 	)

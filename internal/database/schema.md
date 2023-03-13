@@ -477,6 +477,7 @@ Referenced by:
  detached_at              | timestamp with time zone                     |           |          | 
  computed_state           | text                                         |           | not null | 
  external_fork_name       | citext                                       |           |          | 
+ previous_failure_message | text                                         |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -3139,21 +3140,17 @@ Foreign-key constraints:
    Column   |           Type           | Collation | Nullable |              Default              
 ------------+--------------------------+-----------+----------+-----------------------------------
  id         | integer                  |           | not null | nextval('roles_id_seq'::regclass)
- name       | text                     |           | not null | 
  created_at | timestamp with time zone |           | not null | now()
  system     | boolean                  |           | not null | false
+ name       | citext                   |           | not null | 
 Indexes:
     "roles_pkey" PRIMARY KEY, btree (id)
-    "roles_name" UNIQUE CONSTRAINT, btree (name)
-Check constraints:
-    "name_not_blank" CHECK (name <> ''::text)
+    "unique_role_name" UNIQUE, btree (name)
 Referenced by:
     TABLE "role_permissions" CONSTRAINT "role_permissions_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_roles" CONSTRAINT "user_roles_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
 
 ```
-
-**name**: The uniquely identifying name of the role.
 
 **system**: This is used to indicate whether a role is read-only or can be modified.
 
@@ -4206,7 +4203,8 @@ Foreign-key constraints:
     c.last_heartbeat_at,
     c.external_fork_name,
     c.external_fork_namespace,
-    c.detached_at
+    c.detached_at,
+    c.previous_failure_message
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1

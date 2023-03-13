@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -96,7 +98,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 		config        *schema.PermissionsUserMapping
 		args          *database.GrantPendingPermissionsArgs
 		updates       []update
-		expectRepoIDs []int
+		expectRepoIDs []int32
 	}{
 		{
 			name: "grant by emails",
@@ -132,7 +134,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					repoID: 3,
 				},
 			},
-			expectRepoIDs: []int{1, 2},
+			expectRepoIDs: []int32{1, 2},
 		},
 		{
 			name: "grant by username",
@@ -161,7 +163,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					repoID: 2,
 				},
 			},
-			expectRepoIDs: []int{1},
+			expectRepoIDs: []int32{1},
 		},
 		{
 			name: "grant by external accounts",
@@ -197,7 +199,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					repoID: 3,
 				},
 			},
-			expectRepoIDs: []int{1, 2},
+			expectRepoIDs: []int32{1, 2},
 		},
 	}
 	for _, test := range tests {
@@ -220,17 +222,16 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			p := &authz.UserPermissions{
-				UserID: user.ID,
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
-			}
-			err = s.store.LoadUserPermissions(ctx, p)
-			if err != nil {
-				t.Fatal(err)
-			}
+			p, err := s.store.LoadUserPermissions(ctx, user.ID)
+			require.NoError(t, err)
 
-			equal(t, "p.IDs", test.expectRepoIDs, mapsetToArray(p.IDs))
+			gotIDs := make([]int32, len(p))
+			for i, perm := range p {
+				gotIDs[i] = perm.RepoID
+			}
+			slices.Sort(gotIDs)
+
+			equal(t, "p.IDs", test.expectRepoIDs, gotIDs)
 		})
 	}
 }
@@ -331,7 +332,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 						UserID: userID,
 					}
 				}
-				if err := s.store.SetRepoPerms(ctx, update.repoID, userIDs); err != nil {
+				if err := s.store.SetRepoPerms(ctx, update.repoID, userIDs, authz.SourceAPI); err != nil {
 					t.Fatal(err)
 				}
 				_, err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
@@ -372,7 +373,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	}
 
 	// Set both effective and pending permissions for a user
-	if err = s.store.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: user.ID}, []int32{int32(repo.ID)}); err != nil {
+	if err = s.store.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: user.ID}, []int32{int32(repo.ID)}, authz.SourceAPI); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
@@ -410,14 +411,9 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	}
 
 	// The user should not have any permissions now
-	err = s.store.LoadUserPermissions(ctx, &authz.UserPermissions{
-		UserID: user.ID,
-		Perm:   authz.Read,
-		Type:   authz.PermRepos,
-	})
-	if err != authz.ErrPermsNotFound {
-		t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
-	}
+	p, err := s.store.LoadUserPermissions(ctx, user.ID)
+	require.NoError(t, err)
+	assert.Zero(t, len(p))
 
 	srpMap, err := db.SubRepoPerms().GetByUser(ctx, user.ID)
 	if err != nil {

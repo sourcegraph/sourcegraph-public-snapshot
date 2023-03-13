@@ -37,7 +37,7 @@ export function fetchReposByQuery(query: string): Observable<{ name: string; url
         { query }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.search || !data.search.results || !data.search.results.repositories) {
+            if (!data?.search?.results?.repositories) {
                 throw createAggregateError(errors)
             }
             return data.search.results.repositories

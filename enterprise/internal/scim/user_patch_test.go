@@ -51,7 +51,7 @@ func makeEmail(userID int32, address string, primary, verified bool) *database.U
 	return &database.UserEmail{UserID: userID, Email: address, VerifiedAt: vDate, Primary: primary}
 }
 
-func Test_UserResourceHandler_Patch_Username(t *testing.T) {
+func Test_UserResourceHandler_Patch(t *testing.T) {
 	t.Parallel()
 
 	db := getMockDB([]*types.UserForSCIM{
@@ -269,6 +269,21 @@ func Test_UserResourceHandler_Patch_Username(t *testing.T) {
 				assert.Len(t, dbEmails, 2)
 				assert.True(t, containsEmail(dbEmails, "primary@work.com", true, false))
 				assert.True(t, containsEmail(dbEmails, "secondary@work.com", true, true))
+			},
+		},
+		{
+			name:   "Trigger hard delete with soft delete",
+			userId: "10",
+			operations: []scim.PatchOperation{
+				{Op: "replace", Path: parseStringPath(AttrActive), Value: false},
+			},
+			testFunc: func(userRes scim.Resource) {
+				assert.Equal(t, userRes.Attributes[AttrActive], false)
+
+				// Check user in DB
+				userID, _ := strconv.Atoi(userRes.ID)
+				_, err := db.Users().GetByID(context.Background(), int32(userID))
+				assert.Error(t, err, "user not found")
 			},
 		},
 	}

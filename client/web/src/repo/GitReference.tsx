@@ -181,7 +181,7 @@ export const queryGitReferences = memoizeObservable(
                 args.withBehindAhead !== undefined ? args.withBehindAhead : args.type === GitRefType.GIT_BRANCH,
         }).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node || data.node.__typename !== 'Repository' || !data.node.gitRefs) {
+                if (data?.node?.__typename !== 'Repository' || !data?.node?.gitRefs) {
                     throw createAggregateError(errors)
                 }
                 return data.node.gitRefs

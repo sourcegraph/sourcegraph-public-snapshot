@@ -159,6 +159,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     likelyDockerOnMac: boolean
 
     /**
+     * Whether the setup wizard supports file picker query, it's used
+     * only for the Sourcegraph App (in all others deploy types it's always false)
+     */
+    localFilePickerAvailable: boolean
+
+    /**
      * Whether or not the server needs to restart in order to apply a pending
      * configuration change.
      */
@@ -195,6 +201,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether embeddings are enabled on this site. */
     embeddingsEnabled: boolean
+
+    /**
+     * Local git URL, it's used only to create a local external service
+     * in Sourcegraph App.
+     */
+    srcServeGitUrl: string
 
     /** Whether users are allowed to add their own code and at what permission level. */
     externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'

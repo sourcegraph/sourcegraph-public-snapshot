@@ -765,8 +765,7 @@ func check(logger log.Logger, db database.DB) {
 
 	updateBodyFunc := updateBody
 	// In Sourcegraph App mode, use limited pings.
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
+	if deploy.IsApp() {
 		updateBodyFunc = limitedUpdateBody
 	}
 	endpoint := updateCheckURL(logger)
@@ -815,11 +814,24 @@ func check(logger log.Logger, db database.DB) {
 			return "", errors.Errorf("update endpoint returned HTTP error %d: %s", resp.StatusCode, description)
 		}
 
+		// Sourcegraph App: we always get ping responses back, as they may contain notification messages for us.
+		if deploy.IsApp() {
+			var response pingResponse
+			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+				return "", err
+			}
+			response.handleNotifications()
+			if response.UpdateAvailable {
+				return response.Version.String(), nil
+			}
+			return "", nil // no update available
+		}
+
 		if resp.StatusCode == http.StatusNoContent {
 			return "", nil // no update available
 		}
 
-		var latestBuild build
+		var latestBuild pingResponse
 		if err := json.NewDecoder(resp.Body).Decode(&latestBuild); err != nil {
 			return "", err
 		}

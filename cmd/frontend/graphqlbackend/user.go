@@ -482,10 +482,10 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 }
 
 func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
-	userID := r.user.ID
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-		return nil, err
+	if envvar.SourcegraphDotComMode() {
+		return nil, errors.New("roles are not available on sourcegraph.com")
 	}
+	userID := r.user.ID
 	connectionStore := &roleConnectionStore{
 		db:     r.db,
 		userID: userID,

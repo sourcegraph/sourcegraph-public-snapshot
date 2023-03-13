@@ -1,10 +1,18 @@
 # SCIM
 
+<aside class="beta">
+<p>
+<span class="badge badge-beta">Beta</span> This feature is in beta while we're testing it with more IdPs. Our implementation complies with the SCIM 2.0 specification, and passes the validator for Okta and Azure AD. But implementations might differ on the side of IdPs and validators don't give a 100% coverage, so we can't guarantee that our solution works with all IdPs in every case.
+</p>
+
+<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
+</aside>
+
 SCIM (System for Cross-domain Identity Management) is a standard for provisioning and deprovisioning users and groups in an organization. IdPs (identity providers) like Okta, OneLogin, and Azure Active Directory support provisioning users through SCIM.
 
 Sourcegraph supports SCIM 2.0 for provisioning and de-provisioning _users_.
 
-You can use any IdP that supports SCIM, but we’ve only tested the endpoint with Okta and Azure Active Directory.
+> NOTE: While our implementation of SCIM 2.0 is compliant with the specification, we’ve only tested it against two IdPs: Okta and Azure Active Directory. We can't guarantee it works with every IdP if the provider doesn't fully comply with the specification.
 
 ## How to use
 
@@ -72,3 +80,5 @@ We support the following SCIM 2.0 features:
 - ❌ Sorting – when listing users
 - ❌ Entity tags (ETags)
 - ❌ Multi-tenancy – you can only have 1 SCIM client configured at a time.
+- ❌ Soft delete – Currently, we do not support soft deletion through SCIM. When a user is deleted (typically, when removed from a group of users who can access Sourcegraph), we **permanently delete** their user in Sourcegraph. This means that if the user is re-added to such a group, their settings will be reset.
+- ❌ Tests with many IdPs – we’ve only validated the endpoint with Okta and Azure AD.

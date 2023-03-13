@@ -38,6 +38,12 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 syntect = { git = "https://github.com/sourcegraph/syntect", branch = "main" }
 tree-sitter = "0.20.9"
+tree-sitter-highlight = "0.20"
 
-scip = { git = "https://github.com/sourcegraph/scip" }
+scip = { git = "https://github.com/sourcegraph/scip", branch = "main" }
 protobuf = "3"
+
+[profile.release]
+# Enabled debug symbols in release build, so if we have a crash
+# we can inspect the coredump.
+debug = true

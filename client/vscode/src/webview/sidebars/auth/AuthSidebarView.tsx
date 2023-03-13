@@ -19,6 +19,7 @@ import {
 import { WebviewPageProps } from '../../platform/context'
 
 import styles from './AuthSidebarView.module.scss'
+
 interface AuthSidebarViewProps
     extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'instanceURL' | 'authenticatedUser'> {}
 

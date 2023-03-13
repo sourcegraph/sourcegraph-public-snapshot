@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit'
 
-import type { LayoutLoad } from './$types'
-
 import { PUBLIC_SG_ENTERPRISE } from '$env/static/public'
+
+import type { LayoutLoad } from './$types'
 
 export const load: LayoutLoad = () => {
     // Example for how we could prevent access to all enterprese specific routes.

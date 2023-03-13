@@ -226,6 +226,7 @@ type PermissionSyncJobStore interface {
 	CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error
 
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
+	GetLatestFinishedSyncJob(ctx context.Context, opts ListPermissionSyncJobOpts) (*PermissionSyncJob, error)
 	Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
 	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
@@ -371,7 +372,7 @@ func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Cont
 		return tx.create(ctx, job)
 	}
 	// Database constraint guarantees that we have at most 1 job with NULL
-	// `process_after` value.
+	// `process_after` value for the same user/repo ID.
 	existingJob := syncJobs[0]
 
 	// Existing job with higher priority should not be overridden. Existing
@@ -512,6 +513,26 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 		}
 	}
 	return conds
+}
+
+func (s *permissionSyncJobStore) GetLatestFinishedSyncJob(ctx context.Context, opts ListPermissionSyncJobOpts) (*PermissionSyncJob, error) {
+	first := 1
+	opts.PaginationArgs = &PaginationArgs{
+		First:     &first,
+		Ascending: false,
+		OrderBy: []OrderByOption{{
+			Field: "finished_at",
+			Nulls: OrderByNullsLast,
+		}},
+	}
+	jobs, err := s.List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	if len(jobs) == 0 || jobs[0].FinishedAt.IsZero() {
+		return nil, nil
+	}
+	return jobs[0], nil
 }
 
 const listPermissionSyncJobQueryFmtstr = `

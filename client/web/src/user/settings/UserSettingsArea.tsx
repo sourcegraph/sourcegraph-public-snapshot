@@ -66,6 +66,11 @@ const UserSettingsAreaGQLFragment = gql`
                 name
             }
         }
+        roles @skip(if: $isSourcegraphDotCom) {
+            nodes {
+                name
+            }
+        }
         tags @include(if: $siteAdmin)
         ...EditUserProfilePage
     }
