@@ -80,7 +80,7 @@ pub enum SyntaxEngine {
     TreeSitter,
 
     #[serde(rename = "scip-syntax")]
-    TreeSitterSyntax,
+    ScipSyntax,
 }
 
 #[derive(Deserialize, Default, Debug)]
@@ -284,6 +284,7 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
 }
 
 pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
+    dbg!(&q);
     match q.engine {
         SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
             let sg_query = SourcegraphQuery {
@@ -307,13 +308,13 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
             let encoded = document.write_to_bytes().map_err(jsonify_err)?;
             Ok(json!({"scip": base64::encode(encoded), "plaintext": false}))
         }),
-        SyntaxEngine::TreeSitter | SyntaxEngine::TreeSitterSyntax => {
+        SyntaxEngine::TreeSitter | SyntaxEngine::ScipSyntax => {
             let language = q
                 .filetype
                 .ok_or_else(|| json!({"error": "Must pass a language for /scip" }))?
                 .to_lowercase();
 
-            let include_locals = q.engine == SyntaxEngine::TreeSitterSyntax;
+            let include_locals = q.engine == SyntaxEngine::ScipSyntax;
 
             match treesitter_index(treesitter_language(&language), &q.code, include_locals) {
                 Ok(document) => {

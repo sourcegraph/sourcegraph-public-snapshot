@@ -513,4 +513,61 @@ SELECT * FROM my_table
 
         Ok(())
     }
+
+    #[test]
+    fn test_files_with_locals() -> Result<(), std::io::Error> {
+        let crate_root: std::path::PathBuf = std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
+        let input_dir = crate_root
+            .join("src")
+            .join("snapshots")
+            .join("files-with-locals");
+        let dir = read_dir(&input_dir).unwrap();
+
+        let mut failed_tests = vec![];
+        for entry in dir {
+            let entry = entry?;
+            let filepath = entry.path();
+            let mut file = File::open(&filepath)?;
+            let mut contents = String::new();
+            file.read_to_string(&mut contents)?;
+
+            let filetype = &determine_filetype(&SourcegraphQuery {
+                extension: filepath.extension().unwrap().to_str().unwrap().to_string(),
+                filepath: filepath.to_str().unwrap().to_string(),
+                filetype: None,
+                css: false,
+                line_length_limit: None,
+                theme: "".to_string(),
+                code: contents.clone(),
+            });
+
+            let indexed = index_language(filetype, &contents, true);
+            if indexed.is_err() {
+                // assert failure
+                panic!("unknown filetype {:?}", filetype);
+            }
+            let document = indexed.unwrap();
+
+            // TODO: I'm not sure if there's a better way to run the snapshots without
+            // panicing and then catching, but this will do for now.
+            match std::panic::catch_unwind(|| {
+                insta::assert_snapshot!(
+                    filepath.strip_prefix(&input_dir).unwrap().to_str().unwrap(),
+                    dump_document(&document, &contents)
+                );
+            }) {
+                Ok(_) => println!("{}: OK", filepath.to_str().unwrap()),
+                Err(err) => failed_tests.push(err),
+            }
+        }
+
+        if !failed_tests.is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("{} tests failed", failed_tests.len()),
+            ));
+        }
+
+        Ok(())
+    }
 }
