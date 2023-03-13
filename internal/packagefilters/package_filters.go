@@ -8,34 +8,42 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewFilterLists(filters []shared.PackageRepoFilter) (allowlist, blocklist []PackageMatcher, err error) {
+type PackageFilters struct {
+	allowlists map[string][]PackageMatcher
+	blocklists map[string][]PackageMatcher
+}
+
+func NewFilterLists(filters []shared.PackageRepoFilter) (p PackageFilters, err error) {
+	p.allowlists = make(map[string][]PackageMatcher)
+	p.blocklists = make(map[string][]PackageMatcher)
+
 	for _, filter := range filters {
 		var matcher PackageMatcher
 		if filter.NameFilter != nil {
 			matcher, err = NewPackageNameGlob(filter.NameFilter.PackageGlob)
 			if err != nil {
-				return nil, nil, errors.Wrapf(err, "error building glob matcher for %q", filter.NameFilter.PackageGlob)
+				return PackageFilters{}, errors.Wrapf(err, "error building glob matcher for %q", filter.NameFilter.PackageGlob)
 			}
 		} else {
 			matcher, err = NewVersionGlob(filter.VersionFilter.PackageName, filter.VersionFilter.VersionGlob)
 			if err != nil {
-				return nil, nil, errors.Wrapf(err, "error building glob matcher for %q %q", filter.VersionFilter.PackageName, filter.VersionFilter.VersionGlob)
+				return PackageFilters{}, errors.Wrapf(err, "error building glob matcher for %q %q", filter.VersionFilter.PackageName, filter.VersionFilter.VersionGlob)
 			}
 		}
 		switch filter.Behaviour {
 		case "ALLOW":
-			allowlist = append(allowlist, matcher)
+			p.allowlists[filter.PackageScheme] = append(p.allowlists[filter.PackageScheme], matcher)
 		case "BLOCK":
-			blocklist = append(blocklist, matcher)
+			p.blocklists[filter.PackageScheme] = append(p.blocklists[filter.PackageScheme], matcher)
 		}
 	}
 
 	return
 }
 
-func IsPackageAllowed(pkgName reposource.PackageName, allowList, blockList []PackageMatcher) (allowed bool) {
+func IsPackageAllowed(scheme string, pkgName reposource.PackageName, filters PackageFilters) (allowed bool) {
 	// blocklist takes priority
-	for _, block := range blockList {
+	for _, block := range filters.blocklists[scheme] {
 		// non-all-encompassing version globs don't apply to unversioned packages,
 		// likely we're at too-early point in the syncing process to know, but also
 		// we may still want the package to browse versions that _dont_ match this
@@ -43,72 +51,77 @@ func IsPackageAllowed(pkgName reposource.PackageName, allowList, blockList []Pac
 			continue
 		}
 
-		if block.Matches(string(pkgName), "") {
+		if block.Matches(pkgName, "") {
 			return false
 		}
 	}
 
-	// by default, anything is allowed unless specific allowlist exists
-	isAllowed := len(allowList) == 0
-	for _, allow := range allowList {
-		if vglob, ok := allow.(versionGlob); ok && vglob.globStr != "*" {
-			continue
+	// by default, anything is allowed unless specific _name_ filter exists, or version filter with "*".
+	// outside of *, version filters cant disallow a package in this function.
+	// hence, the default value scenarios are:
+	// - allow if no allow filters (like usual)
+	// - allow if only non-"*" version filters (will be checked per-version later)
+	// - disallow otherwise
+	var allowlist []PackageMatcher
+	for _, allow := range filters.allowlists[scheme] {
+		// if is a name filter or if its a "*" version filter
+		if vglob, ok := allow.(versionGlob); !ok || (ok && vglob.globStr == "*") {
+			allowlist = append(allowlist, allow)
 		}
-		isAllowed = isAllowed || allow.Matches(string(pkgName), "")
+	}
+
+	isAllowed := len(allowlist) == 0
+	// then we go on to actually match against the name
+	for _, allow := range allowlist {
+		isAllowed = isAllowed || allow.Matches(pkgName, "")
 	}
 
 	return isAllowed
 }
 
-func IsVersionedPackageAllowed(pkgName reposource.PackageName, version string, allowList, blockList []PackageMatcher) (allowed bool) {
+func IsVersionedPackageAllowed(scheme string, pkgName reposource.PackageName, version string, filters PackageFilters) (allowed bool) {
 	// blocklist takes priority
-	for _, block := range blockList {
-		if _, ok := block.(versionGlob); ok && version == "" {
-			continue
-		}
-
-		if block.Matches(string(pkgName), version) {
+	for _, block := range filters.blocklists[scheme] {
+		if block.Matches(pkgName, version) {
 			return false
 		}
 	}
 
 	// by default, anything is allowed unless specific allowlist exists
-	isAllowed := len(allowList) == 0
-	for _, allow := range allowList {
-		if _, ok := allow.(versionGlob); ok && version == "" {
-			continue
-		}
-		isAllowed = isAllowed || allow.Matches(string(pkgName), version)
+	isAllowed := len(filters.allowlists[scheme]) == 0
+	for _, allow := range filters.allowlists[scheme] {
+		isAllowed = isAllowed || allow.Matches(pkgName, version)
 	}
 
 	return isAllowed
 }
 
 type PackageMatcher interface {
-	Matches(pkg, version string) bool
+	Matches(pkg reposource.PackageName, version string) bool
 }
 
 type packageNameGlob struct {
 	g glob.Glob
 }
 
-func NewPackageNameGlob(str string) (PackageMatcher, error) {
-	g, err := glob.Compile(str)
+func NewPackageNameGlob(nameGlob string) (PackageMatcher, error) {
+	g, err := glob.Compile(nameGlob)
 	if err != nil {
 		return nil, err
 	}
 	return packageNameGlob{g}, nil
 }
 
-func (p packageNameGlob) Matches(pkg, _ string) bool {
+func (p packageNameGlob) Matches(pkg reposource.PackageName, _ string) bool {
 	// when the package name is to be glob matched, we dont
 	// care about the version
-	return p.g.Match(pkg)
+	return p.g.Match(string(pkg))
 }
 
 type versionGlob struct {
-	packageName, globStr string
-	g                    glob.Glob
+	packageName string
+	globStr     string
+	g           glob.Glob
 }
 
 func NewVersionGlob(packageName, vglob string) (PackageMatcher, error) {
@@ -119,8 +132,8 @@ func NewVersionGlob(packageName, vglob string) (PackageMatcher, error) {
 	return versionGlob{packageName, vglob, g}, nil
 }
 
-func (v versionGlob) Matches(pkg, version string) bool {
+func (v versionGlob) Matches(pkg reposource.PackageName, version string) bool {
 	// when the version is to be glob matched, the package name
 	// has to match exactly
-	return pkg == v.packageName && v.g.Match(version)
+	return string(pkg) == v.packageName && v.g.Match(version)
 }
