@@ -3,9 +3,11 @@ package resolvers
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -415,13 +417,16 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 
 	var ids []int32
 	if user != nil {
-		p := &authz.UserPermissions{
-			UserID: user.ID,
-			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-			Type:   authz.PermRepos,
+		var perms []authz.Permission
+		perms, err = r.db.Perms().LoadUserPermissions(ctx, user.ID)
+		if err != nil {
+			return nil, err
 		}
-		err = r.db.Perms().LoadUserPermissions(ctx, p)
-		ids = p.GenerateSortedIDsSlice()
+		ids = make([]int32, len(perms))
+		for i, perm := range perms {
+			ids[i] = perm.RepoID
+		}
+		slices.Sort(ids)
 	} else {
 		p := &authz.UserPendingPermissions{
 			ServiceType: authz.SourcegraphServiceType,
@@ -431,14 +436,15 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 			Type:        authz.PermRepos,
 		}
 		err = r.db.Perms().LoadUserPendingPermissions(ctx, p)
-		ids = p.GenerateSortedIDsSlice()
-	}
-	if err != nil && err != authz.ErrPermsNotFound {
-		return nil, err
-	}
-	// If no row is found, we return an empty list to the consumer.
-	if err == authz.ErrPermsNotFound {
-		ids = []int32{}
+		if err != nil && err != authz.ErrPermsNotFound {
+			return nil, err
+		}
+		// If no row is found, we return an empty list to the consumer.
+		if err == authz.ErrPermsNotFound {
+			ids = []int32{}
+		} else {
+			ids = p.GenerateSortedIDsSlice()
+		}
 	}
 
 	return &repositoryConnectionResolver{
@@ -611,23 +617,39 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 		return nil, err
 	}
 
-	p := &authz.UserPermissions{
-		UserID: userID,
-		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-		Type:   authz.PermRepos,
-	}
-	err = r.db.Perms().LoadUserPermissions(ctx, p)
-	if err != nil && err != authz.ErrPermsNotFound {
+	perms, err := r.db.Perms().LoadUserPermissions(ctx, userID)
+	if err != nil {
 		return nil, err
+	}
+
+	// get max updated_at time from the permissions
+	updatedAt := time.Time{}
+	for _, p := range perms {
+		if p.UpdatedAt.After(updatedAt) {
+			updatedAt = p.UpdatedAt
+		}
+	}
+
+	// get sync time from the sync jobs table
+	latestSyncJob, err := r.db.PermissionSyncJobs().GetLatestFinishedSyncJob(ctx, database.ListPermissionSyncJobOpts{
+		UserID:      int(userID),
+		NotCanceled: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	syncedAt := time.Time{}
+	if latestSyncJob != nil {
+		syncedAt = latestSyncJob.FinishedAt
 	}
 
 	return &permissionsInfoResolver{
 		db:        r.db,
 		ossDB:     r.ossDB,
 		userID:    userID,
-		perms:     p.Perm,
-		syncedAt:  p.SyncedAt,
-		updatedAt: p.UpdatedAt,
+		perms:     authz.Read,
+		syncedAt:  syncedAt,
+		updatedAt: updatedAt,
 	}, nil
 }
 
@@ -639,5 +661,3 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.
 
 	return NewPermissionsSyncJobsResolver(r.db, args)
 }
-
-func strPtr(s string) *string { return &s }

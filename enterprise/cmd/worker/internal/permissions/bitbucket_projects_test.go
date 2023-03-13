@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -154,13 +155,15 @@ func TestSetPermissionsForUsers(t *testing.T) {
 			igor.ID:   {},
 		}, p.UserIDs)
 
-		up := authz.UserPermissions{UserID: pushpa.ID, Perm: authz.Read, Type: authz.PermRepos}
-		err = perms.LoadUserPermissions(ctx, &up)
+		up, err := perms.LoadUserPermissions(ctx, pushpa.ID)
 		require.NoError(t, err)
-		require.Equal(t, map[int32]struct{}{
-			1: {},
-			2: {},
-		}, up.IDs)
+		gotIDs := make([]int32, len(up))
+		for i, perm := range up {
+			gotIDs[i] = perm.RepoID
+		}
+		slices.Sort(gotIDs)
+
+		require.Equal(t, []int32{1, 2}, gotIDs)
 	}
 
 	checkPendingPerms := func(bindIDs []string) {
@@ -373,12 +376,15 @@ func TestHandleRestricted(t *testing.T) {
 		}, p.UserIDs)
 	}
 
-	up := authz.UserPermissions{UserID: pushpa.ID, Perm: authz.Read, Type: authz.PermRepos}
-	err = perms.LoadUserPermissions(ctx, &up)
+	up, err := perms.LoadUserPermissions(ctx, pushpa.ID)
 	require.NoError(t, err)
-	require.Equal(t, map[int32]struct{}{
-		1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {},
-	}, up.IDs)
+	gotIDs := make([]int32, len(up))
+	for i, perm := range up {
+		gotIDs[i] = perm.RepoID
+	}
+	slices.Sort(gotIDs)
+
+	require.Equal(t, []int32{1, 2, 3, 4, 5, 6}, gotIDs)
 }
 
 func TestHandleUnrestricted(t *testing.T) {
