@@ -264,7 +264,7 @@ func getLanguage(path string, contents string) (string, bool) {
 		return lang, true
 	}
 
-	// Use the shebang if possible, sometimes enry is doesn't use the shebang...
+	// Force the use of the shebang.
 	if shebangLang, ok := overrideViaShebang(path, contents); ok {
 		return shebangLang, false
 	}
@@ -280,6 +280,10 @@ func getLanguage(path string, contents string) (string, bool) {
 // It also covers some edge cases when enry eagerly returns more languages
 // than necessary, which ends up overriding the shebang completely (which,
 // IMO is the highest priority match we can have).
+//
+// For example, enry will return "Perl" and "Pod" for a shebang of `#!/usr/bin/env perl`.
+// This is actually unhelpful, because then enry will *not* select "Perl" as the
+// language (which is our desired behavior).
 func overrideViaShebang(path, content string) (lang string, ok bool) {
 	shebangs := enry.GetLanguagesByShebang(path, []byte(content), []string{})
 	if len(shebangs) == 0 {
