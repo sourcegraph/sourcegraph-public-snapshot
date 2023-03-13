@@ -1,12 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ChatViewProvider } from '../chat/ChatViewProvider'
-import {
-	CODY_ACCESS_TOKEN_SECRET,
-	ConfigurationUseContext,
-	getConfiguration,
-	updateConfiguration,
-} from '../configuration'
+import { CODY_ACCESS_TOKEN_SECRET, ConfigurationUseContext, getConfiguration } from '../configuration'
 
 // Registers Commands and Webview at extension start up
 export const CommandsProvider = async (context: vscode.ExtensionContext): Promise<void> => {

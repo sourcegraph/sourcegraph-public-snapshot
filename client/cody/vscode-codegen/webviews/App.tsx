@@ -8,6 +8,7 @@ import { Header } from './Header'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
 import { NavBar } from './NavBar'
+import { Debug } from './Debug'
 import { Recipes } from './Recipes'
 import { Settings } from './Settings'
 import { ChatMessage, View } from './utils/types'
@@ -15,22 +16,28 @@ import { vscodeAPI, WebviewMessage } from './utils/vscodeAPI'
 
 function App(): React.ReactElement {
 	const [devMode, setDevMode] = useState(false)
+	const [debugLog, setDebugLog] = useState(['No data yet'])
 	const [view, setView] = useState<View | undefined>()
 	const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
 	const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
 	useEffect(() => {
 		vscodeAPI.onMessage(message => {
-			// Get chat transcript from extension.
-			if (message.data && message.data.type === 'transcript') {
-				setTranscript(message.data.messages)
-				setMessageInProgress(message.data.messageInProgress)
-			}
-			// Get the token from the extension.
-			if (message.data && message.data.type === 'token') {
-				const hasToken = !!message.data.value
-				setView(hasToken ? 'chat' : 'login')
-				setDevMode(message.data.mode === 'development')
+			switch (message.data.type) {
+				case 'transcript':
+					// Get chat transcript from extension.
+					setTranscript(message.data.messages)
+					setMessageInProgress(message.data.messageInProgress)
+					break
+				case 'token':
+					// Get the token from the extension.
+					const hasToken = !!message.data.value
+					setView(hasToken ? 'chat' : 'login')
+					setDevMode(message.data.mode === 'development')
+					break
+				case 'debug':
+					setDebugLog([...debugLog, message.data.message])
+					break
 			}
 		})
 
@@ -59,10 +66,11 @@ function App(): React.ReactElement {
 
 	const onResetClick = useCallback(() => {
 		setView('chat')
+		setDebugLog([])
 		setMessageInProgress(null)
 		setTranscript([])
 		vscodeAPI.postMessage({ command: 'reset' } as WebviewMessage)
-	}, [setView, setMessageInProgress, setTranscript])
+	}, [setView, setMessageInProgress, setTranscript, setDebugLog])
 
 	if (!view) {
 		return <LoadingPage />
@@ -72,10 +80,11 @@ function App(): React.ReactElement {
 		<div className="outer-container">
 			<Header showResetButton={view && view !== 'login'} onResetClick={onResetClick} />
 			{view === 'login' && <Login onLogin={onLogin} />}
-			{view && view !== 'login' && <NavBar view={view} setView={setView} />}
-			{view === 'recipes' && <Recipes />}
+			{view && view !== 'login' && <NavBar view={view} setView={setView} devMode={devMode} />}
 			{view === 'about' && <About />}
-			{view === 'settings' && <Settings onLogout={onLogout} />}
+			{view === 'debug' && devMode && <Debug debugLog={debugLog} />}
+			{view === 'recipes' && <Recipes />}
+			{view === 'settings' && <Settings setView={setView} onLogout={onLogout} />}
 			{view === 'chat' && (
 				<Chat
 					messageInProgress={messageInProgress}

@@ -9,4 +9,4 @@ export interface ChatMessage extends Omit<Message, 'text'> {
 	contextFiles?: string[]
 }
 
-export type View = 'chat' | 'recipes' | 'about' | 'login' | 'settings'
+export type View = 'chat' | 'recipes' | 'about' | 'login' | 'settings' | 'debug'
