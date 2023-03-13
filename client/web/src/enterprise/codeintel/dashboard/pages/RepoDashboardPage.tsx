@@ -112,7 +112,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
 
     useEffect(() => {
         setFilterState(buildFilterStateFromParams(location, indexingEnabled))
-    }, [location])
+    }, [location, indexingEnabled])
 
     const handleFilterChange = useCallback(
         (value: string, paramKey: keyof SuggestionFilterState | keyof DefaultFilterState) => {
@@ -192,7 +192,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                   ]
                 : [
                       {
-                          label: `Auto-indexing is disabled`,
+                          label: 'Auto-indexing is disabled',
                           value: (
                               <Icon size="sm" aria-label="Auto-indexing is disabled" svgPath={mdiCircleOffOutline} />
                           ),
@@ -200,7 +200,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                       },
                   ]),
         ]
-    }, [indexes, suggestedIndexers])
+    }, [indexes, suggestedIndexers, indexingEnabled])
 
     if (loading && !data) {
         return <LoadingSpinner />

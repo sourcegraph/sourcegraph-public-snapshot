@@ -128,7 +128,7 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                   ]
                 : [
                       {
-                          label: `Auto-indexing is disabled`,
+                          label: 'Auto-indexing is disabled',
                           value: (
                               <Icon size="sm" aria-label="Auto-indexing is disabled" svgPath={mdiCircleOffOutline} />
                           ),
@@ -136,7 +136,7 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                       },
                   ]),
         ]
-    }, [data])
+    }, [data, indexingEnabled])
 
     if (loading || !data) {
         return <LoadingSpinner />
