@@ -7,8 +7,8 @@ import { intervalToDuration } from 'date-fns'
 import formatDuration from 'date-fns/formatDuration'
 import { capitalize, noop } from 'lodash'
 
-import { useMutation } from '@sourcegraph/http-client'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
