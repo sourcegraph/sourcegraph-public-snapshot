@@ -321,8 +321,9 @@ func testPermsStore_FetchReposByUserAndExternalService(db database.DB) func(*tes
 				t.Fatal(err)
 			}
 			t.Cleanup(func() {
-				cleanupReposTable(t, s)
 				cleanupPermsTables(t, s)
+				cleanupUsersTable(t, s)
+				cleanupReposTable(t, s)
 			})
 
 			rp := &authz.RepoPermissions{
@@ -976,6 +977,8 @@ func testPermsStore_FetchReposByExternalAccount(db database.DB) func(*testing.T)
 				s := perms(logger, db, clock)
 				t.Cleanup(func() {
 					cleanupPermsTables(t, s)
+					cleanupUsersTable(t, s)
+					cleanupReposTable(t, s)
 				})
 
 				if test.origPermissions != nil && len(test.origPermissions) > 0 {
