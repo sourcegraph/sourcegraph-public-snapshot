@@ -91,7 +91,6 @@ function App(): React.ReactElement {
                     transcript={transcript}
                     setMessageInProgress={setMessageInProgress}
                     setTranscript={setTranscript}
-                    devMode={devMode}
                 />
             )}
         </div>

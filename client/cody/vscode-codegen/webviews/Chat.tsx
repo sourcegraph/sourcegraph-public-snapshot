@@ -15,7 +15,6 @@ interface ChatboxProps {
     setMessageInProgress: (transcript: ChatMessage | null) => void
     transcript: ChatMessage[]
     setTranscript: (transcripts: ChatMessage[]) => void
-    devMode: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -23,7 +22,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setMessageInProgress,
     transcript,
     setTranscript,
-    devMode,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [formInput, setFormInput] = useState('')
