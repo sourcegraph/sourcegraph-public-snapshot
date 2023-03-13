@@ -1007,8 +1007,6 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fmt.Printf("Test name %s\n", test.name)
-
 			s := perms(logger, db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
@@ -2784,7 +2782,6 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 				}
 			}
 
-			fmt.Printf("Test name: %s\n", test.name)
 			checkUserRepoPermissions(t, s, sqlf.Sprintf("TRUE"), test.expectUserRepoPerms)
 
 			err := checkRegularPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)

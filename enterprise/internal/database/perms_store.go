@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -621,7 +620,6 @@ WHERE
 	}
 
 	q := sqlf.Sprintf(format, where, currentTime, whereSource)
-	fmt.Printf("Query: %v\n", q)
 	return s.Exec(ctx, q)
 }
 
