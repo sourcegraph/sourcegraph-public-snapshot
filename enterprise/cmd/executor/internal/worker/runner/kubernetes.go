@@ -48,6 +48,7 @@ func (r *kubernetesRunner) Setup(ctx context.Context) error {
 	}
 	r.tmpDir = dir
 
+	// TODO: figure out private registry stuff
 	// If docker auth config is present, write it.
 	//if len(r.dockerAuthConfig.Auths) > 0 {
 	//	d, err := json.Marshal(r.dockerAuthConfig)
