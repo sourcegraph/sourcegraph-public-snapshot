@@ -40,8 +40,6 @@ func NewKubernetesWorkspace(
 		path = workspaceDir
 	}
 
-	fmt.Println("workspaceDir: ", workspaceDir)
-
 	if job.RepositoryName != "" {
 		if err = cloneRepo(ctx, workspaceDir, job, cmd, logger, cloneOpts, operations); err != nil {
 			_ = os.RemoveAll(workspaceDir)
@@ -54,8 +52,6 @@ func NewKubernetesWorkspace(
 		_ = os.RemoveAll(workspaceDir)
 		return nil, err
 	}
-
-	fmt.Println("path: ", path)
 
 	return &kubernetesWorkspace{
 		path:            path,
