@@ -39,7 +39,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWith
                     <ul className="mb-0 pl-3">
                         <li>
                             <Link
-                                to="/help/admin/deploy_executors#using-private-registries"
+                                to="/help/admin/executors/deploy_executors#using-private-registries"
                                 rel="noopener"
                                 target="_blank"
                             >
