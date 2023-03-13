@@ -12,6 +12,7 @@ import (
 
 	sgfilter "github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Patch updates one or more attributes of a SCIM resource using a sequence of
@@ -197,7 +198,11 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		return updateUser(r.Context(), tx, user, userRes.Attributes, emailsModified)
 	})
 	if err != nil {
-		return scim.Resource{}, err
+		multiErr, ok := err.(errors.MultiError)
+		if !ok || len(multiErr.Errors()) == 0 {
+			return scim.Resource{}, err
+		}
+		return scim.Resource{}, multiErr.Errors()[len(multiErr.Errors())-1]
 	}
 
 	return userRes, nil
