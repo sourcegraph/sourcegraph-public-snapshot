@@ -33,7 +33,6 @@ go_library(
         "commit_search_result.go",
         "compute.go",
         "default_settings.go",
-        "directives.go",
         "doc.go",
         "dotcom.go",
         "email_invitation.go",

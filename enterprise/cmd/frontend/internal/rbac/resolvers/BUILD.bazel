@@ -10,7 +10,6 @@ go_library(
         "//internal/auth",
         "//internal/database",
         "//internal/types",
-        "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],
 )
