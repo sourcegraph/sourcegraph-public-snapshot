@@ -107,13 +107,14 @@ func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gq
 	}
 
 	var role *types.Role
-	eventArg := &rolePermissionEventArgs{RoleID: role.ID}
+	eventArg := &rolePermissionEventArgs{}
 	err := r.db.WithTransact(ctx, func(tx database.DB) (err error) {
 		role, err = tx.Roles().Create(ctx, args.Name, false)
 		if err != nil {
 			return err
 		}
 
+		eventArg.RoleID = role.ID
 		if len(args.Permissions) > 0 {
 			opts := database.BulkAssignPermissionsToRoleOpts{RoleID: role.ID}
 			for _, permissionID := range args.Permissions {
