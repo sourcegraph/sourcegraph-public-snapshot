@@ -1,4 +1,4 @@
-import { OperationVariables } from '@apollo/client'
+import { OperationVariables, SuspenseQueryHookOptions } from '@apollo/client'
 import { useLoaderData } from 'react-router-dom'
 import * as uuid from 'uuid'
 
@@ -7,9 +7,7 @@ import { getDocumentNode, useSuspenseQuery } from '@sourcegraph/http-client'
 import { getWebGraphQLClient } from '../../backend/graphql'
 
 export type LoaderQuery = Parameters<typeof useSuspenseQuery>[0]
-export interface QueryReference {
-    variables: OperationVariables
-}
+export interface QueryReference extends SuspenseQueryHookOptions {}
 
 /**
  * TODO: Add explainers on how these things are connected.
@@ -17,6 +15,7 @@ export interface QueryReference {
 function createReference(variables: OperationVariables): QueryReference {
     return {
         variables,
+        fetchPolicy: 'cache-first',
     }
 }
 
