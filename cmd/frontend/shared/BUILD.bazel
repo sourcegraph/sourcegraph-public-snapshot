@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "shared",
-    srcs = ["service.go"],
+    srcs = [
+        "debug.go",
+        "service.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/shared",
     visibility = ["//visibility:public"],
     deps = [

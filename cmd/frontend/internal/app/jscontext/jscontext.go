@@ -83,6 +83,16 @@ type TemporarySettings struct {
 	Contents        string `json:"contents"`
 }
 
+type Permission struct {
+	GraphQLTypename string     `json:"__typename"`
+	ID              graphql.ID `json:"id"`
+	DisplayName     string     `json:"displayName"`
+}
+
+type PermissionsConnection struct {
+	GraphQLTypename string       `json:"__typename"`
+	Nodes           []Permission `json:"nodes"`
+}
 type CurrentUser struct {
 	GraphQLTypename     string     `json:"__typename"`
 	ID                  graphql.ID `json:"id"`
@@ -102,6 +112,7 @@ type CurrentUser struct {
 	Session        *UserSession                 `json:"session"`
 	Emails         []UserEmail                  `json:"emails"`
 	LatestSettings *UserLatestSettings          `json:"latestSettings"`
+	Permissions    PermissionsConnection        `json:"permissions"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -313,7 +324,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		SourcegraphAppMode:    deploy.IsDeployTypeSingleProgram(deploy.Type()),
+		SourcegraphAppMode:    deploy.IsApp(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
@@ -364,7 +375,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		RunningOnMacOS: runningOnMacOS,
 
-		LocalFilePickerAvailable: deploy.IsDeployTypeSingleProgram(deploy.Type()) && filepicker.Available(),
+		LocalFilePickerAvailable: deploy.IsApp() && filepicker.Available(),
 
 		SrcServeGitUrl: srcServeGitUrl,
 	}
@@ -418,6 +429,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		URL:                 userResolver.URL(),
 		Username:            userResolver.Username(),
 		ViewerCanAdminister: canAdminister,
+		Permissions:         resolveUserPermissions(ctx, userResolver),
 	}
 }
 
@@ -426,6 +438,33 @@ func derefString(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.UserResolver) PermissionsConnection {
+	connection := PermissionsConnection{
+		GraphQLTypename: "PermissionConnection",
+		Nodes:           []Permission{},
+	}
+
+	permissionResolver, err := userResolver.Permissions(ctx)
+	if err != nil {
+		return connection
+	}
+
+	nodes, err := permissionResolver.Nodes(ctx)
+	if err != nil {
+		return connection
+	}
+
+	for _, node := range nodes {
+		connection.Nodes = append(connection.Nodes, Permission{
+			GraphQLTypename: "Permission",
+			ID:              node.ID(),
+			DisplayName:     node.DisplayName(),
+		})
+	}
+
+	return connection
 }
 
 func resolveUserOrganizations(ctx context.Context, user *graphqlbackend.UserResolver) *UserOrganizationsConnection {

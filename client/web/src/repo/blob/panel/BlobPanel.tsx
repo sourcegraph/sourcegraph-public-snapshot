@@ -18,6 +18,7 @@ import { Text } from '@sourcegraph/wildcard'
 import { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanel } from '../../../codeintel/ReferencesPanel'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
+import { OwnConfigProps } from '../../../own/OwnConfigProps'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { FileOwnershipPanel } from '../own/FileOwnershipPanel'
 
@@ -28,6 +29,7 @@ interface Props
         ExtensionsControllerProps,
         PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
+        OwnConfigProps,
         TelemetryProps {
     repoID: Scalars['ID']
     isPackage: boolean
@@ -53,6 +55,7 @@ function useBlobPanelViews({
     useCodeIntel,
     telemetryService,
     fetchHighlightedFileLineRanges,
+    ownEnabled,
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
 
@@ -68,7 +71,7 @@ function useBlobPanelViews({
             : undefined
     }, [location.hash, location.search])
 
-    const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
+    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
 
     useBuiltinTabbedPanelViews(
         useMemo(() => {
@@ -122,7 +125,7 @@ function useBlobPanelViews({
                               </PanelContent>
                           ),
                       },
-                enableOwnershipPanel
+                ownEnabled && ownFeatureFlagEnabled
                     ? {
                           id: 'ownership',
                           title: 'Ownership',
@@ -157,7 +160,8 @@ function useBlobPanelViews({
             filePath,
             preferAbsoluteTimestamps,
             defaultPageSize,
-            enableOwnershipPanel,
+            ownEnabled,
+            ownFeatureFlagEnabled,
         ])
     )
 

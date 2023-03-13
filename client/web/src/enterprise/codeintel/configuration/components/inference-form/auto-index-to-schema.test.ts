@@ -54,18 +54,18 @@ const mockAutoIndexJobs: AutoIndexJobDescriptionFields[] = [
 
 describe('autoIndexToAutoIndexSchema', () => {
     it('should build form data as expected', () => {
-        const formData = autoIndexJobsToFormData(mockAutoIndexJobs)
+        const formData = autoIndexJobsToFormData({ jobs: mockAutoIndexJobs })
         expect(formData).toMatchSnapshot()
     })
 
     it('should build schema data as expected', () => {
-        const formData = autoIndexJobsToFormData(mockAutoIndexJobs)
+        const formData = autoIndexJobsToFormData({ jobs: mockAutoIndexJobs })
         const schemaData = formDataToSchema(formData)
         expect(schemaData).toMatchSnapshot()
     })
 
     it('should build valid schema data', () => {
-        const formData = autoIndexJobsToFormData(mockAutoIndexJobs)
+        const formData = autoIndexJobsToFormData({ jobs: mockAutoIndexJobs })
         const schemaData = formDataToSchema(formData)
 
         // Validate form data against JSONSchema

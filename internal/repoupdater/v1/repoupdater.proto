@@ -18,6 +18,10 @@ service RepoUpdaterService {
   rpc SchedulePermsSync(SchedulePermsSyncRequest) returns (SchedulePermsSyncResponse);
   // SyncExternalService requests the given external service to be synced.
   rpc SyncExternalService(SyncExternalServiceRequest) returns (SyncExternalServiceResponse);
+  // ExternalServiceNamespaces retrieves a list of namespaces available to the given external service configuration
+  rpc ExternalServiceNamespaces(ExternalServiceNamespacesRequest) returns (ExternalServiceNamespacesResponse);
+  // ExternalServiceRepositories retrieves a list of repositories sourced by the given external service configuration
+  rpc ExternalServiceRepositories(ExternalServiceRepositoriesRequest) returns (ExternalServiceRepositoriesResponse);
 }
 
 message RepoUpdateSchedulerInfoRequest {
@@ -176,3 +180,40 @@ message SyncExternalServiceRequest {
 }
 
 message SyncExternalServiceResponse {}
+
+message ExternalServiceNamespacesRequest {
+  optional int64 external_service_id = 1;
+  string kind = 2;
+  string config = 3;
+}
+
+message ExternalServiceNamespacesResponse {
+  repeated ExternalServiceNamespace namespaces = 1;
+}
+
+// ExternalServiceNamespace represents a namespace on an external service that can have ownership over repositories
+message ExternalServiceNamespace {
+  int64 id = 1;
+  string name = 2;
+  string external_id = 3;
+}
+
+message ExternalServiceRepositoriesRequest {
+  optional int64 external_service_id = 1;
+  string kind = 2;
+  string query = 3;
+  string config = 4;
+  int32 first = 5;
+  repeated string exclude_repos = 6;
+}
+
+message ExternalServiceRepositoriesResponse {
+  repeated ExternalServiceRepository repos = 1;
+}
+
+// ExternalServiceRepository represents a repository on an external service that may not necessarily be sync'd with sourcegraph
+message ExternalServiceRepository {
+  int32 id = 1;
+  string name = 2;
+  string external_id = 3;
+}

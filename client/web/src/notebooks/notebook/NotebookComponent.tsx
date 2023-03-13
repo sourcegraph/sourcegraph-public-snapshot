@@ -16,6 +16,7 @@ import { Button, useEventObservable, Icon } from '@sourcegraph/wildcard'
 import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { NotebookFields } from '../../graphql-operations'
+import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
@@ -33,7 +34,8 @@ import styles from './NotebookComponent.module.scss'
 export interface NotebookComponentProps
     extends SearchStreamingProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery' | 'enableOwnershipSearch'> {
+        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery' | 'enableOwnershipSearch'>,
+        OwnConfigProps {
     globbing: boolean
     isReadOnly?: boolean
     blocks: BlockInit[]
@@ -88,6 +90,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         fetchHighlightedFileLineRanges,
         globbing,
         searchContextsEnabled,
+        ownEnabled,
         settingsCascade,
         outlineContainerElement,
     }) => {
@@ -401,6 +404,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 globbing={globbing}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 searchContextsEnabled={searchContextsEnabled}
+                                ownEnabled={ownEnabled}
                                 settingsCascade={settingsCascade}
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
@@ -421,6 +425,8 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 }
             },
             [
+                selectedBlockId,
+                blockInserterIndex,
                 onRunBlock,
                 onBlockInputChange,
                 onDeleteBlock,
@@ -428,18 +434,17 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 onAddBlock,
                 onMoveBlock,
                 onDuplicateBlock,
-                isEmbedded,
                 isReadOnly,
-                selectedBlockId,
+                isEmbedded,
                 telemetryService,
                 isSourcegraphDotCom,
                 globbing,
                 fetchHighlightedFileLineRanges,
                 searchContextsEnabled,
+                ownEnabled,
                 settingsCascade,
                 platformContext,
                 authenticatedUser,
-                blockInserterIndex,
             ]
         )
 

@@ -21,7 +21,7 @@ import { useExternalServicesConnection } from './backend'
 import { ExternalServiceEditingAppLimitAlert } from './ExternalServiceEditingAppLimitReachedAlert'
 import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
-import { ExternalServiceNode } from './ExternalServiceNode.tsx'
+import { ExternalServiceNode } from './ExternalServiceNode'
 import { isAppLocalFileService } from './isAppLocalFileService'
 
 interface Props extends TelemetryProps {
@@ -63,15 +63,22 @@ export const ExternalServicesPage: FC<Props> = ({
                 description="Manage code host connections to sync repositories."
                 headingElement="h2"
                 actions={
-                    <ButtonLink
-                        className="test-goto-add-external-service-page"
-                        to="/site-admin/external-services/new"
-                        variant="primary"
-                        as={Link}
-                        disabled={editingDisabled || appLimitReached}
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
-                    </ButtonLink>
+                    <>
+                        {isSourcegraphApp && (
+                            <ButtonLink className="mr-2" to="/setup" variant="secondary" as={Link}>
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add local code
+                            </ButtonLink>
+                        )}
+                        <ButtonLink
+                            className="test-goto-add-external-service-page"
+                            to="/site-admin/external-services/new"
+                            variant="primary"
+                            as={Link}
+                            disabled={editingDisabled || appLimitReached}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
+                        </ButtonLink>
+                    </>
                 }
                 className="mb-3"
             />

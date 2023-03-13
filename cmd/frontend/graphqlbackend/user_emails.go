@@ -43,6 +43,33 @@ func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error)
 	return rs, nil
 }
 
+func (r *UserResolver) PrimaryEmail(ctx context.Context) (*userEmailResolver, error) {
+	// 🚨 SECURITY: Only the authenticated user and site admins can list user's
+	// emails on Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+			return nil, err
+		}
+	}
+	ms, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
+		UserID:       r.user.ID,
+		OnlyVerified: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, m := range ms {
+		if m.Primary {
+			return &userEmailResolver{
+				db:        r.db,
+				userEmail: *m,
+				user:      r,
+			}, nil
+		}
+	}
+	return nil, nil
+}
+
 type userEmailResolver struct {
 	db        database.DB
 	userEmail database.UserEmail

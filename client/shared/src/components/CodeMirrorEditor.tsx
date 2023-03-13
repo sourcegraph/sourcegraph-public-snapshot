@@ -94,6 +94,7 @@ export function useCodeMirror(
 
 export interface Editor {
     focus(): void
+    blur(): void
 }
 
 /**
@@ -101,30 +102,35 @@ export interface Editor {
  * to render an editor conditionally.
  */
 export const CodeMirrorEditor = React.memo(
-    forwardRef<Editor, { value: string; extensions?: Extension }>(({ value, extensions }, ref) => {
-        const containerRef = useRef<HTMLDivElement | null>(null)
-        const editorRef = useRef<EditorView | null>(null)
-        useCodeMirror(editorRef, containerRef, value, extensions)
+    forwardRef<Editor, { value: string; extensions?: Extension; className?: string }>(
+        ({ value, extensions, className }, ref) => {
+            const containerRef = useRef<HTMLDivElement | null>(null)
+            const editorRef = useRef<EditorView | null>(null)
+            useCodeMirror(editorRef, containerRef, value, extensions)
 
-        useImperativeHandle(
-            ref,
-            () => ({
-                focus() {
-                    const editor = editorRef.current
-                    if (editor && !editor.hasFocus) {
-                        editor.focus()
-                        editor.dispatch({
-                            selection: { anchor: editor.state.doc.length },
-                            scrollIntoView: true,
-                        })
-                    }
-                },
-            }),
-            []
-        )
+            useImperativeHandle(
+                ref,
+                () => ({
+                    focus() {
+                        const editor = editorRef.current
+                        if (editor && !editor.hasFocus) {
+                            editor.focus()
+                            editor.dispatch({
+                                selection: { anchor: editor.state.doc.length },
+                                scrollIntoView: true,
+                            })
+                        }
+                    },
+                    blur() {
+                        editorRef.current?.contentDOM.blur()
+                    },
+                }),
+                []
+            )
 
-        return <div ref={containerRef} />
-    })
+            return <div ref={containerRef} className={className} />
+        }
+    )
 )
 
 /**

@@ -45,6 +45,7 @@ export const Default: Story = () => (
                 {...props}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
+                ownEnabled={true}
                 globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
@@ -69,6 +70,7 @@ export const DefaultReadOnly: Story = () => (
                 isReadOnly={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
+                ownEnabled={true}
                 globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}

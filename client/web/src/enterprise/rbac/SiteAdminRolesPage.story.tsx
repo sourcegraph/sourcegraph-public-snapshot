@@ -7,7 +7,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../components/WebStory'
 
-import { ALL_PERMISSIONS, ROLES_QUERY, DELETE_ROLE } from './backend'
+import { ALL_PERMISSIONS, ROLES_QUERY, DELETE_ROLE, SET_PERMISSIONS } from './backend'
 import { mockPermissions, mockRoles } from './mock'
 import { SiteAdminRolesPage } from './SiteAdminRolesPage'
 
@@ -43,6 +43,14 @@ const mocks = new WildcardMockLink([
             variables: MATCH_ANY_PARAMETERS,
         },
         result: { data: { deleteRole: { alwaysNil: null } } },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    {
+        request: {
+            query: getDocumentNode(SET_PERMISSIONS),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: { setPermissions: { alwaysNil: null } } },
         nMatches: Number.POSITIVE_INFINITY,
     },
 ])
