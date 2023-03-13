@@ -16,7 +16,7 @@ export function setActiveLoggers(state: Pick<ExtensionHostState, 'settings' | 'a
 }
 
 export function getActiveLoggersFromSettings(settings: Settings): Set<string> {
-    if (!settings || !settings['extensions.activeLoggers']) {
+    if (!settings?.['extensions.activeLoggers']) {
         return new Set<string>()
     }
 

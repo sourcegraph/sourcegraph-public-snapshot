@@ -292,7 +292,7 @@ function queryProductSubscription(
         { uuid }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.dotcom || !data.dotcom.productSubscription || (errors && errors.length > 0)) {
+            if (!data?.dotcom?.productSubscription || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.dotcom.productSubscription
@@ -329,13 +329,7 @@ function queryProductLicenses(
         }
     ).pipe(
         map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.dotcom ||
-                !data.dotcom.productSubscription ||
-                !data.dotcom.productSubscription.productLicenses ||
-                (errors && errors.length > 0)
-            ) {
+            if (!data?.dotcom?.productSubscription?.productLicenses || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.dotcom.productSubscription.productLicenses
@@ -357,7 +351,7 @@ function archiveProductSubscription(args: ArchiveProductSubscriptionVariables): 
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.dotcom || !data.dotcom.archiveProductSubscription || (errors && errors.length > 0)) {
+            if (!data?.dotcom?.archiveProductSubscription || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
         })
