@@ -8,7 +8,7 @@ But when I try that, I get an error about "undefined symbols for architecture ar
 
 However, I can compile and install it using homebrew, which does exactly the same steps, but it succeeds;
 possibly because it sets up the environemnt differently?
-Not sure; I'll just leverage homebrew to compile it. 
+Not sure; I'll just leverage homebrew to compile it.
 (I tried poaching from homebrew's environment in order to run the make manually, but didn't succeed.)
 
 The homebrew steps to take are
@@ -53,6 +53,7 @@ make install
 ```
 
 # multi-arch build
+
 Run on macOS - tested on M1
 
 see `build_universal_ctags_macos.sh`

@@ -13,10 +13,7 @@
       //
       "token": "<SECRET>", // user: sourcegraph-dogfood-user token: public-only-token-for-board-demo-2023-02-24
 
-      "repos": [
-        "sourcegraph/about",
-        "sourcegraph/handbook"
-      ]
+      "repos": ["sourcegraph/about", "sourcegraph/handbook"]
     }
   ]
 }
