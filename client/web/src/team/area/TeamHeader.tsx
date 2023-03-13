@@ -42,8 +42,8 @@ export const TeamHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
 
                         {team.readonly && (
                             <Alert variant="info" className="mb-3">
-                                This team is managed externally and can not be modified from the UI except by
-                                site-admins.
+                                This team is managed externally and cannot be modified from the UI except by
+                                site admins.
                             </Alert>
                         )}
 
