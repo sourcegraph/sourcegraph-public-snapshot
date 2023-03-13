@@ -1,4 +1,4 @@
-import { Navigate, useLocation, useParams } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -49,26 +49,7 @@ const BatchSpecsPage = lazyComponent<BatchSpecsPageProps, 'BatchSpecsPage'>(
     'BatchSpecsPage'
 )
 const WebhookLogPage = lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage')
-const CodeIntelPreciseIndexesPage = lazyComponent(
-    () => import('../codeintel/indexes/pages/CodeIntelPreciseIndexesPage'),
-    'CodeIntelPreciseIndexesPage'
-)
-const CodeIntelPreciseIndexPage = lazyComponent(
-    () => import('../codeintel/indexes/pages/CodeIntelPreciseIndexPage'),
-    'CodeIntelPreciseIndexPage'
-)
-const CodeIntelConfigurationPage = lazyComponent(
-    () => import('../codeintel/configuration/pages/CodeIntelConfigurationPage'),
-    'CodeIntelConfigurationPage'
-)
-const CodeIntelConfigurationPolicyPage = lazyComponent(
-    () => import('../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'),
-    'CodeIntelConfigurationPolicyPage'
-)
-const CodeIntelInferenceConfigurationPage = lazyComponent(
-    () => import('../codeintel/configuration/pages/CodeIntelInferenceConfigurationPage'),
-    'CodeIntelInferenceConfigurationPage'
-)
+const AdminCodeIntelArea = lazyComponent(() => import('../codeintel/admin/AdminCodeIntelArea'), 'AdminCodeIntelArea')
 const SiteAdminLsifUploadPage = lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage')
 const ExecutorsSiteAdminArea = lazyComponent(
     () => import('../executors/ExecutorsSiteAdminArea'),
@@ -155,56 +136,10 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             path: '/code-intelligence/*',
             render: () => <NavigateToCodeGraph />,
         },
-
         // Code graph routes
         {
             path: '/code-graph/*',
             render: props => <AdminCodeIntelArea {...props} />,
-        }
-
-        // Code intelligence dashboard routes
-        {
-            path: '/code-graph',
-            exact: true,
-            render: () => <Navigate to="./code-graph/dashboard" replace={true} />,
-        },
-        {
-            path: '/code-graph/dashboard',
-            render: lazyComponent(
-                () => import('../codeintel/dashboard/pages/GlobalDashboardPage'),
-                'GlobalDashboardPage'
-            ),
-            exact: true,
-        },
-
-        // Precise index routes
-        {
-            path: '/code-graph/indexes',
-            render: props => <CodeIntelPreciseIndexesPage {...props} />,
-        },
-        {
-            path: '/code-graph/indexes/:id',
-            render: props => <CodeIntelPreciseIndexPage {...props} />,
-        },
-
-        // Code graph configuration
-        {
-            path: '/code-graph/configuration',
-            render: props => <CodeIntelConfigurationPage {...props} />,
-        },
-        {
-            path: '/code-graph/configuration/:id',
-            render: props => <CodeIntelConfigurationPolicyPage {...props} />,
-        },
-        {
-            path: '/code-graph/inference-configuration',
-            render: props => <CodeIntelInferenceConfigurationPage {...props} />,
-        },
-
-        // Legacy routes
-        {
-            path: '/code-graph/uploads/:id',
-            render: () => <NavigateToLegacyUploadPage />,
         },
         {
             path: '/lsif-uploads/:id',
@@ -236,13 +171,4 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
 function NavigateToCodeGraph(): JSX.Element {
     const location = useLocation()
     return <Navigate to={location.pathname.replace('/code-intelligence', '/code-graph')} />
-}
-
-function NavigateToLegacyUploadPage(): JSX.Element {
-    const { id = '' } = useParams<{ id: string }>()
-    return (
-        <Navigate
-            to={`/site-admin/code-graph/indexes/${btoa(`PreciseIndex:"U:${(atob(id).match(/(\d+)/) ?? [''])[0]}"`)}`}
-        />
-    )
 }

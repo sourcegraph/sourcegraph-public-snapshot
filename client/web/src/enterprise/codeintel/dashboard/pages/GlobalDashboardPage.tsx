@@ -78,7 +78,7 @@ const DashboardNode: React.FunctionComponent<DashboardNodeProps> = props => {
     )
 }
 
-interface GlobalDashboardPageProps extends TelemetryProps {}
+export interface GlobalDashboardPageProps extends TelemetryProps {}
 
 export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPageProps> = ({ telemetryService }) => {
     useEffect(() => {
