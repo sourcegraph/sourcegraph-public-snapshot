@@ -145,6 +145,8 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		return err
 	}
 
+	e.ch.PreviousFailureMessage = nil
+
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
 

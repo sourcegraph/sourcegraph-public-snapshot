@@ -30,6 +30,7 @@ import { CodeMonitoringProps } from '../../codeMonitoring'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
+import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { buildSearchURLQueryFromQueryState, useNavbarQueryState, useNotepad } from '../../stores'
@@ -56,7 +57,8 @@ export interface StreamingSearchResultsProps
         TelemetryProps,
         CodeInsightsProps,
         SearchAggregationProps,
-        CodeMonitoringProps {
+        CodeMonitoringProps,
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -70,6 +72,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         isSourcegraphDotCom,
         searchAggregationEnabled,
         codeMonitoringEnabled,
+        ownEnabled,
     } = props
 
     const location = useLocation()
@@ -79,7 +82,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const prefetchBlobFormat = usePrefetchBlobFormat()
-    const [enableOwnershipSearch] = useFeatureFlag('search-ownership', false)
+    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
+    const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
@@ -133,6 +137,18 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     )
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
+
+    const resultsLength = results?.results.length || 0
+    const logSearchResultClicked = useCallback(
+        (index: number, type: string) => {
+            telemetryService.log('SearchResultClicked')
+
+            const ranked = rankingFeatureEnabled && rankingToggleEnabled
+            // This data ends up in Prometheus and is not part of the ping payload.
+            telemetryService.log('search.ranking.result-clicked', { index, type, resultsLength, ranked })
+        },
+        [telemetryService, resultsLength, rankingFeatureEnabled, rankingToggleEnabled]
+    )
 
     // Log view event on first load
     useEffect(
@@ -501,6 +517,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             setQueryState={setQueryState}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            logSearchResultClicked={logSearchResultClicked}
                         />
                     </div>
                 </>

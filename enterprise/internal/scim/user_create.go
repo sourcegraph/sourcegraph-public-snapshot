@@ -8,6 +8,7 @@ import (
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -30,6 +31,10 @@ var (
 
 // Create stores given attributes. Returns a resource with the attributes that are stored and a (new) unique identifier.
 func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAttributes) (scim.Resource, error) {
+	if err := checkBodyNotEmpty(r); err != nil {
+		return scim.Resource{}, err
+	}
+
 	// Extract external ID, primary email, username, and display name from attributes to variables
 	primaryEmail, otherEmails := extractPrimaryEmail(attributes)
 	if primaryEmail == "" {
@@ -37,9 +42,47 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	}
 	displayName := extractDisplayName(attributes)
 
+	// Try to match emails to existing users
+	allEmails := append([]string{primaryEmail}, otherEmails...)
+	existingEmails, err := h.db.UserEmails().GetVerifiedEmails(r.Context(), allEmails...)
+	if err != nil {
+		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+	}
+	existingUserIDs := make(map[int32]struct{})
+	for _, email := range existingEmails {
+		existingUserIDs[email.UserID] = struct{}{}
+	}
+	if len(existingUserIDs) > 1 {
+		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusConflict, Detail: "Emails match to multiple users"}
+	}
+	if len(existingUserIDs) == 1 {
+		userID := int32(0)
+		for id := range existingUserIDs {
+			userID = id
+		}
+		// A user with the email(s) already exists → check if the user is not SCIM-controlled
+		user, err := h.db.Users().GetByID(r.Context(), userID)
+		if err != nil {
+			return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+		}
+		if user == nil {
+			return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: "User not found"}
+		}
+		if user.SCIMControlled {
+			// This user creation would fail based on the email address, so we'll return a conflict error
+			return scim.Resource{}, scimerrors.ScimError{Status: http.StatusConflict, Detail: "User already exists based on email address"}
+		}
+
+		// The user exists, but is not SCIM-controlled, so we'll update the user with the new attributes,
+		// and make the user SCIM-controlled (which is the same as a replace)
+		return h.Replace(r, strconv.FormatInt(int64(userID), 10), attributes)
+	}
+
+	// At this point we know that the user does not exist yet, so we'll create a new user
+
 	// Make sure the username is unique, then create user with/without an external account ID
 	var user *types.User
-	err := h.db.WithTransact(r.Context(), func(tx database.DB) error {
+	err = h.db.WithTransact(r.Context(), func(tx database.DB) error {
 		uniqueUsername, err := getUniqueUsername(r.Context(), tx.Users(), extractStringAttribute(attributes, AttrUserName))
 		if err != nil {
 			return err

@@ -84,7 +84,7 @@ function queryLicenses(args: {
               variables
           ).pipe(
               map(({ data, errors }) => {
-                  if (!data || !data.dotcom || !data.dotcom.productLicenses || (errors && errors.length > 0)) {
+                  if (!data?.dotcom?.productLicenses || (errors && errors.length > 0)) {
                       throw createAggregateError(errors)
                   }
                   return data.dotcom.productLicenses

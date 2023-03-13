@@ -22,6 +22,7 @@ import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 import { PageTitle } from '../components/PageTitle'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../graphql-operations'
+import { OwnConfigProps } from '../own/OwnConfigProps'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
@@ -32,7 +33,8 @@ interface SearchConsolePageProps
         Omit<
             StreamingSearchResultsListProps,
             'allExpanded' | 'executedQuery' | 'showSearchContext' | 'enableOwnershipSearch'
-        > {
+        >,
+        OwnConfigProps {
     globbing: boolean
     isMacPlatform: boolean
 }
@@ -40,11 +42,12 @@ interface SearchConsolePageProps
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const location = useLocation()
     const navigate = useNavigate()
-    const { globbing, streamSearch, isSourcegraphDotCom } = props
+    const { globbing, streamSearch, isSourcegraphDotCom, ownEnabled } = props
     const { applySuggestionsOnEnter } = useExperimentalFeatures(features => ({
         applySuggestionsOnEnter: features.applySearchQuerySuggestionOnEnter ?? true,
     }))
-    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
+    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
+    const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
 
     const searchQuery = useMemo(
         () => new BehaviorSubject<string>(parseSearchURLQuery(location.search) ?? ''),

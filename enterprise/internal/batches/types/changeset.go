@@ -298,6 +298,8 @@ type Changeset struct {
 	NumFailures      int64
 	SyncErrorMessage *string
 
+	PreviousFailureMessage *string
+
 	// Closing is set to true (along with the ReocncilerState) when the
 	// reconciler should close the changeset.
 	Closing bool
@@ -1031,6 +1033,8 @@ func (c *Changeset) ResetReconcilerState(state ReconcilerState) {
 	c.ReconcilerState = state
 	c.NumResets = 0
 	c.NumFailures = 0
+	// Copy over and reset the previous failure message
+	c.PreviousFailureMessage = c.FailureMessage
 	c.FailureMessage = nil
 	// The reconciler syncs where needed, so we reset this message.
 	c.SyncErrorMessage = nil

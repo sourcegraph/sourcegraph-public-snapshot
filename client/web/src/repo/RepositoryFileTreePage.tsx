@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { NotebookProps } from '../notebooks'
+import { OwnConfigProps } from '../own/OwnConfigProps'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange, parseBrowserRepoURL } from '../util/url'
 
@@ -20,7 +21,7 @@ import { TreePage } from './tree/TreePage'
 
 import styles from './RepositoryFileTreePage.module.scss'
 
-interface RepositoryFileTreePageProps extends RepoRevisionContainerContext, NotebookProps {
+interface RepositoryFileTreePageProps extends RepoRevisionContainerContext, NotebookProps, OwnConfigProps {
     objectType: 'blob' | 'tree' | undefined
 }
 

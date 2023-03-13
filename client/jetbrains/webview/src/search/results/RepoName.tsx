@@ -2,11 +2,12 @@ import classNames from 'classnames'
 
 import { Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
+import styles from './RepoName.module.scss'
+
 interface RepoNameProps {
     repoName: string
     suffix?: string
 }
-import styles from './RepoName.module.scss'
 
 export const RepoName: React.FunctionComponent<React.PropsWithChildren<RepoNameProps>> = ({ repoName, suffix }) => {
     /**

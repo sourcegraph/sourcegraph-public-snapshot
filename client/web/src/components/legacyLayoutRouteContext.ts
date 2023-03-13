@@ -23,6 +23,7 @@ const hardcodedConfig = {
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
     searchAggregationEnabled: true,
+    ownEnabled: true,
 } satisfies StaticHardcodedAppConfig
 
 export const windowContextConfig = {

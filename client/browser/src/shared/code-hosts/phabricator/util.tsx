@@ -3,9 +3,8 @@ import { map } from 'rxjs/operators'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { getRepoDetailsFromCallsign, getRepoDetailsFromRevisionID, QueryConduitHelper } from './backend'
-
 import { ChangeState, DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
+import { getRepoDetailsFromCallsign, getRepoDetailsFromRevisionID, QueryConduitHelper } from './backend'
 
 const TAG_PATTERN = /r([\dA-z]+)([\da-f]{40})/
 function matchPageTag(): RegExpExecArray | null {
@@ -43,7 +42,7 @@ function getDiffIdFromDifferentialPage(): number {
         throw new Error('parent container of diff container not found.')
     }
     const diffTitle = wrappingDiffBox.children[0].querySelectorAll('.phui-header-header').item(0)
-    if (!diffTitle || !diffTitle.textContent) {
+    if (!diffTitle?.textContent) {
         throw new Error('Could not find diffTitle element, or it had no text content')
     }
     const matches = DIFF_PATTERN.exec(diffTitle.textContent)

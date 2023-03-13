@@ -1,0 +1,10 @@
+{
+	"extends": "../tsconfig.base.json",
+	"compilerOptions": {
+		"rootDir": ".",
+		"outDir": "dist",
+		"jsx": "react-jsx",
+	},
+	"include": ["src/", "webviews/", "vite.config.ts", "webpack.config.js"],
+	"exclude": ["scripts", "out", "dist"],
+}

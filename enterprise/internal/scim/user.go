@@ -1,6 +1,7 @@
 package scim
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/http"
@@ -32,6 +33,7 @@ const (
 	AttrNickName      = "nickName"
 	AttrEmails        = "emails"
 	AttrExternalId    = "externalId"
+	AttrActive        = "active"
 )
 
 // UserResourceHandler implements the scim.ResourceHandler interface for users.
@@ -312,16 +314,27 @@ func getUniqueUsername(ctx context.Context, tx database.UserStore, requestedUser
 }
 
 // checkBodyNotEmpty checks whether the request body is empty. If it is, it returns a SCIM error.
-func checkBodyNotEmpty(r *http.Request) error {
-	// Check whether the request body is empty.
+func checkBodyNotEmpty(r *http.Request) (err error) {
 	data, err := io.ReadAll(r.Body)
+	defer func(Body io.ReadCloser) {
+		closeErr := Body.Close()
+		if closeErr != nil && err == nil {
+			err = closeErr
+		}
+
+		if err == nil {
+			// Restore the original body so that it can be read by a next handler.
+			r.Body = io.NopCloser(bytes.NewBuffer(data))
+		}
+	}(r.Body)
+
 	if err != nil {
-		return err
+		return
 	}
 	if len(data) == 0 {
 		return scimerrors.ScimErrorBadParams([]string{"request body is empty"})
 	}
-	return nil
+	return
 }
 
 // convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
@@ -329,11 +342,18 @@ func convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
 	// Convert account data – if it doesn't exist, never mind
 	attributes, err := fromAccountData(user.SCIMAccountData)
 	if err != nil {
+		first, middle, last := displayNameToPieces(user.DisplayName)
 		// Failed to convert account data to SCIM resource attributes. Fall back to core user data.
 		attributes = scim.ResourceAttributes{
+			AttrActive:      true,
 			AttrUserName:    user.Username,
 			AttrDisplayName: user.DisplayName,
-			AttrName:        map[string]interface{}{AttrNameFormatted: user.DisplayName},
+			AttrName: map[string]interface{}{
+				AttrNameFormatted: user.DisplayName,
+				AttrNameGiven:     first,
+				AttrNameMiddle:    middle,
+				AttrNameFamily:    last,
+			},
 		}
 		if user.SCIMExternalID != "" {
 			attributes[AttrExternalId] = user.SCIMExternalID
@@ -364,5 +384,20 @@ func convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
 			Created:      &user.CreatedAt,
 			LastModified: &user.UpdatedAt,
 		},
+	}
+}
+
+// displayNameToPieces splits a display name into first, middle, and last name.
+func displayNameToPieces(displayName string) (first, middle, last string) {
+	pieces := strings.Fields(displayName)
+	switch len(pieces) {
+	case 0:
+		return "", "", ""
+	case 1:
+		return pieces[0], "", ""
+	case 2:
+		return pieces[0], "", pieces[1]
+	default:
+		return pieces[0], strings.Join(pieces[1:len(pieces)-1], " "), pieces[len(pieces)-1]
 	}
 }

@@ -156,12 +156,16 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 
 	featureFlags := database.NewMockFeatureFlagStore()
 
+	syncJobs := database.NewMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -313,6 +317,9 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	subRepoPerms := edb.NewMockSubRepoPermsStore()
 	subRepoPerms.GetByUserAndServiceFunc.SetDefaultReturn(nil, nil)
 
+	syncJobs := database.NewMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
+
 	db := edb.NewMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
@@ -320,6 +327,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.SubRepoPermsFunc.SetDefaultReturn(subRepoPerms)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -387,12 +395,16 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 
 	featureFlags := database.NewMockFeatureFlagStore()
 
+	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -473,6 +485,9 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	externalAccounts := database.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
+	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
@@ -480,6 +495,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	reposStore := repos.NewMockStore()
 
@@ -572,6 +588,9 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 
 	featureFlags := database.NewMockFeatureFlagStore()
 
+	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
@@ -579,6 +598,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -645,6 +665,9 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 
 	featureFlags := database.NewMockFeatureFlagStore()
 
+	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
+
 	db := edb.NewMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
@@ -653,6 +676,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.SubRepoPermsFunc.SetDefaultReturn(subRepoPerms)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -689,10 +713,13 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	mockRepos := database.NewMockRepoStore()
 	mockFeatureFlags := database.NewMockFeatureFlagStore()
+	mockSyncJobs := database.NewMockPermissionSyncJobStore()
+	mockSyncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: timeutil.Now()}, nil)
 
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.FeatureFlagsFunc.SetDefaultReturn(mockFeatureFlags)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(mockSyncJobs)
 
 	newPermsSyncer := func(reposStore repos.Store, perms edb.PermsStore) *PermsSyncer {
 		return NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)

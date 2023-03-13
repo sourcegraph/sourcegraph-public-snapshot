@@ -23,14 +23,13 @@ import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 import { SearchPatternType } from '../graphql-operations'
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
+import { getInstanceURL } from '.'
 import { GlobalKeyboardListeners } from './GlobalKeyboardListeners'
 import { JetBrainsSearchBox } from './input/JetBrainsSearchBox'
 import { saveLastSearch } from './js-to-java-bridge'
 import { SearchResultList } from './results/SearchResultList'
 import { StatusBar } from './StatusBar'
 import { Search } from './types'
-
-import { getInstanceURL } from '.'
 
 import styles from './App.module.scss'
 

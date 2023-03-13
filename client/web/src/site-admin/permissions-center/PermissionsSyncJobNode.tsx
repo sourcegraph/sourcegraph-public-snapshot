@@ -65,7 +65,7 @@ const JOB_REASON_TO_READABLE_REASON: Record<PermissionsSyncJobReason, string> = 
     REASON_USER_REMOVED_FROM_ORG: 'User removed from organization',
 }
 
-const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStateMetadata> = {
+export const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStateMetadata> = {
     QUEUED: {
         badgeVariant: 'secondary',
         temporalWording: 'Queued',
