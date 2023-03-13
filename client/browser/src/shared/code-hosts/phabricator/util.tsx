@@ -43,7 +43,7 @@ function getDiffIdFromDifferentialPage(): number {
         throw new Error('parent container of diff container not found.')
     }
     const diffTitle = wrappingDiffBox.children[0].querySelectorAll('.phui-header-header').item(0)
-    if (!diffTitle || !diffTitle.textContent) {
+    if (!diffTitle?.textContent) {
         throw new Error('Could not find diffTitle element, or it had no text content')
     }
     const matches = DIFF_PATTERN.exec(diffTitle.textContent)
