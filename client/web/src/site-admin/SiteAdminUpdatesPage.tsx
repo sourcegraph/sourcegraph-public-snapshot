@@ -38,7 +38,9 @@ import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS } from './backend'
 
 import styles from './SiteAdminUpdatesPage.module.scss'
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps {
+    isSourcegraphApp
+}
 
 const SiteUpdateCheck: React.FC = () => {
     const { data, loading, error } = useQuery<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK, {})
@@ -201,7 +203,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
 /**
  * A page displaying information about available updates for the server.
  */
-export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService }) => {
+export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService, isSourcegraphApp }) => {
     useMemo(() => {
         telemetryService.logViewEvent('SiteAdminUpdates')
     }, [telemetryService])
@@ -212,13 +214,28 @@ export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService }) => {
 
             <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
             <Container className="mb-3">
-                <SiteUpdateCheck />
+                {isSourcegraphApp ? (
+                    <Text className="mb-1">
+                        We're making regular improvements to the Sourcegraph app.
+                        <br /> For information on how to upgrade to the latest version, see{' '}
+                        <Link to="/help/app#upgrading" target="_blank" rel="noopener">
+                            our docs
+                        </Link>
+                        .
+                    </Text>
+                ) : (
+                    <SiteUpdateCheck />
+                )}
             </Container>
 
-            <PageHeader path={[{ text: 'Readiness' }]} headingElement="h2" className="mb-3" />
-            <Container className="mb-3">
-                <SiteUpgradeReadiness />
-            </Container>
+            {!isSourcegraphApp && (
+                <>
+                    <PageHeader path={[{ text: 'Readiness' }]} headingElement="h2" className="mb-3" />
+                    <Container className="mb-3">
+                        <SiteUpgradeReadiness />
+                    </Container>
+                </>
+            )}
         </div>
     )
 }
