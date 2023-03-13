@@ -17,8 +17,6 @@ import (
 
 func TestUserResourceHandler_Create(t *testing.T) {
 	txemail.DisableSilently()
-	t.Parallel()
-
 	db := getMockDB([]*types.UserForSCIM{
 		{User: types.User{ID: 1, Username: "user1", DisplayName: "Yay Scim", SCIMControlled: true}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
 		{User: types.User{ID: 2, Username: "user2", DisplayName: "Nay Scim", SCIMControlled: false}, Emails: []string{"b@example.com"}},
