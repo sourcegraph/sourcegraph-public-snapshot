@@ -44,6 +44,7 @@ go_library(
         "//internal/encryption",
         "//internal/extsvc",
         "//internal/search/result",
+        "//internal/slices",
         "//internal/timeutil",
         "//internal/trace",
         "//internal/types",
