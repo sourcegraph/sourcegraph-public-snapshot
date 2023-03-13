@@ -19,7 +19,7 @@ import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { EditorHint, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -276,6 +276,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         }
         onNavbarQueryChange({
             query,
+            hint: EditorHint.Blur,
         })
     }, [revision, filePath, repoName, onNavbarQueryChange, globbing, queryPrefix])
 
