@@ -33,13 +33,7 @@ func TestMin(t *testing.T) {
 
 		for name, test := range tests {
 			t.Run(name, func(t *testing.T) {
-				var got int
-				if len(test.input) == 1 {
-					got = Min(test.input[0])
-				} else {
-					got = Min(test.input[0], test.input[1:]...)
-				}
-				if got != test.want {
+				if got := Min(test.input...); got != test.want {
 					t.Fatalf("got %v, want %v", got, test.want)
 				}
 			})
@@ -75,13 +69,7 @@ func TestMin(t *testing.T) {
 
 		for name, test := range tests {
 			t.Run(name, func(t *testing.T) {
-				var got float64
-				if len(test.input) == 1 {
-					got = Min(test.input[0])
-				} else {
-					got = Min(test.input[0], test.input[1:]...)
-				}
-				if got != test.want {
+				if got := Min(test.input...); got != test.want {
 					t.Fatalf("got %v, want %v", got, test.want)
 				}
 			})

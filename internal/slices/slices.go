@@ -5,9 +5,10 @@ import (
 )
 
 // Min returns the minimum value in a list.
-func Min[T constraints.Ordered](first T, rest ...T) T {
-	min := first
-	for _, val := range rest {
+// It will panic if no arguments are provided.
+func Min[T constraints.Ordered](list ...T) T {
+	min := list[0]
+	for _, val := range list {
 		if val < min {
 			min = val
 		}
