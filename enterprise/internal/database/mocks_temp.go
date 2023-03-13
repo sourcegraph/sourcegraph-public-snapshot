@@ -14346,7 +14346,7 @@ func NewMockPermsStore() *MockPermsStore {
 			},
 		},
 		LoadRepoPermissionsFunc: &PermsStoreLoadRepoPermissionsFunc{
-			defaultHook: func(context.Context, *authz.RepoPermissions) (r0 error) {
+			defaultHook: func(context.Context, int32) (r0 []authz.Permission, r1 error) {
 				return
 			},
 		},
@@ -14498,7 +14498,7 @@ func NewStrictMockPermsStore() *MockPermsStore {
 			},
 		},
 		LoadRepoPermissionsFunc: &PermsStoreLoadRepoPermissionsFunc{
-			defaultHook: func(context.Context, *authz.RepoPermissions) error {
+			defaultHook: func(context.Context, int32) ([]authz.Permission, error) {
 				panic("unexpected invocation of MockPermsStore.LoadRepoPermissions")
 			},
 		},
@@ -15995,24 +15995,24 @@ func (c PermsStoreListUserPermissionsFuncCall) Results() []interface{} {
 // LoadRepoPermissions method of the parent MockPermsStore instance is
 // invoked.
 type PermsStoreLoadRepoPermissionsFunc struct {
-	defaultHook func(context.Context, *authz.RepoPermissions) error
-	hooks       []func(context.Context, *authz.RepoPermissions) error
+	defaultHook func(context.Context, int32) ([]authz.Permission, error)
+	hooks       []func(context.Context, int32) ([]authz.Permission, error)
 	history     []PermsStoreLoadRepoPermissionsFuncCall
 	mutex       sync.Mutex
 }
 
 // LoadRepoPermissions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockPermsStore) LoadRepoPermissions(v0 context.Context, v1 *authz.RepoPermissions) error {
-	r0 := m.LoadRepoPermissionsFunc.nextHook()(v0, v1)
-	m.LoadRepoPermissionsFunc.appendCall(PermsStoreLoadRepoPermissionsFuncCall{v0, v1, r0})
-	return r0
+func (m *MockPermsStore) LoadRepoPermissions(v0 context.Context, v1 int32) ([]authz.Permission, error) {
+	r0, r1 := m.LoadRepoPermissionsFunc.nextHook()(v0, v1)
+	m.LoadRepoPermissionsFunc.appendCall(PermsStoreLoadRepoPermissionsFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the LoadRepoPermissions
 // method of the parent MockPermsStore instance is invoked and the hook
 // queue is empty.
-func (f *PermsStoreLoadRepoPermissionsFunc) SetDefaultHook(hook func(context.Context, *authz.RepoPermissions) error) {
+func (f *PermsStoreLoadRepoPermissionsFunc) SetDefaultHook(hook func(context.Context, int32) ([]authz.Permission, error)) {
 	f.defaultHook = hook
 }
 
@@ -16020,7 +16020,7 @@ func (f *PermsStoreLoadRepoPermissionsFunc) SetDefaultHook(hook func(context.Con
 // LoadRepoPermissions method of the parent MockPermsStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *PermsStoreLoadRepoPermissionsFunc) PushHook(hook func(context.Context, *authz.RepoPermissions) error) {
+func (f *PermsStoreLoadRepoPermissionsFunc) PushHook(hook func(context.Context, int32) ([]authz.Permission, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -16028,20 +16028,20 @@ func (f *PermsStoreLoadRepoPermissionsFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PermsStoreLoadRepoPermissionsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *authz.RepoPermissions) error {
-		return r0
+func (f *PermsStoreLoadRepoPermissionsFunc) SetDefaultReturn(r0 []authz.Permission, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) ([]authz.Permission, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreLoadRepoPermissionsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *authz.RepoPermissions) error {
-		return r0
+func (f *PermsStoreLoadRepoPermissionsFunc) PushReturn(r0 []authz.Permission, r1 error) {
+	f.PushHook(func(context.Context, int32) ([]authz.Permission, error) {
+		return r0, r1
 	})
 }
 
-func (f *PermsStoreLoadRepoPermissionsFunc) nextHook() func(context.Context, *authz.RepoPermissions) error {
+func (f *PermsStoreLoadRepoPermissionsFunc) nextHook() func(context.Context, int32) ([]authz.Permission, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -16080,10 +16080,13 @@ type PermsStoreLoadRepoPermissionsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *authz.RepoPermissions
+	Arg1 int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 []authz.Permission
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -16095,7 +16098,7 @@ func (c PermsStoreLoadRepoPermissionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermsStoreLoadRepoPermissionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // PermsStoreLoadUserPendingPermissionsFunc describes the behavior when the

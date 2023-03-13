@@ -147,17 +147,19 @@ func TestSetPermissionsForUsers(t *testing.T) {
 		// check that the permissions were set
 		perms := db.Perms()
 
-		p := authz.RepoPermissions{RepoID: 1, Perm: authz.Read}
-		err = perms.LoadRepoPermissions(ctx, &p)
+		p, err := perms.LoadRepoPermissions(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, map[int32]struct{}{
-			pushpa.ID: {},
-			igor.ID:   {},
-		}, p.UserIDs)
+		gotIDs := make([]int32, len(p))
+		for i, perm := range p {
+			gotIDs[i] = perm.UserID
+		}
+		slices.Sort(gotIDs)
+
+		require.Equal(t, []int32{igor.ID, pushpa.ID}, gotIDs)
 
 		up, err := perms.LoadUserPermissions(ctx, pushpa.ID)
 		require.NoError(t, err)
-		gotIDs := make([]int32, len(up))
+		gotIDs = make([]int32, len(up))
 		for i, perm := range up {
 			gotIDs[i] = perm.RepoID
 		}
@@ -367,13 +369,15 @@ func TestHandleRestricted(t *testing.T) {
 	perms := db.Perms()
 
 	for _, repoID := range []int32{1, 2, 3, 4, 5, 6} {
-		p := authz.RepoPermissions{RepoID: repoID, Perm: authz.Read}
-		err = perms.LoadRepoPermissions(ctx, &p)
+		p, err := perms.LoadRepoPermissions(ctx, repoID)
 		require.NoError(t, err)
-		require.Equal(t, map[int32]struct{}{
-			pushpa.ID: {},
-			igor.ID:   {},
-		}, p.UserIDs)
+		gotIDs := make([]int32, len(p))
+		for i, perm := range p {
+			gotIDs[i] = perm.UserID
+		}
+		slices.Sort(gotIDs)
+
+		require.Equal(t, []int32{igor.ID, pushpa.ID}, gotIDs)
 	}
 
 	up, err := perms.LoadUserPermissions(ctx, pushpa.ID)
@@ -484,9 +488,10 @@ func TestHandleUnrestricted(t *testing.T) {
 	perms := db.Perms()
 
 	for _, repoID := range []int32{1, 2, 3, 4, 5, 6} {
-		p := authz.RepoPermissions{RepoID: repoID, Perm: authz.Read}
-		err = perms.LoadRepoPermissions(ctx, &p)
+		p, err := perms.LoadRepoPermissions(ctx, repoID)
 		require.NoError(t, err)
-		require.True(t, p.Unrestricted)
+		// if there's only 1 item and userID is 0, it means that the repo is unrestricted
+		require.Equal(t, 1, len(p))
+		require.Equal(t, int32(0), p[0].UserID)
 	}
 }

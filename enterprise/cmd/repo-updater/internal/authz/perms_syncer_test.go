@@ -713,10 +713,13 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	mockRepos := database.NewMockRepoStore()
 	mockFeatureFlags := database.NewMockFeatureFlagStore()
+	mockSyncJobs := database.NewMockPermissionSyncJobStore()
+	mockSyncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: timeutil.Now()}, nil)
 
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.FeatureFlagsFunc.SetDefaultReturn(mockFeatureFlags)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(mockSyncJobs)
 
 	newPermsSyncer := func(reposStore repos.Store, perms edb.PermsStore) *PermsSyncer {
 		return NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
