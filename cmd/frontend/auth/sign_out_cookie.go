@@ -6,6 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 )
 
+const SignOutCookie = session.SignOutCookie
+
 // HasSignOutCookie returns true if the given request has a sign-out cookie.
 func HasSignOutCookie(r *http.Request) bool {
 	return session.HasSignOutCookie(r)
@@ -14,7 +16,7 @@ func HasSignOutCookie(r *http.Request) bool {
 // SetSignOutCookie sets a sign-out cookie on the given response.
 func SetSignOutCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
-		Name:   session.SignOutCookie,
+		Name:   SignOutCookie,
 		Value:  "true",
 		Secure: true,
 		Path:   "/",
