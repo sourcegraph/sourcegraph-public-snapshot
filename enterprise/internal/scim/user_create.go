@@ -141,15 +141,21 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 		}
 	}
 
-	// Email user to ask to set up a password
+	// Email user to ask to set up a password, in the background.
 	// This internally checks whether username/password login is enabled, whether we have an SMTP in place, etc.
-	_, err = auth.ResetPasswordURL(r.Context(), h.db, h.observationCtx.Logger, user, primaryEmail, true)
+	goroutine.Go(func() {
+		_, err = auth.ResetPasswordURL(r.Context(), h.db, h.observationCtx.Logger, user, primaryEmail, true)
+		if err != nil {
+			h.getLogger().Error("error sending password reset email", log.Error(err))
+		}
+	})
 
-	var now = time.Now()
 	// Attempt to send welcome email in the background.
 	goroutine.Go(func() {
-		sendNewUserEmail(primaryEmail, globals.ExternalURL().String(), h.getLogger())
+		_ = sendNewUserEmail(primaryEmail, globals.ExternalURL().String(), h.getLogger())
 	})
+
+	var now = time.Now()
 	return scim.Resource{
 		ID:         strconv.Itoa(int(user.ID)),
 		ExternalID: getOptionalExternalID(attributes),
