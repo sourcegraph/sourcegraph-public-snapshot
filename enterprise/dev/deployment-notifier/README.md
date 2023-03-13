@@ -14,7 +14,7 @@ deployment-notifier -environment $MY_ENV -slack.token=$SLACK_TOKEN -slack.webhoo
 ### Flags
 
 - `-github.token` (defaults to `$GITHUB_TOKEN`)
-- `-environment` either `preprod` or `production`
+- `-environment` (default to the only valid option `production`)
 - `-dry` (optional) do not post on Slack or GitHub, just print out what would be posted.
 - `-slack.token` Slack Token used to find the matching Slack handle for pull request authors.
 - `-slack.webhook` Slack webhook URL to post the notifications on.

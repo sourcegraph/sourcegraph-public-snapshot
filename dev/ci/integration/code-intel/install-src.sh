@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script is called by test.sh and preprod-run.sh to install an up-to-date
+# This script is called by test.sh to install an up-to-date
 # version of src-cli as required by the codeintel-qa pipeline. The target binary
 # is installed to {REPO_ROOT}/.bin/src.
 
