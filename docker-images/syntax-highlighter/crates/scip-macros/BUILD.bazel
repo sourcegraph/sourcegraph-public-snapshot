@@ -27,4 +27,5 @@ rust_test(
     deps = all_crate_deps(
         normal_dev = True,
     ),
+    size = "small",
 )
