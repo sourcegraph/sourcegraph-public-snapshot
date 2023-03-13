@@ -13,6 +13,16 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## 5.0.0
+
+### Added
+
 - `src team` (experimental) has been added to manage teams. [#922](https://github.com/sourcegraph/src-cli/pull/922)
 - `src codeowners` (experimental) has been added to manage manually ingested `CODEOWNERS`. [#943](https://github.com/sourcegraph/src-cli/pull/943)
 
