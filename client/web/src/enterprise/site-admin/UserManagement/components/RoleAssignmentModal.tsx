@@ -18,6 +18,7 @@ import {
     Link,
     MultiComboboxOptionText,
     Code,
+    joinWithAnd,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
@@ -186,5 +187,18 @@ const RoleSuggestionCard: React.FunctionComponent<PropsWithChildren<RoleSuggesti
         <span>
             <MultiComboboxOptionText />
         </span>
+        <small>
+            {item.permissions.nodes.length === 0 && 'No permissions granted to this role.'}
+            {joinWithAnd(
+                item.permissions.nodes,
+                item => (
+                    <Code>
+                        {item.namespace.toLowerCase()}:{item.action.toLowerCase()}
+                    </Code>
+                ),
+                item => item.id,
+                5
+            )}
+        </small>
     </MultiComboboxOption>
 )
