@@ -140,7 +140,7 @@ func resolveLocations(ctx context.Context, locationResolver *sharedresolvers.Cac
 // resolveLocation creates a LocationResolver for the given adjusted location. This function may return a
 // nil resolver if the location's commit is not known by gitserver.
 func resolveLocation(ctx context.Context, locationResolver *sharedresolvers.CachedLocationResolver, location types.UploadLocation) (resolverstubs.LocationResolver, error) {
-	treeResolver, err := locationResolver.Path(ctx, api.RepoID(location.Dump.RepositoryID), location.TargetCommit, location.Path)
+	treeResolver, err := locationResolver.Path(ctx, api.RepoID(location.Dump.RepositoryID), location.TargetCommit, location.Path, false)
 	if err != nil || treeResolver == nil {
 		return nil, err
 	}

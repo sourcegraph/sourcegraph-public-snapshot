@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 
-import { mdiChevronRight } from '@mdi/js'
+import { mdiChevronRight, mdiCircleOffOutline } from '@mdi/js'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
@@ -78,9 +78,14 @@ const DashboardNode: React.FunctionComponent<DashboardNodeProps> = props => {
     )
 }
 
-export interface GlobalDashboardPageProps extends TelemetryProps {}
+export interface GlobalDashboardPageProps extends TelemetryProps {
+    indexingEnabled?: boolean
+}
 
-export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPageProps> = ({ telemetryService }) => {
+export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPageProps> = ({
+    telemetryService,
+    indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
+}) => {
     useEffect(() => {
         telemetryService.logPageView('CodeIntelGlobalDashboard')
     }, [telemetryService])
@@ -104,22 +109,34 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                 label: `${
                     countWithPreciseCodeIntel === 1 ? 'Repository' : 'Repositories'
                 } with precise code intelligence`,
-                value: countWithPreciseCodeIntel,
+                value: <>{countWithPreciseCodeIntel}</>,
                 className: styles.summaryItemExtended,
                 valueClassName: 'text-success',
             },
             {
                 label: `${countWithErrors === 1 ? 'Repository' : 'Repositories'} with errors`,
-                value: countWithErrors,
+                value: <>{countWithErrors}</>,
                 valueClassName: 'text-danger',
             },
-            {
-                label: `Configurable ${countConfigurable === 1 ? 'repository' : 'repositories'}`,
-                value: countConfigurable,
-                valueClassName: 'text-primary',
-            },
+            ...(indexingEnabled
+                ? [
+                      {
+                          label: `Configurable ${countConfigurable === 1 ? 'repository' : 'repositories'}`,
+                          value: <>{countConfigurable}</>,
+                          valueClassName: 'text-primary',
+                      },
+                  ]
+                : [
+                      {
+                          label: 'Auto-indexing is disabled',
+                          value: (
+                              <Icon size="sm" aria-label="Auto-indexing is disabled" svgPath={mdiCircleOffOutline} />
+                          ),
+                          valueClassName: 'text-muted',
+                      },
+                  ]),
         ]
-    }, [data])
+    }, [data, indexingEnabled])
 
     if (loading || !data) {
         return <LoadingSpinner />
@@ -163,7 +180,8 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                         </div>
                     )}
 
-                {data.codeIntelSummary.repositoriesWithConfiguration &&
+                {indexingEnabled ? (
+                    data.codeIntelSummary.repositoriesWithConfiguration &&
                     data.codeIntelSummary.repositoriesWithConfiguration.nodes.length > 0 && (
                         <div className={styles.details}>
                             <H3 className="px-3">Repositories with suggestions</H3>
@@ -181,7 +199,13 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                                 )}
                             </ul>
                         </div>
-                    )}
+                    )
+                ) : (
+                    <div className="text-center p-2">
+                        <Link to="/help/code_navigation/how-to/enable_auto_indexing">Enable auto-indexing</Link> to
+                        automatically create and upload a precise index for your source code.
+                    </div>
+                )}
             </Container>
         </>
     )

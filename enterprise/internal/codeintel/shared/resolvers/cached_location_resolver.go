@@ -97,8 +97,8 @@ func (r *CachedLocationResolver) Commit(ctx context.Context, id api.RepoID, comm
 
 // Path resolves the git tree entry with the given repository identifier, commit hash, and relative path.
 // This method may return a nil resolver if the commit is not known by gitserver.
-func (r *CachedLocationResolver) Path(ctx context.Context, id api.RepoID, commit, path string) (*GitTreeEntryResolver, error) {
-	return r.cachedPath(ctx, id, commit, path)
+func (r *CachedLocationResolver) Path(ctx context.Context, id api.RepoID, commit, path string, isDir bool) (*GitTreeEntryResolver, error) {
+	return r.cachedPath(ctx, id, commit, path, isDir)
 }
 
 // cachedRepository resolves the repository with the given identifier if the resulting resolver does not
@@ -191,7 +191,7 @@ func (r *CachedLocationResolver) cachedCommit(ctx context.Context, id api.RepoID
 // double-checked locking, which ensures that the resolver is created exactly once per GraphQL request.
 //
 // See https://en.wikipedia.org/wiki/Double-checked_locking.
-func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, commit, path string) (*GitTreeEntryResolver, error) {
+func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, commit, path string, isDir bool) (*GitTreeEntryResolver, error) {
 	commitResolver, err := r.cachedCommit(ctx, id, commit)
 	if err != nil || commitResolver == nil {
 		return nil, err
@@ -214,7 +214,7 @@ func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, 
 	}
 
 	// Resolve new value and store in cache
-	pathResolver := r.resolvePath(commitResolver.commitResolver, path)
+	pathResolver := r.resolvePath(commitResolver.commitResolver, path, isDir)
 	commitResolver.pathResolvers[path] = pathResolver
 	return pathResolver, nil
 }
@@ -257,6 +257,6 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 
 // Path resolves the git tree entry with the given commit resolver and relative path. This method must be
 // called only when constructing a resolver to populate the cache.
-func (r *CachedLocationResolver) resolvePath(commitResolver *GitCommitResolver, path string) *GitTreeEntryResolver {
-	return NewGitTreeEntryResolver(r.cloneURLToRepoName, commitResolver, CreateFileInfo(path, false))
+func (r *CachedLocationResolver) resolvePath(commitResolver *GitCommitResolver, path string, isDir bool) *GitTreeEntryResolver {
+	return NewGitTreeEntryResolver(r.cloneURLToRepoName, commitResolver, CreateFileInfo(path, isDir))
 }
