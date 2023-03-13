@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/slices"
+	sgslices "github.com/sourcegraph/sourcegraph/internal/slices"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -515,7 +515,7 @@ RETURNING updated_at;
 	// we split into chunks, so that we don't exceed the maximum number of parameters
 	// we supply 6 parameters per row, so we can only have 65535/6 = 10922 rows per chunk
 	output := make([]time.Time, 0, len(permissions))
-	for _, permissionSlice := range slices.Chunk(permissions, 65535/6) {
+	for _, permissionSlice := range sgslices.Chunk(permissions, 65535/6) {
 		values := make([]*sqlf.Query, 0, len(permissionSlice))
 		for _, p := range permissionSlice {
 			values = append(values, sqlf.Sprintf("(NULLIF(%s::integer, 0), NULLIF(%s::integer, 0), %s::integer, %s::timestamptz, %s::timestamptz, %s::text)",
