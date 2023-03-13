@@ -27,7 +27,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
         if (owner.__typename !== 'Person') {
             return undefined
         }
-        if (owner.user?.primaryEmail !== null) {
+        if (owner.user?.primaryEmail) {
             return owner.user?.primaryEmail.email
         }
         return owner.email
