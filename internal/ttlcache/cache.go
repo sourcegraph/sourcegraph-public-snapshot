@@ -177,9 +177,10 @@ func (c *Cache[K, V]) StartReaper() {
 			log.Duration("reapInterval", c.reapInterval),
 			log.Duration("ttl", c.ttl))
 
-		ticker := time.NewTicker(c.reapInterval)
-
 		go func() {
+			ticker := time.NewTicker(c.reapInterval)
+			defer ticker.Stop()
+
 			for {
 				select {
 				case <-c.reapContext.Done():
