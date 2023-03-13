@@ -28,10 +28,10 @@ func TestDeleteRole(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := createTestUser(t, db, false).ID
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	actorCtx := actor.WithActor(ctx, actor.FromMockUser(userID))
 
 	adminUserID := createTestUser(t, db, true).ID
-	adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
+	adminActorCtx := actor.WithActor(ctx, actor.FromMockUser(adminUserID))
 
 	r := &Resolver{logger: logger, db: db}
 	s, err := newSchema(db, r)
@@ -95,10 +95,10 @@ func TestCreateRole(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := createTestUser(t, db, false).ID
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	actorCtx := actor.WithActor(ctx, actor.FromMockUser(userID))
 
 	adminUserID := createTestUser(t, db, true).ID
-	adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
+	adminActorCtx := actor.WithActor(ctx, actor.FromMockUser(adminUserID))
 
 	r := &Resolver{logger: logger, db: db}
 	s, err := newSchema(db, r)
@@ -203,8 +203,8 @@ func TestSetPermissions(t *testing.T) {
 	admin := createTestUser(t, db, true)
 	user := createTestUser(t, db, false)
 
-	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
-	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+	adminCtx := actor.WithActor(ctx, actor.FromMockUser(admin.ID))
+	userCtx := actor.WithActor(ctx, actor.FromMockUser(user.ID))
 
 	s, err := newSchema(db, &Resolver{logger: logger, db: db})
 	if err != nil {
@@ -318,10 +318,10 @@ func TestSetRoles(t *testing.T) {
 
 	uID := createTestUser(t, db, false).ID
 	userID := gql.MarshalUserID(uID)
-	userCtx := actor.WithActor(ctx, actor.FromUser(uID))
+	userCtx := actor.WithActor(ctx, actor.FromMockUser(uID))
 
 	aID := createTestUser(t, db, true).ID
-	adminCtx := actor.WithActor(ctx, actor.FromUser(aID))
+	adminCtx := actor.WithActor(ctx, actor.FromMockUser(aID))
 
 	s, err := newSchema(db, &Resolver{logger: logger, db: db})
 	if err != nil {
