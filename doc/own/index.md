@@ -14,9 +14,9 @@ Sourcegraph Own is a new, experimental product aimed at helping find the right p
 
 As an experimental feature, Sourcegraph Own is disabled by default. If you like to try it, a site-admin can enable the feature flag `search-ownership`:
 
-- Go to **Site-admin>Feature flags**
-- If the feature flag **search-ownership** doesn't yet exist, click **Create feature flag**
-- Under **Name**, put **search-ownership**
+- Go to **Site-admin > Feature flags**
+- If the feature flag `search-ownership` doesn't yet exist, click **Create feature flag**
+- Under **Name**, put `search-ownership`
 - For **Type** select **Boolean**
 - And set **Value** to **True**
 - Click **Create flag**
