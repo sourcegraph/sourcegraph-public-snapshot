@@ -69,6 +69,7 @@ const UserSettingsAreaGQLFragment = gql`
         roles {
             nodes {
                 name
+                system
             }
         }
         tags @include(if: $siteAdmin)
