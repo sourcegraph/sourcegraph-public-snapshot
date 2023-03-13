@@ -6,7 +6,10 @@ rust_library(
     srcs = glob(["src/*.rs"]),
     aliases = aliases(),
     compile_data = glob(
-        ["queries/**"],
+        [
+            "queries/**",
+            "testdata/**",
+        ],
         allow_empty = False,
     ),
     proc_macro_deps = all_crate_deps(
@@ -31,7 +34,12 @@ rust_test(
         proc_macro_dev = True,
     ),
     crate = ":scip-syntax",
+    data = glob(
+        ["src/snapshots/**"],
+        allow_empty = False,
+    ),
     env = {
+        "INSTA_WORKSPACE_ROOT": ".",
         "RUST_BACKTRACE": "1",
     },
     proc_macro_deps = all_crate_deps(
