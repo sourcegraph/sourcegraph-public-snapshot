@@ -321,7 +321,6 @@ func TestSetRoles(t *testing.T) {
 	userCtx := actor.WithActor(ctx, actor.FromUser(uID))
 
 	aID := createTestUser(t, db, true).ID
-	adminID := gql.MarshalUserID(aID)
 	adminCtx := actor.WithActor(ctx, actor.FromUser(aID))
 
 	s, err := newSchema(db, &Resolver{logger: logger, db: db})
@@ -358,15 +357,6 @@ func TestSetRoles(t *testing.T) {
 
 		require.Len(t, errs, 1)
 		require.ErrorContains(t, errs[0], "must be site admin")
-	})
-
-	t.Run("as self", func(t *testing.T) {
-		input := map[string]any{"user": adminID, "roles": marshalledRoles}
-		var response struct{ AssignRolesToUser apitest.EmptyResponse }
-		errs := apitest.Exec(adminCtx, t, s, input, &response, setRolesQuery)
-
-		require.Len(t, errs, 1)
-		require.ErrorContains(t, errs[0], "cannot assign role to self")
 	})
 
 	t.Run("as site-admin", func(t *testing.T) {

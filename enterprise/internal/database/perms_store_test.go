@@ -3498,91 +3498,125 @@ func testPermsStore_MapUsers(db database.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_Metrics(db database.DB) func(*testing.T) {
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		s := perms(logger, db, clock)
+func TestPermsStore_Metrics(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
 
-		ctx := context.Background()
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
-			cleanupUsersTable(t, s)
-			if t.Failed() {
-				return
-			}
+	logger := logtest.Scoped(t)
 
-			if err := s.execute(ctx, sqlf.Sprintf(`DELETE FROM repo`)); err != nil {
-				t.Fatal(err)
-			}
-		})
+	tests := map[string]struct {
+		unifiedPermissionsEnabled bool
+	}{
+		"unified permissions disabled": {
+			unifiedPermissionsEnabled: false,
+		},
+		"unified permissions enabled": {
+			unifiedPermissionsEnabled: true,
+		},
+	}
 
-		// Set up repositories in various states (public/private, deleted/not, etc.)
-		qs := []*sqlf.Query{
-			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
-			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
-			sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', FALSE, NOW())`),
-			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'private_repo_4', TRUE)`),
-		}
-		for _, q := range qs {
-			if err := s.execute(ctx, q); err != nil {
-				t.Fatal(err)
-			}
-		}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			mockUnifiedPermsConfig(tt.unifiedPermissionsEnabled)
+			testDb := dbtest.NewDB(logger, t)
+			db := database.NewDB(logger, testDb)
+			s := perms(logger, db, clock)
 
-		// Set up users in various states (deleted/not, etc.)
-		qs = []*sqlf.Query{
-			sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(1, 'user1')`),
-			sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(2, 'user2')`),
-			sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'user3', NOW())`),
-		}
-		for _, q := range qs {
-			if err := s.execute(ctx, q); err != nil {
-				t.Fatal(err)
-			}
-		}
+			ctx := context.Background()
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+				cleanupUsersTable(t, s)
+				if t.Failed() {
+					return
+				}
 
-		// Set up permissions for the various repos.
-		for i := 0; i < 4; i++ {
-			_, err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
-				RepoID:  int32(i),
-				Perm:    authz.Read,
-				UserIDs: toMapset(1, 2, 3, 4),
+				if err := s.execute(ctx, sqlf.Sprintf(`DELETE FROM repo`)); err != nil {
+					t.Fatal(err)
+				}
 			})
+
+			// Set up repositories in various states (public/private, deleted/not, etc.)
+			qs := []*sqlf.Query{
+				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
+				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
+				sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', TRUE, NOW())`),
+				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'public_repo_4', FALSE)`),
+			}
+			for _, q := range qs {
+				if err := s.execute(ctx, q); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			// Set up users in various states (deleted/not, etc.)
+			qs = []*sqlf.Query{
+				sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(1, 'user1')`),
+				sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(2, 'user2')`),
+				sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'user3', NOW())`),
+			}
+			for _, q := range qs {
+				if err := s.execute(ctx, q); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			// Set up permissions for the various repos.
+			for i := 0; i < 4; i++ {
+				_, err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+					RepoID:  int32(i + 1),
+					Perm:    authz.Read,
+					UserIDs: toMapset(1, 2, 3, 4),
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			// Mock rows for testing
+			if tt.unifiedPermissionsEnabled {
+				qs = []*sqlf.Query{
+					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, user_id, reason) VALUES(%s, 1, 'TEST')`, clock()),
+					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, user_id, reason) VALUES(%s, 2, 'TEST')`, clock().Add(-1*time.Minute)),
+					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, user_id, reason) VALUES(%s, 3, 'TEST')`, clock().Add(-2*time.Minute)), // Meant to be excluded because it has been deleted
+					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 1, 'TEST')`, clock()),
+					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 2, 'TEST')`, clock().Add(-2*time.Minute)),
+					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 3, 'TEST')`, clock().Add(-3*time.Minute)), // Meant to be excluded because it has been deleted
+					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 4, 'TEST')`, clock().Add(-3*time.Minute)), // Meant to be excluded because it is public
+				}
+			} else {
+				qs = []*sqlf.Query{
+					sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 1`, clock()),
+					sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 2`, clock().Add(-1*time.Minute)),
+					sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 3`, clock().Add(-2*time.Minute)), // Meant to be excluded because it has been deleted
+					sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 1`, clock()),
+					sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 2`, clock().Add(-2*time.Minute)),
+					sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 3`, clock().Add(-3*time.Minute)), // Meant to be excluded because it has been deleted
+					sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 4`, clock().Add(-3*time.Minute)), // Meant to be excluded because it is public
+				}
+			}
+			for _, q := range qs {
+				if err := s.execute(ctx, q); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			m, err := s.Metrics(ctx, time.Minute)
 			if err != nil {
 				t.Fatal(err)
 			}
-		}
 
-		// Mock rows for testing
-		qs = []*sqlf.Query{
-			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 1`, clock()),
-			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 2`, clock().Add(-1*time.Minute)),
-			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 3`, clock().Add(-2*time.Minute)), // Meant to be excluded because it has been deleted
-			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 1`, clock()),
-			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 2`, clock().Add(-2*time.Minute)),
-			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 3`, clock().Add(-3*time.Minute)), // Meant to be excluded because it has been deleted
-			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 4`, clock().Add(-3*time.Minute)), // Meant to be excluded because it is public
-		}
-		for _, q := range qs {
-			if err := s.execute(ctx, q); err != nil {
-				t.Fatal(err)
+			expMetrics := &PermsMetrics{
+				UsersWithStalePerms:  1,
+				UsersPermsGapSeconds: 60,
+				ReposWithStalePerms:  1,
+				ReposPermsGapSeconds: 120,
 			}
-		}
 
-		m, err := s.Metrics(ctx, time.Minute)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		expMetrics := &PermsMetrics{
-			UsersWithStalePerms:  1,
-			UsersPermsGapSeconds: 60,
-			ReposWithStalePerms:  1,
-			ReposPermsGapSeconds: 120,
-		}
-		if diff := cmp.Diff(expMetrics, m); diff != "" {
-			t.Fatalf("mismatch (-want +got):\n%s", diff)
-		}
+			if diff := cmp.Diff(expMetrics, m); diff != "" {
+				t.Fatalf("mismatch (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
 

@@ -11,10 +11,8 @@ import (
 const bazelRemoteCacheURL = "https://storage.googleapis.com/sourcegraph_bazel_cache"
 
 func BazelOperations(optional bool) *operations.Set {
-	ops := operations.NewSet()
-	ops.Append(bazelBuild(optional,
-		"//...",
-	))
+	ops := operations.NewNamedSet("Bazel")
+	ops.Append(bazelBuild(optional, "//..."))
 	ops.Append(bazelTest(optional, "//..."))
 	return ops
 }
@@ -23,6 +21,7 @@ func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.Agent("queue", "bazel"),
+		bk.ArtifactPaths("$$(bazel info bazel-testlogs)/**/*.log"),
 	}
 
 	for _, target := range targets {

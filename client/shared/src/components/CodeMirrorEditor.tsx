@@ -94,6 +94,7 @@ export function useCodeMirror(
 
 export interface Editor {
     focus(): void
+    blur(): void
 }
 
 /**
@@ -119,6 +120,9 @@ export const CodeMirrorEditor = React.memo(
                                 scrollIntoView: true,
                             })
                         }
+                    },
+                    blur() {
+                        editorRef.current?.contentDOM.blur()
                     },
                 }),
                 []

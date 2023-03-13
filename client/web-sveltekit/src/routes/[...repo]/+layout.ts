@@ -1,11 +1,11 @@
 import { NEVER, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import type { LayoutLoad } from './$types'
-
 import { asError, encodeURIPathComponent, type ErrorLike } from '$lib/common'
 import { resolveRepoRevision } from '$lib/loader/repo'
 import { isCloneInProgressErrorLike, isRepoSeeOtherErrorLike, parseRepoRevision } from '$lib/shared'
+
+import type { LayoutLoad } from './$types'
 
 export const load: LayoutLoad = ({ params }) => {
     const { repoName, revision } = parseRepoRevision(params.repo)

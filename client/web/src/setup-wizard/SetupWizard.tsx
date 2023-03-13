@@ -1,4 +1,4 @@
-import { FC, ReactElement, useCallback, useMemo } from 'react'
+import { FC, useCallback, useMemo } from 'react'
 
 import { ApolloClient } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
@@ -11,6 +11,7 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 
+import { LocalRepositoriesStep } from './components/local-repositories-step'
 import { RemoteRepositoriesStep } from './components/remote-repositories-step'
 import { SetupStepsRoot, SetupStepsContent, SetupStepsFooter, StepConfiguration } from './components/setup-steps'
 import { SyncRepositoriesStep } from './components/SyncRepositoriesStep'
@@ -115,8 +116,4 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
             </SetupStepsRoot>
         </div>
     )
-}
-
-function LocalRepositoriesStep(props: any): ReactElement {
-    return <H2 {...props}>Hello local repositories step</H2>
 }

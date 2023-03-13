@@ -527,8 +527,11 @@ ts_project(
         "src/enterprise/codeintel/badge/components/UserFacingCodeIntelligenceBadgeContent.tsx",
         "src/enterprise/codeintel/badge/hooks/queries.ts",
         "src/enterprise/codeintel/badge/hooks/useCodeIntelStatus.ts",
+        "src/enterprise/codeintel/configuration/backend.ts",
         "src/enterprise/codeintel/configuration/components/CodeIntelConfigurationPageHeader.tsx",
         "src/enterprise/codeintel/configuration/components/ConfigurationEditor.tsx",
+        "src/enterprise/codeintel/configuration/components/ConfigurationForm.tsx",
+        "src/enterprise/codeintel/configuration/components/ConfigurationInferButton.tsx",
         "src/enterprise/codeintel/configuration/components/CreatePolicyButtons.tsx",
         "src/enterprise/codeintel/configuration/components/Duration.tsx",
         "src/enterprise/codeintel/configuration/components/DurationSelect.tsx",
@@ -545,7 +548,6 @@ ts_project(
         "src/enterprise/codeintel/configuration/components/inference-form/types.ts",
         "src/enterprise/codeintel/configuration/components/inference-script/InferenceScriptEditor.tsx",
         "src/enterprise/codeintel/configuration/components/inference-script/InferenceScriptPreview.tsx",
-        "src/enterprise/codeintel/configuration/components/inference-script/backend.ts",
         "src/enterprise/codeintel/configuration/hooks/queryPolicies.tsx",
         "src/enterprise/codeintel/configuration/hooks/types.tsx",
         "src/enterprise/codeintel/configuration/hooks/useDeletePolicies.tsx",
@@ -886,6 +888,7 @@ ts_project(
         "src/enterprise/organizations/settings/sidebaritems.ts",
         "src/enterprise/own/DeleteFileButton.tsx",
         "src/enterprise/own/IngestedFileViewer.tsx",
+        "src/enterprise/own/OwnPage.tsx",
         "src/enterprise/own/RepositoryOwnPage.tsx",
         "src/enterprise/own/RepositoryOwnPageContents.tsx",
         "src/enterprise/own/UploadFileButton.tsx",
@@ -899,6 +902,7 @@ ts_project(
         "src/enterprise/rbac/SiteAdminRolesPage.tsx",
         "src/enterprise/rbac/backend.ts",
         "src/enterprise/rbac/components/ConfirmDeleteRoleModal.tsx",
+        "src/enterprise/rbac/components/CreateRoleModal.tsx",
         "src/enterprise/rbac/components/Permissions.tsx",
         "src/enterprise/rbac/components/RoleNode.tsx",
         "src/enterprise/repo/enterpriseRepoContainerRoutes.tsx",
@@ -1094,6 +1098,7 @@ ts_project(
         "src/org/settings/profile/OrgSettingsProfilePage.tsx",
         "src/org/settings/routes.tsx",
         "src/org/settings/sidebaritems.ts",
+        "src/own/OwnConfigProps.ts",
         "src/person/PersonLink.tsx",
         "src/platform/context.ts",
         "src/productSubscription/helpers.ts",
@@ -1261,6 +1266,7 @@ ts_project(
         "src/search/results/SearchResultsCacheProvider.tsx",
         "src/search/results/SearchResultsInfoBar.tsx",
         "src/search/results/StreamingSearchResults.tsx",
+        "src/search/results/UnownedResultsAlert.tsx",
         "src/search/results/components/aggregation/SearchAggregationResult.tsx",
         "src/search/results/components/aggregation/components/AggregationLimitLabel.tsx",
         "src/search/results/components/aggregation/components/aggregation-chart-card/AggregationChartCard.tsx",
@@ -1293,10 +1299,14 @@ ts_project(
         "src/settings/tokens/AccessTokenCreatedAlert.tsx",
         "src/settings/tokens/AccessTokenNode.tsx",
         "src/setup-wizard/SetupWizard.tsx",
+        "src/setup-wizard/components/CodeHostExternalServiceAlert.tsx",
         "src/setup-wizard/components/ProgressBar.tsx",
         "src/setup-wizard/components/SyncRepositoriesStep.tsx",
+        "src/setup-wizard/components/local-repositories-step/LocalRepositoriesStep.tsx",
+        "src/setup-wizard/components/local-repositories-step/helpers.ts",
+        "src/setup-wizard/components/local-repositories-step/index.ts",
+        "src/setup-wizard/components/local-repositories-step/queries.ts",
         "src/setup-wizard/components/remote-repositories-step/RemoteRepositoriesStep.tsx",
-        "src/setup-wizard/components/remote-repositories-step/components/CodeHostExternalServiceAlert.tsx",
         "src/setup-wizard/components/remote-repositories-step/components/code-host-delete-modal/CodeHostDeleteModal.tsx",
         "src/setup-wizard/components/remote-repositories-step/components/code-host-delete-modal/index.ts",
         "src/setup-wizard/components/remote-repositories-step/components/code-host-picker/CodeHostsPicker.tsx",
@@ -1318,6 +1328,7 @@ ts_project(
         "src/setup-wizard/components/setup-steps/SetupSteps.tsx",
         "src/setup-wizard/components/setup-steps/index.ts",
         "src/setup-wizard/index.ts",
+        "src/setup-wizard/queries.ts",
         "src/site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem.tsx",
         "src/site-admin/AccessRequestsPage/index.tsx",
         "src/site-admin/AccessRequestsPage/queries.tsx",
@@ -1559,7 +1570,6 @@ ts_project(
         ":node_modules/@sourcegraph/observability-client",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",
-        # ":web_tests",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/commands",
         "//:node_modules/@codemirror/lang-json",
@@ -1669,6 +1679,13 @@ ts_project(
     ],
 )
 
+js_library(
+    name = "code_intel_schema",
+    srcs = [
+        "src/enterprise/codeintel/configuration/schema.json",  #keep
+    ],
+)
+
 ts_project(
     name = "web_tests",
     testonly = True,
@@ -1704,9 +1721,6 @@ ts_project(
         "src/enterprise/code-monitoring/components/actions/SlackWebhookAction.test.tsx",
         "src/enterprise/code-monitoring/components/actions/WebhookAction.test.tsx",
         "src/enterprise/codeintel/configuration/components/inference-form/auto-index-to-schema.test.ts",
-
-        # TODO(bazel): should not be here. Caused by the issue in `rules_js`.
-        "src/enterprise/codeintel/configuration/schema.json",  #keep
         "src/enterprise/insights/components/creation-ui/code-insight-time-step-picker/get-interval-descrtiption-text/get-interval-description.text.test.ts",
         "src/enterprise/insights/hooks/use-parallel-requests/use-prallel-requests.test.ts",
         "src/enterprise/insights/pages/CodeInsightsRootPage.test.tsx",
@@ -1780,6 +1794,7 @@ ts_project(
     tsconfig = ":tsconfig",
     # TODO(bazel): type-only #keep imports
     deps = [
+        ":code_intel_schema",
         ":graphql_operations",
         ":module_style_typings",
         ":node_modules/@sourcegraph/common",

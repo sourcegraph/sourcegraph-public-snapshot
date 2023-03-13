@@ -54,8 +54,7 @@ type Config struct {
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
 	c.FrontendAuthorizationToken = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The authorization token supplied to the frontend.")
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
+	if deploy.IsApp() {
 		// In App deployments, we respect the in-memory executor password only.
 		c.FrontendAuthorizationToken = confdefaults.AppInMemoryExecutorPassword
 	}

@@ -3,7 +3,9 @@ import { createPath } from 'react-router-dom'
 
 import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
+
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ReferencesPanel } from './ReferencesPanel'

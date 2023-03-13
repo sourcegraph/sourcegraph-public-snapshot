@@ -5,10 +5,10 @@ import type { Navigation } from '@sveltejs/kit'
 import { RouterProvider, UNSAFE_enhanceManualRouteObjects, type RouteObject } from 'react-router-dom'
 import { RouterLink, setLinkComponent } from 'wildcard/src'
 
-import { WildcardThemeContext, type WildcardTheme } from './wildcard'
-
 import { goto } from '$app/navigation'
 import { navigating } from '$app/stores'
+
+import { WildcardThemeContext, type WildcardTheme } from './wildcard'
 
 setLinkComponent(RouterLink)
 

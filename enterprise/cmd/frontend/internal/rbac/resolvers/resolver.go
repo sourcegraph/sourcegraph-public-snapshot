@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Resolver is the GraphQL resolver of all things related to batch changes.
@@ -124,15 +123,6 @@ func (r *Resolver) SetRoles(ctx context.Context, args *gql.SetRolesArgs) (*gql.E
 	userID, err := gql.UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
-	}
-
-	user, err := auth.CurrentUser(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-
-	if user.ID == userID {
-		return nil, errors.New("cannot assign role to self")
 	}
 
 	opts := database.SetRolesForUserOpts{UserID: userID}

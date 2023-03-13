@@ -24,11 +24,10 @@ import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 
+import { Notebook, CopyNotebookProps } from '.'
 import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
 import { NotebookOutline } from './NotebookOutline'
 import { focusBlockElement, useNotebookEventHandlers } from './useNotebookEventHandlers'
-
-import { Notebook, CopyNotebookProps } from '.'
 
 import styles from './NotebookComponent.module.scss'
 

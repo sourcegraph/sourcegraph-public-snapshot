@@ -30,8 +30,8 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 	// Always use the in-memory secret.
 	conf.FrontendAuthorizationToken = confdefaults.AppInMemoryExecutorPassword
 
-	// TODO(sqs) HACK(sqs): run executors for both queues
-	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+	// TODO(sqs) HACK(sqs): TODO(app): run executors for both queues
+	if deploy.IsApp() {
 		otherConfig := *conf
 		if conf.QueueName == "batches" {
 			otherConfig.QueueName = "codeintel"

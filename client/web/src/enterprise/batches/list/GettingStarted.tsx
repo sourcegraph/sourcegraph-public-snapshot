@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
-import { Container, H2, H3, Link, Text, Icon, useMatchMedia } from '@sourcegraph/wildcard'
+import { Alert, Container, H2, H3, Link, Text, Icon, useMatchMedia } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CallToActionBanner } from '../../../components/CallToActionBanner'
@@ -11,11 +11,17 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface GettingStartedProps {
     isSourcegraphDotCom: boolean
+    // canCreate indicates whether or not the currently-authenticated user has sufficient
+    // permissions to create a batch change in whatever context this getting started
+    // section is being presented. If not, canCreate will be a string reason why the user
+    // cannot create.
+    canCreate: true | string
     className?: string
 }
 
 export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<GettingStartedProps>> = ({
     isSourcegraphDotCom,
+    canCreate,
     className,
 }) => {
     const allowAutoplay = useMatchMedia('(prefers-reduced-motion: no-preference)')
@@ -23,6 +29,11 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
     return (
         <div className={className} data-testid="test-getting-started">
             <Container className="mb-3">
+                {canCreate === true ? null : (
+                    <Alert className="my-3" variant="info">
+                        {canCreate}
+                    </Alert>
+                )}
                 <div className="row align-items-center">
                     <div className="col-12 col-md-7">
                         <video

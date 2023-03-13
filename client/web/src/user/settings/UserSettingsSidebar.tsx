@@ -18,7 +18,7 @@ import styles from './UserSettingsSidebar.module.scss'
 
 export interface UserSettingsSidebarItemConditionContext extends BatchChangesProps {
     user: UserSettingsAreaUserFields
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
+    authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
 }

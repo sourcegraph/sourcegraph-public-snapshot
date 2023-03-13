@@ -12,9 +12,8 @@ paste = "1.0.6"
 scip-macros = { path = "../scip-macros" }
 
 scip.workspace = true
-
 tree-sitter.workspace = true
-tree-sitter-highlight = "0.20"
+tree-sitter-highlight.workspace = true
 
 tree-sitter-c = "0.20.2"
 tree-sitter-c-sharp = "0.20.0"
@@ -22,11 +21,11 @@ tree-sitter-cpp = "0.20.0"
 tree-sitter-go = "0.19.1"
 tree-sitter-java = "0.20.0"
 tree-sitter-javascript = "0.20.0"
-tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet" }
-tree-sitter-nickel = { git = "https://github.com/nickel-lang/tree-sitter-nickel" }
+tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet", rev = "009e6f06266f46ae07077dd6c8026ded56ab7dd8" }
+tree-sitter-nickel = { git = "https://github.com/nickel-lang/tree-sitter-nickel", branch = "main" }
 tree-sitter-python = "0.20.2"
 tree-sitter-perl = { git = "https://github.com/sourcegraph/tree-sitter-perl" }
-tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod" }
+tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod", branch = "main"}
 tree-sitter-ruby = "0.20.0"
 tree-sitter-rust = "0.20.3"
 tree-sitter-typescript = "0.20.2"
@@ -38,4 +37,4 @@ tree-sitter-scala = { git = "https://github.com/sourcegraph/tree-sitter-scala" }
 # As of 2022 Apr 06, the upstream crate seems to have paused development,
 # and it relies to tree-sitter 0.19.x creating a type mismatch. So depend
 # on our own fork.
-tree-sitter-sql = { git = "https://github.com/sourcegraph/tree-sitter-sql" }
+tree-sitter-sql = { git = "https://github.com/sourcegraph/tree-sitter-sql", branch = "main" }

@@ -19,7 +19,7 @@ export function commitIDFromPermalink({ selector, hrefRegex }: { selector: strin
         )
     }
     const commitIDMatch = hrefRegex.exec(href)
-    if (!commitIDMatch || !commitIDMatch[1]) {
+    if (!commitIDMatch?.[1]) {
         throw new Error(
             `Unable to determine the commit ID (40 character hash) you're on because the permalink shortcut element's (query selector ${selector}) href is ${href}, which doesn't match the regex /${hrefRegex.source}/.`
         )

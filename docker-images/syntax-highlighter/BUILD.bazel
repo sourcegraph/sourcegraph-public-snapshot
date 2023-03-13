@@ -11,9 +11,6 @@ rust_binary(
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
-    deps = all_crate_deps(
-        normal = True,
-    ) + ["//docker-images/syntax-highlighter/crates/sg-syntax:sg-syntax"],
 )
 
 rust_test(
@@ -29,4 +26,5 @@ rust_test(
     deps = all_crate_deps(
         normal_dev = True,
     ),
+    size = "small",
 )

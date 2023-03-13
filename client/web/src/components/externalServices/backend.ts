@@ -66,7 +66,7 @@ export async function addExternalService(
     )
         .pipe(
             map(({ data, errors }) => {
-                if (!data || !data.addExternalService || (errors && errors.length > 0)) {
+                if (!data?.addExternalService || (errors && errors.length > 0)) {
                     eventLogger.log('AddExternalServiceFailed')
                     throw createAggregateError(errors)
                 }
