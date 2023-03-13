@@ -26,6 +26,8 @@ spec:
               value: hunter2hunter2hunter2
             - name: EXECUTOR_QUEUE_NAME
               value: batches
+            - name: EXECUTOR_USE_FIRECRACKER
+              value: "false"
           volumeMounts:
             - mountPath: /data
               name: executor-volume

@@ -16,6 +16,7 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 		return err
 	}
 
+	// TODO: k8s handling??
 	// Then, validate all tools that are required are installed.
 	//if err := util.ValidateRequiredTools(runner, config.UseFirecracker); err != nil {
 	//	return err
@@ -26,6 +27,7 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 		return err
 	}
 
+	// TODO: k8s handling??
 	//telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, config.UseFirecracker, logger)
 	//copts := queueOptions(config, telemetryOptions)
 	//client, err := apiclient.NewBaseClient(copts.BaseClientOptions)

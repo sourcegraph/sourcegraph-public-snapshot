@@ -74,7 +74,7 @@ func New(
 		}
 	}
 
-	if _, found := os.LookupEnv("KUBERNETES_SERVICE_HOST"); found {
+	if _, ok := os.LookupEnv("KUBERNETES_SERVICE_HOST"); ok {
 		config, err := clientcmd.BuildConfigFromFlags("", runnerOpts.KubernetesOptions.ConfigPath)
 		if err != nil {
 			return nil, err
