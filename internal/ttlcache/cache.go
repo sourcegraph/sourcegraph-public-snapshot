@@ -184,7 +184,6 @@ func (c *Cache[K, V]) StartReaper() {
 			for {
 				select {
 				case <-c.reapContext.Done():
-					ticker.Stop()
 					return
 				case <-ticker.C:
 					c.reap()
