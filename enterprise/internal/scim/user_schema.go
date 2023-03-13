@@ -12,6 +12,10 @@ func createCoreSchema() schema.Schema {
 		Name:        optional.NewString("User"),
 		Description: optional.NewString("User Account"),
 		Attributes: []schema.CoreAttribute{
+			schema.SimpleCoreAttribute(schema.SimpleBooleanParams(schema.BooleanParams{
+				Description: optional.NewString("A Boolean value indicating the User's administrative status."),
+				Name:        "active",
+			})),
 			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
 				Description: optional.NewString("Unique identifier for the User, typically used by the user to directly authenticate to the service provider. Each User MUST include a non-empty userName value. This identifier MUST be unique across the service provider's entire set of Users. REQUIRED."),
 				Name:        "userName",

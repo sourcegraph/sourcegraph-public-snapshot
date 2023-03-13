@@ -23,10 +23,10 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 		{User: types.User{ID: 4, Username: "user4", DisplayName: "First Last"}, Emails: []string{"d@example.com"}, SCIMExternalID: "id4"},
 	},
 		map[int32][]*database.UserEmail{
-			1: {&database.UserEmail{UserID: 1, Email: "a@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			2: {&database.UserEmail{UserID: 2, Email: "b@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			3: {&database.UserEmail{UserID: 3, Email: "c@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			4: {&database.UserEmail{UserID: 4, Email: "d@example.com", VerifiedAt: &verifiedDate, Primary: true}},
+			1: {makeEmail(1, "a@example.com", true, true)},
+			2: {makeEmail(2, "b@example.com", true, true)},
+			3: {makeEmail(3, "c@example.com", true, true)},
+			4: {makeEmail(4, "d@example.com", true, true)},
 		})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 
@@ -34,7 +34,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 		name     string
 		userId   string
 		attrs    scim.ResourceAttributes
-		testFunc func(userRes scim.Resource, err error)
+		testFunc func(userRes scim.Resource)
 	}{
 		{
 			name:   "replace username",
@@ -48,8 +48,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 					},
 				},
 			},
-			testFunc: func(userRes scim.Resource, err error) {
-				assert.NoError(t, err)
+			testFunc: func(userRes scim.Resource) {
 				assert.Equal(t, "user6", userRes.Attributes[AttrUserName])
 				assert.Equal(t, false, userRes.ExternalID.Present())
 				userID, _ := strconv.Atoi(userRes.ID)
@@ -70,8 +69,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 					},
 				},
 			},
-			testFunc: func(userRes scim.Resource, err error) {
-				assert.NoError(t, err)
+			testFunc: func(userRes scim.Resource) {
 				assert.Nil(t, userRes.Attributes[AttrUserName])
 				userID, _ := strconv.Atoi(userRes.ID)
 				user, _ := db.Users().GetByID(context.Background(), int32(userID))
@@ -93,8 +91,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 					},
 				},
 			},
-			testFunc: func(userRes scim.Resource, err error) {
-				assert.NoError(t, err)
+			testFunc: func(userRes scim.Resource) {
 				assert.Nil(t, userRes.Attributes[AttrUserName])
 				assert.Equal(t, "Test User", userRes.Attributes[AttrDisplayName])
 				assert.Equal(t, "testy", userRes.Attributes[AttrNickName])
@@ -120,8 +117,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 					},
 				},
 			},
-			testFunc: func(userRes scim.Resource, err error) {
-				assert.NoError(t, err)
+			testFunc: func(userRes scim.Resource) {
 				assert.Nil(t, userRes.Attributes[AttrUserName])
 				assert.Equal(t, "Test User", userRes.Attributes[AttrDisplayName])
 				assert.Equal(t, "testy", userRes.Attributes[AttrNickName])
@@ -134,12 +130,30 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 				assert.Equal(t, "a@example.com", userEmails[0].Email)
 			},
 		},
+		{
+			name:   "Trigger hard delete with soft delete",
+			userId: "4",
+			attrs: scim.ResourceAttributes{
+				AttrDisplayName: "It will be deleted anyway",
+				AttrActive:      false,
+			},
+			testFunc: func(userRes scim.Resource) {
+				assert.Equal(t, userRes.Attributes[AttrDisplayName], "It will be deleted anyway")
+				assert.Equal(t, userRes.Attributes[AttrActive], false)
+
+				// Check user in DB
+				userID, _ := strconv.Atoi(userRes.ID)
+				_, err := db.Users().GetByID(context.Background(), int32(userID))
+				assert.Error(t, err, "user not found")
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			user, err := userResourceHandler.Replace(createDummyRequest(), tc.userId, tc.attrs)
-			tc.testFunc(user, err)
+			assert.NoError(t, err)
+			tc.testFunc(user)
 		})
 	}
 }
