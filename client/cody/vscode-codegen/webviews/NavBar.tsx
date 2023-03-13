@@ -1,4 +1,5 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+
 import { View } from './utils/types'
 
 import './NavBar.css'

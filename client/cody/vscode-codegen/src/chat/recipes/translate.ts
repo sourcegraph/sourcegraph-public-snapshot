@@ -7,6 +7,7 @@ import { Message } from '@sourcegraph/cody-common'
 import { getActiveEditorSelection } from './helpers'
 import { languageMarkdownID, languageNames } from './langs'
 import { Recipe, RecipePrompt } from './recipe'
+
 export class TranslateToLanguage implements Recipe {
 	getID(): string {
 		return 'translateToLanguage'
