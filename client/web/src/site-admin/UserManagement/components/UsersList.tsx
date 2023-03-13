@@ -59,7 +59,7 @@ const LIMIT = 25
 interface UsersListProps {
     onActionEnd?: () => void
     isEnterprise: boolean
-    renderAssignmentModal: (onCancel: () => void, onSuccess: () => void, user: string) => React.ReactNode
+    renderAssignmentModal: (onCancel: () => void, onSuccess: () => void, user: SiteUser) => React.ReactNode
 }
 
 interface DateRangeQueryParameter {

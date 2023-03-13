@@ -5,6 +5,7 @@ import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import {
     GetAllRolesAndUserRolesResult,
     GetAllRolesAndUserRolesVariables,
+    Scalars,
     SetRolesForUserResult,
     SetRolesForUserVariables,
 } from '../../../graphql-operations'
@@ -45,11 +46,11 @@ export const useSetRoles = (onCompleted: () => void): MutationTuple<SetRolesForU
     useMutation<SetRolesForUserResult, SetRolesForUserVariables>(SET_ROLES_FOR_USER, { onCompleted })
 
 export const useGetUserRolesAndAllRoles = (
-    user: string,
+    user: Scalars['ID'],
     onCompleted: (data: GetAllRolesAndUserRolesResult) => void
 ): QueryResult<GetAllRolesAndUserRolesResult, GetAllRolesAndUserRolesVariables> =>
     useQuery<GetAllRolesAndUserRolesResult, GetAllRolesAndUserRolesVariables>(GET_ALL_ROLES_AND_USER_ROLES, {
-        fetchPolicy: 'no-cache',
+        fetchPolicy: 'cache-and-network',
         variables: { user },
         onCompleted,
     })

@@ -1,7 +1,7 @@
-import React, { useId, useState, useMemo, useCallback } from 'react'
+import React, { useId, useState, useMemo } from 'react'
 
-import { mdiCogOutline } from '@mdi/js'
-import { differenceBy, noop } from 'lodash'
+import { mdiBadgeAccount } from '@mdi/js'
+import { noop } from 'lodash'
 
 import {
     Button,
@@ -17,20 +17,27 @@ import {
     MultiComboboxPopover,
     MultiComboboxList,
     MultiComboboxOption,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
-import { RoleFields } from '../../../../graphql-operations'
+import { RoleFields, Scalars } from '../../../../graphql-operations'
 import { prettifySystemRole } from '../../../../util/settings'
 import { useGetUserRolesAndAllRoles, useSetRoles } from '../backend'
 
 export interface RoleAssignmentModalProps {
     onCancel: () => void
     onSuccess: () => void
-    user: string
+    user: { id: Scalars['ID']; username: string }
 }
 
 type Role = Pick<RoleFields, 'id' | 'system' | 'name'> & { permanent: boolean }
+
+const prepareDisplayRole = (role: Pick<RoleFields, 'id' | 'system' | 'name'>): Role => ({
+    ...role,
+    permanent: role.system,
+    name: role.system ? prettifySystemRole(role.name) : role.name,
+})
 
 export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalProps> = ({
     onCancel,
@@ -41,26 +48,24 @@ export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalPro
 
     const id = useId()
     const [searchTerm, setSearchTerm] = useState('')
-    const [selectedRoles, setSelectedRoles] = useState<Role[]>([])
-    const [allRoles, setAllRoles] = useState<Role[]>([])
 
-    const { loading, error: getUserRolesError } = useGetUserRolesAndAllRoles(user, data => {
+    const {
+        data,
+        loading,
+        error: getUserRolesError,
+    } = useGetUserRolesAndAllRoles(user.id, data => {
         if (data.node?.__typename !== 'User') {
             throw new Error('User not found')
         }
-        const userRoles = data.node.roles.nodes.map(role => ({
-            ...role,
-            permanent: role.system,
-            name: role.system ? prettifySystemRole(role.name) : role.name,
-        }))
-        const allRoles = data.roles.nodes.map(role => ({
-            ...role,
-            permanent: role.system,
-            name: role.system ? prettifySystemRole(role.name) : role.name,
-        }))
+        const userRoles = data.node.roles.nodes.map(prepareDisplayRole)
+        const allRoles = data.roles.nodes.map(prepareDisplayRole)
         setSelectedRoles(userRoles)
         setAllRoles(allRoles)
     })
+
+    const [selectedRoles, setSelectedRoles] = useState<Role[]>([])
+    // Use roles from cached data if it's available, as these will change infrequently.
+    const [allRoles, setAllRoles] = useState<Role[]>((data?.roles.nodes || []).map(prepareDisplayRole))
 
     const selectedRoleNames = useMemo(() => selectedRoles.map(role => role.name), [selectedRoles])
     const [setRoles, { loading: setRolesLoading, error: setRolesError }] = useSetRoles(onSuccess)
@@ -75,27 +80,12 @@ export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalPro
         [allRoles, selectedRoleNames, searchTerm]
     )
 
-    const handleSelectedRolesChange = useCallback(
-        (roles: Role[]) => {
-            // Site admins will not be able to revoke system permissions from this modal. To assign or revoke
-            // the site administrator role, the site admin would have to use the `Promote to site admin` option
-            // available in the `UsersList` options.
-            // The MultiComboBox doesn't support disabling options displayed in `Input` field, so using this hack
-            // to ensure system roles can never be removed.
-            const diff = differenceBy(selectedRoles, roles, 'id')
-            if (diff.findIndex(role => role.system) < 0) {
-                setSelectedRoles(roles)
-            }
-        },
-        [selectedRoles]
-    )
-
     const handleSubmit: React.FormEventHandler = (event): void => {
         event.preventDefault()
         const roleIDs = selectedRoles.map(role => role.id)
         setRoles({
             variables: {
-                user,
+                user: user.id,
                 roles: roleIDs,
             },
         }).catch(noop)
@@ -106,46 +96,57 @@ export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalPro
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelID} as={Form} onSubmit={handleSubmit}>
             <div className="d-flex align-items-center mb-2">
-                <Icon className="icon mr-1" svgPath={mdiCogOutline} inline={false} aria-hidden={true} />{' '}
+                <Icon className="icon mr-1" svgPath={mdiBadgeAccount} inline={false} aria-hidden={true} />{' '}
                 <H3 id={labelID} className="mb-0">
-                    Assign roles
+                    Manage roles for {user.username}
                 </H3>
             </div>
-            <Text>Select roles to be assigned to the user.</Text>
+            <Text>
+                Roles determine which permissions are granted to this user.{' '}
+                <Link to="/site-admin/roles">View roles settings</Link> to manage available roles and permissions.
+            </Text>
 
-            {loading && <LoadingSpinner />}
+            {loading && allRoles.length === 0 && (
+                <div className="d-flex align-items-center">
+                    <Text className="d-block font-italic m-0 mr-2">Loading roles</Text> <LoadingSpinner />
+                </div>
+            )}
             {error && !loading && <ErrorAlert error={error} />}
 
-            <MultiCombobox
-                selectedItems={selectedRoles}
-                getItemKey={item => item.id}
-                getItemName={item => item.name}
-                onSelectedItemsChange={handleSelectedRolesChange}
-                aria-label="Select role(s) to assign to user"
-            >
-                <MultiComboboxInput
-                    id={id}
-                    value={searchTerm}
-                    autoFocus={false}
-                    autoCorrect="false"
-                    autoComplete="off"
-                    placeholder="Select role..."
-                    onChange={event => setSearchTerm(event.target.value)}
-                />
-                <small className="text-muted pl-2">System roles cannot be revoked or assigned via this modal.</small>
+            {(!loading || allRoles.length > 0) && (
+                <MultiCombobox
+                    selectedItems={selectedRoles}
+                    getItemKey={item => item.id}
+                    getItemName={item => item.name}
+                    onSelectedItemsChange={setSelectedRoles}
+                    aria-label="Select role(s) to assign to user"
+                >
+                    <MultiComboboxInput
+                        id={id}
+                        value={searchTerm}
+                        autoFocus={false}
+                        autoCorrect="false"
+                        autoComplete="off"
+                        placeholder="Select role..."
+                        onChange={event => setSearchTerm(event.target.value)}
+                    />
+                    <small className="text-muted pl-2">
+                        System roles cannot be revoked or assigned via this modal.
+                    </small>
 
-                <MultiComboboxPopover>
-                    <MultiComboboxList items={suggestions}>
-                        {items =>
-                            items.map((item, index) => (
-                                <MultiComboboxOption value={item.name} key={item.id} index={index}>
-                                    <small>{item.name}</small>
-                                </MultiComboboxOption>
-                            ))
-                        }
-                    </MultiComboboxList>
-                </MultiComboboxPopover>
-            </MultiCombobox>
+                    <MultiComboboxPopover>
+                        <MultiComboboxList items={suggestions}>
+                            {items =>
+                                items.map((item, index) => (
+                                    <MultiComboboxOption value={item.name} key={item.id} index={index}>
+                                        <small>{item.name}</small>
+                                    </MultiComboboxOption>
+                                ))
+                            }
+                        </MultiComboboxList>
+                    </MultiComboboxPopover>
+                </MultiCombobox>
+            )}
 
             <div className="d-flex my-2 justify-content-end">
                 <Button variant="secondary" className="mr-2" onClick={onCancel}>
@@ -156,7 +157,7 @@ export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalPro
                     loading={setRolesLoading}
                     label="Update"
                     alwaysShowLabel={true}
-                    disabled={setRolesLoading}
+                    disabled={loading || setRolesLoading}
                     type="submit"
                 />
             </div>
