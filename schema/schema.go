@@ -544,12 +544,6 @@ type CloudKMSEncryptionKey struct {
 	Keyname         string `json:"keyname"`
 	Type            string `json:"type"`
 }
-type CodeIntelRepositoryBadge struct {
-	// Enabled description: Show the code intelligence badge when viewing a repository.
-	Enabled bool `json:"enabled"`
-	// ForNerds description: Show entirely too much information.
-	ForNerds *bool `json:"forNerds,omitempty"`
-}
 
 // Completions description: Configuration for the completions service.
 type Completions struct {
@@ -2162,8 +2156,7 @@ type SettingsExperimentalFeatures struct {
 	// CodeInsightsLandingPage description: DEPRECATED: Enables code insights landing page layout.
 	CodeInsightsLandingPage *bool `json:"codeInsightsLandingPage,omitempty"`
 	// CodeInsightsRepoUI description: Specifies which (code insight repo) editor to use for repo query UI
-	CodeInsightsRepoUI       *string                   `json:"codeInsightsRepoUI,omitempty"`
-	CodeIntelRepositoryBadge *CodeIntelRepositoryBadge `json:"codeIntelRepositoryBadge,omitempty"`
+	CodeInsightsRepoUI *string `json:"codeInsightsRepoUI,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
 	CodeMonitoringWebHooks *bool `json:"codeMonitoringWebHooks,omitempty"`
 	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
@@ -2248,7 +2241,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeInsightsCompute")
 	delete(m, "codeInsightsLandingPage")
 	delete(m, "codeInsightsRepoUI")
-	delete(m, "codeIntelRepositoryBadge")
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "enableCodeMirrorFileView")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
@@ -2511,6 +2503,8 @@ type SiteConfiguration struct {
 	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
 	// OutboundRequestLogLimit description: The maximum number of outbound requests to retain. This is a global limit across all outbound requests. If the limit is exceeded, older items will be deleted. If the limit is 0, no outbound requests are logged.
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit,omitempty"`
+	// OwnBestEffortTeamMatching description: The Own service will attempt to match a Team by the last part of its handle if it contains a slash and no match is found for its full handle.
+	OwnBestEffortTeamMatching *bool `json:"own.bestEffortTeamMatching,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
 	// PermissionsSyncJobCleanupInterval description: Time interval (in seconds) of how often cleanup worker should remove old jobs from permissions sync jobs table.
@@ -2681,6 +2675,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "observability.tracing")
 	delete(m, "organizationInvitations")
 	delete(m, "outboundRequestLogLimit")
+	delete(m, "own.bestEffortTeamMatching")
 	delete(m, "parentSourcegraph")
 	delete(m, "permissions.syncJobCleanupInterval")
 	delete(m, "permissions.syncJobsHistorySize")

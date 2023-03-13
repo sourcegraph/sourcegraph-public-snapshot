@@ -10,7 +10,7 @@ This how-to explains how to turn on [auto-indexing](../explanations/auto_indexin
 
 ## Deploy executors
 
-First, [deploy the executor service](../../../../admin/deploy_executors.md) targeting your Sourcegraph instance. This will provide the necessary compute resources that clone the target Git repository, securely analyze the code to produce a code graph data index, then upload that index to your Sourcegraph instance for processing.
+First, [deploy the executor service](../../../../admin/executors/deploy_executors.md) targeting your Sourcegraph instance. This will provide the necessary compute resources that clone the target Git repository, securely analyze the code to produce a code graph data index, then upload that index to your Sourcegraph instance for processing.
 
 ## Enable index job scheduling
 

@@ -1,6 +1,7 @@
 package scim
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"time"
@@ -8,14 +9,32 @@ import (
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
 
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Reusing the env variables from email invites because the intent is the same as the welcome email
+var (
+	disableEmailInvites, _   = strconv.ParseBool(env.Get("DISABLE_EMAIL_INVITES", "false", "Disable email invitations entirely."))
+	debugEmailInvitesMock, _ = strconv.ParseBool(env.Get("DEBUG_EMAIL_INVITES_MOCK", "false", "Do not actually send email invitations, instead just print that we did."))
+)
+
 // Create stores given attributes. Returns a resource with the attributes that are stored and a (new) unique identifier.
 func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAttributes) (scim.Resource, error) {
+	if err := checkBodyNotEmpty(r); err != nil {
+		return scim.Resource{}, err
+	}
+
 	// Extract external ID, primary email, username, and display name from attributes to variables
 	primaryEmail, otherEmails := extractPrimaryEmail(attributes)
 	if primaryEmail == "" {
@@ -23,9 +42,47 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	}
 	displayName := extractDisplayName(attributes)
 
+	// Try to match emails to existing users
+	allEmails := append([]string{primaryEmail}, otherEmails...)
+	existingEmails, err := h.db.UserEmails().GetVerifiedEmails(r.Context(), allEmails...)
+	if err != nil {
+		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+	}
+	existingUserIDs := make(map[int32]struct{})
+	for _, email := range existingEmails {
+		existingUserIDs[email.UserID] = struct{}{}
+	}
+	if len(existingUserIDs) > 1 {
+		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusConflict, Detail: "Emails match to multiple users"}
+	}
+	if len(existingUserIDs) == 1 {
+		userID := int32(0)
+		for id := range existingUserIDs {
+			userID = id
+		}
+		// A user with the email(s) already exists → check if the user is not SCIM-controlled
+		user, err := h.db.Users().GetByID(r.Context(), userID)
+		if err != nil {
+			return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+		}
+		if user == nil {
+			return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: "User not found"}
+		}
+		if user.SCIMControlled {
+			// This user creation would fail based on the email address, so we'll return a conflict error
+			return scim.Resource{}, scimerrors.ScimError{Status: http.StatusConflict, Detail: "User already exists based on email address"}
+		}
+
+		// The user exists, but is not SCIM-controlled, so we'll update the user with the new attributes,
+		// and make the user SCIM-controlled (which is the same as a replace)
+		return h.Replace(r, strconv.FormatInt(int64(userID), 10), attributes)
+	}
+
+	// At this point we know that the user does not exist yet, so we'll create a new user
+
 	// Make sure the username is unique, then create user with/without an external account ID
 	var user *types.User
-	err := h.db.WithTransact(r.Context(), func(tx database.DB) error {
+	err = h.db.WithTransact(r.Context(), func(tx database.DB) error {
 		uniqueUsername, err := getUniqueUsername(r.Context(), tx.Users(), extractStringAttribute(attributes, AttrUserName))
 		if err != nil {
 			return err
@@ -82,9 +139,11 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 			})
 		}
 	}
-
 	var now = time.Now()
-
+	// Attempt to send welcome email in the background.
+	goroutine.Go(func() {
+		sendNewUserEmail(primaryEmail, globals.ExternalURL().String(), h.getLogger())
+	})
 	return scim.Resource{
 		ID:         strconv.Itoa(int(user.ID)),
 		ExternalID: getOptionalExternalID(attributes),
@@ -165,3 +224,66 @@ func containsErrCannotCreateUserError(err error) (database.ErrCannotCreateUser, 
 
 	return database.ErrCannotCreateUser{}, false
 }
+
+func sendNewUserEmail(email, siteURL string, logger log.Logger) error {
+	if email != "" && conf.CanSendEmail() {
+		if disableEmailInvites {
+			return nil
+		}
+		if debugEmailInvitesMock {
+			if logger != nil {
+				logger.Info("email welcome: mock welcome to Sourcegraph", log.String("welcomed", email))
+			}
+			return nil
+		}
+		return txemail.Send(context.Background(), "user_welcome", txemail.Message{
+			To:       []string{email},
+			Template: emailTemplateEmailWelcomeSCIM,
+			Data: struct {
+				URL string
+			}{
+				URL: siteURL,
+			},
+		})
+	}
+	return nil
+}
+
+var emailTemplateEmailWelcomeSCIM = txemail.MustValidate(txtypes.Templates{
+	Subject: `Welcome to Sourcegraph`,
+	Text: `
+Sourcegraph enables you to quickly understand, fix, and automate changes to your code.
+
+You can use Sourcegraph to:
+  - Search and navigate multiple repositories with cross-repository dependency navigation
+  - Share links directly to lines of code to work more collaboratively together
+  - Automate large-scale code changes with Batch Changes
+  - Create code monitors to alert you about changes in code
+
+Come experience the power of great code search.
+
+
+{{.URL}}
+
+Learn more about Sourcegraph:
+
+https://about.sourcegraph.com
+`,
+	HTML: `
+<p>Sourcegraph enables you to quickly understand, fix, and automate changes to your code.</p>
+
+<p>
+	You can use Sourcegraph to:<br/>
+	<ul>
+		<li>Search and navigate multiple repositories with cross-repository dependency navigation</li>
+		<li>Share links directly to lines of code to work more collaboratively together</li>
+		<li>Automate large-scale code changes with Batch Changes</li>
+		<li>Create code monitors to alert you about changes in code</li>
+	</ul>
+</p>
+
+<p><strong><a href="{{.URL}}">Come experience the power of great code search</a></strong></p>
+
+<p><a href="https://about.sourcegraph.com">Learn more about Sourcegraph</a></p>
+`,
+})

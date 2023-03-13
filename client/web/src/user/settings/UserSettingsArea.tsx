@@ -66,7 +66,7 @@ const UserSettingsAreaGQLFragment = gql`
                 name
             }
         }
-        roles {
+        roles @skip(if: $isSourcegraphDotCom) {
             nodes {
                 name
             }

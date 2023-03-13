@@ -37,11 +37,11 @@ import (
 
 // PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
 // It is not enabled if:
-//   - Permissions user mapping (aka explicit permissions API) is enabled
+//   - Permissions user mapping (aka explicit permissions API) is enabled and unified permissions model is not enabled
 //   - Not purchased with the current license
 //   - `disableAutoCodeHostSyncs` site setting is set to true
 func PermissionSyncingDisabled() bool {
-	return globals.PermissionsUserMapping().Enabled ||
+	return (globals.PermissionsUserMapping().Enabled && !conf.ExperimentalFeatures().UnifiedPermissions) ||
 		licensing.Check(licensing.FeatureACLs) != nil ||
 		conf.Get().DisableAutoCodeHostSyncs
 }
@@ -577,7 +577,7 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 	err := s.permsStore.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
 		UserID:            userID,
 		ExternalAccountID: acctID,
-	}, repoIDs)
+	}, repoIDs, authz.SourceUserSync)
 
 	if err != nil {
 		logger.Warn("saving perms to DB", log.Error(err))
@@ -788,13 +788,11 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		}
 	}
 
-	// Load current permissions from database
-	oldPerms := &authz.RepoPermissions{
-		RepoID:  int32(repoID),
-		Perm:    authz.Read,
-		UserIDs: map[int32]struct{}{},
-	}
-	_ = s.permsStore.LoadRepoPermissions(ctx, oldPerms)
+	// Load last finished sync job from database
+	lastSyncJob, err := s.db.PermissionSyncJobs().GetLatestFinishedSyncJob(ctx, database.ListPermissionSyncJobOpts{
+		RepoID:      int(repoID),
+		NotCanceled: true,
+	})
 
 	// Save permissions to database
 	p := &authz.RepoPermissions{
@@ -826,7 +824,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	defer func() { err = txs.Done(err) }()
 
 	// write to new user_repo_permissions table by default
-	if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs)); err != nil {
+	if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
 		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
 	result, err = txs.SetRepoPermissions(ctx, p)
@@ -848,8 +846,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	metricsSuccessPermsSyncs.WithLabelValues("repo").Inc()
 
 	var delayMetricField log.Field
-	if !oldPerms.SyncedAt.IsZero() {
-		delay := p.SyncedAt.Sub(oldPerms.SyncedAt)
+	if lastSyncJob != nil && !lastSyncJob.FinishedAt.IsZero() {
+		delay := p.SyncedAt.Sub(lastSyncJob.FinishedAt)
 		metricsPermsConsecutiveSyncDelay.WithLabelValues("repo").Set(delay.Seconds())
 		delayMetricField = log.Duration("consecutiveSyncDelay", delay)
 	} else {
