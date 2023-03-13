@@ -18,8 +18,12 @@ To configure:
    ```
    "scim.authToken": "{your token}"
    ```
+3. Add the following setting to your site config and select the Identity Provider you intend to use. If your specific provider is not listed, select the default value `STANDARD` which matches the SCIM specification.
 
-3. Set up your IdP to use our SCIM API. The API is at
+   ```
+   "scim.identityProvider": 
+   ```
+4. Set up your IdP to use our SCIM API. The API is at
 
    ```
    https://sourcegraph.company.com/.api/scim/v2
