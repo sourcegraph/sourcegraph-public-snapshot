@@ -19,6 +19,7 @@ import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
 import inRange from 'lodash/inRange'
 import { useNavigate } from 'react-router-dom'
+import useResizeObserver from 'use-resize-observer'
 
 import { HistoryOrNavigate } from '@sourcegraph/common'
 import { Editor, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
@@ -430,8 +431,11 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             }
         }, [setMode])
 
+        const { ref: inputContainerRef, height = 0 } = useResizeObserver({ box: 'border-box' })
+
         return (
             <div
+                ref={inputContainerRef}
                 className={classNames(styles.container, className, {
                     [styles.containerCompact]: visualMode === QueryInputVisualMode.Compact,
                 })}
@@ -441,7 +445,12 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                     <div ref={editorContainerRef} className={styles.input} />
                     {!mode && children}
                 </div>
-                <div ref={setSuggestionsContainer} className={styles.suggestions} />
+                <div
+                    ref={setSuggestionsContainer}
+                    className={styles.suggestions}
+                    // eslint-disable-next-line react/forbid-dom-props
+                    style={{ paddingTop: height }}
+                />
                 <Shortcut ordered={['/']} onMatch={focus} />
             </div>
         )

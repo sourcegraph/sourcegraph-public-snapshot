@@ -17,7 +17,8 @@
         margin: -0.5rem;
 
         .suggestions {
-            padding: 3rem 0.5rem 0.5rem 0.5rem;
+            // Set smaller paddings to the suggestion panel (see Suggestions.module.scss)
+            --suggestions-padding: 0.5rem;
         }
     }
 }
@@ -89,13 +90,12 @@
     top: 0;
     left: 0;
     right: 0;
-    // Hardcoded value in order to render border around
-    // input element but avoid suggestion content overlapping
-    // with input UI
-    padding: 3.5rem 0.75rem 0.75rem 0.75rem;
     border-radius: 8px;
     background-color: var(--color-bg-1);
     box-shadow: 0 10px 50px rgba(0, 0, 0, 0.15);
+
+    // Set a default paddings to the suggestion panel (see Suggestions.module.scss)
+    --suggestions-padding: 0.75rem;
 
     :global(.theme-dark) & {
         box-shadow: 0 10px 60px rgba(0, 0, 0, 0.8);
