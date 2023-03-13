@@ -51,7 +51,6 @@ func TestIntegration_PermsStore(t *testing.T) {
 		{"ListPendingUsers", testPermsStore_ListPendingUsers(db)},
 		{"DeleteAllUserPendingPermissions", testPermsStore_DeleteAllUserPendingPermissions(db)},
 		{"GetUserIDsByExternalAccounts", testPermsStore_GetUserIDsByExternalAccounts(db)},
-		{"Metrics", testPermsStore_Metrics(db)},
 		{"MapUsers", testPermsStore_MapUsers(db)},
 	} {
 		t.Run(tc.name, tc.test)

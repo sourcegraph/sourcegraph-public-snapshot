@@ -1916,23 +1916,49 @@ type PermsMetrics struct {
 func (s *permsStore) Metrics(ctx context.Context, staleDur time.Duration) (*PermsMetrics, error) {
 	m := &PermsMetrics{}
 
+	unifiedPermissionsEnabled := conf.ExperimentalFeatures().UnifiedPermissions
+
+	// Calculate users with outdated permissions
 	stale := s.clock().Add(-1 * staleDur)
-	q := sqlf.Sprintf(`
-SELECT COUNT(*) FROM user_permissions AS perms
-WHERE
-	perms.user_id IN
-		(
-			SELECT users.id FROM users
-			WHERE users.deleted_at IS NULL
-		)
-AND perms.updated_at <= %s
+	var q *sqlf.Query
+	if unifiedPermissionsEnabled {
+		q = sqlf.Sprintf(`
+SELECT COUNT(*)
+FROM (
+	SELECT user_id, MAX(finished_at) AS finished_at FROM permission_sync_jobs
+	LEFT JOIN users ON users.id = user_id
+	WHERE user_id IS NOT NULL
+		AND users.deleted_at IS NULL
+	GROUP BY user_id
+) as up
+WHERE finished_at <= %s
 `, stale)
+	} else {
+		q = sqlf.Sprintf(`
+SELECT COUNT(*) FROM user_permissions AS perms
+INNER JOIN users ON users.id = user_id
+WHERE users.deleted_at IS NULL
+	AND perms.updated_at <= %s
+`, stale)
+	}
 	if err := s.execute(ctx, q, &m.UsersWithStalePerms); err != nil {
 		return nil, errors.Wrap(err, "users with stale perms")
 	}
 
-	var seconds sql.NullFloat64
-	q = sqlf.Sprintf(`
+	// Calculate the largest time gap between user permission syncs
+	if unifiedPermissionsEnabled {
+		q = sqlf.Sprintf(`
+SELECT EXTRACT(EPOCH FROM (MAX(finished_at) - MIN(finished_at)))
+FROM (
+	SELECT user_id, MAX(finished_at) AS finished_at
+	FROM permission_sync_jobs
+	LEFT JOIN users ON users.id = user_id
+	WHERE users.deleted_at IS NULL AND user_id IS NOT NULL
+	GROUP BY user_id
+) AS up
+`)
+	} else {
+		q = sqlf.Sprintf(`
 SELECT EXTRACT(EPOCH FROM (MAX(updated_at) - MIN(updated_at)))
 FROM user_permissions AS perms
 WHERE perms.user_id IN
@@ -1941,27 +1967,56 @@ WHERE perms.user_id IN
 		WHERE users.deleted_at IS NULL
 	)
 `)
+	}
+	var seconds sql.NullFloat64
 	if err := s.execute(ctx, q, &seconds); err != nil {
 		return nil, errors.Wrap(err, "users perms gap seconds")
 	}
 	m.UsersPermsGapSeconds = seconds.Float64
 
-	q = sqlf.Sprintf(`
-SELECT COUNT(*) FROM repo_permissions AS perms
-WHERE perms.repo_id IN
-	(
-		SELECT repo.id FROM repo
-		WHERE
-			repo.deleted_at IS NULL
+	// Calculate repos with outdated perms
+	if unifiedPermissionsEnabled {
+		q = sqlf.Sprintf(`
+SELECT COUNT(*)
+FROM (
+	SELECT repository_id, MAX(finished_at) AS finished_at FROM permission_sync_jobs
+	LEFT JOIN repo ON repo.id = repository_id
+	WHERE repository_id IS NOT NULL
+		AND repo.deleted_at IS NULL
 		AND repo.private = TRUE
-	)
-AND perms.updated_at <= %s
+	GROUP BY repository_id
+) AS rp
+WHERE finished_at <= %s
 `, stale)
+	} else {
+		q = sqlf.Sprintf(`
+SELECT COUNT(*) FROM repo_permissions AS perms
+INNER JOIN repo ON repo.id = perms.repo_id
+WHERE repo.deleted_at IS NULL
+	AND repo.private = TRUE
+	AND perms.updated_at <= %s
+`, stale)
+	}
 	if err := s.execute(ctx, q, &m.ReposWithStalePerms); err != nil {
 		return nil, errors.Wrap(err, "repos with stale perms")
 	}
 
-	q = sqlf.Sprintf(`
+	// Calculate maximum time gap between repo permission syncs
+	if unifiedPermissionsEnabled {
+		q = sqlf.Sprintf(`
+SELECT EXTRACT(EPOCH FROM (MAX(finished_at) - MIN(finished_at)))
+FROM (
+	SELECT repository_id, MAX(finished_at) AS finished_at
+	FROM permission_sync_jobs
+	LEFT JOIN repo ON repo.id = repository_id
+	WHERE repo.deleted_at IS NULL
+		AND repository_id IS NOT NULL
+		AND repo.private = TRUE
+	GROUP BY repository_id
+) AS rp
+`)
+	} else {
+		q = sqlf.Sprintf(`
 SELECT EXTRACT(EPOCH FROM (MAX(perms.updated_at) - MIN(perms.updated_at)))
 FROM repo_permissions AS perms
 WHERE perms.repo_id IN
@@ -1972,6 +2027,7 @@ WHERE perms.repo_id IN
 		AND repo.private = TRUE
 	)
 `)
+	}
 	if err := s.execute(ctx, q, &seconds); err != nil {
 		return nil, errors.Wrap(err, "repos perms gap seconds")
 	}
