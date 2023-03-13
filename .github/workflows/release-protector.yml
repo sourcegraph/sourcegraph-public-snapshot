@@ -7,14 +7,7 @@ on:
       - main
 
 jobs:
-  disable_release_protector:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Disable workflow
-        run: exit 0
-
   validate_release_branch:
-    needs: disable_release_protector
     runs-on: ubuntu-latest
     if: ${{ failure() && github.repository == 'sourcegraph/sourcegraph' && !github.event.pull_request.draft }}
     outputs:
