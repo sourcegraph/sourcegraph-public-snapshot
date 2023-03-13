@@ -1,6 +1,6 @@
-import React, { useId, useState, useMemo } from 'react'
+import React, { useId, useState, useMemo, PropsWithChildren } from 'react'
 
-import { mdiBadgeAccount } from '@mdi/js'
+import { mdiClose } from '@mdi/js'
 import { noop } from 'lodash'
 
 import {
@@ -8,16 +8,16 @@ import {
     Icon,
     Text,
     Modal,
-    H3,
+    H2,
     Form,
     MultiCombobox,
-    LoadingSpinner,
     ErrorAlert,
     MultiComboboxInput,
-    MultiComboboxPopover,
     MultiComboboxList,
     MultiComboboxOption,
     Link,
+    MultiComboboxOptionText,
+    Code,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
@@ -25,15 +25,15 @@ import { RoleFields, Scalars } from '../../../../graphql-operations'
 import { prettifySystemRole } from '../../../../util/settings'
 import { useGetUserRolesAndAllRoles, useSetRoles } from '../backend'
 
+import styles from './RoleAssignmentModal.module.scss'
+
 export interface RoleAssignmentModalProps {
     onCancel: () => void
     onSuccess: (user: { username: string }) => void
     user: { id: Scalars['ID']; username: string }
 }
 
-type Role = Pick<RoleFields, 'id' | 'system' | 'name'>
-
-const prepareDisplayRole = (role: Pick<RoleFields, 'id' | 'system' | 'name'>): Role => ({
+const prepareDisplayRole = (role: RoleFields): RoleFields => ({
     ...role,
     name: role.system ? prettifySystemRole(role.name) : role.name,
 })
@@ -62,9 +62,9 @@ export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalPro
         setAllRoles(allRoles)
     })
 
-    const [selectedRoles, setSelectedRoles] = useState<Role[]>([])
+    const [selectedRoles, setSelectedRoles] = useState<RoleFields[]>([])
     // Use roles from cached data if it's available, as these will change infrequently.
-    const [allRoles, setAllRoles] = useState<Role[]>((data?.roles.nodes || []).map(prepareDisplayRole))
+    const [allRoles, setAllRoles] = useState<RoleFields[]>((data?.roles.nodes || []).map(prepareDisplayRole))
 
     const selectedRoleNames = useMemo(() => selectedRoles.map(role => role.name), [selectedRoles])
     const [setRoles, { loading: setRolesLoading, error: setRolesError }] = useSetRoles(() => onSuccess(user))
@@ -93,26 +93,28 @@ export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalPro
     const error = getUserRolesError || setRolesError
 
     return (
-        <Modal onDismiss={onCancel} aria-labelledby={labelID} as={Form} onSubmit={handleSubmit}>
-            <div className="d-flex align-items-center mb-2">
-                <Icon className="icon mr-1" svgPath={mdiBadgeAccount} inline={false} aria-hidden={true} />{' '}
-                <H3 id={labelID} className="mb-0">
-                    Manage roles for {user.username}
-                </H3>
-            </div>
-            <Text>
-                Roles determine which permissions are granted to this user.{' '}
-                <Link to="/site-admin/roles">View roles settings</Link> to manage available roles and permissions.
-            </Text>
+        <Modal position="center" aria-labelledby={labelID} className={styles.modal} onDismiss={onCancel}>
+            <header className="mb-4">
+                <div className={styles.headerTopLine}>
+                    <H2 className="m-0 font-weight-normal" id={labelID}>
+                        Manage roles for <strong>{user.username}</strong>
+                    </H2>
 
-            {loading && allRoles.length === 0 && (
-                <div className="d-flex align-items-center">
-                    <Text className="d-block font-italic m-0 mr-2">Loading roles</Text> <LoadingSpinner />
+                    <Button variant="icon" className={styles.closeButton} aria-label="Close" onClick={onCancel}>
+                        <Icon aria-hidden={true} svgPath={mdiClose} />
+                    </Button>
                 </div>
-            )}
-            {error && !loading && <ErrorAlert error={error} />}
 
-            {(!loading || allRoles.length > 0) && (
+                <Text className="mb-0">
+                    Roles determine which permissions are granted to this user.{' '}
+                    <Link to="/site-admin/roles">View roles settings</Link> to manage available roles and permissions.
+                    Note that system roles cannot be revoked or assigned via this modal.
+                </Text>
+            </header>
+
+            <Form onSubmit={handleSubmit} className={styles.form}>
+                {error && !loading && <ErrorAlert error={error} />}
+
                 <MultiCombobox
                     selectedItems={selectedRoles}
                     getItemKey={item => item.id}
@@ -120,47 +122,69 @@ export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalPro
                     getItemIsPermanent={item => item.system}
                     onSelectedItemsChange={setSelectedRoles}
                     aria-label="Select role(s) to assign to user"
+                    className={styles.roleCombobox}
                 >
                     <MultiComboboxInput
                         id={id}
                         value={searchTerm}
-                        autoFocus={false}
-                        autoCorrect="false"
-                        autoComplete="off"
-                        placeholder="Select role..."
+                        autoFocus={true}
+                        placeholder="Search roles..."
+                        status={loading ? 'loading' : 'initial'}
                         onChange={event => setSearchTerm(event.target.value)}
                     />
-                    <small className="text-muted pl-2">
-                        System roles cannot be revoked or assigned via this modal.
-                    </small>
 
-                    <MultiComboboxPopover>
-                        <MultiComboboxList items={suggestions}>
-                            {items =>
-                                items.map((item, index) => (
-                                    <MultiComboboxOption value={item.name} key={item.id} index={index}>
-                                        <small>{item.name}</small>
-                                    </MultiComboboxOption>
-                                ))
-                            }
-                        </MultiComboboxList>
-                    </MultiComboboxPopover>
+                    <MultiComboboxList items={suggestions} renderEmptyList={true} className={styles.suggestionsList}>
+                        {items => (
+                            <>
+                                {items.map((item, index) => (
+                                    <RoleSuggestionCard key={item.id} item={item} index={index} />
+                                ))}
+                                {items.length === 0 && (
+                                    <span className={styles.zeroStateMessage}>
+                                        {loading
+                                            ? 'Loading...'
+                                            : allRoles.length > 0
+                                            ? 'No more roles to assign'
+                                            : 'No roles found'}
+                                    </span>
+                                )}
+                            </>
+                        )}
+                    </MultiComboboxList>
                 </MultiCombobox>
-            )}
 
-            <div className="d-flex my-2 justify-content-end">
-                <Button variant="secondary" className="mr-2" onClick={onCancel}>
-                    Cancel
-                </Button>
-                <LoaderButton
-                    variant="primary"
-                    loading={setRolesLoading}
-                    label="Update"
-                    alwaysShowLabel={true}
-                    disabled={loading || setRolesLoading}
-                    type="submit"
-                />
-            </div>
+                <footer className={styles.footer}>
+                    <span className={styles.keyboardExplanation}>
+                        Press <kbd>↑</kbd>
+                        <kbd>↓</kbd> to navigate through results
+                    </span>
+
+                    <Button variant="secondary" className="ml-auto mr-2" onClick={onCancel}>
+                        Cancel
+                    </Button>
+                    <LoaderButton
+                        variant="primary"
+                        loading={setRolesLoading}
+                        label="Update"
+                        alwaysShowLabel={true}
+                        disabled={loading || setRolesLoading}
+                        type="submit"
+                    />
+                </footer>
+            </Form>
         </Modal>
     )
 }
+
+interface RoleSuggestionCardProps {
+    item: RoleFields
+    index: number
+}
+
+const RoleSuggestionCard: React.FunctionComponent<PropsWithChildren<RoleSuggestionCardProps>> = ({ item, index }) => (
+    <MultiComboboxOption value={item.name} index={index} className={styles.suggestionCard}>
+        <span>
+            <MultiComboboxOptionText />
+        </span>
+    </MultiComboboxOption>
+)
