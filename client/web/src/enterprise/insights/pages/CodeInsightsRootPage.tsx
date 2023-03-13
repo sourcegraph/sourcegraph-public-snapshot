@@ -131,8 +131,6 @@ const CodeInsightHeaderActions: FC<CodeInsightHeaderActionsProps> = props => {
 
     const available = creationPermission?.available ?? false
 
-    console.log({ available })
-
     const createInsightButton = (
         <Button
             as={Link}
