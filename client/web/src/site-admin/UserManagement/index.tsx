@@ -10,12 +10,24 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../../util/checkRequestAccessAllowed'
 import { ValueLegendList, ValueLegendListProps } from '../analytics/components/ValueLegendList'
 
-import { UsersList } from './components/UsersList'
+import { SiteUser, UsersList } from './components/UsersList'
 import { USERS_MANAGEMENT_SUMMARY } from './queries'
 
 import styles from './index.module.scss'
 
-export const UsersManagement: React.FunctionComponent = () => {
+export interface UsersManagementProps {
+    isEnterprise: boolean
+    renderAssignmentModal: (
+        onCancel: () => void,
+        onSuccess: (user: { username: string }) => void,
+        user: SiteUser
+    ) => React.ReactNode
+}
+
+export const UsersManagement: React.FunctionComponent<UsersManagementProps> = ({
+    isEnterprise,
+    renderAssignmentModal,
+}) => {
     useEffect(() => {
         eventLogger.logPageView('UsersManagement')
     }, [])
@@ -113,7 +125,11 @@ export const UsersManagement: React.FunctionComponent = () => {
                 ) : (
                     <ValueLegendList className="mb-3" items={legends} />
                 )}
-                <UsersList onActionEnd={refetch} />
+                <UsersList
+                    onActionEnd={refetch}
+                    isEnterprise={isEnterprise}
+                    renderAssignmentModal={renderAssignmentModal}
+                />
             </Card>
             <Text className="font-italic text-center mt-2">
                 All events are generated from entries in the event logs table and are updated every 24 hours.
