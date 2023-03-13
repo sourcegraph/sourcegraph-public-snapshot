@@ -141,28 +141,10 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 		}
 	}
 
-	// Email user to ask to set up a password, in the background.
-	// This internally checks whether username/password login is enabled, whether we have an SMTP in place, etc.
+	// Attempt to send emails in the background.
 	goroutine.Go(func() {
-		if disableEmailInvites {
-			return
-		}
-		l := h.getLogger()
-		if debugEmailInvitesMock {
-			if l != nil {
-				l.Info("email welcome: mock welcome to Sourcegraph", log.String("welcomed", primaryEmail))
-			}
-			return
-		}
-		_, err = auth.ResetPasswordURL(r.Context(), h.db, l, user, primaryEmail, true)
-		if err != nil {
-			h.getLogger().Error("error sending password reset email", log.Error(err))
-		}
-	})
-
-	// Attempt to send welcome email in the background.
-	goroutine.Go(func() {
-		_ = sendNewUserEmail(primaryEmail, globals.ExternalURL().String(), h.getLogger())
+		_ = sendPasswordResetEmail(r.Context(), h.getLogger(), h.db, user, primaryEmail)
+		_ = sendWelcomeEmail(primaryEmail, globals.ExternalURL().String(), h.getLogger())
 	})
 
 	var now = time.Now()
@@ -247,7 +229,28 @@ func containsErrCannotCreateUserError(err error) (database.ErrCannotCreateUser, 
 	return database.ErrCannotCreateUser{}, false
 }
 
-func sendNewUserEmail(email, siteURL string, logger log.Logger) error {
+// sendPasswordResetEmail sends a password reset email to the given user.
+func sendPasswordResetEmail(ctx context.Context, logger log.Logger, db database.DB, user *types.User, primaryEmail string) bool {
+	// Email user to ask to set up a password
+	// This internally checks whether username/password login is enabled, whether we have an SMTP in place, etc.
+	if disableEmailInvites {
+		return true
+	}
+	if debugEmailInvitesMock {
+		if logger != nil {
+			logger.Info("password reset: mock pw reset email to Sourcegraph", log.String("sent", primaryEmail))
+		}
+		return true
+	}
+	_, err := auth.ResetPasswordURL(ctx, db, logger, user, primaryEmail, true)
+	if err != nil {
+		logger.Error("error sending password reset email", log.Error(err))
+	}
+	return false
+}
+
+// sendWelcomeEmail sends a welcome email to the given user.
+func sendWelcomeEmail(email, siteURL string, logger log.Logger) error {
 	if email != "" && conf.CanSendEmail() {
 		if disableEmailInvites {
 			return nil
