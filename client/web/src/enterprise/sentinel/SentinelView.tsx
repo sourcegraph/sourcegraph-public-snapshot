@@ -14,7 +14,11 @@ import styles from './SentinelView.module.scss'
 
 export const SentinelView: FC = () => {
     const [showMobileFilters, setShowMobileFilters] = useState(true)
-    const [filter, setFilter] = useState({ severity: '', language: '' })
+    const [filter, setFilter] = useState({
+        severity: '',
+        language: '',
+        repositoryName: '',
+    })
     const { loading, hasNextPage, fetchMore, connection, error } = useSentinelQuery(filter)
 
     return (

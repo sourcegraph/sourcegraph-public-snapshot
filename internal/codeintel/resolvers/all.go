@@ -39,10 +39,11 @@ type GetVulnerabilitiesArgs struct {
 }
 
 type GetVulnerabilityMatchesArgs struct {
-	First    *int32
-	After    *string
-	Severity *string
-	Language *string
+	First          *int32
+	After          *string
+	Severity       *string
+	Language       *string
+	RepositoryName *string
 }
 
 type VulnerabilityConnectionResolver interface {

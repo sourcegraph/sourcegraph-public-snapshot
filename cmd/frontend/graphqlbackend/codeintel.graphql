@@ -490,10 +490,16 @@ extend type Query {
         Programming language of the vulnerability.
         """
         language: String
+
         """
         Severity of the vulnerability.
         """
         severity: String
+
+        """
+        The name of the repository to filter by.
+        """
+        repositoryName: String
     ): VulnerabilityMatchConnection!
 
     """
@@ -515,7 +521,6 @@ extend type Query {
         """
         repositoryName: String
     ): VulnerabilityMatchGroupByRepositoryConnection!
-
 }
 
 """

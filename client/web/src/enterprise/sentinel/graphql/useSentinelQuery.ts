@@ -13,15 +13,17 @@ import {
 interface UseSentinelProps {
     severity: string
     language: string
+    repositoryName: string
 }
 
 export const useSentinelQuery = ({
     severity,
     language,
+    repositoryName,
 }: UseSentinelProps): UseShowMorePaginationResult<VulnerabilityMatchesResult, VulnerabilitiesFields> => {
     return useShowMorePagination<VulnerabilityMatchesResult, VulnerabilityMatchesVariables, VulnerabilitiesFields>({
         query: RESOLVE_SECURITY_VULNERABILITIES_QUERY,
-        variables: { after: null, first: 50, severity, language },
+        variables: { after: null, first: 50, severity, language, repositoryName },
         options: { fetchPolicy: 'network-only' },
         getConnection: result => {
             const { vulnerabilityMatches } = dataOrThrowErrors(result)

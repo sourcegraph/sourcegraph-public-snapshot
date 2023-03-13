@@ -53,6 +53,9 @@ func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVuln
 	if args.Severity != "" {
 		conds = append(conds, sqlf.Sprintf("vul.severity = %s", args.Severity))
 	}
+	if args.RepositoryName != "" {
+		conds = append(conds, sqlf.Sprintf("r.name = %s", args.RepositoryName))
+	}
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
@@ -73,21 +76,29 @@ SELECT
 	m.id,
 	m.upload_id,
 	vap.vulnerability_id,
-	` + vulnerabilityAffectedPackageFields + `,
-	` + vulnerabilityAffectedSymbolFields + `,
+	vap.package_name,
+	vap.language,
+	vap.namespace,
+	vap.version_constraint,
+	vap.fixed,
+	vap.fixed_in,
+	vas.path,
+	vas.symbols,
 	vul.severity,
 	COUNT(*) OVER() AS count
 FROM limited_matches m
 LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
 LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
 LEFT JOIN vulnerabilities vul ON vap.vulnerability_id = vul.id
+LEFT JOIN lsif_uploads lu ON m.upload_id = lu.id
+LEFT JOIN repo r ON r.id = lu.repository_id
 WHERE %s
 ORDER BY m.id, vap.id, vas.id
 LIMIT %s OFFSET %s
 `
 
 // vulnerabities to uploads to repos
-func (s *store) GetVulnerabilityMatchesByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesGroupByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error) {
+func (s *store) GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesGroupByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error) {
 	ctx, _, endObservation := s.operations.getVulnerabilityMatchesByRepo.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

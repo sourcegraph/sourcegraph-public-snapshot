@@ -19,7 +19,7 @@ type Store interface {
 
 	VulnerabilityMatchByID(ctx context.Context, id int) (shared.VulnerabilityMatch, bool, error)
 	GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error)
-	GetVulnerabilityMatchesByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesGroupByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error)
+	GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesGroupByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error)
 	ScanMatches(ctx context.Context, batchSize int) (numReferencesScanned int, numVulnerabilityMatches int, _ error)
 }
 

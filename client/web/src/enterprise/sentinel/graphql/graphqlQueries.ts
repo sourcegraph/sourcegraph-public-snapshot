@@ -22,8 +22,20 @@ const vulnerabilitiesFields = gql`
 `
 
 export const RESOLVE_SECURITY_VULNERABILITIES_QUERY = gql`
-    query VulnerabilityMatches($first: Int, $after: String, $severity: String, $language: String) {
-        vulnerabilityMatches(first: $first, after: $after, severity: $severity, language: $language) {
+    query VulnerabilityMatches(
+        $first: Int
+        $after: String
+        $severity: String
+        $language: String
+        $repositoryName: String
+    ) {
+        vulnerabilityMatches(
+            first: $first
+            after: $after
+            severity: $severity
+            language: $language
+            repositoryName: $repositoryName
+        ) {
             nodes {
                 id
                 ...VulnerabilitiesFields

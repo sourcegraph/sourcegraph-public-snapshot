@@ -46,10 +46,11 @@ type AffectedSymbol struct {
 }
 
 type GetVulnerabilityMatchesArgs struct {
-	Limit    int
-	Offset   int
-	Severity string
-	Language string
+	Limit          int
+	Offset         int
+	Severity       string
+	Language       string
+	RepositoryName string
 }
 
 type VulnerabilityMatch struct {

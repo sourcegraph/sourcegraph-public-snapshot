@@ -106,11 +106,17 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 		severity = *args.Severity
 	}
 
+	repositoryName := ""
+	if args.RepositoryName != nil {
+		repositoryName = *args.RepositoryName
+	}
+
 	matches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatches(ctx, shared.GetVulnerabilityMatchesArgs{
-		Limit:    limit,
-		Offset:   offset,
-		Language: language,
-		Severity: severity,
+		Limit:          limit,
+		Offset:         offset,
+		Language:       language,
+		Severity:       severity,
+		RepositoryName: repositoryName,
 	})
 	if err != nil {
 		return nil, err
@@ -218,7 +224,7 @@ func (r *rootResolver) VulnerabilityMatchesGroupByRepository(ctx context.Context
 		repositoryName = *args.RepositoryName
 	}
 
-	groupedMatches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesByRepository(ctx, shared.GetVulnerabilityMatchesGroupByRepositoryArgs{
+	groupedMatches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesCountByRepository(ctx, shared.GetVulnerabilityMatchesGroupByRepositoryArgs{
 		Limit:          limit,
 		Offset:         offset,
 		RepositoryName: repositoryName,
