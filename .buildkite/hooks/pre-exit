@@ -13,7 +13,7 @@ fi
 # The bazel queue is running stateful agents, so we need to ensure we're cleaning after us.
 if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" ]]; then
     # Ensure all test databases are wiped, in case a test process was interrupted.
-    for db in `psql -c '\l' | grep sourcegraph* | cut -d '|' -f 1`; do psql -c "drop database \"$db\""; done
+    for db in $(psql -c '\l' | grep sourcegraph* | cut -d '|' -f 1); do psql -c "drop database \"$db\""; done
 fi
 
 if [ "$BUILDKITE_BRANCH" == "main" ]; then
