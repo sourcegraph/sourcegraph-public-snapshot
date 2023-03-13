@@ -23,10 +23,10 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 		{User: types.User{ID: 4, Username: "user4", DisplayName: "First Last"}, Emails: []string{"d@example.com"}, SCIMExternalID: "id4"},
 	},
 		map[int32][]*database.UserEmail{
-			1: {&database.UserEmail{UserID: 1, Email: "a@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			2: {&database.UserEmail{UserID: 2, Email: "b@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			3: {&database.UserEmail{UserID: 3, Email: "c@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			4: {&database.UserEmail{UserID: 4, Email: "d@example.com", VerifiedAt: &verifiedDate, Primary: true}},
+			1: {makeEmail(1, "a@example.com", true, true)},
+			2: {makeEmail(2, "b@example.com", true, true)},
+			3: {makeEmail(3, "c@example.com", true, true)},
+			4: {makeEmail(4, "d@example.com", true, true)},
 		})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 

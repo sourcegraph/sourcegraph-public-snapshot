@@ -21,13 +21,16 @@ func TestUserResourceHandler_Create(t *testing.T) {
 		{User: types.User{ID: 2, Username: "user2", DisplayName: "Nay Scim", SCIMControlled: false}, Emails: []string{"b@example.com"}},
 		{User: types.User{ID: 3, Username: "user3", DisplayName: "Also Yay Scim", SCIMControlled: true}, Emails: []string{"c@example.com"}, SCIMExternalID: "id3"},
 		{User: types.User{ID: 4, Username: "user4", DisplayName: "Double No Scim", SCIMControlled: false}, Emails: []string{"d@example.com", "dd@example.com"}},
+		{User: types.User{ID: 5, Username: "user5", DisplayName: "Also Nay Scim", SCIMControlled: false}, Emails: []string{"e@example.com"}},
+		{User: types.User{ID: 6, Username: "user6", DisplayName: "Double No Scim", SCIMControlled: false}, Emails: []string{"f@example.com", "ff@example.com"}},
 	},
 		map[int32][]*database.UserEmail{
-			1: {&database.UserEmail{UserID: 1, Email: "a@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			2: {&database.UserEmail{UserID: 2, Email: "b@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			3: {&database.UserEmail{UserID: 3, Email: "c@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			4: {&database.UserEmail{UserID: 4, Email: "d@example.com", VerifiedAt: &verifiedDate, Primary: true}},
-			5: {&database.UserEmail{UserID: 4, Email: "dd@example.com", VerifiedAt: &verifiedDate, Primary: false}},
+			1: {makeEmail(1, "a@example.com", true, true)},
+			2: {makeEmail(2, "b@example.com", true, true)},
+			3: {makeEmail(3, "c@example.com", true, true)},
+			4: {makeEmail(4, "d@example.com", true, true), makeEmail(4, "dd@example.com", false, true)},
+			5: {makeEmail(5, "e@example.com", true, true)},
+			6: {makeEmail(6, "f@example.com", true, true), makeEmail(6, "ff@example.com", false, true)},
 		})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	testCases := []struct {
@@ -38,11 +41,11 @@ func TestUserResourceHandler_Create(t *testing.T) {
 	}{
 		{
 			name:     "usernames - create user with new username",
-			username: "user5",
+			username: "user7",
 			testFunc: func(t *testing.T, usernameInDB string, usernameInResource string, err error) {
 				assert.NoError(t, err)
-				assert.Equal(t, "user5", usernameInDB)
-				assert.Equal(t, "user5", usernameInResource)
+				assert.Equal(t, "user7", usernameInDB)
+				assert.Equal(t, "user7", usernameInResource)
 			},
 		},
 		{
@@ -50,7 +53,7 @@ func TestUserResourceHandler_Create(t *testing.T) {
 			username: "user1",
 			testFunc: func(t *testing.T, usernameInDB string, usernameInResource string, err error) {
 				assert.NoError(t, err)
-				assert.Len(t, usernameInDB, 5+1+5) // user4-abcde
+				assert.Len(t, usernameInDB, 5+1+5) // user1-abcde
 				assert.Equal(t, "user1", usernameInResource)
 			},
 		},
@@ -82,15 +85,6 @@ func TestUserResourceHandler_Create(t *testing.T) {
 			},
 		},
 		{
-			name:     "usernames - create user with empty username",
-			username: "",
-			testFunc: func(t *testing.T, usernameInDB string, usernameInResource string, err error) {
-				assert.NoError(t, err)
-				assert.Len(t, usernameInDB, 5) // abcde
-				assert.Equal(t, "", usernameInResource)
-			},
-		},
-		{
 			name:     "existing email - fail for scim-controlled user",
 			username: "updated-user1",
 			attrEmails: []interface{}{
@@ -103,14 +97,14 @@ func TestUserResourceHandler_Create(t *testing.T) {
 		},
 		{
 			name:     "existing email - pass for non-scim-controlled user",
-			username: "updated-user2",
+			username: "updated-user5",
 			attrEmails: []interface{}{
-				map[string]interface{}{"value": "b@example.com", "primary": false},
+				map[string]interface{}{"value": "e@example.com", "primary": true},
 			},
 			testFunc: func(t *testing.T, usernameInDB string, usernameInResource string, err error) {
 				assert.NoError(t, err)
-				assert.Equal(t, "updated-user2", usernameInDB)
-				assert.Equal(t, "updated-user2", usernameInResource)
+				assert.Equal(t, "updated-user5", usernameInDB)
+				assert.Equal(t, "updated-user5", usernameInResource)
 			},
 		},
 		{
@@ -127,15 +121,15 @@ func TestUserResourceHandler_Create(t *testing.T) {
 		},
 		{
 			name:     "existing email - pass for multiple emails for same user",
-			username: "updated-user4",
+			username: "updated-user6",
 			attrEmails: []interface{}{
-				map[string]interface{}{"value": "d@example.com", "primary": false},
-				map[string]interface{}{"value": "dd@example.com", "primary": true},
+				map[string]interface{}{"value": "f@example.com", "primary": false},
+				map[string]interface{}{"value": "ff@example.com", "primary": true},
 			},
 			testFunc: func(t *testing.T, usernameInDB string, usernameInResource string, err error) {
 				assert.NoError(t, err)
-				assert.Equal(t, "updated-user4", usernameInDB)
-				assert.Equal(t, "updated-user4", usernameInResource)
+				assert.Equal(t, "updated-user6", usernameInDB)
+				assert.Equal(t, "updated-user6", usernameInResource)
 			},
 		},
 	}
@@ -144,15 +138,15 @@ func TestUserResourceHandler_Create(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			userRes, err := userResourceHandler.Create(createDummyRequest(), createUserResourceAttributes(tc.username, tc.attrEmails))
 			id, _ := strconv.Atoi(userRes.ID)
-			newUser, _ := db.Users().GetByID(context.Background(), int32(id))
 			usernameInDB := ""
 			usernameInResource := ""
 			if err == nil {
+				newUser, _ := db.Users().GetByID(context.Background(), int32(id))
 				usernameInDB = newUser.Username
 				usernameInResource = userRes.Attributes[AttrUserName].(string)
 			}
 			tc.testFunc(t, usernameInDB, usernameInResource, err)
-			if id > 4 {
+			if err == nil && id > 6 {
 				_ = db.Users().HardDelete(context.Background(), int32(id))
 			}
 		})

@@ -16,7 +16,7 @@ var verifiedDate = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // getMockDB returns a mock database that contains the given users.
 // Note: IDs of users must be ascending.
-func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.UserEmail) *database.MockDB {
+func getMockDB(users []*types.UserForSCIM, usersEmails map[int32][]*database.UserEmail) *database.MockDB {
 	userStore := database.NewMockUserStore()
 	userStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		for _, user := range users {
@@ -71,12 +71,17 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 		return userStore, nil
 	})
 	userStore.HardDeleteFunc.SetDefaultHook(func(ctx context.Context, userID int32) error {
+		// Delete the user
 		for i, u := range users {
 			if u.ID == userID {
+				// Delete the user
 				users = append(users[:i], users[i+1:]...)
+				// Delete the user's emails
+				delete(usersEmails, userID)
 				return nil
 			}
 		}
+
 		return database.NewUserNotFoundErr()
 	})
 
@@ -113,8 +118,8 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 	})
 
 	userEmailsStore := database.NewMockUserEmailsStore()
-	userEmailsStore.AddFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string, s2 *string) error {
-		userEmails[userID] = append(userEmails[userID], &database.UserEmail{Email: email})
+	userEmailsStore.AddFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string, verificationCode *string) error {
+		usersEmails[userID] = append(usersEmails[userID], &database.UserEmail{UserID: userID, Email: email, VerificationCode: verificationCode})
 		return nil
 	})
 
@@ -131,12 +136,12 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 			}
 			return currentEmails, err
 		}
-		userEmails[userID], err = remove(userEmails[userID], email)
+		usersEmails[userID], err = remove(usersEmails[userID], email)
 		return err
 	})
 
 	userEmailsStore.SetVerifiedFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string, verified bool) error {
-		for _, savedEmail := range userEmails[userID] {
+		for _, savedEmail := range usersEmails[userID] {
 			if savedEmail.Email == email {
 				savedEmail.VerifiedAt = &verifiedDate
 			}
@@ -145,7 +150,7 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 	})
 
 	userEmailsStore.SetPrimaryEmailFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string) error {
-		for _, savedEmail := range userEmails[userID] {
+		for _, savedEmail := range usersEmails[userID] {
 			savedEmail.Primary = strings.EqualFold(savedEmail.Email, email)
 		}
 		return nil
@@ -153,7 +158,7 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 
 	userEmailsStore.ListByUserFunc.SetDefaultHook(func(ctx context.Context, opts database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		toReturn := make([]*database.UserEmail, 0)
-		for _, email := range userEmails[opts.UserID] {
+		for _, email := range usersEmails[opts.UserID] {
 			if !opts.OnlyVerified {
 				toReturn = append(toReturn, email)
 				continue
@@ -167,9 +172,11 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 	userEmailsStore.GetVerifiedEmailsFunc.SetDefaultHook(func(ctx context.Context, emails ...string) ([]*database.UserEmail, error) {
 		toReturn := make([]*database.UserEmail, 0)
 		for _, email := range emails {
-			for _, userEmail := range userEmails {
-				if userEmail[0].Email == email && userEmail[0].VerifiedAt != nil {
-					toReturn = append(toReturn, userEmail[0])
+			for _, userEmails := range usersEmails {
+				for _, userEmail := range userEmails {
+					if userEmail.Email == email && userEmail.VerifiedAt != nil {
+						toReturn = append(toReturn, userEmail)
+					}
 				}
 			}
 		}
