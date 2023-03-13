@@ -202,10 +202,8 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                     )
                 ) : (
                     <div className="text-center p-2">
-                        <Link to="https://docs.sourcegraph.com/code_navigation/how-to/enable_auto_indexing">
-                            Enable auto-indexing
-                        </Link>{' '}
-                        to automatically create and upload a precise index for your source code.
+                        <Link to="/help/code_navigation/how-to/enable_auto_indexing">Enable auto-indexing</Link> to
+                        automatically create and upload a precise index for your source code.
                     </div>
                 )}
             </Container>

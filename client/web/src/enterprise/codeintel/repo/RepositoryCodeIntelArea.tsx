@@ -13,7 +13,6 @@ import { RepositoryFields } from '../../../graphql-operations'
 import { RouteV6Descriptor } from '../../../util/contributions'
 import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'
 import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
-import { CodeIntelInferenceConfigurationPageProps } from '../configuration/pages/CodeIntelInferenceConfigurationPage'
 import { CodeIntelRepositoryIndexConfigurationPageProps } from '../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'
 import { RepoDashboardPageProps } from '../dashboard/pages/RepoDashboardPage'
 import { CodeIntelPreciseIndexesPageProps } from '../indexes/pages/CodeIntelPreciseIndexesPage'
@@ -46,11 +45,6 @@ const CodeIntelConfigurationPage = lazyComponent<CodeIntelConfigurationPageProps
     () => import('../configuration/pages/CodeIntelConfigurationPage'),
     'CodeIntelConfigurationPage'
 )
-
-const CodeIntelInferenceConfigurationPage = lazyComponent<
-    CodeIntelInferenceConfigurationPageProps,
-    'CodeIntelInferenceConfigurationPage'
->(() => import('../configuration/pages/CodeIntelInferenceConfigurationPage'), 'CodeIntelInferenceConfigurationPage')
 
 const RepositoryIndexConfigurationPage = lazyComponent<
     CodeIntelRepositoryIndexConfigurationPageProps,
