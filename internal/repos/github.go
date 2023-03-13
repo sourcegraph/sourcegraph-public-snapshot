@@ -412,7 +412,6 @@ func (s *GitHubSource) GetRepo(ctx context.Context, nameWithOwner string) (*type
 }
 
 func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
-	r.Description = strings.ReplaceAll(r.Description, "\x00", "") // Postgres does not support the NULL character in text fields
 	urn := s.svc.URN()
 	metadata := *r
 	// This field flip flops depending on which token was used to retrieve the repo
@@ -430,7 +429,7 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 			r.NameWithOwner,
 		)),
 		ExternalRepo: github.ExternalRepoSpec(r, s.baseURL),
-		Description:  r.Description,
+		Description:  strings.ReplaceAll(r.Description, "\x00", ""), // Postgres does not support the NULL character in text fields
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
 		Stars:        r.StargazerCount,
