@@ -7,6 +7,7 @@ import (
 
 	"github.com/elimity-com/scim"
 	"github.com/elimity-com/scim/optional"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -14,6 +15,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+type IdentityProvider string
+
+const (
+	SCIM_AZURE_AD IdentityProvider = "Azure AD"
+	SCIM_STANDARD IdentityProvider = "STANDARD"
+)
+
+func getConfiguredIdentityProvider() IdentityProvider {
+	value := conf.Get().ScimIdentityProvider
+	switch value {
+	case string(SCIM_AZURE_AD):
+		return SCIM_AZURE_AD
+	default:
+		return SCIM_STANDARD
+	}
+}
 
 // Init sets SCIMHandler to a real handler.
 func Init(ctx context.Context, observationCtx *observation.Context, db database.DB, _ codeintel.Services, _ conftypes.UnifiedWatchable, s *enterprise.Services) error {
@@ -28,6 +46,7 @@ func newHandler(ctx context.Context, db database.DB, observationCtx *observation
 		DocumentationURI: optional.NewString("docs.sourcegraph.com/admin/scim"),
 		MaxResults:       100,
 		SupportFiltering: true,
+		SupportPatch:     true,
 		AuthenticationSchemes: []scim.AuthenticationScheme{
 			{
 				Type:             scim.AuthenticationTypeOauthBearerToken,

@@ -7,12 +7,16 @@ import (
 	"time"
 
 	"github.com/elimity-com/scim"
+	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/scim2/filter-parser/v2"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const sampleAccountData = `{
@@ -289,6 +293,86 @@ func Test_UserResourceHandler_Patch(t *testing.T) {
 			userRes, err := userResourceHandler.Patch(createDummyRequest(), tc.userId, tc.operations)
 			assert.NoError(t, err)
 			tc.testFunc(userRes)
+		})
+	}
+}
+
+func Test_UserResourceHandler_Patch_ReplaceStrategies(t *testing.T) {
+	t.Parallel()
+
+	db := getMockDB([]*types.UserForSCIM{
+		{User: types.User{ID: 1, Username: "test-user1"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id1", SCIMAccountData: sampleAccountData},
+		{User: types.User{ID: 2, Username: "test-user2"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id1", SCIMAccountData: sampleAccountData},
+	},
+		map[int32][]*database.UserEmail{
+			1: {makeEmail(1, "primary@work.com", true, true), makeEmail(1, "secondary@work.com", false, false)},
+			2: {makeEmail(1, "primary@work.com", true, true), makeEmail(2, "secondary@work.com", false, false)},
+		})
+	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+
+	testCases := []struct {
+		name       string
+		userId     string
+		operations []scim.PatchOperation
+		testFunc   func(userRes scim.Resource, err error)
+		config     *conf.Unified
+	}{
+		{
+			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimIdentityProvider: string(SCIM_AZURE_AD)}},
+			name:   "Add email with replace Azure",
+			userId: "1",
+			operations: []scim.PatchOperation{
+				{Op: "replace", Path: parseStringPath("emails[type eq \"work\" and primary eq true].value"), Value: "work@work.com"},
+				{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].value"), Value: "home@work.com"},
+				{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].primary"), Value: false},
+				{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].display"), Value: "home email"},
+			},
+			testFunc: func(userRes scim.Resource, err error) {
+				// Check both emails remain and primary value flipped
+				assert.NoError(t, err)
+				emails, _ := userRes.Attributes[AttrEmails].([]interface{})
+				assert.Len(t, emails, 3)
+				assert.Contains(t, emails, map[string]interface{}{"value": "work@work.com", "primary": true, "type": "work"})
+				assert.Contains(t, emails, map[string]interface{}{"value": "secondary@work.com", "primary": false, "type": "work"})
+				assert.Contains(t, emails, map[string]interface{}{"value": "home@work.com", "primary": false, "type": "home", "display": "home email"})
+
+				// Check user in DB
+				userID, _ := strconv.Atoi(userRes.ID)
+				user, err := db.Users().GetByID(context.Background(), int32(userID))
+				assert.NoError(t, err)
+
+				// Check db email changes and both marked verified
+				dbEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
+				assert.Len(t, dbEmails, 3)
+				assert.True(t, containsEmail(dbEmails, "work@work.com", true, true))
+				assert.True(t, containsEmail(dbEmails, "secondary@work.com", true, false))
+				assert.True(t, containsEmail(dbEmails, "home@work.com", true, false))
+
+			},
+		},
+		{
+			name:   "Add email with replace SCIM Standard",
+			userId: "2",
+			config: &conf.Unified{},
+			operations: []scim.PatchOperation{
+				{Op: "replace", Path: parseStringPath("emails[type eq \"work\" and primary eq true].value"), Value: "work@work.com"},
+				{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].value"), Value: "home@work.com"},
+				{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].primary"), Value: false},
+				{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].display"), Value: "home email"},
+			},
+			testFunc: func(_ scim.Resource, err error) {
+				assert.Error(t, err)
+				assert.True(t, errors.Is(err, scimerrors.ScimErrorNoTarget))
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			conf.Mock(tc.config)
+			defer conf.Mock(nil)
+			userRes, err := userResourceHandler.Patch(createDummyRequest(), tc.userId, tc.operations)
+			tc.testFunc(userRes, err)
 		})
 	}
 }
