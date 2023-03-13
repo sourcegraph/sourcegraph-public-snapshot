@@ -69,7 +69,7 @@ func (r *Resolver) SetPermissions(ctx context.Context, args gql.SetPermissionsAr
 	}
 
 	eventArgs := &rolePermissionEventArgs{RoleID: roleID, PermissionIDs: opts.Permissions}
-	r.logBackendEvent(ctx, "RBACRolePermissionAssignment", eventArgs)
+	r.logBackendEvent(ctx, "RolePermissionAssignment", eventArgs)
 	return &gql.EmptyResponse{}, nil
 }
 
@@ -96,7 +96,7 @@ func (r *Resolver) DeleteRole(ctx context.Context, args *gql.DeleteRoleArgs) (_ 
 	}
 
 	eventArg := &roleEventArg{RoleID: roleID}
-	r.logBackendEvent(ctx, "RBACRoleDeleted", eventArg)
+	r.logBackendEvent(ctx, "RoleDeleted", eventArg)
 	return &gql.EmptyResponse{}, nil
 }
 
@@ -136,7 +136,7 @@ func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gq
 		return nil, err
 	}
 
-	r.logBackendEvent(ctx, "RBACRoleCreated", eventArg)
+	r.logBackendEvent(ctx, "RoleCreated", eventArg)
 	return gql.NewRoleResolver(r.db, role), nil
 }
 
@@ -167,7 +167,7 @@ func (r *Resolver) SetRoles(ctx context.Context, args *gql.SetRolesArgs) (*gql.E
 	}
 
 	eventArgs := &setRolesEventArgs{RoleIDs: opts.Roles, UserID: userID}
-	r.logBackendEvent(ctx, "RBACUserRoleAssignment", eventArgs)
+	r.logBackendEvent(ctx, "UserRoleAssignment", eventArgs)
 	return &gql.EmptyResponse{}, nil
 }
 
