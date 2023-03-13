@@ -39,7 +39,7 @@ import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS } from './backend'
 import styles from './SiteAdminUpdatesPage.module.scss'
 
 interface Props extends TelemetryProps {
-    isSourcegraphApp
+    isSourcegraphApp: boolean
 }
 
 const SiteUpdateCheck: React.FC = () => {
