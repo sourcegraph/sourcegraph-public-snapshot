@@ -180,8 +180,8 @@ func TestPackageRepoFiltersBlockAllow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count != 3 {
-		t.Errorf("unexpected total count of package repos: want=%d got=%d", 3, count)
+	if count != 4 {
+		t.Errorf("unexpected total count of package repos: want=%d got=%d", 4, count)
 	}
 
 	if hasMore {

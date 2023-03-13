@@ -56,24 +56,31 @@ func IsPackageAllowed(scheme string, pkgName reposource.PackageName, filters Pac
 		}
 	}
 
-	// by default, anything is allowed unless specific _name_ filter exists, or version filter with "*".
-	// outside of *, version filters cant disallow a package in this function.
-	// hence, the default value scenarios are:
-	// - allow if no allow filters (like usual)
-	// - allow if only non-"*" version filters (will be checked per-version later)
-	// - disallow otherwise
-	var allowlist []PackageMatcher
+	// package is not blocked; we'll now check for (preliminarily) allowing the package.
+	//
+	// - allow if allow filters are empty (no restrictions)
+	// - allow if any name filter matches it
+	// - allow if any version filter applies to this name (it _may_ allow at least one version, but we can't know that yet)
+
+	var (
+		namesAllowlist    []PackageMatcher
+		versionsAllowlist []versionGlob
+	)
 	for _, allow := range filters.allowlists[scheme] {
-		// if is a name filter or if its a "*" version filter
-		if vglob, ok := allow.(versionGlob); !ok || (ok && vglob.globStr == "*") {
-			allowlist = append(allowlist, allow)
+		if _, ok := allow.(packageNameGlob); ok {
+			namesAllowlist = append(namesAllowlist, allow)
+		} else {
+			versionsAllowlist = append(versionsAllowlist, allow.(versionGlob))
 		}
 	}
 
-	isAllowed := len(allowlist) == 0
-	// then we go on to actually match against the name
-	for _, allow := range allowlist {
+	isAllowed := len(filters.allowlists[scheme]) == 0
+	for _, allow := range namesAllowlist {
 		isAllowed = isAllowed || allow.Matches(pkgName, "")
+	}
+
+	for _, allow := range versionsAllowlist {
+		isAllowed = isAllowed || allow.packageName == string(pkgName)
 	}
 
 	return isAllowed
