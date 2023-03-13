@@ -5,25 +5,28 @@ import (
 )
 
 // Min returns the minimum value in a list.
-// It will panic if no arguments are provided.
-func Min[T constraints.Ordered](list ...T) T {
-	min := list[0]
-	for i := 1; i < len(list); i++ {
-		if list[i] < min {
-			min = list[i]
+func Min[T constraints.Ordered](first T, rest ...T) T {
+	min := first
+	for _, val := range rest {
+		if val < min {
+			min = val
 		}
 	}
 	return min
 }
 
 // Chunk splits the slice into chunks of size `size`. Returns a slice of slices.
+// Chunk size must be greater than or equal to 1.
 func Chunk[T any](slice []T, size int) [][]T {
-	length := len(slice)
-	numChunks := 1 + (length-1)/size
-	chunks := make([][]T, numChunks)
-	for i := 0; i < numChunks; i++ {
-		chunks[i] = slice[i*size : Min((i+1)*size, length)]
+	if size < 1 {
+		panic("chunk size must be greater than or equal to 1")
 	}
+
+	chunks := make([][]T, 0, 1+(len(slice)-1)/size)
+	for size < len(slice) {
+		slice, chunks = slice[size:], append(chunks, slice[0:size:size])
+	}
+	chunks = append(chunks, slice)
 
 	return chunks
 }
