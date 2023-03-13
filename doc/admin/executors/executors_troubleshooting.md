@@ -15,7 +15,7 @@ The VM should now persist after all jobs are satisfied.
 ## Creating a Debug Firecracker VM
 To create a temporary Firecracker VM for debugging purposes:
 
-> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](https://docs.sourcegraph.com/admin/deploy_executors_terraform), the VMs may be configured to sotp automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
+> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](https://docs.sourcegraph.com/admin/deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
 
 1. `ssh` into the host VM
 1. `sudo su` to become the `root` user
