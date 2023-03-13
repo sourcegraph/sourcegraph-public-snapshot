@@ -148,7 +148,7 @@ Bazel ships with a tool named `Gazelle` whose purpose is to take a look at your 
 
 Gazelle and Go: It works almost transparently with Go, it will find all your Go code and infer your dependencies from inspecting your imports. Similarly, it will inspect the `go.mod` to lock down the third parties dependencies required. Because of how well Gazelle-go works, it means that most of the time, you can still rely on your normal Go commands to work. But it's recommended to use Bazel because that's what will be used in CI to build the app and ultimately have the final word in saying if yes or no a PR can be merged. See the [cheat sheet section](#bazel-cheat-sheet) for the commands.
 
-Gazelle and the frontend: TODO
+Gazelle and the frontend: see [Bazel for Web bundle](./bazel_web.md).
 
 ### Bazel cheat sheet
 
@@ -164,7 +164,7 @@ Gazelle and the frontend: TODO
   - ex `bazel build //lib/...` will build everything under the `/lib/...` folder in the Sourcegraph repository.
 - `bazel test [path-to-target]` tests a target.
   - ex `bazel test //lib/...` will run all tests under the `/lib/...` folder in the Sourcegraph repository.
-- `bazel run :gazelle` automatically inspect the source tree and update the buildfiles if needed.
+- `bazel configure` automatically inspect the source tree and update the buildfiles if needed.
 - `bazel run //:gazelle-update-repos` automatically inspect the `go.mod` and update the third parties dependencies if needed.
 
 #### Debugging buildfiles
@@ -203,7 +203,7 @@ So when a change is detected, `iBazel` will build the affected target and it wil
 
 ##### Caveats
 
-- You still need to run `bazel run :gazelle -- fix` if you add/remove files or packages.
+- You still need to run `bazel configure` if you add/remove files or packages.
 - Error handling is not perfect, so if a build fails, that might stop the whole thing. We'll improve this in the upcoming days, as we gather feedback.
 
 ## FAQ
@@ -240,7 +240,7 @@ INFO: 36 processes: 2 internal, 34 darwin-sandbox.
 ```
 
 
-Solution: run `bazel run //:gazelle` to update the buildfiles automatically.
+Solution: run `bazel configure` to update the buildfiles automatically.
 
 
 #### My go tests complains about missing testdata
