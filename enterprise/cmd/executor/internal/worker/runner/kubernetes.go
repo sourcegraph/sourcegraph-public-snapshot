@@ -11,6 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// KubernetesOptions contains options for the Kubernetes runner.
+type KubernetesOptions struct {
+	ConfigPath string
+}
+
 type kubernetesRunner struct {
 	internalLogger log.Logger
 	commandLogger  command.Logger

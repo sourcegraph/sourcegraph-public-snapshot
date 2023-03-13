@@ -40,6 +40,7 @@ type Spec struct {
 type Options struct {
 	DockerOptions      command.DockerOptions
 	FirecrackerOptions FirecrackerOptions
+	KubernetesOptions  KubernetesOptions
 }
 
 // NewRunner creates a new runner with the given options.
