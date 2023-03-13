@@ -49,7 +49,8 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 		// Save user
 		return updateUser(r.Context(), tx, user, userRes.Attributes, true)
 	})
-	if err != nil {
+	// Only return error if the user is not being deleted
+	if err != nil && attributes[AttrActive] != false {
 		return scim.Resource{}, err
 	}
 

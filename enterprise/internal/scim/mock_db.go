@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var verifiedDate = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -122,6 +123,9 @@ func getMockDB(users []*types.UserForSCIM, userEmails map[int32][]*database.User
 		remove := func(currentEmails []*database.UserEmail, toRemove string) ([]*database.UserEmail, error) {
 			for i, email := range currentEmails {
 				if email.Email == toRemove {
+					if email.Primary {
+						return currentEmails, errors.New("can't delete primary email")
+					}
 					return append(currentEmails[:i], currentEmails[i+1:]...), nil
 				}
 			}
