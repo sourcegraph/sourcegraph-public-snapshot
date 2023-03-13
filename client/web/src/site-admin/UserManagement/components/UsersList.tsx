@@ -59,7 +59,11 @@ const LIMIT = 25
 interface UsersListProps {
     onActionEnd?: () => void
     isEnterprise: boolean
-    renderAssignmentModal: (onCancel: () => void, onSuccess: () => void, user: SiteUser) => React.ReactNode
+    renderAssignmentModal: (
+        onCancel: () => void,
+        onSuccess: (user: { username: string }) => void,
+        user: SiteUser
+    ) => React.ReactNode
 }
 
 interface DateRangeQueryParameter {
@@ -218,8 +222,8 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
         }
     }, [limit, offset, setFilters, users?.totalCount])
 
-    const onRoleAssignmentSuccess = (): void => {
-        handleDisplayNotification('Role(s) successfully assigned to user')
+    const onRoleAssignmentSuccess = (user: { username: string }): void => {
+        handleDisplayNotification(`Role(s) successfully updated for user ${user.username}.`)
         closeRoleAssignmentModal()
     }
 

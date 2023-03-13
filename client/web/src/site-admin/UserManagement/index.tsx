@@ -10,14 +10,18 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../../util/checkRequestAccessAllowed'
 import { ValueLegendList, ValueLegendListProps } from '../analytics/components/ValueLegendList'
 
-import { UsersList } from './components/UsersList'
+import { SiteUser, UsersList } from './components/UsersList'
 import { USERS_MANAGEMENT_SUMMARY } from './queries'
 
 import styles from './index.module.scss'
 
 export interface UsersManagementProps {
     isEnterprise: boolean
-    renderAssignmentModal: (onCancel: () => void, onSuccess: () => void, user: string) => React.ReactNode
+    renderAssignmentModal: (
+        onCancel: () => void,
+        onSuccess: (user: { username: string }) => void,
+        user: SiteUser
+    ) => React.ReactNode
 }
 
 export const UsersManagement: React.FunctionComponent<UsersManagementProps> = ({

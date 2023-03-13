@@ -27,7 +27,7 @@ import { useGetUserRolesAndAllRoles, useSetRoles } from '../backend'
 
 export interface RoleAssignmentModalProps {
     onCancel: () => void
-    onSuccess: () => void
+    onSuccess: (user: { username: string }) => void
     user: { id: Scalars['ID']; username: string }
 }
 
@@ -68,7 +68,7 @@ export const RoleAssignmentModal: React.FunctionComponent<RoleAssignmentModalPro
     const [allRoles, setAllRoles] = useState<Role[]>((data?.roles.nodes || []).map(prepareDisplayRole))
 
     const selectedRoleNames = useMemo(() => selectedRoles.map(role => role.name), [selectedRoles])
-    const [setRoles, { loading: setRolesLoading, error: setRolesError }] = useSetRoles(onSuccess)
+    const [setRoles, { loading: setRolesLoading, error: setRolesError }] = useSetRoles(() => onSuccess(user))
     const suggestions = useMemo(
         () =>
             allRoles.filter(
