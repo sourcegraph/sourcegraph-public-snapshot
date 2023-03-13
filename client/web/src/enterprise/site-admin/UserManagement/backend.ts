@@ -9,6 +9,7 @@ import {
     SetRolesForUserResult,
     SetRolesForUserVariables,
 } from '../../../graphql-operations'
+import { roleFragment } from '../../rbac/backend'
 
 export const GET_ALL_ROLES_AND_USER_ROLES = gql`
     query GetAllRolesAndUserRoles($user: ID!) {
@@ -16,9 +17,7 @@ export const GET_ALL_ROLES_AND_USER_ROLES = gql`
             ... on User {
                 roles {
                     nodes {
-                        id
-                        name
-                        system
+                        ...RoleFields
                     }
                 }
             }
@@ -26,12 +25,12 @@ export const GET_ALL_ROLES_AND_USER_ROLES = gql`
 
         roles {
             nodes {
-                id
-                name
-                system
+                ...RoleFields
             }
         }
     }
+
+    ${roleFragment}
 `
 
 export const SET_ROLES_FOR_USER = gql`
