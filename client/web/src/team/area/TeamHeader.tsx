@@ -44,7 +44,7 @@ export const TeamHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                             <Alert variant="info" className="mb-3">
                                 This team is managed externally and cannot be modified from the UI except by site
                                 admins.{' '}
-                                <Link to="/help/admin/teams#configuring-teams">Read more about configuring teams.</Link>
+                                <Link to="/help/admin/teams#configuring-teams">Read more about configuring Teams.</Link>
                             </Alert>
                         )}
 
