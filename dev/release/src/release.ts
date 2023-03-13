@@ -1152,6 +1152,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 console.log(chalk.green('All versions matched expected version!'))
             } else {
                 console.log(chalk.red('Failed to verify src-cli versions'))
+                exit(1)
             }
         },
     },
