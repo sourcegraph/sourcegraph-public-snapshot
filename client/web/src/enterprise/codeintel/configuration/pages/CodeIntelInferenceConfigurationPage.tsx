@@ -1,7 +1,17 @@
 import { FunctionComponent, useState, useCallback } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorAlert, LoadingSpinner, PageHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import {
+    ErrorAlert,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'
@@ -37,7 +47,13 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
                         text: <>Code graph inference script</>,
                     },
                 ]}
-                description="Lua script that emits complete and/or partial auto-indexing job specifications."
+                description={
+                    <>
+                        Lua script that emits complete and/or partial auto-indexing job specifications. See the{' '}
+                        <Link to="/help/code_navigation/references/inference_configuration">reference guide</Link> for
+                        more information.
+                    </>
+                }
                 className="mb-3"
             />
             {fetchError && <ErrorAlert prefix="Error fetching inference script" error={fetchError} />}
