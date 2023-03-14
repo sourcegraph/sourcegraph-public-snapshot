@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "references": [{ "path": "../common" }],
+  "compilerOptions": {
+    "types": ["mocha", "node"],
+    "module": "commonjs",
+    "rootDir": "./src/test",
+    "outDir": "dist/test",
+  },
+  "include": ["./src/test/*", "suite", "workspace"],
+  "exclude": ["chat"],
+}

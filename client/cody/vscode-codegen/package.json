@@ -26,13 +26,14 @@
     "build:dev": "pnpm esbuild --sourcemap && vite build --mode development",
     "download-rg": "scripts/download-rg.sh",
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
-    "test": "pnpm test-deps && node ./out/test/runTest.js",
-    "test-deps": "scripts/check-rg.sh && pnpm --silent build:dev  && vsce package patch --pre-release --no-dependencies -o dist/kodj.vsix",
+    "test": "pnpm compile:test && node ./dist/test/runTest.js",
+    "test:deps": "scripts/check-rg.sh && pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/kodj.vsix",
     "vsce:package": "scripts/check-rg.sh && pnpm --silent build && vsce package --no-dependencies -o dist/kodj.vsix",
     "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
     "watch:esbuild": "pnpm esbuild --sourcemap --watch",
     "watch:webview": "vite build --mode development --watch",
-    "unittest": "tsc -p ./src/test && mocha ./out/test/runTest.js"
+    "unittest": "mocha ./dist/test/runTest.js",
+    "compile:test": "tsc -p tsconfig.test.json"
   },
   "main": "./dist/extension.js",
   "activationEvents": [
