@@ -20,3 +20,7 @@ test --action_env=PGDATABASE
 # Allow tests to understand they're running in CI, which forces dbtest to drop database even in case of failures.
 # TODO(JH) we should instead wipe all templates after a job finishes.
 test --action_env=CI
+
+# Ensure we're not exhausting database connections.
+test --action_env=GOMAXPROCS=10
+test --action_env=TESTDB_MAXOPENCONNS=15
