@@ -11,7 +11,6 @@ import {
     SuggestionResult,
     filterRenderer,
     filterValueRenderer,
-    shortenPath,
     combineResults,
     defaultLanguages,
     queryRenderer,
@@ -257,7 +256,6 @@ function toFileCompletion(
     return {
         label: valuePrefix + item.path,
         icon: mdiFileOutline,
-        description: item.repository,
         matches: positions,
         kind: 'file',
         action: {
@@ -265,10 +263,6 @@ function toFileCompletion(
             insertValue: valuePrefix + regexInsertText(item.path, { globbing: false }) + ' ',
             from,
             to,
-        },
-        alternativeAction: {
-            type: 'goto',
-            url: item.url,
         },
     }
 }
@@ -289,18 +283,13 @@ function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from
     return {
         label: item.name,
         matches: positions,
-        description: shortenPath(item.path, 20),
         icon: getSymbolIconSVGPath(item.kind),
         kind: 'symbol',
         action: {
             type: 'completion',
-            insertValue: item.name + ' type:symbol ',
+            insertValue: `type:symbol ${item.name} `,
             from,
             to,
-        },
-        alternativeAction: {
-            type: 'goto',
-            url: item.url,
         },
     }
 }
@@ -519,14 +508,13 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                         const groups = [
                             {
                                 title: 'Files',
-                                options: entries
-                                    .map(item => toFileCompletion(item, from, to))
-                                    .slice(
-                                        0,
-                                        predicates.length === 0
-                                            ? ALL_FILTER_VALUE_LIST_SIZE
-                                            : MULTIPLE_FILTER_VALUE_LIST_SIZE
-                                    ),
+                                options: limitUniqueOptions(
+                                    entries,
+                                    predicates.length === 0
+                                        ? ALL_FILTER_VALUE_LIST_SIZE
+                                        : MULTIPLE_FILTER_VALUE_LIST_SIZE,
+                                    item => toFileCompletion(item, from, to)
+                                ),
                             },
                         ]
 
@@ -751,9 +739,9 @@ function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): 
             results => [
                 {
                     title: 'Files',
-                    options: results
-                        .slice(0, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE)
-                        .map(result => toFileSuggestion(result, token.range.start)),
+                    options: limitUniqueOptions(results, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE, result =>
+                        toFileSuggestion(result, token.range.start)
+                    ),
                 },
             ],
             parsedQuery,
@@ -796,9 +784,9 @@ function symbolSuggestions(cache: Caches['symbol']): InternalSource {
             results => [
                 {
                     title: 'Symbols',
-                    options: results
-                        .slice(0, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE)
-                        .map(result => toSymbolSuggestion(result, token.range.start)),
+                    options: limitUniqueOptions(results, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE, result =>
+                        toSymbolSuggestion(result, token.range.start)
+                    ),
                 },
             ],
             parsedQuery,
@@ -1284,4 +1272,24 @@ function getFilterDescription(filter: ResolvedFilter, negated = false): string |
     return typeof filter.definition.description === 'function'
         ? filter.definition.description(negated)
         : filter.definition.description
+}
+
+/**
+ * Returns a reduces list of unique options.
+ */
+function limitUniqueOptions<T>(values: T[], limit: number, mapper: (value: T) => Option): Option[] {
+    const seen = new Set()
+    const options: Option[] = []
+    for (const value of values) {
+        const option = mapper(value)
+        if (!seen.has(option.label)) {
+            seen.add(option.label)
+            options.push(option)
+        }
+
+        if (options.length >= limit) {
+            break
+        }
+    }
+    return options
 }

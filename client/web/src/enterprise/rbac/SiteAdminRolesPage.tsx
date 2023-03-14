@@ -28,10 +28,9 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
     // TODO: Fetch paginated roles.
     const { data, error: rolesError, loading: rolesLoading, refetch } = useRolesConnection()
     // We need to query all permissions from the database, so site admins can update easily if they want to.
-    const { error: permissionsError, loading: permissionsLoading } = usePermissions(result => {
-        const permissions = groupBy(result.permissions.nodes, 'namespace')
-        setPermissions(permissions as PermissionsMap)
-    })
+    const { error: permissionsError, loading: permissionsLoading } = usePermissions(result =>
+        setPermissions(groupBy(result.permissions.nodes, 'namespace') as PermissionsMap)
+    )
 
     const [showCreateRoleModal, setShowCreateRoleModal] = useState<boolean>(false)
     const openModal = useCallback<React.MouseEventHandler>(event => {

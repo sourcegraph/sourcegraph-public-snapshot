@@ -59,7 +59,7 @@
           "name": {
             "description": "The name of an Azure DevOps Services organization, project, and repository (\"orgName/projectName/repositoryName\") to exclude from mirroring.",
             "type": "string",
-            "pattern": "^[\\w.-/ ]*?$"
+            "pattern": "^[\\w./ -]*?$"
           },
           "pattern": {
             "description": "Regular expression which matches against the name of an Azure DevOps Services repo.",

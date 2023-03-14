@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiChevronUp, mdiChevronDown, mdiDelete } from '@mdi/js'
-import { startCase, noop } from 'lodash'
+import { noop } from 'lodash'
 import { animated, useSpring } from 'react-spring'
 
 import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
@@ -25,6 +25,7 @@ import {
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { RoleFields } from '../../../graphql-operations'
+import { prettifySystemRole } from '../../../util/settings'
 import { PermissionsMap, useDeleteRole, useSetPermissions } from '../backend'
 
 import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
@@ -79,10 +80,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
         refetch()
     }, closeModal)
 
-    const roleName = useMemo(() => {
-        const lowerCaseName = node.name.replace(/_/g, ' ').toLowerCase()
-        return startCase(lowerCaseName)
-    }, [node.name])
+    const roleName = useMemo(() => (node.system ? prettifySystemRole(node.name) : node.name), [node.system, node.name])
 
     const onDelete = useCallback<React.FormEventHandler>(
         async event => {

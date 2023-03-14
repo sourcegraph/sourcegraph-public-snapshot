@@ -16,7 +16,7 @@ func TestGet(t *testing.T) {
 	}
 
 	options := []Option[string, int]{
-		WithExpirationTime[string, int](24 * time.Hour), // more than enough time for no expirations to occur
+		WithTTL[string, int](24 * time.Hour), // more than enough time for no expirations to occur
 	}
 
 	cache := New(newEntryFunc, options...)
@@ -120,7 +120,7 @@ func TestExpiration_Series(t *testing.T) {
 	}
 
 	options := []Option[string, int]{
-		WithExpirationTime[string, int](expirationTime),
+		WithTTL[string, int](expirationTime),
 		WithExpirationFunc[string, int](expirationFunc),
 		withClock[string, int](clock),
 	}
@@ -166,7 +166,7 @@ func TestGet_After_Reap(t *testing.T) {
 	}
 
 	options := []Option[string, int]{
-		WithExpirationTime[string, int](time.Hour),
+		WithTTL[string, int](time.Hour),
 		withClock[string, int](clock),
 	}
 

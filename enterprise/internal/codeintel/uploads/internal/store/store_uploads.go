@@ -2208,6 +2208,14 @@ func buildDeleteConditions(opts shared.DeleteUploadsOptions) []*sqlf.Query {
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
 	}
+	if len(opts.IndexerNames) != 0 {
+		var indexerConds []*sqlf.Query
+		for _, indexerName := range opts.IndexerNames {
+			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+		}
+
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
+	}
 
 	return conds
 }
