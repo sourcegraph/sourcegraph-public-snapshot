@@ -70,23 +70,37 @@ func newHandler(ctx context.Context, db database.DB, observationCtx *observation
 		ResourceTypes: resourceTypes,
 	}
 
-	// wrap server into logger handler
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return scimAuthMiddleware(scimLicenseCheckMiddleware(scimRewriteMiddleware(server)))
+}
+
+func scimAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		confToken := conf.Get().ScimAuthToken
+		gotToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 		// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification
 		// code via timing attack.
-		if subtle.ConstantTimeCompare([]byte(conf.Get().ScimAuthToken),
-			[]byte(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))) != 1 {
+		if subtle.ConstantTimeCompare([]byte(confToken), []byte(gotToken)) != 1 {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func scimLicenseCheckMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		licenseError := licensing.Check(licensing.FeatureSCIM)
 		if licenseError != nil {
 			http.Error(w, licenseError.Error(), http.StatusForbidden)
 			return
 		}
-		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/.api/scim")
-		server.ServeHTTP(w, r)
+		next.ServeHTTP(w, r)
 	})
+}
 
-	return handler
+func scimRewriteMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/.api/scim")
+		next.ServeHTTP(w, r)
+	})
 }
