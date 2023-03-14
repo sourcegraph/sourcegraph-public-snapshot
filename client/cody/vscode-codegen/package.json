@@ -32,7 +32,7 @@
     "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
     "watch:esbuild": "pnpm esbuild --sourcemap --watch",
     "watch:webview": "vite build --mode development --watch",
-    "unittest": "mocha ./out/test/unittest"
+    "unittest": "tsc -p ./src/test && mocha ./out/test/runTest.js"
   },
   "main": "./dist/extension.js",
   "activationEvents": [
