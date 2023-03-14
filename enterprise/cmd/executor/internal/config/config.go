@@ -9,6 +9,7 @@ import (
 	"github.com/c2h5oh/datasize"
 	"github.com/google/uuid"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -20,35 +21,41 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	FrontendURL                    string
-	FrontendAuthorizationToken     string
-	QueueName                      string
-	QueuePollInterval              time.Duration
-	MaximumNumJobs                 int
-	FirecrackerImage               string
-	FirecrackerKernelImage         string
-	FirecrackerSandboxImage        string
-	VMStartupScriptPath            string
-	VMPrefix                       string
-	KeepWorkspaces                 bool
-	DockerHostMountPath            string
-	UseFirecracker                 bool
-	JobNumCPUs                     int
-	JobMemory                      string
-	FirecrackerDiskSpace           string
-	FirecrackerBandwidthIngress    int
-	FirecrackerBandwidthEgress     int
-	MaximumRuntimePerJob           time.Duration
-	CleanupTaskInterval            time.Duration
-	NumTotalJobs                   int
-	MaxActiveTime                  time.Duration
-	NodeExporterURL                string
-	DockerRegistryNodeExporterURL  string
-	WorkerHostname                 string
-	DockerRegistryMirrorURL        string
-	DockerAuthConfig               types.DockerAuthConfig
-	dockerAuthConfigStr            string
-	dockerAuthConfigUnmarshalError error
+	FrontendURL                     string
+	FrontendAuthorizationToken      string
+	QueueName                       string
+	QueuePollInterval               time.Duration
+	MaximumNumJobs                  int
+	FirecrackerImage                string
+	FirecrackerKernelImage          string
+	FirecrackerSandboxImage         string
+	VMStartupScriptPath             string
+	VMPrefix                        string
+	KeepWorkspaces                  bool
+	DockerHostMountPath             string
+	UseFirecracker                  bool
+	JobNumCPUs                      int
+	JobMemory                       string
+	FirecrackerDiskSpace            string
+	FirecrackerBandwidthIngress     int
+	FirecrackerBandwidthEgress      int
+	MaximumRuntimePerJob            time.Duration
+	CleanupTaskInterval             time.Duration
+	NumTotalJobs                    int
+	MaxActiveTime                   time.Duration
+	NodeExporterURL                 string
+	DockerRegistryNodeExporterURL   string
+	WorkerHostname                  string
+	DockerRegistryMirrorURL         string
+	DockerAuthConfig                types.DockerAuthConfig
+	KubernetesConfigPath            string
+	KubernetesNodeName              string
+	KubernetesResourceLimitCPU      string
+	KubernetesResourceLimitMemory   string
+	KubernetesResourceRequestCPU    string
+	KubernetesResourceRequestMemory string
+	dockerAuthConfigStr             string
+	dockerAuthConfigUnmarshalError  error
 }
 
 func (c *Config) Load() {
@@ -62,7 +69,7 @@ func (c *Config) Load() {
 	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
-	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", strconv.FormatBool(runtime.GOOS == "linux"), "Whether to isolate commands in virtual machines. Requires ignite and firecracker. Linux hosts only.")
+	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", strconv.FormatBool(runtime.GOOS == "linux" && !util.IsKubernetes()), "Whether to isolate commands in virtual machines. Requires ignite and firecracker. Linux hosts only.")
 	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", DefaultFirecrackerImage, "The base image to use for virtual machines.")
 	c.FirecrackerKernelImage = c.Get("EXECUTOR_FIRECRACKER_KERNEL_IMAGE", DefaultFirecrackerKernelImage, "The base image containing the kernel binary to use for virtual machines.")
 	c.FirecrackerSandboxImage = c.Get("EXECUTOR_FIRECRACKER_SANDBOX_IMAGE", DefaultFirecrackerSandboxImage, "The OCI image for the ignite VM sandbox.")
@@ -82,6 +89,12 @@ func (c *Config) Load() {
 	c.DockerRegistryNodeExporterURL = c.GetOptional("DOCKER_REGISTRY_NODE_EXPORTER_URL", "The URL of the Docker Registry instance's node_exporter, without the /metrics path.")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
 	c.DockerRegistryMirrorURL = c.GetOptional("EXECUTOR_DOCKER_REGISTRY_MIRROR_URL", "The address of a docker registry mirror to use in firecracker VMs. Supports multiple values, separated with a comma.")
+	c.KubernetesConfigPath = c.GetOptional("EXECUTOR_KUBERNETES_CONFIG_PATH", "The path to the Kubernetes config file.")
+	c.KubernetesNodeName = c.GetOptional("EXECUTOR_KUBERNETES_NODE_NAME", "The name of the Kubernetes node to run executor jobs in.")
+	c.KubernetesResourceLimitCPU = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU", "1", "The CPU resource limit for Kubernetes jobs.")
+	c.KubernetesResourceLimitMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY", "1Gi", "The memory resource limit for Kubernetes jobs.")
+	c.KubernetesResourceRequestCPU = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU", "1", "The CPU resource request for Kubernetes jobs.")
+	c.KubernetesResourceRequestMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY", "1Gi", "The memory resource request for Kubernetes jobs.")
 	c.dockerAuthConfigStr = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
 
 	if c.dockerAuthConfigStr != "" {

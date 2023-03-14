@@ -11,6 +11,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -21,12 +22,25 @@ import (
 )
 
 const (
-	containerName = "job-container"
-	namespace     = "default"
-	nodeName      = "job-node"
-	volumeName    = "job-volume"
-	mountPath     = "/data"
+	containerName         = "job-container"
+	mountPath             = "/data"
+	namespace             = "default"
+	nodeName              = "job-node"
+	persistenceVolumeName = "executor-pvc"
+	volumeName            = "job-volume"
 )
+
+// KubernetesContainerOptions contains options for the Kubernetes Job containers.
+type KubernetesContainerOptions struct {
+	NodeName        string
+	ResourceLimit   KubernetesResource
+	ResourceRequest KubernetesResource
+}
+
+type KubernetesResource struct {
+	CPU    resource.Quantity
+	Memory resource.Quantity
+}
 
 type KubernetesCommand struct {
 	Logger    log.Logger
@@ -174,7 +188,7 @@ var backoff = wait.Backoff{
 }
 
 // NewKubernetesJob creates a Kubernetes job with the given name, image, volume path, and spec.
-func NewKubernetesJob(name string, image string, spec Spec, path string) *batchv1.Job {
+func NewKubernetesJob(name string, image string, spec Spec, path string, options KubernetesContainerOptions) *batchv1.Job {
 	jobEnvs := make([]corev1.EnvVar, len(spec.Env))
 	for i, env := range spec.Env {
 		parts := strings.SplitN(env, "=", 2)
@@ -191,7 +205,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string) *batchv
 	if util.IsKubernetes() {
 		volumeMount.SubPath = path
 		volumeSource.PersistentVolumeClaim = &corev1.PersistentVolumeClaimVolumeSource{
-			ClaimName: "executor-pvc",
+			ClaimName: persistenceVolumeName,
 		}
 	} else {
 		volumeSource.HostPath = &corev1.HostPathVolumeSource{
@@ -205,7 +219,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string) *batchv
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					//NodeName:      nodeName,
+					NodeName:      options.NodeName,
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
@@ -213,10 +227,20 @@ func NewKubernetesJob(name string, image string, spec Spec, path string) *batchv
 							Image:      image,
 							Command:    spec.Command,
 							WorkingDir: filepath.Join(mountPath, spec.Dir),
+							Env:        jobEnvs,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    options.ResourceLimit.CPU,
+									corev1.ResourceMemory: options.ResourceLimit.Memory,
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    options.ResourceRequest.CPU,
+									corev1.ResourceMemory: options.ResourceRequest.Memory,
+								},
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								volumeMount,
 							},
-							Env: jobEnvs,
 						},
 					},
 					Volumes: []corev1.Volume{

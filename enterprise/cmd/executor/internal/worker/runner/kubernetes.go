@@ -13,7 +13,8 @@ import (
 
 // KubernetesOptions contains options for the Kubernetes runner.
 type KubernetesOptions struct {
-	ConfigPath string
+	ConfigPath       string
+	ContainerOptions command.KubernetesContainerOptions
 }
 
 type kubernetesRunner struct {
@@ -22,6 +23,7 @@ type kubernetesRunner struct {
 	cmd            *command.KubernetesCommand
 	jobNames       []string
 	dir            string
+	options        command.KubernetesContainerOptions
 	// tmpDir is used to store temporary files used for k8s execution.
 	tmpDir string
 }
@@ -32,12 +34,14 @@ func NewKubernetesRunner(
 	cmd *command.KubernetesCommand,
 	commandLogger command.Logger,
 	dir string,
+	options command.KubernetesContainerOptions,
 ) Runner {
 	return &kubernetesRunner{
 		internalLogger: log.Scoped("kubernetes-runner", ""),
 		commandLogger:  commandLogger,
 		cmd:            cmd,
 		dir:            dir,
+		options:        options,
 	}
 }
 
@@ -101,6 +105,7 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 		spec.Image,
 		spec.CommandSpec,
 		r.dir,
+		r.options,
 	)
 	if _, err := r.cmd.CreateJob(ctx, job); err != nil {
 		return errors.Wrap(err, "creating job")

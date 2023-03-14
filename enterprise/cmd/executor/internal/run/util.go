@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
@@ -65,6 +66,7 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 		RunnerOptions: runner.Options{
 			DockerOptions:      dockerOptions(c),
 			FirecrackerOptions: firecrackerOptions(c),
+			KubernetesOptions:  kubernetesOptions(c),
 		},
 		GitServicePath: "/.executors/git",
 		QueueOptions:   queueOptions(c, queueTelemetryOptions),
@@ -167,6 +169,23 @@ func endpointOptions(c *config.Config, pathPrefix string) apiclient.EndpointOpti
 		URL:        c.FrontendURL,
 		PathPrefix: pathPrefix,
 		Token:      c.FrontendAuthorizationToken,
+	}
+}
+
+func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
+	return runner.KubernetesOptions{
+		ConfigPath: c.KubernetesConfigPath,
+		ContainerOptions: command.KubernetesContainerOptions{
+			NodeName: c.KubernetesNodeName,
+			ResourceLimit: command.KubernetesResource{
+				CPU:    resource.MustParse(c.KubernetesResourceLimitCPU),
+				Memory: resource.MustParse(c.KubernetesResourceLimitMemory),
+			},
+			ResourceRequest: command.KubernetesResource{
+				CPU:    resource.MustParse(c.KubernetesResourceRequestCPU),
+				Memory: resource.MustParse(c.KubernetesResourceRequestMemory),
+			},
+		},
 	}
 }
 

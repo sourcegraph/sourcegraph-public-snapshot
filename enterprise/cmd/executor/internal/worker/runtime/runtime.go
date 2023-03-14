@@ -93,6 +93,7 @@ func New(
 			filesStore:   filesStore,
 			cloneOptions: cloneOpts,
 			operations:   ops,
+			options:      runnerOpts.KubernetesOptions.ContainerOptions,
 		}, nil
 	}
 

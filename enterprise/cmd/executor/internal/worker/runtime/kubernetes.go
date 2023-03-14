@@ -17,6 +17,7 @@ type kubernetesRuntime struct {
 	filesStore   workspace.FilesStore
 	cloneOptions workspace.CloneOptions
 	operations   *command.Operations
+	options      command.KubernetesContainerOptions
 }
 
 var _ Runtime = &kubernetesRuntime{}
@@ -38,7 +39,7 @@ func (r *kubernetesRuntime) PrepareWorkspace(ctx context.Context, logger command
 }
 
 func (r *kubernetesRuntime) NewRunner(ctx context.Context, logger command.Logger, options RunnerOptions) (runner.Runner, error) {
-	jobRunner := runner.NewKubernetesRunner(r.kubeCmd, logger, options.Path)
+	jobRunner := runner.NewKubernetesRunner(r.kubeCmd, logger, options.Path, r.options)
 	if err := jobRunner.Setup(ctx); err != nil {
 		return nil, err
 	}
