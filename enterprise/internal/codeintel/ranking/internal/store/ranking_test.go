@@ -169,6 +169,38 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 }
 
+func TestInsertInitialPathCounts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	mockRepoID := 1
+	mockPathNames := []string{"foo.go", "bar.go", "baz.go"}
+
+	if err := store.InsertInitialPathCounts(ctx, mockRepoID, mockPathNames, mockRankingGraphKey); err != nil {
+		t.Fatalf("unexpected error inserting initial path counts: %s", err)
+	}
+
+	inputs, err := getPathCountsInputs(ctx, t, db, mockRankingGraphKey)
+	if err != nil {
+		t.Fatalf("unexpected error getting path count inputs: %s", err)
+	}
+
+	expectedInputs := []pathCountsInput{
+		{RepositoryID: 1, DocumentPath: "bar.go", Count: 0},
+		{RepositoryID: 1, DocumentPath: "baz.go", Count: 0},
+		{RepositoryID: 1, DocumentPath: "foo.go", Count: 0},
+	}
+	if diff := cmp.Diff(expectedInputs, inputs); diff != "" {
+		t.Errorf("unexpected path count inputs (-want +got):\n%s", diff)
+	}
+}
+
 func TestInsertPathCountInputs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
