@@ -131,18 +131,6 @@ const CodeInsightHeaderActions: FC<CodeInsightHeaderActionsProps> = props => {
 
     const available = creationPermission?.available ?? false
 
-    const createInsightButton = (
-        <Button
-            as={Link}
-            to={encodeDashboardIdQueryParam('/insights/create', dashboardId)}
-            variant="primary"
-            onClick={() => telemetryService.log('InsightAddMoreClick')}
-            disabled={!available}
-        >
-            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create insight
-        </Button>
-    )
-
     return (
         <>
             <Button
@@ -154,11 +142,18 @@ const CodeInsightHeaderActions: FC<CodeInsightHeaderActionsProps> = props => {
             >
                 <Icon aria-hidden={true} svgPath={mdiPlus} /> Add dashboard
             </Button>
-            {!available ? (
-                <Tooltip content="You have reached your insights limit">{createInsightButton}</Tooltip>
-            ) : (
-                createInsightButton
-            )}
+
+            <Tooltip content={!available ? 'You have reached your insights limit' : null}>
+                <Button
+                    as={Link}
+                    to={encodeDashboardIdQueryParam('/insights/create', dashboardId)}
+                    variant="primary"
+                    onClick={() => telemetryService.log('InsightAddMoreClick')}
+                    disabled={!available}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Create insight
+                </Button>
+            </Tooltip>
         </>
     )
 }
