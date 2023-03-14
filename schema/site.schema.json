@@ -687,9 +687,9 @@
       "examples": [""]
     },
     "codeIntelRanking.staleResultsAge": {
-      "description": "The interval at which to run the reduce job that computes document reference counts. Default is 72hrs.",
+      "description": "The interval at which to run the reduce job that computes document reference counts. Default is 24hrs.",
       "type": "integer",
-      "default": 72,
+      "default": 24,
       "group": "Code intelligence"
     },
     "corsOrigin": {

@@ -1381,6 +1381,8 @@ commandsets:
       - docsite
       - web
       - caddy
+    env:
+      DISABLE_CODE_INSIGHTS: false
 
 tests:
   # These can be run with `sg test [name]`

@@ -52,9 +52,9 @@ pkgs.mkShell {
     # against it.
     nodejs-16_x
     (nodejs-16_x.pkgs.pnpm.override {
-      version = "7.24.2";
+      version = "7.28.0";
       src = fetchurl {
-        url = "https://registry.npmjs.org/pnpm/-/pnpm-7.24.2.tgz";
+        url = "https://registry.npmjs.org/pnpm/-/pnpm-7.28.0.tgz";
         sha512 = "sha512-XDTYvZf3xF/kaX0pcdh9GWpak9tV5uDGuNCjkN1SFa0UE350mJGpszmM/j2rVyfoOOFzVR73GNdN3Purd4rXlg==";
       };
     })

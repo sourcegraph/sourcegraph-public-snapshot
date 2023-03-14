@@ -23,6 +23,7 @@ import {
     PageSwitcher,
     Select,
     Text,
+    Tooltip,
     useDebounce,
     useLocalStorage,
 } from '@sourcegraph/wildcard'
@@ -250,11 +251,19 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                     </>
                 }
                 actions={
-                    <Button variant="secondary" onClick={() => setPolling(oldValue => !oldValue)}>
-                        {polling ? 'Pause polling' : 'Resume polling'}
-                    </Button>
+                    <Tooltip
+                        content={
+                            polling
+                                ? 'Pausing polling will stop the automatic update of the jobs list on this page until polling is resumed.'
+                                : 'Resume polling to automatic update the jobs list on this page.'
+                        }
+                    >
+                        <Button variant="secondary" onClick={() => setPolling(oldValue => !oldValue)}>
+                            {polling ? 'Pause polling' : 'Resume polling'}
+                        </Button>
+                    </Tooltip>
                 }
-                className="mb-3"
+                className={classNames(styles.pageHeader, 'mb-3')}
             />
             {showModal && selectedJob && renderModal(selectedJob, () => setShowModal(false))}
             <Container>
@@ -352,18 +361,21 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
     {
         key: 'Added',
         header: 'Added',
+        align: 'right',
         render: (node: PermissionsSyncJob) => <PermissionsSyncJobNumbers job={node} added={true} />,
     },
     {
         key: 'Removed',
         header: 'Removed',
+        align: 'right',
         render: (node: PermissionsSyncJob) => <PermissionsSyncJobNumbers job={node} added={false} />,
     },
     {
         key: 'Total',
         header: 'Total',
+        align: 'right',
         render: ({ permissionsFound }: PermissionsSyncJob) => (
-            <div className="text-secondary">
+            <div className="text-secondary text-right mr-2">
                 <b>{permissionsFound}</b>
             </div>
         ),
@@ -460,27 +472,29 @@ const PermissionsSyncJobSearchPane: FC<PermissionsSyncJobSearchPaneProps> = prop
     const { filters, setFilters } = props
 
     return (
-        <Input
-            type="search"
-            placeholder={
-                filters.searchType === ''
-                    ? 'Select a search context'
-                    : filters.searchType === PermissionsSyncJobsSearchType.USER
-                    ? 'Search users...'
-                    : 'Search repositories...'
-            }
-            name="query"
-            value={filters.query}
-            onChange={event => setFilters({ ...filters, query: event.currentTarget.value })}
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck={false}
-            aria-label="Search sync jobs..."
-            variant="regular"
-            disabled={filters.searchType === ''}
-            className={styles.searchInput}
-        />
+        <Tooltip content={filters.searchType === '' ? 'First select the search context on the left.' : undefined}>
+            <Input
+                type="search"
+                placeholder={
+                    filters.searchType === ''
+                        ? 'Select a search context'
+                        : filters.searchType === PermissionsSyncJobsSearchType.USER
+                        ? 'Search users...'
+                        : 'Search repositories...'
+                }
+                name="query"
+                value={filters.query}
+                onChange={event => setFilters({ ...filters, query: event.currentTarget.value })}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                aria-label="Search sync jobs..."
+                variant="regular"
+                disabled={filters.searchType === ''}
+                className={styles.searchInput}
+            />
+        </Tooltip>
     )
 }
 
