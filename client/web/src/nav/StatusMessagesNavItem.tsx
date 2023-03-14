@@ -24,10 +24,9 @@ import {
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 
-import { StatusMessagesResult, RepositoryStatsResult, RepositoryStatsVariables } from '../graphql-operations'
-import { REPOSITORY_STATS } from '../site-admin/backend'
+import { StatusAndRepoStatsResult } from '../graphql-operations'
 
-import { STATUS_MESSAGES } from './StatusMessagesNavItemQueries'
+import { STATUS_AND_REPO_STATS } from './StatusMessagesNavItemQueries'
 
 import styles from './StatusMessagesNavItem.module.scss'
 
@@ -164,12 +163,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = (): void => setIsOpen(old => !old)
 
-    const { data, error } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
-        fetchPolicy: 'no-cache',
-        pollInterval: props.disablePolling !== true ? STATUS_MESSAGES_POLL_INTERVAL : undefined,
-    })
-
-    const { data: repoData } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {
+    const { data, error } = useQuery<StatusAndRepoStatsResult>(STATUS_AND_REPO_STATS, {
         fetchPolicy: 'no-cache',
         pollInterval: props.disablePolling !== true ? STATUS_MESSAGES_POLL_INTERVAL : undefined,
     })
@@ -197,7 +191,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         } else if (data.statusMessages?.some(({ __typename: type }) => type === 'IndexingProgress')) {
             codeHostMessage = 'Indexing repositories...'
             iconProps = { as: CloudSyncIconRefresh }
-        } else if (data.statusMessages.length === 0 && repoData?.repositoryStats.total === 0) {
+        } else if (data.statusMessages.length === 0 && data.repositoryStats.total === 0) {
             codeHostMessage = 'No repositories detected'
             iconProps = { as: CloudAlertIconRefresh }
         } else {
@@ -223,7 +217,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
 
         // no status messages
         if (data.statusMessages.length === 0) {
-            if (repoData?.repositoryStats.total === 0) {
+            if (data.repositoryStats.total === 0) {
                 return (
                     <StatusMessagesNavItemEntry
                         key="no-repositories"

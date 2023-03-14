@@ -1,7 +1,17 @@
 import { gql } from '@sourcegraph/http-client'
 
-export const STATUS_MESSAGES = gql`
-    query StatusMessages {
+export const STATUS_AND_REPO_STATS = gql`
+    query StatusAndRepoStats {
+        repositoryStats {
+            __typename
+            total
+            notCloned
+            cloned
+            cloning
+            failedFetch
+            corrupted
+            indexed
+        }
         statusMessages {
             ... on GitUpdatesDisabled {
                 __typename
