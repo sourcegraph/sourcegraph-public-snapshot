@@ -3,7 +3,7 @@ This page compiles a list of common troubleshooting steps found during developme
 
 
 ## Disabling the auto-deletion of Executor VMs
-> NOTE: These instructions are for users using the VMs deployed via the [Terraform Modules](https://docs.sourcegraph.com/admin/deploy_executors_terraform)
+> NOTE: These instructions are for users using the VMs deployed via the [Terraform Modules](https://docs.sourcegraph.com/admin/executors/deploy_executors_terraform)
 
 The Executor host VMs are configured to automatically tear themselves down once all jobs in the queue are completed. While this is desired behaviour under regular circumstances, it complicates debugging issues in the executor configuration or connections. To prevent the VMs from automatically stopping:
 1. `ssh` into the VM
@@ -15,7 +15,7 @@ The VM should now persist after all jobs are satisfied.
 ## Creating a Debug Firecracker VM
 To create a temporary Firecracker VM for debugging purposes:
 
-> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](https://docs.sourcegraph.com/admin/deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
+> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](https://docs.sourcegraph.com/admin/executors/deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
 
 1. `ssh` into the host VM
 1. `sudo su` to become the `root` user
@@ -31,7 +31,7 @@ To create a temporary Firecracker VM for debugging purposes:
 ## Recreating a Firecracker VM 
 If a server-side batch change fails unexpectedly, it's possible to recreate the generated Firecracker VM from the batch change execution.
 
-> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](https://docs.sourcegraph.com/admin/deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
+> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](https://docs.sourcegraph.com/admin/executors/deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
 
 1. Navigate to the failed execution page of the Batch Change
 1. Select a failed Workspace on the left and click the `Diagnostics` link on the right pane
