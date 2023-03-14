@@ -25,11 +25,11 @@ As an experimental feature, Sourcegraph Own is disabled by default. If you like 
 
 **Owner**: An owner is defined as a person or a team in Sourcegraph.
 
-A __person__ can be:
+A _person_ can be:
 - a Sourcegraph user which we were able to resolve from the `CODEOWNERS` handle or email, in which case we link to their profile.
 - an unknown user for which we were unable to resolve a profile, in which case we will return the `CODEOWNERS` data we have.
 
-A __team__ is a group of Sourcegraph users represented by a common handle, which is a new feature that we added. 
+A _team_ is a group of Sourcegraph users represented by a common handle, which is a new feature that we added. 
 [Read more about how to manage teams in Sourcegraph](../admin/teams).
 
 ## Code ownership
@@ -39,12 +39,14 @@ To define rulesets for codeownership, we make use of the CODEOWNERS format.
 
 ### The CODEOWNERS format
 
-Owners can be defined by a username/team name or an email address. 
+Owners can be defined by a username/team name or an email address (for person owners). 
 
 Using email addresses is generally recommended, as email addresses are most likely the same across different platforms, and are independent of a user having registered yet. 
 In Sourcegraph, a user can add multiple email addresses to their profile. All of those would match to the same user.
 
-For committed CODEOWNERS files, the usernames are usually the username **on the code host**, so they don't necessarily match with the Sourcegraph username. This is a known limitation, and in the future we will provide ways to map external code host names to Sourcegraph users. For now, you can search for a user by their code host username, or switch to using emails in the codeowners files, which will work across both Sourcegraph and the code host.
+For committed CODEOWNERS files, the usernames are usually the username **on the code host**, so they don't necessarily match with the Sourcegraph username. 
+This is a known limitation, and in the future we will provide ways to map external code host names to Sourcegraph users. 
+For now, you can search for a user by their code host username, or switch to using emails in the codeowners files, which will work across both Sourcegraph and the code host.
 
 ```
 TODO: DESCRIBE CODEOWNERS FORMAT HERE.
@@ -79,3 +81,8 @@ Searches at specific commits will return any CODEOWNERS data that exists at that
 Read more on how to [manually ingest CODEOWNERS data](codeowners_ingestion.md) into your Sourcegraph instance.
 
 The docs detail how to use the UI or `src-cli` to upload CODEOWNERS files to Sourcegraph.
+
+### Limitations
+
+- Sourcegraph Own is being released as an MVP for 5.0. In the future of the product we intend to infer ownership beyond CODEOWNERS data.
+- The feature has not been fully validated to work well on large repositories or large CODEOWNERS rulesets. This is a future area of improvement, but please contact us if you run into issues.
