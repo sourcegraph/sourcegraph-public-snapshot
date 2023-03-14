@@ -10,4 +10,4 @@
 --  * If you are modifying Postgres extensions, you must also declare "privileged: true"
 --    in the associated metadata.yaml file.
 
-DROP AGGREGATE IF EXISTS sg_jsonb_concat_agg;
+DROP AGGREGATE IF EXISTS sg_jsonb_concat_agg(jsonb);
