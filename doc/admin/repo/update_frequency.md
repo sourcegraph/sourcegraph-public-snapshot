@@ -13,8 +13,8 @@ If you wish to control how frequently repositories are discovered or how frequen
 
 ### Code host API requests
 
-- Code host config: Sourcegraph uses a configurable internal rate limiter for API requests made from Sourcegraph to [GitHub](../external_service/github.md#internal-rate-limits), [GitLab](../external_service/gitlab.md#internal-rate-limits), [Bitucket Server](../external_service/bitbucket_server.md#internal-rate-limits) and [Bitbucket Cloud](../external_service/bitbucket_cloud.md#internal-rate-limits).
-All other code hosts that don't support explicitly setting the rate limit in the configuration, default to a rate limit of 5000 requests per hour.
+- Code host config: Sourcegraph uses a configurable internal rate limiter for API requests made from Sourcegraph to [GitHub](../external_service/github.md#internal-rate-limits), [GitLab](../external_service/gitlab.md#internal-rate-limits), [Bitucket Server](../external_service/bitbucket_server.md#internal-rate-limits) and [Bitbucket Cloud](../external_service/bitbucket_cloud.md#internal-rate-limits). 
+All other code hosts that don't support explicitly setting the rate limit in the configuration, default to a rate limit of: [defaultRateLimit](../config/site_config.md#defaultRateLimit) requests per hour.
 
 - Site config: [repoListUpdateInterval](../config/site_config.md#repoListUpdateInterval) controls how frequently we check the code host _for new repositories_ in minutes.
 
@@ -26,7 +26,6 @@ All other code hosts that don't support explicitly setting the rate limit in the
 - [gitMaxConcurrentClones](../config/site_config.md#gitMaxConcurrentClones) controls the maximum number of _concurrent_ cloning / pulling operations per gitserver that Sourcegraph will perform.
 
 You may also choose to disable automatic Git updates entirely and instead [configure repository webhooks](webhooks.md).
-
 
 ## Repo Updater State
 
