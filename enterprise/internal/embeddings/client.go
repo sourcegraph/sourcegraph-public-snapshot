@@ -6,14 +6,17 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sglog "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func defaultEndpoints() *endpoint.Map {
@@ -30,19 +33,28 @@ var defaultDoer = func() httpcli.Doer {
 	return d
 }()
 
-func NewClient() *Client {
+type Endpoints interface {
+	Get(key string) (string, error)
+}
+
+func NewClient(rankingService enterprise.RankingService) *Client {
 	return &Client{
-		Endpoints:  defaultEndpoints(),
-		HTTPClient: defaultDoer,
+		Endpoints:      defaultEndpoints(),
+		HTTPClient:     defaultDoer,
+		RankingService: rankingService,
+		logger:         sglog.Scoped("embeddingsClient", "talks to the embeddings service"),
 	}
 }
 
 type Client struct {
 	// Endpoints to embeddings service.
-	Endpoints *endpoint.Map
+	Endpoints Endpoints
 
 	// HTTP client to use
 	HTTPClient httpcli.Doer
+
+	RankingService enterprise.RankingService
+	logger         sglog.Logger
 }
 
 type EmbeddingsSearchParameters struct {
@@ -61,6 +73,24 @@ type IsContextRequiredForChatQueryResult struct {
 }
 
 func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingSearchResults, error) {
+	var response EmbeddingSearchResults
+
+	// Crop results before returning.
+	defer func(codeResultsCount, textResultsCount int) {
+		if len(response.CodeResults) > codeResultsCount {
+			response.CodeResults = response.CodeResults[:codeResultsCount]
+		}
+		if len(response.TextResults) > textResultsCount {
+			response.TextResults = response.TextResults[:textResultsCount]
+		}
+	}(args.CodeResultsCount, args.TextResultsCount)
+
+	// We ask for x results more which gives us the chance to swap x results
+	// with high similarity and low relevance for x results with low
+	// similarity and high relevance.
+	args.CodeResultsCount += 5
+	args.TextResultsCount += 5
+
 	resp, err := c.httpPost(ctx, "search", args.RepoName, args)
 	if err != nil {
 		return nil, err
@@ -77,11 +107,29 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*
 		)
 	}
 
-	var response EmbeddingSearchResults
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return nil, err
 	}
+
+	pathRanks, err := c.RankingService.GetDocumentRanks(ctx, args.RepoName)
+	if err != nil {
+		c.logger.Error("failed to get document ranks", sglog.Error(err), sglog.String("repo", string(args.RepoName)))
+		return &response, nil
+	}
+
+	rank := func(sr []EmbeddingSearchResult) {
+		// Use stable sorting to preserve the order induced by similarity
+		// for files without ranks.
+		sort.SliceStable(sr, func(i, j int) bool {
+			// Sort in descending order
+			return pathRanks.Paths[sr[i].FileName] > pathRanks.Paths[sr[j].FileName]
+		})
+	}
+
+	rank(response.CodeResults)
+	rank(response.TextResults)
+
 	return &response, nil
 }
 

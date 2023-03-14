@@ -26,7 +26,7 @@ func Init(
 	repoEmbeddingsStore := repo.NewRepoEmbeddingJobsStore(db)
 	contextDetectionEmbeddingsStore := contextdetection.NewContextDetectionEmbeddingJobsStore(db)
 	gitserverClient := gitserver.NewClient()
-	embeddingsClient := embeddings.NewClient()
+	embeddingsClient := embeddings.NewClient(enterpriseServices.RankingService)
 	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(db, gitserverClient, embeddingsClient, repoEmbeddingsStore, contextDetectionEmbeddingsStore)
 	return nil
 }
