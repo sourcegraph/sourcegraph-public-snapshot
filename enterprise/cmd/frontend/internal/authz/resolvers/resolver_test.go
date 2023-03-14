@@ -1981,6 +1981,54 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 		require.Nil(t, result)
 	})
 
+	t.Run("authenticated as non-admin with current user's ID as userID filter", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userID := graphqlbackend.MarshalUserID(1)
+		_, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{UserID: &userID})
+
+		require.NoError(t, err)
+	})
+
+	t.Run("authenticated as non-admin with different user's ID as userID filter", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userID := graphqlbackend.MarshalUserID(2)
+		_, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{UserID: &userID})
+
+		require.ErrorIs(t, err, auth.ErrMustBeSiteAdminOrSameUser)
+	})
+
+	t.Run("authenticated as admin with different user's ID as userID filter", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userID := graphqlbackend.MarshalUserID(2)
+		_, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{UserID: &userID})
+
+		require.NoError(t, err)
+	})
+
 	// Mocking users database queries.
 	users := database.NewStrictMockUserStore()
 	returnedUser := &types.User{ID: 1, SiteAdmin: true}
