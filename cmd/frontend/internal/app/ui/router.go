@@ -82,6 +82,7 @@ const (
 	routeEmbed                   = "embed"
 	routeCody                    = "cody"
 	routeOwn                     = "own"
+	routeAppComingSoon           = "app-coming-soon"
 
 	routeSearchStream  = "search.stream"
 	routeSearchConsole = "search.console"
@@ -178,6 +179,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
 	r.PathPrefix("/cody").Methods("GET").Name(routeCody)
 	r.PathPrefix("/own").Methods("GET").Name(routeOwn)
+	r.Path("/app/coming-soon").Methods("GET").Name(routeAppComingSoon)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
@@ -222,6 +224,7 @@ func newRouter() *mux.Router {
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
 	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
 	repo.PathPrefix("/own").Methods("GET").Name(routeRepoOwn)
+	repo.PathPrefix("/app/coming-soon").Methods("GET").Name(routeAppComingSoon)
 
 	// legacy redirects
 	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
@@ -292,6 +295,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	router.Get(routeViews).Handler(brandedNoIndex("View"))
 	router.Get(routeCody).Handler(brandedNoIndex("Cody"))
 	router.Get(routeOwn).Handler(brandedNoIndex("Own"))
+	router.Get(routeAppComingSoon).Handler(brandedNoIndex("Coming soon"))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
