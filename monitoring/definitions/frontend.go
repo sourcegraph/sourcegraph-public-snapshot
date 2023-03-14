@@ -637,54 +637,69 @@ func Frontend() *monitoring.Dashboard {
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			{
-				Title:  "Ranking",
+				Title:  "Search: Ranking",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "mean_position_of_clicked_search_result_6h",
-							Description: "mean position of clicked search result over 6h",
-							Query:       "sum by (type) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (type) (rate(src_search_ranking_result_clicked_count[6h]))",
-							NoAlert:     true,
-							Panel: monitoring.Panel().With(
-								monitoring.PanelOptions.LegendOnRight(),
-								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.Current = true
-									p.GraphPanel.Targets = []sdk.Target{{
-										Expr:         o.Query,
-										LegendFormat: "{{type}}",
-									}, {
-										Expr:         "sum by (app) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (app) (rate(src_search_ranking_result_clicked_count[6h]))",
-										LegendFormat: "all",
-									}}
-									p.GraphPanel.Tooltip.Shared = true
-								}),
+							Name:           "total_search_clicks",
+							Description:    "total number of search clicks over 6h",
+							Query:          "sum by (ranked) (increase(src_search_ranking_result_clicked_count[6h]))",
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("ranked={{ranked}}"),
 							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "The top-most result on the search results has position 0. Low values are considered better. This metric only tracks top-level items and not individual line matches.",
+							Interpretation: "The total number of search clicks across all search types over a 6 hour window.",
 						},
 						{
+							Name:           "percent_file_clicks_on_top_search_result",
+							Description:    "percent of file clicks on top search result over 6h",
+							Query:          "sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le=\"1\",resultsLength=\">3\",type=\"fileMatch\"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count{type=\"fileMatch\"}[6h])) * 100",
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("ranked={{ranked}}").Unit(monitoring.Percentage),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The percent of clicks that were on the top search result, excluding searches with very few results (3 or fewer).",
+						},
+						{
+							Name:           "percent_file_clicks_on_top_3_search_results",
+							Description:    "percent of file clicks on top 3 search results over 6h",
+							Query:          "sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le=\"3\",resultsLength=\">3\",type=\"fileMatch\"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count{type=\"fileMatch\"}[6h])) * 100",
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("ranked={{ranked}}").Unit(monitoring.Percentage),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The percent of file clicks that were on the first 3 search results, excluding searches with very few results (3 or fewer).",
+						},
+					}, {
+						{
 							Name:        "distribution_of_clicked_search_result_type_over_6h_in_percent",
-							Description: "distribution of clicked search result type over 6h in %",
-							Query:       "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"commit\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
+							Description: "distribution of clicked search result type over 6h",
+							Query:       "round(sum(increase(src_search_ranking_result_clicked_count{type=\"repo\"}[6h])) / sum (increase(src_search_ranking_result_clicked_count[6h]))) * 100",
 							NoAlert:     true,
 							Panel: monitoring.Panel().With(
-								monitoring.PanelOptions.LegendOnRight(),
 								func(o monitoring.Observable, p *sdk.Panel) {
 									p.GraphPanel.Legend.Current = true
 									p.GraphPanel.Targets = []sdk.Target{{
 										Expr:         o.Query,
-										LegendFormat: "commit",
+										LegendFormat: "repo",
 									}, {
-										Expr:         "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"fileMatch\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
+										Expr:         "round(sum(increase(src_search_ranking_result_clicked_count{type=\"fileMatch\"}[6h])) / sum (increase(src_search_ranking_result_clicked_count[6h]))) * 100",
 										LegendFormat: "fileMatch",
 									}, {
-										Expr:         "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"repo\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
-										LegendFormat: "repo",
+										Expr:         "round(sum(increase(src_search_ranking_result_clicked_count{type=\"filePathMatch\"}[6h])) / sum (increase(src_search_ranking_result_clicked_count[6h]))) * 100",
+										LegendFormat: "filePathMatch",
 									}}
 									p.GraphPanel.Tooltip.Shared = true
 								}),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "The distribution of clicked search results by result type. At every point in time, the values should sum to 100.",
+						},
+						{
+							Name:           "percent_zoekt_searches_hitting_flush_limit",
+							Description:    "percent of zoekt searches that hit the flush time limit",
+							Query:          "sum(increase(zoekt_final_aggregate_size_count{reason=\"timer_expired\"}[1d])) / sum(increase(zoekt_final_aggregate_size_count[1d])) * 100",
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The percent of Zoekt searches that hit the flush time limit. These searches don't visit all matches, so they could be missing relevant results, or be non-deterministic.",
 						},
 					},
 				},
