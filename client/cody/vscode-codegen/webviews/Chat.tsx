@@ -160,13 +160,13 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
         return (
             <p className="context-files-expanded">
                 <span className="context-files-toggle-icon" onClick={() => setIsExpanded(false)}>
-                    <DownArrowSvg />
+                    <i className="codicon codicon-triangle-up" slot="start" />
                 </span>
                 <div>
                     <div className="context-files-list-title" onClick={() => setIsExpanded(false)}>
                         Cody read the following files to provide an answer:
                     </div>
-                    <ul>
+                    <ul className="context-files-list-container">
                         {contextFiles.map(file => (
                             <li key={file}>
                                 <code className="context-file">{file}</code>
@@ -181,7 +181,7 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
     return (
         <p className="context-files-collapsed" onClick={() => setIsExpanded(true)}>
             <span className="context-files-toggle-icon">
-                <RightArrowSvg />
+                <i className="codicon codicon-triangle-right" slot="start" />
             </span>
             <div className="context-files-collapsed-text">
                 <span>

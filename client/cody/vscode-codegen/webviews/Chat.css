@@ -67,8 +67,8 @@
 }
 
 .human-bubble-content {
-    background-color: var(--vscode-inputValidation-infoBackground);
-    color: var(--vscode-inputValidation-infoForeground);
+    background-color: var(--human-bubble-color);
+    color: var(--human-text-color);
     /* background-color: var(--human-bubble-color); */
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 16px;
@@ -188,9 +188,17 @@
     margin-right: 1em;
 }
 
+.context-files-toggle-icon > i {
+    font-size: var(--vscode-editor-font-size) !important;
+}
+
 .context-files-list-title {
     cursor: pointer;
     font-style: italic;
+}
+
+.context-files-list-container {
+    padding-inline-start: 1em;
 }
 
 .context-files-collapsed .context-files-toggle-icon {
