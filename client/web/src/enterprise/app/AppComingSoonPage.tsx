@@ -22,7 +22,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import styles from './AppComingSoonPage.module.scss'
 
 export const AppComingSoonPage: React.FC = () => {
-    useEffect(() => eventLogger.logPageView('CodeMonitoringGettingStartedPage'), [])
+    useEffect(() => eventLogger.logPageView('AppComingSoonPage'), [])
     const allowAutoplay = useMatchMedia('(prefers-reduced-motion: no-preference)')
 
     return (
