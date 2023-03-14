@@ -138,7 +138,7 @@
         //
         // Note: dynamic :has(element:empty) { display: none } doesn't work
         // properly in Safari
-        &:after {
+        &::after {
             background-color: var(--color-bg-1);
             border-top: 1px solid var(--border-color);
 
@@ -148,6 +148,7 @@
             bottom: 0;
             left: 0;
             right: 0;
+            // stylelint-disable-next-line declaration-property-unit-allowed-list
             margin: 0 calc(50% - 50vw);
             height: 100%;
             z-index: 0;
