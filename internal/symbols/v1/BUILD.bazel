@@ -37,9 +37,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
-    timeout = "short",
     name = "symbols_test",
+    timeout = "short",
     srcs = ["conversion_test.go"],
     embed = [":symbols"],
     deps = [
