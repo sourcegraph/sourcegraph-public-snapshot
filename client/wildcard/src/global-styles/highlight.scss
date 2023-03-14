@@ -94,6 +94,28 @@
     --hl-purple: #6c71c4;
     --hl-pink: #d33682;
 
+    // Tailwind 800
+    // --scip-keyword: #c2410c;
+    // --scip-identifier: #1e40af;
+    // --scip-identifier-type: #3730a3;
+    // --scip-identifier-attribute: #86198f;
+    // --scip-identifier-function: #854d0e;
+    // --scip-string-literal: #115e59;
+    // --scip-escape: #991b1b;
+    // --scip-numeric-literal: #155e75;
+    // --scip-comment: #3f6212;
+
+    // Tailwind 700
+    --scip-keyword: #c2410c; // Orange
+    --scip-identifier: #1d4ed8; // Blue
+    --scip-identifier-type: #4338ca; // Indigo
+    --scip-identifier-attribute: #a21caf; // Fuchsia
+    --scip-identifier-function: #a16207; // Yello
+    --scip-string-literal: #0f766e; // Teal
+    --scip-escape: #b91c1c; // Red
+    --scip-numeric-literal: #0e7490; // Cyan
+    --scip-comment: #4d7c0f; // Lime
+
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
     // Define these in a way that are good. These are just the same values as before.
     --hl-dark-green: #859900;
@@ -486,74 +508,72 @@
     // .hl-typed-$SYNTAX_KIND
 
     .hl-typed-Comment {
-        color: var(--hl-gray-0);
+        color: var(--scip-comment);
     }
-    .hl-typed-PunctuationDelimiter {
-        color: var(--hl-gray-0);
-    }
-    .hl-typed-PunctuationBracket {
-        color: var(--hl-gray-0);
-    }
+    // .hl-typed-PunctuationDelimiter {
+    //     color: var(--hl-gray-0);
+    // }
+    // .hl-typed-PunctuationBracket {
+    //     color: var(--hl-gray-0);
+    // }
     .hl-typed-IdentifierKeyword,
     .hl-typed-Keyword {
-        color: var(--hl-green);
+        color: var(--scip-keyword);
     }
-    .hl-typed-IdentifierOperator {
-        color: var(--hl-gray-3);
-    }
+    // .hl-typed-IdentifierOperator {
+    //     color: var(--hl-gray-3);
+    // }
     .hl-typed-Identifier {
-        color: var(--hl-blue);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierBuiltin {
-        color: var(--hl-green);
-        // filter: brightness(105%);
+        color: var(--scip-keyword);
     }
     .hl-typed-IdentifierBuiltinType {
-        color: var(--hl-green);
+        color: var(--scip-keyword);
     }
     .hl-typed-IdentifierNull {
-        color: var(--hl-orange);
-        // filter: brightness(130%);
+        color: var(--scip-keyword);
     }
     .hl-typed-BooleanLiteral {
-        color: var(--hl-orange);
+        color: var(--scip-keyword);
     }
     .hl-typed-IdentifierConstant {
-        color: var(--hl-yellow);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierMutableGlobal {
-        color: var(--hl-dark-blue-1);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierParameter {
-        color: var(--hl-blue);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierLocal {
-        color: var(--hl-blue);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierShadowed {
-        color: var(--hl-blue);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierModule,
     .hl-typed-IdentifierNamespace {
-        color: var(--hl-orange); // Same as IdentifierType
+        color: var(--scip-identifier-type);
     }
     .hl-typed-IdentifierFunction {
-        color: var(--hl-yellow);
+        color: var(--scip-identifier-function);
     }
     .hl-typed-IdentifierFunctionDefinition {
-        color: var(--hl-yellow);
+        color: var(--scip-identifier-function);
     }
     .hl-typed-IdentifierMacro {
-        color: var(--hl-yellow);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierMacroDefinition {
-        color: var(--hl-yellow);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierType {
-        color: var(--hl-orange);
+        color: var(--scip-identifier-type);
     }
     .hl-typed-IdentifierAttribute {
-        color: var(--hl-pink);
+        color: var(--scip-identifier-attribute);
     }
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
@@ -569,28 +589,27 @@
     // }
 
     .hl-typed-StringLiteral {
-        color: var(--hl-cyan);
+        color: var(--scip-string-literal);
     }
     .hl-typed-StringLiteralEscape {
-        color: var(--hl-red);
+        color: var(--scip-escape);
     }
     .hl-typed-StringLiteralSpecial {
-        color: var(--hl-red);
+        color: var(--scip-escape);
     }
     .hl-typed-StringLiteralKey {
-        color: var(--hl-red);
+        color: var(--scip-identifier-attribute);
     }
     .hl-typed-CharacterLiteral {
-        color: var(--hl-red);
+        color: var(--scip-string-literal);
     }
     .hl-typed-NumericLiteral {
-        color: var(--hl-purple);
+        color: var(--scip-numeric-literal);
     }
     .hl-typed-TagAttribute {
-        color: var(--hl-gray-2);
+        color: var(--scip-identifier-attribute);
     }
 
-    // color: var(--hl-gray-3);
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
     // .hl-typed-Tag {
     // }
@@ -905,77 +924,101 @@
     //
     // Each group should exactly match the name of the spec.
     // .hl-typed-$SYNTAX_KIND
-    --hl-scip-identifier: #859900;
+    --scip-identifier: #859900;
+    --scip-keyword: #429feb;
+    --scip-identifier: #c0c5ce;
+    --scip-identifier-constant: #96b5b4;
+    --scip-identifier-type: #96b5b4;
+    --scip-identifier-attribute: #eb519c; // Properties/fields
+    --scip-identifier-function: #fbd460;
+    --scip-string-literal: #fb90c4;
+    --scip-escape: #d70505;
+    --scip-numeric-literal: #c0c0c9;
+    --scip-comment: #3fad55;
+
+    // Tailwind 300
+    --scip-keyword: #fdba74; // Orange
+    --scip-identifier: #93c5fd; // Blue
+    --scip-identifier-type: #a5b4fc; // Indigo
+    --scip-identifier-attribute: #f0abfc; // Fuchsia
+    --scip-identifier-function: #fde047; // Yellow
+    --scip-string-literal: #5eead4; // Teal
+    --scip-escape: #fca5a5; // Red
+    --scip-numeric-literal: #67e8f9; // Cyan
+    --scip-comment: #bef264; // Lime
 
     .hl-typed-Comment {
-        color: var(--hl-dark-green);
+        color: var(--scip-comment);
     }
-    .hl-typed-PunctuationDelimiter {
-        color: var(--hl-gray-2);
-    }
-    .hl-typed-PunctuationBracket {
-        color: var(--hl-gray-2);
-    }
+    // .hl-typed-PunctuationDelimiter {
+    //     color: var(--hl-gray-2);
+    // }
+    // .hl-typed-PunctuationBracket {
+    //     color: var(--hl-gray-2);
+    // }
     .hl-typed-IdentifierKeyword,
     .hl-typed-Keyword {
-        color: var(--hl-dark-blue-2);
+        color: var(--scip-keyword);
     }
-    .hl-typed-IdentifierOperator {
-        color: var(--hl-gray-0);
-    }
+    // .hl-typed-IdentifierOperator {
+    //     color: var(--hl-gray-0);
+    // }
     .hl-typed-Identifier {
-        color: var(--hl-blue);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierFunction {
-        color: var(--hl-dark-yellow);
+        color: var(--scip-identifier-function);
     }
     .hl-typed-IdentifierType {
-        color: var(--hl-gray-1);
+        color: var(--scip-identifier-type);
     }
     .hl-typed-IdentifierBuiltin {
-        color: var(--hl-dark-blue-2);
+        color: var(--scip-keyword);
         // filter: brightness(105%);
     }
     .hl-typed-IdentifierBuiltinType {
         color: var(--hl-dark-blue-2);
     }
     .hl-typed-IdentifierNull {
-        color: var(--hl-orange);
+        color: var(--scip-keyword);
         // filter: brightness(130%);
     }
     .hl-typed-BooleanLiteral {
-        color: var(--hl-orange);
+        color: var(--scip-keyword);
     }
     .hl-typed-IdentifierConstant {
-        color: var(--hl-orange);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierMutableGlobal {
-        color: var(--hl-blue);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierParameter {
-        color: var(--hl-blue);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierLocal {
-        color: var(--hl-blue);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierShadowed {
-        color: var(--hl-blue);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierModule,
     .hl-typed-IdentifierNamespace {
-        color: var(--hl-gray-1); // Same as IdentifierType
+        color: var(--scip-identifier-type);
     }
     .hl-typed-IdentifierFunctionDefinition {
-        color: var(--hl-yellow);
+        color: var(--scip-identifier-function);
     }
     .hl-typed-IdentifierMacro {
-        color: var(--hl-yellow);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierMacroDefinition {
-        color: var(--hl-yellow);
+        color: var(--scip-identifier);
+    }
+    .hl-typed-IdentifierBuiltinType {
+        color: var(--scip-keyword);
     }
     .hl-typed-IdentifierAttribute {
-        color: var(--hl-purple);
+        color: var(--scip-identifier-attribute);
     }
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
@@ -991,25 +1034,25 @@
     // }
 
     .hl-typed-StringLiteral {
-        color: var(--hl-red);
+        color: var(--scip-string-literal);
     }
     .hl-typed-StringLiteralEscape {
-        color: var(--hl-red);
+        color: var(--scip-escape);
     }
     .hl-typed-StringLiteralSpecial {
-        color: var(--hl-red);
+        color: var(--scip-escape);
     }
     .hl-typed-StringLiteralKey {
-        color: var(--hl-red);
+        color: var(--scip-identifier-attribute);
     }
     .hl-typed-CharacterLiteral {
-        color: var(--hl-red);
+        color: var(--scip-string-literal);
     }
     .hl-typed-NumericLiteral {
-        color: var(--hl-green-1);
+        color: var(--scip-numeric-literal);
     }
     .hl-typed-TagAttribute {
-        color: var(--hl-gray-3);
+        color: var(--scip-identifier-attribute);
     }
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
