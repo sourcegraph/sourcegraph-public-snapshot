@@ -1,10 +1,8 @@
-use std::collections::VecDeque;
-use std::fmt::Write as _; // import without risk of name clashing
-
 use anyhow::Result;
 use protobuf::Message;
 use rocket::serde::json::{serde_json::json, Value as JsonValue};
 use scip::types::{Document, Occurrence, SyntaxKind};
+use scip_treesitter::types::PackedRange;
 use scip_treesitter_languages::highlights::{
     get_highlighting_configuration, get_syntax_kind_for_hl,
 };
@@ -103,8 +101,8 @@ pub fn index_language_with_config(
                 // not have syntax highlighting completely fall apart from one
                 // bad range)
                 let local_range = match PackedRange::from_vec(&local.range) {
-                    Ok(range) => range,
-                    Err(_) => continue,
+                    Some(range) => range,
+                    None => continue,
                 };
 
                 let (matching_idx, matching_occ) = match doc
@@ -202,81 +200,6 @@ impl OffsetManager {
     }
 }
 
-// TODO: I think we could either put this directly in the `scip` bindings OR
-// we can put this in `scip-treesitter` since it's one of the structs we'll
-// be using quite reguarly when comparing and encoding ranges
-#[derive(Debug, PartialEq, Eq, Default)]
-pub struct PackedRange {
-    pub start_line: i32,
-    pub start_col: i32,
-    pub end_line: i32,
-    pub end_col: i32,
-}
-
-impl PackedRange {
-    // TODO: I don't know how much I love just returning an error here...
-    //       Maybe we should make an infallible version too. It's just a bit annoying
-    //       to pack and unpack all of these for effectively no reason.
-    //       But for now it's good.
-    pub fn from_vec(v: &[i32]) -> Result<Self> {
-        match v.len() {
-            3 => Ok(Self {
-                start_line: v[0],
-                start_col: v[1],
-                end_line: v[0],
-                end_col: v[2],
-            }),
-            4 => Ok(Self {
-                start_line: v[0],
-                start_col: v[1],
-                end_line: v[2],
-                end_col: v[3],
-            }),
-            _ => Err(anyhow::anyhow!("Invalid range: {:?}", v)),
-        }
-    }
-
-    /// Checks if the range is equal to the given vector.
-    /// If the other vector is not a valid PackedRange then it returns false
-    pub fn eq_vec(&self, v: &[i32]) -> bool {
-        match v.len() {
-            3 => {
-                self.start_line == v[0]
-                    && self.start_col == v[1]
-                    && self.end_line == v[0]
-                    && self.end_col == v[2]
-            }
-            4 => {
-                self.start_line == v[0]
-                    && self.start_col == v[1]
-                    && self.end_line == v[2]
-                    && self.end_col == v[3]
-            }
-            _ => false,
-        }
-    }
-}
-
-impl PartialOrd for PackedRange {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        (self.start_line, self.end_line, self.start_col).partial_cmp(&(
-            other.start_line,
-            other.end_line,
-            other.start_col,
-        ))
-    }
-}
-
-impl Ord for PackedRange {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (self.start_line, self.end_line, self.start_col).cmp(&(
-            other.start_line,
-            other.end_line,
-            other.start_col,
-        ))
-    }
-}
-
 /// Converts a general-purpose syntax highlighting iterator into a sequence of lines of HTML.
 pub struct ScipEmitter {}
 
@@ -331,92 +254,6 @@ impl ScipEmitter {
     }
 }
 
-pub fn dump_document(doc: &Document, source: &str) -> String {
-    dump_document_range(doc, source, &None)
-}
-
-pub struct FileRange {
-    pub start: usize,
-    pub end: usize,
-}
-
-pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<FileRange>) -> String {
-    let mut occurrences = doc.occurrences.clone();
-    occurrences.sort_by_key(|o| PackedRange::from_vec(&o.range).unwrap_or_default());
-    let mut occurrences = VecDeque::from(occurrences);
-
-    let mut result = String::new();
-
-    let line_iterator: Box<dyn Iterator<Item = (usize, &str)>> = match file_range {
-        Some(range) => Box::new(
-            source
-                .lines()
-                .enumerate()
-                .skip(range.start - 1)
-                .take(range.end - range.start + 1),
-        ),
-        None => Box::new(source.lines().enumerate()),
-    };
-
-    for (idx, line) in line_iterator {
-        result += "  ";
-        result += &line.replace('\t', " ");
-        result += "\n";
-
-        while let Some(occ) = occurrences.pop_front() {
-            if occ.syntax_kind.enum_value_or_default() == SyntaxKind::UnspecifiedSyntaxKind {
-                continue;
-            }
-
-            let range = match PackedRange::from_vec(&occ.range) {
-                Ok(range) => range,
-                Err(_) => continue,
-            };
-
-            let is_single_line = range.start_line == range.end_line;
-            let end_col = if is_single_line {
-                range.end_col
-            } else {
-                line.len() as i32
-            };
-
-            match range.start_line.cmp(&(idx as i32)) {
-                std::cmp::Ordering::Less => continue,
-                std::cmp::Ordering::Greater => {
-                    occurrences.push_front(occ);
-                    break;
-                }
-                std::cmp::Ordering::Equal => {
-                    let length = (end_col - range.start_col) as usize;
-                    let multiline_suffix = if is_single_line {
-                        "".to_string()
-                    } else {
-                        format!(
-                            " {}:{}..{}:{}",
-                            range.start_line, range.start_col, range.end_line, range.end_col
-                        )
-                    };
-                    let symbol_suffix = if occ.symbol.is_empty() {
-                        "".to_owned()
-                    } else {
-                        format!(" {}", occ.symbol)
-                    };
-                    let _ = writeln!(
-                        result,
-                        "//{}{} {:?}{multiline_suffix} {}",
-                        " ".repeat(range.start_col as usize),
-                        "^".repeat(length),
-                        occ.syntax_kind,
-                        symbol_suffix,
-                    );
-                }
-            }
-        }
-    }
-
-    result
-}
-
 #[cfg(test)]
 mod test {
     use std::{
@@ -424,14 +261,42 @@ mod test {
         io::Read,
     };
 
+    use scip_treesitter::snapshot::dump_document_with_config;
+
     use super::*;
     use crate::determine_filetype;
+
+    fn snapshot_treesitter_syntax_kinds(doc: &Document, source: &str) -> String {
+        dump_document_with_config(
+            doc,
+            source,
+            scip_treesitter::snapshot::SnapshotOptions {
+                emit_syntax: scip_treesitter::snapshot::EmitSyntax::Highlighted,
+                emit_symbol: scip_treesitter::snapshot::EmitSymbol::None,
+                ..Default::default()
+            },
+        )
+        .expect("dump document")
+    }
+
+    fn snapshot_treesitter_syntax_and_symbols(doc: &Document, source: &str) -> String {
+        dump_document_with_config(
+            doc,
+            source,
+            scip_treesitter::snapshot::SnapshotOptions {
+                emit_syntax: scip_treesitter::snapshot::EmitSyntax::Highlighted,
+                emit_symbol: scip_treesitter::snapshot::EmitSymbol::All,
+                ..Default::default()
+            },
+        )
+        .expect("dump document")
+    }
 
     #[test]
     fn test_highlights_one_comment() -> Result<(), Error> {
         let src = "// Hello World";
         let document = index_language("go", src, false)?;
-        insta::assert_snapshot!(dump_document(&document, src));
+        insta::assert_snapshot!(snapshot_treesitter_syntax_kinds(&document, src));
 
         Ok(())
     }
@@ -446,7 +311,7 @@ SELECT * FROM my_table
 "#;
 
         let document = index_language("go", src, false)?;
-        insta::assert_snapshot!(dump_document(&document, src));
+        insta::assert_snapshot!(snapshot_treesitter_syntax_kinds(&document, src));
 
         Ok(())
     }
@@ -455,7 +320,7 @@ SELECT * FROM my_table
     fn test_highlight_csharp_file() -> Result<(), Error> {
         let src = "using System;";
         let document = index_language("c_sharp", src, false)?;
-        insta::assert_snapshot!(dump_document(&document, src));
+        insta::assert_snapshot!(snapshot_treesitter_syntax_kinds(&document, src));
 
         Ok(())
     }
@@ -496,7 +361,7 @@ SELECT * FROM my_table
             match std::panic::catch_unwind(|| {
                 insta::assert_snapshot!(
                     filepath.strip_prefix(&input_dir).unwrap().to_str().unwrap(),
-                    dump_document(&document, &contents)
+                    snapshot_treesitter_syntax_kinds(&document, &contents)
                 );
             }) {
                 Ok(_) => println!("{}: OK", filepath.to_str().unwrap()),
@@ -553,7 +418,7 @@ SELECT * FROM my_table
             match std::panic::catch_unwind(|| {
                 insta::assert_snapshot!(
                     filepath.strip_prefix(&input_dir).unwrap().to_str().unwrap(),
-                    dump_document(&document, &contents)
+                    snapshot_treesitter_syntax_and_symbols(&document, &contents)
                 );
             }) {
                 Ok(_) => println!("{}: OK", filepath.to_str().unwrap()),

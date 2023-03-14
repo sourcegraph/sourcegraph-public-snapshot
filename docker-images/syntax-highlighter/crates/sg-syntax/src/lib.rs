@@ -12,9 +12,8 @@ use syntect::{
 
 mod sg_treesitter;
 pub use sg_treesitter::{
-    dump_document, dump_document_range, index_language as treesitter_index,
-    index_language_with_config as treesitter_index_with_config, lsif_highlight,
-    FileRange as DocumentFileRange, PackedRange as LsifPackedRange,
+    index_language as treesitter_index, index_language_with_config as treesitter_index_with_config,
+    lsif_highlight,
 };
 
 mod sg_syntect;
