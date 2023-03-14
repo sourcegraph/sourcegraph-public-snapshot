@@ -27,6 +27,12 @@ type repositoryStatsResolver struct {
 	gitDirBytesErr  error
 }
 
+func NewRepositoryStatsResolver(db database.DB) *repositoryStatsResolver {
+	return &repositoryStatsResolver{
+		db: db,
+	}
+}
+
 func (r *repositoryStatsResolver) GitDirBytes(ctx context.Context) (BigInt, error) {
 	gitDirBytes, err := r.computeGitDirBytes(ctx)
 	if err != nil {

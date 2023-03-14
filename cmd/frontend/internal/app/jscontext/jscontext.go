@@ -204,6 +204,10 @@ type JSContext struct {
 	LocalFilePickerAvailable bool `json:"localFilePickerAvailable"`
 
 	SrcServeGitUrl string `json:"srcServeGitUrl"`
+
+	TotalLocalRepositories int `json:"totalLocalRepositories"`
+
+	TotalRemoteRepositories int `json:"totalRemoteRepositories"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -293,6 +297,28 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	runningOnMacOS := runtime.GOOS == "darwin"
 	srcServeGitUrl := envvar.SrcServeGitUrl()
 
+	repoStatsResolver := graphqlbackend.NewRepositoryStatsResolver(db)
+
+	totalRemoteRepos, err := repoStatsResolver.Total(ctx)
+	if err != nil {
+		totalRemoteRepos = 0
+	}
+
+	totalLocalRepos := int32(0)
+	if deploy.IsApp() {
+		appResolver := graphqlbackend.NewAppResolver(logger.Scoped("jscontext-app", "constructing jscontext - sourcegraph app"), db)
+		if localExternalServices, err := appResolver.LocalExternalServices(ctx); err == nil {
+			for _, svc := range localExternalServices {
+				reposCount, err := svc.RepoCount(ctx)
+				if err == nil {
+					totalLocalRepos += reposCount
+					totalRemoteRepos -= reposCount
+				}
+			}
+		}
+
+	}
+
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -378,6 +404,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		LocalFilePickerAvailable: deploy.IsApp() && filepicker.Available(),
 
 		SrcServeGitUrl: srcServeGitUrl,
+
+		TotalLocalRepositories: int(totalLocalRepos),
+
+		TotalRemoteRepositories: int(totalRemoteRepos),
 	}
 }
 
