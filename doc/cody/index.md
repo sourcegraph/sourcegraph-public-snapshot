@@ -8,7 +8,7 @@
 
 Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of AI (specifically Large Language Models or LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code on GitHub, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge.
 
-Cody is in private alpha (tagged as an [experimental](../doc/admin/beta_and_experimental_features.md) feature) at this stage. Contact your techical advisor or [signup here](https://t.co/4TMTW1b3lR) to get access. We have limited capacity to onboard customers at first, but we're working hard to open Cody up to the world fast! In this initial release, Cody is only available as a VS Code extension.
+Cody is in private alpha (tagged as an [experimental](../admin/beta_and_experimental_features.md) feature) at this stage. Contact your techical advisor or [signup here](https://t.co/4TMTW1b3lR) to get access. We have limited capacity to onboard customers at first, but we're working hard to open Cody up to the world fast! In this initial release, Cody is only available as a VS Code extension.
 
 To enable the Cody extension to work with your Sourcegraph instance (requires site-admin permissions), follow the steps below. Note that this assumes you've reached out to us to get required `accessToken`(s).
 
