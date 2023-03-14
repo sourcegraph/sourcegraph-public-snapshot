@@ -19,6 +19,8 @@ import { InferenceScriptEditor } from '../components/inference-script/InferenceS
 import { InferenceScriptPreview } from '../components/inference-script/InferenceScriptPreview'
 import { useInferenceScript } from '../hooks/useInferenceScript'
 
+import styles from './CodeIntelInferenceConfigurationPage.module.scss'
+
 export interface CodeIntelInferenceConfigurationPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
 }
@@ -51,7 +53,18 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
                     <>
                         Lua script that emits complete and/or partial auto-indexing job specifications. See the{' '}
                         <Link to="/help/code_navigation/references/inference_configuration">reference guide</Link> for
-                        more information.
+                        more information. The following implementations can also be used as reference of the API:
+                        <ul className={styles.list}>
+                            {['Clang', 'Go', 'Java', 'Python', 'Ruby', 'Rust', 'TypeScript'].map(lang => (
+                                <li key={lang.toLowerCase()}>
+                                    <Link
+                                        to={`https://sourcegraph.com/github.com/sourcegraph/sourcegraph@5.0/-/blob/enterprise/internal/codeintel/autoindexing/internal/inference/lua/${lang.toLowerCase()}.lua`}
+                                    >
+                                        {lang}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
                     </>
                 }
                 className="mb-3"
