@@ -84,6 +84,7 @@ export const codeIntelAreaRoutes: readonly AdminCodeIntelAreaRoute[] = (
         {
             path: '/inference-configuration',
             render: props => <CodeIntelInferenceConfigurationPage {...props} />,
+            condition: () => window.context?.codeIntelAutoIndexingEnabled,
         },
 
         // Legacy routes

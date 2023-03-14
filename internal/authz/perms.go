@@ -93,12 +93,12 @@ func (e ErrStalePermissions) Error() string {
 // Permission determines if a user with a specific id
 // can read a repository with a specific id
 type Permission struct {
-	UserID            int32     // The internal database ID of a user
-	ExternalAccountID int32     // The internal database ID of a user external account
-	RepoID            int32     // The internal database ID of a repo
-	CreatedAt         time.Time // The creation time
-	UpdatedAt         time.Time // The last updated time
-	Source            string    // source of the permission
+	UserID            int32       // The internal database ID of a user
+	ExternalAccountID int32       // The internal database ID of a user external account
+	RepoID            int32       // The internal database ID of a repo
+	CreatedAt         time.Time   // The creation time
+	UpdatedAt         time.Time   // The last updated time
+	Source            PermsSource // source of the permission
 }
 
 // A struct that holds the entity we are updating the permissions for
@@ -114,9 +114,13 @@ type UserIDWithExternalAccountID struct {
 	ExternalAccountID int32
 }
 
-const SourceRepoSync = "repo_sync"
-const SourceUserSync = "user_sync"
-const SourceAPI = "api"
+type PermsSource string
+
+const (
+	SourceRepoSync PermsSource = "repo_sync"
+	SourceUserSync PermsSource = "user_sync"
+	SourceAPI      PermsSource = "api"
+)
 
 // TracingFields returns tracing fields for the opentracing log.
 func (p *Permission) TracingFields() []otlog.Field {
@@ -126,7 +130,7 @@ func (p *Permission) TracingFields() []otlog.Field {
 		otlog.Int32("SrcPermissions.ExternalAccountID", p.ExternalAccountID),
 		otlog.String("SrcPermissions.CreatedAt", p.CreatedAt.String()),
 		otlog.String("SrcPermissions.UpdatedAt", p.UpdatedAt.String()),
-		otlog.String("SrcPermissions.UpdatedAt", p.Source),
+		otlog.String("SrcPermissions.Source", string(p.Source)),
 	}
 	return fs
 }

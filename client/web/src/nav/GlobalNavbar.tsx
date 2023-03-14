@@ -369,7 +369,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 </NavActions>
             </NavBar>
             {showSearchBox && (
-                <div className="w-100 px-3 py-2 border-bottom">
+                <div className={styles.searchNavBar}>
                     <SearchNavbarItem
                         {...props}
                         isLightTheme={isLightTheme}

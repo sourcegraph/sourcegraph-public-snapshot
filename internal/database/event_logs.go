@@ -724,7 +724,7 @@ unique_users_by_dwm AS (
 	` + aggregatedUserIDQueryFragment + ` as aggregated_user_id
   FROM event_logs
   LEFT OUTER JOIN users ON users.id = event_logs.user_id
-  WHERE (%s)
+  WHERE (%s) AND anonymous_user_id != 'backend'
   GROUP BY day_period, week_period, month_period, aggregated_user_id, registered
 ),
 unique_users_by_day AS (
@@ -873,6 +873,7 @@ SELECT
   COUNT(*) FILTER (WHERE event_logs.name ='SearchResultsQueried') as search_count,
   COUNT(*) FILTER (WHERE event_logs.name LIKE '%codeintel%') as codeintel_count
 FROM event_logs
+WHERE anonymous_user_id != 'backend'
 GROUP BY 1, 2
 ORDER BY 1 DESC, 2 ASC;
 `
@@ -964,7 +965,7 @@ FROM (
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   LEFT OUTER JOIN users ON users.id = event_logs.user_id
-  WHERE (timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `) AND (%s)
+  WHERE (timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `) AND (%s) AND anonymous_user_id != 'backend'
 ) events
 
 GROUP BY current_rolling_month, rolling_month, current_month, current_week, current_day

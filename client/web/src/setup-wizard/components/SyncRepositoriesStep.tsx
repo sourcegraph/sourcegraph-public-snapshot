@@ -23,7 +23,7 @@ export function SyncRepositoriesStep(props: SyncRepositoriesStep): ReactElement 
     return (
         <section {...attributes}>
             <Text className="mb-2">
-                It may take a few moments to clone and index each repository. Repository statuses are displayed below.
+                It may take a few moments to clone and index each repository. View statuses below.
             </Text>
             <SiteAdminRepositoriesContainer />
 

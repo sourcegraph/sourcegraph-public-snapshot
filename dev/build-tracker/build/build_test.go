@@ -1,4 +1,4 @@
-package main
+package build
 
 import (
 	"testing"
@@ -15,7 +15,14 @@ func TestUpdateFromEvent(t *testing.T) {
 	commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
 	pipelineID := "sourcegraph"
 	msg := "this is a test"
-	job := newJob("job 1", 0)
+	jobName := "new job"
+	jobExit := 0
+	job := Job{
+		buildkite.Job{
+			Name:       &jobName,
+			ExitStatus: &jobExit,
+		},
+	}
 
 	event := Event{
 		Name: "build.finished",
@@ -44,7 +51,7 @@ func TestUpdateFromEvent(t *testing.T) {
 	}
 
 	t.Run("build gets updated with new build", func(t *testing.T) {
-		build := event.build()
+		build := event.WrappedBuild()
 		otherEvent := event
 		num := 7777
 		otherEvent.Build.Number = &num
@@ -56,7 +63,7 @@ func TestUpdateFromEvent(t *testing.T) {
 	})
 
 	t.Run("build gets updated with new pipeline", func(t *testing.T) {
-		build := event.build()
+		build := event.WrappedBuild()
 		otherEvent := event
 		name := "the other one"
 		otherEvent.Pipeline.Name = &name
@@ -132,8 +139,8 @@ func TestBuildFailedJobs(t *testing.T) {
 		build := store.GetByBuildNumber(1)
 
 		unique := make(map[string]int)
-		for _, j := range build.failedJobs() {
-			unique[j.name()] += 1
+		for _, s := range FindFailedSteps(build.Steps) {
+			unique[s.Name] += 1
 		}
 
 		assert.Equal(t, 3, len(unique))
