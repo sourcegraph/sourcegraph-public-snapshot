@@ -2378,7 +2378,7 @@ type SiteConfiguration struct {
 	CodeIntelRankingDocumentReferenceCountsEnabled *bool `json:"codeIntelRanking.documentReferenceCountsEnabled,omitempty"`
 	// CodeIntelRankingDocumentReferenceCountsGraphKey description: An arbitrary identifier used to group calculated rankings from SCIP data (including the SCIP export).
 	CodeIntelRankingDocumentReferenceCountsGraphKey string `json:"codeIntelRanking.documentReferenceCountsGraphKey,omitempty"`
-	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 72hrs.
+	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 24hrs.
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
