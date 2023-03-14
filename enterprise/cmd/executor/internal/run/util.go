@@ -58,10 +58,9 @@ func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFir
 
 func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
-		VMPrefix:       c.VMPrefix,
-		KeepWorkspaces: c.KeepWorkspaces,
-		QueueName:      c.QueueName,
-		WorkerOptions:  workerOptions(c),
+		VMPrefix:      c.VMPrefix,
+		QueueName:     c.QueueName,
+		WorkerOptions: workerOptions(c),
 		RunnerOptions: runner.Options{
 			DockerOptions:      dockerOptions(c),
 			FirecrackerOptions: firecrackerOptions(c),
@@ -119,6 +118,7 @@ func firecrackerOptions(c *config.Config) runner.FirecrackerOptions {
 		VMStartupScriptPath:      c.VMStartupScriptPath,
 		DockerRegistryMirrorURLs: dockerMirrors,
 		DockerOptions:            dockerOptions(c),
+		KeepWorkspaces:           c.KeepWorkspaces,
 	}
 }
 
