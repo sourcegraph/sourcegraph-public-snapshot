@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -30,6 +29,8 @@ import (
 	"github.com/boj/redistore"
 	"github.com/gorilla/sessions"
 )
+
+const SignOutCookie = "sg-signout"
 
 var (
 	sessionStore     sessions.Store
@@ -254,13 +255,30 @@ func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiry
 				expiryPeriod = defaultExpiryPeriod
 			}
 		}
-		auth.RemoveSignOutCookieIfSet(r, w)
+		RemoveSignOutCookieIfSet(r, w)
 
 		value = &sessionInfo{Actor: actor, ExpiryPeriod: expiryPeriod, LastActive: time.Now(), UserCreatedAt: userCreatedAt}
 	}
 	return SetData(w, r, "actor", value)
 }
 
+// RemoveSignOutCookieIfSet removes the sign-out cookie if it is set.
+func RemoveSignOutCookieIfSet(r *http.Request, w http.ResponseWriter) {
+	if HasSignOutCookie(r) {
+		http.SetCookie(w, &http.Cookie{Name: SignOutCookie, Value: "", MaxAge: -1})
+	}
+}
+
+// HasSignOutCookie returns true if the given request has a sign-out cookie.
+func HasSignOutCookie(r *http.Request) bool {
+	ck, err := r.Cookie(SignOutCookie)
+	if err != nil {
+		return false
+	}
+	return ck != nil
+}
+
+// hasSessionCookie returns true if the given request has a session cookie.
 func hasSessionCookie(r *http.Request) bool {
 	c, _ := r.Cookie(cookieName)
 	return c != nil

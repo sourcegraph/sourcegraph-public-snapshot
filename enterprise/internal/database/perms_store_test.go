@@ -910,6 +910,137 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 	}
 }
 
+func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+
+	tests := []struct {
+		name                    string
+		origExplicitPermissions []authz.Permission
+		origSyncedPermissions   []authz.Permission
+		permissions             []authz.Permission
+		expectedPermissions     []authz.Permission
+		entity                  authz.PermissionEntity
+		source                  authz.PermsSource
+	}{
+		{
+			name: "add explicit permissions when synced are already there",
+			origSyncedPermissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+			},
+			permissions: []authz.Permission{
+				{UserID: 1, RepoID: 3},
+			},
+			expectedPermissions: []authz.Permission{
+				{UserID: 1, RepoID: 3, Source: authz.SourceAPI},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceUserSync},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceUserSync},
+			},
+			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			source: authz.SourceAPI,
+		},
+		{
+			name: "add synced permissions when explicit are already there",
+			origExplicitPermissions: []authz.Permission{
+				{UserID: 1, RepoID: 1},
+				{UserID: 1, RepoID: 3},
+			},
+			permissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+			},
+			expectedPermissions: []authz.Permission{
+				{UserID: 1, RepoID: 1, Source: authz.SourceAPI},
+				{UserID: 1, RepoID: 3, Source: authz.SourceAPI},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceUserSync},
+			},
+			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			source: authz.SourceUserSync,
+		},
+		{
+			name: "add, update and remove synced permissions, when explicit are already there",
+			origExplicitPermissions: []authz.Permission{
+				{UserID: 1, RepoID: 2},
+				{UserID: 1, RepoID: 4},
+			},
+			origSyncedPermissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+			},
+			permissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 5},
+			},
+			expectedPermissions: []authz.Permission{
+				{UserID: 1, RepoID: 2, Source: authz.SourceAPI},
+				{UserID: 1, RepoID: 4, Source: authz.SourceAPI},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3, Source: authz.SourceUserSync},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 5, Source: authz.SourceUserSync},
+			},
+			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			source: authz.SourceUserSync,
+		},
+		{
+			name: "add synced permission to same entity as explicit permission adds new row",
+			origExplicitPermissions: []authz.Permission{
+				{UserID: 1, RepoID: 1},
+			},
+			permissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+			},
+			expectedPermissions: []authz.Permission{
+				{UserID: 1, RepoID: 1, Source: authz.SourceAPI},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceUserSync},
+			},
+			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			source: authz.SourceUserSync,
+		},
+	}
+
+	ctx := actor.WithInternalActor(context.Background())
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			s := perms(logger, db, clock)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+				cleanupUsersTable(t, s)
+				cleanupReposTable(t, s)
+			})
+
+			if len(test.origExplicitPermissions) > 0 {
+				setupPermsRelatedEntities(t, s, test.origExplicitPermissions)
+				err := s.setUserRepoPermissions(ctx, test.origExplicitPermissions, test.entity, authz.SourceAPI)
+				require.NoError(t, err)
+			}
+			if len(test.origSyncedPermissions) > 0 {
+				setupPermsRelatedEntities(t, s, test.origSyncedPermissions)
+				err := s.setUserRepoPermissions(ctx, test.origSyncedPermissions, test.entity, authz.SourceUserSync)
+				require.NoError(t, err)
+			}
+
+			if len(test.permissions) > 0 {
+				setupPermsRelatedEntities(t, s, test.permissions)
+			}
+			if err := s.setUserRepoPermissions(ctx, test.permissions, test.entity, test.source); err != nil {
+				t.Fatal("testing user repo permissions", err)
+			}
+
+			if test.entity.UserID > 0 {
+				checkUserRepoPermissions(t, s, sqlf.Sprintf("user_id = %d", test.entity.UserID), test.expectedPermissions)
+			} else if test.entity.RepoID > 0 {
+				checkUserRepoPermissions(t, s, sqlf.Sprintf("repo_id = %d", test.entity.RepoID), test.expectedPermissions)
+			}
+		})
+	}
+}
+
 func testPermsStore_FetchReposByExternalAccount(db database.DB) func(*testing.T) {
 	source := authz.SourceRepoSync
 
@@ -2651,7 +2782,6 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 				}
 			}
 
-			fmt.Printf("Test name: %s\n", test.name)
 			checkUserRepoPermissions(t, s, sqlf.Sprintf("TRUE"), test.expectUserRepoPerms)
 
 			err := checkRegularPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)

@@ -54,3 +54,12 @@
         padding-bottom: var(--spacer);
     }
 }
+
+.modal {
+    &__grid {
+        display: grid;
+        grid-template-columns: max-content max-content;
+        column-gap: 1rem;
+        row-gap: 0.5rem;
+    }
+}

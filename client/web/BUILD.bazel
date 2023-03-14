@@ -923,6 +923,8 @@ ts_project(
         "src/enterprise/site-admin/SiteAdminAuthenticationProvidersPage.tsx",
         "src/enterprise/site-admin/SiteAdminExternalAccountsPage.tsx",
         "src/enterprise/site-admin/SiteAdminLsifUploadPage.tsx",
+        "src/enterprise/site-admin/UserManagement/backend.ts",
+        "src/enterprise/site-admin/UserManagement/components/RoleAssignmentModal.tsx",
         "src/enterprise/site-admin/backend.ts",
         "src/enterprise/site-admin/cody/RepoEmbeddingJobNode.tsx",
         "src/enterprise/site-admin/cody/SiteAdminCodyPage.tsx",
@@ -1551,6 +1553,7 @@ ts_project(
     tsconfig = ":tsconfig",
     # TODO(bazel): type-only #keep imports
     deps = [
+        ":code_intel_schema",  #keep
         ":graphql_operations",
         ":module_style_typings",
         ":node_modules/@sourcegraph/branded",
@@ -1786,7 +1789,6 @@ ts_project(
     tsconfig = ":tsconfig",
     # TODO(bazel): type-only #keep imports
     deps = [
-        ":code_intel_schema",  #keep
         ":graphql_operations",
         ":module_style_typings",
         ":node_modules/@sourcegraph/common",

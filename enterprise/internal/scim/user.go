@@ -13,6 +13,8 @@ import (
 	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -41,6 +43,13 @@ type UserResourceHandler struct {
 	db               database.DB
 	coreSchema       schema.Schema
 	schemaExtensions []scim.SchemaExtension
+}
+
+func (h *UserResourceHandler) getLogger() log.Logger {
+	if h.observationCtx != nil && h.observationCtx.Logger != nil {
+		return h.observationCtx.Logger.Scoped("scim.user", "resource handler for scim user")
+	}
+	return log.Scoped("scim.user", "resource handler for scim user")
 }
 
 // NewUserResourceHandler returns a new UserResourceHandler.

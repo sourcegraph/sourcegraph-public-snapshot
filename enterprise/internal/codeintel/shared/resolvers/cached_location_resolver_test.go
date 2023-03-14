@@ -104,7 +104,7 @@ func TestCachedLocationResolver(t *testing.T) {
 			for _, repositoryID := range repositoryIDs {
 				for _, commit := range commits {
 					for _, path := range paths {
-						treeResolver, err := locationResolver.Path(context.Background(), repositoryID, commit, path)
+						treeResolver, err := locationResolver.Path(context.Background(), repositoryID, commit, path, false)
 						if err != nil {
 							errs <- err
 							return
@@ -171,7 +171,7 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 	}
 
 	// Ensure no dereference in child resolvers either
-	pathResolver, err := locationResolver.Path(context.Background(), 50, "deadbeef", "main.go")
+	pathResolver, err := locationResolver.Path(context.Background(), 50, "deadbeef", "main.go", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -202,7 +202,7 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 	}
 
 	// Ensure no dereference in child resolvers either
-	pathResolver, err := locationResolver.Path(context.Background(), 50, "deadbeef", "main.go")
+	pathResolver, err := locationResolver.Path(context.Background(), 50, "deadbeef", "main.go", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}

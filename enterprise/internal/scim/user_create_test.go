@@ -8,14 +8,15 @@ import (
 	"github.com/elimity-com/scim"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestUserResourceHandler_Create(t *testing.T) {
-	t.Parallel()
-
+	txemail.DisableSilently()
 	db := getMockDB([]*types.UserForSCIM{
 		{User: types.User{ID: 1, Username: "user1", DisplayName: "Yay Scim", SCIMControlled: true}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
 		{User: types.User{ID: 2, Username: "user2", DisplayName: "Nay Scim", SCIMControlled: false}, Emails: []string{"b@example.com"}},
@@ -136,6 +137,8 @@ func TestUserResourceHandler_Create(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			conf.Mock(&conf.Unified{})
+			defer conf.Mock(nil)
 			userRes, err := userResourceHandler.Create(createDummyRequest(), createUserResourceAttributes(tc.username, tc.attrEmails))
 			id, _ := strconv.Atoi(userRes.ID)
 			usernameInDB := ""

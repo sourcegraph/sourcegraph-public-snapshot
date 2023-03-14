@@ -8,16 +8,16 @@
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-[Executors](executors.md) provide a sandbox that can run resource-intensive or untrusted tasks on behalf of the Sourcegraph instance, such as:
+[Executors](index.md) provide a sandbox that can run resource-intensive or untrusted tasks on behalf of the Sourcegraph instance, such as:
 
-- [Automatically indexing a repository for precise code navigation](../code_navigation/explanations/auto_indexing.md)
-- [Running batch changes](../batch_changes/explanations/server_side.md)
+- [Automatically indexing a repository for precise code navigation](../../code_navigation/explanations/auto_indexing.md)
+- [Running batch changes](../../batch_changes/explanations/server_side.md)
 
 > NOTE: Executors are available with no additional setup required on Sourcegraph Cloud.
 
 ## Requirements
 
-Executors by default use KVM-based micro VMs powered by [Firecracker](https://github.com/firecracker-microvm/firecracker) in accordance with our [sandboxing model](executors.md#how-it-works) to isolate jobs from each other and the host.
+Executors by default use KVM-based micro VMs powered by [Firecracker](https://github.com/firecracker-microvm/firecracker) in accordance with our [sandboxing model](index.md#how-it-works) to isolate jobs from each other and the host.
 This requires executors to be run on machines capable of running Linux KVM extensions. On the most popular cloud providers, this either means running executors on bare-metal machines (AWS) or machines capable of nested virtualization (GCP).
 
 Optionally, executors can be run without using KVM-based isolation, which is less secure but might be easier to run on common machines.
@@ -86,7 +86,7 @@ Executors must be run separately from your Sourcegraph instance.
 
 Since they must still be able to reach the Sourcegraph instance in order to dequeue and perform work, requests between the Sourcegraph instance and the executors are authenticated via a shared secret.
 
-Before starting any executors, generate an arbitrary secret string (with at least 20 characters) and [set it as the `executors.accessToken` key in your Sourcegraph instance's site-config](config/site_config.md#view-and-edit-site-configuration).
+Before starting any executors, generate an arbitrary secret string (with at least 20 characters) and [set it as the `executors.accessToken` key in your Sourcegraph instance's site-config](../config/site_config.md#view-and-edit-site-configuration).
 
 ## Executor installation
 

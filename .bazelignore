@@ -37,5 +37,4 @@ cmd/sitemap
 
 # temporary ignores
 internal/cmd/progress-bot
-## TODO port cody to Bazel
 client/cody

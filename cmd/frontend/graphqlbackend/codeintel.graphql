@@ -169,6 +169,11 @@ extend type Mutation {
         states: [PreciseIndexState!]
 
         """
+        If supplied, only precise indexes created by an indexer with the given key are modified.
+        """
+        indexerKey: String
+
+        """
         When specified, only deletes indexes that are latest for the given repository.
         """
         isLatestForRepo: Boolean
@@ -197,6 +202,11 @@ extend type Mutation {
         The index state.
         """
         states: [PreciseIndexState!]
+
+        """
+        If supplied, only precise indexes created by an indexer with the given key are modified.
+        """
+        indexerKey: String
 
         """
         When specified, only modifies indexes that are latest for the given repository.

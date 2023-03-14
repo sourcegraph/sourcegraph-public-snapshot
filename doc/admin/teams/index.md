@@ -119,12 +119,15 @@ Removing a member from a read-only team|🟢|🔴|🔴
 
 ### GitHub teams
 
-Using the GitHub CLI, you can ingest teams data from GitHub into Sourcegraph. You may want to run this process regularly.
+Using the GitHub CLI along with Sourcegraph's CLI, you can ingest teams data from GitHub into Sourcegraph. You may want to run this process regularly.
 
 ```bash
 #!/usr/bin/env bash
 
 set -e
+
+ORG=<YOUR_ORG_NAME>
+export ORG 
 
 if [[ -z "${ORG}" ]]; then
   echo "ORG environment variable is required."

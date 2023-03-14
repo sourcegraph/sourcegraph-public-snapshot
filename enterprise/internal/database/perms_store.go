@@ -619,7 +619,8 @@ WHERE
 		return errors.New("invalid entity for which to delete old permissions, need at least RepoID or UserID specified")
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(format, where, currentTime, whereSource))
+	q := sqlf.Sprintf(format, where, currentTime, whereSource)
+	return s.Exec(ctx, q)
 }
 
 func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (_ *database.SetPermissionsResult, err error) {

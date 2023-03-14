@@ -37,11 +37,11 @@ import (
 
 // PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
 // It is not enabled if:
-//   - Permissions user mapping (aka explicit permissions API) is enabled
+//   - Permissions user mapping (aka explicit permissions API) is enabled and unified permissions model is not enabled
 //   - Not purchased with the current license
 //   - `disableAutoCodeHostSyncs` site setting is set to true
 func PermissionSyncingDisabled() bool {
-	return globals.PermissionsUserMapping().Enabled ||
+	return (globals.PermissionsUserMapping().Enabled && !conf.ExperimentalFeatures().UnifiedPermissions) ||
 		licensing.Check(licensing.FeatureACLs) != nil ||
 		conf.Get().DisableAutoCodeHostSyncs
 }

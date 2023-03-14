@@ -192,6 +192,7 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [
+        "//cmd/frontend/auth",
         "//cmd/frontend/auth/providers",
         "//cmd/frontend/backend",
         "//cmd/frontend/envvar",
