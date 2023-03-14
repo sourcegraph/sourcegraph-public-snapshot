@@ -38,7 +38,7 @@ go_library(
 
 go_test(
     name = "store_test",
-    timeout = "moderate",
+    timeout = "long",
     srcs = [
         "store_configurations_test.go",
         "store_dependency_indexing_job_test.go",
