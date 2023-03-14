@@ -2,22 +2,20 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
-import { Badge, Button, Text } from '@sourcegraph/wildcard'
+import { Badge, Button, Text, useLocalStorage } from '@sourcegraph/wildcard'
 
 import styles from './LimitedAccessBanner.module.scss'
 
 interface LimitedAccessBannerProps {
     badgeText?: string
-    dismissableTemporarySettingsKey: keyof TemporarySettingsSchema
+    storageKey: string
 }
 
 export const LimitedAccessBanner: React.FunctionComponent<
     React.PropsWithChildren<LimitedAccessBannerProps>
 > = props => {
     const badgeText = props.badgeText ?? 'Limited access'
-    const [dismissed, setDismissed] = useTemporarySetting(props.dismissableTemporarySettingsKey)
+    const [dismissed, setDismissed] = useLocalStorage<boolean>(props.storageKey, false)
 
     if (dismissed) {
         return null

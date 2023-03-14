@@ -68,7 +68,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
 
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
-        setupWizard: features.setupWizard,
         // enable fuzzy finder by default unless it's explicitly disabled in settings
         fuzzyFinder: features.fuzzyFinder ?? true,
     }))

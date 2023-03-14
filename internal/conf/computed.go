@@ -290,7 +290,7 @@ func CodeIntelRankingStaleResultAge() time.Duration {
 	if val := Get().CodeIntelRankingStaleResultsAge; val > 0 {
 		return time.Duration(val) * time.Hour
 	}
-	return 72 * time.Hour
+	return 24 * time.Hour
 }
 
 func EmbeddingsEnabled() bool {

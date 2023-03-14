@@ -1,17 +1,33 @@
 package scim
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
+
+// Reusing the env variables from email invites because the intent is the same as the welcome email
+var (
+	disableEmailInvites, _   = strconv.ParseBool(env.Get("DISABLE_EMAIL_INVITES", "false", "Disable email invitations entirely."))
+	debugEmailInvitesMock, _ = strconv.ParseBool(env.Get("DEBUG_EMAIL_INVITES_MOCK", "false", "Do not actually send email invitations, instead just print that we did."))
 )
 
 // Create stores given attributes. Returns a resource with the attributes that are stored and a (new) unique identifier.
@@ -115,7 +131,7 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	// the error because they are not required.
 	if len(otherEmails) > 0 {
 		for _, email := range otherEmails {
-			h.db.WithTransact(r.Context(), func(tx database.DB) error {
+			_ = h.db.WithTransact(r.Context(), func(tx database.DB) error {
 				err := tx.UserEmails().Add(r.Context(), user.ID, email, nil)
 				if err != nil {
 					return err
@@ -125,8 +141,13 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 		}
 	}
 
-	var now = time.Now()
+	// Attempt to send emails in the background.
+	goroutine.Go(func() {
+		_ = sendPasswordResetEmail(r.Context(), h.getLogger(), h.db, user, primaryEmail)
+		_ = sendWelcomeEmail(primaryEmail, globals.ExternalURL().String(), h.getLogger())
+	})
 
+	var now = time.Now()
 	return scim.Resource{
 		ID:         strconv.Itoa(int(user.ID)),
 		ExternalID: getOptionalExternalID(attributes),
@@ -207,3 +228,87 @@ func containsErrCannotCreateUserError(err error) (database.ErrCannotCreateUser, 
 
 	return database.ErrCannotCreateUser{}, false
 }
+
+// sendPasswordResetEmail sends a password reset email to the given user.
+func sendPasswordResetEmail(ctx context.Context, logger log.Logger, db database.DB, user *types.User, primaryEmail string) bool {
+	// Email user to ask to set up a password
+	// This internally checks whether username/password login is enabled, whether we have an SMTP in place, etc.
+	if disableEmailInvites {
+		return true
+	}
+	if debugEmailInvitesMock {
+		if logger != nil {
+			logger.Info("password reset: mock pw reset email to Sourcegraph", log.String("sent", primaryEmail))
+		}
+		return true
+	}
+	_, err := auth.ResetPasswordURL(ctx, db, logger, user, primaryEmail, true)
+	if err != nil {
+		logger.Error("error sending password reset email", log.Error(err))
+	}
+	return false
+}
+
+// sendWelcomeEmail sends a welcome email to the given user.
+func sendWelcomeEmail(email, siteURL string, logger log.Logger) error {
+	if email != "" && conf.CanSendEmail() {
+		if disableEmailInvites {
+			return nil
+		}
+		if debugEmailInvitesMock {
+			if logger != nil {
+				logger.Info("email welcome: mock welcome to Sourcegraph", log.String("welcomed", email))
+			}
+			return nil
+		}
+		return txemail.Send(context.Background(), "user_welcome", txemail.Message{
+			To:       []string{email},
+			Template: emailTemplateEmailWelcomeSCIM,
+			Data: struct {
+				URL string
+			}{
+				URL: siteURL,
+			},
+		})
+	}
+	return nil
+}
+
+var emailTemplateEmailWelcomeSCIM = txemail.MustValidate(txtypes.Templates{
+	Subject: `Welcome to Sourcegraph`,
+	Text: `
+Sourcegraph enables you to quickly understand, fix, and automate changes to your code.
+
+You can use Sourcegraph to:
+  - Search and navigate multiple repositories with cross-repository dependency navigation
+  - Share links directly to lines of code to work more collaboratively together
+  - Automate large-scale code changes with Batch Changes
+  - Create code monitors to alert you about changes in code
+
+Come experience the power of great code search.
+
+
+{{.URL}}
+
+Learn more about Sourcegraph:
+
+https://about.sourcegraph.com
+`,
+	HTML: `
+<p>Sourcegraph enables you to quickly understand, fix, and automate changes to your code.</p>
+
+<p>
+	You can use Sourcegraph to:<br/>
+	<ul>
+		<li>Search and navigate multiple repositories with cross-repository dependency navigation</li>
+		<li>Share links directly to lines of code to work more collaboratively together</li>
+		<li>Automate large-scale code changes with Batch Changes</li>
+		<li>Create code monitors to alert you about changes in code</li>
+	</ul>
+</p>
+
+<p><strong><a href="{{.URL}}">Come experience the power of great code search</a></strong></p>
+
+<p><a href="https://about.sourcegraph.com">Learn more about Sourcegraph</a></p>
+`,
+})

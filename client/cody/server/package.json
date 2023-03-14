@@ -12,24 +12,7 @@
     "test": "mocha --ui tdd out/**/*test.js"
   },
   "main": "out/index.js",
-  "devDependencies": {
-    "@types/body-parser": "^1.19.2",
-    "@types/express": "^4.17.15",
-    "@types/google-spreadsheet": "^3.3.1",
-    "@types/node": "^18.14.2",
-    "@types/node-fetch": "^2.6.2",
-    "@types/ws": "^8.5.3"
-  },
   "dependencies": {
-    "@sourcegraph/cody-common": "workspace:*",
-    "axios": "^1.2.2",
-    "body-parser": "^1.20.1",
-    "express": "^4.18.2",
-    "google-spreadsheet": "^3.3.0",
-    "node-fetch": "^2.6.7",
-    "openai": "^3.1.0",
-    "socket.io": "^4.5.4",
-    "socket.io-client": "^4.5.4",
-    "ws": "^8.11.0"
+    "@sourcegraph/cody-common": "workspace:*"
   }
 }

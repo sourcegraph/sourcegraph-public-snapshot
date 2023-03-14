@@ -25,6 +25,8 @@ go_library(
         "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@org_golang_x_exp//maps",
+        "@org_golang_x_exp//slices",
     ],
 )
 
@@ -43,7 +45,6 @@ go_test(
         "//internal/actor",
         "//internal/api",
         "//internal/fileutil",
-        "//internal/types",
         "//lib/errors",
         "@com_github_gobwas_glob//:glob",
         "@com_github_google_go_cmp//cmp",

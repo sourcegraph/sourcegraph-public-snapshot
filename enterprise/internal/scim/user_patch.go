@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"github.com/elimity-com/scim"
+	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/elimity-com/scim/schema"
 	"github.com/scim2/filter-parser/v2"
 
 	sgfilter "github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Patch updates one or more attributes of a SCIM resource using a sequence of
@@ -42,7 +44,10 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		// Apply changes to the user resource
 		var changed bool
 		for _, op := range operations {
-			newlyChanged, emailsNewlyModified := h.applyOperation(op, &userRes)
+			newlyChanged, emailsNewlyModified, opErr := h.applyOperation(op, &userRes)
+			if opErr != nil {
+				return opErr
+			}
 			changed = changed || newlyChanged
 			emailsModified = emailsModified || emailsNewlyModified
 		}
@@ -69,14 +74,18 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 		return updateUser(r.Context(), tx, user, userRes.Attributes, emailsModified)
 	})
 	if err != nil {
-		return scim.Resource{}, err
+		multiErr, ok := err.(errors.MultiError)
+		if !ok || len(multiErr.Errors()) == 0 {
+			return scim.Resource{}, err
+		}
+		return scim.Resource{}, multiErr.Errors()[len(multiErr.Errors())-1]
 	}
 
 	return userRes, nil
 }
 
 // applyOperation applies a single operation to the given user resource and reports what it did.
-func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *scim.Resource) (changed bool, emailsModified bool) {
+func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *scim.Resource) (changed bool, emailsModified bool, err error) {
 	// Handle multiple operations in one value
 	if op.Path == nil {
 		for rawPath, value := range op.Value.(map[string]interface{}) {
@@ -185,22 +194,32 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 				return // This isn't a slice, so nothing will match the expression → do nothing
 			}
 			validator, _ := sgfilter.NewValidator(buildFilterString(valueExpr, attrName), h.coreSchema, getExtensionSchemas(h.schemaExtensions)...)
+			filterMatched := false
+			// Capture the proper name of the attribute to set so we don't have to do it each iteration
+			attributeToSet := attrName
+			if subAttrName != "" {
+				attributeToSet = subAttrName
+			}
 			for i := 0; i < len(attributeItems); i++ {
 				item, ok := attributeItems[i].(map[string]interface{})
 				if !ok {
 					continue // if this isn't a map of properties it can't match or be replaced
 				}
 				if arrayItemMatchesFilter(attrName, item, validator) {
-					var newlyChanged bool
-					if subAttrName != "" {
-						newlyChanged = applyAttributeChange(item, subAttrName, v, op.Op)
-					} else {
-						newlyChanged = applyAttributeChange(item, attrName, v, op.Op)
-					}
+					// Note that we found a matching item so we dont' need to take additional actions
+					filterMatched = true
+					newlyChanged := applyAttributeChange(item, attributeToSet, v, op.Op)
 					if newlyChanged {
 						attributeItems[i] = item //attribute items are updated
 					}
 					changed = changed || newlyChanged
+				}
+			}
+			if !filterMatched && op.Op == "replace" {
+				strategy := getMultiValueReplaceNotFoundStrategy(getConfiguredIdentityProvider())
+				attributeItems, err = strategy(attributeItems, attributeToSet, v, op.Op, valueExpr)
+				if err != nil {
+					return
 				}
 			}
 			userRes.Attributes[attrName] = attributeItems
@@ -319,4 +338,50 @@ func buildFilterString(valueExpression filter.Expression, attrName string) strin
 		return fmt.Sprintf("%s[%v]", attrName, t)
 	}
 
+}
+
+type multiValueReplaceNotFoundStrategy func(
+	multiValueAttribute []interface{},
+	propertyToSet string,
+	value interface{},
+	operation string,
+	filterExpression filter.Expression,
+) ([]interface{}, error)
+
+func standardMultiValueReplaceNotFoundStrategy(
+	_ []interface{},
+	_ string,
+	_ interface{},
+	_ string,
+	filterExpression filter.Expression) ([]interface{}, error) {
+	return nil, scimerrors.ScimErrorNoTarget
+}
+
+func azureMultiValueReplaceNotFoundStrategy(multiValueAttribute []interface{},
+	propertyToSet string,
+	value interface{},
+	operation string,
+	filterExpression filter.Expression,
+) ([]interface{}, error) {
+	switch v := filterExpression.(type) {
+	case *filter.AttributeExpression:
+		if v.Operator != filter.EQ {
+			// There is nothing we can do in this case because the expected behavior is that an object will be created using the
+			// the left and right side of the operator as a property and value
+			return nil, scimerrors.ScimErrorNoTarget
+		}
+		newItem := map[string]interface{}{v.AttributePath.AttributeName: v.CompareValue, propertyToSet: value}
+		return append(multiValueAttribute, newItem), nil
+	default:
+		return nil, scimerrors.ScimErrorNoTarget
+	}
+}
+
+func getMultiValueReplaceNotFoundStrategy(provider IdentityProvider) multiValueReplaceNotFoundStrategy {
+	switch provider {
+	case SCIM_AZURE_AD:
+		return azureMultiValueReplaceNotFoundStrategy
+	default:
+		return standardMultiValueReplaceNotFoundStrategy
+	}
 }

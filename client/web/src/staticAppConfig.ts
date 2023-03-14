@@ -45,8 +45,7 @@ export interface StaticHardcodedAppConfig
 /**
  * Non-primitive values (components, objects) we inject at the tip of the React tree.
  */
-export interface StaticInjectedAppConfig
-    extends Pick<CodeIntelligenceProps, 'codeIntelligenceBadgeContent' | 'useCodeIntel' | 'codeIntelligenceBadgeMenu'> {
+export interface StaticInjectedAppConfig extends Pick<CodeIntelligenceProps, 'useCodeIntel' | 'brainDot'> {
     siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]

@@ -14,8 +14,6 @@ import (
 )
 
 func Test_UserResourceHandler_Replace(t *testing.T) {
-	t.Parallel()
-
 	db := getMockDB([]*types.UserForSCIM{
 		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
 		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Last"}, Emails: []string{"b@example.com"}, SCIMExternalID: "id2"},

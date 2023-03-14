@@ -208,6 +208,21 @@ So when a change is detected, `iBazel` will build the affected target and it wil
 
 ## FAQ
 
+### General
+
+#### The analysis cache is being busted because of `--action_env` 
+
+Typically you'll see this (in CI or locally):
+
+```
+INFO: Build option --action_env has changed, discarding analysis cache.
+```
+
+- If you added a `build --action_env=VAR` to one of the `bazelrc`s, and `$VAR` is not stable across builds, it will break the analysis cache. You should never pass a variable that is not stable, otherwise, the cache being busted is totally expected and there is no way around it. 
+  - Use `build --action_env=VAR=123` instead to pin it down if it's not stable in your environment.
+- If you added a `test --action_env=VAR`, running `bazel build [...]` will have a different `--action_env` and because the analysis cache is the same for `build` and `test` that will automatically bust the cache. 
+  - Use `build --test_env=VAR` instead, so that env is used only in tests, and doesn't affect builds, while avoiding to bust the cache.
+
 ### Go
 
 #### It complains about some missing symbols, but I'm sure they are there since I can see my files

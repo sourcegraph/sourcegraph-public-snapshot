@@ -180,7 +180,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 </PageHeader.Heading>
             </PageHeader>
             {isSourcegraphApp && (
-                <LimitedAccessBanner dismissableTemporarySettingsKey="app.limitedAccessBannerDismissed.batchChanges">
+                <LimitedAccessBanner storageKey="app.limitedAccessBannerDismissed.batchChanges">
                     Batch Changes is currently available to try for free, up to 10 changesets, while Sourcegraph App is
                     in beta. Pricing and availability for Batch Changes is subject to change in future releases.{' '}
                     <strong>

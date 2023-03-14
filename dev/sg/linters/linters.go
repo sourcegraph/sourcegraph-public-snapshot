@@ -69,7 +69,7 @@ var Targets = []Target{
 		Checks: []*linter{
 			tsEnterpriseImport,
 			inlineTemplates,
-			runScript("pnpm deduplicate", "dev/check/pnpm-deduplicate.sh"),
+			runScript("pnpm dedupe", "dev/check/pnpm-deduplicate.sh"),
 			checkUnversionedDocsLinks(),
 		},
 	},

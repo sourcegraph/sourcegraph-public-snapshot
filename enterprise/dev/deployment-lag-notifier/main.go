@@ -38,9 +38,8 @@ func (f *Flags) Parse() {
 
 // environments represent the currently available environment targets we may care about
 var environments = map[string]string{
-	"cloud":   "https://sourcegraph.com",
-	"k8s":     "https://k8s.sgdev.org",
-	"preprod": "https://preview.sgdev.dev",
+	"cloud": "https://sourcegraph.com",
+	"k8s":   "https://k8s.sgdev.org",
 }
 
 // Getenv wraps os.Getenv but allows a default fallback value

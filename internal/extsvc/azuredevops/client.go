@@ -47,6 +47,7 @@ type Client interface {
 	GetProject(ctx context.Context, org, project string) (Project, error)
 	GetAuthorizedProfile(ctx context.Context) (Profile, error)
 	ListAuthorizedUserOrganizations(ctx context.Context, profile Profile) ([]Org, error)
+	ListAuthorizedUserProjects(ctx context.Context, org string) ([]Project, error)
 	SetWaitForRateLimit(wait bool)
 }
 

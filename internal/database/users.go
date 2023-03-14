@@ -454,6 +454,50 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 	}
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+
+	eArg, _ := json.Marshal(struct {
+		Creator     int32  `json:"creator"`
+		Created     int32  `json:"created"`
+		SiteAdmin   bool   `json:"site_admin"`
+		ServiceType string `json:"service_type"`
+	}{
+		Creator:     a.UID,
+		Created:     u.ID,
+		SiteAdmin:   u.SiteAdmin,
+		ServiceType: serviceType,
+	})
+	logEvent := &Event{
+		Name:            "AccountCreated",
+		URL:             "",
+		AnonymousUserID: "backend",
+		Argument:        eArg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+	db.EventLogs().Insert(ctx, logEvent)
+}
+
+func logAccountModifiedEvent(ctx context.Context, db DB, userID int32, serviceType string) {
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Modifier    int32  `json:"modifier"`
+		ServiceType string `json:"service_type"`
+	}{
+		Modifier:    a.UID,
+		ServiceType: serviceType,
+	})
+
+	event := &SecurityEvent{
+		Name:            SecurityEventNameAccountModified,
+		URL:             "",
+		UserID:          uint32(userID),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -714,6 +758,26 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 		}
 	}
 	db.SecurityEventLogs().LogEventList(ctx, events)
+
+	logEvents := make([]*Event, len(ids))
+	for index, id := range ids {
+		eArg, _ := json.Marshal(struct {
+			Deleter int32 `json:"deleter"`
+			Deleted int32 `json:"deleted"`
+		}{
+			Deleter: a.UID,
+			Deleted: id,
+		})
+		logEvents[index] = &Event{
+			Name:            string(name),
+			URL:             "",
+			AnonymousUserID: "backend",
+			Argument:        eArg,
+			Source:          "BACKEND",
+			Timestamp:       now,
+		}
+	}
+	db.EventLogs().BulkInsert(ctx, logEvents)
 }
 
 // RecoverList recovers a list of users by their IDs.
@@ -817,6 +881,25 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				UserID: id,
 				Role:   types.SiteAdministratorSystemRole,
 			})
+			a := actor.FromContext(ctx)
+			arg, _ := json.Marshal(struct {
+				Assigner int32  `json:"assigner"`
+				Assignee int32  `json:"assignee"`
+				Role     string `json:"role"`
+			}{
+				Assigner: a.UID,
+				Assignee: id,
+				Role:     string(types.SiteAdministratorSystemRole),
+			})
+			logEvent := &Event{
+				Name:            "RoleChangeGranted",
+				URL:             "",
+				AnonymousUserID: "backend",
+				Argument:        arg,
+				Source:          "BACKEND",
+				Timestamp:       time.Now(),
+			}
+			db.EventLogs().Insert(ctx, logEvent)
 			return err
 		}
 
@@ -1473,6 +1556,24 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+
+	eArgs, _ := json.Marshal(struct {
+		Requester int32 `json:"requester"`
+		Requestee int32 `json:"requestee"`
+	}{
+		Requester: a.UID,
+		Requestee: userID,
+	})
+	logEvent := &Event{
+		Name:            string(name),
+		URL:             r.URL.Host,
+		AnonymousUserID: "backend",
+		Argument:        eArgs,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	db.EventLogs().Insert(ctx, logEvent)
 }
 
 func hashPassword(password string) (sql.NullString, error) {

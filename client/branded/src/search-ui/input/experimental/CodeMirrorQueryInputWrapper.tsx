@@ -1,8 +1,11 @@
 import {
+    FC,
     forwardRef,
+    MutableRefObject,
     PropsWithChildren,
     useCallback,
     useEffect,
+    useId,
     useImperativeHandle,
     useMemo,
     useRef,
@@ -17,7 +20,6 @@ import classNames from 'classnames'
 import inRange from 'lodash/inRange'
 import { useNavigate } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
-import * as uuid from 'uuid'
 
 import { HistoryOrNavigate } from '@sourcegraph/common'
 import { Editor, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
@@ -84,7 +86,7 @@ function showWhenEmptyWithoutContext(state: EditorState): boolean {
     )
 }
 
-// For simplicity we will recompute all extensions when input changes using
+// For simplicity, we will recompute all extensions when input changes using
 // this compartment
 const extensionsCompartment = new Compartment()
 
@@ -101,7 +103,7 @@ function configureExtensions({
     historyOrNavigate,
 }: ExtensionConfig): Extension {
     const extensions = [
-        EditorView.darkTheme.of(isLightTheme === false),
+        EditorView.darkTheme.of(!isLightTheme),
         EditorView.updateListener.of(update => {
             if (update.docChanged) {
                 onChange({
@@ -170,92 +172,84 @@ function configureQueryExtensions({
 }
 
 // Creates extensions that don't depend on props
-function createStaticExtensions({ popoverID }: { popoverID: string }): Extension {
-    const position0 = EditorSelection.single(0)
-    return [
-        EditorState.transactionFilter.of(transaction => {
-            // This is a hacky way to "fix" the cursor position when the input receives
-            // focus by clicking outside of it in Chrome.
-            // Debugging has revealed that in such a case the transaction has a user event
-            // 'select', the new selection is set to `0` and 'scrollIntoView' is 'false'.
-            // This is different from other events that change the cursor position:
-            // - Clicking on text inside the input (whether focused or not) will be a 'select.pointer'
-            //   user event.
-            // - Moving the cursor with arrow keys will be a 'select' user event but will also set
-            //   'scrollIntoView' to 'true'
-            // - Entering new characters will be of user type 'input'
-            // - Selecting a text range will be of user type 'select.pointer'
-            // - Tabbing to the input seems to only trigger a 'select' user event transaction when
-            //   the user clicked outside the input (also only in Chrome, this transaction doesn't
-            //   occur in Firefox)
+const position0 = EditorSelection.single(0)
+const staticExtensions: Extension = [
+    EditorState.transactionFilter.of(transaction => {
+        // This is a hacky way to "fix" the cursor position when the input receives
+        // focus by clicking outside of it in Chrome.
+        // Debugging has revealed that in such a case the transaction has a user event
+        // 'select', the new selection is set to `0` and 'scrollIntoView' is 'false'.
+        // This is different from other events that change the cursor position:
+        // - Clicking on text inside the input (whether focused or not) will be a 'select.pointer'
+        //   user event.
+        // - Moving the cursor with arrow keys will be a 'select' user event but will also set
+        //   'scrollIntoView' to 'true'
+        // - Entering new characters will be of user type 'input'
+        // - Selecting a text range will be of user type 'select.pointer'
+        // - Tabbing to the input seems to only trigger a 'select' user event transaction when
+        //   the user clicked outside the input (also only in Chrome, this transaction doesn't
+        //   occur in Firefox)
 
-            if (
-                !transaction.isUserEvent('select.pointer') &&
-                transaction.isUserEvent('select') &&
-                !transaction.scrollIntoView &&
-                transaction.selection?.eq(position0)
-            ) {
-                return [transaction, { selection: EditorSelection.single(transaction.newDoc.length) }]
-            }
-            return transaction
-        }),
-        singleLine,
-        drawSelection(),
-        EditorView.contentAttributes.of({
-            role: 'combobox',
-            'aria-controls': popoverID,
-            'aria-owns': popoverID,
-            'aria-haspopup': 'grid',
-        }),
-        keymap.of(historyKeymap),
-        keymap.of(defaultKeymap),
-        codemirrorHistory(),
-        filterPlaceholder,
-        queryDiagnostic(),
-        Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
-        EditorView.theme({
-            '&': {
-                flex: 1,
-                backgroundColor: 'var(--input-bg)',
-                borderRadius: 'var(--border-radius)',
-                borderColor: 'var(--border-color)',
-                // To ensure that the input doesn't overflow the parent
-                minWidth: 0,
-                marginRight: '0.5rem',
-            },
-            '&.cm-editor.cm-focused': {
-                outline: 'none',
-            },
-            '.cm-scroller': {
-                overflowX: 'hidden',
-            },
-            '.cm-content': {
-                caretColor: 'var(--search-query-text-color)',
-                color: 'var(--search-query-text-color)',
-                fontFamily: 'var(--code-font-family)',
-                fontSize: 'var(--code-font-size)',
-                padding: 0,
-                paddingLeft: '0.25rem',
-            },
-            '.cm-content.focus-visible': {
-                boxShadow: 'none',
-            },
-            '.cm-line': {
-                padding: 0,
-            },
-            '.theme-dark .cm-selectionLayer .cm-selectionBackground': {
-                backgroundColor: 'var(--gray-08)',
-            },
-            '.sg-decorated-token-hover': {
-                borderRadius: '3px',
-            },
-            '.sg-query-filter-placeholder': {
-                color: 'var(--text-muted)',
-                fontStyle: 'italic',
-            },
-        }),
-    ]
-}
+        if (
+            !transaction.isUserEvent('select.pointer') &&
+            transaction.isUserEvent('select') &&
+            !transaction.scrollIntoView &&
+            transaction.selection?.eq(position0)
+        ) {
+            return [transaction, { selection: EditorSelection.single(transaction.newDoc.length) }]
+        }
+        return transaction
+    }),
+    singleLine,
+    drawSelection(),
+    keymap.of(historyKeymap),
+    keymap.of(defaultKeymap),
+    codemirrorHistory(),
+    filterPlaceholder,
+    queryDiagnostic(),
+    Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
+    EditorView.theme({
+        '&': {
+            flex: 1,
+            backgroundColor: 'var(--input-bg)',
+            borderRadius: 'var(--border-radius)',
+            borderColor: 'var(--border-color)',
+            // To ensure that the input doesn't overflow the parent
+            minWidth: 0,
+            marginRight: '0.5rem',
+        },
+        '&.cm-editor.cm-focused': {
+            outline: 'none',
+        },
+        '.cm-scroller': {
+            overflowX: 'hidden',
+        },
+        '.cm-content': {
+            caretColor: 'var(--search-query-text-color)',
+            color: 'var(--search-query-text-color)',
+            fontFamily: 'var(--code-font-family)',
+            fontSize: 'var(--code-font-size)',
+            padding: 0,
+            paddingLeft: '0.25rem',
+        },
+        '.cm-content.focus-visible': {
+            boxShadow: 'none',
+        },
+        '.cm-line': {
+            padding: 0,
+        },
+        '.theme-dark .cm-selectionLayer .cm-selectionBackground': {
+            backgroundColor: 'var(--gray-08)',
+        },
+        '.sg-decorated-token-hover': {
+            borderRadius: '3px',
+        },
+        '.sg-query-filter-placeholder': {
+            color: 'var(--text-muted)',
+            fontStyle: 'italic',
+        },
+    }),
+]
 
 function updateExtensions(editor: EditorView | null, extensions: Extension): void {
     if (editor) {
@@ -271,6 +265,11 @@ function updateQueryExtensions(editor: EditorView | null, extensions: Extension)
 
 const empty: any[] = []
 
+export enum QueryInputVisualMode {
+    Standard = 'standard',
+    Compact = 'compact',
+}
+
 export interface CodeMirrorQueryInputWrapperProps {
     queryState: QueryState
     onChange: (queryState: QueryState) => void
@@ -281,6 +280,8 @@ export interface CodeMirrorQueryInputWrapperProps {
     placeholder: string
     suggestionSource?: Source
     extensions?: Extension
+    visualMode?: QueryInputVisualMode | `${QueryInputVisualMode}`
+    className?: string
 }
 
 export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<CodeMirrorQueryInputWrapperProps>>(
@@ -295,29 +296,30 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             placeholder,
             suggestionSource,
             extensions: externalExtensions = empty,
+            visualMode = QueryInputVisualMode.Standard,
+            className,
             children,
         },
         ref
     ) => {
+        // Global params
+        const popoverID = useId()
         const navigate = useNavigate()
-        const editorContainerRef = useRef<HTMLDivElement | null>(null)
-        const focusContainerRef = useRef<HTMLDivElement | null>(null)
-        const [suggestionsContainer, setSuggestionsContainer] = useState<HTMLDivElement | null>(null)
-        const popoverID = useMemo(() => uuid.v4(), [])
-        const [mode, setMode, modeNotifierExtension] = useInputMode()
 
-        const onSubmitRef = useRef(onSubmit)
-        useEffect(() => {
-            onSubmitRef.current = onSubmit
-        }, [onSubmit])
+        // References
+        const editorRef = useRef<EditorView | null>(null)
+        const editorContainerRef = useRef<HTMLDivElement | null>(null)
+
+        // Local state
+        const [mode, setMode, modeNotifierExtension] = useInputMode()
+        const [suggestionsContainer, setSuggestionsContainer] = useState<HTMLDivElement | null>(null)
+
+        // Handlers
+        const onSubmitRef = useMutableValue(onSubmit)
+        const onChangeRef = useMutableValue(onChange)
+
         const hasSubmitHandler = !!onSubmit
 
-        const onChangeRef = useRef(onChange)
-        useEffect(() => {
-            onChangeRef.current = onChange
-        }, [onChange])
-
-        const staticExtensions = useMemo(() => createStaticExtensions({ popoverID }), [popoverID])
         // Update extensions whenever any of these props change
         const dynamicExtensions = useMemo(
             () => [
@@ -351,6 +353,8 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                 navigate,
                 externalExtensions,
                 modeNotifierExtension,
+                onChangeRef,
+                onSubmitRef,
             ]
         )
 
@@ -359,8 +363,6 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             () => configureQueryExtensions({ patternType, interpretComments }),
             [patternType, interpretComments]
         )
-
-        const editorRef = useRef<EditorView | null>(null)
 
         // Update editor state whenever query state changes
         useUpdateEditorFromQueryState(editorRef, queryState, startCompletion)
@@ -376,6 +378,12 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             queryState.query,
             useMemo(
                 () => [
+                    EditorView.contentAttributes.of({
+                        role: 'combobox',
+                        'aria-controls': popoverID,
+                        'aria-owns': popoverID,
+                        'aria-haspopup': 'grid',
+                    }),
                     staticExtensions,
                     extensionsCompartment.of(dynamicExtensions),
                     querySettingsCompartment.of(queryExtensions),
@@ -383,7 +391,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                 // Only set extensions during initialization. dynamicExtensions and queryExtensions
                 // are updated separately.
                 // eslint-disable-next-line react-hooks/exhaustive-deps
-                []
+                [popoverID]
             )
         )
 
@@ -420,31 +428,59 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             }
         }, [setMode])
 
-        const { ref: spacerRef, height: spacerHeight } = useResizeObserver({
-            ref: focusContainerRef,
-        })
+        const { ref: inputContainerRef, height = 0 } = useResizeObserver({ box: 'border-box' })
 
         return (
-            <div className={styles.container}>
-                {/* eslint-disable-next-line react/forbid-dom-props */}
-                <div className={styles.spacer} style={{ height: `${spacerHeight}px` }} />
-                <div className={styles.root}>
-                    <div ref={spacerRef} className={styles.focusContainer}>
-                        <div className={classNames(styles.modeSection, !!mode && styles.active)}>
-                            <Tooltip content="Recent searches">
-                                <Button variant="icon" onClick={toggleHistoryMode} aria-label="Open search history">
-                                    <Icon svgPath={mdiClockOutline} aria-hidden="true" />
-                                </Button>
-                            </Tooltip>
-                            {mode && <span className="ml-1">{mode}:</span>}
-                        </div>
-                        <div ref={editorContainerRef} className={styles.input} />
-                        {!mode && children}
-                    </div>
-                    <div ref={setSuggestionsContainer} className={styles.suggestions} />
+            <div
+                ref={inputContainerRef}
+                className={classNames(styles.container, className, {
+                    [styles.containerCompact]: visualMode === QueryInputVisualMode.Compact,
+                })}
+            >
+                <div className={styles.focusContainer}>
+                    <SearchModeSwitcher mode={mode} onModeChange={toggleHistoryMode} />
+                    <div ref={editorContainerRef} className={styles.input} />
+                    {!mode && children}
                 </div>
+                <div
+                    ref={setSuggestionsContainer}
+                    className={styles.suggestions}
+                    // eslint-disable-next-line react/forbid-dom-props
+                    style={{ paddingTop: height }}
+                />
                 <Shortcut ordered={['/']} onMatch={focus} />
             </div>
         )
     }
 )
+
+interface SearchModeSwitcherProps {
+    mode: string | null
+    className?: string
+    onModeChange: () => void
+}
+
+const SearchModeSwitcher: FC<SearchModeSwitcherProps> = props => {
+    const { mode, className, onModeChange } = props
+
+    return (
+        <div className={classNames(className, styles.mode, !!mode && styles.modeActive)}>
+            <Tooltip content="Recent searches">
+                <Button variant="icon" aria-label="Open search history" onClick={onModeChange}>
+                    <Icon svgPath={mdiClockOutline} aria-hidden="true" />
+                </Button>
+            </Tooltip>
+            {mode && <span className="ml-1">{mode}:</span>}
+        </div>
+    )
+}
+
+function useMutableValue<T>(value: T): MutableRefObject<T> {
+    const valueRef = useRef(value)
+
+    useEffect(() => {
+        valueRef.current = value
+    }, [value])
+
+    return valueRef
+}

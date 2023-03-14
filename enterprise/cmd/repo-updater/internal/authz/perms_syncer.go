@@ -37,11 +37,11 @@ import (
 
 // PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
 // It is not enabled if:
-//   - Permissions user mapping (aka explicit permissions API) is enabled
+//   - Permissions user mapping (aka explicit permissions API) is enabled and unified permissions model is not enabled
 //   - Not purchased with the current license
 //   - `disableAutoCodeHostSyncs` site setting is set to true
 func PermissionSyncingDisabled() bool {
-	return globals.PermissionsUserMapping().Enabled ||
+	return (globals.PermissionsUserMapping().Enabled && !conf.ExperimentalFeatures().UnifiedPermissions) ||
 		licensing.Check(licensing.FeatureACLs) != nil ||
 		conf.Get().DisableAutoCodeHostSyncs
 }
@@ -577,7 +577,7 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 	err := s.permsStore.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
 		UserID:            userID,
 		ExternalAccountID: acctID,
-	}, repoIDs)
+	}, repoIDs, authz.SourceUserSync)
 
 	if err != nil {
 		logger.Warn("saving perms to DB", log.Error(err))
@@ -824,7 +824,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	defer func() { err = txs.Done(err) }()
 
 	// write to new user_repo_permissions table by default
-	if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs)); err != nil {
+	if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
 		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
 	result, err = txs.SetRepoPermissions(ctx, p)
