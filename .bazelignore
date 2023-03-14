@@ -37,4 +37,6 @@ cmd/sitemap
 
 # temporary ignores
 internal/cmd/progress-bot
-client/cody
+client/cody/common/node_modules
+client/cody/server/node_modules
+client/cody/vscode-codegen/node_modules
