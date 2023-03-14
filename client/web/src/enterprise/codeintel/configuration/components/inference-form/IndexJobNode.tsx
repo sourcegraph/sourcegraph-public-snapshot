@@ -8,6 +8,7 @@ import { Button, Container, H3, H4, Icon, Input, Tooltip } from '@sourcegraph/wi
 import { CommandInput } from './CommandInput'
 import { IndexJobLabel } from './IndexJobLabel'
 import { InferenceArrayValue, InferenceFormJob, InferenceFormJobStep } from './types'
+import { sanitizeIndexer } from './util'
 
 import styles from './IndexJobNode.module.scss'
 
@@ -28,7 +29,9 @@ export const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({
 }) => (
     <>
         <div className={styles.jobHeader}>
-            <H3 className="mb-0">Job #{jobNumber}</H3>
+            <H3 className="mb-0">
+                Job #{jobNumber}: index {job.root} with {sanitizeIndexer(job.indexer)}
+            </H3>
             {!readOnly && (
                 <Button variant="icon" className="ml-2 text-danger" aria-label="Remove" onClick={onRemove}>
                     <Icon svgPath={mdiClose} aria-hidden={true} />
