@@ -1,5 +1,5 @@
 packages:
-  - "client/*"
-  - "client/cody/*"
-  - "schema"
-  - "dev/release"
+  - 'client/*'
+  - 'client/cody/*'
+  - 'schema'
+  - 'dev/release'
