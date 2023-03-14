@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/util"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Build keeps track of a buildkite.Build and it's associated jobs and pipeline.
@@ -61,7 +62,7 @@ const (
 func (b *Build) AddJob(j *Job) error {
 	stepName := j.GetName()
 	if stepName == "" {
-		return fmt.Errorf("job %q name is empty", j.GetID())
+		return errors.Newf("job %q name is empty", j.GetID())
 	}
 	step, ok := b.Steps[stepName]
 	// We don't know about this step, so it must be a new one

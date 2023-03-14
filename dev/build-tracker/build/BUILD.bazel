@@ -11,6 +11,8 @@ go_library(
     deps = [
         "//dev/build-tracker/notify",
         "//dev/build-tracker/util",
+        "//lib/errors",
+        "//dev/build-tracker/notify",
         "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_sourcegraph_log//:log",
     ],
