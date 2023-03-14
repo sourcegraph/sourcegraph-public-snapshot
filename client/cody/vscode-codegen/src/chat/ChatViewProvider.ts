@@ -70,7 +70,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private async findRgPath(): Promise<string> {
-        return getRgPath(this.extensionPath)
+        return await getRgPath(this.extensionPath)
     }
 
     private async onDidReceiveMessage(message: any, webview: vscode.Webview): Promise<void> {
@@ -152,15 +152,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private makeEmbeddingClient(): EmbeddingsClient | null {
-        if (this.codebase && this.accessToken && this.embeddingsEndpoint && this.contextType === 'embeddings') {
+        const useEmbeddings = this.contextType === 'embeddings' || this.contextType === 'blended'
+        if (this.codebase && this.accessToken && this.codebase) {
             const embeddingsClient = new EmbeddingsClient(this.embeddingsEndpoint, this.accessToken, this.codebase)
 
-            if (!embeddingsClient && this.contextType === 'embeddings') {
+            if (!embeddingsClient && useEmbeddings) {
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 vscode.window.showInformationMessage(
                     'Embeddings were not available (is `cody.codebase` set?), falling back to keyword context'
                 )
                 this.contextType = 'keyword'
+                return null
             }
 
             return embeddingsClient
@@ -372,7 +374,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         const nonce = getNonce()
 
         webviewView.webview.html = decoded
-            .replaceAll('/kodj/', `${resources.toString()}/`)
+            .replaceAll('./', `${resources.toString()}/`)
             .replace('/nonce/', nonce)
             .replace('/tos-version/', this.tosVersion.toString())
 
