@@ -120,3 +120,9 @@ See our [how-to guide](../how-tos/updating_a_batch_change.md#removing-changesets
 Unmerged changesets on repositories that have been archived on the code host will move into a *Read-Only* state, which reflects that they cannot be modified any further on the code host. Re-applying the batch change will result in no operations being performed on those changesets, even if they would otherwise be updated. The only exception is that changesets that would be [archived](#why-has-my-changeset-been-archived) due to the `on` statement or search results changing will still be archived.
 
 If the repository is unarchived, Batch Changes will move the changeset back into its previous state the next time Sourcegraph syncs the repository.
+
+### Why do I get different results counts when I run the same search query as a normal search vs. for my `repositoriesMatchingQuery` in a batch spec?
+
+By default, a normal Sorucegraph search will return the total number of _matches_ for a given query, counting matches in the same file or repository as separate results. However, when you use the search query in your batch spec, the results are grouped based on the repository (or "workspace", if you're [working with monorepos](../how-tos/creating_changesets_per_project_in_monorepos.md))  they belong to, giving you the total number of _repositories_ (or _workspaces_) that match the query. This is because Batch Changes produces one changeset for each matching repository (or workspace).
+
+So, if you have a search query that returns 10 results in a single repo, the batch spec will only return 1 result for that repo. This is the equivalent of supplying the `select:repo` aggregator parameter to your search query.
