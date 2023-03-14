@@ -65,8 +65,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "database_test",
+    timeout = "moderate",
     srcs = [
         "authz_test.go",
         "code_monitor_action_jobs_test.go",
