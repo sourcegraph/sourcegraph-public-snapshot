@@ -241,3 +241,5 @@
 
 /enterprise/internal/own/ @sourcegraph/own
 /client/web/src/repo/blob/own/ @sourcegraph/own
+/cmd/frontend/graphqlbackend/own* @sourcegraph/own
+/internal/usagestats/own.go @sourcegraph/own 
