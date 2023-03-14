@@ -2,7 +2,7 @@ import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { screenReaderAnnounce, ErrorAlert, Button } from '@sourcegraph/wildcard'
+import { screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { SaveToolbar, SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../../components/SaveToolbar'

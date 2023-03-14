@@ -177,7 +177,9 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
                         >
                             <option value="">All</option>
                             {roots.map(root => (
-                                <option value={root}>{root}</option>
+                                <option key={root} value={root}>
+                                    {root}
+                                </option>
                             ))}
                         </Select>
                     </span>
@@ -192,7 +194,9 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
                         >
                             <option value="">All</option>
                             {indexers.sort().map(indexer => (
-                                <option value={indexer}>{indexer}</option>
+                                <option key={indexer} value={indexer}>
+                                    {indexer}
+                                </option>
                             ))}
                         </Select>
                     </span>
