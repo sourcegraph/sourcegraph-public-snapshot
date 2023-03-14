@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "timeseries_test",
     srcs = [
         "frames_test.go",

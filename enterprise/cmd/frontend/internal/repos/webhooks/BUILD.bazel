@@ -27,6 +27,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "webhooks_test",
     srcs = ["handlers_test.go"],
     data = glob(["testdata/**"]),

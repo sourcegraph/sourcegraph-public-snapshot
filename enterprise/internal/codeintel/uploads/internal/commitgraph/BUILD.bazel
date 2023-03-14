@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "commitgraph_test",
     srcs = ["commit_graph_test.go"],
     data = glob(["testdata/**"]),

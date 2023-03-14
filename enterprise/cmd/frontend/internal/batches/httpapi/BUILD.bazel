@@ -26,6 +26,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "httpapi_test",
     srcs = ["file_handler_test.go"],
     tags = [

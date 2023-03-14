@@ -1,6 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
+    timeout = "short",
     name = "symbol_test",
     srcs = ["symbol_test.go"],
     deps = [

@@ -21,6 +21,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "azuredevops_test",
     srcs = ["provider_test.go"],
     embed = [":azuredevops"],

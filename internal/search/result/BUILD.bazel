@@ -35,6 +35,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "result_test",
     srcs = [
         "commit_diff_test.go",

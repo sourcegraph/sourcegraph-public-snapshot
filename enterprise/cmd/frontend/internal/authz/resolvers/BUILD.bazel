@@ -41,6 +41,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "resolvers_test",
     srcs = [
         "permissions_sync_jobs_test.go",

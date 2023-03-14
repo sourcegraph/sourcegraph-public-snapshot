@@ -21,6 +21,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "goroutine_test",
     srcs = [
         "background_test.go",

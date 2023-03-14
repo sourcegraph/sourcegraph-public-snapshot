@@ -21,6 +21,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "comby_test",
     srcs = [
         "comby_test.go",

@@ -29,6 +29,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "sysreq_test",
     srcs = ["sysreq_test.go"],
     embed = [":sysreq"],

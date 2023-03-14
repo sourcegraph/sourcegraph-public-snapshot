@@ -25,6 +25,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "alert_test",
     srcs = ["observer_test.go"],
     embed = [":alert"],

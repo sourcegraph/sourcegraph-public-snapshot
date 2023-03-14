@@ -8,6 +8,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "syncx_test",
     srcs = ["oncefunc_test.go"],
     deps = [":syncx"],

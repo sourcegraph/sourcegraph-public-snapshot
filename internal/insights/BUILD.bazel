@@ -18,6 +18,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "insights_test",
     srcs = ["insights_test.go"],
     embed = [":insights"],

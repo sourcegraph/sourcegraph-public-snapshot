@@ -33,6 +33,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "handlerutil_test",
     srcs = ["repo_test.go"],
     embed = [":handlerutil"],

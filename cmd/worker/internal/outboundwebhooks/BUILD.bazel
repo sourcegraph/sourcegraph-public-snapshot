@@ -37,6 +37,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "outboundwebhooks_test",
     srcs = ["handler_test.go"],
     embed = [":outboundwebhooks"],

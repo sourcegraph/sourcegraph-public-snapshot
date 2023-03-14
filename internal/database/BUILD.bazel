@@ -143,6 +143,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "database_test",
     srcs = [
         "access_requests_test.go",

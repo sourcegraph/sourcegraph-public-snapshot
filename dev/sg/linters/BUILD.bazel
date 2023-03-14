@@ -42,6 +42,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "linters_test",
     srcs = [
         "go_checks_test.go",

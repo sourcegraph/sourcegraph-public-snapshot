@@ -23,6 +23,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "subrepoperms_test",
     srcs = ["sub_repo_perms_test.go"],
     embed = [":subrepoperms"],
