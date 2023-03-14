@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { ForwardReferenceExoticComponent } from '../../../types'
+import { AnchorLink } from '../AnchorLink'
 
 export interface LinkProps
     extends Pick<
@@ -39,6 +40,10 @@ if (process.env.NODE_ENV !== 'production') {
     Link = React.forwardRef(() => {
         throw new Error('No Link component set. You must call setLinkComponent to set the Link component to use.')
     }) as typeof Link
+}
+
+if (process.env.JEST_WORKER_ID !== undefined) {
+    setLinkComponent(AnchorLink)
 }
 
 /**
