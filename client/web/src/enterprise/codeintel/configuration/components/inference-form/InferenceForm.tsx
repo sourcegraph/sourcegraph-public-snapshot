@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { mdiPlus } from '@mdi/js'
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
-import classNames from 'classnames'
 import { cloneDeep, uniqueId } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
