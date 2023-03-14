@@ -23,6 +23,7 @@ func TestCombine(t *testing.T) {
 	if err := os.WriteFile(setupPath, []byte(`#!/usr/bin/env bash
 
 set -ex
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 mkdir origin
 cd origin
