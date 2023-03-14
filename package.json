@@ -8,7 +8,7 @@
   },
   "engines": {
     "node": "^v16.18.1",
-    "pnpm": "^7.24.2"
+    "pnpm": "^7.28.0"
   },
   "scripts": {
     "deduplicate": "pnpm-deduplicate",
@@ -496,7 +496,7 @@
     "vscode-uri": "^3.0.7",
     "ws": "^8.11.0"
   },
-  "packageManager": "pnpm@7.24.2",
+  "packageManager": "pnpm@7.28.0",
   "pnpm": {
     "packageExtensions": {
       "cpu-features": {
