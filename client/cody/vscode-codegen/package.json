@@ -3,7 +3,7 @@
   "displayName": "Kodj",
   "version": "0.0.6",
   "publisher": "hpargecruos",
-  "license": "Enterprise",
+  "license": "Apache-2.0",
   "icon": "resources/cody.png",
   "description": "",
   "categories": [
