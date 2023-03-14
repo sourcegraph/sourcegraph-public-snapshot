@@ -4068,15 +4068,36 @@ Query: `sum by(app) (up{app=~".*(frontend|sourcegraph-frontend)"}) / count by (a
 
 ### Frontend: Search: Ranking
 
-#### frontend: percent_file_clicks_on_top_search_result
+#### frontend: total_search_clicks
 
-<p class="subtitle">Percent of file clicks on top search result over 6h</p>
+<p class="subtitle">Total number of search clicks over 6h</p>
 
-The percent of file clicks that were on the top search result, excluding searches with very few results (3 or fewer).
+The total number of search clicks across all search types over a 6 hour window.
 
 This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (ranked) (increase(src_search_ranking_result_clicked_count[6h]))`
+
+</details>
+
+<br />
+
+#### frontend: percent_file_clicks_on_top_search_result
+
+<p class="subtitle">Percent of file clicks on top search result over 6h</p>
+
+The percent of clicks that were on the top search result, excluding searches with very few results (3 or fewer).
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103001` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -4097,7 +4118,7 @@ The percent of file clicks that were on the first 3 search results, excluding se
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103002` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -4118,7 +4139,7 @@ The distribution of clicked search results by result type. At every point in tim
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103002` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103010` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -4139,7 +4160,7 @@ The percent of Zoekt searches that hit the flush time limit. These searches don`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103003` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103011` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 

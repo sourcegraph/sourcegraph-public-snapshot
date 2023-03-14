@@ -642,13 +642,22 @@ func Frontend() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
+							Name:           "total_search_clicks",
+							Description:    "total number of search clicks over 6h",
+							Query:          "sum by (ranked) (increase(src_search_ranking_result_clicked_count[6h]))",
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("ranked={{ranked}}"),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The total number of search clicks across all search types over a 6 hour window.",
+						},
+						{
 							Name:           "percent_file_clicks_on_top_search_result",
 							Description:    "percent of file clicks on top search result over 6h",
 							Query:          "sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le=\"1\",resultsLength=\">3\",type=\"fileMatch\"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count{type=\"fileMatch\"}[6h])) * 100",
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("ranked={{ranked}}").Unit(monitoring.Percentage),
 							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "The percent of file clicks that were on the top search result, excluding searches with very few results (3 or fewer).",
+							Interpretation: "The percent of clicks that were on the top search result, excluding searches with very few results (3 or fewer).",
 						},
 						{
 							Name:           "percent_file_clicks_on_top_3_search_results",
@@ -659,6 +668,7 @@ func Frontend() *monitoring.Dashboard {
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "The percent of file clicks that were on the first 3 search results, excluding searches with very few results (3 or fewer).",
 						},
+					}, {
 						{
 							Name:        "distribution_of_clicked_search_result_type_over_6h_in_percent",
 							Description: "distribution of clicked search result type over 6h",
