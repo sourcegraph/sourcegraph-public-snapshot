@@ -14031,6 +14031,197 @@ Query: `sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job
 
 <br />
 
+### Repo Updater: GRPC server metrics
+
+#### repo-updater: repo_updater_grpc_request_rate_all_methods
+
+<p class="subtitle">Request rate across all methods over 1m</p>
+
+The number of gRPC requests received per second across all methods, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100700` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(repo_updater_grpc_server_started_total{instance=~`${instance:regex}`}[1m]))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_grpc_request_rate_per_method
+
+<p class="subtitle">Request rate per-method over 1m</p>
+
+The number of gRPC requests received per second broken out per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100701` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(repo_updater_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method)`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_error_percentage_all_methods
+
+<p class="subtitle">Error percentage across all methods over 1m</p>
+
+The percentage of gRPC requests that fail across all methods, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100710` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ( (sum(rate(repo_updater_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[1m]))) / (sum(rate(repo_updater_grpc_server_handled_total{instance=~`${instance:regex}`}[1m]))) ))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_grpc_error_percentage_per_method
+
+<p class="subtitle">Error percentage per-method over 1m</p>
+
+The percentage of gRPC requests that fail per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100711` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ( (sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[1m])) by (grpc_method)) / (sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method)) ))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p99_response_time_per_method
+
+<p class="subtitle">99th percentile response time per method over 1m</p>
+
+The 99th percentile response time per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100720` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p90_response_time_per_method
+
+<p class="subtitle">90th percentile response time per method over 1m</p>
+
+The 90th percentile response time per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100721` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p75_response_time_per_method
+
+<p class="subtitle">75th percentile response time per method over 1m</p>
+
+The 75th percentile response time per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100722` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_grpc_response_stream_message_count_per_method
+
+<p class="subtitle">Average streaming response message count per-method over 1m</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100730` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `((sum(rate(repo_updater_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method))/(sum(rate(repo_updater_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method)))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_grpc_all_codes_per_method
+
+<p class="subtitle">Response codes rate per-method over 1m</p>
+
+The rate of all generated gRPC response codes per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100740` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, grpc_code)`
+
+</details>
+
+<br />
+
 ### Repo Updater: HTTP handlers
 
 #### repo-updater: healthy_request_rate
@@ -14041,7 +14232,7 @@ The number of healthy HTTP requests per second to internal HTTP api
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100700` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100800` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14062,7 +14253,7 @@ The number of unhealthy HTTP requests per second to internal HTTP api
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100701` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100801` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14083,7 +14274,7 @@ The number of HTTP requests per second by code
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100702` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100802` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14104,7 +14295,7 @@ The 95th percentile duration by route when the status code is 200
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100710` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100810` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14125,7 +14316,7 @@ The 95th percentile duration by route when the status code is not 200
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100711` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100811` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14146,7 +14337,7 @@ Query: `histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_buck
 
 Refer to the [alerts reference](./alerts.md#repo-updater-frontend-internal-api-error-responses) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100800` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100900` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14167,7 +14358,7 @@ Query: `sum by (category)(increase(src_frontend_internal_request_duration_second
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100900` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101000` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -14186,7 +14377,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="repo-upda
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100901` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101001` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -14205,7 +14396,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="repo-updater"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100910` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101010` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -14224,7 +14415,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="repo-update
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100911` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101011` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -14243,7 +14434,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="repo-updater"
 
 Refer to the [alerts reference](./alerts.md#repo-updater-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100920` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101020` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -14262,7 +14453,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100930` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101030` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -14281,7 +14472,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100931` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101031` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -14300,7 +14491,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100932` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101032` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -14331,7 +14522,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101000` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101100` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14350,7 +14541,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^repo-updater.*"}) 
 
 Refer to the [alerts reference](./alerts.md#repo-updater-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101101` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14369,7 +14560,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^repo-updater.*"}`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101002` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101102` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14391,7 +14582,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101003` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101103` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14412,7 +14603,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^repo-updater.*"}[1h]
 
 Refer to the [alerts reference](./alerts.md#repo-updater-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14431,7 +14622,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alerts reference](./alerts.md#repo-updater-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14450,7 +14641,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^r
 
 Refer to the [alerts reference](./alerts.md#repo-updater-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101210` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14469,7 +14660,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^repo
 
 Refer to the [alerts reference](./alerts.md#repo-updater-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101211` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14491,7 +14682,7 @@ When it occurs frequently, it is an indicator of underprovisioning.
 
 Refer to the [alerts reference](./alerts.md#repo-updater-container-oomkill-events-total) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101112` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101212` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14514,7 +14705,7 @@ A high value here indicates a possible goroutine leak.
 
 Refer to the [alerts reference](./alerts.md#repo-updater-go-goroutines) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14533,7 +14724,7 @@ Query: `max by(instance) (go_goroutines{job=~".*repo-updater"})`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-go-gc-duration-seconds) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101301` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -14554,7 +14745,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*repo-updater"})`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
