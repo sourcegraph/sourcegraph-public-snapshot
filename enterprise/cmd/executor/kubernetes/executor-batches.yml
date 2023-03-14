@@ -28,6 +28,8 @@ spec:
               value: batches
             - name: EXECUTOR_USE_FIRECRACKER
               value: "false"
+            - name: EXECUTOR_MAXIMUM_NUM_JOBS
+              value: "10"
           volumeMounts:
             - mountPath: /data
               name: executor-volume
