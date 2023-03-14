@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2064
+
 # INPUT ENVIRONMENT VARIABLES
 # - APPLE_DEV_ID_APPLICATION_CERT (optional) - path to the Apple Developer ID Application certificate file
 #   - defaults to /mnt/Apple-Developer-ID-Application.p12

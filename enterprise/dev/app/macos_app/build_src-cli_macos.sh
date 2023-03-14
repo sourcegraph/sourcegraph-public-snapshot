@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2064
+
 # build src-cli for macOS
 # since this is a Golang program, it can be built on any system,
 # but this approach requires building on macOS

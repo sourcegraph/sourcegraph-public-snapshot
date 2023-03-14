@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2064
+
 # INPUT ENVIRONMENT VARIABLES
 # - APPLE_APP_STORE_CONNECT_API_KEY_ID - App Store Connect API Key ID, for authenticating with the notarization service. Required.
 #   - comes from Secrets in CI

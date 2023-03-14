@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2064
+
 # INPUT ENVIRONMENT VARIABLES
 # - VERSION - required in order to find the binary on GCS; otherwsise optional
 #   - defaults to 0.0.0
@@ -39,6 +41,7 @@ trap "popd 1>/dev/null && rm -rf \"${tempdir}\"" EXIT
 
 # preserve the ability to run as part of the goreleaser process
 # goreleaser puts the path to the file in the "artifact" env var
+# shellcheck disable=SC2154
 binary_file_path=${artifact}
 
 # grab the binary file from GCS if not running in goreleaser

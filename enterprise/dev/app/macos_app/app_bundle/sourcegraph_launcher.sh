@@ -5,25 +5,27 @@ unset ZPID RPID UPID
 
 cleanup() {
   # App no longer uses the same syntax highlighter, but leave this in place in case it's brought back
-  [ ${RPID:-0} -gt 0 ] && {
+  [[ ${RPID:-0} -gt 0 ]] && {
     echo "$(date) CONTROL KILLING syntect_server process ${RPID}" | tee -a "${sgdir}/sourcegraph.log"
     kill "${RPID}"
   }
   # zoekt is not currently used, but if/when we bring it back, we'll kill its processes here
-  [ ${ZPID:-0} -gt 0 ] && {
+  [[ ${ZPID:-0} -gt 0 ]] && {
     echo "$(date) CONTROL KILLING zoekt process ${ZPID}" | tee -a "${sgdir}/sourcegraph.log"
     kill "${ZPID}"
   }
-  # [ ${UPID:-0} -gt 0 ] && {
+  # repo updater seems to be built in to the binary
+  # [[ ${UPID:-0} -gt 0 ]] && {
   #     echo "$(date) CONTROL KILLING repo-updater process ${UPID}" | tee -a "${sgdir}/sourcegraph.log"
   #     kill "${UPID}"
   # }
 
   # kill any ctags processes that were started
-  cpids=$(pgrep -f "${CTAGS_COMMAND}" | tr '\n' ' ')
-  [ -n "${cpids}" ] && {
-    echo "$(date) CONTROL KILLING ctags processes ${cpids}" | tee -a "${sgdir}/sourcegraph.log"
-    kill ${cpids}
+  # shellcheck disable=SC2207
+  cpids=($(pgrep -f "${CTAGS_COMMAND}"))
+  [ ${#cpids[@]} -gt 0 ] && {
+    echo "$(date) CONTROL KILLING ctags processes ${cpids[*]}" | tee -a "${sgdir}/sourcegraph.log"
+    kill "${cpids[@]}"
   }
 
   # manually shut down the embedded database when it exits
@@ -54,7 +56,7 @@ mkdir -p "${sgdir}"
 # do everything from inside the same directory as this shell script
 # TODO: because if I'm using the unpacked ui directory, it will be in here
 # and the process will be able to find it - it looks for './ui'
-cd "${DIR}" || exit
+cd "${DIR}" || exit 1
 
 # make sure all of the binaries in here are available on PATH
 export PATH="${DIR}:${PATH}"
