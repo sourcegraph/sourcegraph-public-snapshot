@@ -821,7 +821,6 @@ type User struct {
 	UpdatedAt             time.Time
 	SiteAdmin             bool
 	BuiltinAuth           bool
-	Tags                  []string
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	Searchable            bool

@@ -23904,19 +23904,6 @@
           "Comment": ""
         },
         {
-          "Name": "tags",
-          "Index": 15,
-          "TypeName": "text[]",
-          "IsNullable": true,
-          "Default": "'{}'::text[]",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "tos_accepted",
           "Index": 18,
           "TypeName": "boolean",

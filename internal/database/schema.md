@@ -3655,7 +3655,6 @@ Foreign-key constraints:
  site_admin              | boolean                  |           | not null | false
  page_views              | integer                  |           | not null | 0
  search_queries          | integer                  |           | not null | 0
- tags                    | text[]                   |           |          | '{}'::text[]
  billing_customer_id     | text                     |           |          | 
  invalidated_sessions_at | timestamp with time zone |           | not null | now()
  tos_accepted            | boolean                  |           | not null | false
