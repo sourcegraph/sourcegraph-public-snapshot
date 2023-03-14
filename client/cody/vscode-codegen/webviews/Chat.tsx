@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 
 import { Tips } from './Tips'
-import { DownArrowSvg, RightArrowSvg, SubmitSvg } from './utils/icons'
+import { SubmitSvg } from './utils/icons'
 import { WebviewMessage, vscodeAPI } from './utils/VSCodeApi'
 
 import './Chat.css'

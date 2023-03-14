@@ -1,12 +1,12 @@
 {
-	"extends": "../tsconfig.base.json",
-	"compilerOptions": {
-		"rootDir": "src",
-		"outDir": "out"
-	},
-	"references": [
-		{
-			"path": "../common"
-		}
-	]
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "out",
+  },
+  "references": [
+    {
+      "path": "../common",
+    },
+  ],
 }
