@@ -99,7 +99,7 @@ Read more on how to [manually ingest CODEOWNERS data](codeowners_ingestion.md) i
 
 The docs detail how to use the UI or `src-cli` to upload CODEOWNERS files to Sourcegraph.
 
-### Limitations
+## Limitations
 
 - Sourcegraph Own is being released as an MVP for 5.0. In the future of the product we intend to infer ownership beyond CODEOWNERS data.
 - The feature has not been fully validated to work well on large repositories or large CODEOWNERS rulesets. This is a future area of improvement, but please contact us if you run into issues.
