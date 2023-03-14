@@ -5409,7 +5409,7 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
     dependencies:
-      '@types/node': 13.13.5
+      '@types/node': 16.18.11
       playwright-core: 1.25.0
     dev: true
 
@@ -9025,7 +9025,7 @@ packages:
   /@types/sass/1.16.1:
     resolution: {integrity: sha512-iZUcRrGuz/Tbg3loODpW7vrQJkUtpY2fFSf4ELqqkApcS2TkZ1msk7ie8iZPB86lDOP8QOTTmuvWjc5S0R9OjQ==}
     dependencies:
-      '@types/node': 13.13.5
+      '@types/node': 16.18.11
     dev: true
 
   /@types/sass/1.43.1:
