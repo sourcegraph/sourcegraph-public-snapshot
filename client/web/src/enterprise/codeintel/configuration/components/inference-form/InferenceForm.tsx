@@ -3,10 +3,20 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { mdiPlus } from '@mdi/js'
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
+import classNames from 'classnames'
 import { cloneDeep, uniqueId } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
-import { BeforeUnloadPrompt, Button, Container, Form, Icon, LoadingSpinner, useDeepMemo } from '@sourcegraph/wildcard'
+import {
+    BeforeUnloadPrompt,
+    Button,
+    Container,
+    Form,
+    Icon,
+    LoadingSpinner,
+    Select,
+    useDeepMemo,
+} from '@sourcegraph/wildcard'
 
 import schema from '../../schema.json'
 import { ConfigurationInferButton } from '../ConfigurationInferButton'
@@ -14,6 +24,7 @@ import { ConfigurationInferButton } from '../ConfigurationInferButton'
 import { formDataToSchema } from './form-data-to-schema'
 import { IndexJobNode } from './IndexJobNode'
 import { InferenceFormData, InferenceFormJob, SchemaCompatibleInferenceFormData } from './types'
+import { sanitizeIndexer } from './util'
 
 import styles from './InferenceForm.module.scss'
 
@@ -142,11 +153,59 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
         }))
     }, [])
 
+    const [filter, setFilter] = useState({ root: '', indexer: '' })
+    const roots = [...new Set(formData.index_jobs.map(job => `/${job.root}`))].sort()
+    const indexers = [...new Set(formData.index_jobs.map(job => sanitizeIndexer(job.indexer)))]
+    const filteredJobs = formData.index_jobs.filter(
+        ({ root, indexer }: InferenceFormJob) =>
+            (filter.root === '' || filter.root === `/${root}`) &&
+            (filter.indexer === '' || filter.indexer === sanitizeIndexer(indexer))
+    )
+
     return (
         <>
             <BeforeUnloadPrompt when={isDirty} message="Discard changes?" />
+
             <Form onSubmit={handleSubmit}>
-                {formData.index_jobs.map((job, index) => (
+                <div className={styles.inputs}>
+                    <span className="p-2">
+                        <Select
+                            id="root"
+                            label="Filter by root"
+                            value={filter.root}
+                            labelVariant="block"
+                            onChange={event => setFilter({ ...filter, root: event.target.value })}
+                        >
+                            <option value="">All</option>
+                            {roots.map(root => (
+                                <option value={root}>{root}</option>
+                            ))}
+                        </Select>
+                    </span>
+
+                    <span className="p-2">
+                        <Select
+                            id="indexer"
+                            label="Filter by indexer"
+                            value={filter.indexer}
+                            labelVariant="block"
+                            onChange={event => setFilter({ ...filter, indexer: event.target.value })}
+                        >
+                            <option value="">All</option>
+                            {indexers.sort().map(indexer => (
+                                <option value={indexer}>{indexer}</option>
+                            ))}
+                        </Select>
+                    </span>
+                </div>
+
+                {filteredJobs.length < formData.index_jobs.length && (
+                    <div className="mb-4 px-4 text-muted">
+                        {formData.index_jobs.length} total jobs, showing only {filteredJobs.length} matching jobs.
+                    </div>
+                )}
+
+                {filteredJobs.map((job, index) => (
                     <Container id={job.meta.id} key={job.meta.id} className={styles.job}>
                         <IndexJobNode
                             job={job}
