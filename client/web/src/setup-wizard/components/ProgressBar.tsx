@@ -107,7 +107,7 @@ export const ProgressBar: FC<{}> = () => {
     }
 
     return (
-        <section className="d-flex align-items-center">
+        <section className={styles.root}>
             {statusMessage}
 
             {items.map(item => (
