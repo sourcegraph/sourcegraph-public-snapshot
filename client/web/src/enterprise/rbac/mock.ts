@@ -21,6 +21,27 @@ export const mockPermissions: AllPermissionsResult = {
                 action: 'READ',
                 displayName: 'BATCH_CHANGES#READ',
             },
+            {
+                __typename: 'Permission',
+                id: 'perm-3',
+                namespace: 'CODE_INSIGHTS' as PermissionNamespace,
+                action: 'READ',
+                displayName: 'CODE_INSIGHTS#READ',
+            },
+            {
+                __typename: 'Permission',
+                id: 'perm-4',
+                namespace: 'CODE_INSIGHTS' as PermissionNamespace,
+                action: 'WRITE',
+                displayName: 'CODE_INSIGHTS#WRITE',
+            },
+            {
+                __typename: 'Permission',
+                id: 'perm-5',
+                namespace: 'REPO_MANAGEMENT' as PermissionNamespace,
+                action: 'ADD',
+                displayName: 'REPO_MANAGEMENT#ADD',
+            },
         ],
     },
 }
