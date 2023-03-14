@@ -39,7 +39,12 @@ To define rulesets for codeownership, we make use of the CODEOWNERS format.
 
 ### The CODEOWNERS format
 
-Owners can be defined by a username/team name or an email address (for person owners). 
+`CODEOWNERS` files contain a sequence of matching rules - a glob pattern and zero or more owners. 
+A repository has at most one CODEOWNERS file. 
+
+#### Specifying Owner information 
+
+Owners can be defined by a username/team name or an email address. 
 
 Using email addresses is generally recommended, as email addresses are most likely the same across different platforms, and are independent of a user having registered yet. 
 In Sourcegraph, a user can add multiple email addresses to their profile. All of those would match to the same user.
@@ -48,9 +53,21 @@ For committed CODEOWNERS files, the usernames are usually the username **on the 
 This is a known limitation, and in the future we will provide ways to map external code host names to Sourcegraph users. 
 For now, you can search for a user by their code host username, or switch to using emails in the codeowners files, which will work across both Sourcegraph and the code host.
 
+#### File format
+
+The following snippet shows an example of a valid CODEOWNERS file. 
+
 ```
-TODO: DESCRIBE CODEOWNERS FORMAT HERE.
+*.txt @text-team
+/build/logs/ alice@sourcegraph.com 
+/cmd/**/test @qa-team @user
 ```
+
+- Asterisk * is a wildcard that matches any single token
+- Double ** asterisk matches any sub-path
+- Starting a pattern with / anchors matches at the repository root
+
+The rules are considered independently and in order. Rules farther down the file take precedence.
 
 #### Limitations
 
