@@ -13,8 +13,11 @@ NON_BUNDLED = [
     "node-fetch",
     "console",
 
+    # UMD modules
+    "jsonc-parser",
+
     # Dependencies with bundling issues
-    "jsonc-parser"
+    "@sourcegraph/build-config",
 ]
 
 # ... some of which are needed at runtime
