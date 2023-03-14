@@ -744,6 +744,14 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 	switch len(stored) {
 	case 2: // Existing repo with a naming conflict
+		// Scenario where this can happen:
+		// 1. Repo `owner/repo1` with external_id 1 exists
+		// 2. Repo `owner/repo2` with external_id 2 exists
+		// 3. The owner deletes repo1, and renames repo2 to repo1
+		// 4. We sync and we receive `owner/repo1` with external_id 2
+		//
+		// Then the above query will return two results: one matching the name owner/repo1, and one matching the external_service_id 2
+		// The original owner/repo1 should be deleted, and then owner/repo2 with the matching external_service_id should be updated
 		s.ObsvCtx.Logger.Debug("naming conflict")
 
 		// Pick this sourced repo to own the name by deleting the other repo. If it still exists, it'll have a different
