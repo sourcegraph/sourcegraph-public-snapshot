@@ -9,6 +9,9 @@ package database
 import (
 	"context"
 	"database/sql"
+	"sync"
+	"time"
+
 	uuid "github.com/google/uuid"
 	sqlf "github.com/keegancsmith/sqlf"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,8 +25,6 @@ import (
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 	schema "github.com/sourcegraph/sourcegraph/schema"
 	zoekt "github.com/sourcegraph/zoekt"
-	"sync"
-	"time"
 )
 
 // MockAccessRequestStore is a mock implementation of the AccessRequestStore
