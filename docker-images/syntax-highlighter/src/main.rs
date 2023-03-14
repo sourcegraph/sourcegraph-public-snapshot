@@ -50,6 +50,9 @@ fn not_found() -> JsonValue {
 
 #[launch]
 fn rocket() -> _ {
+    // force loading of all syntaxes
+    let _ = scip_treesitter_languages::parsers::BundledParser::Go.get_language();
+
     // Only list features if QUIET != "true"
     match std::env::var("QUIET") {
         Ok(v) if v == "true" => {}

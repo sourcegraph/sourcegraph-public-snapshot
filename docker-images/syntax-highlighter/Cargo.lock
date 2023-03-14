@@ -1674,6 +1674,7 @@ dependencies = [
  "rocket",
  "rustyline",
  "scip",
+ "scip-treesitter-languages",
  "serde",
  "serde_json",
  "sg-syntax",

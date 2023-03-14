@@ -18,6 +18,7 @@ syntect.workspace = true
 rustyline = "9.1.2"
 
 sg-syntax = { path = "./crates/sg-syntax" }
+scip-treesitter-languages = { path = "./crates/scip-treesitter-languages" }
 
 [workspace]
 members = [
