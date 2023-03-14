@@ -149,7 +149,7 @@ func (c *client) Ping(ctx context.Context) error {
 		return errors.Wrap(err, "creating request")
 	}
 
-	err = c.do(ctx, req, nil)
+	err, _ = c.do(ctx, req, nil)
 	if err != nil && !errcode.IsNotFound(err) {
 		return err
 	}
@@ -196,7 +196,7 @@ func (c *client) reqPage(ctx context.Context, url string, results any) (*PageTok
 	}
 
 	var next PageToken
-	err = c.do(ctx, req, &struct {
+	err, _ = c.do(ctx, req, &struct {
 		*PageToken
 		Values any `json:"values"`
 	}{
@@ -211,7 +211,7 @@ func (c *client) reqPage(ctx context.Context, url string, results any) (*PageTok
 	return &next, nil
 }
 
-func (c *client) do(ctx context.Context, req *http.Request, result any) error {
+func (c *client) do(ctx context.Context, req *http.Request, result any) (err error, code int) {
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// If the request doesn't expect a body, then including a content-type can
@@ -245,11 +245,12 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 	sleepTime := 10 * time.Second
 	for {
 		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
+		code = resp.StatusCode
 		if err != nil {
-			return err
+			return err, code
 		}
 
-		if resp.StatusCode != http.StatusTooManyRequests {
+		if code != http.StatusTooManyRequests {
 			break
 		}
 
@@ -265,22 +266,22 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return err, code
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+	if code < 200 || code >= 400 {
 		return errors.WithStack(&httpError{
 			URL:        req.URL,
-			StatusCode: resp.StatusCode,
+			StatusCode: code,
 			Body:       string(bs),
-		})
+		}), code
 	}
 
 	if result != nil {
-		return json.Unmarshal(bs, result)
+		return json.Unmarshal(bs, result), code
 	}
 
-	return nil
+	return nil, code
 }
 
 type PageToken struct {
