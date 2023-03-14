@@ -31,7 +31,7 @@ func NewConnectionCache(l log.Logger) *ConnectionCache {
 		ttlcache.WithExpirationFunc[string, connAndError](closeGRPCConnection),
 
 		ttlcache.WithReapInterval[string, connAndError](1 * time.Minute),
-		ttlcache.WithExpirationTime[string, connAndError](10 * time.Minute),
+		ttlcache.WithTTL[string, connAndError](10 * time.Minute),
 
 		ttlcache.WithLogger[string, connAndError](l),
 

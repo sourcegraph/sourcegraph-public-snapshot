@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
+	iauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,7 +22,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	VerifiedEmail *bool
 }) (*createUserResult, error) {
 	// 🚨 SECURITY: Only site admins can create user accounts.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := iauth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -109,33 +109,9 @@ type createUserResult struct {
 
 func (r *createUserResult) User() *UserResolver { return NewUserResolver(r.db, r.user) }
 
-// This method modifies the DB when it generates reset URLs, which is somewhat
+// ResetPasswordURL modifies the DB when it generates reset URLs, which is somewhat
 // counterintuitive for a "value" type from an implementation POV. Its behavior is
 // justified because it is convenient and intuitive from the POV of the API consumer.
 func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error) {
-	if !userpasswd.ResetPasswordEnabled() {
-		return nil, nil
-	}
-
-	if r.email != "" && conf.CanSendEmail() {
-		// HandleSetPasswordEmail will send a special password reset email that also
-		// verifies the primary email address.
-		ru, err := userpasswd.HandleSetPasswordEmail(ctx, r.db, r.user.ID, r.user.Username, r.email, r.emailVerified)
-		if err != nil {
-			msg := "failed to send set password email"
-			r.logger.Error(msg, log.Error(err))
-			return nil, errors.Wrap(err, msg)
-		}
-		return &ru, nil
-	}
-
-	resetURL, err := backend.MakePasswordResetURL(ctx, r.db, r.user.ID)
-	if err != nil {
-		msg := "failed to generate reset URL"
-		r.logger.Error(msg, log.Error(err))
-		return nil, errors.Wrap(err, msg)
-	}
-
-	ru := globals.ExternalURL().ResolveReference(resetURL).String()
-	return &ru, nil
+	return auth.ResetPasswordURL(ctx, r.db, r.logger, r.user, r.email, r.emailVerified)
 }

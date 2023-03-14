@@ -1,6 +1,7 @@
 package highlight
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/grafana/regexp"
@@ -72,6 +73,56 @@ func TestGetLanguageFromConfig(t *testing.T) {
 
 		if language != testCase.Expected {
 			t.Fatalf("Got: %s, Expected: %s", testCase.Expected, language)
+		}
+	}
+}
+
+func TestShebagn(t *testing.T) {
+	type testCase struct {
+		Contents string
+		Expected string
+	}
+
+	cases := []testCase{
+		{
+			Contents: "#!/usr/bin/env python",
+			Expected: "python",
+		},
+		{
+			Contents: "#!/usr/bin/env node",
+			Expected: "javascript",
+		},
+		{
+			Contents: "#!/usr/bin/env ruby",
+			Expected: "ruby",
+		},
+		{
+			Contents: "#!/usr/bin/env perl",
+			Expected: "perl",
+		},
+		{
+			Contents: "#!/usr/bin/env php",
+			Expected: "php",
+		},
+		{
+			Contents: "#!/usr/bin/env lua",
+			Expected: "lua",
+		},
+		{
+			Contents: "#!/usr/bin/env tclsh",
+			Expected: "tcl",
+		},
+		{
+			Contents: "#!/usr/bin/env fish",
+			Expected: "fish",
+		},
+	}
+
+	for _, testCase := range cases {
+		language, _ := getLanguage("", testCase.Contents)
+		language = strings.ToLower(language)
+		if language != testCase.Expected {
+			t.Fatalf("%s\nGot: %s, Expected: %s", testCase.Contents, testCase.Expected, language)
 		}
 	}
 }

@@ -111,7 +111,9 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "READ",
-    "RepositoryTopics": {},
+    "RepositoryTopics": {
+     "Nodes": []
+    },
     "StargazerCount": 265043,
     "ForkCount": 21462
    },

@@ -16,8 +16,8 @@ type Cache[K comparable, V any] struct {
 	reapContext    context.Context    // reapContext is the context used for the background reaper.
 	reapCancelFunc context.CancelFunc // reapCancelFunc is the cancel function for reapContext.
 
-	reapInterval   time.Duration // reapInterval is the interval at which the cache will reap expired entries.
-	expirationTime time.Duration // expirationTime is the expiration time for entries in the cache.
+	reapInterval time.Duration // reapInterval is the interval at which the cache will reap expired entries.
+	ttl          time.Duration // ttl is the expiration duration for entries in the cache.
 
 	newEntryFunc   func(K) V  // newEntryFunc is the routine that runs when a cache miss occurs.
 	expirationFunc func(K, V) // expirationFunc is the callback to be called when an entry expires in the cache.
@@ -51,8 +51,8 @@ func New[K comparable, V any](newEntryFunc func(K) V, options ...Option[K, V]) *
 		reapContext:    ctx,
 		reapCancelFunc: cancel,
 
-		reapInterval:   1 * time.Minute,
-		expirationTime: 10 * time.Minute,
+		reapInterval: 1 * time.Minute,
+		ttl:          10 * time.Minute,
 
 		newEntryFunc:   newEntryFunc,
 		expirationFunc: func(k K, v V) {},
@@ -83,10 +83,14 @@ func WithReapInterval[K comparable, V any](interval time.Duration) Option[K, V] 
 	}
 }
 
-// WithExpirationTime sets the expiration time for entries in the cache.
-func WithExpirationTime[K comparable, V any](expiration time.Duration) Option[K, V] {
+// WithTTL sets the expiration duration for entries in the cache.
+//
+// On each key access via Get(), the entry's expiration time is reset to now() + ttl.
+//
+// If the entry is not accessed before it expires, the reaper background goroutine will remove it from the cache.
+func WithTTL[K comparable, V any](ttl time.Duration) Option[K, V] {
 	return func(c *Cache[K, V]) {
-		c.expirationTime = expiration
+		c.ttl = ttl
 	}
 }
 
@@ -163,7 +167,7 @@ func (c *Cache[K, V]) Get(key K) V {
 }
 
 // StartReaper starts the reaper goroutine. Every reapInterval, the reaper will
-// remove entries that have not been accessed since expirationTime.
+// remove entries that have not been accessed since now() - ttl.
 //
 // shutdown can be called to stop the reaper. After shutdown is called, the
 // reaper will not be restarted.
@@ -171,14 +175,17 @@ func (c *Cache[K, V]) StartReaper() {
 	c.reapOnce.Do(func() {
 		c.logger.Info("starting reaper",
 			log.Duration("reapInterval", c.reapInterval),
-			log.Duration("expirationTime", c.expirationTime))
+			log.Duration("ttl", c.ttl))
 
 		go func() {
+			ticker := time.NewTicker(c.reapInterval)
+			defer ticker.Stop()
+
 			for {
 				select {
 				case <-c.reapContext.Done():
 					return
-				case <-time.After(c.reapInterval):
+				case <-ticker.C:
 					c.reap()
 				}
 			}
@@ -186,11 +193,11 @@ func (c *Cache[K, V]) StartReaper() {
 	})
 }
 
-// reap removes all entries that have not been accessed since expirationTime, and calls
+// reap removes all entries that have not been accessed since ttl, and calls
 // the expirationFunc for each entry that is removed.
 func (c *Cache[K, V]) reap() {
 	now := c.clock.Now()
-	earliestAllowed := now.Add(-c.expirationTime)
+	earliestAllowed := now.Add(-c.ttl)
 
 	getExpiredEntries := func() map[K]V {
 		expired := make(map[K]V)

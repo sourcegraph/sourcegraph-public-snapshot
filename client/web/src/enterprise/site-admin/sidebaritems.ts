@@ -35,6 +35,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code Insights jobs',
             to: '/site-admin/code-insights-jobs',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }

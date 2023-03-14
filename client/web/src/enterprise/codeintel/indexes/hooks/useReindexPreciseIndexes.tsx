@@ -19,10 +19,17 @@ const REINDEX_PRECISE_INDEXES = gql`
     mutation ReindexPreciseIndexes(
         $query: String
         $states: [PreciseIndexState!]
+        $indexerKey: String
         $repo: ID
         $isLatestForRepo: Boolean
     ) {
-        reindexPreciseIndexes(query: $query, states: $states, repository: $repo, isLatestForRepo: $isLatestForRepo) {
+        reindexPreciseIndexes(
+            query: $query
+            states: $states
+            indexerKey: $indexerKey
+            repository: $repo
+            isLatestForRepo: $isLatestForRepo
+        ) {
             alwaysNil
         }
     }
@@ -42,6 +49,7 @@ export const useReindexPreciseIndexes = (): UseReindexPreciseIndexesResult => {
                 repo: options?.variables?.repo ?? null,
                 query: options?.variables?.query ?? null,
                 states: options?.variables?.states ?? null,
+                indexerKey: options?.variables?.indexerKey ?? null,
                 isLatestForRepo: options?.variables?.isLatestForRepo ?? null,
             }
 

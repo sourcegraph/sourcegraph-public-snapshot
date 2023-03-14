@@ -29,7 +29,7 @@ const permissionFragment = gql`
     }
 `
 
-const roleFragment = gql`
+export const roleFragment = gql`
     fragment RoleFields on Role {
         __typename
         id
