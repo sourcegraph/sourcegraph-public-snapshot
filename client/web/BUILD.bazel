@@ -1715,7 +1715,7 @@ ts_project(
         "src/enterprise/code-monitoring/components/actions/EmailAction.test.tsx",
         "src/enterprise/code-monitoring/components/actions/SlackWebhookAction.test.tsx",
         "src/enterprise/code-monitoring/components/actions/WebhookAction.test.tsx",
-        "src/enterprise/codeintel/configuration/components/inference-form/auto-index-to-schema.test.ts",
+        "src/enterprise/codeintel/configuration/components/inference-form/auto-index-to-schema.test.tsx",
         "src/enterprise/insights/components/creation-ui/code-insight-time-step-picker/get-interval-descrtiption-text/get-interval-description.text.test.ts",
         "src/enterprise/insights/hooks/use-parallel-requests/use-prallel-requests.test.ts",
         "src/enterprise/insights/pages/CodeInsightsRootPage.test.tsx",
