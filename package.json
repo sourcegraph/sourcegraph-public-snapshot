@@ -8,10 +8,9 @@
   },
   "engines": {
     "node": "^v16.18.1",
-    "pnpm": "^7.24.2"
+    "pnpm": "^7.28.0"
   },
   "scripts": {
-    "deduplicate": "pnpm-deduplicate",
     "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write",
     "format:changed": "prettier $(git diff --diff-filter=d --name-only origin/main... && git ls-files --other --modified --exclude-standard | grep -E '\\.(js|json|ts|tsx|graphql|md|scss)$' | xargs) --write --list-different --config prettier.config.js",
     "format:check": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --config prettier.config.js --check --write=false",
@@ -57,6 +56,7 @@
     "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\"",
     "build-vsce": "pnpm --filter @sourcegraph/vscode run build",
     "watch-vsce": "pnpm --filter @sourcegraph/vscode run watch",
+    "watch-cody": "pnpm --filter kodj run watch",
     "postinstall": "set-project-references --save && pnpm run format:tsconfig",
     "postuninstall": "set-project-references --save && pnpm run format:tsconfig"
   },
@@ -330,7 +330,17 @@
     "wildcard-mock-link": "^2.0.1",
     "worker-loader": "^3.0.8",
     "yaml": "^2.2.1",
-    "yauzl": "^2.10.0"
+    "yauzl": "^2.10.0",
+    "concurrently": "^7.6.0",
+    "@types/stopword": "^2.0.0",
+    "@types/stream-json": "^1.7.3",
+    "@types/ws": "^8.5.3",
+    "@vscode/vsce": "^2.18.0",
+    "@vitejs/plugin-react": "^3.1.0",
+    "vite": "^4.1.4",
+    "nodemon": "^2.0.20",
+    "@types/body-parser": "^1.19.2",
+    "@types/google-spreadsheet": "^3.3.1"
   },
   "dependencies": {
     "@apollo/client": "^3.8.0-alpha.7",
@@ -477,9 +487,14 @@
     "webext-domain-permission-toggle": "^1.0.1",
     "webextension-polyfill": "^0.6.0",
     "yaml-ast-parser": "^0.0.43",
-    "zustand": "^3.6.9"
+    "zustand": "^3.6.9",
+    "isomorphic-ws": "^5.0.0",
+    "stopword": "^2.0.7",
+    "stream-json": "^1.7.5",
+    "vscode-uri": "^3.0.7",
+    "ws": "^8.11.0"
   },
-  "packageManager": "pnpm@7.24.2",
+  "packageManager": "pnpm@7.28.0",
   "pnpm": {
     "packageExtensions": {
       "cpu-features": {
