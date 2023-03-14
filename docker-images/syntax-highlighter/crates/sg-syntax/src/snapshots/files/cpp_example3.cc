@@ -179,3 +179,22 @@ public:
     // Overridden virtual method
     void greeting() override;
 };
+
+// Attributes
+[[my_attribute]]
+struct my_attribute {
+    int value;
+};
+
+namespace std {
+    template <>
+    struct has_attribute<my_attribute> : true_type { };
+}
+
+void attributes() {
+    [[my_attribute(5)]] int data;
+    if (has_attribute<my_attribute>(myData)) {
+        // data has the my_attribute attribute
+    }
+}
+}

@@ -218,7 +218,7 @@ expression: "dump_document(&document, &contents)"
 //                                      ^^^^^^^ Identifier 
 //                                                 ^^^^^^^ Identifier 
 //                                                            ^^^^^^^ Identifier 
-    
+  
     static_assert(N <= 32); // C++17 extension
 //  ^^^^^^^^^^^^^ IdentifierBuiltin 
 //                ^ Identifier 
@@ -249,13 +249,25 @@ expression: "dump_document(&document, &contents)"
   public:
 //^^^^^^ Keyword 
     [[nodiscard]] bool empty() const { return Vector.empty(); }
-//    ^^^^^^^^^ Identifier 
+//    ^^^^^^^^^ IdentifierAttribute 
 //                ^^^^ IdentifierBuiltinType 
 //                     ^^^^^ IdentifierFunction 
 //                             ^^^^^ Keyword 
 //                                     ^^^^^^ Keyword 
 //                                            ^^^^^^ Identifier 
 //                                                   ^^^^^ IdentifierFunction 
+    [[nodiscard("PURE FUN")]] int strategic_value(int x, int y) { return x^y; }
+//    ^^^^^^^^^ IdentifierAttribute 
+//              ^^^^^^^^^^ StringLiteral 
+//                            ^^^ IdentifierBuiltinType 
+//                                ^^^^^^^^^^^^^^^ IdentifierFunction 
+//                                                ^^^ IdentifierBuiltinType 
+//                                                    ^ Identifier 
+//                                                       ^^^ IdentifierBuiltinType 
+//                                                           ^ Identifier 
+//                                                                ^^^^^^ Keyword 
+//                                                                       ^ Identifier 
+//                                                                         ^ Identifier 
   
     std::pair<const_iterator, bool> insert(const T &V) {
 //  ^^^ IdentifierNamespace 

@@ -605,4 +605,47 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^ IdentifierBuiltinType 
 //         ^^^^^^^^ IdentifierFunction 
   };
+  
+  // Attributes
+//^^^^^^^^^^^^^ Comment 
+  [[my_attribute]]
+//  ^^^^^^^^^^^^ IdentifierAttribute 
+  struct my_attribute {
+//^^^^^^ Keyword 
+//       ^^^^^^^^^^^^ IdentifierType 
+      int value;
+//    ^^^ IdentifierBuiltinType 
+//        ^^^^^ IdentifierAttribute 
+  };
+  
+  namespace std {
+//^^^^^^^^^ Keyword 
+//          ^^^ Identifier 
+      template <>
+//    ^^^^^^^^ Keyword 
+      struct has_attribute<my_attribute> : true_type { };
+//    ^^^^^^ Keyword 
+//           ^^^^^^^^^^^^^ IdentifierType 
+//                         ^^^^^^^^^^^^ IdentifierType 
+//                                         ^^^^^^^^^ IdentifierType 
+  }
+  
+  void attributes() {
+//^^^^ IdentifierBuiltinType 
+//     ^^^^^^^^^^ IdentifierFunction 
+      [[my_attribute(5)]] int data;
+//      ^^^^^^^^^^^^ IdentifierAttribute 
+//                   ^ NumericLiteral 
+//                        ^^^ IdentifierBuiltinType 
+//                            ^^^^ Identifier 
+      if (has_attribute<my_attribute>(myData)) {
+//    ^^ Keyword 
+//        ^^^^^^^^^^^^^ Identifier 
+//                      ^^^^^^^^^^^^ IdentifierType 
+//                                    ^^^^^^ Identifier 
+          // data has the my_attribute attribute
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      }
+  }
+  }
 

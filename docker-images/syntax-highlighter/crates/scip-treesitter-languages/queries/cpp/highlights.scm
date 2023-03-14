@@ -22,6 +22,7 @@
 (preproc_function_def
   name: (identifier) @identifier.function)
 
+(attribute name: (identifier) @identifier.attribute)
 (field_identifier) @identifier.attribute
 (statement_identifier) @identifier.attribute
 (type_identifier) @type

@@ -66,7 +66,7 @@ public:
   }
 
   const T &operator*() const { return isSmall ? *VecIter : *SetIter; }
-  
+
   static_assert(N <= 32); // C++17 extension
   static_assert(N <= 32, "N should be small");
 };
@@ -77,6 +77,7 @@ class SmallSet {
 
 public:
   [[nodiscard]] bool empty() const { return Vector.empty(); }
+  [[nodiscard("PURE FUN")]] int strategic_value(int x, int y) { return x^y; }
 
   std::pair<const_iterator, bool> insert(const T &V) {
     if (!isSmall()) {
