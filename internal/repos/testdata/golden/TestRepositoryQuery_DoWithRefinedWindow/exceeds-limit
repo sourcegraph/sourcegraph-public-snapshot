@@ -278,7 +278,7 @@
     "IsDisabled": false,
     "ViewerPermission": "READ",
     "RepositoryTopics": {
-     "Nodes": null
+     "Nodes": []
     },
     "StargazerCount": 10059,
     "ForkCount": 1309
@@ -299,7 +299,7 @@
     "IsDisabled": false,
     "ViewerPermission": "READ",
     "RepositoryTopics": {
-     "Nodes": null
+     "Nodes": []
     },
     "StargazerCount": 10054,
     "ForkCount": 1304
@@ -471,7 +471,7 @@
     "IsDisabled": false,
     "ViewerPermission": "READ",
     "RepositoryTopics": {
-     "Nodes": null
+     "Nodes": []
     },
     "StargazerCount": 10029,
     "ForkCount": 874
@@ -594,7 +594,7 @@
     "IsDisabled": false,
     "ViewerPermission": "READ",
     "RepositoryTopics": {
-     "Nodes": null
+     "Nodes": []
     },
     "StargazerCount": 10021,
     "ForkCount": 719
@@ -615,7 +615,7 @@
     "IsDisabled": false,
     "ViewerPermission": "READ",
     "RepositoryTopics": {
-     "Nodes": null
+     "Nodes": []
     },
     "StargazerCount": 10017,
     "ForkCount": 1180
@@ -688,7 +688,7 @@
     "IsDisabled": false,
     "ViewerPermission": "READ",
     "RepositoryTopics": {
-     "Nodes": null
+     "Nodes": []
     },
     "StargazerCount": 10008,
     "ForkCount": 1120
@@ -1103,7 +1103,7 @@
     "IsDisabled": false,
     "ViewerPermission": "READ",
     "RepositoryTopics": {
-     "Nodes": null
+     "Nodes": []
     },
     "StargazerCount": 10019,
     "ForkCount": 2243
@@ -1181,7 +1181,7 @@
     "IsDisabled": false,
     "ViewerPermission": "READ",
     "RepositoryTopics": {
-     "Nodes": null
+     "Nodes": []
     },
     "StargazerCount": 10013,
     "ForkCount": 2331
@@ -1487,7 +1487,7 @@
     "IsDisabled": false,
     "ViewerPermission": "READ",
     "RepositoryTopics": {
-     "Nodes": null
+     "Nodes": []
     },
     "StargazerCount": 10086,
     "ForkCount": 529
@@ -1508,7 +1508,7 @@
     "IsDisabled": false,
     "ViewerPermission": "READ",
     "RepositoryTopics": {
-     "Nodes": null
+     "Nodes": []
     },
     "StargazerCount": 10057,
     "ForkCount": 661
@@ -1633,7 +1633,7 @@
     "IsDisabled": false,
     "ViewerPermission": "READ",
     "RepositoryTopics": {
-     "Nodes": null
+     "Nodes": []
     },
     "StargazerCount": 10036,
     "ForkCount": 531
