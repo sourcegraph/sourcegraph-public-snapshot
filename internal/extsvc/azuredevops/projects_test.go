@@ -22,7 +22,7 @@ func TestClient_GetProject(t *testing.T) {
 // To update this test run:
 //  1. Set the env AZURE_DEV_OPS_USERNAME and AZURE_DEV_OPS_TOKEN (the secrets can be found in 1Password if you search for Azure test credentials)
 //  2. Run the test with the -update flag:
-//     `go test -run='TestClient_ListAuthorizedUserOrganizations' -update=true`
+//     `go test -run='TestClient_ListAuthorizedUserProjects' -update=true`
 func TestClient_ListAuthorizedUserProjects(t *testing.T) {
 	client, save := NewTestClient(
 		t,
