@@ -108,7 +108,13 @@ local custom_recognizer = recognizer.new_path_recognizer {
 }
 
 return require("sg.autoindex.config").new({
-	["sg.test"] = false,
+	-- ["sg.clang"] = false,
+	-- ["sg.go"] = false,
+	-- ["sg.java"] = false,
+	-- ["sg.python"] = false,
+	-- ["sg.ruby"] = false,
+	-- ["sg.rust"] = false,
+	-- ["sg.typescript"] = false,
 	["acme.custom"] = custom_recognizer,
 })
 `
