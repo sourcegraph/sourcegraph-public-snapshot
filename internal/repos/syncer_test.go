@@ -1400,7 +1400,6 @@ func TestDotComPrivateReposDontSync(t *testing.T) {
 var basicGitHubConfig = `{"url": "https://github.com", "token": "beef", "repos": ["owner/name"]}`
 
 func TestConflictingSyncers(t *testing.T) {
-	t.Parallel()
 	store := getTestRepoStore(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
