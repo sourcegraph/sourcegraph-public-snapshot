@@ -25,10 +25,12 @@ As an experimental feature, Sourcegraph Own is disabled by default. If you like 
 
 **Owner**: An owner is defined as a person or a team in Sourcegraph.
 
-A person can be ...
+A __person__ can be:
+- a Sourcegraph user which we were able to resolve from the `CODEOWNERS` handle or email, in which case we link to their profile.
+- an unknown user for which we were unable to resolve a profile, in which case we will return the `CODEOWNERS` data we have.
 
-A team is ... 
-For team owners, we added a new feature to [manage teams in Sourcegraph](../admin/teams). See the docs on how to set them up.
+A __team__ is a group of Sourcegraph users represented by a common handle, which is a new feature that we added. 
+[Read more about how to manage teams in Sourcegraph](../admin/teams).
 
 ## Code ownership
 
