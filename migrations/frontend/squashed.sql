@@ -2635,6 +2635,11 @@ CREATE TABLE lsif_uploads (
     last_reconcile_at timestamp with time zone,
     content_type text DEFAULT 'application/x-ndjson+lsif'::text NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
+    sanitized_indexer text GENERATED ALWAYS AS (split_part(split_part(
+CASE
+    WHEN (strpos(indexer, 'sourcegraph/'::text) = 1) THEN substr(indexer, (length('sourcegraph/'::text) + 1))
+    ELSE indexer
+END, '@'::text, 1), ':'::text, 1)) STORED,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2781,6 +2786,11 @@ CREATE TABLE lsif_indexes (
     cancel boolean DEFAULT false NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
     requested_envvars text[],
+    sanitized_indexer text GENERATED ALWAYS AS (split_part(split_part(
+CASE
+    WHEN (strpos(indexer, 'sourcegraph/'::text) = 1) THEN substr(indexer, (length('sourcegraph/'::text) + 1))
+    ELSE indexer
+END, '@'::text, 1), ':'::text, 1)) STORED,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 

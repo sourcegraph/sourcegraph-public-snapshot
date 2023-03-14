@@ -1895,8 +1895,8 @@ Stores the configuration used for code intel index jobs for a repository.
 
 # Table "public.lsif_indexes"
 ```
-         Column         |           Type           | Collation | Nullable |                 Default                  
-------------------------+--------------------------+-----------+----------+------------------------------------------
+         Column         |           Type           | Collation | Nullable |                                                                                                          Default                                                                                                          
+------------------------+--------------------------+-----------+----------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  id                     | bigint                   |           | not null | nextval('lsif_indexes_id_seq'::regclass)
  commit                 | text                     |           | not null | 
  queued_at              | timestamp with time zone |           | not null | now()
@@ -1922,6 +1922,11 @@ Stores the configuration used for code intel index jobs for a repository.
  cancel                 | boolean                  |           | not null | false
  should_reindex         | boolean                  |           | not null | false
  requested_envvars      | text[]                   |           |          | 
+ sanitized_indexer      | text                     |           |          | generated always as (split_part(split_part(
+CASE
+    WHEN (strpos(indexer, 'sourcegraph/'::text) = 1) THEN substr(indexer, (length('sourcegraph/'::text) + 1))
+    ELSE indexer
+END, '@'::text, 1), ':'::text, 1)) stored
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
@@ -2110,8 +2115,8 @@ Stores the retention policy of code intellience data for a repository.
 
 # Table "public.lsif_uploads"
 ```
-         Column          |           Type           | Collation | Nullable |                Default                 
--------------------------+--------------------------+-----------+----------+----------------------------------------
+         Column          |           Type           | Collation | Nullable |                                                                                                          Default                                                                                                          
+-------------------------+--------------------------+-----------+----------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  id                      | integer                  |           | not null | nextval('lsif_dumps_id_seq'::regclass)
  commit                  | text                     |           | not null | 
  root                    | text                     |           | not null | ''::text
@@ -2147,6 +2152,11 @@ Stores the retention policy of code intellience data for a repository.
  last_reconcile_at       | timestamp with time zone |           |          | 
  content_type            | text                     |           | not null | 'application/x-ndjson+lsif'::text
  should_reindex          | boolean                  |           | not null | false
+ sanitized_indexer       | text                     |           |          | generated always as (split_part(split_part(
+CASE
+    WHEN (strpos(indexer, 'sourcegraph/'::text) = 1) THEN substr(indexer, (length('sourcegraph/'::text) + 1))
+    ELSE indexer
+END, '@'::text, 1), ':'::text, 1)) stored
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text

@@ -828,7 +828,7 @@ WITH ranked_completed AS (
 		u.root,
 		u.indexer,
 		u.finished_at,
-		RANK() OVER (PARTITION BY root, indexer ORDER BY finished_at DESC) AS rank
+		RANK() OVER (PARTITION BY root, sanitized_indexer ORDER BY finished_at DESC) AS rank
 	FROM lsif_indexes u
 	WHERE
 		u.repository_id = %s AND
