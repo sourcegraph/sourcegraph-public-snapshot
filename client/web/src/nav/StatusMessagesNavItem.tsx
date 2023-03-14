@@ -24,7 +24,8 @@ import {
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 
-import { StatusMessagesResult } from '../graphql-operations'
+import { StatusMessagesResult, RepositoryStatsResult, RepositoryStatsVariables } from '../graphql-operations'
+import { REPOSITORY_STATS } from '../site-admin/backend'
 
 import { STATUS_MESSAGES } from './StatusMessagesNavItemQueries'
 
@@ -168,6 +169,11 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         pollInterval: props.disablePolling !== true ? STATUS_MESSAGES_POLL_INTERVAL : undefined,
     })
 
+    const { data: repoData } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {
+        fetchPolicy: 'no-cache',
+        pollInterval: props.disablePolling !== true ? STATUS_MESSAGES_POLL_INTERVAL : undefined,
+    })
+
     const icon: JSX.Element | null = useMemo(() => {
         if (!data) {
             return null
@@ -191,6 +197,9 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         } else if (data.statusMessages?.some(({ __typename: type }) => type === 'IndexingProgress')) {
             codeHostMessage = 'Indexing repositories...'
             iconProps = { as: CloudSyncIconRefresh }
+        } else if (data.statusMessages.length === 0 && repoData?.repositoryStats.total === 0) {
+            codeHostMessage = 'No repositories detected'
+            iconProps = { as: CloudAlertIconRefresh }
         } else {
             codeHostMessage = 'Repositories up to date'
             iconProps = { as: CloudCheckIconRefresh }
@@ -214,6 +223,19 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
 
         // no status messages
         if (data.statusMessages.length === 0) {
+            if (repoData?.repositoryStats.total === 0) {
+                return (
+                    <StatusMessagesNavItemEntry
+                        key="no-repositories"
+                        title="No repositories detected"
+                        message="Connect a code host to connect repositories to Sourcegraph."
+                        linkTo="/setup"
+                        linkText="Setup code hosts"
+                        linkOnClick={toggleIsOpen}
+                        entryType="warning"
+                    />
+                )
+            }
             return (
                 <StatusMessagesNavItemEntry
                     key="up-to-date"
