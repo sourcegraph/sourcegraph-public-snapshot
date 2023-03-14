@@ -1,7 +1,6 @@
 import { execFile, spawn } from 'child_process'
 import * as path from 'path'
 
-import * as natural from 'natural'
 import { removeStopwords } from 'stopword'
 import StreamValues from 'stream-json/streamers/StreamValues'
 import * as vscode from 'vscode'
@@ -164,7 +163,8 @@ export class LocalKeywordFetcher {
 
     public async fetchKeywordFiles(rootPath: string, query: string): Promise<{ filename: string; score: number }[]> {
         const terms = query.split(/\W+/)
-        const stemmedTerms = terms.map(term => natural.PorterStemmer.stem(term)).map(term => escapeRegex(term))
+        // TODO: Stemming using the `natural` package was introducing failing licensing checks. Find a replacement stemming package.
+        const stemmedTerms = terms.map(term => escapeRegex(term))
         // unique stemmed keywords, our representation of the user query
         const filteredTerms = Array.from(new Set(removeStopwords(stemmedTerms).filter(term => term.length >= 3)))
 
@@ -361,7 +361,8 @@ export async function fetchKeywordFiles(
     query: string
 ): Promise<{ filename: string; score: number }[]> {
     const terms = query.split(/\W+/)
-    const stemmedTerms = terms.map(term => natural.PorterStemmer.stem(term)).map(term => escapeRegex(term))
+    // TODO: Stemming using the `natural` package was introducing failing licensing checks. Find a replacement stemming package.
+    const stemmedTerms = terms.map(term => escapeRegex(term))
     // unique stemmed keywords, our representation of the user query
     const filteredTerms = Array.from(new Set(removeStopwords(stemmedTerms).filter(term => term.length >= 3)))
 

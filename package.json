@@ -489,7 +489,6 @@
     "yaml-ast-parser": "^0.0.43",
     "zustand": "^3.6.9",
     "isomorphic-ws": "^5.0.0",
-    "natural": "github:NaturalNode/natural#master",
     "stopword": "^2.0.7",
     "stream-json": "^1.7.5",
     "vscode-uri": "^3.0.7",
