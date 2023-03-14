@@ -148,7 +148,7 @@ func Frontend() *monitoring.Dashboard {
 						},
 						{
 							Name:        "blob_load_latency",
-							Description: "90th percentile blob load latency over 10m",
+							Description: "90th percentile blob load latency over 10m. The 90th percentile of API calls to the blob route in the frontend API is at 5 seconds or more, meaning calls to the blob route, are slow to return a response. The blob API route provides the files and code snippets that the UI displays. When this alert fires, the UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.",
 							Query:       `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
 							Critical:    monitoring.Alert().GreaterOrEqual(5),
 							Panel:       monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
