@@ -140,6 +140,18 @@ func newFromDSN(logger log.Logger, t testing.TB, templateNamespace string) *sql.
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
 	rngLock.Unlock()
 
+	// TODO(JH) Abstract this and the one in the cleanup function so we can
+	// pull those quirks easily instead of having to scavenge the codebase for them.
+	//
+	// Because we're running stateful agents, some databases might not be
+	// deleted afterward. On a normal scenario, this won't happen, but the agent
+	// container might crash, or someone is running an old commit, and it might
+	// still happen. Therefore, we're being defensive here to ensure it doesn't
+	// happen, because it would lead to a CI failure.
+	if os.Getenv("CI") == "true" {
+		dbname = fmt.Sprintf("%s-%s", dbname, os.Getenv("BUILDKITE_JOB_ID"))
+	}
+
 	db := dbConn(logger, t, config)
 	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname)+` TEMPLATE `+pq.QuoteIdentifier(templateDBName(templateNamespace)))
 
