@@ -155,6 +155,44 @@ func TestUser_Email(t *testing.T) {
 		want := "must be authenticated as the authorized user or site admin"
 		assert.Equal(t, want, got)
 	})
+
+	t.Run("allowed by authenticated site admin user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
+
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, SiteAdmin: true}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		userEmails := database.NewMockUserEmailsStore()
+		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("john@doe.com", true, nil)
+		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+		email, _ := NewUserResolver(db, &types.User{ID: 1}).Email(actor.WithActor(context.Background(), &actor.Actor{UID: 2}))
+		got := fmt.Sprintf("%v", email)
+		want := "john@doe.com"
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
+
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		userEmails := database.NewMockUserEmailsStore()
+		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("john@doe.com", true, nil)
+		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+		email, _ := NewUserResolver(db, &types.User{ID: 1}).Email(actor.WithActor(context.Background(), &actor.Actor{UID: 1}))
+		got := fmt.Sprintf("%v", email)
+		want := "john@doe.com"
+		assert.Equal(t, want, got)
+	})
 }
 
 func TestUser_LatestSettings(t *testing.T) {
