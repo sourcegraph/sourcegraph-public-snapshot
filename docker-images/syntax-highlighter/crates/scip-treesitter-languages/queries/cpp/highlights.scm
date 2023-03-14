@@ -1,24 +1,3 @@
-
-"--" @operator
-"-" @operator
-"-=" @operator
-"->" @operator
-"=" @operator
-"!=" @operator
-"*" @operator
-"&" @operator
-"&&" @operator
-"+" @operator
-"++" @operator
-"+=" @operator
-"<" @operator
-"==" @operator
-">" @operator
-"||" @operator
-
-"." @delimiter
-";" @delimiter
-
 (string_literal) @string
 (system_lib_string) @string
 
@@ -38,7 +17,8 @@
     (identifier)
     (field_identifier)
   ] @identifier.function)
-(destructor_name (identifier) @identifier.function)
+
+(destructor_name (identifier) @skip) @identifier.function
 (preproc_function_def
   name: (identifier) @identifier.function)
 

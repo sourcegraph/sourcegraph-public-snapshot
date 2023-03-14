@@ -34,16 +34,13 @@ expression: "dump_document(&document, &contents)"
 //      ^^^^ Identifier 
 //           ^^^^^ Keyword 
 //                 ^^^^ IdentifierType 
-//                      ^ IdentifierOperator 
 //                       ^^^^^ Identifier 
 //                                ^^^^^^ IdentifierAttribute 
 //                                       ^^^^^ IdentifierType 
 //                                                 ^^^^ IdentifierAttribute 
 //                                                      ^^^^^^^^^ Identifier 
     *this = other;
-//  ^ IdentifierOperator 
 //   ^^^^ IdentifierBuiltin 
-//        ^ IdentifierOperator 
 //          ^^^^^ Identifier 
   }
   
@@ -51,7 +48,6 @@ expression: "dump_document(&document, &contents)"
 //^^^^ IdentifierNamespace 
 //      ^^^^ Identifier 
 //           ^^^^ IdentifierType 
-//                ^^ IdentifierOperator 
 //                  ^^^^^ Identifier 
 //                         ^^^^^^^^ Keyword 
 //                                    ^^^^^^ IdentifierAttribute 
@@ -59,9 +55,7 @@ expression: "dump_document(&document, &contents)"
 //                                                     ^^^^ IdentifierAttribute 
 //                                                          ^^^^^^^^^ Identifier 
     *this = move(other);
-//  ^ IdentifierOperator 
 //   ^^^^ IdentifierBuiltin 
-//        ^ IdentifierOperator 
 //          ^^^^ IdentifierFunction 
 //               ^^^^^ Identifier 
   }
@@ -71,12 +65,10 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierBuiltinType 
 //            ^^^^^^^^^^^^^ IdentifierFunction 
 //                          ^^^^ IdentifierType 
-//                               ^ IdentifierOperator 
 //                                ^^^^ Identifier 
     switch (rule->type) {
 //  ^^^^^^ Keyword 
 //          ^^^^ Identifier 
-//              ^^ IdentifierOperator 
 //                ^^^^ IdentifierAttribute 
       case Rule::BlankType: return rule->blank_.~Blank();
 //    ^^^^ Keyword 
@@ -84,109 +76,96 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^ Identifier 
 //                          ^^^^^^ Keyword 
 //                                 ^^^^ Identifier 
-//                                     ^^ IdentifierOperator 
 //                                       ^^^^^^ IdentifierAttribute 
-//                                               ^^^^^ IdentifierFunction 
+//                                              ^^^^^^ IdentifierFunction 
       case Rule::CharacterSetType: return rule->character_set_.~CharacterSet();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
 //               ^^^^^^^^^^^^^^^^ Identifier 
 //                                 ^^^^^^ Keyword 
 //                                        ^^^^ Identifier 
-//                                            ^^ IdentifierOperator 
 //                                              ^^^^^^^^^^^^^^ IdentifierAttribute 
-//                                                              ^^^^^^^^^^^^ IdentifierFunction 
+//                                                             ^^^^^^^^^^^^^ IdentifierFunction 
       case Rule::StringType: return rule->string_ .~String();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
 //               ^^^^^^^^^^ Identifier 
 //                           ^^^^^^ Keyword 
 //                                  ^^^^ Identifier 
-//                                      ^^ IdentifierOperator 
 //                                        ^^^^^^^ IdentifierAttribute 
-//                                                  ^^^^^^ IdentifierFunction 
+//                                                 ^^^^^^^ IdentifierFunction 
       case Rule::PatternType: return rule->pattern_ .~Pattern();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
 //               ^^^^^^^^^^^ Identifier 
 //                            ^^^^^^ Keyword 
 //                                   ^^^^ Identifier 
-//                                       ^^ IdentifierOperator 
 //                                         ^^^^^^^^ IdentifierAttribute 
-//                                                    ^^^^^^^ IdentifierFunction 
+//                                                   ^^^^^^^^ IdentifierFunction 
       case Rule::NamedSymbolType: return rule->named_symbol_.~NamedSymbol();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
 //               ^^^^^^^^^^^^^^^ Identifier 
 //                                ^^^^^^ Keyword 
 //                                       ^^^^ Identifier 
-//                                           ^^ IdentifierOperator 
 //                                             ^^^^^^^^^^^^^ IdentifierAttribute 
-//                                                            ^^^^^^^^^^^ IdentifierFunction 
+//                                                           ^^^^^^^^^^^^ IdentifierFunction 
       case Rule::SymbolType: return rule->symbol_ .~Symbol();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
 //               ^^^^^^^^^^ Identifier 
 //                           ^^^^^^ Keyword 
 //                                  ^^^^ Identifier 
-//                                      ^^ IdentifierOperator 
 //                                        ^^^^^^^ IdentifierAttribute 
-//                                                  ^^^^^^ IdentifierFunction 
+//                                                 ^^^^^^^ IdentifierFunction 
       case Rule::ChoiceType: return rule->choice_ .~Choice();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
 //               ^^^^^^^^^^ Identifier 
 //                           ^^^^^^ Keyword 
 //                                  ^^^^ Identifier 
-//                                      ^^ IdentifierOperator 
 //                                        ^^^^^^^ IdentifierAttribute 
-//                                                  ^^^^^^ IdentifierFunction 
+//                                                 ^^^^^^^ IdentifierFunction 
       case Rule::MetadataType: return rule->metadata_ .~Metadata();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
 //               ^^^^^^^^^^^^ Identifier 
 //                             ^^^^^^ Keyword 
 //                                    ^^^^ Identifier 
-//                                        ^^ IdentifierOperator 
 //                                          ^^^^^^^^^ IdentifierAttribute 
-//                                                      ^^^^^^^^ IdentifierFunction 
+//                                                     ^^^^^^^^^ IdentifierFunction 
       case Rule::RepeatType: return rule->repeat_ .~Repeat();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
 //               ^^^^^^^^^^ Identifier 
 //                           ^^^^^^ Keyword 
 //                                  ^^^^ Identifier 
-//                                      ^^ IdentifierOperator 
 //                                        ^^^^^^^ IdentifierAttribute 
-//                                                  ^^^^^^ IdentifierFunction 
+//                                                 ^^^^^^^ IdentifierFunction 
       case Rule::SeqType: return rule->seq_ .~Seq();
 //    ^^^^ Keyword 
 //         ^^^^ IdentifierNamespace 
 //               ^^^^^^^ Identifier 
 //                        ^^^^^^ Keyword 
 //                               ^^^^ Identifier 
-//                                   ^^ IdentifierOperator 
 //                                     ^^^^ IdentifierAttribute 
-//                                            ^^^ IdentifierFunction 
+//                                           ^^^^ IdentifierFunction 
     }
   }
   
   Rule &Rule::operator=(const Rule &other) {
 //^^^^ IdentifierType 
-//     ^ IdentifierOperator 
 //      ^^^^ IdentifierNamespace 
 //            ^^^^^^^^ Keyword 
 //                    ^ IdentifierOperator 
 //                      ^^^^^ Keyword 
 //                            ^^^^ IdentifierType 
-//                                 ^ IdentifierOperator 
 //                                  ^^^^^ Identifier 
     destroy_value(this);
 //  ^^^^^^^^^^^^^ IdentifierFunction 
 //                ^^^^ IdentifierBuiltin 
     type = other.type;
 //  ^^^^ Identifier 
-//       ^ IdentifierOperator 
 //         ^^^^^ Identifier 
 //               ^^^^ IdentifierAttribute 
     switch (type) {
@@ -197,7 +176,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^ Identifier 
         new (&blank_) Blank(other.blank_);
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^ Identifier 
 //                    ^^^^^ IdentifierType 
 //                          ^^^^^ Identifier 
@@ -209,7 +187,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^^^^^^^ Identifier 
         new (&character_set_) CharacterSet(other.character_set_);
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^ Identifier 
 //                            ^^^^^^^^^^^^ IdentifierType 
 //                                         ^^^^^ Identifier 
@@ -221,7 +198,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^ Identifier 
         new (&string_) String(other.string_);
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^ Identifier 
 //                     ^^^^^^ IdentifierType 
 //                            ^^^^^ Identifier 
@@ -233,7 +209,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^^ Identifier 
         new (&pattern_) Pattern(other.pattern_);
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^ Identifier 
 //                      ^^^^^^^ IdentifierType 
 //                              ^^^^^ Identifier 
@@ -245,7 +220,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^^^^^^ Identifier 
         new (&named_symbol_) NamedSymbol(other.named_symbol_);
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^^^^^^ Identifier 
 //                           ^^^^^^^^^^^ IdentifierType 
 //                                       ^^^^^ Identifier 
@@ -257,7 +231,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^ Identifier 
         new (&symbol_) Symbol(other.symbol_);
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^ Identifier 
 //                     ^^^^^^ IdentifierType 
 //                            ^^^^^ Identifier 
@@ -269,7 +242,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^ Identifier 
         new (&choice_) Choice(other.choice_);
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^ Identifier 
 //                     ^^^^^^ IdentifierType 
 //                            ^^^^^ Identifier 
@@ -281,7 +253,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^^^ Identifier 
         new (&metadata_) Metadata(other.metadata_);
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^^ Identifier 
 //                       ^^^^^^^^ IdentifierType 
 //                                ^^^^^ Identifier 
@@ -293,7 +264,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^ Identifier 
         new (&repeat_) Repeat(other.repeat_);
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^ Identifier 
 //                     ^^^^^^ IdentifierType 
 //                            ^^^^^ Identifier 
@@ -305,7 +275,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^ Identifier 
         new (&seq_) Seq(other.seq_);
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^ Identifier 
 //                  ^^^ IdentifierType 
 //                      ^^^^^ Identifier 
@@ -315,18 +284,15 @@ expression: "dump_document(&document, &contents)"
     }
     return *this;
 //  ^^^^^^ Keyword 
-//         ^ IdentifierOperator 
 //          ^^^^ IdentifierBuiltin 
   }
   
   Rule &Rule::operator=(Rule &&other) noexcept {
 //^^^^ IdentifierType 
-//     ^ IdentifierOperator 
 //      ^^^^ IdentifierNamespace 
 //            ^^^^^^^^ Keyword 
 //                    ^ IdentifierOperator 
 //                      ^^^^ IdentifierType 
-//                           ^^ IdentifierOperator 
 //                             ^^^^^ Identifier 
 //                                    ^^^^^^^^ Keyword 
     destroy_value(this);
@@ -334,7 +300,6 @@ expression: "dump_document(&document, &contents)"
 //                ^^^^ IdentifierBuiltin 
     type = other.type;
 //  ^^^^ Identifier 
-//       ^ IdentifierOperator 
 //         ^^^^^ Identifier 
 //               ^^^^ IdentifierAttribute 
     switch (type) {
@@ -345,7 +310,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^ Identifier 
         new (&blank_) Blank(move(other.blank_));
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^ Identifier 
 //                    ^^^^^ IdentifierType 
 //                          ^^^^ IdentifierFunction 
@@ -358,7 +322,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^^^^^^^ Identifier 
         new (&character_set_) CharacterSet(move(other.character_set_));
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^ Identifier 
 //                            ^^^^^^^^^^^^ IdentifierType 
 //                                         ^^^^ IdentifierFunction 
@@ -371,7 +334,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^ Identifier 
         new (&string_) String(move(other.string_));
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^ Identifier 
 //                     ^^^^^^ IdentifierType 
 //                            ^^^^ IdentifierFunction 
@@ -384,7 +346,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^^ Identifier 
         new (&pattern_) Pattern(move(other.pattern_));
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^ Identifier 
 //                      ^^^^^^^ IdentifierType 
 //                              ^^^^ IdentifierFunction 
@@ -397,7 +358,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^^^^^^ Identifier 
         new (&named_symbol_) NamedSymbol(move(other.named_symbol_));
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^^^^^^ Identifier 
 //                           ^^^^^^^^^^^ IdentifierType 
 //                                       ^^^^ IdentifierFunction 
@@ -410,7 +370,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^ Identifier 
         new (&symbol_) Symbol(move(other.symbol_));
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^ Identifier 
 //                     ^^^^^^ IdentifierType 
 //                            ^^^^ IdentifierFunction 
@@ -423,7 +382,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^ Identifier 
         new (&choice_) Choice(move(other.choice_));
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^ Identifier 
 //                     ^^^^^^ IdentifierType 
 //                            ^^^^ IdentifierFunction 
@@ -436,7 +394,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^^^ Identifier 
         new (&metadata_) Metadata(move(other.metadata_));
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^^ Identifier 
 //                       ^^^^^^^^ IdentifierType 
 //                                ^^^^ IdentifierFunction 
@@ -449,7 +406,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^ Identifier 
         new (&repeat_) Repeat(move(other.repeat_));
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^ Identifier 
 //                     ^^^^^^ IdentifierType 
 //                            ^^^^ IdentifierFunction 
@@ -462,7 +418,6 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^ Identifier 
         new (&seq_) Seq(move(other.seq_));
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^ Identifier 
 //                  ^^^ IdentifierType 
 //                      ^^^^ IdentifierFunction 
@@ -474,22 +429,19 @@ expression: "dump_document(&document, &contents)"
     other.type = BlankType;
 //  ^^^^^ Identifier 
 //        ^^^^ IdentifierAttribute 
-//             ^ IdentifierOperator 
 //               ^^^^^^^^^ Identifier 
     other.blank_ = Blank{};
 //  ^^^^^ Identifier 
 //        ^^^^^^ IdentifierAttribute 
-//               ^ IdentifierOperator 
 //                 ^^^^^ IdentifierType 
     return *this;
 //  ^^^^^^ Keyword 
-//         ^ IdentifierOperator 
 //          ^^^^ IdentifierBuiltin 
   }
   
   Rule::~Rule() noexcept {
 //^^^^ IdentifierNamespace 
-//       ^^^^ IdentifierFunction 
+//      ^^^^^ IdentifierFunction 
 //              ^^^^^^^^ Keyword 
     destroy_value(this);
 //  ^^^^^^^^^^^^^ IdentifierFunction 
@@ -503,13 +455,11 @@ expression: "dump_document(&document, &contents)"
 //                   ^^ IdentifierOperator 
 //                      ^^^^^ Keyword 
 //                            ^^^^ IdentifierType 
-//                                 ^ IdentifierOperator 
 //                                  ^^^^^ Identifier 
 //                                         ^^^^^ Keyword 
     if (type != other.type) return false;
 //  ^^ Keyword 
 //      ^^^^ Identifier 
-//           ^^ IdentifierOperator 
 //              ^^^^^ Identifier 
 //                    ^^^^ IdentifierAttribute 
 //                          ^^^^^^ Keyword 
@@ -523,7 +473,6 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^^^^^^^^ Identifier 
 //                                 ^^^^^^ Keyword 
 //                                        ^^^^^^^^^^^^^^ Identifier 
-//                                                       ^^ IdentifierOperator 
 //                                                          ^^^^^ Identifier 
 //                                                                ^^^^^^^^^^^^^^ IdentifierAttribute 
       case Rule::StringType: return string_ == other.string_;
@@ -532,7 +481,6 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^^ Identifier 
 //                           ^^^^^^ Keyword 
 //                                  ^^^^^^^ Identifier 
-//                                          ^^ IdentifierOperator 
 //                                             ^^^^^ Identifier 
 //                                                   ^^^^^^^ IdentifierAttribute 
       case Rule::PatternType: return pattern_ == other.pattern_;
@@ -541,7 +489,6 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^^^ Identifier 
 //                            ^^^^^^ Keyword 
 //                                   ^^^^^^^^ Identifier 
-//                                            ^^ IdentifierOperator 
 //                                               ^^^^^ Identifier 
 //                                                     ^^^^^^^^ IdentifierAttribute 
       case Rule::NamedSymbolType: return named_symbol_ == other.named_symbol_;
@@ -550,7 +497,6 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^^^^^^^ Identifier 
 //                                ^^^^^^ Keyword 
 //                                       ^^^^^^^^^^^^^ Identifier 
-//                                                     ^^ IdentifierOperator 
 //                                                        ^^^^^ Identifier 
 //                                                              ^^^^^^^^^^^^^ IdentifierAttribute 
       case Rule::SymbolType: return symbol_ == other.symbol_;
@@ -559,7 +505,6 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^^ Identifier 
 //                           ^^^^^^ Keyword 
 //                                  ^^^^^^^ Identifier 
-//                                          ^^ IdentifierOperator 
 //                                             ^^^^^ Identifier 
 //                                                   ^^^^^^^ IdentifierAttribute 
       case Rule::ChoiceType: return choice_ == other.choice_;
@@ -568,7 +513,6 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^^ Identifier 
 //                           ^^^^^^ Keyword 
 //                                  ^^^^^^^ Identifier 
-//                                          ^^ IdentifierOperator 
 //                                             ^^^^^ Identifier 
 //                                                   ^^^^^^^ IdentifierAttribute 
       case Rule::MetadataType: return metadata_ == other.metadata_;
@@ -577,7 +521,6 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^^^^ Identifier 
 //                             ^^^^^^ Keyword 
 //                                    ^^^^^^^^^ Identifier 
-//                                              ^^ IdentifierOperator 
 //                                                 ^^^^^ Identifier 
 //                                                       ^^^^^^^^^ IdentifierAttribute 
       case Rule::RepeatType: return repeat_ == other.repeat_;
@@ -586,7 +529,6 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^^^^ Identifier 
 //                           ^^^^^^ Keyword 
 //                                  ^^^^^^^ Identifier 
-//                                          ^^ IdentifierOperator 
 //                                             ^^^^^ Identifier 
 //                                                   ^^^^^^^ IdentifierAttribute 
       case Rule::SeqType: return seq_ == other.seq_;
@@ -595,14 +537,12 @@ expression: "dump_document(&document, &contents)"
 //               ^^^^^^^ Identifier 
 //                        ^^^^^^ Keyword 
 //                               ^^^^ Identifier 
-//                                    ^^ IdentifierOperator 
 //                                       ^^^^^ Identifier 
 //                                             ^^^^ IdentifierAttribute 
       default: return blank_ == other.blank_;
 //    ^^^^^^^ Keyword 
 //             ^^^^^^ Keyword 
 //                    ^^^^^^ Identifier 
-//                           ^^ IdentifierOperator 
 //                              ^^^^^ Identifier 
 //                                    ^^^^^^ IdentifierAttribute 
     }
@@ -610,68 +550,48 @@ expression: "dump_document(&document, &contents)"
   
   template <>
 //^^^^^^^^ Keyword 
-//         ^ IdentifierOperator 
-//          ^ IdentifierOperator 
   bool Rule::is<Blank>() const { return type == BlankType; }
 //^^^^ IdentifierBuiltinType 
 //     ^^^^ IdentifierNamespace 
 //           ^^ Identifier 
-//             ^ IdentifierOperator 
 //              ^^^^^ IdentifierType 
-//                   ^ IdentifierOperator 
 //                       ^^^^^ Keyword 
 //                               ^^^^^^ Keyword 
 //                                      ^^^^ Identifier 
-//                                           ^^ IdentifierOperator 
 //                                              ^^^^^^^^^ Identifier 
   
   template <>
 //^^^^^^^^ Keyword 
-//         ^ IdentifierOperator 
-//          ^ IdentifierOperator 
   bool Rule::is<Symbol>() const { return type == SymbolType; }
 //^^^^ IdentifierBuiltinType 
 //     ^^^^ IdentifierNamespace 
 //           ^^ Identifier 
-//             ^ IdentifierOperator 
 //              ^^^^^^ IdentifierType 
-//                    ^ IdentifierOperator 
 //                        ^^^^^ Keyword 
 //                                ^^^^^^ Keyword 
 //                                       ^^^^ Identifier 
-//                                            ^^ IdentifierOperator 
 //                                               ^^^^^^^^^^ Identifier 
   
   template <>
 //^^^^^^^^ Keyword 
-//         ^ IdentifierOperator 
-//          ^ IdentifierOperator 
   bool Rule::is<Repeat>() const { return type == RepeatType; }
 //^^^^ IdentifierBuiltinType 
 //     ^^^^ IdentifierNamespace 
 //           ^^ Identifier 
-//             ^ IdentifierOperator 
 //              ^^^^^^ IdentifierType 
-//                    ^ IdentifierOperator 
 //                        ^^^^^ Keyword 
 //                                ^^^^^^ Keyword 
 //                                       ^^^^ Identifier 
-//                                            ^^ IdentifierOperator 
 //                                               ^^^^^^^^^^ Identifier 
   
   template <>
 //^^^^^^^^ Keyword 
-//         ^ IdentifierOperator 
-//          ^ IdentifierOperator 
   const Symbol & Rule::get_unchecked<Symbol>() const { return symbol_; }
 //^^^^^ Keyword 
 //      ^^^^^^ IdentifierType 
-//             ^ IdentifierOperator 
 //               ^^^^ IdentifierNamespace 
 //                     ^^^^^^^^^^^^^ Identifier 
-//                                  ^ IdentifierOperator 
 //                                   ^^^^^^ IdentifierType 
-//                                         ^ IdentifierOperator 
 //                                             ^^^^^ Keyword 
 //                                                     ^^^^^^ Keyword 
 //                                                            ^^^^^^^ Identifier 
@@ -683,14 +603,10 @@ expression: "dump_document(&document, &contents)"
 //                   ^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                                      ^^^ IdentifierNamespace 
 //                                           ^^^^^^ IdentifierType 
-//                                                 ^ IdentifierOperator 
 //                                                  ^^^^ IdentifierType 
-//                                                      ^ IdentifierOperator 
-//                                                        ^ IdentifierOperator 
 //                                                         ^^^^^^^^ Identifier 
 //                                                                   ^^^^^ Keyword 
 //                                                                         ^^^^ IdentifierType 
-//                                                                              ^ IdentifierOperator 
 //                                                                               ^^^^^^^^ Identifier 
     new_rule.match(
 //  ^^^^^^^^ Identifier 
@@ -702,7 +618,6 @@ expression: "dump_document(&document, &contents)"
         for (auto &element : choice.elements) {
 //      ^^^ Keyword 
 //           ^^^^ Keyword 
-//                ^ IdentifierOperator 
 //                 ^^^^^^^ Identifier 
 //                           ^^^^^^ Identifier 
 //                                  ^^^^^^^^ IdentifierAttribute 
@@ -720,20 +635,16 @@ expression: "dump_document(&document, &contents)"
         for (auto &element : *elements) {
 //      ^^^ Keyword 
 //           ^^^^ Keyword 
-//                ^ IdentifierOperator 
 //                 ^^^^^^^ Identifier 
-//                           ^ IdentifierOperator 
 //                            ^^^^^^^^ Identifier 
           if (element == rule) return;
 //        ^^ Keyword 
 //            ^^^^^^^ Identifier 
-//                    ^^ IdentifierOperator 
 //                       ^^^^ Identifier 
 //                             ^^^^^^ Keyword 
         }
         elements->push_back(rule);
 //      ^^^^^^^^ Identifier 
-//              ^^ IdentifierOperator 
 //                ^^^^^^^^^ IdentifierFunction 
 //                          ^^^^ Identifier 
       }
@@ -746,26 +657,19 @@ expression: "dump_document(&document, &contents)"
 //           ^^^^^^ Identifier 
 //                  ^^^^^ Keyword 
 //                        ^^^^^^ IdentifierType 
-//                              ^ IdentifierOperator 
 //                               ^^^^ IdentifierType 
-//                                   ^ IdentifierOperator 
-//                                     ^ IdentifierOperator 
 //                                      ^^^^^ Identifier 
     vector<Rule> elements;
 //  ^^^^^^ IdentifierType 
-//        ^ IdentifierOperator 
 //         ^^^^ IdentifierType 
-//             ^ IdentifierOperator 
 //               ^^^^^^^^ Identifier 
     for (auto &element : rules) {
 //  ^^^ Keyword 
 //       ^^^^ Keyword 
-//            ^ IdentifierOperator 
 //             ^^^^^^^ Identifier 
 //                       ^^^^^ Identifier 
       add_choice_element(&elements, element);
 //    ^^^^^^^^^^^^^^^^^^ IdentifierFunction 
-//                       ^ IdentifierOperator 
 //                        ^^^^^^^^ Identifier 
 //                                  ^^^^^^^ Identifier 
     }
@@ -773,7 +677,6 @@ expression: "dump_document(&document, &contents)"
 //  ^^^^^^ Keyword 
 //          ^^^^^^^^ Identifier 
 //                   ^^^^ IdentifierFunction 
-//                          ^^ IdentifierOperator 
 //                             ^ NumericLiteral 
 //                                  ^^^^^^^^ Identifier 
 //                                           ^^^^^ IdentifierFunction 
@@ -787,15 +690,12 @@ expression: "dump_document(&document, &contents)"
 //           ^^^^^^ Identifier 
 //                  ^^^^^ Keyword 
 //                        ^^^^ IdentifierType 
-//                             ^ IdentifierOperator 
 //                              ^^^^ Identifier 
     return rule.is<Repeat>() ? rule : Repeat{rule};
 //  ^^^^^^ Keyword 
 //         ^^^^ Identifier 
 //              ^^ IdentifierAttribute 
-//                ^ IdentifierOperator 
 //                 ^^^^^^ IdentifierType 
-//                       ^ IdentifierOperator 
 //                             ^^^^ Identifier 
 //                                    ^^^^^^ IdentifierType 
 //                                           ^^^^ Identifier 
@@ -807,10 +707,7 @@ expression: "dump_document(&document, &contents)"
 //           ^^^ Identifier 
 //               ^^^^^ Keyword 
 //                     ^^^^^^ IdentifierType 
-//                           ^ IdentifierOperator 
 //                            ^^^^ IdentifierType 
-//                                ^ IdentifierOperator 
-//                                  ^ IdentifierOperator 
 //                                   ^^^^^ Identifier 
     Rule result;
 //  ^^^^ IdentifierType 
@@ -819,7 +716,6 @@ expression: "dump_document(&document, &contents)"
 //  ^^^ Keyword 
 //       ^^^^^ Keyword 
 //             ^^^^ Keyword 
-//                  ^ IdentifierOperator 
 //                   ^^^^ Identifier 
 //                          ^^^^^ Identifier 
       rule.match(
@@ -828,45 +724,35 @@ expression: "dump_document(&document, &contents)"
         [](Blank) {},
 //         ^^^^^ IdentifierType 
         [&](Metadata metadata) {
-//       ^ IdentifierOperator 
 //          ^^^^^^^^ IdentifierType 
 //                   ^^^^^^^^ Identifier 
           if (!metadata.rule->is<Blank>()) {
 //        ^^ Keyword 
 //             ^^^^^^^^ Identifier 
 //                      ^^^^ IdentifierAttribute 
-//                          ^^ IdentifierOperator 
 //                            ^^ IdentifierAttribute 
-//                              ^ IdentifierOperator 
 //                               ^^^^^ IdentifierType 
-//                                    ^ IdentifierOperator 
             result = Seq{result, rule};
 //          ^^^^^^ Identifier 
-//                 ^ IdentifierOperator 
 //                   ^^^ IdentifierType 
 //                       ^^^^^^ Identifier 
 //                               ^^^^ Identifier 
           }
         },
         [&](auto) {
-//       ^ IdentifierOperator 
 //          ^^^^ Keyword 
           if (result.is<Blank>()) {
 //        ^^ Keyword 
 //            ^^^^^^ Identifier 
 //                   ^^ IdentifierAttribute 
-//                     ^ IdentifierOperator 
 //                      ^^^^^ IdentifierType 
-//                           ^ IdentifierOperator 
             result = rule;
 //          ^^^^^^ Identifier 
-//                 ^ IdentifierOperator 
 //                   ^^^^ Identifier 
           } else {
 //          ^^^^ Keyword 
             result = Seq{result, rule};
 //          ^^^^^^ Identifier 
-//                 ^ IdentifierOperator 
 //                   ^^^ IdentifierType 
 //                       ^^^^^^ Identifier 
 //                               ^^^^ Identifier 
@@ -891,34 +777,25 @@ expression: "dump_document(&document, &contents)"
   size_t hash<Symbol>::operator()(const Symbol &symbol) const {
 //^^^^^^ IdentifierBuiltinType 
 //       ^^^^ IdentifierType 
-//           ^ IdentifierOperator 
 //            ^^^^^^ IdentifierType 
-//                  ^ IdentifierOperator 
 //                     ^^^^^^^^ Keyword 
 //                             ^^ IdentifierOperator 
 //                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
-//                                             ^ IdentifierOperator 
 //                                              ^^^^^^ Identifier 
 //                                                      ^^^^^ Keyword 
     auto result = hash<int>()(symbol.index);
 //  ^^^^ Keyword 
 //       ^^^^^^ Identifier 
-//              ^ IdentifierOperator 
 //                ^^^^ Identifier 
-//                    ^ IdentifierOperator 
 //                     ^^^ IdentifierBuiltinType 
-//                        ^ IdentifierOperator 
 //                            ^^^^^^ Identifier 
 //                                   ^^^^^ IdentifierAttribute 
     hash_combine(&result, hash<int>()(symbol.type));
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
 //                        ^^^^ Identifier 
-//                            ^ IdentifierOperator 
 //                             ^^^ IdentifierBuiltinType 
-//                                ^ IdentifierOperator 
 //                                    ^^^^^^ Identifier 
 //                                           ^^^^ IdentifierAttribute 
     return result;
@@ -929,22 +806,17 @@ expression: "dump_document(&document, &contents)"
   size_t hash<NamedSymbol>::operator()(const NamedSymbol &symbol) const {
 //^^^^^^ IdentifierBuiltinType 
 //       ^^^^ IdentifierType 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^^^^ IdentifierType 
-//                       ^ IdentifierOperator 
 //                          ^^^^^^^^ Keyword 
 //                                  ^^ IdentifierOperator 
 //                                     ^^^^^ Keyword 
 //                                           ^^^^^^^^^^^ IdentifierType 
-//                                                       ^ IdentifierOperator 
 //                                                        ^^^^^^ Identifier 
 //                                                                ^^^^^ Keyword 
     return hash<string>()(symbol.value);
 //  ^^^^^^ Keyword 
 //         ^^^^ Identifier 
-//             ^ IdentifierOperator 
 //              ^^^^^^ IdentifierType 
-//                    ^ IdentifierOperator 
 //                        ^^^^^^ Identifier 
 //                               ^^^^^ IdentifierAttribute 
   }
@@ -952,22 +824,17 @@ expression: "dump_document(&document, &contents)"
   size_t hash<Pattern>::operator()(const Pattern &symbol) const {
 //^^^^^^ IdentifierBuiltinType 
 //       ^^^^ IdentifierType 
-//           ^ IdentifierOperator 
 //            ^^^^^^^ IdentifierType 
-//                   ^ IdentifierOperator 
 //                      ^^^^^^^^ Keyword 
 //                              ^^ IdentifierOperator 
 //                                 ^^^^^ Keyword 
 //                                       ^^^^^^^ IdentifierType 
-//                                               ^ IdentifierOperator 
 //                                                ^^^^^^ Identifier 
 //                                                        ^^^^^ Keyword 
     return hash<string>()(symbol.value);
 //  ^^^^^^ Keyword 
 //         ^^^^ Identifier 
-//             ^ IdentifierOperator 
 //              ^^^^^^ IdentifierType 
-//                    ^ IdentifierOperator 
 //                        ^^^^^^ Identifier 
 //                               ^^^^^ IdentifierAttribute 
   }
@@ -975,22 +842,17 @@ expression: "dump_document(&document, &contents)"
   size_t hash<String>::operator()(const String &symbol) const {
 //^^^^^^ IdentifierBuiltinType 
 //       ^^^^ IdentifierType 
-//           ^ IdentifierOperator 
 //            ^^^^^^ IdentifierType 
-//                  ^ IdentifierOperator 
 //                     ^^^^^^^^ Keyword 
 //                             ^^ IdentifierOperator 
 //                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
-//                                             ^ IdentifierOperator 
 //                                              ^^^^^^ Identifier 
 //                                                      ^^^^^ Keyword 
     return hash<string>()(symbol.value);
 //  ^^^^^^ Keyword 
 //         ^^^^ Identifier 
-//             ^ IdentifierOperator 
 //              ^^^^^^ IdentifierType 
-//                    ^ IdentifierOperator 
 //                        ^^^^^^ Identifier 
 //                               ^^^^^ IdentifierAttribute 
   }
@@ -998,30 +860,24 @@ expression: "dump_document(&document, &contents)"
   size_t hash<CharacterSet>::operator()(const CharacterSet &character_set) const {
 //^^^^^^ IdentifierBuiltinType 
 //       ^^^^ IdentifierType 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^^^^^ IdentifierType 
-//                        ^ IdentifierOperator 
 //                           ^^^^^^^^ Keyword 
 //                                   ^^ IdentifierOperator 
 //                                      ^^^^^ Keyword 
 //                                            ^^^^^^^^^^^^ IdentifierType 
-//                                                         ^ IdentifierOperator 
 //                                                          ^^^^^^^^^^^^^ Identifier 
 //                                                                         ^^^^^ Keyword 
     size_t result = 0;
 //  ^^^^^^ IdentifierBuiltinType 
 //         ^^^^^^ Identifier 
-//                ^ IdentifierOperator 
 //                  ^ NumericLiteral 
     hash_combine(&result, character_set.includes_all);
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
 //                        ^^^^^^^^^^^^^ Identifier 
 //                                      ^^^^^^^^^^^^ IdentifierAttribute 
     hash_combine(&result, character_set.included_chars.size());
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
 //                        ^^^^^^^^^^^^^ Identifier 
 //                                      ^^^^^^^^^^^^^^ IdentifierAttribute 
@@ -1034,13 +890,11 @@ expression: "dump_document(&document, &contents)"
 //                                  ^^^^^^^^^^^^^^ IdentifierAttribute 
       hash_combine(&result, c);
 //    ^^^^^^^^^^^^ IdentifierFunction 
-//                 ^ IdentifierOperator 
 //                  ^^^^^^ Identifier 
 //                          ^ Identifier 
     }
     hash_combine(&result, character_set.excluded_chars.size());
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
 //                        ^^^^^^^^^^^^^ Identifier 
 //                                      ^^^^^^^^^^^^^^ IdentifierAttribute 
@@ -1053,7 +907,6 @@ expression: "dump_document(&document, &contents)"
 //                                  ^^^^^^^^^^^^^^ IdentifierAttribute 
       hash_combine(&result, c);
 //    ^^^^^^^^^^^^ IdentifierFunction 
-//                 ^ IdentifierOperator 
 //                  ^^^^^^ Identifier 
 //                          ^ Identifier 
     }
@@ -1065,14 +918,11 @@ expression: "dump_document(&document, &contents)"
   size_t hash<Blank>::operator()(const Blank &blank) const {
 //^^^^^^ IdentifierBuiltinType 
 //       ^^^^ IdentifierType 
-//           ^ IdentifierOperator 
 //            ^^^^^ IdentifierType 
-//                 ^ IdentifierOperator 
 //                    ^^^^^^^^ Keyword 
 //                            ^^ IdentifierOperator 
 //                               ^^^^^ Keyword 
 //                                     ^^^^^ IdentifierType 
-//                                           ^ IdentifierOperator 
 //                                            ^^^^^ Identifier 
 //                                                   ^^^^^ Keyword 
     return 0;
@@ -1083,32 +933,26 @@ expression: "dump_document(&document, &contents)"
   size_t hash<Choice>::operator()(const Choice &choice) const {
 //^^^^^^ IdentifierBuiltinType 
 //       ^^^^ IdentifierType 
-//           ^ IdentifierOperator 
 //            ^^^^^^ IdentifierType 
-//                  ^ IdentifierOperator 
 //                     ^^^^^^^^ Keyword 
 //                             ^^ IdentifierOperator 
 //                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
-//                                             ^ IdentifierOperator 
 //                                              ^^^^^^ Identifier 
 //                                                      ^^^^^ Keyword 
     size_t result = 0;
 //  ^^^^^^ IdentifierBuiltinType 
 //         ^^^^^^ Identifier 
-//                ^ IdentifierOperator 
 //                  ^ NumericLiteral 
     for (const auto &element : choice.elements) {
 //  ^^^ Keyword 
 //       ^^^^^ Keyword 
 //             ^^^^ Keyword 
-//                  ^ IdentifierOperator 
 //                   ^^^^^^^ Identifier 
 //                             ^^^^^^ Identifier 
 //                                    ^^^^^^^^ IdentifierAttribute 
       symmetric_hash_combine(&result, element);
 //    ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
-//                           ^ IdentifierOperator 
 //                            ^^^^^^ Identifier 
 //                                    ^^^^^^^ Identifier 
     }
@@ -1120,26 +964,20 @@ expression: "dump_document(&document, &contents)"
   size_t hash<Repeat>::operator()(const Repeat &repeat) const {
 //^^^^^^ IdentifierBuiltinType 
 //       ^^^^ IdentifierType 
-//           ^ IdentifierOperator 
 //            ^^^^^^ IdentifierType 
-//                  ^ IdentifierOperator 
 //                     ^^^^^^^^ Keyword 
 //                             ^^ IdentifierOperator 
 //                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
-//                                             ^ IdentifierOperator 
 //                                              ^^^^^^ Identifier 
 //                                                      ^^^^^ Keyword 
     size_t result = 0;
 //  ^^^^^^ IdentifierBuiltinType 
 //         ^^^^^^ Identifier 
-//                ^ IdentifierOperator 
 //                  ^ NumericLiteral 
     hash_combine(&result, *repeat.rule);
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
-//                        ^ IdentifierOperator 
 //                         ^^^^^^ Identifier 
 //                                ^^^^ IdentifierAttribute 
     return result;
@@ -1150,33 +988,25 @@ expression: "dump_document(&document, &contents)"
   size_t hash<Seq>::operator()(const Seq &seq) const {
 //^^^^^^ IdentifierBuiltinType 
 //       ^^^^ IdentifierType 
-//           ^ IdentifierOperator 
 //            ^^^ IdentifierType 
-//               ^ IdentifierOperator 
 //                  ^^^^^^^^ Keyword 
 //                          ^^ IdentifierOperator 
 //                             ^^^^^ Keyword 
 //                                   ^^^ IdentifierType 
-//                                       ^ IdentifierOperator 
 //                                        ^^^ Identifier 
 //                                             ^^^^^ Keyword 
     size_t result = 0;
 //  ^^^^^^ IdentifierBuiltinType 
 //         ^^^^^^ Identifier 
-//                ^ IdentifierOperator 
 //                  ^ NumericLiteral 
     hash_combine(&result, *seq.left);
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
-//                        ^ IdentifierOperator 
 //                         ^^^ Identifier 
 //                             ^^^^ IdentifierAttribute 
     hash_combine(&result, *seq.right);
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
-//                        ^ IdentifierOperator 
 //                         ^^^ Identifier 
 //                             ^^^^^ IdentifierAttribute 
     return result;
@@ -1187,83 +1017,67 @@ expression: "dump_document(&document, &contents)"
   size_t hash<Metadata>::operator()(const Metadata &metadata) const {
 //^^^^^^ IdentifierBuiltinType 
 //       ^^^^ IdentifierType 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^ IdentifierType 
-//                    ^ IdentifierOperator 
 //                       ^^^^^^^^ Keyword 
 //                               ^^ IdentifierOperator 
 //                                  ^^^^^ Keyword 
 //                                        ^^^^^^^^ IdentifierType 
-//                                                 ^ IdentifierOperator 
 //                                                  ^^^^^^^^ Identifier 
 //                                                            ^^^^^ Keyword 
     size_t result = 0;
 //  ^^^^^^ IdentifierBuiltinType 
 //         ^^^^^^ Identifier 
-//                ^ IdentifierOperator 
 //                  ^ NumericLiteral 
     hash_combine(&result, *metadata.rule);
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
-//                        ^ IdentifierOperator 
 //                         ^^^^^^^^ Identifier 
 //                                  ^^^^ IdentifierAttribute 
     hash_combine(&result, metadata.params.precedence);
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
 //                        ^^^^^^^^ Identifier 
 //                                 ^^^^^^ IdentifierAttribute 
 //                                        ^^^^^^^^^^ IdentifierAttribute 
     hash_combine<int>(&result, metadata.params.associativity);
 //  ^^^^^^^^^^^^ Identifier 
-//              ^ IdentifierOperator 
 //               ^^^ IdentifierBuiltinType 
-//                  ^ IdentifierOperator 
-//                    ^ IdentifierOperator 
 //                     ^^^^^^ Identifier 
 //                             ^^^^^^^^ Identifier 
 //                                      ^^^^^^ IdentifierAttribute 
 //                                             ^^^^^^^^^^^^^ IdentifierAttribute 
     hash_combine(&result, metadata.params.has_precedence);
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
 //                        ^^^^^^^^ Identifier 
 //                                 ^^^^^^ IdentifierAttribute 
 //                                        ^^^^^^^^^^^^^^ IdentifierAttribute 
     hash_combine(&result, metadata.params.has_associativity);
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
 //                        ^^^^^^^^ Identifier 
 //                                 ^^^^^^ IdentifierAttribute 
 //                                        ^^^^^^^^^^^^^^^^^ IdentifierAttribute 
     hash_combine(&result, metadata.params.is_token);
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
 //                        ^^^^^^^^ Identifier 
 //                                 ^^^^^^ IdentifierAttribute 
 //                                        ^^^^^^^^ IdentifierAttribute 
     hash_combine(&result, metadata.params.is_string);
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
 //                        ^^^^^^^^ Identifier 
 //                                 ^^^^^^ IdentifierAttribute 
 //                                        ^^^^^^^^^ IdentifierAttribute 
     hash_combine(&result, metadata.params.is_active);
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
 //                        ^^^^^^^^ Identifier 
 //                                 ^^^^^^ IdentifierAttribute 
 //                                        ^^^^^^^^^ IdentifierAttribute 
     hash_combine(&result, metadata.params.is_main_token);
 //  ^^^^^^^^^^^^ IdentifierFunction 
-//               ^ IdentifierOperator 
 //                ^^^^^^ Identifier 
 //                        ^^^^^^^^ Identifier 
 //                                 ^^^^^^ IdentifierAttribute 
@@ -1276,24 +1090,18 @@ expression: "dump_document(&document, &contents)"
   size_t hash<Rule>::operator()(const Rule &rule) const {
 //^^^^^^ IdentifierBuiltinType 
 //       ^^^^ IdentifierType 
-//           ^ IdentifierOperator 
 //            ^^^^ IdentifierType 
-//                ^ IdentifierOperator 
 //                   ^^^^^^^^ Keyword 
 //                           ^^ IdentifierOperator 
 //                              ^^^^^ Keyword 
 //                                    ^^^^ IdentifierType 
-//                                         ^ IdentifierOperator 
 //                                          ^^^^ Identifier 
 //                                                ^^^^^ Keyword 
     size_t result = hash<int>()(rule.type);
 //  ^^^^^^ IdentifierBuiltinType 
 //         ^^^^^^ Identifier 
-//                ^ IdentifierOperator 
 //                  ^^^^ Identifier 
-//                      ^ IdentifierOperator 
 //                       ^^^ IdentifierBuiltinType 
-//                          ^ IdentifierOperator 
 //                              ^^^^ Identifier 
 //                                   ^^^^ IdentifierAttribute 
     switch (rule.type) {
@@ -1307,9 +1115,7 @@ expression: "dump_document(&document, &contents)"
 //                                 ^^^^^^ Keyword 
 //                                        ^^^^^^ Identifier 
 //                                                 ^^^^ Identifier 
-//                                                     ^ IdentifierOperator 
 //                                                      ^^^^^^^^^^^^ IdentifierType 
-//                                                                  ^ IdentifierOperator 
 //                                                                      ^^^^ Identifier 
 //                                                                           ^^^^^^^^^^^^^^ IdentifierAttribute 
       case Rule::StringType: return result ^ hash<String>()(rule.string_);
@@ -1319,9 +1125,7 @@ expression: "dump_document(&document, &contents)"
 //                           ^^^^^^ Keyword 
 //                                  ^^^^^^ Identifier 
 //                                           ^^^^ Identifier 
-//                                               ^ IdentifierOperator 
 //                                                ^^^^^^ IdentifierType 
-//                                                      ^ IdentifierOperator 
 //                                                          ^^^^ Identifier 
 //                                                               ^^^^^^^ IdentifierAttribute 
       case Rule::PatternType: return result ^ hash<Pattern>()(rule.pattern_);
@@ -1331,9 +1135,7 @@ expression: "dump_document(&document, &contents)"
 //                            ^^^^^^ Keyword 
 //                                   ^^^^^^ Identifier 
 //                                            ^^^^ Identifier 
-//                                                ^ IdentifierOperator 
 //                                                 ^^^^^^^ IdentifierType 
-//                                                        ^ IdentifierOperator 
 //                                                            ^^^^ Identifier 
 //                                                                 ^^^^^^^^ IdentifierAttribute 
       case Rule::NamedSymbolType: return result ^ hash<NamedSymbol>()(rule.named_symbol_);
@@ -1343,9 +1145,7 @@ expression: "dump_document(&document, &contents)"
 //                                ^^^^^^ Keyword 
 //                                       ^^^^^^ Identifier 
 //                                                ^^^^ Identifier 
-//                                                    ^ IdentifierOperator 
 //                                                     ^^^^^^^^^^^ IdentifierType 
-//                                                                ^ IdentifierOperator 
 //                                                                    ^^^^ Identifier 
 //                                                                         ^^^^^^^^^^^^^ IdentifierAttribute 
       case Rule::SymbolType: return result ^ hash<Symbol>()(rule.symbol_);
@@ -1355,9 +1155,7 @@ expression: "dump_document(&document, &contents)"
 //                           ^^^^^^ Keyword 
 //                                  ^^^^^^ Identifier 
 //                                           ^^^^ Identifier 
-//                                               ^ IdentifierOperator 
 //                                                ^^^^^^ IdentifierType 
-//                                                      ^ IdentifierOperator 
 //                                                          ^^^^ Identifier 
 //                                                               ^^^^^^^ IdentifierAttribute 
       case Rule::ChoiceType: return result ^ hash<Choice>()(rule.choice_);
@@ -1367,9 +1165,7 @@ expression: "dump_document(&document, &contents)"
 //                           ^^^^^^ Keyword 
 //                                  ^^^^^^ Identifier 
 //                                           ^^^^ Identifier 
-//                                               ^ IdentifierOperator 
 //                                                ^^^^^^ IdentifierType 
-//                                                      ^ IdentifierOperator 
 //                                                          ^^^^ Identifier 
 //                                                               ^^^^^^^ IdentifierAttribute 
       case Rule::MetadataType: return result ^ hash<Metadata>()(rule.metadata_);
@@ -1379,9 +1175,7 @@ expression: "dump_document(&document, &contents)"
 //                             ^^^^^^ Keyword 
 //                                    ^^^^^^ Identifier 
 //                                             ^^^^ Identifier 
-//                                                 ^ IdentifierOperator 
 //                                                  ^^^^^^^^ IdentifierType 
-//                                                          ^ IdentifierOperator 
 //                                                              ^^^^ Identifier 
 //                                                                   ^^^^^^^^^ IdentifierAttribute 
       case Rule::RepeatType: return result ^ hash<Repeat>()(rule.repeat_);
@@ -1391,9 +1185,7 @@ expression: "dump_document(&document, &contents)"
 //                           ^^^^^^ Keyword 
 //                                  ^^^^^^ Identifier 
 //                                           ^^^^ Identifier 
-//                                               ^ IdentifierOperator 
 //                                                ^^^^^^ IdentifierType 
-//                                                      ^ IdentifierOperator 
 //                                                          ^^^^ Identifier 
 //                                                               ^^^^^^^ IdentifierAttribute 
       case Rule::SeqType: return result ^ hash<Seq>()(rule.seq_);
@@ -1403,9 +1195,7 @@ expression: "dump_document(&document, &contents)"
 //                        ^^^^^^ Keyword 
 //                               ^^^^^^ Identifier 
 //                                        ^^^^ Identifier 
-//                                            ^ IdentifierOperator 
 //                                             ^^^ IdentifierType 
-//                                                ^ IdentifierOperator 
 //                                                    ^^^^ Identifier 
 //                                                         ^^^^ IdentifierAttribute 
       default: return result ^ hash<Blank>()(rule.blank_);
@@ -1413,9 +1203,7 @@ expression: "dump_document(&document, &contents)"
 //             ^^^^^^ Keyword 
 //                    ^^^^^^ Identifier 
 //                             ^^^^ Identifier 
-//                                 ^ IdentifierOperator 
 //                                  ^^^^^ IdentifierType 
-//                                       ^ IdentifierOperator 
 //                                           ^^^^ Identifier 
 //                                                ^^^^^^ IdentifierAttribute 
     }
@@ -1432,10 +1220,8 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
   template <typename H>
 //^^^^^^^^ Keyword 
-//         ^ IdentifierOperator 
 //          ^^^^^^^^ Keyword 
 //                   ^ IdentifierType 
-//                    ^ IdentifierOperator 
   class ValidateHandler
 //^^^^^ Keyword 
 //      ^^^^^^^^^^^^^^^ IdentifierType 
@@ -1443,20 +1229,13 @@ expression: "dump_document(&document, &contents)"
 //      ^^^^^^ Keyword 
 //             ^^^^^^^^^ IdentifierNamespace 
 //                        ^^^^^^^^^^^^^^^^^ IdentifierType 
-//                                         ^ IdentifierOperator 
 //                                          ^^^^^^^^^ IdentifierNamespace 
 //                                                     ^^^^ IdentifierType 
-//                                                         ^ IdentifierOperator 
-//                                                          ^ IdentifierOperator 
                                             ValidateHandler<H>> {
 //                                          ^^^^^^^^^^^^^^^ IdentifierType 
-//                                                         ^ IdentifierOperator 
 //                                                          ^ IdentifierType 
-//                                                           ^ IdentifierOperator 
-//                                                            ^ IdentifierOperator 
     H &inner;
 //  ^ IdentifierType 
-//    ^ IdentifierOperator 
 //     ^^^^^ IdentifierAttribute 
   
     enum class Context {
@@ -1505,16 +1284,13 @@ expression: "dump_document(&document, &contents)"
     absl::flat_hash_set<std::string> warnings;
 //  ^^^^ IdentifierNamespace 
 //        ^^^^^^^^^^^^^ IdentifierType 
-//                     ^ IdentifierOperator 
 //                      ^^^ IdentifierNamespace 
 //                           ^^^^^^ IdentifierType 
-//                                 ^ IdentifierOperator 
 //                                   ^^^^^^^^ IdentifierAttribute 
   
     ValidateHandler(H &inner, ValidationOptions options)
 //  ^^^^^^^^^^^^^^^ IdentifierFunction 
 //                  ^ IdentifierType 
-//                    ^ IdentifierOperator 
 //                     ^^^^^ Identifier 
 //                            ^^^^^^^^^^^^^^^^^ IdentifierType 
 //                                              ^^^^^^^ Identifier 
@@ -1544,12 +1320,10 @@ expression: "dump_document(&document, &contents)"
       const char *ctx;
 //    ^^^^^ Keyword 
 //          ^^^^ IdentifierBuiltinType 
-//               ^ IdentifierOperator 
 //                ^^^ Identifier 
       switch (this->context) {
 //    ^^^^^^ Keyword 
 //            ^^^^ IdentifierBuiltin 
-//                ^^ IdentifierOperator 
 //                  ^^^^^^^ IdentifierAttribute 
       case Context::Outermost:
 //    ^^^^ Keyword 
@@ -1557,7 +1331,6 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^ Identifier 
         ctx = "outermost context";
 //      ^^^ Identifier 
-//          ^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^^^^^^ StringLiteral 
         break;
 //      ^^^^^ Keyword 
@@ -1567,7 +1340,6 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^ Identifier 
         ctx = "top-level array context";
 //      ^^^ Identifier 
-//          ^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
         break;
 //      ^^^^^ Keyword 
@@ -1577,7 +1349,6 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^ Identifier 
         ctx = "command object context";
 //      ^^^ Identifier 
-//          ^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
         break;
 //      ^^^^^ Keyword 
@@ -1587,7 +1358,6 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^^ Identifier 
         ctx = "value for the key 'arguments'";
 //      ^^^ Identifier 
-//          ^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
         break;
 //      ^^^^^ Keyword 
@@ -1597,16 +1367,13 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^^^^^^^ Identifier 
         ctx = "array for the key 'arguments'";
 //      ^^^ Identifier 
-//          ^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
         break;
 //      ^^^^^ Keyword 
       }
       this->errorMessage = fmt::format("unexpected {} in {}", forItem, ctx);
 //    ^^^^ IdentifierBuiltin 
-//        ^^ IdentifierOperator 
 //          ^^^^^^^^^^^^ IdentifierAttribute 
-//                       ^ IdentifierOperator 
 //                         ^^^ IdentifierNamespace 
 //                              ^^^^^^ Identifier 
 //                                     ^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
@@ -1617,34 +1384,26 @@ expression: "dump_document(&document, &contents)"
     std::optional<std::string> checkNecessaryKeysPresent() const {
 //  ^^^ IdentifierNamespace 
 //       ^^^^^^^^ IdentifierType 
-//               ^ IdentifierOperator 
 //                ^^^ IdentifierNamespace 
 //                     ^^^^^^ IdentifierType 
-//                           ^ IdentifierOperator 
 //                             ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                                                         ^^^^^ Keyword 
       std::vector<std::string> missingKeys;
 //    ^^^ IdentifierNamespace 
 //         ^^^^^^ IdentifierType 
-//               ^ IdentifierOperator 
 //                ^^^ IdentifierNamespace 
 //                     ^^^^^^ IdentifierType 
-//                           ^ IdentifierOperator 
 //                             ^^^^^^^^^^^ Identifier 
       using UInt = decltype(this->presentKeys);
 //    ^^^^^ Keyword 
 //          ^^^^ IdentifierType 
-//               ^ IdentifierOperator 
 //                 ^^^^^^^^ Keyword 
 //                          ^^^^ IdentifierBuiltin 
-//                              ^^ IdentifierOperator 
 //                                ^^^^^^^^^^^ IdentifierAttribute 
       if (!(this->presentKeys & UInt(Key::Directory))) {
 //    ^^ Keyword 
 //          ^^^^ IdentifierBuiltin 
-//              ^^ IdentifierOperator 
 //                ^^^^^^^^^^^ IdentifierAttribute 
-//                            ^ IdentifierOperator 
 //                              ^^^^ IdentifierFunction 
 //                                   ^^^ IdentifierNamespace 
 //                                        ^^^^^^^^^ Identifier 
@@ -1656,9 +1415,7 @@ expression: "dump_document(&document, &contents)"
       if (!(this->presentKeys & UInt(Key::File))) {
 //    ^^ Keyword 
 //          ^^^^ IdentifierBuiltin 
-//              ^^ IdentifierOperator 
 //                ^^^^^^^^^^^ IdentifierAttribute 
-//                            ^ IdentifierOperator 
 //                              ^^^^ IdentifierFunction 
 //                                   ^^^ IdentifierNamespace 
 //                                        ^^^^ Identifier 
@@ -1670,18 +1427,13 @@ expression: "dump_document(&document, &contents)"
       if (!(this->presentKeys & UInt(Key::Command))
 //    ^^ Keyword 
 //          ^^^^ IdentifierBuiltin 
-//              ^^ IdentifierOperator 
 //                ^^^^^^^^^^^ IdentifierAttribute 
-//                            ^ IdentifierOperator 
 //                              ^^^^ IdentifierFunction 
 //                                   ^^^ IdentifierNamespace 
 //                                        ^^^^^^^ Identifier 
           && !(this->presentKeys & UInt(Key::Arguments))) {
-//        ^^ IdentifierOperator 
 //             ^^^^ IdentifierBuiltin 
-//                 ^^ IdentifierOperator 
 //                   ^^^^^^^^^^^ IdentifierAttribute 
-//                               ^ IdentifierOperator 
 //                                 ^^^^ IdentifierFunction 
 //                                      ^^^ IdentifierNamespace 
 //                                           ^^^^^^^^^ Identifier 
@@ -1705,16 +1457,12 @@ expression: "dump_document(&document, &contents)"
 //    ^^^ Keyword 
 //         ^^^^^^ IdentifierBuiltinType 
 //                ^ Identifier 
-//                  ^ IdentifierOperator 
 //                    ^ NumericLiteral 
 //                       ^ Identifier 
-//                         ^ IdentifierOperator 
 //                           ^^^^^^^^^^^ Identifier 
 //                                       ^^^^ IdentifierFunction 
-//                                              ^ IdentifierOperator 
 //                                                ^ NumericLiteral 
 //                                                   ^ Identifier 
-//                                                    ^^ IdentifierOperator 
         buf.append(missingKeys[i]);
 //      ^^^ Identifier 
 //          ^^^^^^ IdentifierFunction 
@@ -1746,9 +1494,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierFunction 
       this->errorMessage = "unexpected null";
 //    ^^^^ IdentifierBuiltin 
-//        ^^ IdentifierOperator 
 //          ^^^^^^^^^^^^ IdentifierAttribute 
-//                       ^ IdentifierOperator 
 //                         ^^^^^^^^^^^^^^^^^ StringLiteral 
       return false;
 //    ^^^^^^ Keyword 
@@ -1761,9 +1507,7 @@ expression: "dump_document(&document, &contents)"
 //                 ^ Identifier 
       this->errorMessage = fmt::format("unexpected bool {}", b);
 //    ^^^^ IdentifierBuiltin 
-//        ^^ IdentifierOperator 
 //          ^^^^^^^^^^^^ IdentifierAttribute 
-//                       ^ IdentifierOperator 
 //                         ^^^ IdentifierNamespace 
 //                              ^^^^^^ Identifier 
 //                                     ^^^^^^^^^^^^^^^^^^^^ StringLiteral 
@@ -1779,9 +1523,7 @@ expression: "dump_document(&document, &contents)"
 //               ^ Identifier 
       this->errorMessage = fmt::format("unexpected int {}", i);
 //    ^^^^ IdentifierBuiltin 
-//        ^^ IdentifierOperator 
 //          ^^^^^^^^^^^^ IdentifierAttribute 
-//                       ^ IdentifierOperator 
 //                         ^^^ IdentifierNamespace 
 //                              ^^^^^^ Identifier 
 //                                     ^^^^^^^^^^^^^^^^^^^ StringLiteral 
@@ -1797,9 +1539,7 @@ expression: "dump_document(&document, &contents)"
 //                     ^ Identifier 
       this->errorMessage = fmt::format("unexpected unsigned int {}", i);
 //    ^^^^ IdentifierBuiltin 
-//        ^^ IdentifierOperator 
 //          ^^^^^^^^^^^^ IdentifierAttribute 
-//                       ^ IdentifierOperator 
 //                         ^^^ IdentifierNamespace 
 //                              ^^^^^^ Identifier 
 //                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
@@ -1815,9 +1555,7 @@ expression: "dump_document(&document, &contents)"
 //                     ^ Identifier 
       this->errorMessage = fmt::format("unexpected int64_t {}", i);
 //    ^^^^ IdentifierBuiltin 
-//        ^^ IdentifierOperator 
 //          ^^^^^^^^^^^^ IdentifierAttribute 
-//                       ^ IdentifierOperator 
 //                         ^^^ IdentifierNamespace 
 //                              ^^^^^^ Identifier 
 //                                     ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
@@ -1833,9 +1571,7 @@ expression: "dump_document(&document, &contents)"
 //                       ^ Identifier 
       this->errorMessage = fmt::format("unexpected uint64_t {}", i);
 //    ^^^^ IdentifierBuiltin 
-//        ^^ IdentifierOperator 
 //          ^^^^^^^^^^^^ IdentifierAttribute 
-//                       ^ IdentifierOperator 
 //                         ^^^ IdentifierNamespace 
 //                              ^^^^^^ Identifier 
 //                                     ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
@@ -1851,9 +1587,7 @@ expression: "dump_document(&document, &contents)"
 //                     ^ Identifier 
       this->errorMessage = fmt::format("unexpected double {}", d);
 //    ^^^^ IdentifierBuiltin 
-//        ^^ IdentifierOperator 
 //          ^^^^^^^^^^^^ IdentifierAttribute 
-//                       ^ IdentifierOperator 
 //                         ^^^ IdentifierNamespace 
 //                              ^^^^^^ Identifier 
 //                                     ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
@@ -1867,7 +1601,6 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^^^^^^ IdentifierFunction 
 //                 ^^^^^ Keyword 
 //                       ^^^^ IdentifierBuiltinType 
-//                            ^ IdentifierOperator 
 //                             ^^^ Identifier 
 //                                  ^^^^^^^^^ IdentifierNamespace 
 //                                             ^^^^^^^^ IdentifierType 
@@ -1876,9 +1609,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                   ^^^^^^^^ Comment 
       this->errorMessage =
 //    ^^^^ IdentifierBuiltin 
-//        ^^ IdentifierOperator 
 //          ^^^^^^^^^^^^ IdentifierAttribute 
-//                       ^ IdentifierOperator 
           fmt::format("unexpected number {}", std::string_view(str, length));
 //        ^^^ IdentifierNamespace 
 //             ^^^^^^ Identifier 
@@ -1896,7 +1627,6 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^^^ IdentifierFunction 
 //              ^^^^^ Keyword 
 //                    ^^^^ IdentifierBuiltinType 
-//                         ^ IdentifierOperator 
 //                          ^^^ Identifier 
 //                               ^^^^^^^^^ IdentifierNamespace 
 //                                          ^^^^^^^^ IdentifierType 
@@ -1906,7 +1636,6 @@ expression: "dump_document(&document, &contents)"
       switch (this->context) {
 //    ^^^^^^ Keyword 
 //            ^^^^ IdentifierBuiltin 
-//                ^^ IdentifierOperator 
 //                  ^^^^^^^ IdentifierAttribute 
       case Context::Outermost:
 //    ^^^^ Keyword 
@@ -1922,7 +1651,6 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^^ Identifier 
         this->markContextIllegal("string");
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                               ^^^^^^^^ StringLiteral 
         return false;
@@ -1935,21 +1663,16 @@ expression: "dump_document(&document, &contents)"
         if (this->options.checkDirectoryPathsAreAbsolute
 //      ^^ Keyword 
 //          ^^^^ IdentifierBuiltin 
-//              ^^ IdentifierOperator 
 //                ^^^^^^^ IdentifierAttribute 
 //                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierAttribute 
             && this->lastKey == Key::Directory) {
-//          ^^ IdentifierOperator 
 //             ^^^^ IdentifierBuiltin 
-//                 ^^ IdentifierOperator 
 //                   ^^^^^^^ IdentifierAttribute 
-//                           ^^ IdentifierOperator 
 //                              ^^^ IdentifierNamespace 
 //                                   ^^^^^^^^^ Identifier 
           auto dirPath = std::string_view(str, length);
 //        ^^^^ Keyword 
 //             ^^^^^^^ Identifier 
-//                     ^ IdentifierOperator 
 //                       ^^^ IdentifierNamespace 
 //                            ^^^^^^^^^^^ Identifier 
 //                                        ^^^ Identifier 
@@ -1976,9 +1699,7 @@ expression: "dump_document(&document, &contents)"
 //                                               ^^^^^^^^^ IdentifierFunction 
             this->errorMessage = fmt::format(
 //          ^^^^ IdentifierBuiltin 
-//              ^^ IdentifierOperator 
 //                ^^^^^^^^^^^^ IdentifierAttribute 
-//                             ^ IdentifierOperator 
 //                               ^^^ IdentifierNamespace 
 //                                    ^^^^^^ Identifier 
                 "expected absolute path for \"directory\" key but found '{}'",
@@ -1993,7 +1714,6 @@ expression: "dump_document(&document, &contents)"
         return this->inner.String(str, length, copy);
 //      ^^^^^^ Keyword 
 //             ^^^^ IdentifierBuiltin 
-//                 ^^ IdentifierOperator 
 //                   ^^^^^ IdentifierAttribute 
 //                         ^^^^^^ IdentifierFunction 
 //                                ^^^ Identifier 
@@ -2006,7 +1726,6 @@ expression: "dump_document(&document, &contents)"
         return this->inner.String(str, length, copy);
 //      ^^^^^^ Keyword 
 //             ^^^^ IdentifierBuiltin 
-//                 ^^ IdentifierOperator 
 //                   ^^^^^ IdentifierAttribute 
 //                         ^^^^^^ IdentifierFunction 
 //                                ^^^ Identifier 
@@ -2020,7 +1739,6 @@ expression: "dump_document(&document, &contents)"
       switch (this->context) {
 //    ^^^^^^ Keyword 
 //            ^^^^ IdentifierBuiltin 
-//                ^^ IdentifierOperator 
 //                  ^^^^^^^ IdentifierAttribute 
       case Context::Outermost:
 //    ^^^^ Keyword 
@@ -2040,7 +1758,6 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^^^^^^^ Identifier 
         this->markContextIllegal("object start ('{')");
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                               ^^^^^^^^^^^^^^^^^^^^ StringLiteral 
         return false;
@@ -2052,15 +1769,12 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^ Identifier 
         this->context = Context::InObject;
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^ IdentifierAttribute 
-//                    ^ IdentifierOperator 
 //                      ^^^^^^^ IdentifierNamespace 
 //                               ^^^^^^^^ Identifier 
         return this->inner.StartObject();
 //      ^^^^^^ Keyword 
 //             ^^^^ IdentifierBuiltin 
-//                 ^^ IdentifierOperator 
 //                   ^^^^^ IdentifierAttribute 
 //                         ^^^^^^^^^^^ IdentifierFunction 
       }
@@ -2070,7 +1784,6 @@ expression: "dump_document(&document, &contents)"
 //       ^^^ IdentifierFunction 
 //           ^^^^^ Keyword 
 //                 ^^^^ IdentifierBuiltinType 
-//                      ^ IdentifierOperator 
 //                       ^^^ Identifier 
 //                            ^^^^^^^^^ IdentifierNamespace 
 //                                       ^^^^^^^^ IdentifierType 
@@ -2080,7 +1793,6 @@ expression: "dump_document(&document, &contents)"
       switch (this->context) {
 //    ^^^^^^ Keyword 
 //            ^^^^ IdentifierBuiltin 
-//                ^^ IdentifierOperator 
 //                  ^^^^^^^ IdentifierAttribute 
       case Context::Outermost:
 //    ^^^^ Keyword 
@@ -2100,7 +1812,6 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^^^^^^^ Identifier 
         this->markContextIllegal(
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^^^^^ IdentifierFunction 
             fmt::format("object key {}", std::string_view(str, length)));
 //          ^^^ IdentifierNamespace 
@@ -2120,7 +1831,6 @@ expression: "dump_document(&document, &contents)"
         auto key = std::string_view(str, length);
 //      ^^^^ Keyword 
 //           ^^^ Identifier 
-//               ^ IdentifierOperator 
 //                 ^^^ IdentifierNamespace 
 //                      ^^^^^^^^^^^ Identifier 
 //                                  ^^^ Identifier 
@@ -2128,84 +1838,68 @@ expression: "dump_document(&document, &contents)"
         using UInt = decltype(this->presentKeys);
 //      ^^^^^ Keyword 
 //            ^^^^ IdentifierType 
-//                 ^ IdentifierOperator 
 //                   ^^^^^^^^ Keyword 
 //                            ^^^^ IdentifierBuiltin 
-//                                ^^ IdentifierOperator 
 //                                  ^^^^^^^^^^^ IdentifierAttribute 
         compdb::Key sawKey = Key::Unset;
 //      ^^^^^^ IdentifierNamespace 
 //              ^^^ IdentifierType 
 //                  ^^^^^^ Identifier 
-//                         ^ IdentifierOperator 
 //                           ^^^ IdentifierNamespace 
 //                                ^^^^^ Identifier 
         if (key == "directory") {
 //      ^^ Keyword 
 //          ^^^ Identifier 
-//              ^^ IdentifierOperator 
 //                 ^^^^^^^^^^^ StringLiteral 
           sawKey = Key::Directory;
 //        ^^^^^^ Identifier 
-//               ^ IdentifierOperator 
 //                 ^^^ IdentifierNamespace 
 //                      ^^^^^^^^^ Identifier 
         } else if (key == "file") {
 //        ^^^^ Keyword 
 //             ^^ Keyword 
 //                 ^^^ Identifier 
-//                     ^^ IdentifierOperator 
 //                        ^^^^^^ StringLiteral 
           sawKey = Key::File;
 //        ^^^^^^ Identifier 
-//               ^ IdentifierOperator 
 //                 ^^^ IdentifierNamespace 
 //                      ^^^^ Identifier 
         } else if (key == "command") {
 //        ^^^^ Keyword 
 //             ^^ Keyword 
 //                 ^^^ Identifier 
-//                     ^^ IdentifierOperator 
 //                        ^^^^^^^^^ StringLiteral 
           sawKey = Key::Command;
 //        ^^^^^^ Identifier 
-//               ^ IdentifierOperator 
 //                 ^^^ IdentifierNamespace 
 //                      ^^^^^^^ Identifier 
         } else if (key == "arguments") {
 //        ^^^^ Keyword 
 //             ^^ Keyword 
 //                 ^^^ Identifier 
-//                     ^^ IdentifierOperator 
 //                        ^^^^^^^^^^^ StringLiteral 
           this->context = Context::InArgumentsValue;
 //        ^^^^ IdentifierBuiltin 
-//            ^^ IdentifierOperator 
 //              ^^^^^^^ IdentifierAttribute 
-//                      ^ IdentifierOperator 
 //                        ^^^^^^^ IdentifierNamespace 
 //                                 ^^^^^^^^^^^^^^^^ Identifier 
           sawKey = Key::Arguments;
 //        ^^^^^^ Identifier 
-//               ^ IdentifierOperator 
 //                 ^^^ IdentifierNamespace 
 //                      ^^^^^^^^^ Identifier 
         } else if (key == "output") {
 //        ^^^^ Keyword 
 //             ^^ Keyword 
 //                 ^^^ Identifier 
-//                     ^^ IdentifierOperator 
 //                        ^^^^^^^^ StringLiteral 
           sawKey = Key::Output;
 //        ^^^^^^ Identifier 
-//               ^ IdentifierOperator 
 //                 ^^^ IdentifierNamespace 
 //                      ^^^^^^ Identifier 
         } else {
 //        ^^^^ Keyword 
           this->warnings.insert(fmt::format("unknown key {}", key));
 //        ^^^^ IdentifierBuiltin 
-//            ^^ IdentifierOperator 
 //              ^^^^^^^^ IdentifierAttribute 
 //                       ^^^^^^ IdentifierFunction 
 //                              ^^^ IdentifierNamespace 
@@ -2216,28 +1910,22 @@ expression: "dump_document(&document, &contents)"
         if (sawKey != Key::Unset) {
 //      ^^ Keyword 
 //          ^^^^^^ Identifier 
-//                 ^^ IdentifierOperator 
 //                    ^^^ IdentifierNamespace 
 //                         ^^^^^ Identifier 
           this->lastKey = sawKey;
 //        ^^^^ IdentifierBuiltin 
-//            ^^ IdentifierOperator 
 //              ^^^^^^^ IdentifierAttribute 
-//                      ^ IdentifierOperator 
 //                        ^^^^^^ Identifier 
           this->presentKeys |= UInt(this->lastKey);
 //        ^^^^ IdentifierBuiltin 
-//            ^^ IdentifierOperator 
 //              ^^^^^^^^^^^ IdentifierAttribute 
 //                             ^^^^ IdentifierFunction 
 //                                  ^^^^ IdentifierBuiltin 
-//                                      ^^ IdentifierOperator 
 //                                        ^^^^^^^ IdentifierAttribute 
         }
         return this->inner.Key(str, length, copy);
 //      ^^^^^^ Keyword 
 //             ^^^^ IdentifierBuiltin 
-//                 ^^ IdentifierOperator 
 //                   ^^^^^ IdentifierAttribute 
 //                         ^^^ IdentifierFunction 
 //                             ^^^ Identifier 
@@ -2254,7 +1942,6 @@ expression: "dump_document(&document, &contents)"
       switch (this->context) {
 //    ^^^^^^ Keyword 
 //            ^^^^ IdentifierBuiltin 
-//                ^^ IdentifierOperator 
 //                  ^^^^^^^ IdentifierAttribute 
       case Context::Outermost:
 //    ^^^^ Keyword 
@@ -2274,7 +1961,6 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^^^^^^^ Identifier 
         this->markContextIllegal("object end ('}')");
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                               ^^^^^^^^^^^^^^^^^^ StringLiteral 
         return false;
@@ -2286,18 +1972,14 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^ Identifier 
         this->context = Context::InTopLevelArray;
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^ IdentifierAttribute 
-//                    ^ IdentifierOperator 
 //                      ^^^^^^^ IdentifierNamespace 
 //                               ^^^^^^^^^^^^^^^ Identifier 
         if (auto missing = this->checkNecessaryKeysPresent()) {
 //      ^^ Keyword 
 //          ^^^^ Keyword 
 //               ^^^^^^^ Identifier 
-//                       ^ IdentifierOperator 
 //                         ^^^^ IdentifierBuiltin 
-//                             ^^ IdentifierOperator 
 //                               ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
           spdlog::warn("missing keys: {}", missing.value());
 //        ^^^^^^ IdentifierNamespace 
@@ -2308,14 +1990,11 @@ expression: "dump_document(&document, &contents)"
         }
         this->presentKeys = 0;
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^^^^^ IdentifierAttribute 
-//                        ^ IdentifierOperator 
 //                          ^ NumericLiteral 
         return this->inner.EndObject(memberCount);
 //      ^^^^^^ Keyword 
 //             ^^^^ IdentifierBuiltin 
-//                 ^^ IdentifierOperator 
 //                   ^^^^^ IdentifierAttribute 
 //                         ^^^^^^^^^ IdentifierFunction 
 //                                   ^^^^^^^^^^^ Identifier 
@@ -2327,7 +2006,6 @@ expression: "dump_document(&document, &contents)"
       switch (this->context) {
 //    ^^^^^^ Keyword 
 //            ^^^^ IdentifierBuiltin 
-//                ^^ IdentifierOperator 
 //                  ^^^^^^^ IdentifierAttribute 
       case Context::InTopLevelArray:
 //    ^^^^ Keyword 
@@ -2343,7 +2021,6 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^^^^^^^ Identifier 
         this->markContextIllegal("array start ('[')");
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                               ^^^^^^^^^^^^^^^^^^^ StringLiteral 
         return false;
@@ -2355,9 +2032,7 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^ Identifier 
         this->context = Context::InTopLevelArray;
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^ IdentifierAttribute 
-//                    ^ IdentifierOperator 
 //                      ^^^^^^^ IdentifierNamespace 
 //                               ^^^^^^^^^^^^^^^ Identifier 
         break;
@@ -2368,9 +2043,7 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^^ Identifier 
         this->context = Context::InArgumentsValueArray;
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^ IdentifierAttribute 
-//                    ^ IdentifierOperator 
 //                      ^^^^^^^ IdentifierNamespace 
 //                               ^^^^^^^^^^^^^^^^^^^^^ Identifier 
         break;
@@ -2379,7 +2052,6 @@ expression: "dump_document(&document, &contents)"
       return this->inner.StartObject();
 //    ^^^^^^ Keyword 
 //           ^^^^ IdentifierBuiltin 
-//               ^^ IdentifierOperator 
 //                 ^^^^^ IdentifierAttribute 
 //                       ^^^^^^^^^^^ IdentifierFunction 
     }
@@ -2392,7 +2064,6 @@ expression: "dump_document(&document, &contents)"
       switch (this->context) {
 //    ^^^^^^ Keyword 
 //            ^^^^ IdentifierBuiltin 
-//                ^^ IdentifierOperator 
 //                  ^^^^^^^ IdentifierAttribute 
       case Context::Outermost:
 //    ^^^^ Keyword 
@@ -2408,7 +2079,6 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^^ Identifier 
         this->markContextIllegal("array end (']')");
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                               ^^^^^^^^^^^^^^^^^ StringLiteral 
         return false;
@@ -2420,9 +2090,7 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^ Identifier 
         this->context = Context::Outermost;
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^ IdentifierAttribute 
-//                    ^ IdentifierOperator 
 //                      ^^^^^^^ IdentifierNamespace 
 //                               ^^^^^^^^^ Identifier 
         break;
@@ -2433,9 +2101,7 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^^^^^^^^^^^^^^^^^ Identifier 
         this->context = Context::InObject;
 //      ^^^^ IdentifierBuiltin 
-//          ^^ IdentifierOperator 
 //            ^^^^^^^ IdentifierAttribute 
-//                    ^ IdentifierOperator 
 //                      ^^^^^^^ IdentifierNamespace 
 //                               ^^^^^^^^ Identifier 
         break;
@@ -2444,7 +2110,6 @@ expression: "dump_document(&document, &contents)"
       return this->inner.EndArray(elementCount);
 //    ^^^^^^ Keyword 
 //           ^^^^ IdentifierBuiltin 
-//               ^^ IdentifierOperator 
 //                 ^^^^^ IdentifierAttribute 
 //                       ^^^^^^^^ IdentifierFunction 
 //                                ^^^^^^^^^^^^ Identifier 

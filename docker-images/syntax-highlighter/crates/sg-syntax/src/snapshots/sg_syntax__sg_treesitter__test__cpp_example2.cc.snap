@@ -40,76 +40,57 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^^^^^^^^^^ Comment 
   template <typename T, unsigned N, const char *P, typename C = std::less<T>>
 //^^^^^^^^ Keyword 
-//         ^ IdentifierOperator 
 //          ^^^^^^^^ Keyword 
 //                   ^ IdentifierType 
 //                      ^^^^^^^^ IdentifierBuiltinType 
 //                               ^ Identifier 
 //                                  ^^^^^ Keyword 
 //                                        ^^^^ IdentifierBuiltinType 
-//                                             ^ IdentifierOperator 
 //                                              ^ Identifier 
 //                                                 ^^^^^^^^ Keyword 
 //                                                          ^ IdentifierType 
-//                                                            ^ IdentifierOperator 
 //                                                              ^^^ IdentifierNamespace 
 //                                                                   ^^^^ IdentifierType 
-//                                                                       ^ IdentifierOperator 
 //                                                                        ^ IdentifierType 
-//                                                                         ^ IdentifierOperator 
-//                                                                          ^ IdentifierOperator 
   class SmallSetIterator
 //^^^^^ Keyword 
 //      ^^^^^^^^^^^^^^^^ IdentifierType 
       : public iterator_facade_base<SmallSetIterator<T, N>,
 //      ^^^^^^ Keyword 
 //             ^^^^^^^^^^^^^^^^^^^^ IdentifierType 
-//                                 ^ IdentifierOperator 
 //                                  ^^^^^^^^^^^^^^^^ IdentifierType 
-//                                                  ^ IdentifierOperator 
 //                                                   ^ IdentifierType 
 //                                                      ^ IdentifierType 
-//                                                       ^ IdentifierOperator 
                                     std::forward_iterator_tag, T> {
 //                                  ^^^ IdentifierNamespace 
 //                                       ^^^^^^^^^^^^^^^^^^^^ IdentifierType 
 //                                                             ^ IdentifierType 
-//                                                              ^ IdentifierOperator 
   private:
 //^^^^^^^ Keyword 
     using SetIterTy = typename std::set<T, C>::const_iterator;
 //  ^^^^^ Keyword 
 //        ^^^^^^^^^ IdentifierType 
-//                  ^ IdentifierOperator 
 //                    ^^^^^^^^ Keyword 
 //                             ^^^ IdentifierNamespace 
 //                                  ^^^ IdentifierType 
-//                                     ^ IdentifierOperator 
 //                                      ^ IdentifierType 
 //                                         ^ IdentifierType 
-//                                          ^ IdentifierOperator 
 //                                             ^^^^^^^^^^^^^^ IdentifierType 
     using VecIterTy = typename SmallVector<T, N>::const_iterator;
 //  ^^^^^ Keyword 
 //        ^^^^^^^^^ IdentifierType 
-//                  ^ IdentifierOperator 
 //                    ^^^^^^^^ Keyword 
 //                             ^^^^^^^^^^^ IdentifierType 
-//                                        ^ IdentifierOperator 
 //                                         ^ IdentifierType 
 //                                            ^ IdentifierType 
-//                                             ^ IdentifierOperator 
 //                                                ^^^^^^^^^^^^^^ IdentifierType 
     using SelfTy = SmallSetIterator<T, N, C>;
 //  ^^^^^ Keyword 
 //        ^^^^^^ IdentifierType 
-//               ^ IdentifierOperator 
 //                 ^^^^^^^^^^^^^^^^ IdentifierType 
-//                                 ^ IdentifierOperator 
 //                                  ^ IdentifierType 
 //                                     ^ IdentifierType 
 //                                        ^ IdentifierType 
-//                                         ^ IdentifierOperator 
   
     // Non-doc comment
 //  ^^^^^^^^^^^^^^^^^^ Comment 
@@ -139,19 +120,18 @@ expression: "dump_document(&document, &contents)"
 //                                                                  ^^^^^ BooleanLiteral 
   
     ~SmallSetIterator() {
-//   ^^^^^^^^^^^^^^^^ IdentifierFunction 
+//  ^^^^^^^^^^^^^^^^^ IdentifierFunction 
       if (isSmall)
 //    ^^ Keyword 
 //        ^^^^^^^ Identifier 
         VecIter.~VecIterTy();
 //      ^^^^^^^ Identifier 
-//               ^^^^^^^^^ IdentifierFunction 
+//              ^^^^^^^^^^ IdentifierFunction 
     }
   
     SmallSetIterator(SmallSetIterator &&Other) : isSmall(Other.isSmall) {
 //  ^^^^^^^^^^^^^^^^ IdentifierFunction 
 //                   ^^^^^^^^^^^^^^^^ IdentifierType 
-//                                    ^^ IdentifierOperator 
 //                                      ^^^^^ Identifier 
 //                                               ^^^^^^^ IdentifierAttribute 
 //                                                       ^^^^^ Identifier 
@@ -161,7 +141,6 @@ expression: "dump_document(&document, &contents)"
 //        ^^^^^^^ Identifier 
         VecIter = std::move(Other.VecIter);
 //      ^^^^^^^ Identifier 
-//              ^ IdentifierOperator 
 //                ^^^ IdentifierNamespace 
 //                     ^^^^ Identifier 
 //                          ^^^^^ Identifier 
@@ -172,7 +151,6 @@ expression: "dump_document(&document, &contents)"
 //      ^^^^^^^^^^^^^^^^^^ Comment 
         new (&SetIter) SetIterTy(std::move(Other.SetIter));
 //      ^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^ Identifier 
 //                     ^^^^^^^^^ IdentifierType 
 //                               ^^^ IdentifierNamespace 
@@ -183,16 +161,13 @@ expression: "dump_document(&document, &contents)"
   
     SmallSetIterator& operator=(const SmallSetIterator& Other) {
 //  ^^^^^^^^^^^^^^^^ IdentifierType 
-//                  ^ IdentifierOperator 
 //                    ^^^^^^^^ Keyword 
 //                            ^ IdentifierOperator 
 //                              ^^^^^ Keyword 
 //                                    ^^^^^^^^^^^^^^^^ IdentifierType 
-//                                                    ^ IdentifierOperator 
 //                                                      ^^^^^ Identifier 
       return *this;
 //    ^^^^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^ IdentifierBuiltin 
     }
   
@@ -202,13 +177,11 @@ expression: "dump_document(&document, &contents)"
 //                ^^ IdentifierOperator 
 //                   ^^^^^ Keyword 
 //                         ^^^^^^^^^^^^^^^^ IdentifierType 
-//                                          ^ IdentifierOperator 
 //                                           ^^^ Identifier 
 //                                                ^^^^^ Keyword 
       if (isSmall != RHS.isSmall)
 //    ^^ Keyword 
 //        ^^^^^^^ Identifier 
-//                ^^ IdentifierOperator 
 //                   ^^^ Identifier 
 //                       ^^^^^^^ IdentifierAttribute 
         return false;
@@ -220,37 +193,30 @@ expression: "dump_document(&document, &contents)"
         return VecIter == RHS.VecIter;
 //      ^^^^^^ Keyword 
 //             ^^^^^^^ Identifier 
-//                     ^^ IdentifierOperator 
 //                        ^^^ Identifier 
 //                            ^^^^^^^ IdentifierAttribute 
     }
   
     SmallSetIterator &operator++() {
 //  ^^^^^^^^^^^^^^^^ IdentifierType 
-//                   ^ IdentifierOperator 
 //                    ^^^^^^^^ Keyword 
 //                            ^^ IdentifierOperator 
       SetIter++;
 //    ^^^^^^^ Identifier 
-//           ^^ IdentifierOperator 
       return *this;
 //    ^^^^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^ IdentifierBuiltin 
     }
   
     const T &operator*() const { return isSmall ? *VecIter : *SetIter; }
 //  ^^^^^ Keyword 
 //        ^ IdentifierType 
-//          ^ IdentifierOperator 
 //           ^^^^^^^^ Keyword 
 //                   ^ IdentifierOperator 
 //                       ^^^^^ Keyword 
 //                               ^^^^^^ Keyword 
 //                                      ^^^^^^^ Identifier 
-//                                                ^ IdentifierOperator 
 //                                                 ^^^^^^^ Identifier 
-//                                                           ^ IdentifierOperator 
 //                                                            ^^^^^^^ Identifier 
     
     static_assert(N <= 32); // C++17 extension
@@ -270,18 +236,14 @@ expression: "dump_document(&document, &contents)"
 //      ^^^^^^^^ IdentifierType 
     SmallVector<T, N> Vector;
 //  ^^^^^^^^^^^ IdentifierType 
-//             ^ IdentifierOperator 
 //              ^ IdentifierType 
 //                 ^ IdentifierType 
-//                  ^ IdentifierOperator 
 //                    ^^^^^^ IdentifierAttribute 
     std::set<T, C> Set;
 //  ^^^ IdentifierNamespace 
 //       ^^^ IdentifierType 
-//          ^ IdentifierOperator 
 //           ^ IdentifierType 
 //              ^ IdentifierType 
-//               ^ IdentifierOperator 
 //                 ^^^ IdentifierAttribute 
   
   public:
@@ -298,14 +260,11 @@ expression: "dump_document(&document, &contents)"
     std::pair<const_iterator, bool> insert(const T &V) {
 //  ^^^ IdentifierNamespace 
 //       ^^^^ IdentifierType 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^^^^^^^ IdentifierType 
 //                            ^^^^ IdentifierBuiltinType 
-//                                ^ IdentifierOperator 
 //                                  ^^^^^^ IdentifierFunction 
 //                                         ^^^^^ Keyword 
 //                                               ^ IdentifierType 
-//                                                 ^ IdentifierOperator 
 //                                                  ^ Identifier 
       if (!isSmall()) {
 //    ^^ Keyword 
@@ -314,7 +273,6 @@ expression: "dump_document(&document, &contents)"
 //      ^^^^ Keyword 
 //            ^ Identifier 
 //               ^^^^^^^^ Identifier 
-//                         ^ IdentifierOperator 
 //                           ^^^ Identifier 
 //                               ^^^^^^ IdentifierFunction 
 //                                      ^ Identifier 
@@ -330,10 +288,8 @@ expression: "dump_document(&document, &contents)"
   
     template <typename IterT>
 //  ^^^^^^^^ Keyword 
-//           ^ IdentifierOperator 
 //            ^^^^^^^^ Keyword 
 //                     ^^^^^ IdentifierType 
-//                          ^ IdentifierOperator 
     void insert(IterT I, IterT E) {
 //  ^^^^ IdentifierBuiltinType 
 //       ^^^^^^ IdentifierFunction 
@@ -344,13 +300,10 @@ expression: "dump_document(&document, &contents)"
       for (; I != E; ++I)
 //    ^^^ Keyword 
 //           ^ Identifier 
-//             ^^ IdentifierOperator 
 //                ^ Identifier 
-//                   ^^ IdentifierOperator 
 //                     ^ Identifier 
         insert(*I);
 //      ^^^^^^ IdentifierFunction 
-//             ^ IdentifierOperator 
 //              ^ Identifier 
     }
   
