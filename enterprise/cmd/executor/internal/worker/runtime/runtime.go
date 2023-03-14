@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"context"
-	"os"
 
 	"github.com/sourcegraph/log"
 	"k8s.io/client-go/kubernetes"
@@ -74,7 +73,7 @@ func New(
 		}
 	}
 
-	if _, ok := os.LookupEnv("KUBERNETES_SERVICE_HOST"); ok {
+	if util.IsKubernetes() {
 		config, err := clientcmd.BuildConfigFromFlags("", runnerOpts.KubernetesOptions.ConfigPath)
 		if err != nil {
 			return nil, err

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"os/exec"
 	"testing"
 
@@ -489,6 +490,18 @@ func TestValidateIgniteInstalled(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIsKubernetes(t *testing.T) {
+	os.Setenv("KUBERNETES_SERVICE_HOST", "localhost")
+	t.Cleanup(func() {
+		os.Unsetenv("KUBERNETES_SERVICE_HOST")
+	})
+
+	assert.True(t, util.IsKubernetes())
+
+	os.Unsetenv("KUBERNETES_SERVICE_HOST")
+	assert.True(t, util.IsKubernetes())
 }
 
 // TODO: visit this later. It uses os.Stat on a constant path. Maybe mock os.Stat or use a temp dir??

@@ -3,7 +3,6 @@ package command
 import (
 	"context"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -188,7 +188,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string) *batchv
 		MountPath: mountPath,
 	}
 	volumeSource := corev1.VolumeSource{}
-	if _, found := os.LookupEnv("KUBERNETES_SERVICE_HOST"); found {
+	if util.IsKubernetes() {
 		volumeMount.SubPath = path
 		volumeSource.PersistentVolumeClaim = &corev1.PersistentVolumeClaimVolumeSource{
 			ClaimName: "executor-pvc",
