@@ -23,9 +23,9 @@ Uploaded index files are processed asynchronously from a queue. Each upload has 
 
 ![Upload state diagram](./diagrams/upload-states.svg)
 
-The general happy-path for an upload is: _UPLOADING_, _QUEUED_, _PROCESSING_, then _COMPLETED_. 
+The general happy-path for an upload is: `UPLOADING_INDEX`, `QUEUED_FOR_PROCESSING`, `PROCESSING`, then `COMPLETED`.
 
-Processing of a code graph index file may occur due to malformed input or due to transient errors related to the network (for example). An upload will enter the `FAILED` state on the former type of error and the `ERRORED` state. Errored uploads may be retried a number of times before moving into the `FAILED` state.
+Processing of a code graph index file may occur due to malformed input or due to transient errors related to the network (for example). An upload will enter the `PROCESSING_ERRORED` state on such conditions. Errored uploads may be retried a number of times before moving into a permanently errored state.
 
 At any point, the upload record may be deleted. This can happen because the record is being replaced by a newer upload, due to [age of the upload record](../how-to/configure_data_retention.md), or due to explicit deletion by the user. Deleting a record that could be used to resolve to code navigation queries will first move into the `DELETING` state. Moving temporarily into this state allows Sourcegraph to smoothly transition the set of code graph uploads that are visible for query resolution.
 
@@ -42,7 +42,7 @@ Alternatively, users can see code graph data uploads for a particular repository
 
 Administrators of a Sourcegraph instance can see a global view of code graph data uploads across all repositories from the _Site Admin_ page.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/site-admin-list.png" class="screenshot" alt="Global list of code graphd data uploads across all repositories">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/indexes-list.png" class="screenshot" alt="Global list of code graphd data uploads across all repositories">
 
 ## Repository commit graph
 
@@ -55,8 +55,8 @@ While this flag is set, the repository's commit graph is considered _stale_. Thi
 
 The state of a repository's commit graph can be seen in the code graph data page in the target repository's index page.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/list-stale-commit-graph.png" class="screenshot" alt="Stale repository commit graph notice">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/stale-commit-graph.png" class="screenshot" alt="Stale repository commit graph notice">
 
 Once the commit graph has updated (and no subsequent changes to that repository's uploads have occurred), the repository commit graph is no longer considered stale.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/list-states.png" class="screenshot" alt="Up-to-date repository commit graph notice">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/fresh-commit-graph.png" class="screenshot" alt="Up-to-date repository commit graph notice">
