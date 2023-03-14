@@ -162,7 +162,7 @@ expression: "dump_document(&document, &contents)"
     SmallSetIterator& operator=(const SmallSetIterator& Other) {
 //  ^^^^^^^^^^^^^^^^ IdentifierType 
 //                    ^^^^^^^^ Keyword 
-//                            ^ IdentifierOperator 
+//                            ^ Identifier 
 //                              ^^^^^ Keyword 
 //                                    ^^^^^^^^^^^^^^^^ IdentifierType 
 //                                                      ^^^^^ Identifier 
@@ -174,7 +174,7 @@ expression: "dump_document(&document, &contents)"
      bool operator==(const SmallSetIterator &RHS) const {
 //   ^^^^ IdentifierBuiltinType 
 //        ^^^^^^^^ Keyword 
-//                ^^ IdentifierOperator 
+//                ^^ Identifier 
 //                   ^^^^^ Keyword 
 //                         ^^^^^^^^^^^^^^^^ IdentifierType 
 //                                           ^^^ Identifier 
@@ -200,7 +200,7 @@ expression: "dump_document(&document, &contents)"
     SmallSetIterator &operator++() {
 //  ^^^^^^^^^^^^^^^^ IdentifierType 
 //                    ^^^^^^^^ Keyword 
-//                            ^^ IdentifierOperator 
+//                            ^^ Identifier 
       SetIter++;
 //    ^^^^^^^ Identifier 
       return *this;
@@ -212,7 +212,7 @@ expression: "dump_document(&document, &contents)"
 //  ^^^^^ Keyword 
 //        ^ IdentifierType 
 //           ^^^^^^^^ Keyword 
-//                   ^ IdentifierOperator 
+//                   ^ Identifier 
 //                       ^^^^^ Keyword 
 //                               ^^^^^^ Keyword 
 //                                      ^^^^^^^ Identifier 

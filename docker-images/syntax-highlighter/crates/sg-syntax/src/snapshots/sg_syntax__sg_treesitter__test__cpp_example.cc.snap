@@ -157,7 +157,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^ IdentifierType 
 //      ^^^^ IdentifierNamespace 
 //            ^^^^^^^^ Keyword 
-//                    ^ IdentifierOperator 
+//                    ^ Identifier 
 //                      ^^^^^ Keyword 
 //                            ^^^^ IdentifierType 
 //                                  ^^^^^ Identifier 
@@ -291,7 +291,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^ IdentifierType 
 //      ^^^^ IdentifierNamespace 
 //            ^^^^^^^^ Keyword 
-//                    ^ IdentifierOperator 
+//                    ^ Identifier 
 //                      ^^^^ IdentifierType 
 //                             ^^^^^ Identifier 
 //                                    ^^^^^^^^ Keyword 
@@ -452,7 +452,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^ IdentifierBuiltinType 
 //     ^^^^ IdentifierNamespace 
 //           ^^^^^^^^ Keyword 
-//                   ^^ IdentifierOperator 
+//                   ^^ Identifier 
 //                      ^^^^^ Keyword 
 //                            ^^^^ IdentifierType 
 //                                  ^^^^^ Identifier 
@@ -779,7 +779,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierType 
 //            ^^^^^^ IdentifierType 
 //                     ^^^^^^^^ Keyword 
-//                             ^^ IdentifierOperator 
+//                             ^^ Identifier 
 //                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
 //                                              ^^^^^^ Identifier 
@@ -808,7 +808,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierType 
 //            ^^^^^^^^^^^ IdentifierType 
 //                          ^^^^^^^^ Keyword 
-//                                  ^^ IdentifierOperator 
+//                                  ^^ Identifier 
 //                                     ^^^^^ Keyword 
 //                                           ^^^^^^^^^^^ IdentifierType 
 //                                                        ^^^^^^ Identifier 
@@ -826,7 +826,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierType 
 //            ^^^^^^^ IdentifierType 
 //                      ^^^^^^^^ Keyword 
-//                              ^^ IdentifierOperator 
+//                              ^^ Identifier 
 //                                 ^^^^^ Keyword 
 //                                       ^^^^^^^ IdentifierType 
 //                                                ^^^^^^ Identifier 
@@ -844,7 +844,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierType 
 //            ^^^^^^ IdentifierType 
 //                     ^^^^^^^^ Keyword 
-//                             ^^ IdentifierOperator 
+//                             ^^ Identifier 
 //                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
 //                                              ^^^^^^ Identifier 
@@ -862,7 +862,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierType 
 //            ^^^^^^^^^^^^ IdentifierType 
 //                           ^^^^^^^^ Keyword 
-//                                   ^^ IdentifierOperator 
+//                                   ^^ Identifier 
 //                                      ^^^^^ Keyword 
 //                                            ^^^^^^^^^^^^ IdentifierType 
 //                                                          ^^^^^^^^^^^^^ Identifier 
@@ -920,7 +920,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierType 
 //            ^^^^^ IdentifierType 
 //                    ^^^^^^^^ Keyword 
-//                            ^^ IdentifierOperator 
+//                            ^^ Identifier 
 //                               ^^^^^ Keyword 
 //                                     ^^^^^ IdentifierType 
 //                                            ^^^^^ Identifier 
@@ -935,7 +935,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierType 
 //            ^^^^^^ IdentifierType 
 //                     ^^^^^^^^ Keyword 
-//                             ^^ IdentifierOperator 
+//                             ^^ Identifier 
 //                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
 //                                              ^^^^^^ Identifier 
@@ -966,7 +966,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierType 
 //            ^^^^^^ IdentifierType 
 //                     ^^^^^^^^ Keyword 
-//                             ^^ IdentifierOperator 
+//                             ^^ Identifier 
 //                                ^^^^^ Keyword 
 //                                      ^^^^^^ IdentifierType 
 //                                              ^^^^^^ Identifier 
@@ -990,7 +990,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierType 
 //            ^^^ IdentifierType 
 //                  ^^^^^^^^ Keyword 
-//                          ^^ IdentifierOperator 
+//                          ^^ Identifier 
 //                             ^^^^^ Keyword 
 //                                   ^^^ IdentifierType 
 //                                        ^^^ Identifier 
@@ -1019,7 +1019,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierType 
 //            ^^^^^^^^ IdentifierType 
 //                       ^^^^^^^^ Keyword 
-//                               ^^ IdentifierOperator 
+//                               ^^ Identifier 
 //                                  ^^^^^ Keyword 
 //                                        ^^^^^^^^ IdentifierType 
 //                                                  ^^^^^^^^ Identifier 
@@ -1092,7 +1092,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^ IdentifierType 
 //            ^^^^ IdentifierType 
 //                   ^^^^^^^^ Keyword 
-//                           ^^ IdentifierOperator 
+//                           ^^ Identifier 
 //                              ^^^^^ Keyword 
 //                                    ^^^^ IdentifierType 
 //                                          ^^^^ Identifier 

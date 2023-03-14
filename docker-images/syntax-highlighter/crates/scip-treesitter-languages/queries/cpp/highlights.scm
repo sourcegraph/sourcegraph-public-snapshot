@@ -29,13 +29,14 @@
 (primitive_type) @type.builtin
 (sized_type_specifier) @type.builtin
 
+(literal_suffix) @identifier
 (identifier) @identifier
 (namespace_identifier) @identifier.module
 
 (this) @constant.builtin
 (comment) @comment
 (operator_name "operator" @keyword)
-(operator_name) @identifier.operator
+(operator_name) @identifier
 (auto) @keyword
 
 [

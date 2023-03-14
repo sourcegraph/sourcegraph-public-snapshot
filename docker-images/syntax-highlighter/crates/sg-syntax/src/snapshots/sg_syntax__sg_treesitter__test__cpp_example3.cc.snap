@@ -120,7 +120,7 @@ expression: "dump_document(&document, &contents)"
 //^^^ IdentifierNamespace 
 //     ^^^^^^ IdentifierType 
 //            ^^^^^^^^ Keyword 
-//                    ^^^ IdentifierOperator 
+//                    ^^^ Identifier 
 //                       ^^ Identifier 
 //                          ^^^^^ Keyword 
 //                                ^^^^ IdentifierBuiltinType 
@@ -142,7 +142,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^^^^ Keyword 
 //          ^^^ IdentifierBuiltinType 
 //              ^^^^^^^^ Keyword 
-//                      ^^^ IdentifierOperator 
+//                      ^^^ Identifier 
 //                         ^^ Identifier 
 //                            ^^^^^^^^^^^^^^^^^^ IdentifierBuiltinType 
 //                                               ^ Identifier 
@@ -162,6 +162,7 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^ IdentifierType 
 //                ^ Identifier 
 //                    ^^^^^^^ StringLiteral 
+//                           ^^ Identifier 
       std::cout << s << std::endl; // prints "hello"
 //    ^^^ IdentifierNamespace 
 //         ^^^^ Identifier 
@@ -174,6 +175,7 @@ expression: "dump_document(&document, &contents)"
 //    ^^^ IdentifierBuiltinType 
 //        ^^^^^^ Identifier 
 //                 ^ NumericLiteral 
+//                  ^^ Identifier 
       std::cout << meters << " meters" << std::endl; // prints "5000 meters"
 //    ^^^ IdentifierNamespace 
 //         ^^^^ Identifier 
@@ -562,7 +564,7 @@ expression: "dump_document(&document, &contents)"
 //           ^^^ IdentifierNamespace 
 //                ^^^^^^^ IdentifierType 
 //                         ^^^^^^^^ Keyword 
-//                                 ^^ IdentifierOperator 
+//                                 ^^ Identifier 
 //                                    ^^^ IdentifierNamespace 
 //                                         ^^^^^^^ IdentifierType 
 //                                                  ^^ Identifier 
