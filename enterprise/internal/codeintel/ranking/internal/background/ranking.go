@@ -38,7 +38,9 @@ func exportRankingGraph(
 	numReferencesInserted := 0
 
 	for _, upload := range uploads {
+		documentPaths := []string{}
 		if err := lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, graphKey, writeBatchSize, func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error {
+			documentPaths = append(documentPaths, path)
 			numDefinitions, numReferences, err := setDefinitionsAndReferencesForUpload(ctx, store, upload, rankingBatchSize, rankingGraphKey, path, document)
 			numDefinitionsInserted += numDefinitions
 			numReferencesInserted += numReferences
@@ -49,6 +51,18 @@ func exportRankingGraph(
 				log.Int("id", upload.ID),
 				log.String("repo", upload.Repo),
 				log.String("root", upload.Root),
+				log.Error(err),
+			)
+
+			return 0, 0, 0, err
+		}
+
+		if err := store.InsertInitialPathCounts(ctx, upload.RepoID, documentPaths, graphKey); err != nil {
+			logger.Error(
+				"Failed to insert initial path counts",
+				log.Int("id", upload.ID),
+				log.Int("repoID", upload.RepoID),
+				log.String("graphKey", graphKey),
 				log.Error(err),
 			)
 

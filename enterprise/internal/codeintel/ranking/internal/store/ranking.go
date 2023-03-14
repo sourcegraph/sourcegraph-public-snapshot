@@ -289,6 +289,55 @@ SELECT
 	(SELECT COUNT(*) FROM ins)
 `
 
+func (s *store) InsertInitialPathCounts(ctx context.Context, repositoryID int, documentPath []string, derivativeGraphKey string) (err error) {
+	ctx, _, endObservation := s.operations.insertPathRanks.With(
+		ctx,
+		&err,
+		observation.Args{LogFields: []otlog.Field{
+			otlog.String("derivativeGraphKey", derivativeGraphKey),
+		}},
+	)
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	inserter := func(inserter *batch.Inserter) error {
+		for _, path := range documentPath {
+			if err := inserter.Insert(ctx, repositoryID, path, 0, derivativeGraphKey); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	if err := batch.WithInserter(
+		ctx,
+		tx.Handle(),
+		"codeintel_ranking_definitions",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"repository_id",
+			"document_path",
+			"count",
+			"graph_key",
+		},
+		inserter,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const insertInitialPathRankCountsQuery = `
+INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
+`
+
 func (s *store) InsertPathRanks(
 	ctx context.Context,
 	derivativeGraphKey string,
