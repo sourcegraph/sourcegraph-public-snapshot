@@ -377,8 +377,8 @@ inserted AS (
 				THEN EXCLUDED.payload
 			ELSE
 				(
-					SELECT sg_jsonb_concat_agg(row) FROM (
-						SELECT jsonb_build_object(key, SUM(value::int)) AS row
+					SELECT jsonb_object_agg(key, sum) FROM (
+						SELECT key, SUM(value::int) AS sum
 						FROM
 							(
 								SELECT * FROM jsonb_each(pr.payload)
