@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/exp/maps"
 )
 
 var mockServerURL string
@@ -57,11 +56,7 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 		return initResults
 	}
 
-	// Convert the map back to a slice now that we have a unique list of orgs and projects.
-	uniqueOrgs := maps.Keys(orgs)
-	uniqueProjects := maps.Keys(projects)
-
-	p, err := newAuthzProvider(db, authorizedConnections, uniqueOrgs, uniqueProjects)
+	p, err := newAuthzProvider(db, authorizedConnections, orgs, projects)
 	if err != nil {
 		initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeAzureDevOps)
 		initResults.Problems = append(initResults.Problems, err.Error())
@@ -72,7 +67,7 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 	return initResults
 }
 
-func newAuthzProvider(db database.DB, conns []*types.AzureDevOpsConnection, orgs, projects []string) (*Provider, error) {
+func newAuthzProvider(db database.DB, conns []*types.AzureDevOpsConnection, orgs, projects map[string]struct{}) (*Provider, error) {
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
@@ -100,10 +95,10 @@ type Provider struct {
 
 	conns []*types.AzureDevOpsConnection
 
-	// orgs is the list of orgs as configured in the code host connection.
-	orgs []string
-	// projects is the list of projects as configured in the code host connection.
-	projects []string
+	// orgs is the set of orgs as configured across all the code host connections.
+	orgs map[string]struct{}
+	// projects is the set of projects as configured across all the code host connections.
+	projects map[string]struct{}
 }
 
 func (p *Provider) FetchAccount(_ context.Context, _ *types.User, _ []*extsvc.Account, _ []string) (*extsvc.Account, error) {
@@ -180,7 +175,14 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	for _, org := range orgs {
-		logger.Debug("listing repos", log.String("org", fmt.Sprintf("%#v", org)))
+		// The user may have access to more orgs than those listed in a Azure DevOps code host connection.
+		// Do not sync this org.
+		if _, ok := p.orgs[org.Name]; !ok {
+			logger.Debug("skipping org as it is not set in code host configuration", log.String("org", org.Name))
+			continue
+		}
+
+		logger.Debug("listing repos", log.String("org", org.Name))
 
 		foundRepos, err := client.ListRepositoriesByProjectOrOrg(ctx, azuredevops.ListRepositoriesByProjectOrOrgArgs{
 			ProjectOrOrgName: org.Name,
@@ -212,7 +214,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		repos = append(repos, foundRepos...)
 	}
 
-	for _, project := range p.projects {
+	for project := range p.projects {
 		foundRepos, err := client.ListRepositoriesByProjectOrOrg(ctx, azuredevops.ListRepositoriesByProjectOrOrgArgs{
 			ProjectOrOrgName: project,
 		})

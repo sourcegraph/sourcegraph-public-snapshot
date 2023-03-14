@@ -277,6 +277,10 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 									ID:   "1",
 									Name: "solarsystem",
 								},
+								{
+									ID:   "1",
+									Name: "this-org-is-not-synced",
+								},
 							},
 						}
 					case "/solarsystem/_apis/git/repositories":
