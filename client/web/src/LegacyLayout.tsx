@@ -132,7 +132,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         return <Navigate replace={true} to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
 
-    if (isSetupWizardPage) {
+    if (isSetupWizardPage && !!props.authenticatedUser?.siteAdmin) {
         return (
             <Suspense
                 fallback={
