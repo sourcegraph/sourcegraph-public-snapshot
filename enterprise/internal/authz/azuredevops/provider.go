@@ -112,10 +112,9 @@ func (p *Provider) FetchAccount(_ context.Context, _ *types.User, _ []*extsvc.Ac
 
 func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	logger := log.Scoped("azuredevops.FetchuserPerms", "logger for azuredevops provider")
-
 	logger.Debug("starting FetchUserPerms", log.String("user ID", fmt.Sprintf("%#v", account.UserID)))
 
-	_, token, err := azuredevops.GetExternalAccountData(ctx, &account.AccountData)
+	profile, token, err := azuredevops.GetExternalAccountData(ctx, &account.AccountData)
 	if err != nil {
 		return nil, errors.Wrapf(
 			err,
@@ -159,12 +158,32 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	var repos []azuredevops.Repository
+	var orgs []azuredevops.Org
 
-	for _, org := range p.orgs {
+	// List the users orgs only if the superset of orgs in the provider (collected from all the
+	// Azure DevOps code host connections) is not empty.
+	if len(p.orgs) > 0 {
+		var userProfile azuredevops.Profile
+		if profile == nil {
+			userProfile, err = client.GetAuthorizedProfile(ctx)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			userProfile = *profile
+		}
+
+		orgs, err = client.ListAuthorizedUserOrganizations(ctx, userProfile)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for _, org := range orgs {
 		logger.Debug("listing repos", log.String("org", fmt.Sprintf("%#v", org)))
 
 		foundRepos, err := client.ListRepositoriesByProjectOrOrg(ctx, azuredevops.ListRepositoriesByProjectOrOrgArgs{
-			ProjectOrOrgName: org,
+			ProjectOrOrgName: org.Name,
 		})
 		if err != nil {
 			if httpErr, ok := err.(*azuredevops.HTTPError); ok {
@@ -177,7 +196,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 				if httpErr.StatusCode == http.StatusUnauthorized || httpErr.StatusCode == http.StatusForbidden || httpErr.StatusCode == http.StatusNotFound {
 
 					logger.Debug("user does not have access to this org",
-						log.String("org", org),
+						log.String("org", org.Name),
 						log.Int("http status code", httpErr.StatusCode),
 					)
 

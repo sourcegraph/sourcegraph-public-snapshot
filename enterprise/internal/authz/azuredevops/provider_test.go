@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -191,8 +190,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			AccountID:   "1",
 		},
 		AccountData: extsvc.AccountData{
-			AuthData: extsvc.NewUnencryptedData([]byte(`
-{}`)),
+			Data:     extsvc.NewUnencryptedData([]byte(`{"ID": "1", "PublicAlias": "12345"}`)),
+			AuthData: extsvc.NewUnencryptedData([]byte(`{}`)),
 		},
 	}
 
@@ -214,9 +213,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	}
 
 	type output struct {
-		error       string
-		permissions *authz.ExternalUserPermissions
+		error              string
+		serverInvokedCount int
+		permissions        *authz.ExternalUserPermissions
 	}
+
+	serverInvokedCount := 0
 
 	testCases := []struct {
 		name  string
@@ -259,22 +261,40 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			input: input{
 				connection: &schema.AzureDevOpsConnection{
 					EnforcePermissions: true,
-					Orgs:               []string{"solarsystem"},
+					Orgs:               []string{"solarsystem", "milkyway"},
 				},
 				account: account,
 				mockServer: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					response := azuredevops.ListRepositoriesResponse{
-						Value: []azuredevops.Repository{
-							{
-								ID:   "1",
-								Name: "one",
-								Project: azuredevops.Project{
+					serverInvokedCount += 1
+
+					var response any
+					switch r.URL.Path {
+					case "/_apis/accounts":
+						response = azuredevops.ListAuthorizedUserOrgsResponse{
+							Count: 1,
+							Value: []azuredevops.Org{
+								{
 									ID:   "1",
-									Name: "mercury",
+									Name: "solarsystem",
 								},
 							},
-						},
-						Count: 1,
+						}
+					case "/solarsystem/_apis/git/repositories":
+						response = azuredevops.ListRepositoriesResponse{
+							Value: []azuredevops.Repository{
+								{
+									ID:   "1",
+									Name: "one",
+									Project: azuredevops.Project{
+										ID:   "1",
+										Name: "mercury",
+									},
+								},
+							},
+							Count: 1,
+						}
+					default:
+						panic(fmt.Sprintf("request received in unexpected URL path: %q", r.URL.Path))
 					}
 
 					if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -284,6 +304,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})),
 			},
 			output: output{
+				serverInvokedCount: 2,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{
 						"1",
@@ -292,7 +313,78 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			},
 		},
 		{
-			name:  "auth provider config with projects",
+			name:  "auth provider config with orgs but empty account data",
+			setup: setup,
+			input: input{
+				connection: &schema.AzureDevOpsConnection{
+					EnforcePermissions: true,
+					Orgs:               []string{"solarsystem", "milkyway"},
+				},
+				account: &extsvc.Account{
+					AccountSpec: extsvc.AccountSpec{
+						ServiceType: extsvc.TypeAzureDevOps,
+						ServiceID:   "https://dev.azure.com/",
+						AccountID:   "1",
+					},
+					AccountData: extsvc.AccountData{
+						AuthData: extsvc.NewUnencryptedData([]byte(`{}`)),
+					},
+				},
+				mockServer: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					serverInvokedCount += 1
+
+					var response any
+					switch r.URL.Path {
+					case "/_apis/profile/profiles/me":
+						response = azuredevops.Profile{
+							ID:          "1",
+							PublicAlias: "12345",
+						}
+					case "/_apis/accounts":
+						response = azuredevops.ListAuthorizedUserOrgsResponse{
+							Count: 1,
+							Value: []azuredevops.Org{
+								{
+									ID:   "1",
+									Name: "solarsystem",
+								},
+							},
+						}
+					case "/solarsystem/_apis/git/repositories":
+						response = azuredevops.ListRepositoriesResponse{
+							Value: []azuredevops.Repository{
+								{
+									ID:   "1",
+									Name: "one",
+									Project: azuredevops.Project{
+										ID:   "1",
+										Name: "mercury",
+									},
+								},
+							},
+							Count: 1,
+						}
+					default:
+						panic(fmt.Sprintf("request received in unexpected URL path: %q", r.URL.Path))
+					}
+
+					if err := json.NewEncoder(w).Encode(response); err != nil {
+						w.WriteHeader(http.StatusInternalServerError)
+						w.Write([]byte(err.Error()))
+					}
+				})),
+			},
+			output: output{
+				serverInvokedCount: 3,
+				permissions: &authz.ExternalUserPermissions{
+					Exacts: []extsvc.RepoID{
+						"1",
+					},
+				},
+			},
+		},
+		{
+			name:  "auth provider config with projects only",
 			setup: setup,
 			input: input{
 				connection: &schema.AzureDevOpsConnection{
@@ -301,25 +393,36 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				},
 				account: account,
 				mockServer: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					response := azuredevops.ListRepositoriesResponse{
-						Value: []azuredevops.Repository{
-							{
-								ID:   "1",
-								Name: "one",
-								Project: azuredevops.Project{
+					serverInvokedCount += 1
+
+					var response any
+					switch r.URL.Path {
+					case "/solar/system/_apis/git/repositories":
+						response = azuredevops.ListRepositoriesResponse{
+							Value: []azuredevops.Repository{
+								{
 									ID:   "1",
-									Name: "mercury",
+									Name: "one",
+									Project: azuredevops.Project{
+										ID:   "1",
+										Name: "mercury",
+									},
 								},
 							},
-						},
-						Count: 1,
-					}
+							Count: 1,
+						}
 
-					json.NewEncoder(w).Encode(response)
-					return
+					default:
+						panic(fmt.Sprintf("request received in unexpected URL path: %q", r.URL.Path))
+					}
+					if err := json.NewEncoder(w).Encode(response); err != nil {
+						w.WriteHeader(http.StatusInternalServerError)
+						w.Write([]byte(err.Error()))
+					}
 				})),
 			},
 			output: output{
+				serverInvokedCount: 1,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1"},
 				},
@@ -331,43 +434,65 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			input: input{
 				connection: &schema.AzureDevOpsConnection{
 					EnforcePermissions: true,
-					Orgs:               []string{"solarsystem"},
+					Orgs:               []string{"solarsystem", "milkyway"},
 					Projects:           []string{"solar/system"},
 				},
 				account: account,
 				mockServer: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					response := azuredevops.ListRepositoriesResponse{
-						Value: []azuredevops.Repository{},
-						Count: 1,
-					}
+					serverInvokedCount += 1
 
-					if strings.HasPrefix(r.URL.Path, "/solarsystem") {
-						response.Value = append(response.Value, azuredevops.Repository{
-							ID:   "1",
-							Name: "one",
-							Project: azuredevops.Project{
-								ID:   "1",
-								Name: "mercury",
+					var response any
+					switch r.URL.Path {
+					case "/_apis/accounts":
+						response = azuredevops.ListAuthorizedUserOrgsResponse{
+							Count: 1,
+							Value: []azuredevops.Org{
+								{
+									ID:   "1",
+									Name: "solarsystem",
+								},
 							},
-						})
-					}
-
-					if strings.HasPrefix(r.URL.Path, "/solar/system") {
-						response.Value = append(response.Value, azuredevops.Repository{
-							ID:   "2",
-							Name: "two",
-							Project: azuredevops.Project{
-								ID:   "2",
-								Name: "venus",
+						}
+					case "/solarsystem/_apis/git/repositories":
+						response = azuredevops.ListRepositoriesResponse{
+							Count: 1,
+							Value: []azuredevops.Repository{
+								{
+									ID:   "1",
+									Name: "one",
+									Project: azuredevops.Project{
+										ID:   "1",
+										Name: "mercury",
+									},
+								},
 							},
-						})
+						}
+					case "/solar/system/_apis/git/repositories":
+						response = azuredevops.ListRepositoriesResponse{
+							Count: 1,
+							Value: []azuredevops.Repository{
+								{
+									ID:   "2",
+									Name: "two",
+									Project: azuredevops.Project{
+										ID:   "2",
+										Name: "venus",
+									},
+								},
+							},
+						}
+					default:
+						panic(fmt.Sprintf("request received in unexpected URL path: %q", r.URL.Path))
 					}
 
-					json.NewEncoder(w).Encode(response)
-					return
+					if err := json.NewEncoder(w).Encode(response); err != nil {
+						w.WriteHeader(http.StatusInternalServerError)
+						w.Write([]byte(err.Error()))
+					}
 				})),
 			},
 			output: output{
+				serverInvokedCount: 3,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1", "2"},
 				},
@@ -384,43 +509,78 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				},
 				account: account,
 				mockServer: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					response := azuredevops.ListRepositoriesResponse{
-						Value: []azuredevops.Repository{},
-						Count: 1,
-					}
+					serverInvokedCount += 1
 
-					if strings.HasPrefix(r.URL.Path, "/solarsystem") {
-						response.Value = append(response.Value, azuredevops.Repository{
-							ID:   "1",
-							Name: "one",
-							Project: azuredevops.Project{
-								ID:   "1",
-								Name: "mercury",
+					var response any
+					switch r.URL.Path {
+					case "/_apis/accounts":
+						response = azuredevops.ListAuthorizedUserOrgsResponse{
+							Count: 1,
+							Value: []azuredevops.Org{
+								{
+									ID:   "1",
+									Name: "solarsystem",
+								},
+								{
+									ID:   "2",
+									Name: "simulate-401",
+								},
+								{
+									ID:   "3",
+									Name: "simulate-403",
+								},
+								{
+									ID:   "4",
+									Name: "simulate-404",
+								},
 							},
-						})
-					} else if strings.HasPrefix(r.URL.Path, "/solar/system") {
-						response.Value = append(response.Value, azuredevops.Repository{
-							ID:   "2",
-							Name: "two",
-							Project: azuredevops.Project{
-								ID:   "2",
-								Name: "venus",
+						}
+					case "/solarsystem/_apis/git/repositories":
+						response = azuredevops.ListRepositoriesResponse{
+							Count: 1,
+							Value: []azuredevops.Repository{
+								{
+									ID:   "1",
+									Name: "one",
+									Project: azuredevops.Project{
+										ID:   "1",
+										Name: "mercury",
+									},
+								},
 							},
-						})
-					} else if strings.Contains(r.URL.Path, "401") {
+						}
+					case "/solar/system/_apis/git/repositories":
+						response = azuredevops.ListRepositoriesResponse{
+							Count: 1,
+							Value: []azuredevops.Repository{
+								{
+									ID:   "2",
+									Name: "two",
+									Project: azuredevops.Project{
+										ID:   "2",
+										Name: "venus",
+									},
+								},
+							},
+						}
+					case "/simulate-401/_apis/git/repositories", "/testorg/simulate-401/_apis/git/repositories":
 						w.WriteHeader(http.StatusUnauthorized)
-						return
-					} else if strings.Contains(r.URL.Path, "403") {
+					case "/simulate-403/_apis/git/repositories", "/testorg/simulate-403/_apis/git/repositories":
 						w.WriteHeader(http.StatusForbidden)
-					} else if strings.Contains(r.URL.Path, "404") {
+					case "/simulate-404/_apis/git/repositories", "/testorg/simulate-404/_apis/git/repositories":
 						w.WriteHeader(http.StatusNotFound)
+					default:
+						panic(fmt.Sprintf("request received in unexpected URL path: %q", r.URL.Path))
 					}
 
-					json.NewEncoder(w).Encode(response)
-					return
+					if err := json.NewEncoder(w).Encode(response); err != nil {
+						w.WriteHeader(http.StatusInternalServerError)
+						w.Write([]byte(err.Error()))
+					}
 				})),
 			},
 			output: output{
+				serverInvokedCount: 9,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1", "2"},
 				},
@@ -437,8 +597,14 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				tc.setup()
 			}
 
+			if tc.mockServer != nil {
+				azuredevops.MockVisualStudioAppURL = tc.mockServer.URL
+			}
+
 			t.Cleanup(func() {
 				mockServerURL = ""
+				azuredevops.MockVisualStudioAppURL = ""
+				serverInvokedCount = 0
 				conf.Mock(nil)
 			})
 
@@ -479,6 +645,10 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				if diff := cmp.Diff(tc.error, err.Error()); diff != "" {
 					t.Fatalf("Mismatched error, (-want, +got)\n%s", diff)
 				}
+			}
+
+			if tc.serverInvokedCount != serverInvokedCount {
+				t.Errorf("Mistmatched number of API calls, expected %d, but got %d", tc.serverInvokedCount, serverInvokedCount)
 			}
 
 			if diff := cmp.Diff(tc.permissions, permissions); diff != "" {
@@ -541,49 +711,83 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		serverInvokedCount := 0
 		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			serverInvokedCount += 1
-			response := azuredevops.ListRepositoriesResponse{
-				Value: []azuredevops.Repository{},
-				Count: 1,
-			}
 
-			if strings.HasPrefix(r.URL.Path, "/solarsystem") {
-				response.Value = append(response.Value, azuredevops.Repository{
-					ID:   "1",
-					Name: "one",
-					Project: azuredevops.Project{
-						ID:   "1",
-						Name: "mercury",
+			var response any
+			switch r.URL.Path {
+			case "/_apis/accounts":
+				response = azuredevops.ListAuthorizedUserOrgsResponse{
+					Count: 2,
+					Value: []azuredevops.Org{
+						{
+							ID:   "1",
+							Name: "solarsystem",
+						},
+						{
+							ID:   "2",
+							Name: "milkyway",
+						},
 					},
-				})
-			} else if strings.HasPrefix(r.URL.Path, "/solar/system") {
-				response.Value = append(response.Value, azuredevops.Repository{
-					ID:   "2",
-					Name: "two",
-					Project: azuredevops.Project{
-						ID:   "2",
-						Name: "venus",
+				}
+			case "/solarsystem/_apis/git/repositories":
+				response = azuredevops.ListRepositoriesResponse{
+					Count: 1,
+					Value: []azuredevops.Repository{
+						{
+							ID:   "1",
+							Name: "one",
+							Project: azuredevops.Project{
+								ID:   "1",
+								Name: "mercury",
+							},
+						},
 					},
-				})
-			} else if strings.HasPrefix(r.URL.Path, "/milkyway") {
-				response.Value = append(response.Value, azuredevops.Repository{
-					ID:   "3",
-					Name: "three",
-					Project: azuredevops.Project{
-						ID:   "3",
-						Name: "earth",
+				}
+			case "/solar/system/_apis/git/repositories":
+				response = azuredevops.ListRepositoriesResponse{
+					Count: 1,
+					Value: []azuredevops.Repository{
+						{
+							ID:   "2",
+							Name: "two",
+							Project: azuredevops.Project{
+								ID:   "2",
+								Name: "venus",
+							},
+						},
 					},
-				})
-			} else if strings.HasPrefix(r.URL.Path, "/milky/way") {
-				response.Value = append(response.Value, azuredevops.Repository{
-					ID:   "4",
-					Name: "four",
-					Project: azuredevops.Project{
-						ID:   "4",
-						Name: "mars",
+				}
+			case "/milkyway/_apis/git/repositories":
+				response = azuredevops.ListRepositoriesResponse{
+					Count: 1,
+					Value: []azuredevops.Repository{
+						{
+							ID:   "3",
+							Name: "three",
+							Project: azuredevops.Project{
+								ID:   "3",
+								Name: "earth",
+							},
+						},
 					},
-				})
-			}
+				}
+			case "/milky/way/_apis/git/repositories":
+				response = azuredevops.ListRepositoriesResponse{
+					Count: 1,
+					Value: []azuredevops.Repository{
+						{
+							ID:   "4",
+							Name: "four",
+							Project: azuredevops.Project{
+								ID:   "4",
+								Name: "mars",
+							},
+						},
+					},
+				}
+			default:
+				panic(fmt.Sprintf("request received in unexpected URL path: %q", r.URL.Path))
 
+			}
 			if err := json.NewEncoder(w).Encode(response); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(err.Error()))
@@ -591,6 +795,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		}))
 
 		mockServerURL = mockServer.URL
+		azuredevops.MockVisualStudioAppURL = mockServer.URL
 
 		// In the provider initialisation code, we put stuff in a map to deduplicate orgs /
 		// projects, before putting them back into a slice. As a result the ordering is no longer
@@ -614,8 +819,9 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			t.Fatalf("Unexpected error, (-want, +got)\n%s", err)
 		}
 
-		if serverInvokedCount != 4 {
-			t.Fatalf("External list reops API should have been called only 4 times, but got called %d times", serverInvokedCount)
+		// 1 request for list user orgs. 2 requests to list repos of 2 orgs and 2 projects each.
+		if serverInvokedCount != 5 {
+			t.Fatalf("External list repos API should have been called only 5 times, but got called %d times", serverInvokedCount)
 		}
 
 		gotPermissions := map[extsvc.RepoID]struct{}{}
