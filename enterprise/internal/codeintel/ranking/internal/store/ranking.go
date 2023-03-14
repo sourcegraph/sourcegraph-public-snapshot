@@ -318,7 +318,7 @@ func (s *store) InsertInitialPathCounts(ctx context.Context, repositoryID int, d
 	if err := batch.WithInserter(
 		ctx,
 		tx.Handle(),
-		"codeintel_ranking_definitions",
+		"codeintel_ranking_path_counts_inputs",
 		batch.MaxNumPostgresParameters,
 		[]string{
 			"repository_id",
