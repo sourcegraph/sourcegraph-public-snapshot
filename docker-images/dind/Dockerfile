@@ -1,4 +1,4 @@
-FROM docker:23.0.0-dind@sha256:be7c1cb42809b910473a8a1b195736758fc8c10b395001b90968d5f31ad6a40b
+FROM docker:23.0.1-dind@sha256:ed6220b0de0f309f0844cf8cf1a6b861e981fb7f5c28bec6acc97abc910bd0a8
 
 RUN rm -f /usr/libexec/docker/cli-plugins/docker-compose && \
     rm -f /usr/libexec/docker/cli-plugins/docker-buildx
