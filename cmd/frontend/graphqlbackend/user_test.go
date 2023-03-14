@@ -146,9 +146,13 @@ func TestUser_Email(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig)
 
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, database.ErrNoCurrentUser)
+		db.UsersFunc.SetDefaultReturn(users)
+
 		_, err := NewUserResolver(db, &types.User{ID: 1}).Email(context.Background())
 		got := fmt.Sprintf("%v", err)
-		want := "must be authenticated as user with id 1"
+		want := "must be authenticated as the authorized user or site admin"
 		assert.Equal(t, want, got)
 	})
 }
