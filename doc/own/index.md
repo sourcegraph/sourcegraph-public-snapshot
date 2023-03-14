@@ -67,7 +67,7 @@ The following snippet shows an example of a valid CODEOWNERS file.
 - Double ** asterisk matches any sub-path
 - Starting a pattern with / anchors matches at the repository root
 
-The rules are considered independently and in order. Rules farther down the file take precedence.
+The rules are considered independently and in order. Rules farther down the file take precedence. Only **one** rule matches.
 
 #### Limitations
 
