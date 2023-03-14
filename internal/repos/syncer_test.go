@@ -1349,17 +1349,17 @@ func TestCloudDefaultExternalServicesDontSync(t *testing.T) {
 }
 
 func TestDotComPrivateReposDontSync(t *testing.T) {
-	t.Parallel()
-	store := getTestRepoStore(t)
-
-	ctx, cancel := context.WithCancel(context.Background())
 	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
+
+	ctx, cancel := context.WithCancel(context.Background())
 
 	t.Cleanup(func() {
 		envvar.MockSourcegraphDotComMode(orig)
 		cancel()
 	})
+
+	store := getTestRepoStore(t)
 
 	now := time.Now()
 
@@ -1400,6 +1400,7 @@ func TestDotComPrivateReposDontSync(t *testing.T) {
 var basicGitHubConfig = `{"url": "https://github.com", "token": "beef", "repos": ["owner/name"]}`
 
 func TestConflictingSyncers(t *testing.T) {
+	t.Parallel()
 	store := getTestRepoStore(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
