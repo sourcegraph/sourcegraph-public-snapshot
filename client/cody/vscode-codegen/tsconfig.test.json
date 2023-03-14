@@ -4,9 +4,9 @@
   "compilerOptions": {
     "types": ["mocha", "node"],
     "module": "commonjs",
-    "rootDir": "./src/test",
+    "rootDir": "./",
     "outDir": "dist/test",
   },
-  "include": ["./src/test/*", "suite", "workspace"],
-  "exclude": ["chat"],
+  "include": ["**/*"],
+  "exclude": ["webviews", "scripts", "vite.config.ts"],
 }

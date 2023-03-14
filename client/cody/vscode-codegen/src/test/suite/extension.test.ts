@@ -9,7 +9,7 @@ import * as mockServer from '../mock-server'
 async function enableCodyWithAccessToken(token: string): Promise<void> {
     const config = vscode.workspace.getConfiguration()
     await config.update('sourcegraph.cody.enable', true)
-    await vscode.commands.executeCommand('cody.set-access-token', token)
+    await ensureExecuteCommand('cody.set-access-token', token)
 }
 
 async function setMockServerConfig(): Promise<void> {
@@ -38,7 +38,10 @@ async function ensureExecuteCommand<T>(command: string, ...args: any[]): Promise
 async function getTranscript(api: vscode.Extension<ExtensionApi>, index: number): Promise<ChatMessage> {
     let transcript
     await waitUntil(async () => {
-        transcript = await api.exports.testing?.chatTranscript()
+        if (!api.isActive || !api.exports.testing) {
+            return false
+        }
+        transcript = await api.exports.testing.chatTranscript()
         return Boolean(transcript && transcript.length > index)
     })
     assert.ok(transcript)
@@ -70,6 +73,7 @@ suite('End-to-end', () => {
         await ensureExecuteCommand('cody.recipe.explain-code-high-level')
         const api = vscode.extensions.getExtension<ExtensionApi>('hpargecruos.kodj')
         assert.ok(api)
+        assert.ok(api.exports)
 
         // Check the chat transcript contains markdown
         let message = await getTranscript(api, 0)

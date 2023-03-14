@@ -2,9 +2,13 @@ import * as vscode from 'vscode'
 
 import { ChatViewProvider } from '../chat/ChatViewProvider'
 import { CODY_ACCESS_TOKEN_SECRET, ConfigurationUseContext, getConfiguration } from '../configuration'
+import { ExtensionApi } from '../extension-api'
 
 // Registers Commands and Webview at extension start up
-export const CommandsProvider = async (context: vscode.ExtensionContext): Promise<void> => {
+export const CommandsProvider = async (context: vscode.ExtensionContext): Promise<ExtensionApi> => {
+    // for tests
+    const extensionApi = new ExtensionApi()
+
     const config = getConfiguration(vscode.workspace.getConfiguration())
     const accessToken = (await context.secrets.get(CODY_ACCESS_TOKEN_SECRET)) || ''
     const useContext: ConfigurationUseContext = config.useContext
@@ -100,4 +104,6 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
     }
 
     vscode.Disposable.from(...disposables)
+
+    return extensionApi
 }
