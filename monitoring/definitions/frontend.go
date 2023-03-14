@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -27,6 +28,7 @@ func Frontend() *monitoring.Dashboard {
 	}
 
 	defaultSamplingInterval := (90 * time.Minute).Round(time.Second)
+	grpcMethodVariable := shared.GRPCMethodVariable("frontend")
 
 	orgMetricSpec := []struct{ name, route, description string }{
 		{"org_members", "OrganizationMembers", "API requests to list organisation members"},
@@ -41,15 +43,29 @@ func Frontend() *monitoring.Dashboard {
 		Name:        "frontend",
 		Title:       "Frontend",
 		Description: "Serves all end-user browser and API requests.",
-		Variables: []monitoring.ContainerVariable{{
-			Name:  "sentinel_sampling_duration",
-			Label: "Sentinel query sampling duration",
-			Options: monitoring.ContainerVariableOptions{
-				Type:          monitoring.OptionTypeInterval,
-				Options:       sentinelSamplingIntervals,
-				DefaultOption: defaultSamplingInterval.String(),
+		Variables: []monitoring.ContainerVariable{
+			{
+				Name:  "sentinel_sampling_duration",
+				Label: "Sentinel query sampling duration",
+				Options: monitoring.ContainerVariableOptions{
+					Type:          monitoring.OptionTypeInterval,
+					Options:       sentinelSamplingIntervals,
+					DefaultOption: defaultSamplingInterval.String(),
+				},
 			},
-		}},
+			{
+				Label: "Internal instance",
+				Name:  "internalInstance",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "src_updatecheck_client_duration_seconds_sum",
+					LabelName:     "instance",
+					ExampleOption: "sourcegraph-frontend:3090",
+				},
+				Multi: true,
+			},
+			grpcMethodVariable,
+		},
+
 		Groups: []monitoring.Group{
 			{
 				Title: "Search at a glance",
@@ -385,6 +401,15 @@ func Frontend() *monitoring.Dashboard {
 					ErrorRate: shared.NoAlertsOption("none"),
 				},
 			}),
+
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					ServiceName:     "frontend",
+					MetricNamespace: "frontend",
+
+					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex: `${internalInstance:regex}`,
+				}, monitoring.ObservableOwnerSearchCore),
 
 			{
 				Title:  "Internal service requests",
