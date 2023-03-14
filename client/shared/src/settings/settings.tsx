@@ -307,7 +307,6 @@ const defaultFeatures: SettingsExperimentalFeatures = {
     editor: 'codemirror6',
     codeInsightsRepoUI: 'search-query-or-strict-list',
     applySearchQuerySuggestionOnEnter: false,
-    setupWizard: false,
     isInitialized: true,
 }
 

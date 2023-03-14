@@ -78,12 +78,11 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
 
     // eslint-disable-next-line no-restricted-syntax
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
-    const { setupWizard, fuzzyFinder } = useExperimentalFeatures(features => ({
-        setupWizard: features.setupWizard,
+    const { fuzzyFinder } = useExperimentalFeatures(features => ({
         // enable fuzzy finder by default unless it's explicitly disabled in settings
         fuzzyFinder: features.fuzzyFinder ?? true,
     }))
-    const isSetupWizardPage = setupWizard && location.pathname.startsWith(PageRoutes.SetupWizard)
+    const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
     const userHistory = useUserHistory(isRepositoryRelatedPage)
@@ -157,7 +156,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     // setup wizard state, since we don't have a good solution for this at the
     // moment, we use mutable window.context object here.
     // TODO remove window.context and use injected context store/props
-    if (setupWizard && window.context.needsRepositoryConfiguration && !wasSetupWizardSkipped) {
+    if (window.context.needsRepositoryConfiguration && !wasSetupWizardSkipped) {
         return <Navigate to={PageRoutes.SetupWizard} replace={true} />
     }
 
