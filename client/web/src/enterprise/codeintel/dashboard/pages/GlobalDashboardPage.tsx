@@ -167,6 +167,11 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                         <div className={styles.details}>
                             <H3 className="px-3">Repositories with errors</H3>
 
+                            <p className="px-3 text-muted">
+                                The following repositories have failures on the most recent attempt to automatically
+                                index or process precise code intelligence index.
+                            </p>
+
                             <ul className={styles.detailsList}>
                                 {data.codeIntelSummary.repositoriesWithErrors.nodes.map(({ repository, count }) => (
                                     <DashboardNode
@@ -185,6 +190,16 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                     data.codeIntelSummary.repositoriesWithConfiguration.nodes.length > 0 && (
                         <div className={styles.details}>
                             <H3 className="px-3">Repositories with suggestions</H3>
+
+                            <p className="px-3 text-muted">
+                                We have inferred auto-indexing jobs for the following repositories.
+                            </p>
+
+                            <p className="px-3 text-muted">
+                                The repositories in this list are ordered by their <strong>searched-based</strong> code
+                                navigation activity (and increasing precise coverage on these repositories will have the
+                                biggest impact on current users).
+                            </p>
 
                             <ul className={styles.detailsList}>
                                 {data.codeIntelSummary.repositoriesWithConfiguration.nodes.map(
