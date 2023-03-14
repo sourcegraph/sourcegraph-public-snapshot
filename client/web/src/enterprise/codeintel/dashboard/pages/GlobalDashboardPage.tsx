@@ -5,7 +5,7 @@ import { mdiChevronRight, mdiCircleOffOutline } from '@mdi/js'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Badge, Container, ErrorAlert, H3, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, Container, ErrorAlert, H3, Icon, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import {
     DashboardRepoFields,
