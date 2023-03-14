@@ -9,7 +9,7 @@ import * as mockServer from '../mock-server'
 async function enableCodyWithAccessToken(token: string): Promise<void> {
     const config = vscode.workspace.getConfiguration()
     await config.update('sourcegraph.cody.enable', true)
-    await ensureExecuteCommand('cody.set-access-token', token)
+    await ensureExecuteCommand('cody.set-access-token', [token])
 }
 
 async function setMockServerConfig(): Promise<void> {

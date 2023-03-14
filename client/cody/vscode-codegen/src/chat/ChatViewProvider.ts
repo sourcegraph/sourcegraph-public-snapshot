@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 
 import { ChatMetadata, Feedback, Message } from '@sourcegraph/cody-common'
 
+import { SecretStorage } from '../command/secret-storage'
 import { CODY_ACCESS_TOKEN_SECRET, updateConfiguration } from '../configuration'
 import { EmbeddingsClient } from '../embeddings-client'
 import { getRgPath } from '../rg'
@@ -45,7 +46,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         private embeddingsEndpoint: string,
         private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         private debug: boolean,
-        private secretStorage: vscode.SecretStorage
+        private secretStorage: SecretStorage
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
@@ -392,10 +393,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     public async configChangeDetected(changes: string): Promise<void> {
         switch (changes) {
             case 'token':
-                await vscode.window.showInformationMessage('Token has been updated.')
-                // TODO: Reset clients.
-                // Notify user with exisiting conversations to reload VS Code.
-                // await vscode.window.showWarningMessage('Please reload VS Code to use the new token.')
+                void vscode.window.showInformationMessage('Token has been updated.')
+                // TODO: Properly reset clients.
+                this.accessToken = await this.getAccessToken()
+                this.wsclient = this.makeWSChatClient()
                 break
             default:
                 await vscode.window.showInformationMessage('Your configurations for Cody have been updated.')

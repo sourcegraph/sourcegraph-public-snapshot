@@ -7,5 +7,5 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     console.log('Cody extension activated')
 
     // Register commands and webview
-    return await CommandsProvider(context)
+    return CommandsProvider(context)
 }
