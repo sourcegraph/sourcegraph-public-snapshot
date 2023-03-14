@@ -143,7 +143,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         (index: number, type: string) => {
             telemetryService.log('SearchResultClicked')
 
-            const ranked = rankingFeatureEnabled && rankingToggleEnabled
+            // Ranking is used when the feature flag is enabled, and when the toggle is either unset or explicitly enabled.
+            const ranked = rankingFeatureEnabled && (rankingToggleEnabled === undefined || rankingToggleEnabled)
             // This data ends up in Prometheus and is not part of the ping payload.
             telemetryService.log('search.ranking.result-clicked', { index, type, resultsLength, ranked })
         },
