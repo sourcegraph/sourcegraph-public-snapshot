@@ -224,7 +224,6 @@ func newRouter() *mux.Router {
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
 	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
 	repo.PathPrefix("/own").Methods("GET").Name(routeRepoOwn)
-	repo.PathPrefix("/app/coming-soon").Methods("GET").Name(routeAppComingSoon)
 
 	// legacy redirects
 	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
