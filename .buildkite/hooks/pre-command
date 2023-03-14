@@ -40,6 +40,7 @@ if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" ]]; then
         echo "running normal install"
         ./dev/ci/asdf-install.sh
     fi
-else
-    export BUILDKITE_ARTIFACT_PATHS="$(bazel info bazel-testlogs)/**/*.log"
+# else
+    # Only enable when you're debugging, this produces about 300 log files
+    # export BUILDKITE_ARTIFACT_PATHS="$(bazel info bazel-testlogs)/**/*.log"
 fi
