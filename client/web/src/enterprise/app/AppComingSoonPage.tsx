@@ -40,7 +40,7 @@ export const AppComingSoonPage: React.FC = () => {
             <Container className="mb-3">
                 <section className={classNames('row align-items-center', styles.section)}>
                     <div className="col-12 col-md-6">
-                        <ProductStatusBadge status="private-beta" className="mb-4" />
+                        <ProductStatusBadge status="private-beta" className="mb-4 text-uppercase" />
                         <H2 as="h3" className="mb-4">
                             Cody
                         </H2>
@@ -83,7 +83,7 @@ export const AppComingSoonPage: React.FC = () => {
             <Container className="mb-3">
                 <section className={classNames('row align-items-center', styles.section)}>
                     <div className="col-12 col-md-6">
-                        <ProductStatusBadge status="experimental" className="mb-4" />
+                        <ProductStatusBadge status="experimental" className="mb-4 text-uppercase" />
                         <H2 as="h3" className="mb-4">
                             Sourcegraph Own
                         </H2>

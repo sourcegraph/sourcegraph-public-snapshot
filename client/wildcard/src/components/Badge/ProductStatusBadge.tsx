@@ -72,6 +72,7 @@ export const ProductStatusBadge = React.forwardRef(function ProductStatusBadge(p
             : props.status === 'private-beta'
             ? 'This feature is in private beta'
             : ''
+    const status = props.status === 'private-beta' ? 'private beta' : props.status
 
     if ('linkToDocs' in props) {
         return (
@@ -84,7 +85,7 @@ export const ProductStatusBadge = React.forwardRef(function ProductStatusBadge(p
                     className={className}
                     aria-hidden={true}
                 >
-                    {props.status}
+                    {status}
                 </Badge>
             </>
         )
@@ -94,7 +95,7 @@ export const ProductStatusBadge = React.forwardRef(function ProductStatusBadge(p
         <>
             <VisuallyHidden>{`This feature is currently in ${props.status}`}</VisuallyHidden>
             <Badge ref={reference} {...props} variant={variant} className={className} aria-hidden={true}>
-                {props.status}
+                {status}
             </Badge>
         </>
     )
