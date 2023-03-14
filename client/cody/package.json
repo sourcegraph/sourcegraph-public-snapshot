@@ -7,8 +7,6 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
     "scripts": {
-    "lint": "eslint .",
-    "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write",
     "build:common": "cd common && pnpm exec tsc --build",
     "vsce:package": "pnpm --filter kodj run vsce:package",
     "vsce:watch": "pnpm --filter kodj run watch"
