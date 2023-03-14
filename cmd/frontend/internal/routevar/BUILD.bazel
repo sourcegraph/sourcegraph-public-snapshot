@@ -25,6 +25,7 @@ go_test(
         "regexp_test.go",
         "repo_test.go",
     ],
+    timeout = "short",
     embed = [":routevar"],
     deps = [
         "@com_github_gorilla_mux//:mux",

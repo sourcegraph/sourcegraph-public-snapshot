@@ -35,6 +35,7 @@ go_test(
         "protects_test.go",
     ],
     data = ["//enterprise/internal/authz/perforce/testdata:data"],
+    timeout = "short",
     embed = [":perforce"],
     deps = [
         "//enterprise/internal/authz/subrepoperms",

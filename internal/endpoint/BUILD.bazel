@@ -34,6 +34,7 @@ go_test(
         "k8s_test.go",
         "main_test.go",
     ],
+    timeout = "short",
     embed = [":endpoint"],
     deps = [
         "//lib/errors",

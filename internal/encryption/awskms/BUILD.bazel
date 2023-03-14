@@ -20,6 +20,7 @@ go_test(
     name = "awskms_test",
     srcs = ["aws_kms_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":awskms"],
     deps = [
         "//internal/httpcli",

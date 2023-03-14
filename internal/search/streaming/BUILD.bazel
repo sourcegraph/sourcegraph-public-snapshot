@@ -28,6 +28,7 @@ go_test(
         "search_filters_test.go",
         "stream_test.go",
     ],
+    timeout = "short",
     embed = [":streaming"],
     deps = [
         "//internal/search/result",

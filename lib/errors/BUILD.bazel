@@ -21,6 +21,7 @@ go_test(
         "filter_test.go",
         "warning_test.go",
     ],
+    timeout = "short",
     embed = [":errors"],
     deps = [
         "@com_github_stretchr_testify//assert",

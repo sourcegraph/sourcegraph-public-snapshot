@@ -37,6 +37,7 @@ go_test(
         "client_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":bitbucketserver"],
     deps = [
         "//internal/extsvc/auth",

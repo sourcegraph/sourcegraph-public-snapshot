@@ -17,6 +17,7 @@ go_library(
 go_test(
     name = "env_test",
     srcs = ["env_test.go"],
+    timeout = "short",
     embed = [":env"],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

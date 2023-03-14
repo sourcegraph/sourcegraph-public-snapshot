@@ -16,6 +16,7 @@ go_test(
     name = "trie_test",
     srcs = ["trie_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":trie"],
     deps = ["//lib/errors"],
 )

@@ -17,6 +17,7 @@ go_library(
 go_test(
     name = "metrics_test",
     srcs = ["metrics_test.go"],
+    timeout = "short",
     embed = [":metrics"],
     deps = [
         "@com_github_google_go_cmp//cmp",

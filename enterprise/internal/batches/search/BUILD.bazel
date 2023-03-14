@@ -17,6 +17,7 @@ go_library(
 go_test(
     name = "search_test",
     srcs = ["text_test.go"],
+    timeout = "short",
     embed = [":search"],
     deps = [
         "//enterprise/internal/batches/search/syntax",

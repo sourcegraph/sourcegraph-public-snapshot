@@ -38,6 +38,7 @@ go_test(
         "handler_test.go",
         "mocks_test.go",
     ],
+    timeout = "short",
     embed = [":http"],
     tags = [
         # Test requires localhost database

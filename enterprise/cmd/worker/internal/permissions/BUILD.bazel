@@ -45,6 +45,7 @@ go_test(
         "main_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":permissions"],
     tags = [
         # Test requires localhost for database

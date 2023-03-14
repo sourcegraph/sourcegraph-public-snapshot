@@ -17,6 +17,7 @@ go_test(
         "diff_test.go",
         "linters_test.go",
     ],
+    timeout = "short",
     embed = [":changed"],
     deps = [
         "//dev/sg/linters",

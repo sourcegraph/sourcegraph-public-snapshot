@@ -35,6 +35,7 @@ go_library(
 go_test(
     name = "types_test",
     srcs = ["secret_test.go"],
+    timeout = "short",
     embed = [":types"],
     deps = [
         "//internal/extsvc",

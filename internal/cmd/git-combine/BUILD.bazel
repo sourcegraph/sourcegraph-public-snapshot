@@ -18,6 +18,7 @@ go_library(
 
 go_binary(
     name = "git-combine",
+    timeout = "short",
     embed = [":git-combine_lib"],
     visibility = ["//:__subpackages__"],
 )
@@ -25,6 +26,7 @@ go_binary(
 go_test(
     name = "git-combine_test",
     srcs = ["git-combine_test.go"],
+    timeout = "short",
     embed = [":git-combine_lib"],
     deps = [
         "@com_github_go_git_go_git_v5//plumbing",

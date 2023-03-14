@@ -17,6 +17,7 @@ go_library(
 
 go_binary(
     name = "scanprotects",
+    timeout = "short",
     embed = [":scanprotects_lib"],
     visibility = ["//enterprise:__subpackages__"],
 )
@@ -25,6 +26,7 @@ go_test(
     name = "scanprotects_test",
     srcs = ["main_test.go"],
     data = ["//enterprise/internal/authz/perforce/testdata:data"],
+    timeout = "short",
     embed = [":scanprotects_lib"],
     deps = [
         "@com_github_sourcegraph_log//logtest",

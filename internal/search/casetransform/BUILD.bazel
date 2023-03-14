@@ -24,5 +24,6 @@ go_test(
         "lower_regexp_test.go",
         "lower_test.go",
     ],
+    timeout = "short",
     embed = [":casetransform"],
 )

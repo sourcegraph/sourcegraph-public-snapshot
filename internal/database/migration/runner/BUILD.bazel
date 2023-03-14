@@ -33,6 +33,7 @@ go_test(
         "run_test.go",
         "validate_test.go",
     ],
+    timeout = "short",
     embed = [":runner"],
     deps = [
         "//internal/database/migration/definition",

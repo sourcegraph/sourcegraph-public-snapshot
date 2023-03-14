@@ -54,6 +54,7 @@ go_test(
         "mocks_test.go",
         "validate_test.go",
     ],
+    timeout = "short",
     embed = [":conf"],
     deps = [
         "//cmd/frontend/envvar",

@@ -31,6 +31,7 @@ go_test(
         "app_test.go",
         "mocks_test.go",
     ],
+    timeout = "short",
     embed = [":app"],
     deps = [
         "//internal/actor",

@@ -50,6 +50,7 @@ go_test(
         "webhooks_integration_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":webhooks"],
     tags = [
         # Test requires localhost database

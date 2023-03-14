@@ -26,6 +26,7 @@ go_library(
 go_test(
     name = "gerrit_test",
     srcs = ["gerrit_test.go"],
+    timeout = "short",
     embed = [":gerrit"],
     deps = [
         "//internal/authz",

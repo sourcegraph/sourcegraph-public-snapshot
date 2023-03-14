@@ -80,6 +80,7 @@ go_test(
         "router_test.go",
         "templ_test.go",
     ],
+    timeout = "short",
     embed = [":ui"],
     deps = [
         "//cmd/frontend/backend",

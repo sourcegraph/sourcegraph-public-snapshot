@@ -49,6 +49,7 @@ go_test(
         "mocks_test.go",
         "utils_test.go",
     ],
+    timeout = "short",
     embed = [":graphql"],
     deps = [
         "//enterprise/internal/codeintel/autoindexing/shared",

@@ -52,6 +52,7 @@ go_test(
         "service_references_test.go",
         "service_stencil_test.go",
     ],
+    timeout = "short",
     embed = [":codenav"],
     deps = [
         "//enterprise/internal/codeintel/codenav/internal/lsifstore",

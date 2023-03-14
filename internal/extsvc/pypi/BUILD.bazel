@@ -20,6 +20,7 @@ go_test(
     name = "pypi_test",
     srcs = ["client_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":pypi"],
     deps = [
         "//internal/httpcli",

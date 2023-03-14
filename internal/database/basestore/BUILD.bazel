@@ -31,6 +31,7 @@ go_test(
         "scan_collections_test.go",
         "store_test.go",
     ],
+    timeout = "short",
     embed = [":basestore"],
     tags = [
         # Test requires localhost database

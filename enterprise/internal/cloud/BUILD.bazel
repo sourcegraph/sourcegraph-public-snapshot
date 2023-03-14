@@ -15,6 +15,7 @@ go_library(
 go_test(
     name = "cloud_test",
     srcs = ["site_config_test.go"],
+    timeout = "short",
     embed = [":cloud"],
     deps = [
         "@com_github_stretchr_testify//assert",

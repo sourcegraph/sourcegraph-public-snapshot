@@ -23,6 +23,7 @@ go_library(
 go_test(
     name = "azuredevops_test",
     srcs = ["provider_test.go"],
+    timeout = "short",
     embed = [":azuredevops"],
     deps = [
         "//enterprise/internal/licensing",

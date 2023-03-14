@@ -34,6 +34,7 @@ go_test(
         "extsvc_test.go",
         "serve_test.go",
     ],
+    timeout = "short",
     embed = [":servegit"],
     tags = [
         # Test requires localhost database

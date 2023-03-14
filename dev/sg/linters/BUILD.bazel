@@ -47,6 +47,7 @@ go_test(
         "go_checks_test.go",
         "gomod_test.go",
     ],
+    timeout = "short",
     embed = [":linters"],
     deps = [
         "//dev/sg/internal/repo",

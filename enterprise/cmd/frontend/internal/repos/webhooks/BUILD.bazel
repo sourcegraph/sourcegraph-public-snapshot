@@ -30,6 +30,7 @@ go_test(
     name = "webhooks_test",
     srcs = ["handlers_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":webhooks"],
     tags = [
         # Test requires localhost database

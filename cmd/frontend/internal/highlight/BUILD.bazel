@@ -47,6 +47,7 @@ go_test(
         "language_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":highlight"],
     embedsrcs = [
         "testdata/telemetry-raw.txt",

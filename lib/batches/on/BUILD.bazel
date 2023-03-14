@@ -10,6 +10,7 @@ go_library(
 go_test(
     name = "on_test",
     srcs = ["aggregator_test.go"],
+    timeout = "short",
     embed = [":on"],
     deps = ["@com_github_stretchr_testify//assert"],
 )

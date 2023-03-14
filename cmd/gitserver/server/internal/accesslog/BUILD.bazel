@@ -16,6 +16,7 @@ go_library(
 go_test(
     name = "accesslog_test",
     srcs = ["accesslog_test.go"],
+    timeout = "short",
     embed = [":accesslog"],
     deps = [
         "//internal/conf/conftypes",

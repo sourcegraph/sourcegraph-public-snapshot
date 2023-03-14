@@ -32,6 +32,7 @@ go_test(
         "filter_job_test.go",
         "select_job_test.go",
     ],
+    timeout = "short",
     embed = [":search"],
     deps = [
         "//enterprise/internal/database",

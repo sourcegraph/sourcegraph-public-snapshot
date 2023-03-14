@@ -66,6 +66,7 @@ go_test(
         "step_info_test.go",
         "syncer_test.go",
     ],
+    timeout = "short",
     embed = [":types"],
     deps = [
         "//enterprise/internal/batches/sources/azuredevops",

@@ -29,6 +29,7 @@ go_test(
         "weekday_test.go",
         "window_test.go",
     ],
+    timeout = "short",
     embed = [":window"],
     deps = [
         "//lib/errors",

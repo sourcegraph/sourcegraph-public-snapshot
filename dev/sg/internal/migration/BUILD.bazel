@@ -36,6 +36,7 @@ go_library(
 go_test(
     name = "migration_test",
     srcs = ["util_test.go"],
+    timeout = "short",
     embed = [":migration"],
     deps = [
         "@com_github_hexops_autogold_v2//:autogold",

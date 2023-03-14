@@ -22,6 +22,7 @@ go_library(
 go_test(
     name = "docker_test",
     srcs = ["lints_test.go"],
+    timeout = "short",
     embed = [":docker"],
     deps = [
         "@com_github_moby_buildkit//frontend/dockerfile/instructions",

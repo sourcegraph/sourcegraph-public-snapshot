@@ -30,6 +30,7 @@ go_test(
         "search_test.go",
         "util_test.go",
     ],
+    timeout = "short",
     embed = [":protocol"],
     deps = [
         "//internal/api",

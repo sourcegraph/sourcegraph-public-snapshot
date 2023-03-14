@@ -33,6 +33,7 @@ go_library(
 go_test(
     name = "adminanalytics_test",
     srcs = ["users_test.go"],
+    timeout = "short",
     embed = [":adminanalytics"],
     tags = [
         # Test requires localhost for database

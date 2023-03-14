@@ -30,6 +30,7 @@ go_test(
         "mocks_test.go",
         "upload_handler_test.go",
     ],
+    timeout = "short",
     embed = [":uploadhandler"],
     deps = [
         "//cmd/frontend/backend",

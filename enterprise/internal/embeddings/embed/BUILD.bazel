@@ -24,6 +24,7 @@ go_library(
 go_test(
     name = "embed_test",
     srcs = ["embed_test.go"],
+    timeout = "short",
     embed = [":embed"],
     deps = [
         "//enterprise/internal/embeddings/split",

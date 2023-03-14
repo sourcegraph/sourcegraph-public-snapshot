@@ -18,6 +18,7 @@ go_test(
     name = "compression_test",
     srcs = ["compression_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":compression"],
     deps = [
         "//internal/api",

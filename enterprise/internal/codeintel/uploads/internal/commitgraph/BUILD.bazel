@@ -15,6 +15,7 @@ go_test(
     name = "commitgraph_test",
     srcs = ["commit_graph_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":commitgraph"],
     deps = [
         "//internal/gitserver/gitdomain",

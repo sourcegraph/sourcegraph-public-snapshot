@@ -15,6 +15,7 @@ go_library(
 go_test(
     name = "servicecatalog_test",
     srcs = ["servicecatalog_test.go"],
+    timeout = "short",
     embed = [":servicecatalog"],
     deps = [
         "@com_github_stretchr_testify//assert",

@@ -24,6 +24,7 @@ go_library(
 go_test(
     name = "gitserver_test",
     srcs = ["client_test.go"],
+    timeout = "short",
     embed = [":gitserver"],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

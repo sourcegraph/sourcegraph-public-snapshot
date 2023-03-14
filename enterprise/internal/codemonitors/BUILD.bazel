@@ -35,6 +35,7 @@ go_library(
 go_test(
     name = "codemonitors_test",
     srcs = ["search_test.go"],
+    timeout = "short",
     embed = [":codemonitors"],
     tags = [
         # Test requires localhost database

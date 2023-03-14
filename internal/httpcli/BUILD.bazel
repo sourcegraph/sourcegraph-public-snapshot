@@ -41,6 +41,7 @@ go_test(
         "client_test.go",
         "redis_logger_middleware_test.go",
     ],
+    timeout = "short",
     embed = [":httpcli"],
     tags = [
         # Test requires localhost database

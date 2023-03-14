@@ -36,6 +36,7 @@ go_test(
         "perms_test.go",
         "sub_repo_perms_test.go",
     ],
+    timeout = "short",
     embed = [":authz"],
     deps = [
         "//cmd/frontend/envvar",

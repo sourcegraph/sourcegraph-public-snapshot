@@ -19,6 +19,7 @@ go_library(
 go_test(
     name = "httptestutil_test",
     srcs = ["recorder_test.go"],
+    timeout = "short",
     embed = [":httptestutil"],
     deps = [
         "@com_github_dnaeon_go_vcr//cassette",

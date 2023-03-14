@@ -36,6 +36,7 @@ go_test(
         "gitlab_test.go",
         "mocks_test.go",
     ],
+    timeout = "short",
     embed = [":auth"],
     deps = [
         "//internal/extsvc/github",

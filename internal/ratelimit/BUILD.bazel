@@ -25,6 +25,7 @@ go_test(
         "monitor_test.go",
         "rate_limit_test.go",
     ],
+    timeout = "short",
     embed = [":ratelimit"],
     deps = [
         "//internal/conf",

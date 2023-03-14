@@ -64,6 +64,7 @@ go_test(
         "version_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":gitlab"],
     tags = [
         # requires localhost database

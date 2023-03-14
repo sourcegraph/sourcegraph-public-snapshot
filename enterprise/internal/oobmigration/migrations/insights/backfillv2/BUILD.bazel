@@ -21,6 +21,7 @@ go_library(
 go_test(
     name = "backfillv2_test",
     srcs = ["migrator_test.go"],
+    timeout = "short",
     embed = [":backfillv2"],
     tags = [
         # Test requires localhost database

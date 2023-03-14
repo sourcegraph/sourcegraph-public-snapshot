@@ -36,6 +36,7 @@ go_test(
         "changeset_specs_test.go",
         "published_test.go",
     ],
+    timeout = "short",
     embed = [":batches"],
     deps = [
         "//lib/batches/execution",

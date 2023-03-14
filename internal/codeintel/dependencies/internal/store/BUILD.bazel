@@ -30,6 +30,7 @@ go_library(
 go_test(
     name = "store_test",
     srcs = ["store_test.go"],
+    timeout = "short",
     embed = [":store"],
     tags = [
         # Test requires localhost database

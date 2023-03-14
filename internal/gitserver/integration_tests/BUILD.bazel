@@ -31,6 +31,7 @@ go_test(
         "object_test.go",
         "tree_test.go",
     ],
+    timeout = "short",
     embed = [":integration_tests"],
     # This test loads coursier as a side effect, so we ensure the
     # path is sandboxed properly.

@@ -74,6 +74,7 @@ go_test(
         "usage_stats_test.go",
         "verify_email_test.go",
     ],
+    timeout = "short",
     embed = [":app"],
     tags = [
         # Test requires localhost database

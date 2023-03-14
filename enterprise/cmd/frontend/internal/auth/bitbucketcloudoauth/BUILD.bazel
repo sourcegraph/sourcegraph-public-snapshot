@@ -43,6 +43,7 @@ go_test(
         "provider_test.go",
         "session_test.go",
     ],
+    timeout = "short",
     embed = [":bitbucketcloudoauth"],
     tags = [
         # allows network requests to localhost (database)

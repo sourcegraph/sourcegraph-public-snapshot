@@ -15,5 +15,6 @@ go_library(
 go_test(
     name = "timeutil_test",
     srcs = ["week_test.go"],
+    timeout = "short",
     embed = [":timeutil"],
 )

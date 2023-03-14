@@ -50,6 +50,7 @@ go_library(
 go_test(
     name = "shared_test",
     srcs = ["repo_embedding_index_cache_test.go"],
+    timeout = "short",
     embed = [":shared"],
     deps = [
         "//enterprise/internal/embeddings",

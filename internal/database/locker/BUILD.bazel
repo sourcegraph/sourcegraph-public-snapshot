@@ -16,6 +16,7 @@ go_library(
 go_test(
     name = "locker_test",
     srcs = ["locker_test.go"],
+    timeout = "short",
     embed = [":locker"],
     tags = [
         # Test requires localhost database

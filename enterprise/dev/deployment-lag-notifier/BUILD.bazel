@@ -17,6 +17,7 @@ go_library(
 
 go_binary(
     name = "deployment-lag-notifier",
+    timeout = "short",
     embed = [":deployment-lag-notifier_lib"],
     visibility = ["//visibility:public"],
 )
@@ -24,5 +25,6 @@ go_binary(
 go_test(
     name = "deployment-lag-notifier_test",
     srcs = ["main_test.go"],
+    timeout = "short",
     embed = [":deployment-lag-notifier_lib"],
 )

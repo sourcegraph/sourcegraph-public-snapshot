@@ -36,6 +36,7 @@ go_test(
     # therefore, we have to create a filegroup with the correct visibility and reference
     # it manually below.
     data = ["//lib/codeintel/lsif/testdata:data"],
+    timeout = "short",
     embed = [":conversion"],
     deps = [
         "//lib/codeintel/lsif/conversion/datastructures",

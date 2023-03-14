@@ -84,6 +84,7 @@ go_test(
         "perms_store_test.go",
         "sub_repo_perms_store_test.go",
     ],
+    timeout = "short",
     embed = [":database"],
     tags = [
         # Test requires localhost database

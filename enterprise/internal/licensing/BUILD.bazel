@@ -35,6 +35,7 @@ go_test(
         "plans_test.go",
         "tags_test.go",
     ],
+    timeout = "short",
     embed = [":licensing"],
     deps = [
         "//enterprise/internal/license",

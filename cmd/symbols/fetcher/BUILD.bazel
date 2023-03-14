@@ -26,6 +26,7 @@ go_test(
         "mocks_test.go",
         "repository_fetcher_test.go",
     ],
+    timeout = "short",
     embed = [":fetcher"],
     deps = [
         "//cmd/symbols/gitserver",

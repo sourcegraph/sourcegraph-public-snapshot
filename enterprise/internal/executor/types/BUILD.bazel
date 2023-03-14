@@ -14,6 +14,7 @@ go_library(
 go_test(
     name = "types_test",
     srcs = ["job_test.go"],
+    timeout = "short",
     embed = [":types"],
     deps = [
         "@com_github_google_go_cmp//cmp",

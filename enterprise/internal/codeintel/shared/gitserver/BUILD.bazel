@@ -32,6 +32,7 @@ go_library(
 go_test(
     name = "gitserver_test",
     srcs = ["repo_test.go"],
+    timeout = "short",
     embed = [":gitserver"],
     tags = [
         # Test requires localhost database

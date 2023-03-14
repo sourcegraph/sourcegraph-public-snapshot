@@ -11,6 +11,7 @@ go_library(
 go_test(
     name = "siteid_test",
     srcs = ["siteid_test.go"],
+    timeout = "short",
     embed = [":siteid"],
     deps = [
         "//internal/conf",

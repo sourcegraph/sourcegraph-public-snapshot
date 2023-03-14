@@ -45,6 +45,7 @@ go_test(
         "users_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":bitbucketcloud"],
     deps = [
         "//internal/errcode",

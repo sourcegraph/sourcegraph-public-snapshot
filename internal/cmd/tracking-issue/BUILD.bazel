@@ -32,6 +32,7 @@ go_library(
 
 go_binary(
     name = "tracking-issue",
+    timeout = "short",
     embed = [":tracking-issue_lib"],
     visibility = ["//:__subpackages__"],
 )
@@ -40,6 +41,7 @@ go_test(
     name = "tracking-issue_test",
     srcs = ["main_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":tracking-issue_lib"],
     deps = [
         "//internal/testutil",

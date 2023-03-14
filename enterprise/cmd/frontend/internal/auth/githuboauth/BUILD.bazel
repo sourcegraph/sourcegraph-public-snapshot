@@ -46,6 +46,7 @@ go_test(
         "provider_test.go",
         "session_test.go",
     ],
+    timeout = "short",
     embed = [":githuboauth"],
     tags = [
         # Test requires localhost database

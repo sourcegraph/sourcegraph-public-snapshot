@@ -20,6 +20,7 @@ go_test(
         "disjoint_idset_test.go",
         "idset_test.go",
     ],
+    timeout = "short",
     embed = [":datastructures"],
     deps = [
         "@com_github_google_go_cmp//cmp",

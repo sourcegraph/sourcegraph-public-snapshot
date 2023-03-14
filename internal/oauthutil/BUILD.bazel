@@ -20,6 +20,7 @@ go_library(
 go_test(
     name = "oauthutil_test",
     srcs = ["oauth2_test.go"],
+    timeout = "short",
     embed = [":oauthutil"],
     deps = [
         "//internal/extsvc/auth",

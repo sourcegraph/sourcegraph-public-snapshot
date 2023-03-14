@@ -29,6 +29,7 @@ go_test(
         "template_test.go",
         "txemail_test.go",
     ],
+    timeout = "short",
     embed = [":txemail"],
     deps = [
         "//internal/txemail/txtypes",

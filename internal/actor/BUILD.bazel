@@ -27,6 +27,7 @@ go_test(
         "grpc_test.go",
         "http_test.go",
     ],
+    timeout = "short",
     embed = [":actor"],
     deps = [
         "@com_github_google_go_cmp//cmp",

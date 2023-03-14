@@ -21,6 +21,7 @@ go_library(
 go_test(
     name = "scheduler_test",
     srcs = ["ticker_test.go"],
+    timeout = "short",
     embed = [":scheduler"],
     deps = [
         "//enterprise/internal/batches/types/scheduler/window",

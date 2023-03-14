@@ -34,6 +34,7 @@ go_test(
         "op_string_test.go",
         "operators_test.go",
     ],
+    timeout = "short",
     embed = [":filter"],
     deps = [
         "@com_github_elimity_com_scim//schema",

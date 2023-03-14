@@ -18,6 +18,7 @@ go_library(
 go_test(
     name = "audit_test",
     srcs = ["audit_test.go"],
+    timeout = "short",
     embed = [":audit"],
     deps = [
         "//internal/actor",

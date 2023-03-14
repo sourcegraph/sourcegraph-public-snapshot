@@ -28,6 +28,7 @@ go_library(
 go_test(
     name = "commit_test",
     srcs = ["commit_test.go"],
+    timeout = "short",
     embed = [":commit"],
     deps = [
         "//internal/database",

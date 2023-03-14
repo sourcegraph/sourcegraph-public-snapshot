@@ -26,6 +26,7 @@ go_test(
         "extsvc_webhook_migrator_test.go",
         "role_assignment_migrator_test.go",
     ],
+    timeout = "short",
     embed = [":batches"],
     tags = [
         # Test requires localhost database

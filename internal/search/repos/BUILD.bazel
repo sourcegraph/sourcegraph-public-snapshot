@@ -50,6 +50,7 @@ go_test(
         "mocks_test.go",
         "repos_test.go",
     ],
+    timeout = "short",
     embed = [":repos"],
     tags = [
         # Test requires localhost database

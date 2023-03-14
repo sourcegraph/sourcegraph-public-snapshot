@@ -33,6 +33,7 @@ go_test(
         "repo_iterator_from_query_test.go",
         "scoped_repo_iterator_test.go",
     ],
+    timeout = "short",
     embed = [":discovery"],
     deps = [
         "//enterprise/internal/insights/query/querybuilder",

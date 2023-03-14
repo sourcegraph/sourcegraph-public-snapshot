@@ -69,6 +69,7 @@ go_test(
         "mocks_test.go",
         "prefetcher_test.go",
     ],
+    timeout = "short",
     embed = [":resolvers"],
     deps = [
         "//enterprise/internal/codeintel/autoindexing/shared",

@@ -42,5 +42,6 @@ go_library(
 go_test(
     name = "executorqueue_test",
     srcs = ["queue_allocation_test.go"],
+    timeout = "short",
     embed = [":executorqueue"],
 )

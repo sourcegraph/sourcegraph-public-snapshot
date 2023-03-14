@@ -81,6 +81,7 @@ go_test(
         "zipcache_test.go",
         "zoekt_search_test.go",
     ],
+    timeout = "short",
     embed = [":search"],
     deps = [
         "//cmd/searcher/protocol",

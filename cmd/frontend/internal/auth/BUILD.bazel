@@ -20,6 +20,7 @@ go_test(
         "config_test.go",
         "forbid_all_test.go",
     ],
+    timeout = "short",
     embed = [":auth"],
     deps = [
         "//internal/conf",

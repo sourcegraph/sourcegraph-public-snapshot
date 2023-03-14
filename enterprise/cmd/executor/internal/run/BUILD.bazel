@@ -40,6 +40,7 @@ go_library(
 go_test(
     name = "run_test",
     srcs = ["validate_test.go"],
+    timeout = "short",
     embed = [":run"],
     deps = [
         "//enterprise/cmd/executor/internal/apiclient",

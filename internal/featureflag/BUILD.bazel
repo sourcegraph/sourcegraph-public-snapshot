@@ -26,6 +26,7 @@ go_test(
         "mocks_test.go",
         "override_test.go",
     ],
+    timeout = "short",
     embed = [":featureflag"],
     deps = [
         "//internal/actor",

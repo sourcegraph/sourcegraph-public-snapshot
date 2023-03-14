@@ -25,6 +25,7 @@ go_test(
         "partial_eval_test.go",
         "templating_test.go",
     ],
+    timeout = "short",
     embed = [":template"],
     deps = [
         "//lib/batches/execution",

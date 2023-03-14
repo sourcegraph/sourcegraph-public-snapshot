@@ -40,6 +40,7 @@ go_library(
 
 go_binary(
     name = "prom-wrapper",
+    timeout = "short",
     embed = [":prom-wrapper_lib"],
     visibility = ["//visibility:public"],
 )
@@ -50,6 +51,7 @@ go_test(
         "receivers_test.go",
         "silence_test.go",
     ],
+    timeout = "short",
     embed = [":prom-wrapper_lib"],
     deps = [
         "//internal/version",

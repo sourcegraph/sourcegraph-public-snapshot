@@ -21,6 +21,7 @@ go_library(
 go_test(
     name = "webhooks_test",
     srcs = ["github_test.go"],
+    timeout = "short",
     embed = [":webhooks"],
     tags = [
         # Test requires localhost database

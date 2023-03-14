@@ -76,6 +76,7 @@ go_test(
         "sub_repo_perms_job_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":jobutil"],
     deps = [
         "//cmd/searcher/protocol",

@@ -44,6 +44,7 @@ go_test(
         "middleware_test.go",
         "webhooks_test.go",
     ],
+    timeout = "short",
     embed = [":webhooks"],
     tags = [
         # Test requires localhost database

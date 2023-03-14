@@ -34,6 +34,7 @@ go_test(
         "similarity_search_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":embeddings"],
     deps = [
         "//internal/api",

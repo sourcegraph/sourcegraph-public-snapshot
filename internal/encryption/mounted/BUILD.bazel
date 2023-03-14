@@ -15,6 +15,7 @@ go_library(
 go_test(
     name = "mounted_test",
     srcs = ["key_test.go"],
+    timeout = "short",
     embed = [":mounted"],
     deps = [
         "//schema",

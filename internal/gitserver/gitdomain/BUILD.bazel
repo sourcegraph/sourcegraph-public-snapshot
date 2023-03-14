@@ -31,6 +31,7 @@ go_test(
         "exec_test.go",
         "services_test.go",
     ],
+    timeout = "short",
     embed = [":gitdomain"],
     deps = [
         "//internal/api",

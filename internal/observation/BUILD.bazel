@@ -35,5 +35,6 @@ go_test(
         "snakecase_test.go",
         "util_test.go",
     ],
+    timeout = "short",
     embed = [":observation"],
 )

@@ -16,5 +16,6 @@ go_test(
         "limiter_test.go",
         "mutable_test.go",
     ],
+    timeout = "short",
     embed = [":limiter"],
 )

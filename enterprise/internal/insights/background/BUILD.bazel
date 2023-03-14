@@ -55,6 +55,7 @@ go_test(
         "mocks_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":background"],
     tags = [
         # Test requires localhost for database

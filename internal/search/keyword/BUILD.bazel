@@ -31,6 +31,7 @@ go_test(
         "match_groups_test.go",
         "query_transformer_test.go",
     ],
+    timeout = "short",
     embed = [":keyword"],
     deps = [
         "//internal/search/query",

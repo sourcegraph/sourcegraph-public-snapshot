@@ -29,6 +29,7 @@ go_test(
         "mocks_test.go",
         "symbol_test.go",
     ],
+    timeout = "short",
     embed = [":symbol"],
     deps = [
         "//internal/search",

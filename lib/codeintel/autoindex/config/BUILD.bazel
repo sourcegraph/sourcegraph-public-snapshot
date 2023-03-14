@@ -23,6 +23,7 @@ go_test(
         "types_test.go",
         "yaml_test.go",
     ],
+    timeout = "short",
     embed = [":config"],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

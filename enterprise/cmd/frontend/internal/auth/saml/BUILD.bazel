@@ -44,6 +44,7 @@ go_test(
         "provider_test.go",
         "user_test.go",
     ],
+    timeout = "short",
     embed = [":saml"],
     deps = [
         "//cmd/frontend/auth",

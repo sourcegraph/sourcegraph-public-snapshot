@@ -22,6 +22,7 @@ go_library(
 
 go_binary(
     name = "lsif-index-tester",
+    timeout = "short",
     embed = [":lsif-index-tester_lib"],
     visibility = ["//visibility:public"],
 )
@@ -29,6 +30,7 @@ go_binary(
 go_test(
     name = "lsif-index-tester_test",
     srcs = ["range_differ_test.go"],
+    timeout = "short",
     embed = [":lsif-index-tester_lib"],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

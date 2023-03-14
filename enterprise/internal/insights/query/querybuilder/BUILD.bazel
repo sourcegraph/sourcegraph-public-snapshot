@@ -26,6 +26,7 @@ go_test(
         "parser_test.go",
         "regexp_test.go",
     ],
+    timeout = "short",
     embed = [":querybuilder"],
     deps = [
         "//internal/search/query",

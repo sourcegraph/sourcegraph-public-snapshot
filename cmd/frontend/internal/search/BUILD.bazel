@@ -49,6 +49,7 @@ go_test(
         "decorate_test.go",
         "search_test.go",
     ],
+    timeout = "short",
     embed = [":search"],
     deps = [
         "//cmd/frontend/graphqlbackend",

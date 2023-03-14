@@ -23,6 +23,7 @@ go_test(
         "index_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":scip"],
     deps = [
         "//lib/codeintel/precise",

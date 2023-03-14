@@ -22,6 +22,7 @@ go_test(
     name = "gerrit_test",
     srcs = ["client_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":gerrit"],
     deps = [
         "//internal/httpcli",

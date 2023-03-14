@@ -14,5 +14,6 @@ go_library(
 go_test(
     name = "vcs_test",
     srcs = ["url_test.go"],
+    timeout = "short",
     embed = [":vcs"],
 )

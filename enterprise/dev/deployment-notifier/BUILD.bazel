@@ -27,6 +27,7 @@ go_library(
 
 go_binary(
     name = "deployment-notifier",
+    timeout = "short",
     embed = [":deployment-notifier_lib"],
     visibility = ["//visibility:public"],
 )
@@ -39,6 +40,7 @@ go_test(
         "trace_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":deployment-notifier_lib"],
     deps = [
         "//internal/httptestutil",

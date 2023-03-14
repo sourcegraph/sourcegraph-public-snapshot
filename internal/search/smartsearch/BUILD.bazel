@@ -33,6 +33,7 @@ go_test(
         "smart_search_job_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":smartsearch"],
     deps = [
         "//internal/search",

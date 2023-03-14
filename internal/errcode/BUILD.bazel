@@ -21,6 +21,7 @@ go_test(
         "code_test.go",
         "presentation_error_test.go",
     ],
+    timeout = "short",
     embed = [":errcode"],
     deps = ["//lib/errors"],
 )

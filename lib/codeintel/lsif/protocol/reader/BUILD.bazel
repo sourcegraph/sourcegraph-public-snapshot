@@ -24,6 +24,7 @@ go_test(
         "reader_test.go",
         "unmarshal_test.go",
     ],
+    timeout = "short",
     embed = [":reader"],
     deps = [
         "//lib/codeintel/lsif/protocol",

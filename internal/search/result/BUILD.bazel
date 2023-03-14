@@ -48,6 +48,7 @@ go_test(
         "symbol_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":result"],
     deps = [
         "//internal/api",

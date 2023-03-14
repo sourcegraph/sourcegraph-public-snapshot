@@ -40,6 +40,7 @@ go_test(
         "template_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":compute"],
     deps = [
         "//internal/comby",

@@ -24,6 +24,7 @@ go_test(
         "client_test.go",
         "decoder_test.go",
     ],
+    timeout = "short",
     embed = [":http"],
     deps = [
         "//internal/search/streaming/api",

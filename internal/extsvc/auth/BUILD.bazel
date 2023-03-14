@@ -24,6 +24,7 @@ go_test(
         "oauth1_test.go",
         "oauth_bearer_test.go",
     ],
+    timeout = "short",
     embed = [":auth"],
     deps = ["@com_github_gomodule_oauth1//oauth"],
 )

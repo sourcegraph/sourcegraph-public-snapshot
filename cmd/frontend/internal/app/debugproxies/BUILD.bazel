@@ -31,6 +31,7 @@ go_test(
         "handler_test.go",
         "scanner_test.go",
     ],
+    timeout = "short",
     embed = [":debugproxies"],
     deps = [
         "//cmd/frontend/internal/app/router",

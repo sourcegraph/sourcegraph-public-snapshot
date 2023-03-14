@@ -17,6 +17,7 @@ go_test(
     name = "diff_test",
     srcs = ["diff_test.go"],
     data = ["//lib/codeintel/precise/diff/testdata:data"],
+    timeout = "short",
     embed = [":diff"],
     deps = [
         "//lib/codeintel/lsif/conversion",

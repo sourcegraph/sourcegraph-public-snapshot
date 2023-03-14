@@ -18,6 +18,7 @@ go_library(
 go_test(
     name = "policy_test",
     srcs = ["grpc_test.go"],
+    timeout = "short",
     embed = [":policy"],
     deps = [
         "@com_github_stretchr_testify//require",

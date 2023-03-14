@@ -23,6 +23,7 @@ go_library(
 
 go_binary(
     name = "build-tracker",
+    timeout = "short",
     embed = [":build-tracker_lib"],
     visibility = ["//visibility:public"],
 )
@@ -34,6 +35,7 @@ go_test(
         "server_test.go",
         "slack_test.go",
     ],
+    timeout = "short",
     embed = [":build-tracker_lib"],
     deps = [
         "//dev/team",

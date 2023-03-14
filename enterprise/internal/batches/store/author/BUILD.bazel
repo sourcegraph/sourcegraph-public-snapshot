@@ -16,6 +16,7 @@ go_library(
 go_test(
     name = "author_test",
     srcs = ["author_test.go"],
+    timeout = "short",
     embed = [":author"],
     tags = [
         # Test requires localhost for database

@@ -16,6 +16,7 @@ go_library(
 go_test(
     name = "dbcache_test",
     srcs = ["cached_indexable_repos_test.go"],
+    timeout = "short",
     embed = [":dbcache"],
     deps = [
         "//internal/database",

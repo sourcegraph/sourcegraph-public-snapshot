@@ -25,6 +25,7 @@ go_library(
 go_test(
     name = "repo_test",
     srcs = ["store_test.go"],
+    timeout = "short",
     embed = [":repo"],
     tags = [
         # Test requires localhost database

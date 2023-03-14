@@ -22,6 +22,7 @@ go_test(
         "hash_test.go",
         "util_test.go",
     ],
+    timeout = "short",
     embed = [":precise"],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

@@ -30,6 +30,7 @@ go_test(
         "periodic_test.go",
         "pool_test.go",
     ],
+    timeout = "short",
     embed = [":goroutine"],
     deps = [
         "//lib/errors",

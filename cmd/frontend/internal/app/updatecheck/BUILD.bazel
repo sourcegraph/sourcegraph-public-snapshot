@@ -43,6 +43,7 @@ go_test(
         "client_test.go",
         "handler_test.go",
     ],
+    timeout = "short",
     embed = [":updatecheck"],
     deps = [
         "//internal/extsvc",

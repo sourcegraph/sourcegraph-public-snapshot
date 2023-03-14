@@ -44,6 +44,7 @@ go_test(
         "search_test.go",
         "server_test.go",
     ],
+    timeout = "short",
     embed = [":rockskip"],
     tags = [
         # Test requires localhost database

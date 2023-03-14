@@ -10,6 +10,7 @@ go_library(
 go_test(
     name = "outputtest_test",
     srcs = ["buffer_test.go"],
+    timeout = "short",
     embed = [":outputtest"],
     deps = [
         "//lib/output",

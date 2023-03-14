@@ -36,6 +36,7 @@ go_test(
         "mocks_test.go",
         "worker_test.go",
     ],
+    timeout = "short",
     embed = [":workerutil"],
     deps = [
         "//internal/observation",

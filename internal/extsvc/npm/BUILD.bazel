@@ -26,6 +26,7 @@ go_test(
     name = "npm_test",
     srcs = ["npm_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":npm"],
     deps = [
         "//internal/conf/reposource",

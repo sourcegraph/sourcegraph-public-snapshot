@@ -39,6 +39,7 @@ go_test(
         "sync_test.go",
         "syncer_test.go",
     ],
+    timeout = "short",
     embed = [":syncer"],
     deps = [
         "//enterprise/internal/batches/store",

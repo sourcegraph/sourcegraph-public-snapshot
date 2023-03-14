@@ -19,6 +19,7 @@ go_library(
 go_test(
     name = "registry_test",
     srcs = ["http_api_test.go"],
+    timeout = "short",
     embed = [":registry"],
     deps = ["//cmd/frontend/envvar"],
 )

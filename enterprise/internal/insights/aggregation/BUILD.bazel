@@ -31,6 +31,7 @@ go_test(
         "aggregation_test.go",
         "limited_aggregator_test.go",
     ],
+    timeout = "short",
     embed = [":aggregation"],
     deps = [
         "//enterprise/internal/insights/types",

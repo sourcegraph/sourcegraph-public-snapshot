@@ -46,6 +46,7 @@ go_test(
         "mocks_test.go",
         "service_test.go",
     ],
+    timeout = "short",
     embed = [":autoindexing"],
     tags = [
         # requires localhost database

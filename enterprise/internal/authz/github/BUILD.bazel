@@ -38,6 +38,7 @@ go_test(
         "github_test.go",
         "mocks_test.go",
     ],
+    timeout = "short",
     embed = [":github"],
     deps = [
         "//enterprise/internal/licensing",

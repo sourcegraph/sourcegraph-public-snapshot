@@ -41,6 +41,7 @@ go_test(
         "run_test.go",
         "util_test.go",
     ],
+    timeout = "short",
     embed = [":command"],
     deps = [
         "//enterprise/internal/executor/types",

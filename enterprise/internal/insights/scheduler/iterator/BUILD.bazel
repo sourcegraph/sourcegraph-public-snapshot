@@ -19,6 +19,7 @@ go_library(
 go_test(
     name = "iterator_test",
     srcs = ["repo_iterator_test.go"],
+    timeout = "short",
     embed = [":iterator"],
     tags = [
         # Test requires localhost for database

@@ -15,6 +15,7 @@ go_library(
 go_test(
     name = "loki_test",
     srcs = ["loki_test.go"],
+    timeout = "short",
     embed = [":loki"],
     deps = [
         "//dev/sg/internal/bk",

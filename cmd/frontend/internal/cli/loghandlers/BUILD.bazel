@@ -11,6 +11,7 @@ go_library(
 go_test(
     name = "loghandlers_test",
     srcs = ["loghandlers_test.go"],
+    timeout = "short",
     embed = [":loghandlers"],
     deps = ["@com_github_inconshreveable_log15//:log15"],
 )

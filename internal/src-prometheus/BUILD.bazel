@@ -18,6 +18,7 @@ go_library(
 go_test(
     name = "src-prometheus_test",
     srcs = ["prometheus_test.go"],
+    timeout = "short",
     embed = [":src-prometheus"],
     deps = ["//lib/errors"],
 )

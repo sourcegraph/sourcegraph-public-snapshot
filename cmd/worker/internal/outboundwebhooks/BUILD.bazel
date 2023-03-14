@@ -39,6 +39,7 @@ go_library(
 go_test(
     name = "outboundwebhooks_test",
     srcs = ["handler_test.go"],
+    timeout = "short",
     embed = [":outboundwebhooks"],
     deps = [
         "//internal/database",

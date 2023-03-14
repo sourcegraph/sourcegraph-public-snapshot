@@ -40,6 +40,7 @@ go_test(
         "redirect_test.go",
         "user_test.go",
     ],
+    timeout = "short",
     embed = [":auth"],
     deps = [
         "//cmd/frontend/internal/app/ui",

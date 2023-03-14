@@ -36,6 +36,7 @@ go_test(
         "shared_test.go",
         "ubuntu_test.go",
     ],
+    timeout = "short",
     embed = [":dependencies"],
     deps = [
         "//dev/sg/internal/check",

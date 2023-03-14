@@ -28,6 +28,7 @@ go_test(
         "types_test.go",
         "validate_test.go",
     ],
+    timeout = "short",
     embed = [":notebooks"],
     tags = [
         # Test requires localhost for database

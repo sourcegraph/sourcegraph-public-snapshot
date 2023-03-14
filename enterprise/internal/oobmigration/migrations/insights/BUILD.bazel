@@ -32,6 +32,7 @@ go_test(
     name = "insights_test",
     srcs = ["migrator_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":insights"],
     tags = [
         # Test requires localhost database

@@ -20,6 +20,7 @@ go_library(
 go_test(
     name = "gitserver_test",
     srcs = ["first_commit_test.go"],
+    timeout = "short",
     embed = [":gitserver"],
     deps = [
         "//lib/errors",

@@ -23,6 +23,7 @@ go_test(
         "calculate_test.go",
         "migrator_test.go",
     ],
+    timeout = "short",
     embed = [":recording_times"],
     tags = [
         # Test requires localhost database

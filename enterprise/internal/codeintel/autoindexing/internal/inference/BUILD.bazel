@@ -58,6 +58,7 @@ go_test(
         "service_hinter_test.go",
         "service_test.go",
     ],
+    timeout = "short",
     embed = [":inference"],
     deps = [
         "//enterprise/internal/codeintel/autoindexing/internal/inference/libs",

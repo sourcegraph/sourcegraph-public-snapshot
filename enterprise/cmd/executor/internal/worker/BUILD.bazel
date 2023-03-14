@@ -37,6 +37,7 @@ go_test(
         "mocks_test.go",
         "workspace_test.go",
     ],
+    timeout = "short",
     embed = [":worker"],
     deps = [
         "//enterprise/cmd/executor/internal/apiclient",

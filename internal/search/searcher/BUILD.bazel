@@ -49,6 +49,7 @@ go_library(
 go_test(
     name = "searcher_test",
     srcs = ["symbol_search_job_test.go"],
+    timeout = "short",
     embed = [":searcher"],
     deps = [
         "//internal/search/result",

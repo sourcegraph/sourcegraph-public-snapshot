@@ -16,6 +16,7 @@ go_library(
 go_test(
     name = "rewirer_test",
     srcs = ["rewirer_test.go"],
+    timeout = "short",
     embed = [":rewirer"],
     deps = [
         "//enterprise/internal/batches/global",

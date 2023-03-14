@@ -10,5 +10,6 @@ go_library(
 go_test(
     name = "randstring_test",
     srcs = ["string_test.go"],
+    timeout = "short",
     embed = [":randstring"],
 )

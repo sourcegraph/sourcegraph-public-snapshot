@@ -29,6 +29,7 @@ go_test(
         "authz_test.go",
         "provider_test.go",
     ],
+    timeout = "short",
     embed = [":bitbucketcloud"],
     deps = [
         "//enterprise/internal/licensing",

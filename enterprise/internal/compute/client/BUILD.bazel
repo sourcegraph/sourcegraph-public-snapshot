@@ -22,6 +22,7 @@ go_test(
         "compute_text_client_test.go",
         "match_context_client_test.go",
     ],
+    timeout = "short",
     embed = [":client"],
     deps = [
         "//enterprise/internal/compute",

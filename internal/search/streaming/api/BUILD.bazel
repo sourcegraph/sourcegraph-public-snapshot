@@ -15,6 +15,7 @@ go_test(
     name = "api_test",
     srcs = ["progress_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":api"],
     deps = [
         "//internal/api",

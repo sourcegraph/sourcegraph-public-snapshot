@@ -19,6 +19,7 @@ go_library(
 go_test(
     name = "recorder_test",
     srcs = ["common_test.go"],
+    timeout = "short",
     embed = [":recorder"],
     tags = [
         # requires localhost database

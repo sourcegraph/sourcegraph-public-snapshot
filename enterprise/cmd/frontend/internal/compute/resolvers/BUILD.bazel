@@ -22,6 +22,7 @@ go_library(
 go_test(
     name = "resolvers_test",
     srcs = ["resolvers_test.go"],
+    timeout = "short",
     embed = [":resolvers"],
     deps = [
         "//enterprise/internal/compute",

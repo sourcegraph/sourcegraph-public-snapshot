@@ -19,6 +19,7 @@ go_test(
     name = "gomodproxy_test",
     srcs = ["client_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":gomodproxy"],
     deps = [
         "//internal/conf/reposource",

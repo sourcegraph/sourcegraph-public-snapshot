@@ -21,6 +21,7 @@ go_library(
 go_test(
     name = "graphqlutil_test",
     srcs = ["connection_resolver_test.go"],
+    timeout = "short",
     embed = [":graphqlutil"],
     deps = [
         "//internal/database",

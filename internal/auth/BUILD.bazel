@@ -21,6 +21,7 @@ go_library(
 go_test(
     name = "auth_test",
     srcs = ["site_admin_test.go"],
+    timeout = "short",
     embed = [":auth"],
     deps = [
         "//internal/actor",

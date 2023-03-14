@@ -48,6 +48,7 @@ go_library(
 go_test(
     name = "output_test",
     srcs = ["output_unix_test.go"],
+    timeout = "short",
     embed = [":output"],
     deps = select({
         "@io_bazel_rules_go//go/platform:aix": [

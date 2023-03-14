@@ -24,6 +24,7 @@ go_library(
 go_test(
     name = "migrations_test",
     srcs = ["init_test.go"],
+    timeout = "short",
     embed = [":migrations"],
     deps = ["//internal/oobmigration"],
 )

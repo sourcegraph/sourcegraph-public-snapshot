@@ -31,6 +31,7 @@ go_test(
         "authz_test.go",
         "main_test.go",
     ],
+    timeout = "short",
     embed = [":authz"],
     deps = [
         "//cmd/frontend/auth/providers",

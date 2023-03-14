@@ -14,6 +14,7 @@ go_library(
 go_test(
     name = "unpack_test",
     srcs = ["unpack_test.go"],
+    timeout = "short",
     embed = [":unpack"],
     deps = [
         "@com_github_google_go_cmp//cmp",

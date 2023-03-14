@@ -30,5 +30,6 @@ go_library(
 go_test(
     name = "repoupdater_test",
     srcs = ["client_test.go"],
+    timeout = "short",
     embed = [":repoupdater"],
 )

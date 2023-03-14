@@ -25,6 +25,7 @@ go_test(
         "codehost_test.go",
         "types_test.go",
     ],
+    timeout = "short",
     embed = [":extsvc"],
     deps = [
         "//internal/api",

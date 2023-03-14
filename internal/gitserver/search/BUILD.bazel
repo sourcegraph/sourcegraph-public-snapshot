@@ -35,6 +35,7 @@ go_test(
         "search_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":search"],
     embedsrcs = [
         "testdata/large_diff.txt",

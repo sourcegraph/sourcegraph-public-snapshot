@@ -69,6 +69,7 @@ go_test(
         "grpc_test.go",
         "internal_test.go",
     ],
+    timeout = "short",
     embed = [":gitserver"],
     # This test loads coursier as a side effect, so we ensure the
     # path is sandboxed properly.

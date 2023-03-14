@@ -25,6 +25,7 @@ go_test(
         "sexp_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":printer"],
     deps = [
         "//internal/search/job",

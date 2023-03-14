@@ -11,6 +11,7 @@ go_library(
 go_test(
     name = "gqlutil_test",
     srcs = ["datetime_test.go"],
+    timeout = "short",
     embed = [":gqlutil"],
     deps = ["@com_github_stretchr_testify//require"],
 )

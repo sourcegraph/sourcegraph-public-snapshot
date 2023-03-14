@@ -55,6 +55,7 @@ go_test(
         "sources_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":sources"],
     deps = [
         "//enterprise/internal/batches/sources/azuredevops",

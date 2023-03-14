@@ -29,6 +29,7 @@ go_test(
         "permission_test.go",
         "permissions_test.go",
     ],
+    timeout = "short",
     embed = [":rbac"],
     tags = [
         # requires localhost database

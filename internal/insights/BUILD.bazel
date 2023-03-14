@@ -20,6 +20,7 @@ go_library(
 go_test(
     name = "insights_test",
     srcs = ["insights_test.go"],
+    timeout = "short",
     embed = [":insights"],
     tags = [
         # Test requires localhost database

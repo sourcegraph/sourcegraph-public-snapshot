@@ -14,5 +14,6 @@ go_library(
 go_test(
     name = "jsonc_test",
     srcs = ["jsonc_test.go"],
+    timeout = "short",
     embed = [":jsonc"],
 )

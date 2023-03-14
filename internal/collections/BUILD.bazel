@@ -14,6 +14,7 @@ go_library(
 go_test(
     name = "collections_test",
     srcs = ["slice_utils_test.go"],
+    timeout = "short",
     embed = [":collections"],
     deps = [
         "@com_github_google_go_cmp//cmp",

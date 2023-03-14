@@ -47,6 +47,7 @@ go_test(
         "service_test.go",
     ],
     data = glob(["test_repos/**"]),
+    timeout = "short",
     embed = [":squirrel"],
     deps = [
         "//internal/search",

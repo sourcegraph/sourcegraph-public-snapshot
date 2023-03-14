@@ -44,6 +44,7 @@ go_test(
         "s3_client_test.go",
         "store_test.go",
     ],
+    timeout = "short",
     embed = [":uploadstore"],
     deps = [
         "//internal/observation",

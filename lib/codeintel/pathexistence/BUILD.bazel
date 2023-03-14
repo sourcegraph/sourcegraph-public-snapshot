@@ -22,6 +22,7 @@ go_test(
         "git_test.go",
         "paths_test.go",
     ],
+    timeout = "short",
     embed = [":pathexistence"],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

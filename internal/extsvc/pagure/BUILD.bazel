@@ -24,6 +24,7 @@ go_test(
     name = "pagure_test",
     srcs = ["client_test.go"],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":pagure"],
     deps = [
         "//internal/testutil",

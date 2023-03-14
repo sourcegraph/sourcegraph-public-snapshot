@@ -66,6 +66,7 @@ go_test(
         "scip_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":background"],
     deps = [
         "//cmd/frontend/backend",

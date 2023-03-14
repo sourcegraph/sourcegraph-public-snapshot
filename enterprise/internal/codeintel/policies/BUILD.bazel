@@ -41,6 +41,7 @@ go_test(
         "mocks_test.go",
         "service_test.go",
     ],
+    timeout = "short",
     embed = [":policies"],
     deps = [
         "//enterprise/internal/codeintel/policies/internal/store",

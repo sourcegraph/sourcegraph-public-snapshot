@@ -21,6 +21,7 @@ go_test(
         "analyzer_test.go",
         "priority_test.go",
     ],
+    timeout = "short",
     embed = [":priority"],
     deps = [
         "//enterprise/internal/insights/query/querybuilder",

@@ -24,6 +24,7 @@ go_test(
         "helpers_test.go",
         "read_test.go",
     ],
+    timeout = "short",
     embed = [":definition"],
     deps = [
         "//internal/database/migration/definition/testdata",

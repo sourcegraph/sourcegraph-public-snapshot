@@ -30,6 +30,7 @@ go_library(
 go_test(
     name = "pipeline_test",
     srcs = ["backfill_test.go"],
+    timeout = "short",
     embed = [":pipeline"],
     deps = [
         "//enterprise/internal/insights/background/queryrunner",

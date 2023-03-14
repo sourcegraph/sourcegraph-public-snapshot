@@ -200,6 +200,7 @@ go_test(
         "webhooks_test.go",
         "zoekt_repos_test.go",
     ],
+    timeout = "short",
     embed = [":database"],
     tags = [
         # Test requires localhost database

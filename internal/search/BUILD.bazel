@@ -41,6 +41,7 @@ go_test(
         "alert_test.go",
         "repo_status_test.go",
     ],
+    timeout = "short",
     embed = [":search"],
     deps = [
         "//internal/api",

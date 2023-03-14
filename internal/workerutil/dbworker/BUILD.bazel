@@ -25,6 +25,7 @@ go_library(
 go_test(
     name = "dbworker_test",
     srcs = ["resetter_test.go"],
+    timeout = "short",
     embed = [":dbworker"],
     deps = [
         "//internal/workerutil/dbworker/store",

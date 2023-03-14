@@ -36,6 +36,7 @@ go_test(
         "check_test.go",
         "runner_test.go",
     ],
+    timeout = "short",
     embed = [":check"],
     deps = [
         "//dev/sg/internal/std",

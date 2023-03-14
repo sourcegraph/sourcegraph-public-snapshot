@@ -21,6 +21,7 @@ go_test(
         "parser_test.go",
         "scanner_test.go",
     ],
+    timeout = "short",
     embed = [":syntax"],
     deps = ["//lib/errors"],
 )

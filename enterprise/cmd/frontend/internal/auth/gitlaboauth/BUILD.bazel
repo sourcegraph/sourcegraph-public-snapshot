@@ -41,6 +41,7 @@ go_test(
         "middleware_test.go",
         "session_test.go",
     ],
+    timeout = "short",
     embed = [":gitlaboauth"],
     tags = [
         # Test requires localhost database

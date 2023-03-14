@@ -17,6 +17,7 @@ go_test(
         "frames_test.go",
         "series_test.go",
     ],
+    timeout = "short",
     embed = [":timeseries"],
     deps = [
         "//enterprise/internal/insights/types",

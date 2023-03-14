@@ -39,6 +39,7 @@ go_test(
         "mocks_test.go",
         "queuehandler_test.go",
     ],
+    timeout = "short",
     embed = [":executorqueue"],
     deps = [
         "//enterprise/internal/executor/store",

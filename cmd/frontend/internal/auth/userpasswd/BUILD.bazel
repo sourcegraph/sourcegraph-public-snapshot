@@ -63,6 +63,7 @@ go_test(
         "set_password_test.go",
         "verify_email_test.go",
     ],
+    timeout = "short",
     embed = [":userpasswd"],
     tags = [
         # requires localhost database

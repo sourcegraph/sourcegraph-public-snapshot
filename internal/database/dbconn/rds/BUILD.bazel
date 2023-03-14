@@ -18,6 +18,7 @@ go_library(
 go_test(
     name = "rds_test",
     srcs = ["rds_test.go"],
+    timeout = "short",
     embed = [":rds"],
     deps = [
         "@com_github_hexops_autogold_v2//:autogold",

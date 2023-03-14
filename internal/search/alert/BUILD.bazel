@@ -27,6 +27,7 @@ go_library(
 go_test(
     name = "alert_test",
     srcs = ["observer_test.go"],
+    timeout = "short",
     embed = [":alert"],
     deps = [
         "//internal/database",

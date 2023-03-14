@@ -23,6 +23,7 @@ go_library(
 go_test(
     name = "diskcache_test",
     srcs = ["cache_test.go"],
+    timeout = "short",
     embed = [":diskcache"],
     deps = ["//internal/observation"],
 )

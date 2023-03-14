@@ -41,6 +41,7 @@ go_test(
         "generator_test.go",
         "variables_test.go",
     ],
+    timeout = "short",
     embed = [":monitoring"],
     deps = [
         "//monitoring/definitions",

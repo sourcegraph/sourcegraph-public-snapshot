@@ -32,6 +32,7 @@ go_library(
 
 go_binary(
     name = "search-blitz",
+    timeout = "short",
     embed = [":search-blitz_lib"],
     visibility = ["//:__subpackages__"],
 )
@@ -39,5 +40,6 @@ go_binary(
 go_test(
     name = "search-blitz_test",
     srcs = ["config_test.go"],
+    timeout = "short",
     embed = [":search-blitz_lib"],
 )

@@ -43,6 +43,7 @@ go_test(
         "job_packages_filter_test.go",
         "mocks_test.go",
     ],
+    timeout = "short",
     embed = [":background"],
     tags = [
         # requires localhost database

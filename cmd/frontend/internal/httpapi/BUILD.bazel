@@ -102,6 +102,7 @@ go_test(
         "src_cli_test.go",
         "stream_blame_test.go",
     ],
+    timeout = "short",
     embed = [":httpapi"],
     deps = [
         "//cmd/frontend/backend",

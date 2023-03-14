@@ -31,6 +31,7 @@ go_test(
         "naive_test.go",
         "redispool_test.go",
     ],
+    timeout = "short",
     embed = [":redispool"],
     tags = [
         # Test requires localhost database

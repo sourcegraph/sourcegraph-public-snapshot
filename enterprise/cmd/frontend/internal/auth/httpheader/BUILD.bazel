@@ -30,6 +30,7 @@ go_test(
         "config_test.go",
         "middleware_test.go",
     ],
+    timeout = "short",
     embed = [":httpheader"],
     tags = [
         # Test requires localhost database

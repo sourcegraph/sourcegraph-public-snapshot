@@ -91,6 +91,7 @@ go_library(
 go_test(
     name = "cli_test",
     srcs = ["config_test.go"],
+    timeout = "short",
     embed = [":cli"],
     tags = [
         # Test requires localhost database

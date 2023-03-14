@@ -22,6 +22,7 @@ go_test(
         "entries_test.go",
         "inventory_test.go",
     ],
+    timeout = "short",
     embed = [":inventory"],
     deps = [
         "//internal/fileutil",

@@ -48,6 +48,7 @@ go_library(
 go_test(
     name = "uploads_test",
     srcs = ["mocks_test.go"],
+    timeout = "short",
     embed = [":uploads"],
     deps = [
         "//enterprise/internal/codeintel/policies",

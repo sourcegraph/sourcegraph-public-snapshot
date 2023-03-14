@@ -22,6 +22,7 @@ go_test(
         "bool_test.go",
         "overridable_test.go",
     ],
+    timeout = "short",
     embed = [":overridable"],
     deps = [
         "@com_github_google_go_cmp//cmp",

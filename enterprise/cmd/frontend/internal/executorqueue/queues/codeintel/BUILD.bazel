@@ -27,6 +27,7 @@ go_library(
 go_test(
     name = "codeintel_test",
     srcs = ["transform_test.go"],
+    timeout = "short",
     embed = [":codeintel"],
     deps = [
         "//enterprise/cmd/frontend/internal/executorqueue/handler",

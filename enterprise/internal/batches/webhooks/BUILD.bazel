@@ -32,6 +32,7 @@ go_test(
         "batch_change_test.go",
         "changeset_test.go",
     ],
+    timeout = "short",
     embed = [":webhooks"],
     tags = [
         # Test requires localhost for database

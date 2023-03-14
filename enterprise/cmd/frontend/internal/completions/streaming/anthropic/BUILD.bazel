@@ -24,6 +24,7 @@ go_test(
         "prompt_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":anthropic"],
     deps = [
         "//enterprise/cmd/frontend/internal/completions/types",

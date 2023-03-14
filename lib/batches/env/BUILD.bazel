@@ -20,6 +20,7 @@ go_test(
         "env_test.go",
         "var_test.go",
     ],
+    timeout = "short",
     embed = [":env"],
     deps = [
         "@com_github_google_go_cmp//cmp",

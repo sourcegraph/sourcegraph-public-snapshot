@@ -65,6 +65,7 @@ go_test(
         "job_dependency_sync_scheduler_test.go",
         "mocks_test.go",
     ],
+    timeout = "short",
     embed = [":background"],
     deps = [
         "//cmd/frontend/envvar",

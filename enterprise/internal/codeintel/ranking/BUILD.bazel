@@ -35,6 +35,7 @@ go_test(
         "mocks_test.go",
         "service_test.go",
     ],
+    timeout = "short",
     embed = [":ranking"],
     deps = [
         "//enterprise/internal/codeintel/ranking/internal/store",

@@ -51,6 +51,7 @@ go_test(
         "visitor_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":query"],
     deps = [
         "//lib/errors",

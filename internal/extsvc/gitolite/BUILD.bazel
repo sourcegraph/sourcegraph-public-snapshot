@@ -18,6 +18,7 @@ go_library(
 go_test(
     name = "gitolite_test",
     srcs = ["repos_test.go"],
+    timeout = "short",
     embed = [":gitolite"],
     deps = [
         "//internal/errcode",

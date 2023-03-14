@@ -10,6 +10,7 @@ go_library(
 go_test(
     name = "streamio_test",
     srcs = ["streamio_test.go"],
+    timeout = "short",
     embed = [":streamio"],
     deps = ["@com_github_stretchr_testify//require"],
 )

@@ -29,6 +29,7 @@ go_test(
         "indexer_name_test.go",
         "upload_test.go",
     ],
+    timeout = "short",
     embed = [":upload"],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

@@ -33,6 +33,7 @@ go_test(
         "oauth_test.go",
         "sudo_test.go",
     ],
+    timeout = "short",
     embed = [":gitlab"],
     deps = [
         "//cmd/frontend/auth/providers",

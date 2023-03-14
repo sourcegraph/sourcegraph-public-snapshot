@@ -41,6 +41,7 @@ go_test(
         "codeowners_resolvers_test.go",
         "resolvers_test.go",
     ],
+    timeout = "short",
     embed = [":resolvers"],
     deps = [
         "//cmd/frontend/backend",

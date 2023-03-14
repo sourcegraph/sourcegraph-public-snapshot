@@ -14,5 +14,6 @@ go_library(
 go_test(
     name = "paths_test",
     srcs = ["match_test.go"],
+    timeout = "short",
     embed = [":paths"],
 )

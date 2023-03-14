@@ -24,6 +24,7 @@ go_library(
 go_test(
     name = "webhooks_test",
     srcs = ["handler_test.go"],
+    timeout = "short",
     embed = [":webhooks"],
     deps = [
         "//internal/database",

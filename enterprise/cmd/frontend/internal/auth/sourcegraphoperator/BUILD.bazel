@@ -38,6 +38,7 @@ go_test(
         "config_test.go",
         "middleware_test.go",
     ],
+    timeout = "short",
     embed = [":sourcegraphoperator"],
     tags = [
         # Test requires localhost database

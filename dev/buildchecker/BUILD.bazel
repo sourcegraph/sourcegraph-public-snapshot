@@ -27,6 +27,7 @@ go_library(
 
 go_binary(
     name = "buildchecker",
+    timeout = "short",
     embed = [":buildchecker_lib"],
     visibility = ["//visibility:public"],
 )
@@ -41,6 +42,7 @@ go_test(
         "slack_test.go",
     ],
     data = glob(["testdata/**"]),
+    timeout = "short",
     embed = [":buildchecker_lib"],
     deps = [
         "//dev/team",

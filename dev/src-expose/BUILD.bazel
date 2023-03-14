@@ -18,6 +18,7 @@ go_library(
 
 go_binary(
     name = "src-expose",
+    timeout = "short",
     embed = [":src-expose_lib"],
     visibility = ["//visibility:public"],
 )
@@ -28,6 +29,7 @@ go_test(
         "main_test.go",
         "serve_test.go",
     ],
+    timeout = "short",
     embed = [":src-expose_lib"],
     deps = [
         "@com_github_google_go_cmp//cmp",

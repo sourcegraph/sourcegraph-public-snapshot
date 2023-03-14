@@ -126,6 +126,7 @@ go_library(
 
 go_binary(
     name = "sg",
+    timeout = "short",
     embed = [":sg_lib"],
     visibility = ["//visibility:public"],
 )
@@ -140,6 +141,7 @@ go_test(
     ],
     # Required by func findRoot() to check if sg is running in sourcegraph/sourcegraph
     data = ["//:go.mod"],
+    timeout = "short",
     embed = [":sg_lib"],
     # HOME is required to be set to start sg
     env = {"HOME": "/tmp"},

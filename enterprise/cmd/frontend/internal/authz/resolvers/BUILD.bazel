@@ -45,6 +45,7 @@ go_test(
         "permissions_sync_jobs_test.go",
         "resolver_test.go",
     ],
+    timeout = "short",
     embed = [":resolvers"],
     deps = [
         "//cmd/frontend/envvar",
