@@ -108,6 +108,7 @@
     // Tailwind 700
     --scip-keyword: #c2410c; // Orange
     --scip-identifier: #1d4ed8; // Blue
+    --scip-identifier-constant: #0369a1; // Sky
     --scip-identifier-type: #4338ca; // Indigo
     --scip-identifier-attribute: #a21caf; // Fuchsia
     --scip-identifier-function: #a16207; // Yello
@@ -539,7 +540,7 @@
         color: var(--scip-keyword);
     }
     .hl-typed-IdentifierConstant {
-        color: var(--scip-identifier);
+        color: var(--scip-identifier-constant);
     }
     .hl-typed-IdentifierMutableGlobal {
         color: var(--scip-identifier);
@@ -924,21 +925,22 @@
     //
     // Each group should exactly match the name of the spec.
     // .hl-typed-$SYNTAX_KIND
-    --scip-identifier: #859900;
-    --scip-keyword: #429feb;
-    --scip-identifier: #c0c5ce;
-    --scip-identifier-constant: #96b5b4;
-    --scip-identifier-type: #96b5b4;
-    --scip-identifier-attribute: #eb519c; // Properties/fields
-    --scip-identifier-function: #fbd460;
-    --scip-string-literal: #fb90c4;
-    --scip-escape: #d70505;
-    --scip-numeric-literal: #c0c0c9;
-    --scip-comment: #3fad55;
+    // --scip-identifier: #859900;
+    // --scip-keyword: #429feb;
+    // --scip-identifier: #c0c5ce;
+    // --scip-identifier-constant: #96b5b4;
+    // --scip-identifier-type: #96b5b4;
+    // --scip-identifier-attribute: #eb519c; // Properties/fields
+    // --scip-identifier-function: #fbd460;
+    // --scip-string-literal: #fb90c4;
+    // --scip-escape: #d70505;
+    // --scip-numeric-literal: #c0c0c9;
+    // --scip-comment: #3fad55;
 
     // Tailwind 300
     --scip-keyword: #fdba74; // Orange
     --scip-identifier: #93c5fd; // Blue
+    --scip-identifier-constant: #7dd3fc; // Sky
     --scip-identifier-type: #a5b4fc; // Indigo
     --scip-identifier-attribute: #f0abfc; // Fuchsia
     --scip-identifier-function: #fde047; // Yellow
@@ -987,7 +989,7 @@
         color: var(--scip-keyword);
     }
     .hl-typed-IdentifierConstant {
-        color: var(--scip-identifier);
+        color: var(--scip-identifier-constant);
     }
     .hl-typed-IdentifierMutableGlobal {
         color: var(--scip-identifier);
