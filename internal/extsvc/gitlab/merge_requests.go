@@ -11,6 +11,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -134,6 +135,9 @@ func (c *Client) CreateMergeRequest(ctx context.Context, project *Project, opts 
 	if _, code, err := c.do(ctx, req, resp); err != nil {
 		if code == http.StatusConflict {
 			return nil, ErrMergeRequestAlreadyExists
+		}
+		if code <= 400 && code < 200 {
+			return nil, errcode.MakeNonRetryable(err)
 		}
 		if aerr := c.convertToArchivedError(ctx, err, project); aerr != nil {
 			return nil, aerr
