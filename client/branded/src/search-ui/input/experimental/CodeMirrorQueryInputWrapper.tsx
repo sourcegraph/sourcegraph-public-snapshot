@@ -319,7 +319,6 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
         const onChangeRef = useMutableValue(onChange)
 
         const hasSubmitHandler = !!onSubmit
-        const staticExtensions = useMemo(() => createStaticExtensions({ popoverID }), [popoverID])
 
         // Update extensions whenever any of these props change
         const dynamicExtensions = useMemo(
