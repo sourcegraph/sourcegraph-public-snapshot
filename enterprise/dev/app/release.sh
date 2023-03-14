@@ -79,7 +79,7 @@ else
 fi
 
 # shellcheck disable=SC2086
-exec docker run --rm \
+docker run --rm \
   ${DOCKER_ARGS[*]} \
   -v "$DOCKER_VOLUME_SOURCE":/go/src/github.com/sourcegraph/sourcegraph \
   -w /go/src/github.com/sourcegraph/sourcegraph \
@@ -91,6 +91,8 @@ exec docker run --rm \
 
 ### post-build sign macOS binaries
 ### and build, sign and notarize a macOS app bundle
-### everything is downloads from the GCS versioned bucket,
+### everything is downloaded from the GCS versioned bucket,
 ### uploaded back to GCS, and replicated in a "latest" bucket
 "${ROOTDIR}/enterprise/dev/app/post-process_macos_artifacts.sh" || exit 1
+
+exit 0
