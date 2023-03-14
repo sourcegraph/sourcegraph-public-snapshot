@@ -8,5 +8,5 @@
     "outDir": "dist/test",
   },
   "include": ["**/*"],
-  "exclude": ["webviews", "scripts", "vite.config.ts"],
+  "exclude": ["dist", "webviews", "scripts", "vite.config.ts"],
 }

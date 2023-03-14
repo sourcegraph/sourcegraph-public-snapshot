@@ -85,5 +85,8 @@ suite('End-to-end', () => {
         // in runTest.js responds to all messages with
         message = await getTranscript(api, 1)
         assert.ok(message.displayText.includes('hello, world'))
+
+        // Clean up.
+        await ensureExecuteCommand('cody.delete-access-token')
     })
 })
