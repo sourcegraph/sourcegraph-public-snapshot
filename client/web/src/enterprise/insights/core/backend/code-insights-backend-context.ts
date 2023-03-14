@@ -13,7 +13,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     // Insights
     public getInsights = errorMockMethod('getInsights')
     public getInsightById = errorMockMethod('getInsightById')
-    public getActiveInsightsCount = (number: number): Observable<number> => of(number)
+    public getActiveInsightsCount = (number: number): Observable<number> => of(number - 1)
     public createInsight = errorMockMethod('createInsight')
     public updateInsight = errorMockMethod('updateInsight')
     public deleteInsight = errorMockMethod('deleteInsight')
