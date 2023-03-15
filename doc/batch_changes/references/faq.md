@@ -123,6 +123,10 @@ If the repository is unarchived, Batch Changes will move the changeset back into
 
 ### Why do I get different results counts when I run the same search query as a normal search vs. for my `repositoriesMatchingQuery` in a batch spec?
 
-By default, a normal Sorucegraph search will return the total number of _matches_ for a given query, counting matches in the same file or repository as separate results. However, when you use the search query in your batch spec, the results are grouped based on the repository (or "workspace", if you're [working with monorepos](../how-tos/creating_changesets_per_project_in_monorepos.md))  they belong to, giving you the total number of _repositories_ (or _workspaces_) that match the query. This is because Batch Changes produces one changeset for each matching repository (or workspace).
+By default, a normal Sourcegraph search will return the total number of _matches_ for a given query, counting matches in the same file or repository as separate results. However, when you use the search query in your batch spec, the results are grouped based on the repository (or "workspace", if you're [working with monorepos](../how-tos/creating_changesets_per_project_in_monorepos.md))  they belong to, giving you the total number of _repositories_ (or _workspaces_) that match the query. This is because Batch Changes produces one changeset for each matching repository (or workspace).
 
 So, if you have a search query that returns 10 results in a single repo, the batch spec will only return 1 result for that repo. This is the equivalent of supplying the `select:repo` aggregator parameter to your search query.
+
+### Why do I get fewer changes in my changeset diff when I run a batch spec than there are results when I run the same search query?
+
+Sourcegraph search shows you results on any repositories that you have read access to. However, Sourcegraph and Batch Changes do not know which repositories you have _write_ access to. This disparity most often stems from not having write access to one or more of the repositories where your search query returns results. Consider asking an admin to set up a [global service account token](../how-tos/configuring_credentials.md#global-service-account-tokens) if it's important that your batch change updates all matching repositories.
