@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/packagefilters"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -102,6 +103,11 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 		return errors.Wrap(err, "error listing package repo filters")
 	}
 
+	packageFilters, err := packagefilters.NewFilterLists(pkgFilters)
+	if err != nil {
+		return err
+	}
+
 	for {
 		packageReference, exists, err := scanner.Next()
 		if err != nil {
@@ -133,7 +139,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 			continue
 		}
 
-		newRepo, newVersion, err := h.insertPackageRepoRef(ctx, pkg, pkgFilters, instant)
+		newRepo, newVersion, err := h.insertPackageRepoRef(ctx, pkg, packageFilters, instant)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -242,26 +248,16 @@ func newPackage(pkg uploadsshared.Package) (*precise.Package, error) {
 	return &p, nil
 }
 
-func (h *dependencySyncSchedulerHandler) insertPackageRepoRef(ctx context.Context, pkg precise.Package, filters []dependencies.PackageRepoFilter, instant time.Time) (newRepos, newVersions bool, err error) {
-	pkgAllowed, err := h.depsSvc.IsPackageRepoAllowed(ctx, pkg.Scheme, reposource.PackageName(pkg.Name))
-	if err != nil {
-		return false, false, err
-	}
-
-	versionAllowed, err := h.depsSvc.IsPackageRepoVersionAllowed(ctx, pkg.Scheme, reposource.PackageName(pkg.Name), pkg.Version)
-	if err != nil {
-		return false, false, err
-	}
-
+func (h *dependencySyncSchedulerHandler) insertPackageRepoRef(ctx context.Context, pkg precise.Package, filters packagefilters.PackageFilters, instant time.Time) (newRepos, newVersions bool, err error) {
 	insertedRepos, insertedVersions, err := h.depsSvc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
 		{
 			Name:          reposource.PackageName(pkg.Name),
 			Scheme:        pkg.Scheme,
-			Blocked:       !pkgAllowed,
+			Blocked:       !packagefilters.IsPackageAllowed(pkg.Scheme, reposource.PackageName(pkg.Name), filters),
 			LastCheckedAt: &instant,
 			Versions: []dependencies.MinimalPackageRepoRefVersion{{
 				Version:       pkg.Version,
-				Blocked:       !versionAllowed,
+				Blocked:       !packagefilters.IsVersionedPackageAllowed(pkg.Scheme, reposource.PackageName(pkg.Name), pkg.Version, filters),
 				LastCheckedAt: &instant,
 			}},
 		},
