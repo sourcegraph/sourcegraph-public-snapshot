@@ -1,5 +1,7 @@
 import './Tips.css'
 
+import { ResetIcon } from './utils/icons'
+
 export const Tips: React.FunctionComponent<{}> = () => (
     <div className="tips-container">
         <h3>Example questions</h3>
@@ -13,8 +15,8 @@ export const Tips: React.FunctionComponent<{}> = () => (
         <ul>
             <li>Visit the Recipes tab for special actions like Write a unit test or Summarize code history.</li>
             <li>
-                Use the <i className="codicon codicon-refresh" /> button in the upper right to reset the chat when you
-                want to start a new line of thought. Cody does not remember anything outside the current chat.
+                Use the <ResetIcon /> button in the upper right to reset the chat when you want to start a new line of
+                thought. Cody does not remember anything outside the current chat.
             </li>
             <li>Use the feedback buttons when Cody messes up. We will use your feedback to make Cody better.</li>
             <li>
