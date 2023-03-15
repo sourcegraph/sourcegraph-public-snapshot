@@ -38,6 +38,7 @@ Administration is usually handled by site administrators are the admins responsi
 - [User authentication](auth/index.md)
   - [User data deletion](user_data_deletion.md)
 - <span class="badge badge-beta">Beta</span> [Provision users through SCIM](scim.md)
+- <span class="badge badge-beta">Beta</span> [Access control](access_control/index.md)
 - [Setting the URL for your instance](url.md)
 - [Repository permissions](permissions/index.md)
   - [Row-level security](repo/row_level_security.md)
