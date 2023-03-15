@@ -15,7 +15,7 @@ func (c *client) CurrentUser(ctx context.Context) (*User, error) {
 	}
 
 	var user User
-	if err := c.do(ctx, req, &user); err != nil {
+	if err, _ := c.do(ctx, req, &user); err != nil {
 		return nil, errors.Wrap(err, "sending request")
 	}
 
