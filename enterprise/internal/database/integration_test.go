@@ -39,8 +39,6 @@ func TestIntegration_PermsStore(t *testing.T) {
 		name string
 		test func(*testing.T)
 	}{
-		{"FetchReposByUserAndExternalService", testPermsStore_FetchReposByUserAndExternalService(db)},
-		{"FetchReposByExternalAccount", testPermsStore_FetchReposByExternalAccount(db)},
 		{"LoadUserPendingPermissions", testPermsStore_LoadUserPendingPermissions(db)},
 		{"SetRepoPendingPermissions", testPermsStore_SetRepoPendingPermissions(db)},
 		{"ListPendingUsers", testPermsStore_ListPendingUsers(db)},
