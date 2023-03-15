@@ -3,9 +3,9 @@ import * as vscode from 'vscode'
 import { CommandsProvider } from './command/CommandsProvider'
 import { ExtensionApi } from './extension-api'
 
-export async function activate(context: vscode.ExtensionContext): Promise<ExtensionApi> {
+export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi> {
     console.log('Cody extension activated')
 
     // Register commands and webview
-    return await CommandsProvider(context)
+    return CommandsProvider(context)
 }

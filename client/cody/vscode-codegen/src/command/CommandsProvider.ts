@@ -4,13 +4,20 @@ import { ChatViewProvider } from '../chat/ChatViewProvider'
 import { CODY_ACCESS_TOKEN_SECRET, ConfigurationUseContext, getConfiguration } from '../configuration'
 import { ExtensionApi } from '../extension-api'
 
+import { InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
+
+function getSecretStorage(context: vscode.ExtensionContext): SecretStorage {
+    return process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
+}
+
 // Registers Commands and Webview at extension start up
 export const CommandsProvider = async (context: vscode.ExtensionContext): Promise<ExtensionApi> => {
     // for tests
     const extensionApi = new ExtensionApi()
 
+    const secretStorage = getSecretStorage(context)
     const config = getConfiguration(vscode.workspace.getConfiguration())
-    const accessToken = (await context.secrets.get(CODY_ACCESS_TOKEN_SECRET)) || ''
+    const accessToken = (await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) || ''
     const useContext: ConfigurationUseContext = config.useContext
 
     // Create chat webview
@@ -22,7 +29,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         config.embeddingsEndpoint,
         useContext,
         config.debug,
-        context.secrets
+        secretStorage
     )
 
     vscode.window.registerWebviewViewProvider('cody.chat', chatProvider)
@@ -47,10 +54,10 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             if (tokenInput === undefined || tokenInput === '') {
                 return
             }
-            await context.secrets.store(CODY_ACCESS_TOKEN_SECRET, tokenInput)
+            await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, tokenInput)
         }),
         vscode.commands.registerCommand('cody.delete-access-token', async () =>
-            context.secrets.delete(CODY_ACCESS_TOKEN_SECRET)
+            secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
         ),
         // TOS
         vscode.commands.registerCommand('cody.accept-tos', async version => {
@@ -91,8 +98,8 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         })
     )
     context.subscriptions.push(
-        context.secrets.onDidChange(async event => {
-            if (event.key === CODY_ACCESS_TOKEN_SECRET) {
+        secretStorage.onDidChange(async key => {
+            if (key === CODY_ACCESS_TOKEN_SECRET) {
                 await chatProvider.configChangeDetected('token')
             }
         })
