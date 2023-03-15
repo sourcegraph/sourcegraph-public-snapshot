@@ -33,6 +33,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "types_test",
     srcs = ["secret_test.go"],
     embed = [":types"],

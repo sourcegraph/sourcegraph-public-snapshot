@@ -13,6 +13,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "mapfs_test",
     srcs = ["mapfs_test.go"],
     embed = [":mapfs"],

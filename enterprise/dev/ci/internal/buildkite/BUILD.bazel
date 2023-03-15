@@ -19,6 +19,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "buildkite_test",
     srcs = ["buildkite_test.go"],
     deps = [

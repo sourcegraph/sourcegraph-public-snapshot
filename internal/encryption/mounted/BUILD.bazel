@@ -13,6 +13,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "mounted_test",
     srcs = ["key_test.go"],
     embed = [":mounted"],

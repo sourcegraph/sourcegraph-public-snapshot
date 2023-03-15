@@ -168,7 +168,11 @@ const renderDashboardsContent = (
     ...renderWithBrandedContext(
         <MockedTestProvider mocks={mocks}>
             <Wrapper>
-                <DashboardsView dashboardId={dashboardID} telemetryService={mockTelemetryService} />
+                <DashboardsView
+                    dashboardId={dashboardID}
+                    telemetryService={mockTelemetryService}
+                    isSourcegraphApp={false}
+                />
             </Wrapper>
         </MockedTestProvider>
     ),

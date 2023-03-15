@@ -13,6 +13,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "servicecatalog_test",
     srcs = ["servicecatalog_test.go"],
     embed = [":servicecatalog"],

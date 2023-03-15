@@ -131,6 +131,7 @@ go_binary(
 )
 
 go_test(
+    timeout = "short",
     name = "sg_test",
     srcs = [
         "main_test.go",

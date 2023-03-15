@@ -89,9 +89,9 @@ func SetExternalAccountData(data *extsvc.AccountData, user *Profile, token *oaut
 
 // GetExternalAccountData returns the deserialized user and token from the external account data
 // JSON blob in a typesafe way.
-func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *Profile, tok *oauth2.Token, err error) {
+func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (profile *Profile, tok *oauth2.Token, err error) {
 	if data.Data != nil {
-		usr, err = encryption.DecryptJSON[Profile](ctx, data.Data)
+		profile, err = encryption.DecryptJSON[Profile](ctx, data.Data)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -104,7 +104,7 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr 
 		}
 	}
 
-	return usr, tok, nil
+	return profile, tok, nil
 }
 
 func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData) (*extsvc.PublicAccountData, error) {

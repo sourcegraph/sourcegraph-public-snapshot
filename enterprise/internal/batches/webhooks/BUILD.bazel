@@ -27,6 +27,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "webhooks_test",
     srcs = [
         "batch_change_test.go",

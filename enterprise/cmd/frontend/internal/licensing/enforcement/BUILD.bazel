@@ -28,6 +28,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "enforcement_test",
     srcs = [
         "external_services_test.go",

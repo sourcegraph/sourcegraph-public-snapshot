@@ -25,6 +25,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "httpheader_test",
     srcs = [
         "config_test.go",

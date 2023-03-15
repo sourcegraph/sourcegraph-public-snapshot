@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "changed_test",
     srcs = [
         "diff_test.go",

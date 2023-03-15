@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "json_test",
     srcs = ["validate_test.go"],
     embed = [":json"],

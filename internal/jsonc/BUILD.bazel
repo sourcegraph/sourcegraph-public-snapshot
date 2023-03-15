@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "jsonc_test",
     srcs = ["jsonc_test.go"],
     embed = [":jsonc"],

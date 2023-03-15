@@ -3,6 +3,7 @@ package background
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -66,6 +67,8 @@ func exportRankingGraph(
 	return len(uploads), numDefinitionsInserted, numReferencesInserted, nil
 }
 
+const skipPrefix = "lsif ."
+
 func setDefinitionsAndReferencesForUpload(
 	ctx context.Context,
 	store store.Store,
@@ -77,7 +80,7 @@ func setDefinitionsAndReferencesForUpload(
 	seenDefinitions := map[string]struct{}{}
 	definitions := []shared.RankingDefinitions{}
 	for _, occ := range document.Occurrences {
-		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
+		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
 			continue
 		}
 
@@ -93,7 +96,7 @@ func setDefinitionsAndReferencesForUpload(
 
 	references := []string{}
 	for _, occ := range document.Occurrences {
-		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
+		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
 			continue
 		}
 

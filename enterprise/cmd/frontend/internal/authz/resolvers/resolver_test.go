@@ -188,20 +188,20 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			perms := edb.NewStrictMockPermsStore()
 			perms.TransactFunc.SetDefaultReturn(perms, nil)
 			perms.DoneFunc.SetDefaultReturn(nil)
-			perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, ids []authz.UserIDWithExternalAccountID, source authz.PermsSource) error {
+			perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, ids []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 				expUserIDs := maps.Keys(test.expUserIDs)
 				userIDs := make([]int32, len(ids))
 				for i, u := range ids {
 					userIDs[i] = u.UserID
 				}
 				if diff := cmp.Diff(expUserIDs, userIDs); diff != "" {
-					return errors.Errorf("userIDs expected: %v, got: %v", expUserIDs, userIDs)
+					return nil, errors.Errorf("userIDs expected: %v, got: %v", expUserIDs, userIDs)
 				}
 				if source != authz.SourceAPI {
-					return errors.Errorf("source expected: %s, got: %s", authz.SourceAPI, source)
+					return nil, errors.Errorf("source expected: %s, got: %s", authz.SourceAPI, source)
 				}
 
-				return nil
+				return nil, nil
 			})
 			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 				ids := p.UserIDs

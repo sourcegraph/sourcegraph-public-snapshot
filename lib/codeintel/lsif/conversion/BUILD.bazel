@@ -25,6 +25,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "conversion_test",
     srcs = [
         "canonicalize_test.go",

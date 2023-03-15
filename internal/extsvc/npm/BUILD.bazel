@@ -23,6 +23,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "npm_test",
     srcs = ["npm_test.go"],
     data = glob(["testdata/**"]),

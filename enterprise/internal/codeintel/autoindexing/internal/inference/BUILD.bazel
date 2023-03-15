@@ -43,6 +43,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "inference_test",
     srcs = [
         "infer_test.go",
