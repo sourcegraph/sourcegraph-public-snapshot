@@ -155,29 +155,56 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	var repos []azuredevops.Repository
 	var orgs []azuredevops.Org
 
-	// List the users orgs only if the superset of orgs in the provider (collected from all the
-	// Azure DevOps code host connections) is not empty.
-	if len(p.orgs) > 0 {
-		var userProfile azuredevops.Profile
-		if profile == nil {
-			userProfile, err = client.GetAuthorizedProfile(ctx)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			userProfile = *profile
-		}
-
-		orgs, err = client.ListAuthorizedUserOrganizations(ctx, userProfile)
+	var userProfile azuredevops.Profile
+	if profile == nil {
+		userProfile, err = client.GetAuthorizedProfile(ctx)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		userProfile = *profile
+	}
+
+	// Always list the orgs accessible by this user, even if no orgs are specified in the Azure
+	// DevOps code host connection. The code host connection may have have only projects, but
+	// listing the user's orgs will help us with discovery of all accessible repos of this user.
+	orgs, err = client.ListAuthorizedUserOrganizations(ctx, userProfile)
+	if err != nil {
+		return nil, err
+	}
+
+	allOrgs := map[string]struct{}{}
+	for name := range p.orgs {
+		allOrgs[name] = struct{}{}
+	}
+
+	for project := range p.projects {
+		// A project here is a in the format <org-name>/<project-name>. An org or project name
+		// itself cannot contain any `/` so we are guaranteed that splitting the string with `/`
+		// will return two strings.
+		parts := strings.Split(project, "/")
+
+		// Consequently, this should never happen but just in case, log it as a warning instead
+		// of a hard failure.
+		if len(parts) != 2 {
+			logger.Warn(
+				"Unexpected project name found in Azure DevOps authorization provider (this likely means a misconfigured item in the `projects` key of one of the Azure DevOps code host connections, please check the code host config). Permissions syncing for this user will not be 100% complete and they may not have access to some repos on Sourcegraph that they can access on Azure DevOps.",
+				log.String("project", project), log.String("user", profile.EmailAddress),
+			)
+			continue
+		}
+
+		// Add the org name. If the org is already listed in the `orgs` key of the code host
+		// connection, then this is safe. If it is not, then we will now have tracked it for the
+		// next step of the user's permissions sync.
+		allOrgs[parts[0]] = struct{}{}
 	}
 
 	for _, org := range orgs {
-		// The user may have access to more orgs than those listed in a Azure DevOps code host connection.
+		// The user may have access to more orgs than those listed in an Azure DevOps code host
+		// connection through the `orgs` or `projects` keys.
 		// Do not sync this org.
-		if _, ok := p.orgs[org.Name]; !ok {
+		if _, ok := allOrgs[org.Name]; !ok {
 			logger.Debug("skipping org as it is not set in code host configuration", log.String("org", org.Name))
 			continue
 		}
@@ -211,36 +238,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		}
 
 		logger.Debug("adding repos", log.Int("count", len(foundRepos)))
-		repos = append(repos, foundRepos...)
-	}
-
-	for project := range p.projects {
-		foundRepos, err := client.ListRepositoriesByProjectOrOrg(ctx, azuredevops.ListRepositoriesByProjectOrOrgArgs{
-			ProjectOrOrgName: project,
-		})
-		if err != nil {
-			if httpErr, ok := err.(*azuredevops.HTTPError); ok {
-				// If the HTTPError is 401 / 403 / 404, this user does not have access to this org.
-				// Skip and continue to the next.
-				//
-				// For orgs/projects that don't exist, or the user does not have access to the API
-				// returns 404. We're not sure if the API might return 401 or 403 for some use case
-				// but we don't want to hard fail on that either.
-				if httpErr.StatusCode == http.StatusUnauthorized || httpErr.StatusCode == http.StatusForbidden || httpErr.StatusCode == http.StatusNotFound {
-
-					logger.Debug("user does not have access to this project",
-						log.String("project", project),
-						log.Int("http status code", httpErr.StatusCode),
-					)
-
-					continue
-				}
-			}
-
-			// For any other errors, we want to hard fail so that the issue can be identified.
-			return nil, errors.Newf("failed to list repositories for project: %q with error: %q", project, err.Error())
-		}
-
 		repos = append(repos, foundRepos...)
 	}
 
