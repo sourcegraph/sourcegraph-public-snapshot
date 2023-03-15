@@ -20,7 +20,7 @@ import {
 import { CommandInput } from './CommandInput'
 import { IndexJobLabel } from './IndexJobLabel'
 import { InferenceArrayValue, InferenceFormJob, InferenceFormJobStep } from './types'
-import { sanitizeIndexer } from './util'
+import { sanitizeIndexer, sanitizeRoot } from './util'
 
 import styles from './IndexJobNode.module.scss'
 
@@ -38,7 +38,7 @@ export const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({ job, 
         <Collapse isOpen={isOpened} onOpenChange={() => setOpened(!isOpened)}>
             <CollapseHeader as={H3} focusLocked={true} className={classNames(styles.jobHeader, 'mb-0')}>
                 <span>
-                    Job #{jobNumber}: index {job.root} with {sanitizeIndexer(job.indexer)}
+                    Job #{jobNumber}: index {sanitizeRoot(job.root)} with {sanitizeIndexer(job.indexer)}
                 </span>
                 <Icon aria-hidden={true} svgPath={isOpened ? mdiChevronDown : mdiChevronLeft} className="mr-1" />
             </CollapseHeader>

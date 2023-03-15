@@ -24,7 +24,7 @@ import { ConfigurationInferButton } from '../ConfigurationInferButton'
 import { formDataToSchema } from './form-data-to-schema'
 import { IndexJobNode } from './IndexJobNode'
 import { InferenceFormData, InferenceFormJob, SchemaCompatibleInferenceFormData } from './types'
-import { sanitizeIndexer } from './util'
+import { sanitizeIndexer, sanitizeRoot } from './util'
 
 import styles from './InferenceForm.module.scss'
 
@@ -153,12 +153,15 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
         }))
     }, [])
 
-    const [filter, setFilter] = useState({ root: '', indexer: '' })
-    const roots = [...new Set(formData.index_jobs.map(job => `/${job.root}`))].sort()
+    const [filter, setFilter] = useState({
+        root: '',
+        indexer: '',
+    })
+    const roots = [...new Set(formData.index_jobs.map(job => sanitizeRoot(job.root)))].sort()
     const indexers = [...new Set(formData.index_jobs.map(job => sanitizeIndexer(job.indexer)))]
     const filteredJobs = formData.index_jobs.filter(
         ({ root, indexer }: InferenceFormJob) =>
-            (filter.root === '' || filter.root === `/${root}`) &&
+            (filter.root === '' || filter.root === sanitizeRoot(root)) &&
             (filter.indexer === '' || filter.indexer === sanitizeIndexer(indexer))
     )
 
@@ -168,7 +171,7 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
 
             <Form onSubmit={handleSubmit}>
                 <div className={styles.inputs}>
-                    <span className="p-2">
+                    <span className="py-2 mr-3">
                         <Select
                             id="root"
                             label="Filter by root"
@@ -186,7 +189,7 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
                         </Select>
                     </span>
 
-                    <span className="p-2">
+                    <span className="py-2">
                         <Select
                             id="indexer"
                             label="Filter by indexer"
