@@ -1326,7 +1326,7 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 		createRepo(t, 4)
 
 		// set permissions on repo 4
-		err := s.SetRepoPerms(ctx, 4, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync)
+		_, err := s.SetRepoPerms(ctx, 4, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync)
 		require.NoError(t, err)
 		err = s.SetRepoPermissionsUnrestricted(ctx, []int32{1, 2, 3, 4}, true)
 		require.NoError(t, err)
