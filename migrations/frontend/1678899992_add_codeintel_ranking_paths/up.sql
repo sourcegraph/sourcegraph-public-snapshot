@@ -13,5 +13,4 @@ CREATE TABLE IF NOT EXISTS codeintel_initial_path_ranks_processed(
     CONSTRAINT fk_codeintel_initial_path_ranks FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
 );
 
-
 CREATE INDEX IF NOT EXISTS codeintel_initial_path_ranks_graph_key_and_repository_id ON codeintel_initial_path_ranks (graph_key, repository_id);
