@@ -86,6 +86,7 @@ func TestClientKeepsBaseURLPath(t *testing.T) {
 
 		succeeded = true
 	}))
+	defer srv.Close()
 
 	srvURL, err := url.JoinPath(srv.URL, "/testpath")
 	require.NoError(t, err)
