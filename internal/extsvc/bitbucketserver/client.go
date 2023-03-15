@@ -943,7 +943,7 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
-	req.URL = c.URL.ResolveReference(req.URL)
+	req.URL = c.URL.JoinPath(req.URL.Path)
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	}
