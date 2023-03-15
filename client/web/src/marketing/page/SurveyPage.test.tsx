@@ -1,10 +1,8 @@
 import { MockedProviderProps } from '@apollo/client/testing'
 import { cleanup, fireEvent, within, waitFor } from '@testing-library/react'
-import { createMemoryHistory } from 'history'
-import { Route } from 'react-router'
 
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SurveyPage } from './SurveyPage'
 import { mockVariables, submitSurveyMock } from './SurveyPage.mocks'
@@ -25,19 +23,19 @@ describe('SurveyPage', () => {
 
     afterEach(cleanup)
 
-    const renderSurveyPage = ({ mocks, routerProps }: RenderSurveyPageParameters) => {
-        const history = createMemoryHistory()
-        history.push(`/survey/${routerProps?.matchParam || ''}`, routerProps?.locationState)
-
-        return renderWithBrandedContext(
+    const renderSurveyPage = ({ mocks, routerProps }: RenderSurveyPageParameters) =>
+        renderWithBrandedContext(
             <MockedTestProvider mocks={mocks}>
-                <Route path="/survey/:score?">
-                    <SurveyPage authenticatedUser={null} />
-                </Route>
+                <SurveyPage authenticatedUser={null} />
             </MockedTestProvider>,
-            { route: '/', history }
+            {
+                path: '/survey/:score?',
+                route: {
+                    pathname: `/survey/${routerProps?.matchParam || ''}`,
+                    state: routerProps?.locationState,
+                },
+            }
         )
-    }
 
     describe('Prior to submission', () => {
         beforeEach(() => {
@@ -62,7 +60,7 @@ describe('SurveyPage', () => {
 
             fireEvent.click(renderResult.getByText('Submit'))
 
-            await waitFor(() => expect(renderResult.history.location.pathname).toBe('/survey/thanks'))
+            await waitFor(() => expect(renderResult.locationRef.current?.pathname).toBe('/survey/thanks'))
         })
     })
 

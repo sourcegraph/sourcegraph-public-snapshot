@@ -2,8 +2,8 @@ import { EMPTY, Subject } from 'rxjs'
 import { bufferTime, catchError, concatMap } from 'rxjs/operators'
 
 import { gql } from '@sourcegraph/http-client'
-// eslint-disable-next-line no-restricted-imports
-import { LogEventsResult, LogEventsVariables, Event } from '@sourcegraph/web/src/graphql-operations'
+
+import { LogEventsResult, LogEventsVariables, Event } from '../graphql-operations'
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
 

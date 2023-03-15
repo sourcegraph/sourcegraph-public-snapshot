@@ -4,7 +4,7 @@ package aggregation
 // The intention is to not take a dependency on the compute package itself.
 
 import (
-	"regexp"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -77,7 +77,7 @@ func extractPattern(basic *query.Basic) (*query.Pattern, error) {
 	return pattern, nil
 }
 
-func fromRegexpMatches(submatches []int, namedGroups []string, content string) map[string]int {
+func fromRegexpMatches(submatches []int, content string) map[string]int {
 	counts := map[string]int{}
 
 	if len(submatches) >= 4 {

@@ -51,7 +51,7 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 					std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
 						sgBugReportTemplate)
 					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack("addAnalyticsHooks"))
-					actionErr = cli.NewExitError(message, 1)
+					actionErr = cli.Exit(message, 1)
 
 					// Log event
 					span.RecordError("panic", actionErr)

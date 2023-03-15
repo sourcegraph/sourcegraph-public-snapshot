@@ -5,7 +5,7 @@ import { getDocumentNode, gql } from '@sourcegraph/http-client'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
-import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
+import { SearchValue } from '../../fuzzyFinder/SearchValue'
 import { createUrlFunction } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 import {
     FileNamesResult,
@@ -13,6 +13,7 @@ import {
     FuzzyFinderFilesResult,
     FuzzyFinderFilesVariables,
 } from '../../graphql-operations'
+import { UserHistory } from '../useUserHistory'
 
 import { FuzzyFSM, newFuzzyFSMFromValues } from './FuzzyFsm'
 import { emptyFuzzyCache, PersistableQueryResult } from './FuzzyLocalCache'
@@ -63,8 +64,8 @@ export const FUZZY_FILES_QUERY = gql`
 
 function fileIcon(filename: string): JSX.Element {
     return (
-        <span className="fuzzy-repos-result-icon">
-            <Icon aria-label={filename} svgPath={mdiFileDocumentOutline} className="fuzzy-repos-result-icon" />
+        <span className="mr-1">
+            <Icon aria-label={filename} svgPath={mdiFileDocumentOutline} className="mr-1" />
         </span>
     )
 }
@@ -109,13 +110,15 @@ export class FuzzyRepoFiles {
         private readonly client: ApolloClient<object> | undefined,
         private readonly createURL: createUrlFunction,
         private readonly onNamesChanged: () => void,
-        private readonly repoRevision: FuzzyRepoRevision
+        private readonly repoRevision: FuzzyRepoRevision,
+        private readonly userHistory: UserHistory
     ) {}
     public fuzzyFSM(): FuzzyFSM {
         return this.fsm
     }
     public handleQuery(): void {
         if (this.fsm.key === 'empty') {
+            this.fsm = { key: 'downloading' }
             this.download().then(
                 () => {},
                 () => {}
@@ -124,7 +127,6 @@ export class FuzzyRepoFiles {
     }
     private async download(): Promise<PersistableQueryResult[]> {
         const client = this.client || (await getWebGraphQLClient())
-        this.fsm = { key: 'downloading' }
         const response = await client.query<FileNamesResult, FileNamesVariables>({
             query: getDocumentNode(FUZZY_GIT_LSFILES_QUERY),
             variables: {
@@ -133,9 +135,10 @@ export class FuzzyRepoFiles {
             },
         })
         const filenames = response.data.repository?.commit?.fileNames || []
-        const values: SearchValue[] = filenames.map(text => ({
+        const values: SearchValue[] = filenames.map<SearchValue>(text => ({
             text,
             icon: fileIcon(text),
+            historyRanking: () => this.userHistory.lastAccessedFilePath(this.repoRevision.repositoryName, text),
         }))
         this.updateFSM(newFuzzyFSMFromValues(values, this.createURL))
         this.loopIndexing()
@@ -169,17 +172,20 @@ export class FuzzyFiles extends FuzzyQuery {
     constructor(
         private readonly client: ApolloClient<object> | undefined,
         onNamesChanged: () => void,
-        private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>
+        private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>,
+        private readonly userHistory: UserHistory
     ) {
-        // Symbol results should not be cached because stale symbol data is complicated to evict/invalidate.
         super(onNamesChanged, emptyFuzzyCache)
     }
 
     /* override */ protected searchValues(): SearchValue[] {
-        return [...this.queryResults.values()].map(({ text, url }) => ({
+        return [...this.queryResults.values()].map<SearchValue>(({ text, url, repoName, filePath }) => ({
             text,
             url,
             icon: fileIcon(text),
+            historyRanking: () =>
+                repoName && filePath ? this.userHistory.lastAccessedFilePath(repoName, filePath) : undefined,
+            ranking: repoName ? this.userHistory.lastAccessedRepo(repoName) : undefined,
         }))
     }
 
@@ -199,6 +205,8 @@ export class FuzzyFiles extends FuzzyQuery {
         for (const result of results) {
             if (result.__typename === 'FileMatch') {
                 queryResults.push({
+                    repoName: result.repository.name,
+                    filePath: result.file.path,
                     text: `${result.repository.name}/${result.file.path}`,
                     url: `/${result.repository.name}/-/blob/${result.file.path}`,
                 })

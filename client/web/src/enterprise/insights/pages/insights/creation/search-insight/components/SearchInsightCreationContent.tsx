@@ -2,12 +2,12 @@ import { FC, ReactNode } from 'react'
 
 import { noop } from 'rxjs'
 
+import { FormChangeEvent, SubmissionErrors } from '@sourcegraph/wildcard'
+
 import {
     CreationUiLayout,
     CreationUIForm,
     CreationUIPreview,
-    FormChangeEvent,
-    SubmissionErrors,
     createDefaultEditSeries,
     EditableDataSeries,
     getSanitizedSeries,
@@ -36,10 +36,11 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
         form: { values, formAPI, handleSubmit },
         title,
         repositories,
+        repoQuery,
+        repoMode,
         series,
         step,
         stepValue,
-        allReposMode,
     } = useInsightCreationForm({
         touched,
         initialValue,
@@ -50,7 +51,8 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
     const handleFormReset = (): void => {
         // TODO [VK] Change useForm API in order to implement form.reset method.
         title.input.onChange('')
-        repositories.input.onChange('')
+        repositories.input.onChange([])
+        repoQuery.input.onChange({ query: '' })
         // Focus first element of the form
         repositories.input.ref.current?.focus()
         series.input.onChange([createDefaultEditSeries({ edit: true })])
@@ -61,15 +63,14 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
     // If some fields that needed to run live preview  are invalid
     // we should disable live chart preview
     const allFieldsForPreviewAreValid =
-        repositories.meta.validState === 'VALID' &&
+        (repositories.meta.validState === 'VALID' || repoQuery.meta.validState === 'VALID') &&
         (series.meta.validState === 'VALID' || series.input.value.some(series => series.valid)) &&
-        stepValue.meta.validState === 'VALID' &&
-        // For the "all repositories" mode we are not able to show the live preview chart
-        !allReposMode.input.value
+        stepValue.meta.validState === 'VALID'
 
     const hasFilledValue =
         values.series?.some(line => line.name !== '' || line.query !== '') ||
-        values.repositories !== '' ||
+        values.repositories.length > 0 ||
+        values.repoQuery.query !== '' ||
         values.title !== ''
 
     return (
@@ -83,7 +84,8 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
                 submitted={formAPI.submitted}
                 title={title}
                 repositories={repositories}
-                allReposMode={allReposMode}
+                repoQuery={repoQuery}
+                repoMode={repoMode}
                 series={series}
                 step={step}
                 stepValue={stepValue}
@@ -98,7 +100,8 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
                 as={LineChartLivePreview}
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
-                isAllReposMode={allReposMode.input.value}
+                repoMode={repoMode.meta.value}
+                repoQuery={repoQuery.meta.value.query}
                 series={seriesToPreview(series.input.value)}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}

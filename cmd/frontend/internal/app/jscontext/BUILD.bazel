@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "jscontext",
+    srcs = ["jscontext.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/auth/providers",
+        "//cmd/frontend/enterprise",
+        "//cmd/frontend/envvar",
+        "//cmd/frontend/globals",
+        "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/hooks",
+        "//cmd/frontend/internal/app/assetsutil",
+        "//cmd/frontend/internal/auth/userpasswd",
+        "//cmd/frontend/internal/siteid",
+        "//cmd/frontend/webhooks",
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/conf/deploy",
+        "//internal/database",
+        "//internal/env",
+        "//internal/lazyregexp",
+        "//internal/singleprogram/filepicker",
+        "//internal/types",
+        "//internal/version",
+        "//schema",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "jscontext_test",
+    srcs = ["jscontext_test.go"],
+    embed = [":jscontext"],
+)

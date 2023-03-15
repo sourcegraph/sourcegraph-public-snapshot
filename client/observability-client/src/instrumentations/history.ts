@@ -1,9 +1,19 @@
-import { otperformance } from '@opentelemetry/core'
+import { AttributeValue } from '@opentelemetry/api'
 
-import { SharedSpanName, ActiveSpanConfig, InstrumentationBaseWeb, sharedSpanStore } from '../sdk'
+import { ClientAttributes } from '../processors/clientAttributesSpanProcessor'
+import { SharedSpanName, InstrumentationBaseWeb, sharedSpanStore } from '../sdk'
 
 const PATCHED_HISTORY_METHODS = ['replaceState', 'pushState', 'back', 'forward', 'go'] as const
 type PatchedKeys = typeof PATCHED_HISTORY_METHODS[number]
+
+interface LocationInfo {
+    pathname?: AttributeValue
+    search?: AttributeValue
+}
+
+interface HistoryInstrumentationOptions {
+    shouldCreatePageViewOnLocationChange: (prevLocationInfo: LocationInfo) => boolean
+}
 
 /**
  * Auto instrumentation of the window `popstate` event and history API that
@@ -21,8 +31,12 @@ export class HistoryInstrumentation extends InstrumentationBaseWeb {
     public static instrumentationName = '@sourcegraph/instrumentation-history'
     public static version = '0.1'
 
-    constructor() {
+    private shouldCreatePageViewOnLocationChange: HistoryInstrumentationOptions['shouldCreatePageViewOnLocationChange']
+
+    constructor(options: HistoryInstrumentationOptions) {
         super(HistoryInstrumentation.instrumentationName, HistoryInstrumentation.version)
+
+        this.shouldCreatePageViewOnLocationChange = options.shouldCreatePageViewOnLocationChange
     }
 
     private patchHistoryMethod = (original: History[PatchedKeys]): History[PatchedKeys] => {
@@ -30,28 +44,32 @@ export class HistoryInstrumentation extends InstrumentationBaseWeb {
         const instrumentation = this
 
         return function historyMethod(this: History, ...args: unknown[]) {
-            const navigationSpan = sharedSpanStore.getRootNavigationSpan()
+            /**
+             * TODO: figure out why `original as any` is required.
+             * Without it the monorepo wide Typescript build fails even though
+             * the `observability-client` Typescript builds are successful.
+             */
+            const result = (original as any).apply(this, args as any)
+            instrumentation.createPageViewSpan()
 
-            const spanConfig: ActiveSpanConfig = {
-                name: SharedSpanName.PageView,
-                // Link new navigation span to the previous navigation span.
-                links: navigationSpan ? [{ context: navigationSpan.spanContext() }] : [],
-            }
-
-            return instrumentation.createActiveSpan(spanConfig, pageViewSpan => {
-                const result = original.apply(this, args as any)
-                pageViewSpan.end()
-
-                return result
-            })
+            return result
         }
     }
 
-    private handlePopState = (): void => {
-        this.createFinishedSpan({
-            name: SharedSpanName.PageView,
-            startTime: otperformance.now(),
-        })
+    private createPageViewSpan = (): void => {
+        const previousNavigationSpan = sharedSpanStore.getRootNavigationSpan()
+        const prevLocationInfo = {
+            pathname: previousNavigationSpan?.attributes[ClientAttributes.LocationPathname],
+            search: previousNavigationSpan?.attributes[ClientAttributes.LocationSearch],
+        }
+
+        if (this.shouldCreatePageViewOnLocationChange(prevLocationInfo)) {
+            this.createFinishedSpan({
+                name: SharedSpanName.PageView,
+                // Link new navigation span to the previous navigation span.
+                links: previousNavigationSpan ? [{ context: previousNavigationSpan.spanContext() }] : [],
+            })
+        }
     }
 
     private patchHistoryApi(): void {
@@ -61,12 +79,12 @@ export class HistoryInstrumentation extends InstrumentationBaseWeb {
 
     public enable(): void {
         this.patchHistoryApi()
-        window.addEventListener('popstate', this.handlePopState)
+        window.addEventListener('popstate', this.createPageViewSpan)
     }
 
     public disable(): void {
         // The spread operator in the array is required to please TS.
         this._massUnwrap([history], [...PATCHED_HISTORY_METHODS])
-        window.removeEventListener('popstate', this.handlePopState)
+        window.removeEventListener('popstate', this.createPageViewSpan)
     }
 }

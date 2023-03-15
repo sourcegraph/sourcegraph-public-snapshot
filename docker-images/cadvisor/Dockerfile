@@ -1,5 +1,6 @@
-FROM gcr.io/cadvisor/cadvisor@sha256:9360d7421c5e9b646ea13e5ced3f8e6da80017b0144733a04b7401dd8c01a5cb
-LABEL com.sourcegraph.cadvisor.version=v0.45.0
+# NOTE: Check the README before updating
+FROM gcr.io/cadvisor/cadvisor@sha256:adc29827d88730174181e9fe221938323baa6ba8c5734c2ec52aa2e86a0c303e
+LABEL com.sourcegraph.cadvisor.version=v0.47.0
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

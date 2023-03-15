@@ -6,9 +6,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/hexops/valast"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log/logtest"
@@ -23,7 +22,7 @@ import (
 
 func TestGet(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	groupByRepo := "repo"
 
@@ -43,10 +42,10 @@ func TestGet(t *testing.T) {
 	}
 
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by)
-                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo'),
-									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null);`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by, repository_criteria)
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null,'repo:a'),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo', null),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null, 'repo:*');`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,6 +69,7 @@ func TestGet(t *testing.T) {
 			t.Fatal(err)
 		}
 		sampleIntervalUnit := "MONTH"
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               1,
@@ -93,6 +93,7 @@ func TestGet(t *testing.T) {
 				GenerationMethod:     types.Search,
 				IsFrozen:             false,
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               1,
@@ -157,6 +158,7 @@ func TestGet(t *testing.T) {
 			t.Fatal(err)
 		}
 		sampleIntervalUnit := "MONTH"
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               1,
@@ -180,6 +182,7 @@ func TestGet(t *testing.T) {
 				GenerationMethod:     types.Search,
 				IsFrozen:             false,
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               1,
@@ -219,6 +222,7 @@ func TestGet(t *testing.T) {
 			t.Fatal(err)
 		}
 		sampleIntervalUnit := "MONTH"
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               1,
@@ -242,6 +246,7 @@ func TestGet(t *testing.T) {
 				GenerationMethod:     types.Search,
 				IsFrozen:             false,
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               1,
@@ -277,14 +282,15 @@ func TestGet(t *testing.T) {
 
 func TestGetAll(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	groupByRepo := "repo"
 	ctx := context.Background()
 
+	store := NewInsightStore(insightsDB)
+
 	// First test the method on an empty database.
 	t.Run("test empty database", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
 		got, err := store.GetAll(ctx, InsightQueryArgs{})
 		if err != nil {
 			t.Fatal(err)
@@ -305,9 +311,9 @@ func TestGetAll(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (id, series_id, query, created_at, oldest_historical_at, last_recorded_at,
-		next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by)
-		VALUES  (1, 'series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null),
-				(2, 'series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo')`, now)
+		next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by, repository_criteria)
+		VALUES  (1, 'series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null, 'repo:a'),
+				(2, 'series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo', null)`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -343,13 +349,12 @@ func TestGetAll(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("test all results", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
+	t.Run("all results", func(t *testing.T) {
 		got, err := store.GetAll(ctx, InsightQueryArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               5,
@@ -372,6 +377,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               5,
@@ -417,6 +423,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               2,
@@ -462,19 +469,20 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
-	t.Run("test first result", func(t *testing.T) {
+	t.Run("first result", func(t *testing.T) {
 		store := NewInsightStore(insightsDB)
 		got, err := store.GetAll(ctx, InsightQueryArgs{Limit: 1})
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               5,
@@ -497,6 +505,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               5,
@@ -526,13 +535,12 @@ func TestGetAll(t *testing.T) {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
-	t.Run("test second result", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
+	t.Run("second result", func(t *testing.T) {
 		got, err := store.GetAll(ctx, InsightQueryArgs{Limit: 1, After: "b"})
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               2,
@@ -555,6 +563,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               2,
@@ -584,13 +593,12 @@ func TestGetAll(t *testing.T) {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
-	t.Run("test last 2 results", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
+	t.Run("last 2 results", func(t *testing.T) {
 		got, err := store.GetAll(ctx, InsightQueryArgs{After: "b"})
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               2,
@@ -613,6 +621,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               2,
@@ -658,17 +667,218 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+	t.Run("find by title results", func(*testing.T) {
+		got, err := store.GetAll(ctx, InsightQueryArgs{Find: "view 3"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		series1RepoCriteria := "repo:a"
+		want := []types.InsightViewSeries{
+			{
+				ViewID:               5,
+				UniqueID:             "b",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 3",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label5-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
+			},
+			{
+				ViewID:               5,
+				UniqueID:             "b",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "user can view 3",
+				Description:          "",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label5-2",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+	t.Run("find by series label results", func(*testing.T) {
+		got, err := store.GetAll(ctx, InsightQueryArgs{Find: "label5-1"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		series1RepoCriteria := "repo:a"
+		want := []types.InsightViewSeries{
+			{
+				ViewID:               5,
+				UniqueID:             "b",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 3",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label5-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
+			},
+			{
+				ViewID:               5,
+				UniqueID:             "b",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "user can view 3",
+				Description:          "",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label5-2",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+	t.Run("exclude insight ids from results", func(t *testing.T) {
+		got, err := store.GetAll(ctx, InsightQueryArgs{ExcludeIDs: []string{"b", "e"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		series1RepoCriteria := "repo:a"
+		want := []types.InsightViewSeries{
+			{
+				ViewID:               2,
+				UniqueID:             "d",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 1",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
+			},
+			{
+				ViewID:               2,
+				UniqueID:             "d",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "user can view 1",
+				Description:          "",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-2",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+	t.Run("returns expected number of samples", func(t *testing.T) {
+		// Set the series_num_samples value
+		numSamples := int32(50)
+		view, err := store.UpdateView(ctx, types.InsightView{
+			UniqueID:         "d",
+			PresentationType: types.Line, // setting for null constraint
+			SeriesNumSamples: &numSamples,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(&numSamples, view.SeriesNumSamples); diff != "" {
+			t.Errorf("unexpected insight view series num samples want/got: %s", diff)
+		}
+
+		series, err := store.GetAll(ctx, InsightQueryArgs{UniqueIDs: []string{"d"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// we're only testing the number of samples in this test cases
+		for _, s := range series {
+			if diff := cmp.Diff(&numSamples, s.SeriesNumSamples); diff != "" {
+				t.Errorf("unexpected insight view series num samples want/got: %s", diff)
+			}
 		}
 	})
 }
 
 func TestGetAllOnDashboard(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	groupByRepo := "repo"
 
@@ -682,10 +892,10 @@ func TestGetAllOnDashboard(t *testing.T) {
 	}
 
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by)
-                            VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo'),
-									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null);`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by, repository_criteria)
+                            VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null, 'repo:a'),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo', null),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null, null);`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -721,7 +931,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               2,
@@ -769,6 +979,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               4,
@@ -816,6 +1027,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -828,7 +1040,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               2,
@@ -876,6 +1088,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -888,7 +1101,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               4,
@@ -936,6 +1149,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -946,7 +1160,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 
 func TestCreateSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2021, 5, 1, 1, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	groupByRepo := "repo"
 
@@ -958,6 +1172,7 @@ func TestCreateSeries(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("test create series", func(t *testing.T) {
+		repoCriteria := "repo:a"
 		series := types.InsightSeries{
 			SeriesID:           "unique-1",
 			Query:              "query-1",
@@ -970,6 +1185,7 @@ func TestCreateSeries(t *testing.T) {
 			SampleIntervalUnit: string(types.Month),
 			GenerationMethod:   types.Search,
 			GroupBy:            &groupByRepo,
+			RepositoryCriteria: &repoCriteria,
 		}
 
 		got, err := store.CreateSeries(ctx, series)
@@ -992,17 +1208,16 @@ func TestCreateSeries(t *testing.T) {
 			GenerationMethod:     types.Search,
 			GroupBy:              &groupByRepo,
 			SupportsAugmentation: true,
+			RepositoryCriteria:   &repoCriteria,
 		}
-
-		log15.Info("values", "want", want, "got", got)
 
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result from create insight series (want/got): %s", diff)
 		}
 	})
 	t.Run("test create and get capture groups series", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
 		sampleIntervalUnit := "MONTH"
+		repoCriteria := "repo:a"
 		_, err := store.CreateSeries(ctx, types.InsightSeries{
 			SeriesID:                   "capture-group-1",
 			Query:                      "well hello there",
@@ -1017,6 +1232,7 @@ func TestCreateSeries(t *testing.T) {
 			CreatedAt:                  now,
 			GeneratedFromCaptureGroups: true,
 			GenerationMethod:           types.Search,
+			RepositoryCriteria:         &repoCriteria,
 		})
 		if err != nil {
 			return
@@ -1033,13 +1249,13 @@ func TestCreateSeries(t *testing.T) {
 		}
 		got[0].ID = 1 // normalizing this for test determinism
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 }
 
 func TestCreateView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1049,7 +1265,6 @@ func TestCreateView(t *testing.T) {
 	}
 
 	t.Run("test create view", func(t *testing.T) {
-
 		view := types.InsightView{
 			Title:            "my view",
 			Description:      "my view description",
@@ -1084,7 +1299,7 @@ func TestCreateView(t *testing.T) {
 
 func TestCreateGetView_WithGrants(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1135,7 +1350,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		if len(got) == 0 {
 			t.Errorf("unexpected count for user 1 insight views")
 		}
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 
 	t.Run("user 2 cannot see the view", func(t *testing.T) {
@@ -1165,7 +1380,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		if len(got) == 0 {
 			t.Errorf("unexpected count for org 5 insight views")
 		}
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("no users or orgs provided should only return global", func(t *testing.T) {
 		uniqueID := "globalonly"
@@ -1209,13 +1424,13 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		if len(got) != 1 {
 			t.Errorf("unexpected count for global only insights")
 		}
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 }
 
 func TestUpdateView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1235,7 +1450,7 @@ func TestUpdateView(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("AfterCreateView", types.InsightView{
+		autogold.Expect(types.InsightView{
 			ID: 1, Title: "my view",
 			Description:      "my view description",
 			UniqueID:         "1234567",
@@ -1256,21 +1471,21 @@ func TestUpdateView(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("AfterUpdateView", types.InsightView{
+		autogold.Expect(types.InsightView{
 			ID: 1, Title: "new title", UniqueID: "1234567",
 			Filters: types.InsightViewFilters{
 				IncludeRepoRegex: valast.Addr("include repos").(*string),
 				ExcludeRepoRegex: valast.Addr("exclude repos").(*string),
 				SearchContexts:   []string{"@dev/mycontext"},
 			},
-			PresentationType: types.PresentationType("LINE"),
+			PresentationType: "LINE",
 		}).Equal(t, got)
 	})
 }
 
 func TestUpdateViewSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	groupByRepo := "repo"
 	ctx := context.Background()
@@ -1325,14 +1540,14 @@ func TestUpdateViewSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("LabelAfterUpdateViewSeries", "new label").Equal(t, got[0].Label)
-		autogold.Want("ColorAfterUpdateViewSeries", "orange").Equal(t, got[0].LineColor)
+		autogold.Expect("new label").Equal(t, got[0].Label)
+		autogold.Expect("orange").Equal(t, got[0].LineColor)
 	})
 }
 
 func TestDeleteView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1399,7 +1614,7 @@ func TestDeleteView(t *testing.T) {
 
 func TestAttachSeriesView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1480,7 +1695,7 @@ func TestAttachSeriesView(t *testing.T) {
 
 func TestRemoveSeriesFromView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1580,7 +1795,7 @@ func TestRemoveSeriesFromView(t *testing.T) {
 
 func TestInsightStore_GetDataSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	groupByRepo := "repo"
 	ctx := context.Background()
@@ -1665,7 +1880,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 
 func TestInsightStore_StampRecording(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2020, 1, 5, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1709,7 +1924,7 @@ func TestInsightStore_StampRecording(t *testing.T) {
 
 func TestInsightStore_StampBackfillQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1738,6 +1953,28 @@ func TestInsightStore_StampBackfillQueued(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	repoScope := "repo:scope"
+	repoScopedSeries := types.InsightSeries{
+		SeriesID:           "repoScoped",
+		Query:              "query-2",
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+		RepositoryCriteria: &repoScope,
+	}
+	repoScopedSeries, err = store.CreateSeries(ctx, repoScopedSeries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = store.StampBackfill(ctx, repoScopedSeries)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("test only incomplete", func(t *testing.T) {
 		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{
@@ -1749,7 +1986,7 @@ func TestInsightStore_StampBackfillQueued(t *testing.T) {
 
 		want := 0
 		if diff := cmp.Diff(want, len(got)); diff != "" {
-			t.Errorf("mismatched updated backfill_stamp count want/got: %v", diff)
+			t.Errorf("mismatched not queued backfill_stamp count want/got: %v", diff)
 		}
 	})
 	t.Run("test get all", func(t *testing.T) {
@@ -1758,16 +1995,33 @@ func TestInsightStore_StampBackfillQueued(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		want := 1
+		want := 2
 		if diff := cmp.Diff(want, len(got)); diff != "" {
-			t.Errorf("mismatched updated backfill_stamp count want/got: %v", diff)
+			t.Errorf("mismatched get all count want/got: %v", diff)
+		}
+	})
+	t.Run("test global only", func(t *testing.T) {
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{
+			GlobalOnly: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantCount := 1
+		want := series.SeriesID
+		if diff := cmp.Diff(wantCount, len(got)); diff != "" {
+			t.Errorf("mismatched global only count want/got: %v", diff)
+		}
+		if diff := cmp.Diff(want, got[0].SeriesID); diff != "" {
+			t.Errorf("mismatched global only seriesID want/got: %v", diff)
 		}
 	})
 }
 
 func TestInsightStore_StampBackfillCompleted(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1823,154 +2077,9 @@ func TestInsightStore_StampBackfillCompleted(t *testing.T) {
 	})
 }
 
-func TestDirtyQueries(t *testing.T) {
-	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
-	now := time.Now().Round(0).Truncate(time.Microsecond)
-	ctx := context.Background()
-
-	store := NewInsightStore(insightsDB)
-	store.Now = func() time.Time {
-		return now
-	}
-
-	t.Run("test read with no inserts", func(t *testing.T) {
-		series := types.InsightSeries{
-			ID:       1,
-			SeriesID: "asdf",
-			Query:    "qwerwre",
-		}
-		queries, err := store.GetDirtyQueries(ctx, &series)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(queries) != 0 {
-			t.Fatal("unexpected results of dirty queries")
-		}
-	})
-
-	t.Run("write and read back", func(t *testing.T) {
-		series := types.InsightSeries{
-			SeriesID:           "asdf",
-			Query:              "qwerwre",
-			SampleIntervalUnit: string(types.Month),
-			GenerationMethod:   types.Search,
-		}
-
-		created, err := store.CreateSeries(ctx, series)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		at := time.Date(2020, 1, 1, 5, 5, 5, 5, time.UTC).Truncate(time.Microsecond)
-
-		if err := store.InsertDirtyQuery(ctx, &created, &types.DirtyQuery{
-			ID:      1,
-			Query:   created.Query,
-			ForTime: at,
-			Reason:  "this is a reason",
-		}); err != nil {
-			t.Fatal(err)
-		}
-
-		got, err := store.GetDirtyQueries(ctx, &created)
-		if err != nil {
-			t.Fatal(err)
-		}
-		want := []*types.DirtyQuery{
-			{
-				ID:      1,
-				Query:   created.Query,
-				ForTime: at,
-				DirtyAt: now,
-				Reason:  "this is a reason",
-			},
-		}
-
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("mismatched dirty query (want/got): %v", diff)
-		}
-	})
-}
-
-func TestDirtyQueriesAggregated(t *testing.T) {
-	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
-	now := time.Now().Round(0).Truncate(time.Microsecond)
-	ctx := context.Background()
-
-	store := NewInsightStore(insightsDB)
-	store.Now = func() time.Time {
-		return now
-	}
-
-	t.Run("test read with no inserts", func(t *testing.T) {
-		series := types.InsightSeries{
-			ID:       1,
-			SeriesID: "asdf",
-			Query:    "qwerwre",
-		}
-		queries, err := store.GetDirtyQueriesAggregated(ctx, series.SeriesID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(queries) != 0 {
-			t.Fatal("unexpected results of dirty queries")
-		}
-	})
-
-	t.Run("write and read back", func(t *testing.T) {
-		series := types.InsightSeries{
-			SeriesID:           "asdf",
-			Query:              "qwerwre",
-			SampleIntervalUnit: string(types.Month),
-			GenerationMethod:   types.Search,
-		}
-
-		created, err := store.CreateSeries(ctx, series)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		at := time.Date(2020, 1, 1, 5, 5, 5, 5, time.UTC).Truncate(time.Microsecond)
-
-		if err := store.InsertDirtyQuery(ctx, &created, &types.DirtyQuery{
-			ID:      1,
-			Query:   created.Query,
-			ForTime: at,
-			Reason:  "reason1",
-		}); err != nil {
-			t.Fatal(err)
-		}
-		if err := store.InsertDirtyQuery(ctx, &created, &types.DirtyQuery{
-			ID:      1,
-			Query:   created.Query,
-			ForTime: at.AddDate(0, 0, 1),
-			Reason:  "reason2",
-		}); err != nil {
-			t.Fatal(err)
-		}
-		if err := store.InsertDirtyQuery(ctx, &created, &types.DirtyQuery{
-			ID:      1,
-			Query:   created.Query,
-			ForTime: at,
-			Reason:  "reason1",
-		}); err != nil {
-			t.Fatal(err)
-		}
-
-		got, err := store.GetDirtyQueriesAggregated(ctx, created.SeriesID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		autogold.Equal(t, got, autogold.ExportedOnly())
-	})
-}
-
 func TestSetSeriesEnabled(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -2035,7 +2144,7 @@ func TestSetSeriesEnabled(t *testing.T) {
 
 func TestFindMatchingSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -2067,16 +2176,16 @@ func TestFindMatchingSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
-		autogold.Want("FoundTrue", true).Equal(t, gotFound)
+		autogold.ExpectFile(t, gotSeries, autogold.ExportedOnly())
+		autogold.Expect(true).Equal(t, gotFound)
 	})
 	t.Run("find no matching series when none exist", func(t *testing.T) {
 		gotSeries, gotFound, err := store.FindMatchingSeries(ctx, MatchSeriesArgs{Query: "query 2", StepIntervalUnit: string(types.Week), StepIntervalValue: 1})
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
-		autogold.Want("FoundFalse", false).Equal(t, gotFound)
+		autogold.ExpectFile(t, gotSeries, autogold.ExportedOnly())
+		autogold.Expect(false).Equal(t, gotFound)
 	})
 	t.Run("match capture group series", func(t *testing.T) {
 		_, err := store.CreateSeries(ctx, types.InsightSeries{
@@ -2101,14 +2210,14 @@ func TestFindMatchingSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
-		autogold.Want("FoundTrueCaptureGroups", true).Equal(t, gotFound)
+		autogold.ExpectFile(t, gotSeries, autogold.ExportedOnly())
+		autogold.Expect(true).Equal(t, gotFound)
 	})
 }
 
 func TestUpdateFrontendSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -2140,7 +2249,7 @@ func TestUpdateFrontendSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("BeforeUpdateSeries", []types.InsightSeries{{
+		autogold.Expect([]types.InsightSeries{{
 			ID:                   1,
 			SeriesID:             "series id 1",
 			Query:                "query 1",
@@ -2170,7 +2279,7 @@ func TestUpdateFrontendSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("AfterUpdateSeries", []types.InsightSeries{{
+		autogold.Expect([]types.InsightSeries{{
 			ID:                   1,
 			SeriesID:             "series id 1",
 			Query:                "updated query!",
@@ -2191,7 +2300,7 @@ func TestUpdateFrontendSeries(t *testing.T) {
 
 func TestGetReferenceCount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
 	store := NewInsightStore(insightsDB)
@@ -2229,27 +2338,27 @@ func TestGetReferenceCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("ReferenceCount", referenceCount).Equal(t, 1)
+		autogold.Expect(referenceCount).Equal(t, 1)
 	})
 	t.Run("finds 3 references", func(t *testing.T) {
 		referenceCount, err := store.GetReferenceCount(ctx, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("ReferenceCount", referenceCount).Equal(t, 3)
+		autogold.Expect(referenceCount).Equal(t, 3)
 	})
 	t.Run("finds no references", func(t *testing.T) {
 		referenceCount, err := store.GetReferenceCount(ctx, 3)
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("ReferenceCount", referenceCount).Equal(t, 0)
+		autogold.Expect(referenceCount).Equal(t, 0)
 	})
 }
 
 func TestGetSoftDeletedSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -2285,12 +2394,12 @@ func TestGetSoftDeletedSeries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("get_soft_deleted_series", []string{"soft_deleted"}).Equal(t, got)
+	autogold.Expect([]string{"soft_deleted"}).Equal(t, got)
 }
 
 func TestGetUnfrozenInsightCount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	store := NewInsightStore(insightsDB)
 	ctx := context.Background()
 
@@ -2299,8 +2408,8 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("GlobalCount", globalCount).Equal(t, 0)
-		autogold.Want("TotalCount", totalCount).Equal(t, 0)
+		autogold.Expect(globalCount).Equal(t, 0)
+		autogold.Expect(totalCount).Equal(t, 0)
 	})
 	t.Run("returns count for unfrozen insights not attached to dashboards", func(t *testing.T) {
 		_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
@@ -2313,8 +2422,8 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("GlobalCount", globalCount).Equal(t, 0)
-		autogold.Want("TotalCount", totalCount).Equal(t, 1)
+		autogold.Expect(globalCount).Equal(t, 0)
+		autogold.Expect(totalCount).Equal(t, 1)
 	})
 	t.Run("returns correct counts for unfrozen insights", func(t *testing.T) {
 		_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
@@ -2356,14 +2465,14 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("GlobalCount", globalCount).Equal(t, 2)
-		autogold.Want("TotalCount", totalCount).Equal(t, 4)
+		autogold.Expect(globalCount).Equal(t, 2)
+		autogold.Expect(totalCount).Equal(t, 4)
 	})
 }
 
 func TestUnfreezeGlobalInsights(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	store := NewInsightStore(insightsDB)
 	ctx := context.Background()
 
@@ -2376,8 +2485,8 @@ func TestUnfreezeGlobalInsights(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("GlobalCount", globalCount).Equal(t, 0)
-		autogold.Want("TotalCount", totalCount).Equal(t, 0)
+		autogold.Expect(globalCount).Equal(t, 0)
+		autogold.Expect(totalCount).Equal(t, 0)
 	})
 	t.Run("does not unfreeze anything if there are no global insights", func(t *testing.T) {
 		_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
@@ -2419,8 +2528,8 @@ func TestUnfreezeGlobalInsights(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Want("GlobalCount", globalCount).Equal(t, 0)
-		autogold.Want("TotalCount", totalCount).Equal(t, 0)
+		autogold.Expect(globalCount).Equal(t, 0)
+		autogold.Expect(totalCount).Equal(t, 0)
 	})
 	t.Run("unfreezes 2 global insights", func(t *testing.T) {
 		_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
@@ -2446,14 +2555,14 @@ func TestUnfreezeGlobalInsights(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("GlobalCount", globalCount).Equal(t, 2)
-		autogold.Want("TotalCount", totalCount).Equal(t, 2)
+		autogold.Expect(globalCount).Equal(t, 2)
+		autogold.Expect(totalCount).Equal(t, 2)
 	})
 }
 
 func TestIncrementBackfillAttempts(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
 	_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
@@ -2505,13 +2614,13 @@ func TestIncrementBackfillAttempts(t *testing.T) {
 		seriesID string
 		want     autogold.Value
 	}{
-		{"series-id-1", autogold.Want("update 0", int32(1))},
-		{"series-id-2", autogold.Want("increment 1", int32(2))},
-		{"series-id-3", autogold.Want("increment 2", int32(3))},
+		{"series-id-1", autogold.Expect(int32(1))},
+		{"series-id-2", autogold.Expect(int32(2))},
+		{"series-id-3", autogold.Expect(int32(3))},
 	}
 
 	for _, tc := range cases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.seriesID, func(t *testing.T) {
 			series, err := store.GetDataSeries(ctx, GetDataSeriesArgs{SeriesID: tc.seriesID})
 			if err != nil {
 				t.Fatal(err)
@@ -2519,7 +2628,6 @@ func TestIncrementBackfillAttempts(t *testing.T) {
 
 			got := series[0].BackfillAttempts
 			tc.want.Equal(t, got)
-
 		})
 	}
 }
@@ -2534,7 +2642,7 @@ func TestHardDeleteSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)

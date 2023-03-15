@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/run"
+	"go.bobheadxi.dev/streamline/pipeline"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -119,7 +119,7 @@ NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
 // asdf, which is uniform across platforms. It takes an optional list of additonalChecks, useful
 // when they depend on the plaftorm we're installing them on.
 func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) category {
-	return category{
+	categories := category{
 		Name:      "Programming languages & tooling",
 		DependsOn: []string{depsCloneRepo, depsBaseUtilities},
 		Enabled:   enableOnlyInSourcegraphRepo(),
@@ -135,13 +135,14 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 				},
 			},
 			{
-				Name:  "yarn",
-				Check: checkYarnVersion,
+				Name:        "pnpm",
+				Description: "Run `asdf install pnpm` or `npm i -g pnpm`",
+				Check:       checkPnpmVersion,
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := forceASDFPluginAdd(ctx, "yarn", ""); err != nil {
+					if err := forceASDFPluginAdd(ctx, "pnpm", ""); err != nil {
 						return err
 					}
-					return root.Run(usershell.Command(ctx, "asdf install yarn")).StreamLines(cio.Verbose)
+					return root.Run(usershell.Command(ctx, "asdf install pnpm")).StreamLines(cio.Verbose)
 				},
 			},
 			{
@@ -171,7 +172,7 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 					// If any of these fail with ErrNotInPath, we may need to regenerate
 					// all our asdf shims.
 					for _, c := range []check.CheckAction[CheckArgs]{
-						checkGoVersion, checkYarnVersion, checkNodeVersion, checkRustVersion,
+						checkGoVersion, checkPnpmVersion, checkNodeVersion, checkRustVersion,
 					} {
 						if err := c(ctx, out, args); err != nil {
 							return errors.Wrap(err, "we may need to regenerate asdf shims")
@@ -186,6 +187,8 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 			},
 		},
 	}
+	categories.Checks = append(categories.Checks, additionalChecks...)
+	return categories
 }
 
 func categoryAdditionalSGConfiguration() category {
@@ -304,7 +307,7 @@ func dependencyGcloud() *dependency {
 					"curl https://sdk.cloud.google.com | bash -s -- --disable-prompts").
 					Input(cio.Input).
 					Run().
-					Map(func(_ context.Context, line []byte, dst io.Writer) (int, error) {
+					Pipeline(pipeline.Map(func(line []byte) []byte {
 						// Listen for gcloud telling us to source paths
 						if matches := gcloudSourceRegexp.FindSubmatch(line); len(matches) > 0 {
 							shouldSource := matches[gcloudSourceRegexp.SubexpIndex("path")]
@@ -312,9 +315,8 @@ func dependencyGcloud() *dependency {
 								pathsToSource = append(pathsToSource, string(shouldSource))
 							}
 						}
-						// Pass through to underlying writer
-						return dst.Write(line)
-					}).
+						return line
+					})).
 					StreamLines(cio.Write); err != nil {
 					return err
 				}

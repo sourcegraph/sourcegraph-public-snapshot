@@ -18,6 +18,7 @@ import { REPOSITORY_GIT_COMMIT } from './RevisionsPopoverCommits'
 export const MOCK_PROPS: RevisionsPopoverProps = {
     repoId: 'some-repo-id',
     repoName: 'testorg/testrepo',
+    repoServiceType: 'github',
     defaultBranch: 'main',
     currentRev: 'main',
     togglePopover: () => null,
@@ -55,11 +56,11 @@ const generateGitReferenceNodes = (nodeCount: number, variant: GitRefType): GitR
                         date: yesterday,
                         person: commitPerson,
                     },
-                    behindAhead: null,
+                    behindAhead: {},
                 },
             },
         }
-    })
+    }) as GitRefConnectionFields['nodes']
 
 const generateGitCommitNodes = (nodeCount: number): GitCommitAncestorsConnectionFields['nodes'] =>
     new Array(nodeCount).fill(null).map((_value, index) => ({

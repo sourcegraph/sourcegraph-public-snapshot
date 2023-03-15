@@ -1,20 +1,17 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Route, Routes } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
-import { HeroPage } from '../../components/HeroPage'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { RouteError } from '../../components/ErrorBoundary'
+import { HeroPage, NotFoundPage } from '../../components/HeroPage'
 import {
     UserAreaUserFields,
     UserSettingsAreaUserFields,
@@ -22,7 +19,7 @@ import {
     UserSettingsAreaUserProfileVariables,
 } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { RouteDescriptor } from '../../util/contributions'
+import { RouteV6Descriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
 import { EditUserProfilePageGQLFragment } from './profile/UserSettingsProfilePage'
@@ -30,21 +27,14 @@ import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSid
 
 import styles from './UserSettingsArea.module.scss'
 
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
-)
+export interface UserSettingsAreaRoute extends RouteV6Descriptor<UserSettingsAreaRouteContext> {}
 
-export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaRouteContext> {}
-
-export interface UserSettingsAreaProps
-    extends UserAreaRouteContext,
-        RouteComponentProps<{}>,
-        ThemeProps,
-        TelemetryProps {
+export interface UserSettingsAreaProps extends UserAreaRouteContext, TelemetryProps {
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]
     user: UserAreaUserFields
+    isSourcegraphDotCom: boolean
 }
 
 export interface UserSettingsAreaRouteContext extends UserSettingsAreaProps {
@@ -64,15 +54,22 @@ const UserSettingsAreaGQLFragment = gql`
         siteAdmin @include(if: $siteAdmin)
         builtinAuth
         createdAt
-        emails @include(if: $siteAdmin) {
+        emails @skip(if: $isSourcegraphDotCom) {
             email
             verified
+            isPrimary
         }
         organizations {
             nodes {
                 id
                 displayName
                 name
+            }
+        }
+        roles @skip(if: $isSourcegraphDotCom) {
+            nodes {
+                name
+                system
             }
         }
         tags @include(if: $siteAdmin)
@@ -82,7 +79,7 @@ const UserSettingsAreaGQLFragment = gql`
 `
 
 const USER_SETTINGS_AREA_USER_PROFILE = gql`
-    query UserSettingsAreaUserProfile($userID: ID!, $siteAdmin: Boolean!) {
+    query UserSettingsAreaUserProfile($userID: ID!, $siteAdmin: Boolean!, $isSourcegraphDotCom: Boolean!) {
         node(id: $userID) {
             __typename
             ...UserSettingsAreaUserFields
@@ -106,22 +103,9 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
         variables: {
             userID: props.user.id,
             siteAdmin: authenticatedUser.siteAdmin,
+            isSourcegraphDotCom: props.isSourcegraphDotCom,
         },
     })
-    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
-    const memoizedRoutes = useMemo((): readonly UserSettingsAreaRoute[] => {
-        if (!isOpenBetaEnabled) {
-            return props.routes
-        }
-        return [
-            ...props.routes,
-            {
-                path: '/organizations',
-                render: lazyComponent(() => import('./openBetaOrgs/OrganizationsList'), 'OrganizationsListPage'),
-                exact: true,
-            },
-        ]
-    }, [isOpenBetaEnabled, props.routes])
 
     // Accept stale data if recently updated, avoids unmounting components due to a brief lack of data
     const user =
@@ -137,7 +121,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
     }
 
     if (!user) {
-        return <NotFoundPage />
+        return <NotFoundPage pageType="user" />
     }
 
     if (authenticatedUser.id !== user.id && !user.viewerCanAdminister) {
@@ -165,33 +149,29 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
                     Viewing account for <strong>{user.username}</strong>
                 </SiteAdminAlert>
             )}
-            <div className="d-flex">
+            <div className="d-flex flex-column flex-sm-row">
                 <UserSettingsSidebar
                     items={sideBarItems}
                     {...context}
-                    className={classNames('flex-0 mr-3', styles.userSettingsSidebar)}
+                    className={classNames('flex-0 mr-3 mb-4', styles.userSettingsSidebar)}
                 />
                 <div className="flex-1">
-                    <ErrorBoundary location={props.location}>
-                        <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                            <Switch>
-                                {memoizedRoutes.map(
-                                    ({ path, exact, render, condition = () => true }) =>
-                                        condition(context) && (
-                                            <Route
-                                                render={routeComponentProps =>
-                                                    render({ ...context, ...routeComponentProps })
-                                                }
-                                                path={props.match.url + path}
-                                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                exact={exact}
-                                            />
-                                        )
-                                )}
-                                <Route component={NotFoundPage} key="hardcoded-key" />
-                            </Switch>
-                        </React.Suspense>
-                    </ErrorBoundary>
+                    <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+                        <Routes>
+                            {props.routes.map(
+                                ({ path, render, condition = () => true }) =>
+                                    condition(context) && (
+                                        <Route
+                                            errorElement={<RouteError />}
+                                            element={render(context)}
+                                            path={path}
+                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        />
+                                    )
+                            )}
+                            <Route path="*" element={<NotFoundPage pageType="settings" />} />
+                        </Routes>
+                    </React.Suspense>
                 </div>
             </div>
         </>

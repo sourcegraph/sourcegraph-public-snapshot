@@ -8,28 +8,29 @@ import {
     Settings,
     SettingsCascade,
     SettingsSubject,
-    SubjectSettingsContents,
 } from './settings'
 
-const FIXTURE_ORG: SettingsSubject & SubjectSettingsContents = {
+const FIXTURE_ORG: SettingsSubject = {
     __typename: 'Org',
     name: 'n',
     displayName: 'n',
     id: 'a',
     viewerCanAdminister: true,
     latestSettings: { id: 1, contents: '{"a":1}' },
+    settingsURL: null,
 }
 
-const FIXTURE_USER: SettingsSubject & SubjectSettingsContents = {
+const FIXTURE_USER: SettingsSubject = {
     __typename: 'User',
     username: 'n',
     displayName: 'n',
     id: 'b',
     viewerCanAdminister: true,
     latestSettings: { id: 2, contents: '{"b":2}' },
+    settingsURL: null,
 }
 
-const FIXTURE_USER_WITH_SETTINGS_ERROR: SettingsSubject & SubjectSettingsContents = {
+const FIXTURE_USER_WITH_SETTINGS_ERROR: SettingsSubject = {
     ...FIXTURE_USER,
     id: 'c',
     latestSettings: { id: 3, contents: '.' },
@@ -72,9 +73,7 @@ describe('gqlToCascade', () => {
 describe('mergeSettings', () => {
     test('handles an empty array', () => expect(mergeSettings([])).toBe(null))
     test('merges multiple values', () =>
-        expect(
-            mergeSettings<{ a?: number; b?: number } & Settings>([{ a: 1 }, { b: 2 }, { a: 3 }])
-        ).toEqual({
+        expect(mergeSettings<{ a?: number; b?: number } & Settings>([{ a: 1 }, { b: 2 }, { a: 3 }])).toEqual({
             a: 3,
             b: 2,
         }))
@@ -136,41 +135,6 @@ describe('mergeSettings', () => {
                 { name: 'About Sourcegraph', url: 'https://docs.internal/about-sourcegraph' },
                 { name: 'mycorp extensions', url: 'https://sourcegraph.com/extensions?query=mycorp%2F' },
             ],
-        }))
-    test('merges search.repositoryGroups property', () =>
-        expect(
-            mergeSettings<{ a?: { [key: string]: string }; b?: { [key: string]: string } } & Settings>([
-                {
-                    'search.repositoryGroups': {
-                        sourcegraph: ['github.com/sourcegraph/sourcegraph', 'github.com/sourcegraph/codeintellify'],
-                    },
-                },
-                {
-                    'search.repositoryGroups': {
-                        k8s: ['github.com/kubernetes/kubernetes'],
-                    },
-                },
-                {
-                    'search.repositoryGroups': {
-                        docker: ['github.com/docker/docker'],
-                        sourcegraph: [
-                            'github.com/sourcegraph/sourcegraph',
-                            'github.com/sourcegraph/codeintellify',
-                            'github.com/sourcegraph/sourcegraph-typescript',
-                        ],
-                    },
-                },
-            ])
-        ).toEqual({
-            'search.repositoryGroups': {
-                k8s: ['github.com/kubernetes/kubernetes'],
-                docker: ['github.com/docker/docker'],
-                sourcegraph: [
-                    'github.com/sourcegraph/sourcegraph',
-                    'github.com/sourcegraph/codeintellify',
-                    'github.com/sourcegraph/sourcegraph-typescript',
-                ],
-            },
         }))
     test('merges notices property', () =>
         expect(

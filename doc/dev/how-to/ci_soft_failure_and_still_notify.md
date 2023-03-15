@@ -1,6 +1,6 @@
 # How to allow a CI step to fail without breaking the build and still receive a notification.
 
-Sometimes, it's not clearcut if a CI step is flaky or not, especially when the root cause for the failures is external to the system (like a third party website failing to answer requests). It means that the step is in gray area, where you typically want to keep running it so you can further observe and understand its behaviour, but you don't want to disrupt teammates workflow either. 
+Sometimes, it's not clearcut if a CI step is flaky or not, especially when the root cause for the failures is external to the system (like a third party website failing to answer requests). It means that the step is in gray area, where you typically want to keep running it so you can further observe and understand its behaviour, but you don't want to disrupt teammates workflow either.
 
 That's what the _soft fail_ attribute is for, it will allow a step to fail without failing the build that contains that step. But this create another problem, as the owner of that step, you now have to actively monitor builds to see when they failed, which is not very practical.
 
@@ -10,7 +10,7 @@ Therefore a good solution for that is to also enable custom step notifications, 
 
 In the [CI pipeline generator](../background-information/ci/development.md), you'll find the code that declare all steps, usually located in [ci/operations.go](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/operations.go)
 
-A good way to find all of them is the following search query: 
+A good way to find all of them is the following search query:
 
 <div class="embed">
   <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6MTQwMA=="
@@ -18,17 +18,17 @@ A good way to find all of them is the following search query:
   </iframe>
 </div>
 
-Let's use as an example the following: 
+Let's use as an example the following:
 
 ```diff
 --- a/enterprise/dev/ci/internal/ci/operations.go
 +++ b/enterprise/dev/ci/internal/ci/operations.go
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
-		withYarnCache(),
-		bk.Cmd("yarn --immutable --network-timeout 60000"),
-		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn workspace @sourcegraph/jetbrains run build"),
+		withPnpmCache(),
+		bk.Cmd("pnpm install --fetch-timeout 60000"),
+		bk.Cmd("pnpm generate"),
+		bk.Cmd("pnpm --filter @sourcegraph/jetbrains run build"),
 +   bk.SoftFail(1, 2),
 	)
 }
@@ -40,53 +40,53 @@ The `bk.SoftFail` function will make that step soft fail if and only if the exit
 
 Now we want to add a custom notification as well:
 
-> NOTE: You don't need to provide `buildkite.SlackStepNotifyConfigPayload.SlackTokenEnvVarName`, a default value will be injected. 
+> NOTE: You don't need to provide `buildkite.SlackStepNotifyConfigPayload.SlackTokenEnvVarName`, a default value will be injected.
 
 ```diff
 --- a/enterprise/dev/ci/internal/ci/operations.go
 +++ b/enterprise/dev/ci/internal/ci/operations.go
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
-		withYarnCache(),
+		withPnpmCache(),
 +   bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
 +     Message:              "JetBrains Unit tests failed, cc <@integrations-eng>",
 +     ChannelName:          "integrations-internal",
 +     Conditions:           bk.SlackStepNotifyPayloadConditions{
-+       Failed: true, 
++       Failed: true,
 +       Branches: []string{"main"},
 +     },
 +   }),
-    bk.Cmd("yarn --immutable --network-timeout 60000"),
-    bk.Cmd("yarn generate"),
-    bk.Cmd("yarn workspace @sourcegraph/jetbrains run build"),
+    bk.Cmd("pnpm install --fetch-timeout 60000"),
+    bk.Cmd("pnpm generate"),
+    bk.Cmd("pnpm --filter @sourcegraph/jetbrains run build"),
 +   bk.SoftFail(1, 2),
-+   
++
 	)
 }
 ```
 
-And that's it! 
+And that's it!
 
-> NOTE: If you want to test your changes before merging your code, so you can see how the notification will look like, you can modify the step as following: 
+> NOTE: If you want to test your changes before merging your code, so you can see how the notification will look like, you can modify the step as following:
 
 ```diff
 --- a/enterprise/dev/ci/internal/ci/operations.go
 +++ b/enterprise/dev/ci/internal/ci/operations.go
 unc addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
-		withYarnCache(),
+		withPnpmCache(),
     bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
       Message:              "JetBrains Unit tests failed, cc <@integrations-eng>",
       ChannelName:          "integrations-internal",
       Conditions:           bk.SlackStepNotifyPayloadConditions{
-        Failed: true, 
+        Failed: true,
 +       // Branches: []string{"main"}, commenting so it triggers on your branch, before it gets merged.
 -       Branches: []string{"main"},
       },
     }),
--   bk.Cmd("yarn --immutable --network-timeout 60000"),
--   bk.Cmd("yarn generate"),
--   bk.Cmd("yarn workspace @sourcegraph/jetbrains run build"),
+-   bk.Cmd("pnpm install --fetch-timeout 60000"),
+-   bk.Cmd("pnpm generate"),
+-   bk.Cmd("pnpm --filter @sourcegraph/jetbrains run build"),
 +   bk.Cmd("please-fail-lol"),
 -   bk.SoftFail(1, 2),
 +   bk.SoftFail(127), // 127 is the exit code when a command isn't found, see the line above.

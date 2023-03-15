@@ -1,7 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { isEqual } from 'lodash'
-
 import {
     BatchSpecExecutionFields,
     BatchSpecState,
@@ -127,39 +125,9 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
     const { handleCodeChange, isValid, isServerStale: isServerBatchSpecYAMLStale } = editor
 
     const [filters, setFilters] = useState<WorkspacePreviewFilters>()
-    const [executionOptions, _setExecutionOptions] = useState<ExecutionOptions>(DEFAULT_EXECUTION_OPTIONS)
-    // Currently, execution options are sent with the workspaces preview request,
-    // not the execution request. In other words, we only honor the currently selected
-    // execution options if you used them for your latest workspaces preview. To prevent
-    // confusion until after the API is updated, we keep track of the last execution
-    // options sent with a workspaces preview request, and if the current options differ,
-    // we mark the workspaces preview as stale to ensure the user triggers a new preview
-    // before trying to execute their batch spec.
-    // TODO: Once the API is updated and the execution mutation honors these options,
-    // this can be removed.
-    const [lastPreviewExecutionOptions, setLastPreviewExecutionOptions] = useState<ExecutionOptions>(
-        DEFAULT_EXECUTION_OPTIONS
-    )
-    const [didExecutionOptionsChange, setDidExecutionOptionsChange] = useState(false)
+    const [executionOptions, setExecutionOptions] = useState<ExecutionOptions>(DEFAULT_EXECUTION_OPTIONS)
 
-    // When the user changes the execution options, also check if they differ from the
-    // last options sent with the workspaces preview, and mark the workspaces preview as
-    // stale if they do.
-    // TODO: Once the API is updated and the execution mutation honors execution options,
-    // this can be removed.
-    const setExecutionOptions: (options: ExecutionOptions) => void = useCallback(
-        (options: ExecutionOptions) => {
-            _setExecutionOptions(options)
-            if (isEqual(options, lastPreviewExecutionOptions)) {
-                setDidExecutionOptionsChange(false)
-            } else {
-                setDidExecutionOptionsChange(true)
-            }
-        },
-        [lastPreviewExecutionOptions]
-    )
-
-    const isServerStale = isServerBatchSpecYAMLStale || didExecutionOptionsChange
+    const isServerStale = isServerBatchSpecYAMLStale
 
     // Manage the batch spec that was last submitted to the backend for the workspaces preview.
     const workspacesPreview = useWorkspacesPreview(batchSpec.id, {
@@ -176,17 +144,8 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
         error: previewError,
         clearError: clearPreviewError,
         hasPreviewed,
-        preview: _preview,
+        preview,
     } = workspacesPreview
-
-    // TODO: Once the API is updated and the execution mutation honors execution options,
-    // this can be removed.
-    const preview: UseWorkspacesPreviewResult['preview'] = (code: string) =>
-        _preview(code).then(() => {
-            // Update for the execution options sent with the last preview.
-            setLastPreviewExecutionOptions(executionOptions)
-            setDidExecutionOptionsChange(false)
-        })
 
     // Disable triggering a new preview if the batch spec code is invalid or if we're
     // already processing a preview.
@@ -210,9 +169,11 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
     const isExecuting = batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING
 
     // Manage submitting a batch spec for execution.
-    const { executeBatchSpec, isLoading: isExecutionRequestInProgress, error: executeError } = useExecuteBatchSpec(
-        batchSpec.id
-    )
+    const {
+        executeBatchSpec,
+        isLoading: isExecutionRequestInProgress,
+        error: executeError,
+    } = useExecuteBatchSpec(batchSpec.id, executionOptions.runWithoutCache)
 
     // Disable triggering a new execution if any of the following are true:
     // - The batch spec code is invalid.
@@ -297,7 +258,7 @@ export const useBatchSpecContext = <
     BatchSpecFields extends MinimalBatchSpecFields = MinimalBatchSpecFields
 >(): BatchSpecContextState<BatchSpecFields> => {
     const context = React.useContext<BatchSpecContextState<BatchSpecFields>>(
-        (BatchSpecContext as unknown) as React.Context<BatchSpecContextState<BatchSpecFields>>
+        BatchSpecContext as unknown as React.Context<BatchSpecContextState<BatchSpecFields>>
     )
     if (!context) {
         throw new Error('useBatchSpecContext must be used under BatchSpecContextProvider')

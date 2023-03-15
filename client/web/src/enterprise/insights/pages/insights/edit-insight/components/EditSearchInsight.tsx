@@ -1,12 +1,8 @@
 import { FC, useMemo } from 'react'
 
-import {
-    SubmissionErrors,
-    createDefaultEditSeries,
-    CodeInsightsCreationActions,
-    CodeInsightCreationMode,
-    FORM_ERROR,
-} from '../../../../components'
+import { FORM_ERROR, SubmissionErrors } from '@sourcegraph/wildcard'
+
+import { createDefaultEditSeries, CodeInsightsCreationActions, CodeInsightCreationMode } from '../../../../components'
 import { MinimalSearchBasedInsightData, SearchBasedInsight } from '../../../../core'
 import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
 import { SearchInsightCreationContent } from '../../creation/search-insight/components/SearchInsightCreationContent'
@@ -23,25 +19,28 @@ interface EditSearchBasedInsightProps {
 export const EditSearchBasedInsight: FC<EditSearchBasedInsightProps> = props => {
     const { insight, licensed, isEditAvailable, onSubmit, onCancel } = props
 
-    const insightFormValues = useMemo<CreateInsightFormFields>(
-        () => ({
+    const insightFormValues = useMemo<CreateInsightFormFields>(() => {
+        const isAllReposInsight = insight.repoQuery === '' && insight.repositories.length === 0
+        const repoQuery = isAllReposInsight ? 'repo:.*' : insight.repoQuery
+
+        return {
             title: insight.title,
-            repositories: insight.repositories.join(', '),
+            repoMode: repoQuery ? 'search-query' : 'urls-list',
+            repoQuery: { query: repoQuery },
+            repositories: insight.repositories,
             series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,
             allRepos: insight.repositories.length === 0,
             dashboardReferenceCount: insight.dashboardReferenceCount,
-        }),
-        [insight]
-    )
+        }
+    }, [insight])
 
     const handleSubmit = (values: CreateInsightFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {
         const sanitizedInsight = getSanitizedSearchInsight(values)
         return onSubmit({
             ...sanitizedInsight,
             filters: insight.filters,
-            seriesDisplayOptions: insight.seriesDisplayOptions,
         })
     }
 

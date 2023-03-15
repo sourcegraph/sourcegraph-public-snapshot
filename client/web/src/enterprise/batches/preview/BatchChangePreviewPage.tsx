@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react'
+import { FC, useEffect } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { useHistory, useLocation } from 'react-router'
+import { useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Alert, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
@@ -25,23 +25,21 @@ import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 import { PreviewList } from './list/PreviewList'
 
-export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
+export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'emails'>
 
-export interface BatchChangePreviewPageProps extends BatchChangePreviewProps {
+export interface BatchChangePreviewPageProps extends Omit<BatchChangePreviewProps, 'batchSpecID'> {
     /** Used for testing. */
     queryApplyPreviewStats?: typeof _queryApplyPreviewStats
 }
 
-export const BatchChangePreviewPage: React.FunctionComponent<
-    React.PropsWithChildren<BatchChangePreviewPageProps>
-> = props => {
-    const history = useHistory()
+export const BatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props => {
+    const { batchSpecID } = useParams()
 
-    const { batchSpecID: specID, authenticatedUser, telemetryService, queryApplyPreviewStats } = props
+    const { authenticatedUser, telemetryService, queryApplyPreviewStats } = props
 
     const { data, loading } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
         variables: {
-            batchSpec: specID,
+            batchSpec: batchSpecID!,
         },
         fetchPolicy: 'cache-and-network',
         pollInterval: 5000,
@@ -93,7 +91,6 @@ export const BatchChangePreviewPage: React.FunctionComponent<
                         queryApplyPreviewStats={queryApplyPreviewStats}
                     />
                     <CreateUpdateBatchChangeAlert
-                        history={history}
                         specID={spec.id}
                         toBeArchived={spec.applyPreview.stats.archive}
                         batchChange={spec.appliesToBatchChange}
@@ -101,7 +98,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<
                         telemetryService={telemetryService}
                     />
                     <Description description={spec.description.description} />
-                    <BatchChangePreviewTabs spec={spec} {...props} />
+                    <BatchChangePreviewTabs spec={spec} {...props} batchSpecID={spec.id} />
                 </div>
             </BatchChangePreviewContextProvider>
         </MultiSelectContextProvider>
@@ -113,15 +110,10 @@ export const BatchChangePreviewPage: React.FunctionComponent<
  * current one, but until we are ready to flip the feature flag, we need to keep
  * both around.
  */
-export const NewBatchChangePreviewPage: React.FunctionComponent<
-    React.PropsWithChildren<BatchChangePreviewPageProps>
-> = props => {
-    const history = useHistory()
-    const location = useLocation()
+export const NewBatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props => {
+    const { batchSpecID } = useParams()
 
     const {
-        batchSpecID: specID,
-        isLightTheme,
         expandChangesetDescriptions,
         queryChangesetApplyPreview,
         queryChangesetSpecFileDiffs,
@@ -132,7 +124,7 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
 
     const { data, loading, error } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
         variables: {
-            batchSpec: specID,
+            batchSpec: batchSpecID!,
         },
         fetchPolicy: 'cache-and-network',
         pollInterval: 5000,
@@ -178,7 +170,6 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
                     />
                     {!exceedsLicense(spec.applyPreview.totalCount) && (
                         <CreateUpdateBatchChangeAlert
-                            history={history}
                             specID={spec.id}
                             toBeArchived={spec.applyPreview.stats.archive}
                             batchChange={spec.appliesToBatchChange}
@@ -198,11 +189,8 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
                         </Alert>
                     )}
                     <PreviewList
-                        batchSpecID={specID}
-                        history={history}
-                        location={location}
+                        batchSpecID={spec.id}
                         authenticatedUser={authenticatedUser}
-                        isLightTheme={isLightTheme}
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         expandChangesetDescriptions={expandChangesetDescriptions}

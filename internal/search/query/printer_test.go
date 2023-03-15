@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 )
 
 func TestStringHuman(t *testing.T) {
@@ -26,23 +26,24 @@ func TestStringHuman(t *testing.T) {
 		"-repo:modspeed -file:pogspeed Arizonan not Phoenicians",
 		"r:alias",
 		`/bo/u\gros/`,
+		`filePath.Clean( AND NOT filepath.Clean(filePath.Join("/",`,
 	}
 
 	test := func(input string) string {
 		q, _ := ParseStandard(input)
-		json, _ := json.MarshalIndent(struct {
+		j, _ := json.MarshalIndent(struct {
 			Input  string
 			Result string
 		}{
 			Input:  input,
 			Result: StringHuman(q),
 		}, "", "  ")
-		return string(json)
+		return string(j)
 	}
 
 	for _, c := range cases {
 		t.Run("printer", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(c)))
+			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
 }

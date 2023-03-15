@@ -4,14 +4,13 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -19,8 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -37,11 +37,42 @@ type externalServiceResolver struct {
 	webhookErr     error
 }
 
+type externalServiceAvailabilityStateResolver struct {
+	available   *externalServiceAvailable
+	unavailable *externalServiceUnavailable
+	unknown     *externalServiceUnknown
+}
+
+type externalServiceAvailable struct {
+	lastCheckedAt time.Time
+}
+
+type externalServiceUnavailable struct {
+	suspectedReason string
+}
+
+type externalServiceUnknown struct{}
+
 const externalServiceIDKind = "ExternalService"
 
-func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
-	id, err := UnmarshalExternalServiceID(gqlID)
+// availabilityCheck indicates which code host types have an availability check implemented. For any
+// new code hosts where this check is implemented, add a new entry for the respective kind and set
+// the value to true.
+var availabilityCheck = map[string]bool{
+	extsvc.KindGitHub:          true,
+	extsvc.KindGitLab:          true,
+	extsvc.KindBitbucketServer: true,
+	extsvc.KindBitbucketCloud:  true,
+	extsvc.KindAzureDevOps:     true,
+}
 
+func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+		return nil, err
+	}
+
+	id, err := UnmarshalExternalServiceID(gqlID)
 	if err != nil {
 		return nil, err
 	}
@@ -51,9 +82,6 @@ func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) 
 		return nil, err
 	}
 
-	if err := backend.CheckExternalServiceAccess(ctx, db); err != nil {
-		return nil, err
-	}
 	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: db, externalService: es}, nil
 }
 
@@ -68,6 +96,23 @@ func UnmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err err
 	}
 	err = relay.UnmarshalSpec(id, &externalServiceID)
 	return
+}
+
+func TryUnmarshalExternalServiceID(externalServiceID *graphql.ID) (*int64, error) {
+	var (
+		id  int64
+		err error
+	)
+
+	if externalServiceID != nil {
+		id, err = UnmarshalExternalServiceID(*externalServiceID)
+		if err != nil {
+			return nil, err
+		}
+		return &id, nil
+	}
+
+	return nil, nil
 }
 
 func (r *externalServiceResolver) ID() graphql.ID {
@@ -96,18 +141,6 @@ func (r *externalServiceResolver) CreatedAt() gqlutil.DateTime {
 
 func (r *externalServiceResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.externalService.UpdatedAt}
-}
-
-func (r *externalServiceResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
-	if r.externalService.NamespaceUserID == 0 {
-		return nil, nil
-	}
-	userID := MarshalUserID(r.externalService.NamespaceUserID)
-	n, err := NamespaceByID(ctx, r.db, userID)
-	if err != nil {
-		return nil, err
-	}
-	return &NamespaceResolver{n}, nil
 }
 
 func (r *externalServiceResolver) WebhookURL(ctx context.Context) (*string, error) {
@@ -189,32 +222,85 @@ func (r *externalServiceResolver) NextSyncAt() *gqlutil.DateTime {
 	return &gqlutil.DateTime{Time: r.externalService.NextSyncAt}
 }
 
-var scopeCache = rcache.New("extsvc_token_scope")
-
-func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string, error) {
-	scopes, err := repos.GrantedScopes(ctx, r.logger.Scoped("GrantedScopes", ""), scopeCache, r.db, r.externalService)
-	if err != nil {
-		// It's possible that we fail to fetch scope from the code host, in this case we
-		// don't want the entire resolver to fail.
-		log15.Error("Getting service scope", "id", r.externalService.ID, "error", err)
-		return nil, nil
-	}
-	if scopes == nil {
-		return nil, nil
-	}
-	return &scopes, nil
-}
-
-func (r *externalServiceResolver) WebhookLogs(ctx context.Context, args *webhookLogsArgs) (*webhookLogConnectionResolver, error) {
-	return newWebhookLogConnectionResolver(ctx, r.db, args, webhookLogsExternalServiceID(r.externalService.ID))
+func (r *externalServiceResolver) WebhookLogs(ctx context.Context, args *WebhookLogsArgs) (*WebhookLogConnectionResolver, error) {
+	return NewWebhookLogConnectionResolver(ctx, r.db, args, webhookLogsExternalServiceID(r.externalService.ID))
 }
 
 type externalServiceSyncJobsArgs struct {
 	First *int32
 }
 
-func (r *externalServiceResolver) SyncJobs(ctx context.Context, args *externalServiceSyncJobsArgs) (*externalServiceSyncJobConnectionResolver, error) {
-	return newExternalServiceSyncJobConnectionResolver(ctx, r.db, args, r.externalService.ID)
+func (r *externalServiceResolver) SyncJobs(args *externalServiceSyncJobsArgs) (*externalServiceSyncJobConnectionResolver, error) {
+	return newExternalServiceSyncJobConnectionResolver(r.db, args, r.externalService.ID)
+}
+
+// mockCheckConnection mocks (*externalServiceResolver).CheckConnection.
+var mockCheckConnection func(context.Context, *externalServiceResolver) (*externalServiceAvailabilityStateResolver, error)
+
+func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externalServiceAvailabilityStateResolver, error) {
+	if mockCheckConnection != nil {
+		return mockCheckConnection(ctx, r)
+	}
+
+	if !r.HasConnectionCheck() {
+		return &externalServiceAvailabilityStateResolver{unknown: &externalServiceUnknown{}}, nil
+	}
+
+	source, err := repos.NewSource(
+		ctx,
+		log.Scoped("externalServiceResolver.CheckConnection", ""),
+		r.db,
+		r.externalService,
+		httpcli.ExternalClientFactory,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create source")
+	}
+
+	if err := source.CheckConnection(ctx); err != nil {
+		return &externalServiceAvailabilityStateResolver{
+			unavailable: &externalServiceUnavailable{suspectedReason: err.Error()},
+		}, nil
+	}
+
+	return &externalServiceAvailabilityStateResolver{
+		available: &externalServiceAvailable{
+			lastCheckedAt: time.Now(),
+		},
+	}, nil
+}
+
+func (r *externalServiceResolver) HasConnectionCheck() bool {
+	return availabilityCheck[r.externalService.Kind]
+}
+
+func (r *externalServiceAvailabilityStateResolver) ToExternalServiceAvailable() (*externalServiceAvailabilityStateResolver, bool) {
+	return r, r.available != nil
+}
+
+func (r *externalServiceAvailabilityStateResolver) ToExternalServiceUnavailable() (*externalServiceAvailabilityStateResolver, bool) {
+	return r, r.unavailable != nil
+
+}
+
+func (r *externalServiceAvailabilityStateResolver) ToExternalServiceAvailabilityUnknown() (*externalServiceAvailabilityStateResolver, bool) {
+	return r, r.unknown != nil
+}
+
+func (r *externalServiceAvailabilityStateResolver) LastCheckedAt() (gqlutil.DateTime, error) {
+	return gqlutil.DateTime{Time: r.available.lastCheckedAt}, nil
+}
+
+func (r *externalServiceAvailabilityStateResolver) SuspectedReason() (string, error) {
+	return r.unavailable.suspectedReason, nil
+}
+
+func (r *externalServiceAvailabilityStateResolver) ImplementationNote() string {
+	return "not implemented"
+}
+
+func (r *externalServiceResolver) SupportsRepoExclusion() bool {
+	return r.externalService.SupportsRepoExclusion()
 }
 
 type externalServiceSyncJobConnectionResolver struct {
@@ -228,7 +314,7 @@ type externalServiceSyncJobConnectionResolver struct {
 	err        error
 }
 
-func newExternalServiceSyncJobConnectionResolver(ctx context.Context, db database.DB, args *externalServiceSyncJobsArgs, externalServiceID int64) (*externalServiceSyncJobConnectionResolver, error) {
+func newExternalServiceSyncJobConnectionResolver(db database.DB, args *externalServiceSyncJobsArgs, externalServiceID int64) (*externalServiceSyncJobConnectionResolver, error) {
 	return &externalServiceSyncJobConnectionResolver{
 		args:              args,
 		externalServiceID: externalServiceID,
@@ -370,3 +456,147 @@ func (r *externalServiceSyncJobResolver) ReposDeleted() int32 { return r.job.Rep
 func (r *externalServiceSyncJobResolver) ReposModified() int32 { return r.job.ReposModified }
 
 func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }
+
+func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceNamespace, int32, error) {
+	r.once.Do(func() {
+		config, err := NewSourceConfiguration(r.args.Kind, r.args.Url, r.args.Token)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		externalServiceID, err := TryUnmarshalExternalServiceID(r.args.ID)
+
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		namespacesArgs := protocol.ExternalServiceNamespacesArgs{
+			ExternalServiceID: externalServiceID,
+			Kind:              r.args.Kind,
+			Config:            config,
+		}
+
+		res, err := r.repoupdaterClient.ExternalServiceNamespaces(ctx, namespacesArgs)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		r.nodes = append(r.nodes, res.Namespaces...)
+		r.totalCount = int32(len(r.nodes))
+	})
+
+	return r.nodes, r.totalCount, r.err
+}
+
+func (r *externalServiceNamespaceConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceNamespaceResolver, error) {
+	namespaces, totalCount, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes := make([]*externalServiceNamespaceResolver, totalCount)
+	for i, j := range namespaces {
+		nodes[i] = &externalServiceNamespaceResolver{
+			namespace: j,
+		}
+	}
+
+	return nodes, nil
+}
+
+func (r *externalServiceNamespaceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	_, totalCount, err := r.compute(ctx)
+	return totalCount, err
+}
+
+type externalServiceNamespaceResolver struct {
+	namespace *types.ExternalServiceNamespace
+}
+
+func (r *externalServiceNamespaceResolver) ID() graphql.ID {
+	return relay.MarshalID("ExternalServiceNamespace", r.namespace)
+}
+
+func (r *externalServiceNamespaceResolver) Name() string {
+	return r.namespace.Name
+}
+
+func (r *externalServiceNamespaceResolver) ExternalID() string {
+	return r.namespace.ExternalID
+}
+
+func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceRepository, error) {
+	r.once.Do(func() {
+		config, err := NewSourceConfiguration(r.args.Kind, r.args.Url, r.args.Token)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		first := int32(100)
+		if r.args.First != nil {
+			first = *r.args.First
+		}
+
+		externalServiceID, err := TryUnmarshalExternalServiceID(r.args.ID)
+
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		reposArgs := protocol.ExternalServiceRepositoriesArgs{
+			ExternalServiceID: externalServiceID,
+			Kind:              r.args.Kind,
+			Query:             r.args.Query,
+			Config:            config,
+			First:             first,
+			ExcludeRepos:      r.args.ExcludeRepos,
+		}
+
+		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, reposArgs)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		r.nodes = res.Repos
+	})
+
+	return r.nodes, r.err
+}
+
+func (r *externalServiceRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceRepositoryResolver, error) {
+	sourceRepos, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes := make([]*externalServiceRepositoryResolver, len(sourceRepos))
+	for i, j := range sourceRepos {
+		nodes[i] = &externalServiceRepositoryResolver{
+			repo: j,
+		}
+	}
+
+	return nodes, nil
+}
+
+type externalServiceRepositoryResolver struct {
+	repo *types.ExternalServiceRepository
+}
+
+func (r *externalServiceRepositoryResolver) ID() graphql.ID {
+	return relay.MarshalID("ExternalServiceRepository", r.repo)
+}
+
+func (r *externalServiceRepositoryResolver) Name() string {
+	return string(r.repo.Name)
+}
+
+func (r *externalServiceRepositoryResolver) ExternalID() string {
+	return r.repo.ExternalID
+}

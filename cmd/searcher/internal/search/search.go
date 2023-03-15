@@ -66,8 +66,6 @@ type Service struct {
 // ServeHTTP handles HTTP based search requests
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	metricRunning.Inc()
-	defer metricRunning.Dec()
 
 	var p protocol.Request
 	dec := json.NewDecoder(r.Body)
@@ -141,6 +139,9 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
+	metricRunning.Inc()
+	defer metricRunning.Dec()
+
 	var tr *trace.Trace
 	tr, ctx = trace.New(ctx, "search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	defer tr.Finish()
@@ -155,7 +156,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		attribute.StringSlice("languages", p.Languages),
 		attribute.Bool("isWordMatch", p.IsWordMatch),
 		attribute.Bool("isCaseSensitive", p.IsCaseSensitive),
-		attribute.Bool("pathPatternsAreRegExps", p.PathPatternsAreRegExps),
 		attribute.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive),
 		attribute.Int("limit", p.Limit),
 		attribute.Bool("patternMatchesContent", p.PatternMatchesContent),
@@ -215,14 +215,10 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		}
 	}
 
-	if p.FetchTimeout == "" {
-		p.FetchTimeout = "500ms"
+	if p.FetchTimeout == time.Duration(0) {
+		p.FetchTimeout = 500 * time.Millisecond
 	}
-	fetchTimeout, err := time.ParseDuration(p.FetchTimeout)
-	if err != nil {
-		return err
-	}
-	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
+	prepareCtx, cancel := context.WithTimeout(ctx, p.FetchTimeout)
 	defer cancel()
 
 	getZf := func() (string, *zipFile, error) {
@@ -236,16 +232,21 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 
 	hybrid := !p.IsStructuralPat && p.FeatHybrid
 	if hybrid {
-		unsearched, ok, err := s.hybrid(ctx, p, sender)
+		logger := logWithTrace(ctx, s.Log).Scoped("hybrid", "hybrid indexed and unindexed search").With(
+			log.String("repo", string(p.Repo)),
+			log.String("commit", string(p.Commit)),
+		)
+
+		unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
 		if err != nil {
-			s.Log.Error("hybrid search failed",
+			logger.Error("hybrid search failed",
 				log.String("repo", string(p.Repo)),
 				log.String("commit", string(p.Commit)),
 				log.Error(err))
 			return errors.Wrap(err, "hybrid search failed")
 		}
 		if !ok {
-			s.Log.Warn("hybrid search is falling back to normal unindexed search",
+			logger.Debug("hybrid search is falling back to normal unindexed search",
 				log.String("repo", string(p.Repo)),
 				log.String("commit", string(p.Commit)))
 		} else {

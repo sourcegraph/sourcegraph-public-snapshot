@@ -1,10 +1,10 @@
 package graphqlbackend
 
 import (
-	"regexp"
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -15,7 +15,7 @@ import (
 
 const oneReleaseCycle = 35 * 24 * time.Hour
 
-var insiderBuildRegex = regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+`)
+var insiderBuildRegex = regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_(\d+\.\d+-)?\w+`)
 
 func NewExecutorResolver(executor types.Executor) *ExecutorResolver {
 	return &ExecutorResolver{executor: executor}
@@ -26,7 +26,7 @@ type ExecutorResolver struct {
 }
 
 func (e *ExecutorResolver) ID() graphql.ID {
-	return relay.MarshalID("Executor", (int64(e.executor.ID)))
+	return relay.MarshalID("Executor", int64(e.executor.ID))
 }
 func (e *ExecutorResolver) Hostname() string  { return e.executor.Hostname }
 func (e *ExecutorResolver) QueueName() string { return e.executor.QueueName }
@@ -58,7 +58,7 @@ func (e *ExecutorResolver) Compatibility() (*string, error) {
 }
 
 func calculateExecutorCompatibility(ev string) (*string, error) {
-	var compatibility ExecutorCompatibility = ExecutorCompatibilityUpToDate
+	compatibility := ExecutorCompatibilityUpToDate
 	sv := version.Version()
 
 	isExecutorDev := ev != "" && version.IsDev(ev)

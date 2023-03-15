@@ -1,87 +1,61 @@
-import React, { useEffect, useMemo, useCallback, useState } from 'react'
+import { FC, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import * as H from 'history'
-import { Redirect } from 'react-router'
-import { Subject } from 'rxjs'
+import { Navigate } from 'react-router-dom'
 
-import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
+import {
+    ConnectionContainer,
+    ConnectionError,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
-import { queryExternalServices as _queryExternalServices } from './backend'
+import { useExternalServicesConnection } from './backend'
+import { ExternalServiceEditingAppLimitAlert } from './ExternalServiceEditingAppLimitReachedAlert'
 import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
-import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
+import { ExternalServiceNode } from './ExternalServiceNode'
+import { isAppLocalFileService } from './isAppLocalFileService'
 
 interface Props extends TelemetryProps {
-    history: H.History
-    location: H.Location
-    routingPrefix: string
-    afterDeleteRoute: string
-    userID?: Scalars['ID']
-    authenticatedUser: Pick<AuthenticatedUser, 'id'>
-
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
-
-    /** For testing only. */
-    queryExternalServices?: typeof _queryExternalServices
+    isSourcegraphApp: boolean
 }
 
 /**
  * A page displaying the external services on this site.
  */
-export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    afterDeleteRoute,
-    history,
-    location,
-    routingPrefix,
-    userID,
+export const ExternalServicesPage: FC<Props> = ({
     telemetryService,
-    authenticatedUser,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
-    queryExternalServices = _queryExternalServices,
+    isSourcegraphApp,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalServices')
     }, [telemetryService])
-    const updates = useMemo(() => new Subject<void>(), [])
-    const onDidUpdateExternalServices = useCallback(() => updates.next(), [updates])
 
-    const queryConnection = useCallback(
-        (args: FilteredConnectionQueryArguments) =>
-            queryExternalServices({
-                first: args.first ?? null,
-                after: args.after ?? null,
-                namespace: userID ?? null,
-            }),
-        [userID, queryExternalServices]
-    )
+    const { loading, hasNextPage, fetchMore, connection, error } = useExternalServicesConnection({
+        first: null,
+        after: null,
+    })
 
-    const [noExternalServices, setNoExternalServices] = useState<boolean>(false)
-    const onUpdate = useCallback<
-        (connection: ExternalServicesResult['externalServices'] | ErrorLike | undefined) => void
-    >(connection => {
-        if (connection && !isErrorLike(connection)) {
-            setNoExternalServices(connection.totalCount === 0)
-        }
-    }, [])
+    const editingDisabled = externalServicesFromFile && !allowEditExternalServicesWithFile
 
-    const editingDisabled = !!externalServicesFromFile && !allowEditExternalServicesWithFile
+    const externalServices = connection?.nodes ? connection?.nodes?.filter(node => !isAppLocalFileService(node)) : []
+    const appLimitReached = isSourcegraphApp && externalServices.length >= 1
 
-    const isManagingOtherUser = !!userID && userID !== authenticatedUser.id
-
-    if (!isManagingOtherUser && noExternalServices) {
-        return <Redirect to={`${routingPrefix}/external-services/new`} />
-    }
-    return (
+    return !loading && (connection?.nodes?.length ?? 0) === 0 ? (
+        <Navigate to="/site-admin/external-services/new" replace={true} />
+    ) : (
         <div className="site-admin-external-services-page">
             <PageTitle title="Manage code hosts" />
             <PageHeader
@@ -90,53 +64,58 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                 headingElement="h2"
                 actions={
                     <>
-                        {!isManagingOtherUser && (
-                            <ButtonLink
-                                className="test-goto-add-external-service-page"
-                                to={`${routingPrefix}/external-services/new`}
-                                variant="primary"
-                                as={Link}
-                                disabled={editingDisabled}
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
+                        {isSourcegraphApp && (
+                            <ButtonLink className="mr-2" to="/setup" variant="secondary" as={Link}>
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add local code
                             </ButtonLink>
                         )}
+                        <ButtonLink
+                            className="test-goto-add-external-service-page"
+                            to="/site-admin/external-services/new"
+                            variant="primary"
+                            as={Link}
+                            disabled={editingDisabled || appLimitReached}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
+                        </ButtonLink>
                     </>
                 }
                 className="mb-3"
             />
 
             {editingDisabled && <ExternalServiceEditingDisabledAlert />}
+            {isSourcegraphApp && <ExternalServiceEditingAppLimitAlert />}
             {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
 
             <Container className="mb-3">
-                <FilteredConnection<
-                    ListExternalServiceFields,
-                    Omit<ExternalServiceNodeProps, 'node'>,
-                    {},
-                    ExternalServicesResult['externalServices']
-                >
-                    className="mb-0"
-                    listClassName="list-group list-group-flush mb-0"
-                    noun="code host"
-                    pluralNoun="code hosts"
-                    withCenteredSummary={true}
-                    queryConnection={queryConnection}
-                    nodeComponent={ExternalServiceNode}
-                    nodeComponentProps={{
-                        onDidUpdate: onDidUpdateExternalServices,
-                        history,
-                        routingPrefix,
-                        afterDeleteRoute,
-                        editingDisabled,
-                    }}
-                    hideSearch={true}
-                    cursorPaging={true}
-                    updates={updates}
-                    history={history}
-                    location={location}
-                    onUpdate={onUpdate}
-                />
+                <ConnectionContainer>
+                    {error && <ConnectionError errors={[error.message]} />}
+                    {loading && !connection && <ConnectionLoading />}
+                    <ConnectionList as="ul" className="list-group" aria-label="CodeHosts">
+                        {connection?.nodes?.map(node => (
+                            <ExternalServiceNode
+                                key={node.id}
+                                node={node}
+                                editingDisabled={editingDisabled}
+                                isSourcegraphApp={isSourcegraphApp}
+                            />
+                        ))}
+                    </ConnectionList>
+                    {connection && (
+                        <SummaryContainer className="mt-2" centered={true}>
+                            <ConnectionSummary
+                                noSummaryIfAllNodesVisible={false}
+                                first={connection.totalCount ?? 0}
+                                centered={true}
+                                connection={connection}
+                                noun="code host"
+                                pluralNoun="code hosts"
+                                hasNextPage={hasNextPage}
+                            />
+                            {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
+                        </SummaryContainer>
+                    )}
+                </ConnectionContainer>
             </Container>
         </div>
     )

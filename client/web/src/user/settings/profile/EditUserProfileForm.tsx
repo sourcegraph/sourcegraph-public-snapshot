@@ -1,10 +1,9 @@
 import React, { useCallback, useState } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation } from '@sourcegraph/http-client'
-import { Container, Button, Alert } from '@sourcegraph/wildcard'
+import { Container, Button, Alert, Form } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
 import { EditUserProfilePage, UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
@@ -24,7 +23,7 @@ export const UPDATE_USER = gql`
 `
 
 interface Props {
-    user: Pick<EditUserProfilePage, 'id' | 'viewerCanChangeUsername'>
+    user: Pick<EditUserProfilePage, 'id' | 'viewerCanChangeUsername' | 'scimControlled'>
     initialValue: UserProfileFormFieldsValue
     after?: React.ReactNode
 }
@@ -37,11 +36,11 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
     initialValue,
     after,
 }) => {
-    const history = useHistory()
+    const navigate = useNavigate()
     const [updateUser, { data, loading, error }] = useMutation<UpdateUserResult, UpdateUserVariables>(UPDATE_USER, {
         onCompleted: ({ updateUser }) => {
             eventLogger.log('UserProfileUpdated')
-            history.replace(`/users/${updateUser.username}/settings/profile`)
+            navigate(`/users/${updateUser.username}/settings/profile`, { replace: true })
 
             // In case the edited user is the current user, immediately reflect the changes in the
             // UI.
@@ -75,13 +74,16 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
         [updateUser, user.id, userFields]
     )
 
+    const isUserScimControlled = user.scimControlled
+
     return (
         <Container>
             <Form className="w-100" onSubmit={onSubmit}>
                 <UserProfileFormFields
                     value={userFields}
                     onChange={onChange}
-                    usernameFieldDisabled={!user.viewerCanChangeUsername}
+                    usernameFieldDisabled={!user.viewerCanChangeUsername || isUserScimControlled}
+                    displayNameFieldDisabled={isUserScimControlled}
                     disabled={loading}
                 />
                 <Button type="submit" disabled={loading} id="test-EditUserProfileForm__save" variant="primary">

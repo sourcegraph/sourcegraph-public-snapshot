@@ -9,17 +9,14 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	autoindex "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
-	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -163,7 +160,11 @@ func (r *RepositoryResolver) DiskSizeBytes(ctx context.Context) (*BigInt, error)
 		return nil, err
 	}
 	repo, err := r.db.GitserverRepos().GetByID(ctx, r.IDInt32())
-	return &BigInt{Int: repo.RepoSizeBytes}, err
+	if err != nil {
+		return nil, err
+	}
+	size := BigInt(repo.RepoSizeBytes)
+	return &size, nil
 }
 
 func (r *RepositoryResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
@@ -188,7 +189,7 @@ type RepositoryCommitArgs struct {
 }
 
 func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit")
+	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 	span.SetTag("commit", args.Rev)
 
@@ -197,7 +198,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -206,6 +207,26 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 	}
 
 	return r.CommitFromID(ctx, args, commitID)
+}
+
+func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (*GitCommitResolver, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "repository.firstEverCommit") //nolint:staticcheck // OT is deprecated
+	defer span.Finish()
+
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	commit, err := r.gitserverClient.FirstEverCommit(ctx, authz.DefaultSubRepoPermsChecker, repo.Name)
+	if err != nil {
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return r.CommitFromID(ctx, &RepositoryCommitArgs{}, commit.ID)
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
@@ -245,14 +266,13 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	gsClient := gitserver.NewClient(r.db)
-	commitID, err := backend.NewRepos(r.logger, r.db, gsClient).ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, gsClient).GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return "", err
 	}
@@ -270,6 +290,14 @@ func (r *RepositoryResolver) Enabled() bool { return true }
 // https://github.com/sourcegraph/sourcegraph/pull/4668
 func (r *RepositoryResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: time.Now()}
+}
+
+func (r *RepositoryResolver) RawCreatedAt() string {
+	if r.innerRepo == nil {
+		return ""
+	}
+
+	return r.innerRepo.CreatedAt.Format(time.RFC3339)
 }
 
 func (r *RepositoryResolver) UpdatedAt() *gqlutil.DateTime {
@@ -308,7 +336,7 @@ func (r *RepositoryResolver) Label() (Markdown, error) {
 }
 
 func (r *RepositoryResolver) Detail() Markdown {
-	return Markdown("Repository match")
+	return "Repository match"
 }
 
 func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {
@@ -366,33 +394,33 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	return r.err
 }
 
-func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *uploads.LSIFUploadsQueryArgs) (sharedresolvers.LSIFUploadConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &uploads.LSIFRepositoryUploadsQueryArgs{
+func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *resolverstubs.LSIFUploadsQueryArgs) (resolverstubs.LSIFUploadConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &resolverstubs.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
 }
 
-func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *autoindex.LSIFIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &autoindex.LSIFRepositoryIndexesQueryArgs{
+func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *resolverstubs.LSIFIndexesQueryArgs) (resolverstubs.LSIFIndexConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &resolverstubs.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
 }
 
-func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (autoindex.IndexConfigurationResolver, error) {
+func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (resolverstubs.IndexConfigurationResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.IndexConfiguration(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (uploads.CodeIntelligenceCommitGraphResolver, error) {
+func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (resolverstubs.CodeIntelligenceCommitGraphResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (sharedresolvers.CodeIntelRepositorySummaryResolver, error) {
+func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (resolverstubs.CodeIntelRepositorySummaryResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *policies.PreviewGitObjectFilterArgs) ([]policies.GitObjectFilterPreviewResolver, error) {
+func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *resolverstubs.PreviewGitObjectFilterArgs) (resolverstubs.GitObjectFilterPreviewResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.PreviewGitObjectFilter(ctx, r.ID(), args)
 }
 
@@ -455,19 +483,18 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		return nil, err
 	}
 	targetRef := fmt.Sprintf("phabricator/diff/%d", args.DiffID)
-	gitserverClient := gitserver.NewClient(db)
 	getCommit := func() (*GitCommitResolver, error) {
 		// We first check via the vcsrepo api so that we can toggle
 		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err = gitserverClient.ResolveRevision(ctx, repo.Name, targetRef, gitserver.ResolveRevisionOptions{
+		_, err = r.gitserverClient.ResolveRevision(ctx, repo.Name, targetRef, gitserver.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {
 			return nil, err
 		}
-		r := NewRepositoryResolver(db, gitserver.NewClient(db), repo)
+		r := NewRepositoryResolver(db, r.gitserverClient, repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 
@@ -533,11 +560,11 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		}
 	}
 
-	_, err = gitserverClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	_, err = r.gitserverClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(args.RepoName),
 		BaseCommit: api.CommitID(args.BaseRev),
 		TargetRef:  targetRef,
-		Patch:      patch,
+		Patch:      []byte(patch),
 		CommitInfo: protocol.PatchCommitInfo{
 			AuthorName:  info.AuthorName,
 			AuthorEmail: info.AuthorEmail,
@@ -633,7 +660,7 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
-		return &EmptyResponse{}, nil
+		return &EmptyResponse{}, err
 	}
 
 	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
@@ -655,7 +682,7 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
-		return &EmptyResponse{}, nil
+		return &EmptyResponse{}, err
 	}
 
 	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
@@ -677,8 +704,12 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
-		return &EmptyResponse{}, nil
+		return &EmptyResponse{}, err
 	}
 
 	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
+}
+
+func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {
+	return EnterpriseResolvers.ownResolver.RepoIngestedCodeowners(ctx, r.IDInt32())
 }

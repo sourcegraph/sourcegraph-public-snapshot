@@ -1,0 +1,264 @@
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "74d544d96f4a5bb630d465ca8bbcfe231e3594e5aae57e1edbf17a6eb3ca2506",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
+    ],
+)
+
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+
+bazel_skylib_workspace()
+
+http_archive(
+    name = "aspect_bazel_lib",
+    sha256 = "2518c757715d4f5fc7cc7e0a68742dd1155eaafc78fb9196b8a18e13a738cea2",
+    strip_prefix = "bazel-lib-1.28.0",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.28.0/bazel-lib-v1.28.0.tar.gz",
+)
+
+http_archive(
+    name = "aspect_rules_js",
+    sha256 = "1aa0ab76d1f9520bb8993e2d84f82da2a9c87da1e6e8d121dbb4c857a292c2cd",
+    strip_prefix = "rules_js-1.20.1",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v1.20.1/rules_js-v1.20.1.tar.gz",
+)
+
+http_archive(
+    name = "aspect_rules_ts",
+    sha256 = "02480b6a1cd12516edf364e678412e9da10445fe3f1070c014ac75e922c969ea",
+    strip_prefix = "rules_ts-1.3.1",
+    url = "https://github.com/aspect-build/rules_ts/releases/download/v1.3.1/rules_ts-v1.3.1.tar.gz",
+)
+
+http_archive(
+    name = "aspect_rules_jest",
+    sha256 = "fa103b278137738ef08fd23d3c8c9157897a7159af2aa22714bc71680da58583",
+    strip_prefix = "rules_jest-0.16.1",
+    url = "https://github.com/aspect-build/rules_jest/archive/refs/tags/v0.16.1.tar.gz",
+)
+
+http_archive(
+    name = "io_bazel_rules_go",
+    sha256 = "dd926a88a564a9246713a9c00b35315f54cbd46b31a26d5d8fb264c07045f05d",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.38.1/rules_go-v0.38.1.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.38.1/rules_go-v0.38.1.zip",
+    ],
+)
+
+http_archive(
+    name = "rules_buf",
+    sha256 = "523a4e06f0746661e092d083757263a249fedca535bd6dd819a8c50de074731a",
+    strip_prefix = "rules_buf-0.1.1",
+    urls = [
+        "https://github.com/bufbuild/rules_buf/archive/refs/tags/v0.1.1.zip",
+    ],
+)
+
+http_archive(
+    name = "bazel_gazelle",
+    sha256 = "ecba0f04f96b4960a5b250c8e8eeec42281035970aa8852dda73098274d14a1d",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.29.0/bazel-gazelle-v0.29.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.29.0/bazel-gazelle-v0.29.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "com_google_protobuf",
+    sha256 = "6aff9834fd7c540875e1836967c8d14c6897e3785a2efac629f69860fb7834ff",
+    strip_prefix = "protobuf-3.15.0",
+    urls = [
+        "https://github.com/protocolbuffers/protobuf/archive/v3.15.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "rules_rust",
+    sha256 = "d125fb75432dc3b20e9b5a19347b45ec607fabe75f98c6c4ba9badaab9c193ce",
+    # As of Mar 8 2023, the latest release is 0.18.0, but that release
+    # has a bug which triggers a compilation error in futures-util-0.3.21
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.17.0/rules_rust-v0.17.0.tar.gz"],
+)
+
+# rules_js setup ================================
+load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
+
+rules_js_dependencies()
+
+# node toolchain setup ==========================
+load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
+
+nodejs_register_toolchains(
+    name = "nodejs",
+    node_version = "16.19.0",
+)
+
+# rules_js npm setup ============================
+load("@aspect_rules_js//npm:npm_import.bzl", "npm_translate_lock")
+
+npm_translate_lock(
+    name = "npm",
+    npm_package_target_name = "{dirname}_pkg",
+    npmrc = "//:.npmrc",
+    pnpm_lock = "//:pnpm-lock.yaml",
+    verify_node_modules_ignored = "//:.bazelignore",
+)
+
+# rules_ts npm setup ============================
+load("@npm//:repositories.bzl", "npm_repositories")
+
+npm_repositories()
+
+load("@aspect_rules_ts//ts:repositories.bzl", "rules_ts_dependencies")
+
+rules_ts_dependencies(ts_version = "4.9.5")
+
+# rules_jest setup ==============================
+load("@aspect_rules_jest//jest:dependencies.bzl", "rules_jest_dependencies")
+
+rules_jest_dependencies()
+
+load("@aspect_rules_jest//jest:repositories.bzl", "jest_repositories")
+
+jest_repositories(
+    name = "jest",
+    jest_version = "v28.1.0",
+)
+
+load("@jest//:npm_repositories.bzl", jest_npm_repositories = "npm_repositories")
+
+jest_npm_repositories()
+
+# rules_esbuild setup ===========================
+http_archive(
+    name = "aspect_rules_esbuild",
+    sha256 = "621c8ccb8a1400951c52357377eda4c575c6c901689bb629969881e0be8a8614",
+    strip_prefix = "rules_esbuild-175023fede7d2532dd35d89cb43b43cbe9e75678",
+    url = "https://github.com/aspect-build/rules_esbuild/archive/175023fede7d2532dd35d89cb43b43cbe9e75678.tar.gz",
+)
+
+load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependencies")
+
+rules_esbuild_dependencies()
+
+# Register a toolchain containing esbuild npm package and native bindings
+load("@aspect_rules_esbuild//esbuild:repositories.bzl", "LATEST_VERSION", "esbuild_register_toolchains")
+
+esbuild_register_toolchains(
+    name = "esbuild",
+    esbuild_version = LATEST_VERSION,
+)
+
+# rules_webpack setup ===========================
+http_archive(
+    name = "aspect_rules_webpack",
+    sha256 = "4f30fb310d625a4045e37b9e04afb2366c56b547a73c935f308e3d9c31b77519",
+    strip_prefix = "rules_webpack-0.9.1",
+    url = "https://github.com/aspect-build/rules_webpack/releases/download/v0.9.1/rules_webpack-v0.9.1.tar.gz",
+)
+
+load("@aspect_rules_webpack//webpack:dependencies.bzl", "rules_webpack_dependencies")
+
+rules_webpack_dependencies()
+
+load("@aspect_rules_webpack//webpack:repositories.bzl", "webpack_repositories")
+
+webpack_repositories(name = "webpack")
+
+load("@webpack//:npm_repositories.bzl", webpack_npm_repositories = "npm_repositories")
+
+webpack_npm_repositories()
+
+# Go toolchain setup
+
+load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_toolchains")
+
+rules_buf_dependencies()
+
+rules_buf_toolchains(version = "v1.11.0")
+
+load("@rules_buf//gazelle/buf:repositories.bzl", "gazelle_buf_dependencies")
+
+gazelle_buf_dependencies()
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
+rules_proto_dependencies()
+
+rules_proto_toolchains()
+
+load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
+load("//:linter_deps.bzl", "linter_dependencies")
+load("//:deps.bzl", "go_dependencies")
+
+go_repository(
+    name = "com_github_aws_aws_sdk_go_v2_service_ssooidc",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/aws/aws-sdk-go-v2/service/ssooidc",
+    sum = "h1:0bLhH6DRAqox+g0LatcjGKjjhU6Eudyys6HB6DJVPj8=",
+    version = "v1.14.1",
+)
+
+# gazelle:repository_macro deps.bzl%go_dependencies
+go_dependencies()
+
+go_rules_dependencies()
+
+go_register_toolchains(
+    nogo = "@//:sg_nogo",
+    version = "1.19.6",
+)
+
+linter_dependencies()
+
+gazelle_dependencies()
+
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
+protobuf_deps()
+
+# rust toolchain setup
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+rules_rust_dependencies()
+
+rust_register_toolchains(
+    edition = "2021",
+    # Keep in sync with docker-images/syntax-highlighter/Dockerfile
+    # and docker-images/syntax-highlighter/rust-toolchain.toml
+    versions = [
+        "1.68.0",
+    ],
+)
+
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
+
+crates_repository(
+    name = "crate_index",
+    cargo_config = "//docker-images/syntax-highlighter:.cargo/config.toml",
+    cargo_lockfile = "//docker-images/syntax-highlighter:Cargo.lock",
+    # this file has to be manually created and it will be filled when
+    # the target is ran.
+    # To regenerate this file run: CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
+    lockfile = "//docker-images/syntax-highlighter:Cargo.Bazel.lock",
+    # glob doesn't work in WORKSPACE files: https://github.com/bazelbuild/bazel/issues/11935
+    manifests = [
+        "//docker-images/syntax-highlighter:Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-macros/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-syntax/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-treesitter/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
+    ],
+)
+
+load("@crate_index//:defs.bzl", "crate_repositories")
+
+crate_repositories()

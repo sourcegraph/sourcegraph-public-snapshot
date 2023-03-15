@@ -1,11 +1,13 @@
 import React from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Badge, Icon, H2, Heading } from '@sourcegraph/wildcard'
+import { Badge, Icon, Heading, H3, H4, Tooltip } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { BatchChangeFields } from '../../../graphql-operations'
@@ -22,6 +24,9 @@ import {
 
 import styles from './BatchChangeStatsCard.module.scss'
 
+const ARCHIVED_TOOLTIP =
+    'Changesets created by an earlier version of the batch change for repos that are not in scope anymore are archived in the batch change and closed on the code host. They do not count towards the completion percentage.'
+
 interface BatchChangeStatsCardProps {
     batchChange: Pick<BatchChangeFields, 'diffStat' | 'changesetsStats' | 'state'>
     className?: string
@@ -36,37 +41,30 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
     className,
 }) => {
     const { changesetsStats: stats, diffStat } = batchChange
-    const percentComplete = stats.total === 0 ? 0 : ((stats.closed + stats.merged + stats.deleted) / stats.total) * 100
-    const isCompleted = stats.closed + stats.merged + stats.deleted === stats.total
-    let BatchChangeStatusIcon = ProgressCheckIcon
-    if (isCompleted) {
-        BatchChangeStatusIcon = CheckCircleOutlineIcon
-    }
+    const BatchChangeStatusIcon = stats.isCompleted ? CheckCircleOutlineIcon : ProgressCheckIcon
     return (
         <div className={classNames(className)}>
             <div className="d-flex flex-wrap align-items-center flex-grow-1">
-                <H2 className="m-0">
-                    {/*
-                        a11y-ignore
-                        Rule: "color-contrast" (Elements must have sufficient color contrast)
-                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
-                    */}
-                    <BatchChangeStatePill
-                        state={batchChange.state}
-                        className={classNames('a11y-ignore', styles.batchChangeStatsCardStateBadge)}
-                    />
-                </H2>
+                {/*
+                    a11y-ignore
+                    Rule: "color-contrast" (Elements must have sufficient color contrast)
+                    GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                */}
+                <BatchChangeStatePill
+                    state={batchChange.state}
+                    className={classNames('a11y-ignore', styles.batchChangeStatsCardStateBadge)}
+                />
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'mx-3')} />
                 <div className="d-flex align-items-center">
-                    <Heading as="h3" styleAs="h1" className="d-inline mb-0" aria-label="Batch Change Status">
+                    <Heading as="h3" styleAs="h1" className="d-inline mb-0" aria-hidden="true">
                         <Icon
-                            className={classNames('mr-2', isCompleted ? 'text-success' : 'text-muted')}
+                            className={classNames('mr-2', stats.isCompleted ? 'text-success' : 'text-muted')}
                             as={BatchChangeStatusIcon}
-                            aria-label="Batch Change Status Icon"
+                            aria-hidden={true}
                         />
                     </Heading>{' '}
                     <span className={classNames(styles.batchChangeStatsCardCompleteness, 'lead text-nowrap')}>
-                        {formatDisplayPercent(percentComplete)} complete
+                        {`${formatDisplayPercent(stats.percentComplete)} complete`}
                     </span>
                 </div>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'd-none d-md-block mx-3')} />
@@ -74,27 +72,63 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                 <div className="d-flex flex-wrap justify-content-end flex-grow-1">
                     <BatchChangeStatsTotalAction count={stats.total} />
                     <ChangesetStatusUnpublished
-                        label={<span className="text-muted">{stats.unpublished} Unpublished</span>}
+                        label={
+                            <H4 className="font-weight-normal text-muted m-0">
+                                {stats.unpublished}{' '}
+                                <VisuallyHidden>{pluralize('changeset', stats.unpublished)}</VisuallyHidden> unpublished
+                            </H4>
+                        }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 px-2 text-truncate')}
                     />
                     <ChangesetStatusDraft
-                        label={<span className="text-muted">{stats.draft} Draft</span>}
+                        label={
+                            <H4 className="font-weight-normal text-muted m-0">
+                                {stats.draft} <VisuallyHidden>{pluralize('changeset', stats.draft)}</VisuallyHidden>{' '}
+                                draft
+                            </H4>
+                        }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 px-2 text-truncate')}
                     />
                     <ChangesetStatusOpen
-                        label={<span className="text-muted">{stats.open} Open</span>}
+                        label={
+                            <H4 className="font-weight-normal text-muted m-0">
+                                {stats.open} <VisuallyHidden>{pluralize('changeset', stats.open)}</VisuallyHidden> open
+                            </H4>
+                        }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 px-2 text-truncate')}
                     />
                     <ChangesetStatusClosed
-                        label={<span className="text-muted">{stats.closed} Closed</span>}
+                        label={
+                            <H4 className="font-weight-normal text-muted m-0">
+                                {stats.closed} <VisuallyHidden>{pluralize('changeset', stats.closed)}</VisuallyHidden>{' '}
+                                closed
+                            </H4>
+                        }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 px-2 text-truncate')}
                     />
                     <ChangesetStatusMerged
-                        label={<span className="text-muted">{stats.merged} Merged</span>}
+                        label={
+                            <H4 className="font-weight-normal text-muted m-0">
+                                {stats.merged} <VisuallyHidden>{pluralize('changeset', stats.merged)}</VisuallyHidden>{' '}
+                                merged
+                            </H4>
+                        }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 pl-2 text-truncate')}
                     />
                     <ChangesetStatusArchived
-                        label={<span className="text-muted">{stats.archived} Archived</span>}
+                        label={
+                            <H4 className="font-weight-normal text-muted m-0">
+                                {stats.archived}{' '}
+                                <VisuallyHidden>{pluralize('changeset', stats.archived)}</VisuallyHidden> archived
+                                <Tooltip content={ARCHIVED_TOOLTIP}>
+                                    <Icon
+                                        aria-label={ARCHIVED_TOOLTIP}
+                                        svgPath={mdiInformationOutline}
+                                        className="ml-1"
+                                    />
+                                </Tooltip>
+                            </H4>
+                        }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 pl-2 text-truncate')}
                     />
                 </div>
@@ -106,17 +140,19 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
 export const BatchChangeStatsTotalAction: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({
     count,
 }) => (
-    <div
+    <H4
+        as={H3}
         className={classNames(
             styles.batchChangeStatsCardStat,
-            'm-0 flex-grow-0 pr-2 text-truncate text-nowrap d-flex flex-column align-items-center justify-content-center'
+            'font-weight-normal m-0 flex-grow-0 pr-2 text-truncate text-nowrap d-flex flex-column align-items-center justify-content-center'
         )}
+        aria-label={`${count} total ${pluralize('changeset', count)}`}
     >
         <span className={styles.batchChangeStatsCardChangesetsPill}>
             <Badge variant="secondary" pill={true}>
                 {count}
             </Badge>
         </span>
-        <span className="text-muted">{pluralize('Changeset', count)}</span>
-    </div>
+        <span className="text-muted">{pluralize('changeset', count)}</span>
+    </H4>
 )

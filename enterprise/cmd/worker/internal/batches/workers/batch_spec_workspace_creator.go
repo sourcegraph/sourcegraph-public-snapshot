@@ -8,15 +8,18 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store/author"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
@@ -34,9 +37,11 @@ type batchSpecWorkspaceCreator struct {
 
 // HandlerFunc returns a workerutil.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
-func (r *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
-	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-		job := record.(*btypes.BatchSpecResolutionJob)
+func (r *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc[*btypes.BatchSpecResolutionJob] {
+	return func(ctx context.Context, logger log.Logger, job *btypes.BatchSpecResolutionJob) (err error) {
+		// Run the resolution job as the user, so that only secrets and workspaces
+		// that are visible to the user are returned.
+		ctx = actor.WithActor(ctx, actor.FromUser(job.InitiatorID))
 
 		return r.process(ctx, service.NewWorkspaceResolver, job)
 	}
@@ -51,7 +56,7 @@ type workspaceCacheKey struct {
 	dbWorkspace   *btypes.BatchSpecWorkspace
 	repo          batcheslib.Repository
 	stepCacheKeys []stepCacheKey
-	skippedSteps  map[int32]struct{}
+	skippedSteps  map[int]struct{}
 }
 
 // process runs one workspace creation run for the given job utilizing the given
@@ -73,9 +78,34 @@ func (r *batchSpecWorkspaceCreator) process(
 		return err
 	}
 
+	// Next, we fetch all secrets that are requested by the spec.
+	rk := spec.Spec.RequiredEnvVars()
+	var secrets []*database.ExecutorSecret
+	if len(rk) > 0 {
+		esStore := r.store.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+		secrets, _, err = esStore.List(ctx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
+			NamespaceUserID: spec.NamespaceUserID,
+			NamespaceOrgID:  spec.NamespaceOrgID,
+			Keys:            rk,
+		})
+		if err != nil {
+			return errors.Wrap(err, "fetching secrets")
+		}
+	}
+
+	esalStore := r.store.DatabaseDB().ExecutorSecretAccessLogs()
+	envVars := make([]string, len(secrets))
+	for i, secret := range secrets {
+		// This will create an audit log event in the name of the initiating user.
+		val, err := secret.Value(ctx, esalStore)
+		if err != nil {
+			return errors.Wrap(err, "getting value for secret")
+		}
+		envVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
+	}
+
 	resolver := newResolver(r.store)
-	userCtx := actor.WithActor(ctx, actor.FromUser(spec.UserID))
-	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(userCtx, evaluatableSpec)
+	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec)
 	if err != nil {
 		return err
 	}
@@ -113,9 +143,6 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		ws = append(ws, workspace)
 
-		if spec.NoCache {
-			continue
-		}
 		if !spec.AllowIgnored && w.Ignored {
 			continue
 		}
@@ -124,7 +151,7 @@ func (r *batchSpecWorkspaceCreator) process(
 		}
 
 		repo := batcheslib.Repository{
-			ID:          string(graphqlbackend.MarshalRepositoryID(w.Repo.ID)),
+			ID:          string(marshalRepositoryID(w.Repo.ID)),
 			Name:        string(w.Repo.Name),
 			BaseRef:     w.Branch,
 			BaseRev:     string(w.Commit),
@@ -139,7 +166,7 @@ func (r *batchSpecWorkspaceCreator) process(
 		stepCacheKeys := make([]stepCacheKey, 0, len(spec.Spec.Steps))
 		// Generate cache keys for all the steps.
 		for i := 0; i < len(spec.Spec.Steps); i++ {
-			if _, ok := skippedSteps[int32(i)]; ok {
+			if _, ok := skippedSteps[i]; ok {
 				continue
 			}
 
@@ -150,6 +177,7 @@ func (r *batchSpecWorkspaceCreator) process(
 				},
 				repo,
 				w.Path,
+				envVars,
 				w.OnlyFetchWorkspace,
 				spec.Spec.Steps,
 				i,
@@ -158,7 +186,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 			rawStepKey, err := key.Key()
 			if err != nil {
-				return nil
+				return err
 			}
 
 			stepCacheKeys = append(stepCacheKeys, stepCacheKey{index: i, key: rawStepKey})
@@ -193,6 +221,11 @@ func (r *batchSpecWorkspaceCreator) process(
 	usedCacheEntries := []int64{}
 	changesetsByWorkspace := make(map[*btypes.BatchSpecWorkspace][]*btypes.ChangesetSpec)
 
+	changesetAuthor, err := author.GetChangesetAuthorForUser(ctx, database.UsersWith(r.logger, r.store), spec.UserID)
+	if err != nil {
+		return err
+	}
+
 	// Check for an existing cache entry for each of the workspaces.
 	for _, workspace := range cacheKeyWorkspaces {
 		for _, ck := range workspace.stepCacheKeys {
@@ -218,6 +251,7 @@ func (r *batchSpecWorkspaceCreator) process(
 		// TODO: In the future, move this to a separate field, so we can
 		// tell the two cases apart.
 		if len(spec.Spec.Steps) == len(workspace.skippedSteps) {
+			// TODO: Doesn't this mean we don't build changeset specs?
 			workspace.dbWorkspace.CachedResultFound = true
 			continue
 		}
@@ -226,7 +260,7 @@ func (r *batchSpecWorkspaceCreator) process(
 		latestStepIdx := -1
 		for i := len(spec.Spec.Steps) - 1; i >= 0; i-- {
 			// Keep skipping steps until the first one is hit that we do want to run.
-			if _, ok := workspace.skippedSteps[int32(i)]; ok {
+			if _, ok := workspace.skippedSteps[i]; ok {
 				continue
 			}
 			latestStepIdx = i
@@ -236,6 +270,9 @@ func (r *batchSpecWorkspaceCreator) process(
 			continue
 		}
 
+		// TODO: Should we also do dynamic evaluation, instead of just static?
+		// We have everything that's needed at this point, including the latest
+		// execution step result.
 		res, found := workspace.dbWorkspace.StepCacheResult(latestStepIdx + 1)
 		if !found {
 			// There is no cache result available, proceed.
@@ -244,7 +281,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		workspace.dbWorkspace.CachedResultFound = true
 
-		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, *res.Value, workspace.dbWorkspace.Path)
+		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, *res.Value, workspace.dbWorkspace.Path, true, changesetAuthor)
 		if err != nil {
 			return err
 		}
@@ -315,32 +352,29 @@ func (r *remoteFileMetadataRetriever) Get(steps []batcheslib.Step) ([]cache.Moun
 	var mountsMetadata []cache.MountMetadata
 	for _, step := range steps {
 		for _, stepMount := range step.Mount {
-			metadata, err := getMountMetadata(r.mounts, stepMount.Path)
-			if err != nil {
-				return nil, err
+			dir, file := filepath.Split(stepMount.Path)
+			dir = strings.TrimSuffix(dir, string(filepath.Separator))
+			dir = strings.TrimPrefix(dir, fmt.Sprintf(".%s", string(filepath.Separator)))
+
+			mountPath := filepath.Join(dir, file)
+			var metadata cache.MountMetadata
+			for _, mount := range r.mounts {
+				if filepath.Join(mount.Path, mount.FileName) == mountPath {
+					metadata = cache.MountMetadata{Path: mountPath, Size: mount.Size, Modified: mount.ModifiedAt}
+				}
 			}
-			mountsMetadata = append(mountsMetadata, metadata)
+			if metadata.Path != "" {
+				mountsMetadata = append(mountsMetadata, metadata)
+			} else {
+				// It is probably a directory
+				for _, mount := range r.mounts {
+					mountsMetadata = append(mountsMetadata, cache.MountMetadata{Path: filepath.Join(mount.Path, mount.FileName), Size: mount.Size, Modified: mount.ModifiedAt})
+				}
+			}
+
 		}
 	}
 	return mountsMetadata, nil
-}
-
-func getMountMetadata(mounts []*btypes.BatchSpecWorkspaceFile, path string) (metadata cache.MountMetadata, err error) {
-	dir, file := filepath.Split(path)
-	dir = strings.TrimSuffix(dir, string(filepath.Separator))
-	dir = strings.TrimPrefix(dir, fmt.Sprintf(".%s", string(filepath.Separator)))
-	mountPath := filepath.Join(dir, file)
-
-	for _, mount := range mounts {
-		if filepath.Join(mount.Path, mount.FileName) == mountPath {
-			return cache.MountMetadata{
-				Path:     mountPath,
-				Size:     mount.Size,
-				Modified: mount.ModifiedAt,
-			}, nil
-		}
-	}
-	return metadata, errors.New("could not find a matching mount entry")
 }
 
 func changesetSpecsForImports(ctx context.Context, s *store.Store, importChangesets []batcheslib.ImportChangeset, batchSpecID int64, userID int32) ([]*btypes.ChangesetSpec, error) {
@@ -362,7 +396,7 @@ func changesetSpecsForImports(ctx context.Context, s *store.Store, importChanges
 
 		repoNameIDs := make(map[string]string, len(repos))
 		for _, r := range repos {
-			repoNameIDs[string(r.Name)] = string(graphqlbackend.MarshalRepositoryID(r.ID))
+			repoNameIDs[string(r.Name)] = string(marshalRepositoryID(r.ID))
 		}
 		return repoNameIDs, nil
 	})
@@ -370,7 +404,8 @@ func changesetSpecsForImports(ctx context.Context, s *store.Store, importChanges
 		return nil, err
 	}
 	for _, c := range specs {
-		repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(c.BaseRepository))
+		var repoID api.RepoID
+		err = relay.UnmarshalSpec(graphql.ID(c.BaseRepository), &repoID)
 		if err != nil {
 			return nil, err
 		}
@@ -386,4 +421,8 @@ func changesetSpecsForImports(ctx context.Context, s *store.Store, importChanges
 		cs = append(cs, changesetSpec)
 	}
 	return cs, nil
+}
+
+func marshalRepositoryID(id api.RepoID) graphql.ID {
+	return relay.MarshalID("Repository", id)
 }

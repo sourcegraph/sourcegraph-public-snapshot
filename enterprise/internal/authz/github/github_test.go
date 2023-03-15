@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-//nolint:unparam // unparam complains that `u` always has same value across call-sites, but that's OK
 func mustURL(t *testing.T, u string) *url.URL {
 	parsed, err := url.Parse(u)
 	if err != nil {
@@ -108,8 +107,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			},
 		}
 
-		//nolint:unparam // Returning constant value for 'int' result is OK
-		mockListAffiliatedRepositories = func(_ context.Context, _ github.Visibility, page int, _ ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
+		mockListAffiliatedRepositories = func(_ context.Context, _ github.Visibility, page int, perPage int, _ ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
 			switch page {
 			case 1:
 				return []*github.Repository{
@@ -125,10 +123,9 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			return []*github.Repository{}, false, 1, nil
 		}
 
-		mockOrgNoRead  = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
-		mockOrgNoRead2 = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph-2"}, DefaultRepositoryPermission: "none"}
-		mockOrgRead    = &github.OrgDetails{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"}
-		//nolint:unparam // Returning constant value for 'int' result is OK
+		mockOrgNoRead      = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
+		mockOrgNoRead2     = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph-2"}, DefaultRepositoryPermission: "none"}
+		mockOrgRead        = &github.OrgDetails{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"}
 		mockListOrgDetails = func(_ context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error) {
 			switch page {
 			case 1:
@@ -150,7 +147,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			return nil, false, 1, nil
 		}
 
-		//nolint:unparam // Returning constant value for 'int' result is OK
 		mockListOrgRepositories = func(_ context.Context, org string, page int, _ string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 			switch org {
 			case mockOrgRead.Login:
@@ -176,11 +172,11 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	t.Run("cache disabled", func(t *testing.T) {
 		mockClient := newMockClientWithTokenMock()
 		mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(
-			func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+			func(ctx context.Context, visibility github.Visibility, page int, perPage int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 				if len(affiliations) != 0 {
 					t.Fatalf("Expected 0 affiliations, got %+v", affiliations)
 				}
-				return mockListAffiliatedRepositories(ctx, visibility, page, affiliations...)
+				return mockListAffiliatedRepositories(ctx, visibility, page, perPage, affiliations...)
 			})
 
 		p := NewProvider("", ProviderOptions{
@@ -640,7 +636,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			},
 		}
 
-		//nolint:unparam // Allow returning nil error on all code paths
 		mockListCollaborators = func(_ context.Context, _, _ string, page int, _ github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error) {
 			switch page {
 			case 1:
@@ -1211,8 +1206,8 @@ func TestProvider_ValidateConnection(t *testing.T) {
 			GitHubURL:      mustURL(t, "https://github.com"),
 			GroupsCacheTTL: -1,
 		})
-		problems := p.ValidateConnection(context.Background())
-		if len(problems) > 0 {
+		err := p.ValidateConnection(context.Background())
+		if err != nil {
 			t.Fatal("expected validate to pass")
 		}
 	})
@@ -1230,12 +1225,12 @@ func TestProvider_ValidateConnection(t *testing.T) {
 					return nil, errors.New("scopes error")
 				})
 			p.client = mockClientFunc(mockClient)
-			problems := p.ValidateConnection(context.Background())
-			if len(problems) != 1 {
+			err := p.ValidateConnection(context.Background())
+			if err == nil {
 				t.Fatal("expected 1 problem")
 			}
-			if !strings.Contains(problems[0], "scopes error") {
-				t.Fatalf("unexpected problem: %q", problems[0])
+			if !strings.Contains(err.Error(), "scopes error") {
+				t.Fatalf("unexpected problem: %q", err.Error())
 			}
 		})
 
@@ -1246,12 +1241,12 @@ func TestProvider_ValidateConnection(t *testing.T) {
 					return []string{}, nil
 				})
 			p.client = mockClientFunc(mockClient)
-			problems := p.ValidateConnection(context.Background())
-			if len(problems) != 1 {
-				t.Fatal("expected 1 problem")
+			err := p.ValidateConnection(context.Background())
+			if err == nil {
+				t.Fatal("expected error")
 			}
-			if !strings.Contains(problems[0], "read:org") {
-				t.Fatalf("unexpected problem: %q", problems[0])
+			if !strings.Contains(err.Error(), "read:org") {
+				t.Fatalf("unexpected problem: %q", err.Error())
 			}
 		})
 
@@ -1267,8 +1262,8 @@ func TestProvider_ValidateConnection(t *testing.T) {
 						return testCase, nil
 					})
 				p.client = mockClientFunc(mockClient)
-				problems := p.ValidateConnection(context.Background())
-				if len(problems) != 0 {
+				err := p.ValidateConnection(context.Background())
+				if err != nil {
 					t.Fatalf("expected validate to pass for scopes=%+v", testCase)
 				}
 			}

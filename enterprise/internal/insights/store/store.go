@@ -23,12 +23,16 @@ import (
 // Interface is the interface describing a code insights store. See the Store struct
 // for actual API usage.
 type Interface interface {
+	WithOther(other basestore.ShareableStore) Interface
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
-	GetInsightSeriesRecordingTimes(ctx context.Context, id int, from *time.Time, to *time.Time) (types.InsightSeriesRecordingTimes, error)
+	GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)
+	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
+	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
+	GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts) ([]SeriesPointForExport, error)
 }
 
 var _ Interface = &Store{}
@@ -70,10 +74,15 @@ var _ basestore.ShareableStore = &Store{}
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{Store: s.Store.With(other), now: s.now}
+	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
 }
 
-var _ Interface = &Store{}
+// WithOther creates a new Store with the given basestore.Shareable store as the
+// underlying basestore.Store.
+// Needed to implement the basestore.Store interface
+func (s *Store) WithOther(other basestore.ShareableStore) Interface {
+	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
+}
 
 // SeriesPoint describes a single insights' series data point.
 //
@@ -113,8 +122,8 @@ type SeriesPointsOpts struct {
 	IncludeRepoRegex []string
 	ExcludeRepoRegex []string
 
-	// Time ranges to query from/to, if non-nil, in UTC.
-	From, To *time.Time
+	// Time ranges to query from/to (inclusive) or after (exclusive), if non-nil, in UTC.
+	From, To, After *time.Time
 
 	// Whether to augment the series points data with zero values.
 	SupportsAugmentation bool
@@ -184,7 +193,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (points []SeriesPoint, err error) {
 	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
 	if err != nil {
-		return []SeriesPoint{}, err
+		return nil, err
 	}
 	denyBitmap := roaring.New()
 	for _, id := range denylist {
@@ -254,6 +263,10 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 
 		return nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	pointsMap := make(map[string]*SeriesPoint)
 	captureValues := make(map[string]struct{})
@@ -389,6 +402,9 @@ func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 	if opts.To != nil {
 		preds = append(preds, sqlf.Sprintf("time <= %s", *opts.To))
 	}
+	if opts.After != nil {
+		preds = append(preds, sqlf.Sprintf("time > %s", *opts.After))
+	}
 
 	if len(opts.Included) > 0 {
 		s := fmt.Sprintf("repo_id = any(%v)", values(opts.Included))
@@ -398,12 +414,18 @@ func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("perm.excluded_repo IS NULL"))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
+		includePreds := []*sqlf.Query{}
 		for _, regex := range opts.IncludeRepoRegex {
 			if len(regex) == 0 {
 				continue
 			}
-			preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
+			includePreds = append(includePreds, sqlf.Sprintf("rn.name ~ %s", regex))
 		}
+		if len(includePreds) > 0 {
+			includes := sqlf.Sprintf("(%s)", sqlf.Join(includePreds, "OR"))
+			preds = append(preds, includes)
+		}
+
 	}
 	if len(opts.ExcludeRepoRegex) > 0 {
 		for _, regex := range opts.ExcludeRepoRegex {
@@ -515,10 +537,14 @@ DELETE FROM insight_series_recording_times WHERE insight_series_id = %s and snap
 type PersistMode string
 
 const (
-	RecordMode     PersistMode = "record"
-	SnapshotMode   PersistMode = "snapshot"
-	recordingTable string      = "series_points"
-	snapshotsTable string      = "series_points_snapshots"
+	RecordMode          PersistMode = "record"
+	SnapshotMode        PersistMode = "snapshot"
+	recordingTable      string      = "series_points"
+	snapshotsTable      string      = "series_points_snapshots"
+	recordingTimesTable string      = "insight_series_recording_times"
+
+	recordingTableArchive      string = "archived_series_points"
+	recordingTimesTableArchive string = "archived_insight_series_recording_times"
 )
 
 // RecordSeriesPointArgs describes arguments for the RecordSeriesPoint method.
@@ -629,17 +655,20 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	return nil
 }
 
-func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from, to *time.Time) (series types.InsightSeriesRecordingTimes, err error) {
+func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts SeriesPointsOpts) (series types.InsightSeriesRecordingTimes, err error) {
 	series.InsightSeriesID = id
 
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("insight_series_id = %s", id),
 	}
-	if from != nil {
-		preds = append(preds, sqlf.Sprintf("recording_time >= %s", from.UTC()))
+	if opts.From != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time >= %s", opts.From.UTC()))
 	}
-	if to != nil {
-		preds = append(preds, sqlf.Sprintf("recording_time <= %s", to.UTC()))
+	if opts.To != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time <= %s", opts.To.UTC()))
+	}
+	if opts.After != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time > %s", opts.After.UTC()))
 	}
 	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
 
@@ -663,6 +692,27 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from
 
 	return series, nil
 }
+
+func (s *Store) GetOffsetNRecordingTime(ctx context.Context, seriesId, n int, excludeSnapshot bool) (time.Time, error) {
+	preds := []*sqlf.Query{sqlf.Sprintf("insight_series_id = %s", seriesId)}
+	if excludeSnapshot {
+		preds = append(preds, sqlf.Sprintf("snapshot is false"))
+	}
+
+	var tempTime time.Time
+	oldestTime, got, err := basestore.ScanFirstTime(s.Query(ctx, sqlf.Sprintf(getOffsetNRecordingTimeSql, sqlf.Join(preds, "and"), n)))
+	if err != nil {
+		return tempTime, err
+	}
+	if !got {
+		return tempTime, nil
+	}
+	return oldestTime, nil
+}
+
+const getOffsetNRecordingTimeSql = `
+select recording_time from insight_series_recording_times where %s order by recording_time desc offset %s limit 1
+`
 
 // RecordSeriesPointsAndRecordingTimes is a wrapper around the RecordSeriesPoints and SetInsightSeriesRecordingTimes
 // functions. It makes the assumption that this is called per-series, so all the points will share the same SeriesID.
@@ -691,7 +741,7 @@ func (s *Store) augmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, 
 	if opts.ID == nil || opts.SeriesID == nil || !opts.SupportsAugmentation {
 		return []SeriesPoint{}, nil
 	}
-	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts.From, opts.To)
+	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
 	}
@@ -775,3 +825,168 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	}
 	return rows.Err()
 }
+
+var quote = sqlf.Sprintf
+
+// LoadAggregatedIncompleteDatapoints returns incomplete datapoints for a given series aggregated for each reason and time. This will effectively
+// remove any repository granularity information from the result.
+func (s *Store) LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error) {
+	if seriesID == 0 {
+		return nil, errors.New("invalid seriesID")
+	}
+
+	q := "select reason, time from insight_series_incomplete_points where series_id = %s group by reason, time;"
+	rows, err := s.Query(ctx, sqlf.Sprintf(q, seriesID))
+	if err != nil {
+		return nil, err
+	}
+	return results, scanAll(rows, func(s scanner) (err error) {
+		var tmp IncompleteDatapoint
+		if err = rows.Scan(
+			&tmp.Reason,
+			&tmp.Time); err != nil {
+			return err
+		}
+		results = append(results, tmp)
+		return nil
+	})
+}
+
+type AddIncompleteDatapointInput struct {
+	SeriesID int
+	RepoID   *int
+	Reason   IncompleteReason
+	Time     time.Time
+}
+
+func (s *Store) AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error {
+	q := "insert into insight_series_incomplete_points (series_id, repo_id, reason, time) values (%s, %s, %s, %s) on conflict do nothing;"
+	return s.Exec(ctx, sqlf.Sprintf(q, input.SeriesID, input.RepoID, input.Reason, input.Time))
+}
+
+type IncompleteDatapoint struct {
+	Reason IncompleteReason
+	RepoId *int
+	Time   time.Time
+}
+
+type IncompleteReason string
+
+const (
+	ReasonTimeout           IncompleteReason = "timeout"
+	ReasonGeneric           IncompleteReason = "generic"
+	ReasonExceedsErrorLimit IncompleteReason = "exceeds-error-limit"
+)
+
+// SeriesPointForExport contains series points data that has additional metadata, like insight view title.
+// It should only be used for code insight data exporting.
+type SeriesPointForExport struct {
+	InsightViewTitle string
+	SeriesLabel      string
+	SeriesQuery      string
+	RecordingTime    time.Time
+	RepoName         *string
+	Value            int
+	Capture          *string
+}
+
+type ExportOpts struct {
+	InsightViewUniqueID string
+	IncludeRepoRegex    []string
+	ExcludeRepoRegex    []string
+}
+
+func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts) (_ []SeriesPointForExport, err error) {
+	// 🚨 SECURITY: this function will only be called if the insight with the given insightViewId is visible given
+	// this user context. This is similar to how `SeriesPoints` works.
+	// We enforce repo permissions here as we store repository data at this level.
+	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetUnauthorizedRepoIDs")
+	}
+	excludedRepoIDs := make([]*sqlf.Query, 0)
+	for _, repoID := range denylist {
+		excludedRepoIDs = append(excludedRepoIDs, sqlf.Sprintf("%d", repoID))
+	}
+	var preds []*sqlf.Query
+	if len(excludedRepoIDs) > 0 {
+		preds = append(preds, sqlf.Sprintf("sp.repo_id not in (%s)", sqlf.Join(excludedRepoIDs, ",")))
+	}
+	if len(opts.IncludeRepoRegex) > 0 {
+		includePreds := []*sqlf.Query{}
+		for _, regex := range opts.IncludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			includePreds = append(includePreds, sqlf.Sprintf("rn.name ~ %s", regex))
+		}
+		if len(includePreds) > 0 {
+			includes := sqlf.Sprintf("(%s)", sqlf.Join(includePreds, "OR"))
+			preds = append(preds, includes)
+		}
+	}
+	if len(opts.ExcludeRepoRegex) > 0 {
+		for _, regex := range opts.ExcludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
+		}
+	}
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("true"))
+	}
+
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	var results []SeriesPointForExport
+	exportScanner := func(sc scanner) error {
+		var tmp SeriesPointForExport
+		if err = sc.Scan(
+			&tmp.InsightViewTitle,
+			&tmp.SeriesLabel,
+			&tmp.SeriesQuery,
+			&tmp.RecordingTime,
+			&tmp.RepoName,
+			&tmp.Value,
+			&tmp.Capture,
+		); err != nil {
+			return err
+		}
+		// if this is a capture group insight the label will be the capture
+		if tmp.Capture != nil {
+			tmp.SeriesLabel = *tmp.Capture
+		}
+		results = append(results, tmp)
+		return nil
+	}
+
+	formattedPreds := sqlf.Join(preds, "AND")
+	// start with the oldest archived points and add them to the results
+	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTableArchive), quote(recordingTableArchive), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
+		return nil, errors.Wrap(err, "fetching archived code insights data")
+	}
+	// then add live points
+	// we join both series points tables
+	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTable), quote("(select * from series_points union all select * from series_points_snapshots)"), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
+		return nil, errors.Wrap(err, "fetching code insights data")
+	}
+
+	return results, nil
+}
+
+const exportCodeInsightsDataSql = `
+select iv.title, ivs.label, i.query, isrt.recording_time, rn.name, coalesce(sp.value, 0) as value, sp.capture 
+from %s isrt
+    join insight_series i on i.id = isrt.insight_series_id
+    join insight_view_series ivs ON i.id = ivs.insight_series_id
+    join insight_view iv ON ivs.insight_view_id = iv.id
+    left outer join %s sp on sp.series_id = i.series_id and sp.time = isrt.recording_time
+    left outer join repo_names rn on sp.repo_name_id = rn.id
+	where iv.unique_id = %s and %s
+    order by iv.title, isrt.recording_time, ivs.label, sp.capture;
+`

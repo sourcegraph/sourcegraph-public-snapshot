@@ -108,12 +108,6 @@ func convertNotebookBlockInput(inputBlock graphqlbackend.CreateNotebookBlockInpu
 			SymbolContainerName: inputBlock.SymbolInput.SymbolContainerName,
 			SymbolKind:          inputBlock.SymbolInput.SymbolKind,
 		}
-	case graphqlbackend.NotebookComputeBlockType:
-		if inputBlock.ComputeInput == nil {
-			return nil, errors.Errorf("query block with id %s is missing input", inputBlock.ID)
-		}
-		block.Type = notebooks.NotebookComputeBlockType
-		block.ComputeInput = &notebooks.NotebookComputeBlockInput{Value: *inputBlock.ComputeInput}
 	default:
 		return nil, errors.Newf("invalid block type: %s", inputBlock.Type)
 	}
@@ -313,7 +307,7 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 	}
 
 	store := notebooks.Notebooks(r.db)
-	notebooks, err := store.ListNotebooks(ctx, pageOpts, opts)
+	nbs, err := store.ListNotebooks(ctx, pageOpts, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -324,14 +318,14 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 	}
 
 	hasNextPage := false
-	if len(notebooks) == int(args.First)+1 {
+	if len(nbs) == int(args.First)+1 {
 		hasNextPage = true
-		notebooks = notebooks[:len(notebooks)-1]
+		nbs = nbs[:len(nbs)-1]
 	}
 
 	return &notebookConnectionResolver{
 		afterCursor: afterCursor,
-		notebooks:   r.notebooksToResolvers(notebooks),
+		notebooks:   r.notebooksToResolvers(nbs),
 		totalCount:  int32(count),
 		hasNextPage: hasNextPage,
 	}, nil
@@ -519,13 +513,6 @@ func (r *notebookBlockResolver) ToSymbolBlock() (graphqlbackend.SymbolBlockResol
 	return nil, false
 }
 
-func (r *notebookBlockResolver) ToComputeBlock() (graphqlbackend.ComputeBlockResolver, bool) {
-	if r.block.Type == notebooks.NotebookComputeBlockType {
-		return &computeBlockResolver{r.block}, true
-	}
-	return nil, false
-}
-
 type markdownBlockResolver struct {
 	// block.type == NotebookMarkdownBlockType
 	block notebooks.NotebookBlock
@@ -643,17 +630,4 @@ func (r *symbolBlockInputResolver) SymbolContainerName() string {
 
 func (r *symbolBlockInputResolver) SymbolKind() string {
 	return r.input.SymbolKind
-}
-
-type computeBlockResolver struct {
-	// block.type == NotebookComputeBlockType
-	block notebooks.NotebookBlock
-}
-
-func (r *computeBlockResolver) ID() string {
-	return r.block.ID
-}
-
-func (r *computeBlockResolver) ComputeInput() string {
-	return r.block.ComputeInput.Value
 }

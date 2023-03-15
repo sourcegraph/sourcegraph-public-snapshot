@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -29,9 +28,6 @@ const DefaultSymbolLimit = 100
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
 func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit string) string {
-	if !conf.SearchIndexEnabled() {
-		return ""
-	}
 	z := search.Indexed()
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
@@ -41,7 +37,7 @@ func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit s
 		return ""
 	}
 
-	r, ok := list.Minimal[uint32(repo.ID)]
+	r, ok := list.Minimal[uint32(repo.ID)] //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 	if !ok || !r.HasSymbols {
 		return ""
 	}
@@ -55,7 +51,7 @@ func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit s
 	return ""
 }
 
-func filterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, results []*result.SymbolMatch) ([]*result.SymbolMatch, error) {
+func FilterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, results []*result.SymbolMatch) ([]*result.SymbolMatch, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return results, nil
 	}
@@ -75,7 +71,10 @@ func filterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChec
 }
 
 func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
-	raw := *queryString
+	var raw string
+	if queryString != nil {
+		raw = *queryString
+	}
 	if raw == "" {
 		raw = ".*"
 	}
@@ -117,14 +116,12 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
 	match := limitOrDefault(first) + 1
 	resp, err := search.Indexed().Search(ctx, final, &zoekt.SearchOptions{
-		Trace:                  policy.ShouldTrace(ctx),
-		MaxWallTime:            3 * time.Second,
-		ShardMaxMatchCount:     match * 25,
-		TotalMaxMatchCount:     match * 25,
-		ShardMaxImportantMatch: match * 25,
-		TotalMaxImportantMatch: match * 25,
-		MaxDocDisplayCount:     match,
-		ChunkMatches:           true,
+		Trace:              policy.ShouldTrace(ctx),
+		MaxWallTime:        3 * time.Second,
+		ShardMaxMatchCount: match * 25,
+		TotalMaxMatchCount: match * 25,
+		MaxDocDisplayCount: match,
+		ChunkMatches:       true,
 	})
 	if err != nil {
 		return nil, err
@@ -200,7 +197,7 @@ func Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoNa
 		if err != nil {
 			return nil, errors.Wrap(err, "zoekt symbol search")
 		}
-		results, err = filterZoektResults(ctx, checker, repoName.Name, results)
+		results, err = FilterZoektResults(ctx, checker, repoName.Name, results)
 		if err != nil {
 			return nil, errors.Wrap(err, "checking permissions")
 		}
@@ -226,7 +223,7 @@ func Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoNa
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
 		Repo:            repoName.Name,
 		IncludePatterns: includePatternsSlice,
-		Timeout:         int(serverTimeout.Seconds()),
+		Timeout:         serverTimeout,
 	}
 	if query != nil {
 		searchArgs.Query = *query

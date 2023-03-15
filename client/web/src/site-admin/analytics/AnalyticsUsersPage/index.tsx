@@ -2,13 +2,13 @@ import { useState, useMemo, useEffect, FC } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, Series } from '@sourcegraph/wildcard'
 
 import { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { checkRequestAccessAllowed } from '../../../util/checkRequestAccessAllowed'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
@@ -21,7 +21,7 @@ import { USERS_STATISTICS } from './queries'
 
 import styles from './AnalyticsUsersPage.module.scss'
 
-export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
+export const AnalyticsUsersPage: FC = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'uniqueUsers' })
     const { data, error, loading } = useQuery<UsersStatisticsResult, UsersStatisticsVariables>(USERS_STATISTICS, {
         variables: {
@@ -39,7 +39,7 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
             return []
         }
         const { users } = data.site.analytics
-        const legends: ValueLegendListProps['items'] = [
+        let legends: ValueLegendListProps['items'] = [
             {
                 value: users.activity.summary.totalUniqueUsers,
                 description: 'Active users',
@@ -61,6 +61,25 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
                 tooltip: 'The number of user licenses your current account is provisioned for.',
             },
         ]
+
+        const isRequestAccessAllowed = checkRequestAccessAllowed(
+            window.context.sourcegraphDotComMode,
+            window.context.allowSignup,
+            window.context.experimentalFeatures
+        )
+        if (isRequestAccessAllowed) {
+            legends = [
+                ...legends.slice(0, 1),
+                {
+                    value: data.pendingAccessRequests.totalCount,
+                    description: 'Pending requests',
+                    color: 'var(--cyan)',
+                    position: 'right',
+                    tooltip: 'The number of users who have requested access to your Sourcegraph instance.',
+                },
+                ...legends.slice(1),
+            ]
+        }
 
         const frequencies: FrequencyDatum[] = buildFrequencyDatum(users.frequencies, uniqueOrPercentage, 30)
 
@@ -155,7 +174,7 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
                     {frequencies && (
                         <ChartContainer
                             title="Frequency of use"
-                            labelX="Days used"
+                            labelX="Minimum days used"
                             labelY={uniqueOrPercentage === 'unique' ? 'Unique users' : 'Percentage of active users'}
                             className={classNames(styles.barChart)}
                         >
@@ -169,6 +188,9 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
                                     getDatumValue={datum => datum.value}
                                     getDatumColor={() => 'var(--bar-color)'}
                                     getDatumFadeColor={() => 'var(--bar-fade-color)'}
+                                    getDatumHoverValueLabel={datum =>
+                                        `${datum.value}${uniqueOrPercentage !== 'unique' ? '%' : ''}`
+                                    }
                                 />
                             )}
                         </ChartContainer>

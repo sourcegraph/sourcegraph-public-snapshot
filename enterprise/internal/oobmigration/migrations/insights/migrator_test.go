@@ -9,7 +9,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/log/logtest"
@@ -26,7 +26,7 @@ func TestInsightsMigrator(t *testing.T) {
 	}
 
 	// We can still run this test even if a dev has disabled code insights in
-	// there env.
+	// their env.
 	t.Setenv("DISABLE_CODE_INSIGHTS", "")
 
 	ctx := context.Background()
@@ -34,7 +34,7 @@ func TestInsightsMigrator(t *testing.T) {
 	frontendDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 	insightsDB := dbtest.NewInsightsDB(logger, t)
 	frontendStore := basestore.NewWithHandle(frontendDB.Handle())
-	insightsStore := basestore.NewWithHandle(basestore.NewHandleWithDB(insightsDB, sql.TxOptions{}))
+	insightsStore := basestore.NewWithHandle(basestore.NewHandleWithDB(logger, insightsDB, sql.TxOptions{}))
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -146,7 +146,7 @@ func TestInsightsMigrator(t *testing.T) {
 		t.Fatalf("failed to marshal description: %s", err)
 	}
 
-	autogold.Equal(t, autogold.Raw(string(serialized)))
+	autogold.ExpectFile(t, autogold.Raw(serialized))
 }
 
 func describe(ctx context.Context, insightsStore *basestore.Store) (any, error) {

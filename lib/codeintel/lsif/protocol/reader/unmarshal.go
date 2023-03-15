@@ -353,6 +353,7 @@ func unmarshalPackageInformation(line []byte) (any, error) {
 	}
 
 	return PackageInformation{
+		Manager: "",
 		Name:    payload.Name,
 		Version: payload.Version,
 	}, nil

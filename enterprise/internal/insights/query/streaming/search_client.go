@@ -10,21 +10,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 )
-
-const ShardTimeoutSkippedReason = streamapi.ShardTimeout
 
 type SearchClient interface {
 	Search(ctx context.Context, query string, patternType *string, sender streaming.Sender) (*search.Alert, error)
 }
 
-func NewInsightsSearchClient(db database.DB) SearchClient {
+func NewInsightsSearchClient(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
 	logger := log.Scoped("insightsSearchClient", "")
 	return &insightsSearchClient{
 		db:           db,
-		searchClient: client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs()),
+		searchClient: client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs),
 	}
 }
 

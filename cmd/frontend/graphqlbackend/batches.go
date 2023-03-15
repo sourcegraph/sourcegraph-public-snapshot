@@ -62,6 +62,10 @@ type ReenqueueChangesetArgs struct {
 	Changeset graphql.ID
 }
 
+type CreateChangesetSpecsArgs struct {
+	ChangesetSpecs []string
+}
+
 type CreateChangesetSpecArgs struct {
 	ChangesetSpec string
 }
@@ -110,7 +114,7 @@ type DeleteBatchSpecArgs struct {
 
 type ExecuteBatchSpecArgs struct {
 	BatchSpec graphql.ID
-	NoCache   bool
+	NoCache   *bool
 	AutoApply bool
 }
 
@@ -271,6 +275,7 @@ type BatchChangesResolver interface {
 	DeleteBatchChangesCredential(ctx context.Context, args *DeleteBatchChangesCredentialArgs) (*EmptyResponse, error)
 
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
+	CreateChangesetSpecs(ctx context.Context, args *CreateChangesetSpecsArgs) ([]ChangesetSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (BulkOperationResolver, error)
@@ -363,6 +368,7 @@ type BatchSpecResolver interface {
 
 	AllowIgnored() *bool
 	AllowUnsupported() *bool
+	NoCache() *bool
 
 	ViewerCanRetry(context.Context) (bool, error)
 
@@ -632,7 +638,7 @@ type ListRecentlyErroredWorkspacesArgs struct {
 
 type BatchSpecWorkspaceStepOutputLinesArgs struct {
 	First int32
-	After *int32
+	After *string
 }
 
 type BatchChangeResolver interface {
@@ -685,10 +691,11 @@ type BatchWorkspaceFileResolver interface {
 	Path() string
 	Name() string
 	IsDirectory() bool
-	Content(ctx context.Context) (string, error)
+	Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
 	ByteSize(ctx context.Context) (int32, error)
+	TotalLines(ctx context.Context) (int32, error)
 	Binary(ctx context.Context) (bool, error)
-	RichHTML(ctx context.Context) (string, error)
+	RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
 	URL(ctx context.Context) (string, error)
 	CanonicalURL() string
 	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
@@ -724,6 +731,8 @@ type ChangesetsStatsResolver interface {
 	Processing() int32
 	Deleted() int32
 	Archived() int32
+	IsCompleted() bool
+	PercentComplete() int32
 }
 
 type ChangesetsConnectionResolver interface {
@@ -774,7 +783,14 @@ type ExternalChangesetResolver interface {
 	Body(context.Context) (*string, error)
 	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
+
+	OwnedByBatchChange() *graphql.ID
+
+	// If the changeset is a fork, this corresponds to the namespace of the fork.
 	ForkNamespace() *string
+	// If the changeset is a fork, this corresponds to the name of the fork.
+	ForkName() *string
+
 	// ReviewState returns a value of type *btypes.ChangesetReviewState.
 	ReviewState(context.Context) *string
 	// CheckState returns a value of type *btypes.ChangesetCheckState.
@@ -888,7 +904,7 @@ type ResolvedBatchSpecWorkspaceResolver interface {
 	OnlyFetchWorkspace() bool
 	Ignored() bool
 	Unsupported() bool
-	Repository(ctx context.Context) *RepositoryResolver
+	Repository() *RepositoryResolver
 	Branch(ctx context.Context) *GitRefResolver
 	Path() string
 	SearchResultPaths() []string
@@ -896,8 +912,14 @@ type ResolvedBatchSpecWorkspaceResolver interface {
 
 type BatchSpecWorkspaceStagesResolver interface {
 	Setup() []ExecutionLogEntryResolver
-	SrcExec() ExecutionLogEntryResolver
+	SrcExec() []ExecutionLogEntryResolver
 	Teardown() []ExecutionLogEntryResolver
+}
+
+type BatchSpecWorkspaceStepOutputLineConnectionResolver interface {
+	TotalCount() (int32, error)
+	PageInfo() (*graphqlutil.PageInfo, error)
+	Nodes() ([]string, error)
 }
 
 type BatchSpecWorkspaceStepResolver interface {
@@ -907,7 +929,7 @@ type BatchSpecWorkspaceStepResolver interface {
 	IfCondition() *string
 	CachedResultFound() bool
 	Skipped() bool
-	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error)
+	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) BatchSpecWorkspaceStepOutputLineConnectionResolver
 
 	StartedAt() *gqlutil.DateTime
 	FinishedAt() *gqlutil.DateTime
@@ -922,7 +944,7 @@ type BatchSpecWorkspaceStepResolver interface {
 
 type BatchSpecWorkspaceEnvironmentVariableResolver interface {
 	Name() string
-	Value() string
+	Value() *string
 }
 
 type BatchSpecWorkspaceOutputVariableResolver interface {

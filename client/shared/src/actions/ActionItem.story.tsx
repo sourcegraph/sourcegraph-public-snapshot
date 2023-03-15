@@ -4,8 +4,7 @@ import * as H from 'history'
 import { NEVER } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
-// eslint-disable-next-line no-restricted-imports
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
@@ -38,7 +37,7 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     active: true,
 })
 
-const decorator: DecoratorFn = story => <WebStory>{() => <div className="p-4">{story()}</div>}</WebStory>
+const decorator: DecoratorFn = story => <BrandedStory>{() => <div className="p-4">{story()}</div>}</BrandedStory>
 
 const config: Meta = {
     title: 'shared/ActionItem',
@@ -63,7 +62,6 @@ export const CommandAction: Story = () => (
         telemetryService={NOOP_TELEMETRY_SERVICE}
         disabledDuringExecution={true}
         showLoadingSpinnerDuringExecution={true}
-        showInlineError={true}
         onDidExecute={onDidExecute}
     />
 )
@@ -106,7 +104,6 @@ export const Executing: Story = () => {
             action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
             disabledDuringExecution={true}
             showLoadingSpinnerDuringExecution={true}
-            showInlineError={true}
         />
     )
 }
@@ -125,7 +122,6 @@ export const _Error: Story = () => {
             action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
             disabledDuringExecution={true}
             showLoadingSpinnerDuringExecution={true}
-            showInlineError={true}
         />
     )
 }

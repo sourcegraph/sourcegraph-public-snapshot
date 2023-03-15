@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "permssync",
+    srcs = ["permssync.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/permssync",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/repoupdater",
+        "//internal/repoupdater/protocol",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "permssync_test",
+    srcs = ["permssync_test.go"],
+    embed = [":permssync"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/repoupdater/protocol",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

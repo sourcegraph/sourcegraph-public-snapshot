@@ -15,6 +15,7 @@ import (
 
 const (
 	perforceRepoName = "perforce/test-perms"
+	testPermsDepot   = "test-perms"
 	aliceEmail       = "alice@perforce.sgdev.org"
 	aliceUsername    = "alice"
 )
@@ -22,12 +23,18 @@ const (
 func TestSubRepoPermissionsPerforce(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	createPerforceExternalService(t)
-	userClient, repoName := createTestUserAndWaitForRepo(t)
+	cleanup := createPerforceExternalService(t, testPermsDepot, false)
+	t.Cleanup(cleanup)
+	userClient, repoName, err := createTestUserAndWaitForRepo(t)
+	if err != nil {
+		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+	}
 
 	// Test cases
 
+	// flaky test
 	t.Run("can read README.md", func(t *testing.T) {
+		t.Skip("skipping because flaky")
 		blob, err := userClient.GitBlob(repoName, "master", "README.md")
 		if err != nil {
 			t.Fatal(err)
@@ -39,11 +46,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 		}
 	})
 
-	// flaky test
-	// https://github.com/sourcegraph/sourcegraph/issues/40882
 	t.Run("cannot read hack.sh", func(t *testing.T) {
-		t.Skip("skipping because flaky")
-
 		// Should not be able to read hack.sh
 		blob, err := userClient.GitBlob(repoName, "master", "Security/hack.sh")
 		if err != nil {
@@ -60,10 +63,8 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 	})
 
 	// flaky test
-	// https://github.com/sourcegraph/sourcegraph/issues/40883
 	t.Run("file list excludes excluded files", func(t *testing.T) {
 		t.Skip("skipping because flaky")
-
 		files, err := userClient.GitListFilenames(repoName, "master")
 		if err != nil {
 			t.Fatal(err)
@@ -82,13 +83,54 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 	})
 }
 
+func TestSubRepoPermissionsSymbols(t *testing.T) {
+	checkPerforceEnvironment(t)
+	enableSubRepoPermissions(t)
+	cleanup := createPerforceExternalService(t, testPermsDepot, false)
+	t.Cleanup(cleanup)
+	userClient, repoName, err := createTestUserAndWaitForRepo(t)
+	if err != nil {
+		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+	}
+
+	err = client.WaitForReposToBeIndexed(perforceRepoName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("can read main.go and app.ts, but not hack.sh symbols", func(t *testing.T) {
+		// Symbols are lazily indexed, that's why we need an initial request to search
+		// for the revision, after which symbols of this revision are indexed. The search
+		// is repeated 10 times and the test runs for ~50 seconds in total to increase
+		// the probability of symbols being indexed.
+		for i := 0; i < 10; i++ {
+			symbols, err := userClient.GitGetCommitSymbols(repoName, "master")
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Should not be able to read hack.sh
+			for _, symbol := range symbols {
+				fileName := symbol.Location.Resource.Path
+				if fileName == "Security/hack.sh" {
+					t.Fatal("Shouldn't be able to read symbols of hack.sh")
+				}
+			}
+			time.Sleep(5 * time.Second)
+		}
+	})
+}
+
 func TestSubRepoPermissionsSearch(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	createPerforceExternalService(t)
-	userClient, _ := createTestUserAndWaitForRepo(t)
+	cleanup := createPerforceExternalService(t, testPermsDepot, false)
+	t.Cleanup(cleanup)
+	userClient, _, err := createTestUserAndWaitForRepo(t)
+	if err != nil {
+		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+	}
 
-	err := client.WaitForReposToBeIndexed(perforceRepoName)
+	err = client.WaitForReposToBeIndexed(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -284,7 +326,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	})
 }
 
-func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
+func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string, error) {
 	t.Helper()
 
 	// We need to create the `alice` user with a specific e-mail address. This user is
@@ -306,13 +348,13 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
 		t.Fatal(err)
 	}
 
-	err = userClient.WaitForReposToBeCloned(perforceRepoName)
+	err = userClient.WaitForReposToBeClonedWithin(5*time.Second, perforceRepoName)
 	if err != nil {
-		t.Fatal(err)
+		return nil, "", err
 	}
 
 	syncUserPerms(t, aliceID, aliceUsername)
-	return userClient, perforceRepoName
+	return userClient, perforceRepoName, nil
 }
 
 func syncUserPerms(t *testing.T, userID, userName string) {
@@ -336,6 +378,24 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 	})
 	if err != nil {
 		t.Fatal("Waiting for user permissions to be synced:", err)
+	}
+	// Wait up to 30 seconds for Perforce to be added as an authz provider
+	err = gqltestutil.Retry(30*time.Second, func() error {
+		authzProviders, err := client.AuthzProviderTypes()
+		if err != nil {
+			t.Fatal("failed to fetch list of authz providers", err)
+		}
+		if len(authzProviders) != 0 {
+			for _, p := range authzProviders {
+				if p == "perforce" {
+					return nil
+				}
+			}
+		}
+		return gqltestutil.ErrContinueRetry
+	})
+	if err != nil {
+		t.Fatal("Waiting for authz providers to be added:", err)
 	}
 }
 

@@ -50,7 +50,7 @@ func (m gitlabAuthzProviderParams) URN() string {
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) ValidateConnection(context.Context) []string { return nil }
+func (m gitlabAuthzProviderParams) ValidateConnection(context.Context) error { return nil }
 
 func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	panic("should never be called")
@@ -65,6 +65,7 @@ func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repos
 }
 
 func TestAuthzProvidersFromConfig(t *testing.T) {
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
 		return gitlabAuthzProviderParams{OAuthOp: op}
 	}
@@ -430,6 +431,48 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expSeriousProblems:           []string{"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when \"gitlab\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
 		},
 		{
+			description: "No conflict if unified perms is ON",
+			cfg: conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					PermissionsUserMapping: &schema.PermissionsUserMapping{
+						Enabled: true,
+						BindID:  "email",
+					},
+					AuthProviders: []schema.AuthProviders{{
+						Gitlab: &schema.GitLabAuthProvider{
+							ClientID:     "clientID",
+							ClientSecret: "clientSecret",
+							DisplayName:  "GitLab",
+							Type:         extsvc.TypeGitLab,
+							Url:          "https://gitlab.mine",
+						},
+					}},
+					ExperimentalFeatures: &schema.ExperimentalFeatures{
+						UnifiedPermissions: true,
+					},
+				},
+			},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+					},
+					Url:   "https://gitlab.mine",
+					Token: "asdf",
+				},
+			},
+			expAuthzAllowAccessByDefault: true,
+			expAuthzProviders: providersEqual(
+				gitlabAuthzProviderParams{
+					OAuthOp: gitlab.OAuthProviderOp{
+						URN:     "extsvc:gitlab:0",
+						BaseURL: mustURLParse(t, "https://gitlab.mine"),
+						Token:   "asdf",
+					},
+				},
+			),
+		},
+		{
 			description: "Conflicted configuration between Sourcegraph and Bitbucket Server authz provider",
 			cfg: conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
@@ -489,14 +532,13 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbs)),
 							})
 						}
-					case extsvc.KindGitHub, extsvc.KindPerforce:
+					case extsvc.KindGitHub, extsvc.KindPerforce, extsvc.KindBitbucketCloud, extsvc.KindGerrit, extsvc.KindAzureDevOps:
 					default:
 						return nil, errors.Errorf("unexpected kind: %s", kind)
 					}
 				}
 				return svcs, nil
 			})
-			licensing.MockCheckFeatureError("")
 			allowAccessByDefault, authzProviders, seriousProblems, _, _ := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
@@ -514,17 +556,44 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 }
 
 func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
+	t.Cleanup(licensing.MockCheckFeatureError("failed"))
 	tests := []struct {
 		description                string
 		cfg                        conf.Unified
+		azureDevOpsConnections     []*schema.AzureDevOpsConnection
 		gitlabConnections          []*schema.GitLabConnection
 		bitbucketServerConnections []*schema.BitbucketServerConnection
 		githubConnections          []*schema.GitHubConnection
 		perforceConnections        []*schema.PerforceConnection
+		bitbucketCloudConnections  []*schema.BitbucketCloudConnection
+		gerritConnections          []*schema.GerritConnection
 
 		expInvalidConnections []string
 		expSeriousProblems    []string
 	}{
+		{
+			description: "Azure DevOps connection with enforce permissions enabled but missing license for ACLs",
+			cfg: conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					AuthProviders: []schema.AuthProviders{{
+						AzureDevOps: &schema.AzureDevOpsAuthProvider{
+							ClientID:     "clientID",
+							ClientSecret: "clientSecret",
+							DisplayName:  "Azure DevOps",
+							Type:         extsvc.TypeAzureDevOps,
+						},
+					}},
+				},
+			},
+			azureDevOpsConnections: []*schema.AzureDevOpsConnection{
+				{
+					EnforcePermissions: true,
+					Url:                "https://dev.azure.com",
+				},
+			},
+			expSeriousProblems:    []string{"failed"},
+			expInvalidConnections: []string{"azuredevops"},
+		},
 		{
 			description: "GitHub connection with authz enabled but missing license for ACLs",
 			cfg: conf.Unified{
@@ -577,7 +646,7 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			expInvalidConnections: []string{"gitlab"},
 		},
 		{
-			description: "Bitbucket connection with authz enabled but missing license for ACLs",
+			description: "Bitbucket Server connection with authz enabled but missing license for ACLs",
 			cfg:         conf.Unified{},
 			bitbucketServerConnections: []*schema.BitbucketServerConnection{
 				{
@@ -599,6 +668,34 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			},
 			expSeriousProblems:    []string{"failed"},
 			expInvalidConnections: []string{"bitbucketServer"},
+		},
+		{
+			description: "Bitbucket Cloud connection with authz enabled but missing license for ACLs",
+			cfg:         conf.Unified{},
+			bitbucketCloudConnections: []*schema.BitbucketCloudConnection{
+				{
+					Authorization: &schema.BitbucketCloudAuthorization{},
+					Url:           "https://bitbucket.org",
+					Username:      "admin",
+					AppPassword:   "secret-password",
+				},
+			},
+			expSeriousProblems:    []string{"failed"},
+			expInvalidConnections: []string{"bitbucketCloud"},
+		},
+		{
+			description: "Gerrit connection with authz enabled but missing license for ACLs",
+			cfg:         conf.Unified{},
+			gerritConnections: []*schema.GerritConnection{
+				{
+					Authorization: &schema.GerritAuthorization{},
+					Url:           "https://gerrit.sgdev.org",
+					Username:      "admin",
+					Password:      "secret-password",
+				},
+			},
+			expSeriousProblems:    []string{"failed"},
+			expInvalidConnections: []string{"gerrit"},
 		},
 		{
 			description: "Perforce connection with authz enabled but missing license for ACLs",
@@ -633,6 +730,13 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 				var svcs []*types.ExternalService
 				for _, kind := range opt.Kinds {
 					switch kind {
+					case extsvc.KindAzureDevOps:
+						for _, ado := range test.azureDevOpsConnections {
+							svcs = append(svcs, &types.ExternalService{
+								Kind:   kind,
+								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(ado)),
+							})
+						}
 					case extsvc.KindGitLab:
 						for _, gl := range test.gitlabConnections {
 							svcs = append(svcs, &types.ExternalService{
@@ -654,6 +758,20 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(gh)),
 							})
 						}
+					case extsvc.KindBitbucketCloud:
+						for _, bbcloud := range test.bitbucketCloudConnections {
+							svcs = append(svcs, &types.ExternalService{
+								Kind:   kind,
+								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbcloud)),
+							})
+						}
+					case extsvc.KindGerrit:
+						for _, g := range test.gerritConnections {
+							svcs = append(svcs, &types.ExternalService{
+								Kind:   kind,
+								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(g)),
+							})
+						}
 					case extsvc.KindPerforce:
 						for _, pf := range test.perforceConnections {
 							svcs = append(svcs, &types.ExternalService{
@@ -666,7 +784,6 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 				return svcs, nil
 			})
 
-			licensing.MockCheckFeatureError("failed")
 			_, _, seriousProblems, _, invalidConnections := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),

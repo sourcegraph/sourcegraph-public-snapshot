@@ -102,24 +102,20 @@ func (p *Provider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *Provider) ValidateConnection(ctx context.Context) []string {
-	required := p.requiredAuthScopes()
-	if len(required) == 0 {
-		return []string{}
+func (p *Provider) ValidateConnection(ctx context.Context) error {
+	required, ok := p.requiredAuthScopes()
+	if !ok {
+		return nil
 	}
 
 	client, err := p.client()
 	if err != nil {
-		return []string{
-			fmt.Sprintf("Unable to get client: %v", err),
-		}
+		return errors.Wrap(err, "unable to get client")
 	}
 
 	scopes, err := client.GetAuthenticatedOAuthScopes(ctx)
 	if err != nil {
-		return []string{
-			fmt.Sprintf("Additional OAuth scopes are required, but failed to get available scopes: %+v", err),
-		}
+		return errors.Wrap(err, "additional OAuth scopes are required, but failed to get available scopes")
 	}
 
 	gotScopes := make(map[string]struct{})
@@ -127,22 +123,19 @@ func (p *Provider) ValidateConnection(ctx context.Context) []string {
 		gotScopes[gotScope] = struct{}{}
 	}
 
-	var problems []string
 	// check if required scopes are satisfied
-	for _, requiredScope := range required {
-		satisfiesScope := false
-		for _, s := range requiredScope.oneOf {
-			if _, found := gotScopes[s]; found {
-				satisfiesScope = true
-				break
-			}
-		}
-		if !satisfiesScope {
-			problems = append(problems, requiredScope.message)
+	satisfiesScope := false
+	for _, s := range required.oneOf {
+		if _, found := gotScopes[s]; found {
+			satisfiesScope = true
+			break
 		}
 	}
+	if !satisfiesScope {
+		return errors.New(required.message)
+	}
 
-	return problems
+	return nil
 }
 
 type requiredAuthScope struct {
@@ -152,20 +145,18 @@ type requiredAuthScope struct {
 	message string
 }
 
-func (p *Provider) requiredAuthScopes() []requiredAuthScope {
-	scopes := []requiredAuthScope{}
-
-	if p.groupsCache != nil {
-		// Needs extra scope to pull group permissions
-		scopes = append(scopes, requiredAuthScope{
-			oneOf: []string{"read:org", "write:org", "admin:org"},
-			message: "Scope `read:org`, `write:org`, or `admin:org` is required to enable `authorization.groupsCacheTTL` - " +
-				"please provide a `token` with the required scopes, or try updating the [**site configuration**](/site-admin/configuration)'s " +
-				"corresponding entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable `allowGroupsPermissionsSync`.",
-		})
+func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
+	if p.groupsCache == nil {
+		return requiredAuthScope{}, false
 	}
 
-	return scopes
+	// Needs extra scope to pull group permissions
+	return requiredAuthScope{
+		oneOf: []string{"read:org", "write:org", "admin:org"},
+		message: "Scope `read:org`, `write:org`, or `admin:org` is required to enable `authorization.groupsCacheTTL` - " +
+			"please provide a `token` with the required scopes, or try updating the [**site configuration**](/site-admin/configuration)'s " +
+			"corresponding entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable `allowGroupsPermissionsSync`.",
+	}, true
 }
 
 // fetchUserPermsByToken fetches all the private repo ids that the token can access.
@@ -173,10 +164,13 @@ func (p *Provider) requiredAuthScopes() []requiredAuthScope {
 // This may return a partial result if an error is encountered, e.g. via rate limits.
 func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
+	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
+
 	client, err := p.client()
 	if err != nil {
 		return nil, errors.Wrap(err, "get client")
 	}
+
 	client = client.WithAuthenticator(token)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
@@ -227,7 +221,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 	for page := 1; hasNextPage; page++ {
 		var err error
 		var repos []*github.Repository
-		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, affiliations...)
+		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, 100, affiliations...)
 		if err != nil {
 			return perms, errors.Wrap(err, "list repos for user")
 		}
@@ -248,8 +242,6 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 	if err != nil {
 		return perms, errors.Wrap(err, "get groups affiliated with user")
 	}
-
-	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
 
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {

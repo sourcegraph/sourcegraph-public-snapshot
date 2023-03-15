@@ -92,6 +92,9 @@ export const ListOfBatchChanges: Story = args => (
                     headingElement="h1"
                     canCreate={args.canCreate}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    isSourcegraphDotCom={false}
+                    isSourcegraphApp={false}
+                    authenticatedUser={null}
                 />
             </MockedTestProvider>
         )}
@@ -117,6 +120,9 @@ export const ListOfBatchChangesSpecificNamespace: Story = () => (
                     canCreate={true}
                     namespaceID="test-12345"
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    isSourcegraphDotCom={false}
+                    isSourcegraphApp={false}
+                    authenticatedUser={null}
                 />
             </MockedTestProvider>
         )}
@@ -139,6 +145,9 @@ export const ListOfBatchChangesServerSideExecutionEnabled: Story = () => (
                             experimentalFeatures: { batchChangesExecution: true },
                         },
                     }}
+                    isSourcegraphDotCom={false}
+                    isSourcegraphApp={false}
+                    authenticatedUser={null}
                 />
             </MockedTestProvider>
         )}
@@ -156,6 +165,9 @@ export const LicensingNotEnforced: Story = () => (
                     headingElement="h1"
                     canCreate={true}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    isSourcegraphDotCom={false}
+                    isSourcegraphApp={false}
+                    authenticatedUser={null}
                 />
             </MockedTestProvider>
         )}
@@ -173,6 +185,9 @@ export const NoBatchChanges: Story = () => (
                     headingElement="h1"
                     canCreate={true}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    isSourcegraphDotCom={false}
+                    isSourcegraphApp={false}
+                    authenticatedUser={null}
                 />
             </MockedTestProvider>
         )}
@@ -191,6 +206,9 @@ export const AllBatchChangesTabEmpty: Story = () => (
                     canCreate={true}
                     openTab="batchChanges"
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    isSourcegraphDotCom={false}
+                    isSourcegraphApp={false}
+                    authenticatedUser={null}
                 />
             </MockedTestProvider>
         )}

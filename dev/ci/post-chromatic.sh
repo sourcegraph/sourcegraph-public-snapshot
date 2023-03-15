@@ -2,9 +2,9 @@
 
 set -eu -o pipefail
 
-# This script gets Chromatic storybook preview link from `yarn chromatic [...]` output
+# This script gets Chromatic storybook preview link from `pnpm chromatic [...]` output
 # to add Storybook link into `App preview` section of PR description.
-# Ex: yarn chromatic --exit-zero-on-changes --exit-once-uploaded | ./dev/ci/post-chromatic.sh
+# Ex: pnpm chromatic --exit-zero-on-changes --exit-once-uploaded | ./dev/ci/post-chromatic.sh
 # Env variables:
 # - BUILDKITE_PULL_REQUEST_REPO
 # - BUILDKITE_PULL_REQUEST

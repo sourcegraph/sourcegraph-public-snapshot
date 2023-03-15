@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "outboundwebhooks",
+    srcs = [
+        "handler.go",
+        "janitor.go",
+        "job.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/outboundwebhooks",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/encryption",
+        "//internal/encryption/keyring",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/httpcli",
+        "//internal/observation",
+        "//internal/types",
+        "//internal/webhooks/outbound",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker",
+        "//internal/workerutil/dbworker/store",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "outboundwebhooks_test",
+    srcs = ["handler_test.go"],
+    embed = [":outboundwebhooks"],
+    deps = [
+        "//internal/database",
+        "//internal/encryption",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen//testutil/assert",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

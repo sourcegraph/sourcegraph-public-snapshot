@@ -1,263 +1,250 @@
-# Table "public.lsif_data_definitions"
+# Table "public.codeintel_last_reconcile"
 ```
-     Column     |  Type   | Collation | Nullable | Default 
-----------------+---------+-----------+----------+---------
- dump_id        | integer |           | not null | 
- scheme         | text    |           | not null | 
- identifier     | text    |           | not null | 
- data           | bytea   |           |          | 
- schema_version | integer |           | not null | 
- num_locations  | integer |           | not null | 
+      Column       |           Type           | Collation | Nullable | Default 
+-------------------+--------------------------+-----------+----------+---------
+ dump_id           | integer                  |           | not null | 
+ last_reconcile_at | timestamp with time zone |           | not null | 
 Indexes:
-    "lsif_data_definitions_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
-    "lsif_data_definitions_dump_id_schema_version" btree (dump_id, schema_version)
-Triggers:
-    lsif_data_definitions_schema_versions_insert AFTER INSERT ON lsif_data_definitions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_definitions_schema_versions_insert()
+    "codeintel_last_reconcile_dump_id_key" UNIQUE CONSTRAINT, btree (dump_id)
+    "codeintel_last_reconcile_last_reconcile_at_dump_id" btree (last_reconcile_at, dump_id)
 
 ```
 
-Associates (document, range) pairs with the import monikers attached to the range.
+Stores the last time processed LSIF data was reconciled with the other database.
 
-**data**: A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L106:6) types.
+# Table "public.codeintel_scip_document_lookup"
+```
+    Column     |  Type   | Collation | Nullable |                          Default                           
+---------------+---------+-----------+----------+------------------------------------------------------------
+ id            | bigint  |           | not null | nextval('codeintel_scip_document_lookup_id_seq'::regclass)
+ upload_id     | integer |           | not null | 
+ document_path | text    |           | not null | 
+ document_id   | bigint  |           | not null | 
+Indexes:
+    "codeintel_scip_document_lookup_pkey" PRIMARY KEY, btree (id)
+    "codeintel_scip_document_lookup_upload_id_document_path_key" UNIQUE CONSTRAINT, btree (upload_id, document_path)
+    "codeintel_scip_document_lookup_document_id" hash (document_id)
+Foreign-key constraints:
+    "codeintel_scip_document_lookup_document_id_fk" FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)
+Referenced by:
+    TABLE "codeintel_scip_symbols" CONSTRAINT "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
+Triggers:
+    codeintel_scip_document_lookup_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert()
+    codeintel_scip_documents_dereference_logs_insert AFTER DELETE ON codeintel_scip_document_lookup REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_dereference_logs_delete()
 
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+```
 
-**identifier**: The moniker identifier.
+A mapping from file paths to document references within a particular SCIP index.
 
-**num_locations**: The number of locations stored in the data field.
+**document_id**: The foreign key to the shared document payload (see the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup)).
 
-**schema_version**: The schema version of this row - used to determine presence and encoding of data.
+**document_path**: The file path to the document relative to the root of the index.
 
-**scheme**: The moniker scheme.
+**id**: An auto-generated identifier. This column is used as a foreign key target to reduce occurrences of the full document path value.
 
-# Table "public.lsif_data_definitions_schema_versions"
+**upload_id**: The identifier of the upload that provided this SCIP index.
+
+# Table "public.codeintel_scip_document_lookup_schema_versions"
 ```
        Column       |  Type   | Collation | Nullable | Default 
 --------------------+---------+-----------+----------+---------
- dump_id            | integer |           | not null | 
+ upload_id          | integer |           | not null | 
  min_schema_version | integer |           |          | 
  max_schema_version | integer |           |          | 
 Indexes:
-    "lsif_data_definitions_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
-    "lsif_data_definitions_schema_versions_dump_id_schema_version_bo" btree (dump_id, min_schema_version, max_schema_version)
+    "codeintel_scip_document_lookup_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
 
 ```
 
-Tracks the range of schema_versions for each upload in the lsif_data_definitions table.
+Tracks the range of `schema_versions` values associated with each SCIP index in the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.
 
-**dump_id**: The identifier of the associated dump in the lsif_uploads table.
+**max_schema_version**: An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
 
-**max_schema_version**: An upper-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`.
+**min_schema_version**: A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
 
-**min_schema_version**: A lower-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`.
+**upload_id**: The identifier of the associated SCIP index.
 
-# Table "public.lsif_data_documents"
+# Table "public.codeintel_scip_documents"
 ```
-     Column      |  Type   | Collation | Nullable | Default 
------------------+---------+-----------+----------+---------
- dump_id         | integer |           | not null | 
- path            | text    |           | not null | 
- data            | bytea   |           |          | 
- schema_version  | integer |           | not null | 
- num_diagnostics | integer |           | not null | 
- ranges          | bytea   |           |          | 
- hovers          | bytea   |           |          | 
- monikers        | bytea   |           |          | 
- packages        | bytea   |           |          | 
- diagnostics     | bytea   |           |          | 
+      Column      |  Type   | Collation | Nullable |                       Default                        
+------------------+---------+-----------+----------+------------------------------------------------------
+ id               | bigint  |           | not null | nextval('codeintel_scip_documents_id_seq'::regclass)
+ payload_hash     | bytea   |           | not null | 
+ schema_version   | integer |           | not null | 
+ raw_scip_payload | bytea   |           | not null | 
 Indexes:
-    "lsif_data_documents_pkey" PRIMARY KEY, btree (dump_id, path)
-    "lsif_data_documents_dump_id_schema_version" btree (dump_id, schema_version)
-Triggers:
-    lsif_data_documents_schema_versions_insert AFTER INSERT ON lsif_data_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_documents_schema_versions_insert()
+    "codeintel_scip_documents_pkey" PRIMARY KEY, btree (id)
+    "codeintel_scip_documents_payload_hash_key" UNIQUE CONSTRAINT, btree (payload_hash)
+Referenced by:
+    TABLE "codeintel_scip_document_lookup" CONSTRAINT "codeintel_scip_document_lookup_document_id_fk" FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)
 
 ```
 
-Stores reference, hover text, moniker, and diagnostic data about a particular text document witin a dump.
+A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&amp;patternType=standard) payloads by their hash.
 
-**data**: A gob-encoded payload conforming to the [DocumentData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L13:6) type. This field is being migrated across ranges, hovers, monikers, packages, and diagnostics columns and will be removed in a future release of Sourcegraph.
+**id**: An auto-generated identifier. This column is used as a foreign key target to reduce occurrences of the full payload hash value.
 
-**diagnostics**: A gob-encoded payload conforming to the [Diagnostics](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L18:2) field of the DocumentDatatype.
+**payload_hash**: A deterministic hash of the raw SCIP payload. We use this as a unique value to enforce deduplication between indexes with the same document data.
 
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+**raw_scip_payload**: The raw, canonicalized SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&amp;patternType=standard) payload.
 
-**hovers**: A gob-encoded payload conforming to the [HoversResults](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L15:2) field of the DocumentDatatype.
+**schema_version**: The schema version of this row - used to determine presence and encoding of (future) denormalized data.
 
-**monikers**: A gob-encoded payload conforming to the [Monikers](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L16:2) field of the DocumentDatatype.
+# Table "public.codeintel_scip_documents_dereference_logs"
+```
+      Column       |           Type           | Collation | Nullable |                                Default                                
+-------------------+--------------------------+-----------+----------+-----------------------------------------------------------------------
+ id                | bigint                   |           | not null | nextval('codeintel_scip_documents_dereference_logs_id_seq'::regclass)
+ document_id       | bigint                   |           | not null | 
+ last_removal_time | timestamp with time zone |           | not null | now()
+Indexes:
+    "codeintel_scip_documents_dereference_logs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_scip_documents_dereference_logs_last_removal_time_doc" btree (last_removal_time, document_id)
 
-**num_diagnostics**: The number of diagnostics stored in the data field.
+```
 
-**packages**: A gob-encoded payload conforming to the [PackageInformation](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L17:2) field of the DocumentDatatype.
+A list of document rows that were recently dereferenced by the deletion of an index.
 
-**path**: The path of the text document relative to the associated dump root.
+**document_id**: The identifier of the document that was dereferenced.
 
-**ranges**: A gob-encoded payload conforming to the [Ranges](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L14:2) field of the DocumentDatatype.
+**last_removal_time**: The time that the log entry was inserted.
 
-**schema_version**: The schema version of this row - used to determine presence and encoding of data.
-
-# Table "public.lsif_data_documents_schema_versions"
+# Table "public.codeintel_scip_documents_schema_versions"
 ```
        Column       |  Type   | Collation | Nullable | Default 
 --------------------+---------+-----------+----------+---------
- dump_id            | integer |           | not null | 
+ upload_id          | integer |           | not null | 
  min_schema_version | integer |           |          | 
  max_schema_version | integer |           |          | 
 Indexes:
-    "lsif_data_documents_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
-    "lsif_data_documents_schema_versions_dump_id_schema_version_boun" btree (dump_id, min_schema_version, max_schema_version)
+    "codeintel_scip_documents_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
 
 ```
 
-Tracks the range of schema_versions for each upload in the lsif_data_documents table.
+Tracks the range of `schema_versions` values associated with each document referenced from the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.
 
-**dump_id**: The identifier of the associated dump in the lsif_uploads table.
+**max_schema_version**: An upper-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
 
-**max_schema_version**: An upper-bound on the `lsif_data_documents.schema_version` where `lsif_data_documents.dump_id = dump_id`.
+**min_schema_version**: A lower-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
 
-**min_schema_version**: A lower-bound on the `lsif_data_documents.schema_version` where `lsif_data_documents.dump_id = dump_id`.
+**upload_id**: The identifier of the associated SCIP index.
 
-# Table "public.lsif_data_implementations"
+# Table "public.codeintel_scip_metadata"
 ```
-     Column     |  Type   | Collation | Nullable | Default 
-----------------+---------+-----------+----------+---------
- dump_id        | integer |           | not null | 
- scheme         | text    |           | not null | 
- identifier     | text    |           | not null | 
- data           | bytea   |           |          | 
- schema_version | integer |           | not null | 
- num_locations  | integer |           | not null | 
+         Column         |  Type   | Collation | Nullable |                       Default                       
+------------------------+---------+-----------+----------+-----------------------------------------------------
+ id                     | bigint  |           | not null | nextval('codeintel_scip_metadata_id_seq'::regclass)
+ upload_id              | integer |           | not null | 
+ tool_name              | text    |           | not null | 
+ tool_version           | text    |           | not null | 
+ tool_arguments         | text[]  |           | not null | 
+ text_document_encoding | text    |           | not null | 
+ protocol_version       | integer |           | not null | 
 Indexes:
-    "lsif_data_implementations_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
-    "lsif_data_implementations_dump_id_schema_version" btree (dump_id, schema_version)
-Triggers:
-    lsif_data_implementations_schema_versions_insert AFTER INSERT ON lsif_data_implementations REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_implementations_schema_versions_insert()
+    "codeintel_scip_metadata_pkey" PRIMARY KEY, btree (id)
 
 ```
 
-Associates (document, range) pairs with the implementation monikers attached to the range.
+Global metadatadata about a single processed upload.
 
-**data**: A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L106:6) types.
+**id**: An auto-generated identifier.
 
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+**protocol_version**: The version of the SCIP protocol used to encode this index.
 
-**identifier**: The moniker identifier.
+**text_document_encoding**: The encoding of the text documents within this index. May affect range boundaries.
 
-**num_locations**: The number of locations stored in the data field.
+**tool_arguments**: Command-line arguments that were used to invoke this indexer.
 
-**schema_version**: The schema version of this row - used to determine presence and encoding of data.
+**tool_name**: Name of the indexer that produced this index.
 
-**scheme**: The moniker scheme.
+**tool_version**: Version of the indexer that produced this index.
 
-# Table "public.lsif_data_implementations_schema_versions"
+**upload_id**: The identifier of the upload that provided this SCIP index.
+
+# Table "public.codeintel_scip_symbol_names"
+```
+    Column    |  Type   | Collation | Nullable | Default 
+--------------+---------+-----------+----------+---------
+ id           | integer |           | not null | 
+ upload_id    | integer |           | not null | 
+ name_segment | text    |           | not null | 
+ prefix_id    | integer |           |          | 
+Indexes:
+    "codeintel_scip_symbol_names_pkey" PRIMARY KEY, btree (upload_id, id)
+    "codeintel_scip_symbol_names_upload_id_roots" btree (upload_id) WHERE prefix_id IS NULL
+    "codeisdntel_scip_symbol_names_upload_id_children" btree (upload_id, prefix_id) WHERE prefix_id IS NOT NULL
+
+```
+
+Stores a prefix tree of symbol names within a particular upload.
+
+**id**: An identifier unique within the index for this symbol name segment.
+
+**name_segment**: The portion of the symbol name that is unique to this symbol and its children.
+
+**prefix_id**: The identifier of the segment that forms the prefix of this symbol, if any.
+
+**upload_id**: The identifier of the upload that provided this SCIP index.
+
+# Table "public.codeintel_scip_symbols"
+```
+         Column         |  Type   | Collation | Nullable | Default 
+------------------------+---------+-----------+----------+---------
+ upload_id              | integer |           | not null | 
+ document_lookup_id     | bigint  |           | not null | 
+ schema_version         | integer |           | not null | 
+ definition_ranges      | bytea   |           |          | 
+ reference_ranges       | bytea   |           |          | 
+ implementation_ranges  | bytea   |           |          | 
+ type_definition_ranges | bytea   |           |          | 
+ symbol_id              | integer |           | not null | 
+Indexes:
+    "codeintel_scip_symbols_pkey" PRIMARY KEY, btree (upload_id, symbol_id, document_lookup_id)
+    "codeintel_scip_symbols_document_lookup_id" btree (document_lookup_id)
+Foreign-key constraints:
+    "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
+Triggers:
+    codeintel_scip_symbols_schema_versions_insert AFTER INSERT ON codeintel_scip_symbols REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_symbols_schema_versions_insert()
+
+```
+
+A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol&amp;patternType=standard) to path and ranges where that symbol occurs within a particular SCIP index.
+
+**definition_ranges**: An encoded set of ranges within the associated document that have a **definition** relationship to the associated symbol.
+
+**document_lookup_id**: A reference to the `id` column of [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup). Joining on this table yields the document path relative to the index root.
+
+**implementation_ranges**: An encoded set of ranges within the associated document that have a **implementation** relationship to the associated symbol.
+
+**reference_ranges**: An encoded set of ranges within the associated document that have a **reference** relationship to the associated symbol.
+
+**schema_version**: The schema version of this row - used to determine presence and encoding of denormalized data.
+
+**symbol_id**: The identifier of the segment that terminates the name of this symbol. See the table [`codeintel_scip_symbol_names`](#table-publiccodeintel_scip_symbol_names) on how to reconstruct the full symbol name.
+
+**type_definition_ranges**: An encoded set of ranges within the associated document that have a **type definition** relationship to the associated symbol.
+
+**upload_id**: The identifier of the upload that provided this SCIP index.
+
+# Table "public.codeintel_scip_symbols_schema_versions"
 ```
        Column       |  Type   | Collation | Nullable | Default 
 --------------------+---------+-----------+----------+---------
- dump_id            | integer |           | not null | 
+ upload_id          | integer |           | not null | 
  min_schema_version | integer |           |          | 
  max_schema_version | integer |           |          | 
 Indexes:
-    "lsif_data_implementations_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
-    "lsif_data_implementations_schema_versions_dump_id_schema_versio" btree (dump_id, min_schema_version, max_schema_version)
+    "codeintel_scip_symbols_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
 
 ```
 
-Tracks the range of schema_versions for each upload in the lsif_data_implementations table.
+Tracks the range of `schema_versions` for each index in the [`codeintel_scip_symbols`](#table-publiccodeintel_scip_symbols) table.
 
-**dump_id**: The identifier of the associated dump in the lsif_uploads table.
+**max_schema_version**: An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_symbols`](#table-publiccodeintel_scip_symbols) where the `upload_id` column matches the associated SCIP index.
 
-**max_schema_version**: An upper-bound on the `lsif_data_implementations.schema_version` where `lsif_data_implementations.dump_id = dump_id`.
+**min_schema_version**: A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_symbols`](#table-publiccodeintel_scip_symbols) where the `upload_id` column matches the associated SCIP index.
 
-**min_schema_version**: A lower-bound on the `lsif_data_implementations.schema_version` where `lsif_data_implementations.dump_id = dump_id`.
-
-# Table "public.lsif_data_metadata"
-```
-      Column       |  Type   | Collation | Nullable | Default 
--------------------+---------+-----------+----------+---------
- dump_id           | integer |           | not null | 
- num_result_chunks | integer |           |          | 
-Indexes:
-    "lsif_data_metadata_pkey" PRIMARY KEY, btree (dump_id)
-
-```
-
-Stores the number of result chunks associated with a dump.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**num_result_chunks**: A bound of populated indexes in the lsif_data_result_chunks table for the associated dump. This value is used to hash identifiers into the result chunk index to which they belong.
-
-# Table "public.lsif_data_references"
-```
-     Column     |  Type   | Collation | Nullable | Default 
-----------------+---------+-----------+----------+---------
- dump_id        | integer |           | not null | 
- scheme         | text    |           | not null | 
- identifier     | text    |           | not null | 
- data           | bytea   |           |          | 
- schema_version | integer |           | not null | 
- num_locations  | integer |           | not null | 
-Indexes:
-    "lsif_data_references_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
-    "lsif_data_references_dump_id_schema_version" btree (dump_id, schema_version)
-Triggers:
-    lsif_data_references_schema_versions_insert AFTER INSERT ON lsif_data_references REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_references_schema_versions_insert()
-
-```
-
-Associates (document, range) pairs with the export monikers attached to the range.
-
-**data**: A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L106:6) types.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**identifier**: The moniker identifier.
-
-**num_locations**: The number of locations stored in the data field.
-
-**schema_version**: The schema version of this row - used to determine presence and encoding of data.
-
-**scheme**: The moniker scheme.
-
-# Table "public.lsif_data_references_schema_versions"
-```
-       Column       |  Type   | Collation | Nullable | Default 
---------------------+---------+-----------+----------+---------
- dump_id            | integer |           | not null | 
- min_schema_version | integer |           |          | 
- max_schema_version | integer |           |          | 
-Indexes:
-    "lsif_data_references_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
-    "lsif_data_references_schema_versions_dump_id_schema_version_bou" btree (dump_id, min_schema_version, max_schema_version)
-
-```
-
-Tracks the range of schema_versions for each upload in the lsif_data_references table.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table.
-
-**max_schema_version**: An upper-bound on the `lsif_data_references.schema_version` where `lsif_data_references.dump_id = dump_id`.
-
-**min_schema_version**: A lower-bound on the `lsif_data_references.schema_version` where `lsif_data_references.dump_id = dump_id`.
-
-# Table "public.lsif_data_result_chunks"
-```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- dump_id | integer |           | not null | 
- idx     | integer |           | not null | 
- data    | bytea   |           |          | 
-Indexes:
-    "lsif_data_result_chunks_pkey" PRIMARY KEY, btree (dump_id, idx)
-
-```
-
-Associates result set identifiers with the (document path, range identifier) pairs that compose the set.
-
-**data**: A gob-encoded payload conforming to the [ResultChunkData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L76:6) type.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**idx**: The unique result chunk index within the associated dump. Every result set identifier present should hash to this index (modulo lsif_data_metadata.num_result_chunks).
+**upload_id**: The identifier of the associated SCIP index.
 
 # Table "public.migration_logs"
 ```

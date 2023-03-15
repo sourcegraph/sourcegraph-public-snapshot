@@ -1,8 +1,8 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "module": "esnext",
+    "module": "commonjs",
     "sourceRoot": "src",
     "baseUrl": ".",
     "paths": {
@@ -12,11 +12,36 @@
     "outDir": "./out",
   },
   "references": [
-    { "path": "../common" },
-    { "path": "../codeintellify" },
-    { "path": "../template-parser" },
-    { "path": "../http-client" },
-    { "path": "../client-api" },
+    {
+      "path": "../build-config",
+    },
+    {
+      "path": "../client-api",
+    },
+    {
+      "path": "../codeintellify",
+    },
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../extension-api",
+    },
+    {
+      "path": "../extension-api-types",
+    },
+    {
+      "path": "../http-client",
+    },
+    {
+      "path": "../template-parser",
+    },
+    {
+      "path": "../testing",
+    },
+    {
+      "path": "../wildcard",
+    },
   ],
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "./src/end-to-end"],

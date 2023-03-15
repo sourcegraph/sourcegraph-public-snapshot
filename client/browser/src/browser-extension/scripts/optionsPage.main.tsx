@@ -77,13 +77,10 @@ const fetchCurrentTabStatus = async (sourcegraphURL: string): Promise<TabStatus>
 }
 
 // Make GraphQL requests from background page
-const createRequestGraphQL = (sourcegraphURL: string) => <T, V = object>(options: {
-    request: string
-    variables: V
-}): Observable<GraphQLResult<T>> =>
-    from(
-        background.requestGraphQL<T, V>({ ...options, sourcegraphURL })
-    )
+const createRequestGraphQL =
+    (sourcegraphURL: string) =>
+    <T, V = object>(options: { request: string; variables: V }): Observable<GraphQLResult<T>> =>
+        from(background.requestGraphQL<T, V>({ ...options, sourcegraphURL }))
 
 const version = getExtensionVersion()
 const isFullPage = !new URLSearchParams(window.location.search).get('popup')
@@ -190,10 +187,10 @@ const Options: React.FunctionComponent<React.PropsWithChildren<unknown>> = () =>
         )
     )
     const currentUser = useObservable(
-        useMemo(() => (currentTabStatus?.status.hasRepoSyncError ? fetchCurrentUser(sourcegraphUrl!) : of(undefined)), [
-            currentTabStatus,
-            sourcegraphUrl,
-        ])
+        useMemo(
+            () => (currentTabStatus?.status.hasRepoSyncError ? fetchCurrentUser(sourcegraphUrl!) : of(undefined)),
+            [currentTabStatus, sourcegraphUrl]
+        )
     )
 
     const showSourcegraphComAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')

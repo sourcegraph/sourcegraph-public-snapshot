@@ -15,11 +15,7 @@ func Zoekt() *monitoring.Dashboard {
 		indexServerContainerName = "zoekt-indexserver"
 		webserverContainerName   = "zoekt-webserver"
 		bundledContainerName     = "indexed-search"
-
-		nodeExporterInstanceRegex = `node-exporter.*`
 	)
-
-	joinOnMountInfo := "zoekt_indexserver_mount_point_info{mount_name=\"indexDir\",instance=~`${instance:regex}`} * on (nodename, device) group_left()"
 
 	return &monitoring.Dashboard{
 		Name:                     "zoekt",
@@ -46,67 +42,49 @@ func Zoekt() *monitoring.Dashboard {
 						{
 							Name:        "total_repos_aggregate",
 							Description: "total number of repos (aggregate)",
-							Query:       `sum(index_num_assigned)`,
+							Query:       `sum by (__name__) ({__name__=~"index_num_assigned|index_num_indexed|index_queue_cap"})`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(
-								monitoring.PanelOptions.LegendOnRight(),
-								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.Current = true
-									p.GraphPanel.Targets = []sdk.Target{{
-										Expr:         o.Query,
-										LegendFormat: "assigned",
-									}, {
-										Expr:         "sum(index_num_indexed)",
-										LegendFormat: "indexed",
-									}, {
-										Expr:         "sum(index_queue_cap)",
-										LegendFormat: "tracked",
-									}}
-									p.GraphPanel.Tooltip.Shared = true
-								}).MinAuto(),
+							Panel: monitoring.Panel().
+								With(
+									monitoring.PanelOptions.LegendOnRight(),
+									monitoring.PanelOptions.HoverShowAll(),
+								).
+								MinAuto().
+								LegendFormat("{{__name__}}"),
 							Owner: monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 								Sudden changes can be caused by indexing configuration changes.
 
-								Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+								Additionally, a discrepancy between "index_num_assigned" and "index_queue_cap" could indicate a bug.
 
 								Legend:
-								- assigned: # of repos assigned to Zoekt
-								- indexed: # of repos Zoekt has indexed
-								- tracked: # of repos Zoekt is aware of, including those that it has finished indexing
+								- index_num_assigned: # of repos assigned to Zoekt
+								- index_num_indexed: # of repos Zoekt has indexed
+								- index_queue_cap: # of repos Zoekt is aware of, including those that it has finished indexing
 							`,
 						},
 						{
 							Name:        "total_repos_per_instance",
 							Description: "total number of repos (per instance)",
-							Query:       "sum by (instance) (index_num_assigned{instance=~`${instance:regex}`})",
+							Query:       `sum by (__name__, instance) ({__name__=~"index_num_assigned|index_num_indexed|index_queue_cap",instance=~"${instance:regex}"})`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(
-								monitoring.PanelOptions.LegendOnRight(),
-								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.Current = true
-									p.GraphPanel.Targets = []sdk.Target{{
-										Expr:         o.Query,
-										LegendFormat: "{{instance}} assigned",
-									}, {
-										Expr:         "sum by (instance) (index_num_indexed{instance=~`${instance:regex}`})",
-										LegendFormat: "{{instance}} indexed",
-									}, {
-										Expr:         "sum by (instance) (index_queue_cap{instance=~`${instance:regex}`})",
-										LegendFormat: "{{instance}} tracked",
-									}}
-									p.GraphPanel.Tooltip.Shared = true
-								}).MinAuto(),
+							Panel: monitoring.Panel().
+								With(
+									monitoring.PanelOptions.LegendOnRight(),
+									monitoring.PanelOptions.HoverShowAll(),
+								).
+								MinAuto().
+								LegendFormat("{{instance}} {{__name__}}"),
 							Owner: monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 								Sudden changes can be caused by indexing configuration changes.
 
-								Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+								Additionally, a discrepancy between "index_num_assigned" and "index_queue_cap" could indicate a bug.
 
 								Legend:
-								- assigned: # of repos assigned to Zoekt
-								- indexed: # of repos Zoekt has indexed
-								- tracked: # of repos Zoekt is aware of, including those that it has finished processing
+								- index_num_assigned: # of repos assigned to Zoekt
+								- index_num_indexed: # of repos Zoekt has indexed
+								- index_queue_cap: # of repos Zoekt is aware of, including those that it has finished processing
 							`,
 						},
 					},
@@ -179,6 +157,157 @@ func Zoekt() *monitoring.Dashboard {
 			{
 				Title: "Search requests",
 				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "indexed_search_request_duration_p99_aggregate",
+							Description: "99th percentile indexed search duration over 1m (aggregate)",
+							Query:       `histogram_quantile(0.99, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`, // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 99th percentile of search request durations over the last minute (aggregated across all instances).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+						{
+							Name:        "indexed_search_request_duration_p90_aggregate",
+							Description: "90th percentile indexed search duration over 1m (aggregate)",
+							Query:       `histogram_quantile(0.90, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`, // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 90th percentile of search request durations over the last minute (aggregated across all instances).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+						{
+							Name:        "indexed_search_request_duration_p75_aggregate",
+							Description: "75th percentile indexed search duration over 1m (aggregate)",
+							Query:       `histogram_quantile(0.75, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`, // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 75th percentile of search request durations over the last minute (aggregated across all instances).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "indexed_search_request_duration_p99_by_instance",
+							Description: "99th percentile indexed search duration over 1m (per instance)",
+							Query:       "histogram_quantile(0.99, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))", // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 99th percentile of search request durations over the last minute (broken out per instance).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+						{
+							Name:        "indexed_search_request_duration_p90_by_instance",
+							Description: "90th percentile indexed search duration over 1m (per instance)",
+							Query:       "histogram_quantile(0.90, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))", // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 90th percentile of search request durations over the last minute (broken out per instance).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+						{
+							Name:        "indexed_search_request_duration_p75_by_instance",
+							Description: "75th percentile indexed search duration over 1m (per instance)",
+							Query:       "histogram_quantile(0.75, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))", // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 75th percentile of search request durations over the last minute (broken out per instance).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "indexed_search_num_concurrent_requests_aggregate",
+							Description: "amount of in-flight indexed search requests (aggregate)",
+							Query:       `sum by (name) (zoekt_search_running)`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the current number of indexed search requests that are in-flight, aggregated across all instances.
+
+								In-flight search requests include both running and queued requests.
+
+								The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+							`,
+						},
+						{
+							Name:        "indexed_search_num_concurrent_requests_by_instance",
+							Description: "amount of in-flight indexed search requests (per instance)",
+							Query:       "sum by (instance, name) (zoekt_search_running{instance=~`${instance:regex}`})",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the current number of indexed search requests that are-flight, broken out per instance.
+
+								In-flight search requests include both running and queued requests.
+
+								The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "indexed_search_concurrent_request_growth_rate_1m_aggregate",
+							Description: "rate of growth of in-flight indexed search requests over 1m (aggregate)",
+							Query:       `sum by (name) (deriv(zoekt_search_running[1m]))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Number),
+
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the rate of growth of in-flight requests, aggregated across all instances.
+
+								In-flight search requests include both running and queued requests.
+
+								This metric gives a notion of how quickly the indexed-search backend is working through its request load
+								(taking into account the request arrival rate and processing time). A sustained high rate of growth
+								can indicate that the indexed-search backend is saturated.
+							`,
+						},
+						{
+							Name:        "indexed_search_concurrent_request_growth_rate_1m_per_instance",
+							Description: "rate of growth of in-flight indexed search requests over 1m (per instance)",
+							Query:       "sum by (instance) (deriv(zoekt_search_running[1m]))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.RequestsPerSecond),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the rate of growth of in-flight requests, broken out per instance.
+
+								In-flight search requests include both running and queued requests.
+
+								This metric gives a notion of how quickly the indexed-search backend is working through its request load
+								(taking into account the request arrival rate and processing time). A sustained high rate of growth
+								can indicate that the indexed-search backend is saturated.
+							`,
+						},
+					},
 					{
 						{
 							Name:        "indexed_search_request_errors",
@@ -289,9 +418,9 @@ func Zoekt() *monitoring.Dashboard {
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							Panel: monitoring.Panel().LegendFormat("{{state}}").With(
 								monitoring.PanelOptions.LegendOnRight(),
+								monitoring.PanelOptions.HoverShowAll(),
 								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
-									p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
+									p.GraphPanel.Yaxes[0].LogBase = 2 // log to show the huge number of "noop" or "empty"
 								},
 							),
 							Interpretation: `
@@ -684,8 +813,8 @@ func Zoekt() *monitoring.Dashboard {
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.Percentage).
 								With(monitoring.PanelOptions.LegendOnRight()),
-							Warning:  monitoring.Alert().GreaterOrEqual(70),
-							Critical: monitoring.Alert().GreaterOrEqual(90),
+							Warning:  monitoring.Alert().GreaterOrEqual(60),
+							Critical: monitoring.Alert().GreaterOrEqual(80),
 							Owner:    monitoring.ObservableOwnerSearchCore,
 
 							Interpretation: `
@@ -701,19 +830,24 @@ func Zoekt() *monitoring.Dashboard {
 							NextSteps: `
 								If you are running out of memory map areas, you could resolve this by:
 
+								    - Enabling shard merging for Zoekt: Set SRC_ENABLE_SHARD_MERGING="1" for zoekt-indexserver. Use this option
+								if your corpus of repositories has a high percentage of small, rarely updated repositories. See
+								[documentation](https://docs.sourcegraph.com/code_search/explanations/search_details#shard-merging).
 								    - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
 								means that each _individual_ replica will have fewer shards. This, in turn, decreases the
 								amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
-								    - Increase the virtual memory subsystem's 'max_map_count' parameter which defines the upper limit of memory areas
-								a process can use. The exact instructions for tuning this parameter can differ depending on your environment.
-								See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
+								    - Increasing the virtual memory subsystem's "max_map_count" parameter which defines the upper limit of memory areas
+								a process can use. The default value of max_map_count is usually 65536. We recommend to set this value to 2x the number
+								of repos to be indexed per Zoekt instance. This means, if you want to index 240k repositories with 3 Zoekt instances,
+								set max_map_count to (240000 / 3) * 2 = 160000. The exact instructions for tuning this parameter can differ depending
+								on your environment. See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
 							`,
 						},
 					},
 				},
 			},
 			{
-				Title:  "Compound shards (experimental)",
+				Title:  "Compound shards",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -921,252 +1055,18 @@ func Zoekt() *monitoring.Dashboard {
 					},
 				},
 			},
-			{
-				Title:  "Disk I/O metrics (only available on Sourcegraph internal instances)",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						{
-							Name:        "data_disk_reads_sec",
-							Description: "data disk read request rate over 2m (per instance)",
-							Query:       fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit(monitoring.ReadsPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The number of read requests that were issued to the device per second.
+			shared.NewDiskMetricsGroup(
+				shared.DiskMetricsGroupOptions{
+					DiskTitle: "data",
 
+					MetricMountNameLabel: "indexDir",
+					MetricNamespace:      "zoekt_indexserver",
 
-								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-								These statistics are best interpreted as the load experienced by the device Zoekt is
-								using, not the load Zoekt is solely responsible for causing.
-							`,
-						},
-						{
-							Name:        "data_disk_writes_sec",
-							Description: "data disk write request rate over 2m (per instance)",
-							Query:       fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit(monitoring.WritesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The number of write requests that were issued to the device per second.
-
-								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-								These statistics are best interpreted as the load experienced by the device Zoekt is
-								using, not the load Zoekt is solely responsible for causing.
-							`,
-						},
-					},
-					{
-						{
-							Name:        "data_disk_read_throughput",
-							Description: "data disk read throughput over 2m (per instance)",
-							Query:       fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit(monitoring.BytesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The amount of data that was read from the device per second.
-
-								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-								These statistics are best interpreted as the load experienced by the device Zoekt is
-								using, not the load Zoekt is solely responsible for causing.
-							`,
-						},
-						{
-							Name:        "data_disk_write_throughput",
-							Description: "data disk write throughput over 2m (per instance)",
-							Query:       fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit(monitoring.BytesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The amount of data that was written to the device per second.
-
-								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-								These statistics are best interpreted as the load experienced by the device Zoekt is
-								using, not the load Zoekt is solely responsible for causing.
-							`,
-						},
-					},
-					{
-						{
-							Name:        "data_disk_read_duration",
-							Description: "data disk average read duration over 2m (per instance)",
-
-							Query: fmt.Sprintf("((%s) / (%s))",
-								fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-								fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-							),
-							NoAlert: true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit(monitoring.Seconds).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The average time for read requests issued to the device to be served. This includes the time spent
-								by the requests in queue and the time spent servicing them.
-
-								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-								These statistics are best interpreted as the load experienced by the device Zoekt is
-								using, not the load Zoekt is solely responsible for causing.
-							`,
-						},
-						{
-							Name:        "data_disk_write_duration",
-							Description: "data disk average write duration over 2m (per instance)",
-
-							Query: fmt.Sprintf("((%s) / (%s))",
-								fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-								fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-							),
-							NoAlert: true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit(monitoring.Seconds).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The average time for write requests issued to the device to be served. This includes the time spent
-								by the requests in queue and the time spent servicing them.
-
-								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-								These statistics are best interpreted as the load experienced by the device Zoekt is
-								using, not the load Zoekt is solely responsible for causing.
-							`,
-						},
-					},
-					{
-						{
-							Name:        "data_disk_read_request_size",
-							Description: "data disk average read request size over 2m (per instance)",
-							Query: fmt.Sprintf("((%s) / (%s))",
-								fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-								fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-							),
-							NoAlert: true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit(monitoring.Bytes).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The average size of read requests that were issued to the device.
-
-								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-								These statistics are best interpreted as the load experienced by the device Zoekt is
-								using, not the load Zoekt is solely responsible for causing.
-						`,
-						},
-						{
-							Name:        "data_disk_write_request_size",
-							Description: "data disk average write request size over 2m (per instance)",
-							Query: fmt.Sprintf("((%s) / (%s))",
-								fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-								fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-							),
-							NoAlert: true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit(monitoring.Bytes).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The average size of write requests that were issued to the device.
-
-								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-								These statistics are best interpreted as the load experienced by the device Zoekt is
-								using, not the load Zoekt is solely responsible for causing.
-						`,
-						},
-					},
-					{
-						{
-							Name:        "data_disk_reads_merged_sec",
-							Description: "data disk merged read request rate over 2m (per instance)",
-							Query:       fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit(monitoring.RequestsPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The number of read requests merged per second that were queued to the device.
-
-								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-								These statistics are best interpreted as the load experienced by the device Zoekt is
-								using, not the load Zoekt is solely responsible for causing.
-						`,
-						},
-						{
-							Name:        "data_disk_writes_merged_sec",
-							Description: "data disk merged writes request rate over 2m (per instance)",
-							Query:       fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit(monitoring.RequestsPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The number of write requests merged per second that were queued to the device.
-
-								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-								These statistics are best interpreted as the load experienced by the device Zoekt is
-								using, not the load Zoekt is solely responsible for causing.
-						`,
-						},
-					},
-					{
-						{
-
-							Name:        "data_disk_average_queue_size",
-							Description: "data disk average queue size over 2m (per instance)",
-							Query:       fmt.Sprintf("max by (instance) (%s (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`%s`}[2m]))))", joinOnMountInfo, nodeExporterInstanceRegex),
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit("req").
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The number of I/O operations that were being queued or being serviced. See
-								https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
-
-								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-								These statistics are best interpreted as the load experienced by the device Zoekt is
-								using, not the load Zoekt is solely responsible for causing.
-`,
-						},
-					},
+					ServiceName:         "zoekt",
+					InstanceFilterRegex: `${instance:regex}`,
 				},
-			},
+				monitoring.ObservableOwnerSearchCore,
+			),
 
 			// Note:
 			// zoekt_indexserver and zoekt_webserver are deployed together as part of the indexed-search service

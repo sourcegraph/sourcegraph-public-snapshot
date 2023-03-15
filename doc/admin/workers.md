@@ -32,6 +32,10 @@ This job periodically updates the set of code graph data indexes that are visibl
 
 This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
 
+#### `codeintel-autoindexing-summary-builder`
+
+This job periodically checks for auto-indexability on repositories in the background. This is used to populate the global code intelligence dashboard.
+
 #### `codeintel-autoindexing-dependency-scheduler`
 
 This job periodically checks for dependency packages that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
@@ -52,14 +56,37 @@ This job periodically updates an index of policy repository patterns to matching
 
 This job periodically updates the crates.io packages on the instance by syncing the crates.io index.
 
+#### `codeintel-ranking-file-reference-counter`
+
+This job periodically calculates a global reference count of text documents within a repo from other text documents on the instance.
+
+#### `codeintel-uploadstore-expirer`
+
+This job periodically compares index records against retention policies and marks them as expired if they are unprotected.
+
+#### `codeintel-package-filter-applicator`
+
+This job periodically updates the blocked status of package repo references and versions when package repo fitlers are updated or deleted.
+
 #### `insights-job`
 
-This job contains all of the backgrounds processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
-1. Commit indexer
-2. Background query executor
-3. Historical data recorder
-4. Data clean up jobs
-5. Settings file insight definition migrations
+This job contains most of the background processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
+
+1. Insight enqueuer
+2. Insight backfiller
+3. Insight license checker
+4. Insight backfill checker
+5. Data clean up jobs
+6. Retention job enqueuer
+
+#### `insights-query-runner-job`
+
+This job is responsible for processing and running record and snapshot points for Code Insights. Such points are filled by running global searches. 
+This job was split from the other Code Insights background processes so that it could benefit from horizontal scaling. 
+
+#### `insights-data-retention-job`
+
+This job is responsible for periodically archiving code insights data points that are beyond the maximum sample size as specified by the site config setting `insights.maximumSampleSize`. It dequeues jobs which are enqueued from the `insights-job` worker in the retention job enqueuer routine. Data will only be archived if the experimental setting `insightsDataRetention` is enabled.
 
 #### `webhook-log-janitor`
 
@@ -107,6 +134,10 @@ This job runs the workspace resolutions for batch specs. Used for batch changes 
 
 This job runs queries against the database pertaining to generate `gitserver` metrics. These queries are generally expensive to run and do not need to be run per-instance of `gitserver` so the worker allows them to only be run once per scrape.
 
+#### `outbound-webhook-sender`
+
+This job dispatches HTTP requests for outbound webhooks and periodically removes old logs entries for them.
+
 #### `repo-statistics-compactor`
 
 This job periodically cleans up the `repo_statistics` table by rolling up all rows into a single row.
@@ -118,6 +149,10 @@ This job bulk encrypts existing data in the database when an encryption key is i
 #### `zoekt-repos-updater`
 
 This job periodically fetches the list of indexed repositories from Zoekt shards and updates the indexing status accordingly in the `zoekt_repos` table.
+
+#### `auth-sourcegraph-operator-cleaner`
+
+This job periodically cleans up the Sourcegraph Operator user accounts on the instance. It hard deletes expired Sourcegraph Operator user accounts based on the configured lifecycle duration every minute. It skips users that have external accounts connected other than service type `sourcegraph-operator` (i.e. a special case handling for "sourcegraph.sourcegraph.com").
 
 ## Deploying workers
 

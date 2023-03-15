@@ -6,12 +6,10 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
@@ -19,10 +17,10 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
@@ -391,8 +389,14 @@ type subset []string
 
 var all universalSet = struct{}{}
 
+var mockStructuralSearch func(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) error = nil
+
 func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch")
+	if mockStructuralSearch != nil {
+		return mockStructuralSearch(ctx, inputType, paths, extensionHint, pattern, rule, languages, repo, sender)
+	}
+
+	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch") //nolint:staticcheck // OT is deprecated
 	span.SetTag("repo", repo)
 	defer func() {
 		if err != nil {
@@ -409,7 +413,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 
 	var filePatterns []string
 	if v, ok := paths.(subset); ok {
-		filePatterns = []string(v)
+		filePatterns = v
 	}
 	span.LogFields(otlog.Int("paths", len(filePatterns)))
 
@@ -436,37 +440,33 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 // runCombyAgainstTar runs comby with the flags `-tar` and `-chunk-matches 0`. `-chunk-matches 0` instructs comby to return
 // chunks as part of matches that it finds. Data is streamed into stdin from the channel on tarInput and out from stdout
 // to the result stream.
-func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar, sender matchSender) (err error) {
-	cmd, stdin, stdout, err := comby.SetupCmdWithPipes(ctx, args)
+func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar, sender matchSender) error {
+	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
 	}
 
-	wg := sync.WaitGroup{}
-	defer wg.Wait()
+	p := pool.New().WithErrors()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	p.Go(func() error {
 		defer stdin.Close()
 
 		tw := tar.NewWriter(stdin)
 		defer tw.Close()
+
 		for tb := range tarInput.TarInputEventC {
 			if err := tw.WriteHeader(&tb.Header); err != nil {
-				log.NamedError(fmt.Sprintf("failed to write tar header for file %s", tb.Header.Name), err)
-				continue
+				return errors.Wrap(err, "WriteHeader")
 			}
 			if _, err := tw.Write(tb.Content); err != nil {
-				log.NamedError(fmt.Sprintf("failed to write file content to tar format for file %s", tb.Header.Name), err)
-				continue
+				return errors.Wrap(err, "Write")
 			}
 		}
-	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+		return nil
+	})
+
+	p.Go(func() error {
 		defer stdout.Close()
 
 		scanner := bufio.NewScanner(stdout)
@@ -475,29 +475,37 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 
 		for scanner.Scan() {
 			b := scanner.Bytes()
-			if err := scanner.Err(); err != nil {
-				// warn on scanner errors and skip
-				log.NamedError("comby error: skipping scanner error line", err)
-				break
+			r, err := comby.ToCombyFileMatchWithChunks(b)
+			if err != nil {
+				return errors.Wrap(err, "ToCombyFileMatchWithChunks")
 			}
-			if r := comby.ToCombyFileMatchWithChunks(b); r != nil {
-				sender.Send(combyChunkMatchesToFileMatch(r.(*comby.FileMatchWithChunks)))
-			}
+			sender.Send(combyChunkMatchesToFileMatch(r.(*comby.FileMatchWithChunks)))
 		}
-	}()
 
-	err = comby.StartAndWaitForCompletion(cmd)
-	if ctx.Err() != nil {
-		// context has been canceled, ignore any "process killed" errors from the subprocess
-		return nil
+		return errors.Wrap(scanner.Err(), "scan")
+	})
+
+	if err := cmd.Start(); err != nil {
+		return errors.Wrap(err, "start comby")
 	}
-	return err
+
+	// Wait for readers and writers to complete before calling Wait
+	// because Wait closes the pipes.
+	if err := p.Wait(); err != nil {
+		return err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return comby.InterpretCombyError(err, stderr)
+	}
+
+	return nil
 }
 
 // runCombyAgainstZip runs comby with the flag `-zip`. It reads matches from comby's stdout as they are returned and
 // attempts to convert each to a protocol.FileMatch, sending it to the result stream if successful.
 func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipPath, sender matchSender) (err error) {
-	cmd, stdin, stdout, err := comby.SetupCmdWithPipes(ctx, args)
+	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
 	}
@@ -509,12 +517,9 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 	}
 	defer zipReader.Close()
 
-	wg := sync.WaitGroup{}
-	defer wg.Wait()
+	p := pool.New().WithErrors()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	p.Go(func() error {
 		defer stdout.Close()
 
 		scanner := bufio.NewScanner(stdout)
@@ -523,25 +528,38 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 
 		for scanner.Scan() {
 			b := scanner.Bytes()
-			if err := scanner.Err(); err != nil {
-				// warn on scanner errors and skip
-				log.NamedError("comby error: skipping scanner error line", err)
-				break
+
+			cfm, err := comby.ToFileMatch(b)
+			if err != nil {
+				return errors.Wrap(err, "ToFileMatch")
 			}
 
-			cfm := comby.ToFileMatch(b)
-			if cfm != nil {
-				fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
-				if err != nil {
-					log.NamedError("error converting comby match to FileMatch, skipping", err)
-					continue
-				}
-				sender.Send(fm)
+			fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
+			if err != nil {
+				return errors.Wrap(err, "toFileMatch")
 			}
+
+			sender.Send(fm)
 		}
-	}()
 
-	return comby.StartAndWaitForCompletion(cmd)
+		return errors.Wrap(scanner.Err(), "scan")
+	})
+
+	if err := cmd.Start(); err != nil {
+		return errors.Wrap(err, "start comby")
+	}
+
+	// Wait for readers and writers to complete before calling Wait
+	// because Wait closes the pipes.
+	if err := p.Wait(); err != nil {
+		return err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return comby.InterpretCombyError(err, stderr)
+	}
+
+	return nil
 }
 
 var metricRequestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{

@@ -4,16 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path"
 	"path/filepath"
+	"strconv"
 
+	"github.com/kballard/go-shellquote"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/lib/api"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -21,6 +27,7 @@ import (
 
 const (
 	srcInputPath         = "input.json"
+	srcPatchFile         = "state.diff"
 	srcRepoDir           = "repository"
 	srcTempDir           = ".src-tmp"
 	srcWorkspaceFilesDir = "workspace-files"
@@ -37,7 +44,7 @@ type BatchesStore interface {
 const fileStoreBucket = "batch-changes"
 
 // transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
-func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, version string) (apiclient.Job, error) {
 	workspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
 	if err != nil {
 		return apiclient.Job{}, errors.Wrapf(err, "fetching workspace %d", job.BatchSpecWorkspaceID)
@@ -55,8 +62,40 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	}
 
 	// 🚨 SECURITY: Set the actor on the context so we check for permissions
-	// when loading the repository.
+	// when loading the repository and getting secret values.
 	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
+
+	// Next, we fetch all secrets that are requested for the execution.
+	rk := batchSpec.Spec.RequiredEnvVars()
+	var secrets []*database.ExecutorSecret
+	if len(rk) > 0 {
+		esStore := s.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+		secrets, _, err = esStore.List(ctx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
+			NamespaceUserID: batchSpec.NamespaceUserID,
+			NamespaceOrgID:  batchSpec.NamespaceOrgID,
+			Keys:            rk,
+		})
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+	}
+
+	// And build the env vars from the secrets.
+	secretEnvVars := make([]string, len(secrets))
+	redactedEnvVars := make(map[string]string, len(secrets))
+	esalStore := s.DatabaseDB().ExecutorSecretAccessLogs()
+	for i, secret := range secrets {
+		// Get the secret value. This also creates an access log entry in the
+		// name of the user.
+		val, err := secret.Value(ctx, esalStore)
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+
+		secretEnvVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
+		// We redact secret values as ${{ secrets.NAME }}.
+		redactedEnvVars[val] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
+	}
 
 	repo, err := s.DatabaseDB().Repos().Get(ctx, workspace.RepoID)
 	if err != nil {
@@ -74,11 +113,8 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		},
 		Path:               workspace.Path,
 		OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
-		// TODO: We can further optimize here later and tell src-cli to
-		// not run those steps so there is no discrepancy between the backend
-		// and src-cli calculating the if conditions.
-		Steps:             batchSpec.Spec.Steps,
-		SearchResultPaths: workspace.FileMatches,
+		Steps:              batchSpec.Spec.Steps,
+		SearchResultPaths:  workspace.FileMatches,
 		BatchChangeAttributes: template.BatchChangeAttributes{
 			Name:        batchSpec.Spec.Name,
 			Description: batchSpec.Spec.Description,
@@ -87,22 +123,20 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 
 	// Check if we have a cache result for the workspace, if so, add it to the execution
 	// input.
-	if !batchSpec.NoCache {
-		// Find the cache entry for the _last_ step. src-cli only needs the most
-		// recent cache entry to do its work.
-		latestStepIndex := -1
-		for stepIndex := range workspace.StepCacheResults {
-			if stepIndex > latestStepIndex {
-				latestStepIndex = stepIndex
-			}
+	// Find the cache entry for the _last_ step. src-cli only needs the most
+	// recent cache entry to do its work.
+	latestStepIndex := -1
+	for stepIndex := range workspace.StepCacheResults {
+		if stepIndex > latestStepIndex {
+			latestStepIndex = stepIndex
 		}
-		if latestStepIndex != -1 {
-			cacheEntry, ok := workspace.StepCacheResult(latestStepIndex)
-			// Technically this should never be not ok, but computers.
-			if ok {
-				executionInput.CachedStepResultFound = true
-				executionInput.CachedStepResult = *cacheEntry.Value
-			}
+	}
+	if latestStepIndex != -1 {
+		cacheEntry, ok := workspace.StepCacheResult(latestStepIndex)
+		// Technically this should never be not ok, but computers.
+		if ok {
+			executionInput.CachedStepResultFound = true
+			executionInput.CachedStepResult = *cacheEntry.Value
 		}
 	}
 
@@ -114,7 +148,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	}
 	files := map[string]apiclient.VirtualMachineFile{
 		srcInputPath: {
-			Content: string(marshaledInput),
+			Content: marshaledInput,
 		},
 	}
 
@@ -138,21 +172,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		}
 	}
 
-	commands := []string{
-		"batch",
-		"exec",
-		"-f", srcInputPath,
-		"-repo", srcRepoDir,
-		// Tell src to store tmp files inside the workspace. Src currently
-		// runs on the host and we don't want pollution outside of the workspace.
-		"-tmp", srcTempDir,
-	}
-	// Only add the workspaceFiles flag if there are files to mount. This helps with backwards compatibility.
-	if len(workspaceFiles) > 0 {
-		commands = append(commands, "-workspaceFiles", srcWorkspaceFilesDir)
-	}
-
-	return apiclient.Job{
+	aj := apiclient.Job{
 		ID:                  int(job.ID),
 		VirtualMachineFiles: files,
 		RepositoryName:      string(repo.Name),
@@ -162,15 +182,162 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		// Later we might allow to tweak more git parameters, like submodules and LFS.
 		ShallowClone:   true,
 		SparseCheckout: sparseCheckout,
-		CliSteps: []apiclient.CliStep{
+		RedactedValues: redactedEnvVars,
+	}
+
+	if job.Version == 2 {
+		helperImage := fmt.Sprintf("%s:%s", conf.ExecutorsBatcheshelperImage(), conf.ExecutorsBatcheshelperImageTag())
+
+		// Find the step to start with.
+		startStep := 0
+
+		dockerSteps := []apiclient.DockerStep{}
+
+		if executionInput.CachedStepResultFound {
+			cacheEntry := executionInput.CachedStepResult
+			// Apply the diff if necessary.
+			if len(cacheEntry.Diff) > 0 {
+				dockerSteps = append(dockerSteps, apiclient.DockerStep{
+					Key: "apply-diff",
+					Dir: srcRepoDir,
+					Commands: []string{
+						"set -e",
+						shellquote.Join("git", "apply", "-p0", "../"+srcPatchFile),
+						shellquote.Join("git", "add", "--all"),
+					},
+					Image: helperImage,
+				})
+				files[srcPatchFile] = apiclient.VirtualMachineFile{
+					Content: cacheEntry.Diff,
+				}
+			}
+			startStep = cacheEntry.StepIndex + 1
+			val, err := json.Marshal(cacheEntry)
+			if err != nil {
+				return apiclient.Job{}, err
+			}
+			// Write the step result for the last cached step.
+			files[fmt.Sprintf("step%d.json", cacheEntry.StepIndex)] = apiclient.VirtualMachineFile{
+				Content: val,
+			}
+		}
+
+		skipped, err := batcheslib.SkippedStepsForRepo(batchSpec.Spec, string(repo.Name), workspace.FileMatches)
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+
+		for i := startStep; i < len(batchSpec.Spec.Steps); i++ {
+			step := batchSpec.Spec.Steps[i]
+
+			// Skip statically skipped steps.
+			if _, skipped := skipped[i]; skipped {
+				continue
+			}
+
+			runDir := srcRepoDir
+			if workspace.Path != "" {
+				runDir = path.Join(runDir, workspace.Path)
+			}
+
+			runDirToScriptDir, err := filepath.Rel("/"+runDir, "/")
+			if err != nil {
+				return apiclient.Job{}, err
+			}
+
+			dockerSteps = append(dockerSteps, apiclient.DockerStep{
+				Key:   fmt.Sprintf("step.%d.pre", i),
+				Image: helperImage,
+				Env:   secretEnvVars,
+				Dir:   ".",
+				Commands: []string{
+					// TODO: This doesn't handle skipped steps right, it assumes
+					// there are outputs from i-1 present at all times.
+					shellquote.Join("batcheshelper", "pre", strconv.Itoa(i)),
+				},
+			})
+
+			dockerSteps = append(dockerSteps, apiclient.DockerStep{
+				Key:   fmt.Sprintf("step.%d.run", i),
+				Image: step.Container,
+				Dir:   runDir,
+				// Invoke the script file but also write stdout and stderr to separate files, which will then be
+				// consumed by the post step to build the AfterStepResult.
+				Commands: []string{
+					// Hide commands from stderr.
+					"{ set +x; } 2>/dev/null",
+					fmt.Sprintf(`(exec "%s/step%d.sh" | tee %s/stdout%d.log) 3>&1 1>&2 2>&3 | tee %s/stderr%d.log`, runDirToScriptDir, i, runDirToScriptDir, i, runDirToScriptDir, i),
+				},
+			})
+
+			// This step gets the diff, reads stdout and stderr, renders the outputs and builds the AfterStepResult.
+			dockerSteps = append(dockerSteps, apiclient.DockerStep{
+				Key:   fmt.Sprintf("step.%d.post", i),
+				Image: helperImage,
+				Env:   secretEnvVars,
+				Dir:   ".",
+				Commands: []string{
+					shellquote.Join("batcheshelper", "post", strconv.Itoa(i)),
+				},
+			})
+
+			aj.DockerSteps = dockerSteps
+		}
+	} else {
+		commands := []string{
+			"batch",
+			"exec",
+			"-f", srcInputPath,
+			"-repo", srcRepoDir,
+			// Tell src to store tmp files inside the workspace. Src currently
+			// runs on the host and we don't want pollution outside of the workspace.
+			"-tmp", srcTempDir,
+		}
+
+		if version != "" {
+			canUseBinaryDiffs, err := api.CheckSourcegraphVersion(version, ">= 4.3.0-0", "2022-11-29")
+			if err != nil {
+				return apiclient.Job{}, err
+			}
+			if canUseBinaryDiffs {
+				// Enable binary diffs.
+				commands = append(commands, "-binaryDiffs")
+			}
+		}
+
+		// Only add the workspaceFiles flag if there are files to mount. This helps with backwards compatibility.
+		if len(workspaceFiles) > 0 {
+			commands = append(commands, "-workspaceFiles", srcWorkspaceFilesDir)
+		}
+		aj.CliSteps = []apiclient.CliStep{
 			{
 				Key:      "batch-exec",
 				Commands: commands,
 				Dir:      ".",
-				Env:      []string{},
+				Env:      secretEnvVars,
 			},
-		},
-		// Nothing to redact for now. We want to add secrets here once implemented.
-		RedactedValues: map[string]string{},
-	}, nil
+		}
+	}
+
+	// Append docker auth config.
+	esStore := s.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+	secrets, _, err = esStore.List(ctx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
+		NamespaceUserID: batchSpec.NamespaceUserID,
+		NamespaceOrgID:  batchSpec.NamespaceOrgID,
+		Keys:            []string{"DOCKER_AUTH_CONFIG"},
+	})
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+	if len(secrets) == 1 {
+		val, err := secrets[0].Value(ctx, s.DatabaseDB().ExecutorSecretAccessLogs())
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+		if err := json.Unmarshal([]byte(val), &aj.DockerAuthConfig); err != nil {
+			return aj, err
+		}
+	}
+
+	return aj, nil
 }

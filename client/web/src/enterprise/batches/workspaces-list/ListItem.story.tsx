@@ -39,8 +39,7 @@ export const Basic: Story = () => (
                             repository: {
                                 __typename: 'Repository',
                                 id: 'with-long-name',
-                                name:
-                                    'sourcegraph.github.com/some-really-long-organization-name/an-even-longer-repo-name-for-some-reason-that-just-keeps-going',
+                                name: 'sourcegraph.github.com/some-really-long-organization-name/an-even-longer-repo-name-for-some-reason-that-just-keeps-going',
                                 url: 'lol.fake',
                             },
                         })}
@@ -61,8 +60,7 @@ export const NonRootPath: Story = () => (
                 <ListItem {...props}>
                     <Descriptor
                         workspace={mockPreviewWorkspace(2, {
-                            path:
-                                'a/really/deeply/nested/path/that/is/super/long/and/obnoxious/like/it/just/keeps/going/and-what-the-heck-is-this-folder-name-its-just-so-long/path/to/workspace',
+                            path: 'a/really/deeply/nested/path/that/is/super/long/and/obnoxious/like/it/just/keeps/going/and-what-the-heck-is-this-folder-name-its-just-so-long/path/to/workspace',
                         })}
                     />
                 </ListItem>

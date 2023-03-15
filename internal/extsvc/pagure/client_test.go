@@ -18,18 +18,30 @@ func TestClient_ListProjects(t *testing.T) {
 	defer save()
 
 	ctx := context.Background()
+	limit := 5
 
 	args := ListProjectsArgs{
-		Cursor:  &Pagination{PerPage: 5, Page: 1},
+		Cursor:  &Pagination{PerPage: limit, Page: 1},
 		Fork:    true,
 		Pattern: "tmux",
 	}
 
-	resp, err := cli.ListProjects(ctx, args)
-	if err != nil {
+	it := cli.ListProjects(ctx, args)
+
+	var projects []*Project
+	for i := 0; i < limit && it.Next(); i++ {
+		projects = append(projects, it.Current())
+	}
+
+	if err := it.Err(); err != nil {
 		t.Fatal(err)
 	}
 
+	// TODO We wrap the golden to make the diff where we only return projects
+	// cleaner to review. Can be removed in future.
+	resp := map[string]any{
+		"projects": projects,
+	}
 	testutil.AssertGolden(t, "testdata/golden/ListProjects.json", *update, resp)
 }
 

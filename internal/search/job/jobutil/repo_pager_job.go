@@ -84,7 +84,11 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 	var maxAlerter search.MaxAlerter
 
 	repoResolver := repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
-	pager := func(page *repos.Resolved) error {
+	it := repoResolver.Iterator(ctx, p.repoOpts)
+
+	for it.Next() {
+		page := it.Current()
+		page.MaybeSendStats(stream)
 		indexed, unindexed, err := zoekt.PartitionRepos(
 			ctx,
 			clients.Logger,
@@ -94,17 +98,21 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 			p.repoOpts.UseIndex,
 			p.containsRefGlobs,
 		)
+
 		if err != nil {
-			return err
+			return maxAlerter.Alert, err
 		}
 
 		job := p.child.Resolve(resolvedRepos{indexed, unindexed})
 		alert, err := job.Run(ctx, clients, stream)
 		maxAlerter.Add(alert)
-		return err
+
+		if err != nil {
+			return maxAlerter.Alert, err
+		}
 	}
 
-	return maxAlerter.Alert, repoResolver.Paginate(ctx, p.repoOpts, pager)
+	return maxAlerter.Alert, it.Err()
 }
 
 func (p *repoPagerJob) Name() string {

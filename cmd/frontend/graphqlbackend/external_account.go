@@ -72,7 +72,7 @@ func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, 
 	// Therefore, the site admins and the user can view account data of GitHub and
 	// GitLab, but only site admins can view account data for all other types.
 	var err error
-	if r.account.ServiceType == extsvc.TypeGitHub || r.account.ServiceType == extsvc.TypeGitLab || r.account.ServiceType == extsvc.TypeGitHubApp {
+	if r.account.ServiceType == extsvc.TypeGitHub || r.account.ServiceType == extsvc.TypeGitLab {
 		err = auth.CheckSiteAdminOrSameUser(ctx, r.db, actor.FromContext(ctx).UID)
 	} else {
 		err = auth.CheckUserIsSiteAdmin(ctx, r.db, actor.FromContext(ctx).UID)
@@ -89,5 +89,25 @@ func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, 
 
 		return &JSONValue{raw}, nil
 	}
+	return nil, nil
+}
+
+func (r *externalAccountResolver) PublicAccountData(ctx context.Context) (*externalAccountDataResolver, error) {
+	// 🚨 SECURITY: We only return this data to site admin or user who is linked to the external account
+	// This method differs from the one above - here we only return specific attributes
+	// from the account that are public info, e.g. username, email, etc.
+	err := auth.CheckSiteAdminOrSameUser(ctx, r.db, actor.FromContext(ctx).UID)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.account.Data != nil {
+		res, err := NewExternalAccountDataResolver(ctx, r.account)
+		if err != nil {
+			return nil, nil
+		}
+		return res, nil
+	}
+
 	return nil, nil
 }

@@ -570,7 +570,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 			if tc.batchSpecApplied {
 				batchChange := &btypes.BatchChange{
-					Name:            fmt.Sprintf("batch change for spec %d", batchSpec.ID),
+					Name:            fmt.Sprintf("batch-change-for-spec-%d", batchSpec.ID),
 					BatchSpecID:     batchSpec.ID,
 					CreatorID:       batchSpec.UserID,
 					NamespaceUserID: batchSpec.NamespaceUserID,

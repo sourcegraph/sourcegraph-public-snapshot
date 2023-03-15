@@ -138,7 +138,7 @@ func (q Q) IsCaseSensitive() bool {
 	return q.BoolValue("case")
 }
 
-func (q Q) Repositories() (repos []string, negatedRepos []string) {
+func (q Q) Repositories() (repos []ParsedRepoFilter, negatedRepos []string) {
 	VisitField(q, FieldRepo, func(value string, negated bool, a Annotation) {
 		if a.Labels.IsSet(IsPredicate) {
 			return
@@ -147,7 +147,12 @@ func (q Q) Repositories() (repos []string, negatedRepos []string) {
 		if negated {
 			negatedRepos = append(negatedRepos, value)
 		} else {
-			repos = append(repos, value)
+			repoFilter, err := ParseRepositoryRevisions(value)
+			// Should never happen because the repo name is already validated
+			if err != nil {
+				panic(fmt.Sprintf("repo field %q is an invalid regex: %v", value, err))
+			}
+			repos = append(repos, repoFilter)
 		}
 	})
 	return repos, negatedRepos
@@ -198,7 +203,7 @@ func (p Plan) ToQ() Q {
 		operands := basic.ToParseTree()
 		nodes = append(nodes, NewOperator(operands, And)...)
 	}
-	return Q(NewOperator(nodes, Or))
+	return NewOperator(nodes, Or)
 }
 
 // Basic represents a leaf expression to evaluate in our search engine. A basic
@@ -344,6 +349,7 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 // - repo:contains.file(path:foo content:bar) || repo:has.file(path:foo content:bar)
 // - repo:contains.path(foo) || repo:has.path(foo)
 // - repo:contains.content(c) || repo:has.content(c)
+// - repo:contains(file:foo content:bar)
 // - repohasfile:f
 type RepoHasFileContentArgs struct {
 	// At least one of these strings should be non-empty
@@ -378,6 +384,14 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate) {
 		res = append(res, RepoHasFileContentArgs{
 			Path:    pred.Path,
+			Content: pred.Content,
+			Negated: pred.Negated,
+		})
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsPredicate) {
+		res = append(res, RepoHasFileContentArgs{
+			Path:    pred.File,
 			Content: pred.Content,
 			Negated: pred.Negated,
 		})
@@ -423,6 +437,7 @@ type RepoKVPFilter struct {
 	Key     string
 	Value   *string
 	Negated bool
+	KeyOnly bool
 }
 
 func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
@@ -441,7 +456,33 @@ func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
 		})
 	})
 
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasKeyPredicate) {
+		res = append(res, RepoKVPFilter{
+			Key:     pred.Key,
+			Negated: pred.Negated,
+			KeyOnly: true,
+		})
+	})
+
 	return res
+}
+
+func (p Parameters) RepoHasTopics() (res []RepoHasTopicPredicate) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasTopicPredicate) {
+		res = append(res, *pred)
+	})
+	return res
+}
+
+func (p Parameters) FileHasOwner() (include, exclude []string) {
+	VisitTypedPredicate(toNodes(p), func(pred *FileHasOwnerPredicate) {
+		if pred.Negated {
+			exclude = append(exclude, pred.Owner)
+		} else {
+			include = append(include, pred.Owner)
+		}
+	})
+	return include, exclude
 }
 
 // Exists returns whether a parameter exists in the query (whether negated or not).
@@ -546,7 +587,7 @@ func (p Parameters) Archived() *YesNoOnly {
 	return p.yesNoOnlyValue(FieldArchived)
 }
 
-func (p Parameters) Repositories() (repos []string, negatedRepos []string) {
+func (p Parameters) Repositories() (repos []ParsedRepoFilter, negatedRepos []string) {
 	VisitField(toNodes(p), FieldRepo, func(value string, negated bool, a Annotation) {
 		if a.Labels.IsSet(IsPredicate) {
 			return
@@ -555,7 +596,12 @@ func (p Parameters) Repositories() (repos []string, negatedRepos []string) {
 		if negated {
 			negatedRepos = append(negatedRepos, value)
 		} else {
-			repos = append(repos, value)
+			repoFilter, err := ParseRepositoryRevisions(value)
+			// Should never happen because the repo name is already validated
+			if err != nil {
+				panic(fmt.Sprintf("repo field %q is an invalid regex: %v", value, err))
+			}
+			repos = append(repos, repoFilter)
 		}
 	})
 	return repos, negatedRepos

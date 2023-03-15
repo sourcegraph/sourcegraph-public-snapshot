@@ -1,13 +1,19 @@
 package types
 
 import (
+	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+
+	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
 
+	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -256,7 +262,8 @@ type Changeset struct {
 	ExternalServiceType string
 	// ExternalBranch should always be prefixed with refs/heads/. Call git.EnsureRefPrefix before setting this value.
 	ExternalBranch string
-	// ExternalForkNamespace is only set if the changeset is opened on a fork.
+	// ExternalForkName[space] is only set if the changeset is opened on a fork.
+	ExternalForkName      string
 	ExternalForkNamespace string
 	ExternalDeletedAt     time.Time
 	ExternalUpdatedAt     time.Time
@@ -290,6 +297,8 @@ type Changeset struct {
 	NumResets        int64
 	NumFailures      int64
 	SyncErrorMessage *string
+
+	PreviousFailureMessage *string
 
 	// Closing is set to true (along with the ReocncilerState) when the
 	// reconciler should close the changeset.
@@ -382,8 +391,10 @@ func (c *Changeset) SetMetadata(meta any) error {
 
 		if pr.BaseRepository.ID != pr.HeadRepository.ID {
 			c.ExternalForkNamespace = pr.HeadRepository.Owner.Login
+			c.ExternalForkName = pr.HeadRepository.Name
 		} else {
 			c.ExternalForkNamespace = ""
+			c.ExternalForkName = ""
 		}
 	case *bitbucketserver.PullRequest:
 		c.Metadata = pr
@@ -394,8 +405,10 @@ func (c *Changeset) SetMetadata(meta any) error {
 
 		if pr.FromRef.Repository.ID != pr.ToRef.Repository.ID {
 			c.ExternalForkNamespace = pr.FromRef.Repository.Project.Key
+			c.ExternalForkName = pr.FromRef.Repository.Slug
 		} else {
 			c.ExternalForkNamespace = ""
+			c.ExternalForkName = ""
 		}
 	case *gitlab.MergeRequest:
 		c.Metadata = pr
@@ -404,6 +417,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.SourceBranch)
 		c.ExternalUpdatedAt = pr.UpdatedAt.Time
 		c.ExternalForkNamespace = pr.SourceProjectNamespace
+		c.ExternalForkName = pr.SourceProjectName
 	case *bbcs.AnnotatedPullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.ID, 10)
@@ -417,9 +431,27 @@ func (c *Changeset) SetMetadata(meta any) error {
 				return errors.Wrap(err, "determining fork namespace")
 			}
 			c.ExternalForkNamespace = namespace
+			c.ExternalForkName = pr.Source.Repo.Name
 		} else {
 			c.ExternalForkNamespace = ""
+			c.ExternalForkName = ""
 		}
+	case *adobatches.AnnotatedPullRequest:
+		c.Metadata = pr
+		c.ExternalID = strconv.Itoa(pr.ID)
+		c.ExternalServiceType = extsvc.TypeAzureDevOps
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.SourceRefName)
+		// ADO does not have a last updated at field on its PR objects, so we set the creation time.
+		c.ExternalUpdatedAt = pr.CreationDate
+
+		if pr.ForkSource != nil {
+			c.ExternalForkNamespace = pr.ForkSource.Repository.Namespace()
+			c.ExternalForkName = pr.ForkSource.Repository.Name
+		} else {
+			c.ExternalForkNamespace = ""
+			c.ExternalForkName = ""
+		}
+
 	default:
 		return errors.New("unknown changeset type")
 	}
@@ -447,6 +479,8 @@ func (c *Changeset) Title() (string, error) {
 		return m.Title, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Title, nil
+	case *adobatches.AnnotatedPullRequest:
+		return m.Title, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -466,6 +500,8 @@ func (c *Changeset) AuthorName() (string, error) {
 		return m.Author.Username, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Author.Username, nil
+	case *adobatches.AnnotatedPullRequest:
+		return m.CreatedBy.UniqueName, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -493,6 +529,8 @@ func (c *Changeset) AuthorEmail() (string, error) {
 		// Bitbucket Cloud does not provide the e-mail of the author under any
 		// circumstances.
 		return "", nil
+	case *adobatches.AnnotatedPullRequest:
+		return m.CreatedBy.UniqueName, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -511,6 +549,8 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 		return m.CreatedAt.Time
 	case *bbcs.AnnotatedPullRequest:
 		return m.CreatedOn
+	case *adobatches.AnnotatedPullRequest:
+		return m.CreationDate
 	default:
 		return time.Time{}
 	}
@@ -527,6 +567,8 @@ func (c *Changeset) Body() (string, error) {
 		return m.Description, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Rendered.Description.Raw, nil
+	case *adobatches.AnnotatedPullRequest:
+		return m.Description, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -572,6 +614,25 @@ func (c *Changeset) URL() (s string, err error) {
 		// pull request ID, but since the link _should_ be there, we'll error
 		// instead.
 		return "", errors.New("Bitbucket Cloud pull request does not have a html link")
+	case *adobatches.AnnotatedPullRequest:
+		org, err := m.Repository.GetOrganization()
+		if err != nil {
+			return "", err
+		}
+		u, err := urlx.Parse(m.URL)
+		if err != nil {
+			return "", err
+		}
+
+		// The URL returned by the API is for the PR API endpoint, so we need to reconstruct it.
+		prPath := fmt.Sprintf("/%s/%s/_git/%s/pullrequest/%s", org, m.Repository.Project.Name, m.Repository.Name, strconv.Itoa(m.ID))
+		returnURL := url.URL{
+			Scheme: u.Scheme,
+			Host:   u.Host,
+			Path:   prPath,
+		}
+
+		return returnURL.String(), nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -744,6 +805,36 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 				Metadata:    status,
 			})
 		}
+	case *adobatches.AnnotatedPullRequest:
+		// There are two types of event that we create from an annotated pull
+		// request: review events, based on the reviewers within the pull
+		// request, and check events, based on the build statuses.
+
+		var kind ChangesetEventKind
+
+		for _, reviewer := range m.Reviewers {
+			if kind, err = ChangesetEventKindFor(&reviewer); err != nil {
+				return
+			}
+			appendEvent(&ChangesetEvent{
+				ChangesetID: c.ID,
+				Key:         reviewer.ID,
+				Kind:        kind,
+				Metadata:    reviewer,
+			})
+		}
+
+		for _, status := range m.Statuses {
+			if kind, err = ChangesetEventKindFor(status); err != nil {
+				return
+			}
+			appendEvent(&ChangesetEvent{
+				ChangesetID: c.ID,
+				Key:         strconv.Itoa(status.ID),
+				Kind:        kind,
+				Metadata:    status,
+			})
+		}
 	}
 	return events, nil
 }
@@ -761,6 +852,8 @@ func (c *Changeset) HeadRefOid() (string, error) {
 		return m.DiffRefs.HeadSHA, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Source.Commit.Hash, nil
+	case *adobatches.AnnotatedPullRequest:
+		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -778,6 +871,8 @@ func (c *Changeset) HeadRef() (string, error) {
 		return "refs/heads/" + m.SourceBranch, nil
 	case *bbcs.AnnotatedPullRequest:
 		return "refs/heads/" + m.Source.Branch.Name, nil
+	case *adobatches.AnnotatedPullRequest:
+		return m.SourceRefName, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -796,6 +891,8 @@ func (c *Changeset) BaseRefOid() (string, error) {
 		return m.DiffRefs.BaseSHA, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Destination.Commit.Hash, nil
+	case *adobatches.AnnotatedPullRequest:
+		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -813,6 +910,8 @@ func (c *Changeset) BaseRef() (string, error) {
 		return "refs/heads/" + m.TargetBranch, nil
 	case *bbcs.AnnotatedPullRequest:
 		return "refs/heads/" + m.Destination.Branch.Name, nil
+	case *adobatches.AnnotatedPullRequest:
+		return m.TargetRefName, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -934,6 +1033,8 @@ func (c *Changeset) ResetReconcilerState(state ReconcilerState) {
 	c.ReconcilerState = state
 	c.NumResets = 0
 	c.NumFailures = 0
+	// Copy over and reset the previous failure message
+	c.PreviousFailureMessage = c.FailureMessage
 	c.FailureMessage = nil
 	// The reconciler syncs where needed, so we reset this message.
 	c.SyncErrorMessage = nil
@@ -1135,8 +1236,45 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 		return ChangesetEventKindBitbucketCloudRepoCommitStatusCreated, nil
 	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
 		return ChangesetEventKindBitbucketCloudRepoCommitStatusUpdated, nil
-	}
 
+	case *azuredevops.PullRequestMergedEvent:
+		return ChangesetEventKindAzureDevOpsPullRequestMerged, nil
+	case *azuredevops.PullRequestApprovedEvent:
+		return ChangesetEventKindAzureDevOpsPullRequestApproved, nil
+	case *azuredevops.PullRequestApprovedWithSuggestionsEvent:
+		return ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions, nil
+	case *azuredevops.PullRequestWaitingForAuthorEvent:
+		return ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor, nil
+	case *azuredevops.PullRequestRejectedEvent:
+		return ChangesetEventKindAzureDevOpsPullRequestRejected, nil
+	case *azuredevops.PullRequestUpdatedEvent:
+		return ChangesetEventKindAzureDevOpsPullRequestUpdated, nil
+	case *azuredevops.Reviewer:
+		switch e.Vote {
+		case 10:
+			return ChangesetEventKindAzureDevOpsPullRequestApproved, nil
+		case 5:
+			return ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions, nil
+		case 0:
+			return ChangesetEventKindAzureDevOpsPullRequesReviewed, nil
+		case -5:
+			return ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor, nil
+		case -10:
+			return ChangesetEventKindAzureDevOpsPullRequestRejected, nil
+		}
+
+	case *azuredevops.PullRequestBuildStatus:
+		switch e.State {
+		case azuredevops.PullRequestBuildStatusStateSucceeded:
+			return ChangesetEventKindAzureDevOpsPullRequestBuildSucceeded, nil
+		case azuredevops.PullRequestBuildStatusStateError:
+			return ChangesetEventKindAzureDevOpsPullRequestBuildError, nil
+		case azuredevops.PullRequestBuildStatusStateFailed:
+			return ChangesetEventKindAzureDevOpsPullRequestBuildFailed, nil
+		default:
+			return ChangesetEventKindAzureDevOpsPullRequestBuildPending, nil
+		}
+	}
 	return ChangesetEventKindInvalid, errors.Errorf("unknown changeset event kind for %T", e)
 }
 
@@ -1248,6 +1386,29 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (any, error) {
 			return new(gitlab.MergeRequestMergedEvent), nil
 		case ChangesetEventKindGitLabReopened:
 			return new(gitlab.MergeRequestReopenedEvent), nil
+		}
+	case strings.HasPrefix(string(k), "azuredevops"):
+		switch k {
+		case ChangesetEventKindAzureDevOpsPullRequestMerged:
+			return new(azuredevops.PullRequestMergedEvent), nil
+		case ChangesetEventKindAzureDevOpsPullRequestApproved:
+			return new(azuredevops.PullRequestApprovedEvent), nil
+		case ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions:
+			return new(azuredevops.PullRequestApprovedWithSuggestionsEvent), nil
+		case ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor:
+			return new(azuredevops.PullRequestWaitingForAuthorEvent), nil
+		case ChangesetEventKindAzureDevOpsPullRequestRejected:
+			return new(azuredevops.PullRequestRejectedEvent), nil
+		case ChangesetEventKindAzureDevOpsPullRequestBuildSucceeded:
+			return new(azuredevops.PullRequestBuildStatus), nil
+		case ChangesetEventKindAzureDevOpsPullRequestBuildFailed:
+			return new(azuredevops.PullRequestBuildStatus), nil
+		case ChangesetEventKindAzureDevOpsPullRequestBuildError:
+			return new(azuredevops.PullRequestBuildStatus), nil
+		case ChangesetEventKindAzureDevOpsPullRequestBuildPending:
+			return new(azuredevops.PullRequestBuildStatus), nil
+		default:
+			return new(azuredevops.PullRequestUpdatedEvent), nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)

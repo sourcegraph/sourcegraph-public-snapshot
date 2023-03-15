@@ -19,7 +19,12 @@ func stringHumanPattern(nodes []Node) string {
 			if n.Annotation.Labels.IsSet(Regexp) {
 				v = fmt.Sprintf("/%s/", v)
 			}
-			if n.Annotation.Labels.IsSet(IsAlias) {
+			if _, _, ok := ScanBalancedPattern([]byte(v)); !ok && !n.Annotation.Labels.IsSet(IsAlias) && n.Annotation.Labels.IsSet(Literal) {
+				v = fmt.Sprintf(`content:%s`, strconv.Quote(v))
+				if n.Negated {
+					v = "-" + v
+				}
+			} else if n.Annotation.Labels.IsSet(IsAlias) {
 				v = fmt.Sprintf("content:%s", v)
 				if n.Negated {
 					v = "-" + v
@@ -202,17 +207,17 @@ func nodesToJSON(q Q) []any {
 }
 
 func ToJSON(q Q) (string, error) {
-	json, err := json.Marshal(nodesToJSON(q))
+	j, err := json.Marshal(nodesToJSON(q))
 	if err != nil {
 		return "", err
 	}
-	return string(json), nil
+	return string(j), nil
 }
 
 func PrettyJSON(q Q) (string, error) {
-	json, err := json.MarshalIndent(nodesToJSON(q), "", "  ")
+	j, err := json.MarshalIndent(nodesToJSON(q), "", "  ")
 	if err != nil {
 		return "", err
 	}
-	return string(json), nil
+	return string(j), nil
 }

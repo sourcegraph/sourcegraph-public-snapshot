@@ -1,5 +1,0 @@
-.object {
-    // This is to prevent a bug in Chromium which applies a white background to an
-    // `<object />` when it is the child of an element with color-scheme: dark; applied.
-    color-scheme: none;
-}

@@ -1,6 +1,7 @@
 import { Series } from '../../../../types'
 
 import { getStackedSeriesData } from './get-stacked-series-data'
+import { encodePointId } from './helpers'
 import { IndependentSeries, SeriesType, SeriesWithData, StandardSeriesDatum } from './types'
 
 interface Input<Datum> {
@@ -32,14 +33,15 @@ export function getSeriesData<Datum>(input: Input<Datum>): SeriesWithData<Datum>
             series
                 // Separate datum object by series lines
                 .map<IndependentSeries<Datum>>(line => {
-                    const { data, getXValue, getYValue } = line
+                    const { data, getXValue, getYValue, id } = line
 
                     return {
                         ...line,
                         type: SeriesType.Independent,
                         // Filter select series data from the datum object and process this points array
-                        data: data.map<StandardSeriesDatum<Datum>>(datum => ({
+                        data: data.map<StandardSeriesDatum<Datum>>((datum, index) => ({
                             datum,
+                            id: encodePointId(id, index),
                             x: getXValue(datum),
                             y: getYValue(datum),
                         })),

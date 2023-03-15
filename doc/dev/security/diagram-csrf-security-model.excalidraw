@@ -164,7 +164,7 @@
       "boundElementIds": [],
       "fontSize": 16,
       "fontFamily": 3,
-      "text": "(code) httpapi.go:NewHandler\n\n* /.api/graphql (POST only)\n* /.api/search/stream (GET, POST)\n* Code host integration webhooks\n* LSIF uploads\n* Extension registry\n* ...",
+      "text": "(code) httpapi.go:NewHandler\n\n* /.api/graphql (POST only)\n* /.api/search/stream (GET, POST)\n* Code host integration webhooks\n* LSIF uploads\n* ...",
       "baseline": 152,
       "textAlign": "left",
       "verticalAlign": "top"
@@ -195,7 +195,7 @@
       ],
       "fontSize": 16,
       "fontFamily": 3,
-      "text": "(code) app.go:NewHandler\n\n* /-/sign-up\n* /-/site-init\n* /-/verify-email\n* /-/sign-in\n* /-/sign-out\n* /-/reset-password-init\n* Extension registry (incl. private extensions)\n* /site-admin/usage-statistics/archive (private data)\n* /site-admin/pings/latest (private data)\n* ...\n",
+      "text": "(code) app.go:NewHandler\n\n* /-/sign-up\n* /-/site-init\n* /-/verify-email\n* /-/sign-in\n* /-/sign-out\n* /-/reset-password-init\n* /site-admin/usage-statistics/archive (private data)\n* /site-admin/pings/latest (private data)\n* ...\n",
       "baseline": 250,
       "textAlign": "left",
       "verticalAlign": "top"

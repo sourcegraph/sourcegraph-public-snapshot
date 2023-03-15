@@ -1,36 +1,31 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import { EditorView } from '@codemirror/view'
-import { mdiPlayCircleOutline, mdiOpenInNew } from '@mdi/js'
+import { mdiPlayCircleOutline, mdiOpenInNew, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { Observable, of } from 'rxjs'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
-import { SearchContextProps } from '@sourcegraph/search'
 import {
     StreamingSearchResultsList,
-    FetchFileParameters,
     CodeMirrorQueryInput,
     changeListener,
     createDefaultSuggestions,
-} from '@sourcegraph/search-ui'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+} from '@sourcegraph/branded'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../stores'
+import { OwnConfigProps } from '../../../own/OwnConfigProps'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
@@ -42,16 +37,14 @@ import styles from './NotebookQueryBlock.module.scss'
 interface NotebookQueryBlockProps
     extends BlockProps<QueryBlock>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'>,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
+        OwnConfigProps {
     globbing: boolean
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
-    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 // Defines the max height for the CodeMirror editor
@@ -70,25 +63,25 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         id,
         input,
         output,
-        isLightTheme,
         telemetryService,
         settingsCascade,
         isSelected,
-        isOtherBlockSelected,
-        hoverifier,
         onBlockInputChange,
         fetchHighlightedFileLineRanges,
         onRunBlock,
         globbing,
         isSourcegraphDotCom,
+        searchContextsEnabled,
+        ownEnabled,
         ...props
     }) => {
-        const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
         const [editor, setEditor] = useState<EditorView>()
         const searchResults = useObservable(output ?? of(undefined))
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
         const applySuggestionsOnEnter =
             useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+        const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
+        const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
 
         const onInputChange = useCallback(
             (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
@@ -157,11 +150,9 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
 
         return (
             <NotebookBlock
-                className={styles.block}
                 id={id}
                 aria-label="Notebook query block"
                 isSelected={isSelected}
-                isOtherBlockSelected={isOtherBlockSelected}
                 isInputVisible={true}
                 focusInput={focusInput}
                 mainAction={mainMenuAction}
@@ -169,28 +160,34 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                 {...props}
             >
                 <div className={styles.content}>
-                    <div className="mb-1 text-muted">Search query</div>
                     <div className={styles.queryInputWrapper}>
-                        <CodeMirrorQueryInput
-                            value={input.query}
-                            patternType={SearchPatternType.standard}
-                            interpretComments={true}
-                            isLightTheme={isLightTheme}
-                            onEditorCreated={setEditor}
-                            extensions={useMemo(
-                                () => [
-                                    EditorView.lineWrapping,
-                                    queryCompletion,
-                                    changeListener(onInputChange),
-                                    blockKeymap({ runBlock }),
-                                    maxEditorHeight,
-                                    editorAttributes,
-                                ],
-                                [queryCompletion, runBlock, onInputChange]
-                            )}
+                        <Icon
+                            aria-hidden={true}
+                            svgPath={mdiMagnify}
+                            style={{
+                                display: 'inline-block',
+                            }}
                         />
+                        <div className={styles.codeMirrorWrapper}>
+                            <CodeMirrorQueryInput
+                                value={input.query}
+                                patternType={SearchPatternType.standard}
+                                interpretComments={true}
+                                onEditorCreated={setEditor}
+                                extensions={useMemo(
+                                    () => [
+                                        EditorView.lineWrapping,
+                                        queryCompletion,
+                                        changeListener(onInputChange),
+                                        blockKeymap({ runBlock }),
+                                        maxEditorHeight,
+                                        editorAttributes,
+                                    ],
+                                    [queryCompletion, runBlock, onInputChange]
+                                )}
+                            />
+                        </div>
                     </div>
-
                     {searchResults && searchResults.state === 'loading' && (
                         <div className={classNames('d-flex justify-content-center py-3', styles.results)}>
                             <LoadingSpinner />
@@ -200,18 +197,15 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                         <div className={styles.results}>
                             <StreamingSearchResultsList
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                searchContextsEnabled={props.searchContextsEnabled}
+                                enableOwnershipSearch={enableOwnershipSearch}
+                                searchContextsEnabled={searchContextsEnabled}
                                 allExpanded={false}
                                 results={searchResults}
-                                isLightTheme={isLightTheme}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 telemetryService={telemetryService}
                                 settingsCascade={settingsCascade}
-                                showSearchContext={showSearchContext}
                                 assetsRoot={window.context?.assetsRoot || ''}
                                 platformContext={props.platformContext}
-                                extensionsController={props.extensionsController}
-                                hoverifier={hoverifier}
                                 openMatchesInNewTab={true}
                                 executedQuery={executedQuery}
                             />

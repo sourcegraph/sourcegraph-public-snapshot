@@ -1,8 +1,11 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.base.json",
   "references": [
     { "path": "client/template-parser" },
     { "path": "client/build-config" },
+    { "path": "client/cody/vscode-codegen" },
+    { "path": "client/cody/common" },
+    { "path": "client/cody/server" },
     { "path": "client/common" },
     { "path": "client/shared" },
     { "path": "client/shared/src/testing" },
@@ -18,8 +21,7 @@
     { "path": "client/extension-api" },
     { "path": "client/extension-api-types" },
     { "path": "client/storybook" },
-    { "path": "client/search" },
-    { "path": "client/search-ui" },
+    { "path": "client/testing" },
     { "path": "dev/release" },
     { "path": "schema" },
     { "path": "client/codeintellify" },
@@ -27,6 +29,6 @@
     { "path": "client/vscode" },
     { "path": "client/jetbrains" },
     { "path": "client/observability-client" },
-    { "path": "client/observability-server" },
-  ],
+    { "path": "client/observability-server" }
+  ]
 }

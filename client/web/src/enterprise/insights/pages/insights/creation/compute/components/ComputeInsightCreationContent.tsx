@@ -1,25 +1,28 @@
 import { FC, HTMLAttributes, ReactNode } from 'react'
 
 import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
-import { Code, Input } from '@sourcegraph/wildcard'
+import {
+    Code,
+    Input,
+    Label,
+    useForm,
+    useField,
+    FormGroup,
+    FormChangeEvent,
+    getDefaultInputProps,
+    SubmissionErrors,
+} from '@sourcegraph/wildcard'
 
 import {
     createDefaultEditSeries,
     CreationUIForm,
     CreationUiLayout,
     CreationUIPreview,
-    FormChangeEvent,
-    FormGroup,
     FormSeries,
-    getDefaultInputProps,
-    insightRepositoriesAsyncValidator,
     insightRepositoriesValidator,
     insightSeriesValidator,
     insightTitleValidator,
     RepositoriesField,
-    SubmissionErrors,
-    useField,
-    useForm,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
 import { CreateComputeInsightFormFields } from '../types'
@@ -30,7 +33,7 @@ import { ComputeLivePreview } from './ComputeLivePreview'
 const INITIAL_INSIGHT_VALUES: CreateComputeInsightFormFields = {
     series: [createDefaultEditSeries({ edit: true })],
     title: '',
-    repositories: '',
+    repositories: [],
     groupBy: GroupByField.REPO,
     dashboardReferenceCount: 0,
 }
@@ -71,11 +74,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
     const repositories = useField({
         name: 'repositories',
         formApi: formAPI,
-        validators: {
-            // Turn off any validations for the repositories' field in we are in all repos mode
-            sync: insightRepositoriesValidator,
-            async: insightRepositoriesAsyncValidator,
-        },
+        validators: { sync: insightRepositoriesValidator },
     })
 
     const series = useField({
@@ -92,7 +91,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
     const handleFormReset = (): void => {
         // TODO [VK] Change useForm API in order to implement form.reset method.
         title.input.onChange('')
-        repositories.input.onChange('')
+        repositories.input.onChange([])
         series.input.onChange([createDefaultEditSeries({ edit: true })])
 
         // Focus first element of the form
@@ -101,7 +100,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
 
     const hasFilledValue =
         values.series?.some(line => line.name !== '' || line.query !== '') ||
-        values.repositories !== '' ||
+        values.repositories.length > 0 ||
         values.title !== ''
 
     // If some fields that needed to run live preview  are invalid
@@ -125,15 +124,12 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     title="Targeted repositories"
                     subtitle="Create a list of repositories to run your search over"
                 >
-                    <Input
-                        as={RepositoriesField}
-                        autoFocus={true}
-                        required={true}
-                        label="Repositories"
-                        message="Separate repositories with commas"
-                        placeholder="Example: github.com/sourcegraph/sourcegraph"
+                    <Label htmlFor="repositories-id">Repositories</Label>
+                    <RepositoriesField
+                        id="repositories-id"
+                        description="Find and choose at least 1 repository to run insight"
+                        placeholder="Search repositories..."
                         {...getDefaultInputProps(repositories)}
-                        className="mb-0 d-flex flex-column"
                     />
                 </FormGroup>
 
@@ -143,7 +139,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     innerRef={series.input.ref}
                     name="data series group"
                     title="Data series"
-                    error={series.meta.touched && series.meta.error}
+                    error={(series.meta.touched && series.meta.error) || undefined}
                     subtitle={
                         licensed
                             ? 'Add any number of data series to your chart'
@@ -152,14 +148,16 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                 >
                     <FormSeries
                         seriesField={series}
+                        // Compute doesn't support repo query selection
+                        repoQuery={null}
                         repositories={repositories.input.value}
                         showValidationErrorsOnMount={formAPI.submitted}
                         hasAddNewSeriesButton={false}
                         queryFieldDescription={
                             <ul className="pl-3">
                                 <li>
-                                    Do not include the <Code weight="bold">repo:</Code> filter as it will be added
-                                    automatically, if needed{' '}
+                                    Do not include <Code>context:</Code> <Code>repo:</Code> or <Code>rev:</Code>{' '}
+                                    filters; if needed, <Code>repo:</Code> will be added automatically.
                                 </li>
                                 <li>
                                     You can use <Code weight="bold">before:</Code> and <Code weight="bold">after:</Code>{' '}
@@ -175,7 +173,11 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                 <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup name="map result" title="Map result">
-                    <ComputeInsightMapPicker series={validSeries} {...groupBy.input} />
+                    <ComputeInsightMapPicker
+                        series={validSeries}
+                        value={groupBy.input.value}
+                        onChange={groupBy.input.onChange}
+                    />
                 </FormGroup>
 
                 <hr aria-hidden={true} className="my-4 w-100" />

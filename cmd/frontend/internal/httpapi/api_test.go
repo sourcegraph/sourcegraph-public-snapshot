@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
 
@@ -29,16 +30,25 @@ func newTest(t *testing.T) *httptestutil.Client {
 	db := database.NewMockDB()
 
 	return httptestutil.NewTest(NewHandler(db,
+		jobutil.NewUnimplementedEnterpriseJobs(),
 		router.New(mux.NewRouter()),
 		nil,
 		rateLimiter,
 		&Handlers{
-			GitHubWebhook:             enterpriseServices.GitHubWebhook,
-			GitLabWebhook:             enterpriseServices.GitLabWebhook,
-			BitbucketServerWebhook:    enterpriseServices.BitbucketServerWebhook,
-			BitbucketCloudWebhook:     enterpriseServices.BitbucketCloudWebhook,
-			NewCodeIntelUploadHandler: enterpriseServices.NewCodeIntelUploadHandler,
-			NewComputeStreamHandler:   enterpriseServices.NewComputeStreamHandler,
+			BatchesGitHubWebhook:          enterpriseServices.BatchesGitHubWebhook,
+			BatchesGitLabWebhook:          enterpriseServices.BatchesGitLabWebhook,
+			GitHubSyncWebhook:             enterpriseServices.ReposGithubWebhook,
+			GitLabSyncWebhook:             enterpriseServices.ReposGitLabWebhook,
+			BitbucketServerSyncWebhook:    enterpriseServices.ReposBitbucketServerWebhook,
+			BitbucketCloudSyncWebhook:     enterpriseServices.ReposBitbucketCloudWebhook,
+			BatchesBitbucketServerWebhook: enterpriseServices.BatchesBitbucketServerWebhook,
+			BatchesBitbucketCloudWebhook:  enterpriseServices.BatchesBitbucketCloudWebhook,
+			BatchesAzureDevOpsWebhook:     enterpriseServices.BatchesAzureDevOpsWebhook,
+			SCIMHandler:                   enterpriseServices.SCIMHandler,
+			NewCodeIntelUploadHandler:     enterpriseServices.NewCodeIntelUploadHandler,
+			NewComputeStreamHandler:       enterpriseServices.NewComputeStreamHandler,
+			PermissionsGitHubWebhook:      enterpriseServices.PermissionsGitHubWebhook,
+			NewCompletionsStreamHandler:   enterpriseServices.NewCompletionsStreamHandler,
 		},
 	))
 }

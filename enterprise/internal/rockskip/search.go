@@ -16,6 +16,7 @@ import (
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -34,10 +35,11 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 
 	if args.Timeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, time.Duration(args.Timeout)*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, args.Timeout)
 		defer cancel()
 		defer func() {
-			if ctx.Err() == nil || !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			if !errors.Is(ctx.Err(), context.DeadlineExceeded) &&
+				!errors.Is(err, context.DeadlineExceeded) {
 				return
 			}
 
@@ -47,7 +49,6 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 					err = errors.Newf("Still processing symbols ([more details](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)). Estimated completion: %s.", status.Remaining())
 				}
 			}
-			return
 		}()
 	}
 
@@ -80,29 +81,53 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 	if err != nil {
 		return nil, err
 	} else if !present {
-
 		// Try to send an index request.
 		done, err := s.emitIndexRequest(repoCommit{repo: repo, commit: commitHash})
 		if err != nil {
 			return nil, err
 		}
 
-		// Wait for indexing to complete or the request to be canceled.
-		threadStatus.Tasklog.Start("awaiting indexing completion")
-		select {
-		case <-done:
-			threadStatus.Tasklog.Start("recheck commit presence")
-			commit, _, present, err = GetCommitByHash(ctx, s.db, repoId, commitHash)
-			if err != nil {
-				return nil, err
-			}
-			if !present {
-				return nil, errors.Newf("indexing failed, check server logs")
-			}
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
+		if s.searchLastIndexedCommit {
+			found := false
+			threadStatus.Tasklog.Start("RevList")
+			err = s.git.RevList(ctx, repo, commitHash, func(commitHash string) (shouldContinue bool, err error) {
+				defer threadStatus.Tasklog.Continue("RevList")
 
+				threadStatus.Tasklog.Start("GetCommitByHash")
+				id, _, present, err := GetCommitByHash(ctx, s.db, repoId, commitHash)
+				if err != nil {
+					return false, err
+				} else if present {
+					found = true
+					commit = id
+					args.CommitID = api.CommitID(commitHash)
+					return false, nil
+				}
+				return true, nil
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "RevList")
+			}
+			if !found {
+				return nil, context.DeadlineExceeded
+			}
+		} else {
+			// Wait for indexing to complete or the request to be canceled.
+			threadStatus.Tasklog.Start("awaiting indexing completion")
+			select {
+			case <-done:
+				threadStatus.Tasklog.Start("recheck commit presence")
+				commit, _, present, err = GetCommitByHash(ctx, s.db, repoId, commitHash)
+				if err != nil {
+					return nil, err
+				}
+				if !present {
+					return nil, errors.Newf("indexing failed, check server logs")
+				}
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
 	}
 
 	// Finally search.
@@ -536,20 +561,20 @@ func regexMatch(conditions Conditions, regex string, isCaseSensitive bool) *sqlf
 // If so, this function returns true along with the literal search query. If not, this
 // function returns false.
 func isLiteralEquality(expr string) (string, bool, error) {
-	regexp, err := syntax.Parse(expr, syntax.Perl)
+	regex, err := syntax.Parse(expr, syntax.Perl)
 	if err != nil {
 		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
 	}
 
 	// want a concat of size 3 which is [begin, literal, end]
-	if regexp.Op == syntax.OpConcat && len(regexp.Sub) == 3 {
+	if regex.Op == syntax.OpConcat && len(regex.Sub) == 3 {
 		// starts with ^
-		if regexp.Sub[0].Op == syntax.OpBeginLine || regexp.Sub[0].Op == syntax.OpBeginText {
+		if regex.Sub[0].Op == syntax.OpBeginLine || regex.Sub[0].Op == syntax.OpBeginText {
 			// is a literal
-			if regexp.Sub[1].Op == syntax.OpLiteral {
+			if regex.Sub[1].Op == syntax.OpLiteral {
 				// ends with $
-				if regexp.Sub[2].Op == syntax.OpEndLine || regexp.Sub[2].Op == syntax.OpEndText {
-					return string(regexp.Sub[1].Rune), true, nil
+				if regex.Sub[2].Op == syntax.OpEndLine || regex.Sub[2].Op == syntax.OpEndText {
+					return string(regex.Sub[1].Rune), true, nil
 				}
 			}
 		}
@@ -562,18 +587,18 @@ func isLiteralEquality(expr string) (string, bool, error) {
 // If so, this function returns true along with the literal search query. If not, this
 // function returns false.
 func isLiteralPrefix(expr string) (string, bool, error) {
-	regexp, err := syntax.Parse(expr, syntax.Perl)
+	regex, err := syntax.Parse(expr, syntax.Perl)
 	if err != nil {
 		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
 	}
 
 	// want a concat of size 2 which is [begin, literal]
-	if regexp.Op == syntax.OpConcat && len(regexp.Sub) == 2 {
+	if regex.Op == syntax.OpConcat && len(regex.Sub) == 2 {
 		// starts with ^
-		if regexp.Sub[0].Op == syntax.OpBeginLine || regexp.Sub[0].Op == syntax.OpBeginText {
+		if regex.Sub[0].Op == syntax.OpBeginLine || regex.Sub[0].Op == syntax.OpBeginText {
 			// is a literal
-			if regexp.Sub[1].Op == syntax.OpLiteral {
-				return string(regexp.Sub[1].Rune), true, nil
+			if regex.Sub[1].Op == syntax.OpLiteral {
+				return string(regex.Sub[1].Rune), true, nil
 			}
 		}
 	}

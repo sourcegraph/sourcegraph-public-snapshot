@@ -16,7 +16,7 @@ import (
 //
 // http://developers.hubspot.com/docs/methods/contacts/create_or_update
 func (c *Client) CreateOrUpdateContact(email string, params *ContactProperties) (*ContactResponse, error) {
-	if c.hapiKey == "" {
+	if c.accessToken == "" {
 		return nil, errors.New("HubSpot API key must be provided.")
 	}
 	var resp ContactResponse
@@ -34,14 +34,10 @@ func (c *Client) CreateOrUpdateContact(email string, params *ContactProperties) 
 }
 
 func (c *Client) baseContactURL(email string) *url.URL {
-	q := url.Values{}
-	q.Set("hapikey", c.hapiKey)
-
 	return &url.URL{
-		Scheme:   "https",
-		Host:     "api.hubapi.com",
-		Path:     "/contacts/v1/contact/createOrUpdate/email/" + email + "/",
-		RawQuery: q.Encode(),
+		Scheme: "https",
+		Host:   "api.hubapi.com",
+		Path:   "/contacts/v1/contact/createOrUpdate/email/" + email + "/",
 	}
 }
 

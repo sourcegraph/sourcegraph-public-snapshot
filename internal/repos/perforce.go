@@ -5,12 +5,14 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -43,6 +45,13 @@ func newPerforceSource(svc *types.ExternalService, c *schema.PerforceConnection)
 	}, nil
 }
 
+// CheckConnection at this point assumes availability and relies on errors returned
+// from the subsequent calls. This is going to be expanded as part of issue #44683
+// to actually only return true if the source can serve requests.
+func (s PerforceSource) CheckConnection(ctx context.Context) error {
+	return nil
+}
+
 // ListRepos returns all Perforce depots accessible to all connections
 // configured in Sourcegraph via the external services configuration.
 func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult) {
@@ -53,7 +62,23 @@ func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult
 			return
 		}
 
-		results <- SourceResult{Source: s, Repo: s.makeRepo(depot)}
+		u := url.URL{
+			Scheme: "perforce",
+			Host:   s.config.P4Port,
+			Path:   depot,
+			User:   url.UserPassword(s.config.P4User, s.config.P4Passwd),
+		}
+		p4Url, err := vcs.ParseURL(u.String())
+		if err != nil {
+			results <- SourceResult{Source: s, Err: err}
+			continue
+		}
+		syncer := server.PerforceDepotSyncer{}
+		if err := syncer.IsCloneable(ctx, p4Url); err == nil {
+			results <- SourceResult{Source: s, Repo: s.makeRepo(depot)}
+		} else {
+			results <- SourceResult{Source: s, Err: err}
+		}
 	}
 }
 

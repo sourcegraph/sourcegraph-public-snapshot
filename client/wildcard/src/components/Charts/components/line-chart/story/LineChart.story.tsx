@@ -4,24 +4,25 @@ import { Meta, Story } from '@storybook/react'
 import { ParentSize } from '@visx/responsive'
 import { ResizableBox } from 'react-resizable'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
+import { BrandedStory } from '../../../../../stories/BrandedStory'
 import { Badge } from '../../../../Badge'
 import { Button } from '../../../../Button'
 import { H2, Text, Code } from '../../../../Typography'
 import { Series } from '../../../types'
 import { LineChart, LegendList, LegendItem, getLineColor } from '../index'
 
-import { FLAT_SERIES, STANDARD_SERIES, SERIES_WITH_HUGE_DATA, UNALIGNED_SERIES, StandardDatum } from './mocks'
+import {
+    FLAT_SERIES,
+    STANDARD_SERIES,
+    SERIES_WITH_HUGE_DATA,
+    UNALIGNED_SERIES,
+    StandardDatum,
+    FLAT_XY_SERIES,
+} from './mocks'
 
 const StoryConfig: Meta = {
     title: 'wildcard/Charts',
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
     parameters: {
         chromatic: { disableSnapshots: false, enableDarkMode: true },
     },
@@ -40,6 +41,7 @@ export const LineChartsDemo: Story = () => (
         }}
     >
         <PlainChartExample />
+        <FlatChartExample />
         <PlainStackedChartExample />
         <ResponsiveChartExample />
         <WithLegendExample />
@@ -69,6 +71,19 @@ const PlainChartExample = () => {
         </section>
     )
 }
+
+const FlatChartExample = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Flat chart</H2>
+
+        <Text>
+            A standard example of the line chart but with fully flat datasets, try to navigate with arrows keyboard
+            navigation.
+        </Text>
+
+        <LineChart width={400} height={400} series={FLAT_XY_SERIES} />
+    </section>
+)
 
 const PlainStackedChartExample = () => {
     const [active, setActive] = useState(false)

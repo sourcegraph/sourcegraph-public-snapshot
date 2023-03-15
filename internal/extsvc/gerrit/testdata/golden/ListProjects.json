@@ -1,4 +1,31 @@
 {
+  "Core-Plugins": {
+   "description": "",
+   "id": "Core-Plugins",
+   "name": "",
+   "parent": "",
+   "state": "ACTIVE",
+   "branches": null,
+   "labels": null
+  },
+  "Public-Plugins": {
+   "description": "",
+   "id": "Public-Plugins",
+   "name": "",
+   "parent": "",
+   "state": "ACTIVE",
+   "branches": null,
+   "labels": null
+  },
+  "Public-Projects": {
+   "description": "",
+   "id": "Public-Projects",
+   "name": "",
+   "parent": "",
+   "state": "ACTIVE",
+   "branches": null,
+   "labels": null
+  },
   "TestRepo": {
    "description": "",
    "id": "TestRepo",

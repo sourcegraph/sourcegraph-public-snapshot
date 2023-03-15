@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "reader",
+    srcs = [
+        "interner.go",
+        "reader.go",
+        "types.go",
+        "unmarshal.go",
+        "unmarshal_documentation.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/codeintel/lsif/protocol",
+        "@com_github_json_iterator_go//:go",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "reader_test",
+    srcs = [
+        "interner_test.go",
+        "reader_test.go",
+        "unmarshal_test.go",
+    ],
+    embed = [":reader"],
+    deps = [
+        "//lib/codeintel/lsif/protocol",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

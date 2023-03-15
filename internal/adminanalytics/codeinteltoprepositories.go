@@ -28,7 +28,7 @@ func (s *CodeIntelTopRepositories) HasPrecise() bool  { return s.HasPrecise_ }
 func GetCodeIntelTopRepositories(ctx context.Context, db database.DB, cache bool, dateRange string) ([]*CodeIntelTopRepositories, error) {
 	cacheKey := fmt.Sprintf(`CodeIntelTopRepositories:%s`, dateRange)
 
-	if cache == true {
+	if cache {
 		if nodes, err := getArrayFromCache[CodeIntelTopRepositories](cacheKey); err == nil {
 			return nodes, nil
 		}
@@ -112,7 +112,7 @@ func GetCodeIntelTopRepositories(ctx context.Context, db database.DB, cache bool
 		items = append(items, &item)
 	}
 
-	if _, err := setArrayToCache(cacheKey, items); err != nil {
+	if err := setArrayToCache(cacheKey, items); err != nil {
 		return nil, err
 	}
 

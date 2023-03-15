@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func aptGetInstall(pkg string, preinstall ...string) check.FixAction[CheckArgs] {
@@ -33,8 +34,8 @@ var Ubuntu = []category{
 			},
 			{
 				Name:  "git",
-				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.34.1"))),
-				Fix:   aptGetInstall("git", "sudo add-apt-repository ppa:git-core/ppa"),
+				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.38.1"))),
+				Fix:   aptGetInstall("git", "sudo add-apt-repository -y ppa:git-core/ppa"),
 			}, {
 				Name:  "pcre",
 				Check: checkAction(check.HasUbuntuLibrary("libpcre3-dev")),
@@ -75,6 +76,24 @@ var Ubuntu = []category{
 				Name:  "bash",
 				Check: checkAction(check.CommandOutputContains("bash --version", "version 5")),
 				Fix:   aptGetInstall("bash"),
+			},
+			{
+				// Bazelisk is a wrapper for Bazel written in Go. It automatically picks a good version of Bazel given your current working directory
+				// Bazelisk replaces the bazel binary in your path
+				Name:  "bazelisk",
+				Check: checkAction(check.Combine(check.InPath("bazel"), check.CommandOutputContains("bazel version", "Bazelisk version"))),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := check.InPath("bazel")(ctx); err == nil {
+						cio.WriteAlertf("There already exists a bazel binary in your path and it is not managed by Bazlisk. Please remove it as Bazelisk replaces the bazel binary")
+						return errors.New("bazel binary already exists - please uninstall it with your package manager ex. `apt remove bazel`")
+					}
+					return cmdFix(`sudo curl -L https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -o /usr//bin/bazel && sudo chmod +x /usr/bin/bazel`)(ctx, cio, args)
+				},
+			},
+			{
+				Name:  "ibazel",
+				Check: checkAction(check.InPath("ibazel")),
+				Fix:   cmdFix(`sudo curl -L  https://github.com/bazelbuild/bazel-watcher/releases/download/v0.21.4/ibazel_linux_amd64 -o /usr/bin/ibazel && sudo chmod +x /usr/bin/ibazel`),
 			},
 			{
 				Name: "asdf",
@@ -161,7 +180,7 @@ var Ubuntu = []category{
 				},
 				Description: `Sourcegraph requires the PostgreSQL database to be running.
 
-We recommend installing it with Homebrew and starting it as a system service.
+We recommend installing it with your OS package manager  and starting it as a system service.
 If you know what you're doing, you can also install PostgreSQL another way.
 For example: you can use https://postgresapp.com/
 

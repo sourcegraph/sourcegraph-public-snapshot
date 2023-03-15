@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gosyntect",
+    srcs = [
+        "gosyntect.go",
+        "languages.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/gosyntect",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_opentracing_contrib_go_stdlib//nethttp",
+        "@com_github_opentracing_opentracing_go//:opentracing-go",
+    ],
+)

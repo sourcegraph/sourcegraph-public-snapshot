@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "confdefaults",
+    srcs = ["confdefaults.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/conf/confdefaults",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/conftypes",
+        "@com_github_russellhaering_gosaml2//uuid",
+    ],
+)

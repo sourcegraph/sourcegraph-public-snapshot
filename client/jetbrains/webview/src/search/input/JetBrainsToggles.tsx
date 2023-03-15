@@ -6,6 +6,7 @@ import React, { useCallback, useMemo } from 'react'
 import { mdiCodeBrackets, mdiFormatLetterCase, mdiLightningBolt, mdiRegex } from '@mdi/js'
 import classNames from 'classnames'
 
+import { QueryInputToggle } from '@sourcegraph/branded/src/search-ui/input/toggles/QueryInputToggle'
 import { isErrorLike } from '@sourcegraph/common'
 import {
     CaseSensitivityProps,
@@ -13,13 +14,13 @@ import {
     SearchPatternTypeMutationProps,
     SearchPatternTypeProps,
     SubmitSearchProps,
-} from '@sourcegraph/search'
-import { QueryInputToggle } from '@sourcegraph/search-ui/src/input/toggles/QueryInputToggle'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+} from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button } from '@sourcegraph/wildcard'
+
+import { SearchPatternType } from '../../graphql-operations'
 
 import styles from './JetBrainsToggles.module.scss'
 
@@ -173,8 +174,7 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                                 condition:
                                     findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !==
                                     undefined,
-                                reason:
-                                    'Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity',
+                                reason: 'Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity',
                             },
                             {
                                 condition: patternType === SearchPatternType.structural,

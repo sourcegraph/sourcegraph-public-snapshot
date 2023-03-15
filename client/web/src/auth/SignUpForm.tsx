@@ -1,21 +1,19 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiGithub, mdiGitlab } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
 import cookies from 'js-cookie'
 import { Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { asError } from '@sourcegraph/common'
 import {
     useInputValidation,
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Link, Icon, Label, Text, Button, AnchorLink } from '@sourcegraph/wildcard'
+import { Link, Icon, Label, Text, Button, AnchorLink, LoaderInput, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
@@ -46,11 +44,7 @@ interface SignUpFormProps {
     buttonLabel?: string
     context: Pick<
         SourcegraphContext,
-        | 'authProviders'
-        | 'sourcegraphDotComMode'
-        | 'experimentalFeatures'
-        | 'authPasswordPolicy'
-        | 'authMinPasswordLength'
+        'authProviders' | 'sourcegraphDotComMode' | 'authPasswordPolicy' | 'authMinPasswordLength'
     >
 
     // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service.
@@ -258,6 +252,8 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                                         <Icon aria-hidden={true} svgPath={mdiGithub} />
                                     ) : provider.serviceType === 'gitlab' ? (
                                         <Icon aria-hidden={true} svgPath={mdiGitlab} />
+                                    ) : provider.serviceType === 'bitbucketCloud' ? (
+                                        <Icon aria-hidden={true} svPath={mdiBitbucket} />
                                     ) : null}{' '}
                                     Continue with {provider.displayName}
                                 </Button>

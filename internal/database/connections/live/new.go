@@ -10,8 +10,8 @@ import (
 // matches any expected shape.
 //
 // This method should not be used outside of migration utilities.
-func RawNewFrontendDB(dsn, appName string, observationContext *observation.Context) (*sql.DB, error) {
-	return connectFrontendDB(dsn, appName, false, false, observationContext)
+func RawNewFrontendDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
+	return connectFrontendDB(observationCtx, dsn, appName, false, false)
 }
 
 // EnsureNewFrontendDB creates a new connection to the frontend database. After successful connection, the schema
@@ -21,23 +21,23 @@ func RawNewFrontendDB(dsn, appName string, observationContext *observation.Conte
 // If the SG_DEV_MIGRATE_ON_APPLICATION_STARTUP environment variable is set, which it is during local development,
 // then this call will behave equivalently to MigrateNewFrontendDB, which will attempt to  upgrade the database. We
 // only do this in dev as we don't want to introduce the migrator into an otherwise fast feedback cycle for developers.
-func EnsureNewFrontendDB(dsn, appName string, observationContext *observation.Context) (*sql.DB, error) {
-	return connectFrontendDB(dsn, appName, true, false, observationContext)
+func EnsureNewFrontendDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
+	return connectFrontendDB(observationCtx, dsn, appName, true, false)
 }
 
 // MigrateNewFrontendDB creates a new connection to the frontend database. After successful connection, the schema version
 // of the database will be compared against an expected version. If it is not up to date, the most recent schema version will
 // be applied.
-func MigrateNewFrontendDB(dsn, appName string, observationContext *observation.Context) (*sql.DB, error) {
-	return connectFrontendDB(dsn, appName, true, true, observationContext)
+func MigrateNewFrontendDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
+	return connectFrontendDB(observationCtx, dsn, appName, true, true)
 }
 
 // RawNewCodeIntelDB creates a new connection to the codeintel database. This method does not ensure that the schema
 // matches any expected shape.
 //
 // This method should not be used outside of migration utilities.
-func RawNewCodeIntelDB(dsn, appName string, observationContext *observation.Context) (*sql.DB, error) {
-	return connectCodeIntelDB(dsn, appName, false, false, observationContext)
+func RawNewCodeIntelDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
+	return connectCodeIntelDB(observationCtx, dsn, appName, false, false)
 }
 
 // EnsureNewCodeIntelDB creates a new connection to the codeintel database. After successful connection, the schema
@@ -47,23 +47,23 @@ func RawNewCodeIntelDB(dsn, appName string, observationContext *observation.Cont
 // If the SG_DEV_MIGRATE_ON_APPLICATION_STARTUP environment variable is set, which it is during local development,
 // then this call will behave equivalently to MigrateNewCodeIntelDB, which will attempt to  upgrade the database. We
 // only do this in dev as we don't want to introduce the migrator into an otherwise fast feedback cycle for developers.
-func EnsureNewCodeIntelDB(dsn, appName string, observationContext *observation.Context) (*sql.DB, error) {
-	return connectCodeIntelDB(dsn, appName, true, false, observationContext)
+func EnsureNewCodeIntelDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
+	return connectCodeIntelDB(observationCtx, dsn, appName, true, false)
 }
 
 // MigrateNewCodeIntelDB creates a new connection to the codeintel database. After successful connection, the schema version
 // of the database will be compared against an expected version. If it is not up to date, the most recent schema version will
 // be applied.
-func MigrateNewCodeIntelDB(dsn, appName string, observationContext *observation.Context) (*sql.DB, error) {
-	return connectCodeIntelDB(dsn, appName, true, true, observationContext)
+func MigrateNewCodeIntelDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
+	return connectCodeIntelDB(observationCtx, dsn, appName, true, true)
 }
 
 // RawNewCodeInsightsDB creates a new connection to the codeinsights database. This method does not ensure that the schema
 // matches any expected shape.
 //
 // This method should not be used outside of migration utilities.
-func RawNewCodeInsightsDB(dsn, appName string, observationContext *observation.Context) (*sql.DB, error) {
-	return connectCodeInsightsDB(dsn, appName, false, false, observationContext)
+func RawNewCodeInsightsDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
+	return connectCodeInsightsDB(observationCtx, dsn, appName, false, false)
 }
 
 // EnsureNewCodeInsightsDB creates a new connection to the codeinsights database. After successful connection, the schema
@@ -72,13 +72,13 @@ func RawNewCodeInsightsDB(dsn, appName string, observationContext *observation.C
 // If the SG_DEV_MIGRATE_ON_APPLICATION_STARTUP environment variable is set, which it is during local development,
 // then this call will behave equivalently to MigrateNewCodeInsightsDB, which will attempt to  upgrade the database. We
 // only do this in dev as we don't want to introduce the migrator into an otherwise fast feedback cycle for  developers.
-func EnsureNewCodeInsightsDB(dsn, appName string, observationContext *observation.Context) (*sql.DB, error) {
-	return connectCodeInsightsDB(dsn, appName, true, false, observationContext)
+func EnsureNewCodeInsightsDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
+	return connectCodeInsightsDB(observationCtx, dsn, appName, true, false)
 }
 
 // MigrateNewCodeInsightsDB creates a new connection to the codeinsights database. After successful connection, the schema
 // version of the database will be compared against an expected version. If it is not up to date, the most recent schema version
 // will be applied.
-func MigrateNewCodeInsightsDB(dsn, appName string, observationContext *observation.Context) (*sql.DB, error) {
-	return connectCodeInsightsDB(dsn, appName, true, true, observationContext)
+func MigrateNewCodeInsightsDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
+	return connectCodeInsightsDB(observationCtx, dsn, appName, true, true)
 }

@@ -3,12 +3,12 @@ package jobutil
 import (
 	"context"
 	"fmt"
-	"regexp"
-	"sort"
 	"strings"
 	"time"
 
+	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -209,8 +209,8 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 
 func (j *fileContainsFilterJob) removeUnmatchedFileDiffs(cm *result.CommitMatch, matchedFileCounts map[string]int) result.Match {
 	// Ensure the matched ranges are sorted by start offset
-	sort.Slice(cm.DiffPreview.MatchedRanges, func(i, j int) bool {
-		return cm.DiffPreview.MatchedRanges[i].Start.Offset < cm.DiffPreview.MatchedRanges[j].End.Offset
+	slices.SortFunc(cm.DiffPreview.MatchedRanges, func(a, b result.Range) bool {
+		return a.Start.Offset < b.End.Offset
 	})
 
 	// Convert each file diff to a string so we know how much we are removing if we drop that file

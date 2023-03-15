@@ -1,15 +1,14 @@
 import { Duration } from 'date-fns'
 
-import { BaseInsight, InsightExecutionType, InsightFilters, InsightType } from '../common'
+import { BaseInsight, InsightFilters, InsightType } from '../common'
 
 export interface SearchBasedInsight extends BaseInsight {
+    type: InsightType.SearchBased
     repositories: string[]
+    repoQuery: string
     filters: InsightFilters
     series: SearchBasedInsightSeries[]
     step: Duration
-
-    executionType: InsightExecutionType.Backend
-    type: InsightType.SearchBased
 }
 
 export interface SearchBasedInsightSeries {

@@ -3,12 +3,10 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } f
 import { gql, useMutation } from '@apollo/client'
 import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps, useHistory } from 'react-router'
+import { useNavigate, useParams } from 'react-router-dom'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -27,6 +25,8 @@ import {
     Label,
     H3,
     Text,
+    ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
@@ -39,17 +39,18 @@ import { getFeatureFlagReferences, parseProductReference } from './SiteAdminFeat
 
 import styles from './SiteAdminFeatureFlagConfigurationPage.module.scss'
 
-export interface SiteAdminFeatureFlagConfigurationProps extends RouteComponentProps<{ name: string }>, TelemetryProps {
+export interface SiteAdminFeatureFlagConfigurationProps extends TelemetryProps {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags
     productVersion?: string
 }
 
 export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
     React.PropsWithChildren<SiteAdminFeatureFlagConfigurationProps>
-> = ({ match: { params }, fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version }) => {
-    const history = useHistory()
+> = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version }) => {
+    const { name = '' } = useParams<{ name: string }>()
+    const navigate = useNavigate()
     const productGitVersion = parseProductReference(productVersion)
-    const isCreateFeatureFlag = params.name === 'new'
+    const isCreateFeatureFlag = name === 'new'
 
     // Load the initial feature flag, unless we are creating a new feature flag.
     const featureFlagOrError = useObservable(
@@ -58,16 +59,16 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                 isCreateFeatureFlag
                     ? of(undefined)
                     : fetchFeatureFlags().pipe(
-                          map(flags => flags.find(flag => flag.name === params.name)),
+                          map(flags => flags.find(flag => flag.name === name)),
                           map(flag => {
                               if (flag === undefined) {
-                                  throw new Error(`Could not find feature flag with name '${params.name}'.`)
+                                  throw new Error(`Could not find feature flag with name '${name}'.`)
                               }
                               return flag
                           }),
                           catchError((error): [ErrorLike] => [asError(error)])
                       ),
-            [isCreateFeatureFlag, params.name, fetchFeatureFlags]
+            [isCreateFeatureFlag, name, fetchFeatureFlags]
         )
     )
 
@@ -94,15 +95,12 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
     )
 
     // Set up mutations for creation or management of this feature flag.
-    const [createFeatureFlag, { loading: createFlagLoading, error: createFlagError }] = useMutation(
-        CREATE_FEATURE_FLAG_MUTATION
-    )
-    const [updateFeatureFlag, { loading: updateFlagLoading, error: updateFlagError }] = useMutation(
-        UPDATE_FEATURE_FLAG_MUTATION
-    )
-    const [deleteFeatureFlag, { loading: deleteFlagLoading, error: deleteFlagError }] = useMutation(
-        DELETE_FEATURE_FLAG_MUTATION
-    )
+    const [createFeatureFlag, { loading: createFlagLoading, error: createFlagError }] =
+        useMutation(CREATE_FEATURE_FLAG_MUTATION)
+    const [updateFeatureFlag, { loading: updateFlagLoading, error: updateFlagError }] =
+        useMutation(UPDATE_FEATURE_FLAG_MUTATION)
+    const [deleteFeatureFlag, { loading: deleteFlagLoading, error: deleteFlagError }] =
+        useMutation(DELETE_FEATURE_FLAG_MUTATION)
 
     // Create the main form fields and action buttons based on the state of the page.
     let body: React.ReactElement
@@ -130,7 +128,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                             ...flagValue,
                         },
                     }).then(() => {
-                        history.push(`./${flagName || 'new'}`)
+                        navigate(`/site-admin/feature-flags/configuration/${flagName || 'new'}`)
                     })
                 }
             >
@@ -170,7 +168,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                                 ...flagValue,
                             },
                         }).then(() => {
-                            history.push(`./${flagName}`)
+                            navigate(`/site-admin/feature-flags/configuration/${flagName}`)
                         })
                     }
                 >
@@ -193,7 +191,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                                 name: flagName,
                             },
                         }).then(() => {
-                            history.push('../')
+                            navigate('/site-admin/feature-flags')
                         })
                     }
                 >
@@ -239,7 +237,12 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
 
             <div className="mt-3">
                 {actions}
-                <Button type="button" className="ml-2" variant="secondary" onClick={() => history.push('../')}>
+                <Button
+                    type="button"
+                    className="ml-2"
+                    variant="secondary"
+                    onClick={() => navigate('/site-admin/feature-flags')}
+                >
                     Cancel
                 </Button>
             </div>
@@ -292,10 +295,10 @@ const AddFeatureFlagOverride: FunctionComponent<
     const [overrideType, setOverrideType] = useState<FeatureFlagOverrideType>('User')
     const [namespaceID, setNamespaceID] = useState<number | string>('')
 
-    const getBase64Namespace = useCallback((): string => btoa(`${overrideType}:${namespaceID}`), [
-        namespaceID,
-        overrideType,
-    ])
+    const getBase64Namespace = useCallback(
+        (): string => btoa(`${overrideType}:${namespaceID}`),
+        [namespaceID, overrideType]
+    )
 
     const [addOverride, { loading, error, reset }] = useMutation<
         CreateFeatureFlagOverrideResult,
@@ -770,10 +773,10 @@ const ReferencesCollapsible: React.FunctionComponent<
     }>
 > = ({ flagName, productGitVersion }) => {
     const references = useObservable(
-        useMemo(() => (flagName ? getFeatureFlagReferences(flagName, productGitVersion) : of([])), [
-            flagName,
-            productGitVersion,
-        ])
+        useMemo(
+            () => (flagName ? getFeatureFlagReferences(flagName, productGitVersion) : of([])),
+            [flagName, productGitVersion]
+        )
     )
     if (references === undefined || references.length === 0) {
         return <></>

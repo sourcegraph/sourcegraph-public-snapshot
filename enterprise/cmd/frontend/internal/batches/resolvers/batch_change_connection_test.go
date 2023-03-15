@@ -12,7 +12,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
+	bstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -32,7 +33,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, true).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := bstore.New(db, &observation.TestContext, nil)
 	repoStore := database.ReposWith(logger, bstore)
 	esStore := database.ExternalServicesWith(logger, bstore)
 
@@ -87,10 +88,10 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 	// Batch changes are returned in reverse order.
 	nodes := []apitest.BatchChange{
 		{
-			ID: string(marshalBatchChangeID(batchChange2.ID)),
+			ID: string(bgql.MarshalBatchChangeID(batchChange2.ID)),
 		},
 		{
-			ID: string(marshalBatchChangeID(batchChange1.ID)),
+			ID: string(bgql.MarshalBatchChangeID(batchChange1.ID)),
 		},
 	}
 
@@ -188,7 +189,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 	orgID := bt.CreateTestOrg(t, db, "org").ID
 
-	store := store.New(db, &observation.TestContext, nil)
+	store := bstore.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: store}
 	s, err := newSchema(db, r)
@@ -239,7 +240,7 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange.ID))},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
@@ -267,8 +268,8 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 2,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange2.ID))},
-					{ID: string(marshalBatchChangeID(batchChange.ID))},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange2.ID))},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
@@ -323,7 +324,7 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange.ID))},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
@@ -351,8 +352,8 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 2,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange2.ID))},
-					{ID: string(marshalBatchChangeID(batchChange.ID))},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange2.ID))},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}

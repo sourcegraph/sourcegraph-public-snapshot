@@ -43,8 +43,13 @@ func RunValidate(cliCtx *cli.Context, logger log.Logger, config *config.Config) 
 	// TODO: Validate access token.
 	// Validate src-cli is of a good version, rely on the connected instance to tell
 	// us what "good" means.
-	if err := validateSrcCLIVersion(cliCtx.Context, logger, client, copts.BaseClientOptions.EndpointOptions); err != nil {
-		return err
+	if err = validateSrcCLIVersion(cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions); err != nil {
+		if errors.Is(err, ErrSrcPatchBehind) {
+			// This is ok. The patch just doesn't match but still works.
+			logger.Warn("A newer patch release version of src-cli is available, consider running executor install src-cli to upgrade", log.Error(err))
+		} else {
+			return err
+		}
 	}
 
 	if config.UseFirecracker {
@@ -81,9 +86,9 @@ func validateGitVersion(ctx context.Context) error {
 }
 
 // validateSrcCLIVersion queries the latest recommended version of src-cli and makes sure it
-// matches what is installed. If not, a warning message recommending to use a different
-// version is logged.
-func validateSrcCLIVersion(ctx context.Context, logger log.Logger, client *apiclient.BaseClient, options apiclient.EndpointOptions) error {
+// matches what is installed. If not, an error recommending to use a different
+// version is returned.
+func validateSrcCLIVersion(ctx context.Context, client *apiclient.BaseClient, options apiclient.EndpointOptions) error {
 	latestVersion, err := latestSrcCLIVersion(ctx, client, options)
 	if err != nil {
 		return errors.Wrap(err, "cannot retrieve latest compatible src-cli version")
@@ -106,16 +111,18 @@ func validateSrcCLIVersion(ctx context.Context, logger log.Logger, client *apicl
 	if err != nil {
 		return errors.Wrap(err, "failed to parse latest src-cli version")
 	}
-	// If the installed version is too old:
-	if actual.LessThan(latest) {
-		return errors.Newf("installed src-cli is not the latest recommended version, consider upgrading actual=%s, latest=%s", actual.String(), latest.String())
-		// If the installed version is too new:
-	} else if actual.Major() != latest.Major() || actual.Minor() != latest.Minor() {
+
+	if actual.Major() != latest.Major() || actual.Minor() != latest.Minor() {
 		return errors.Newf("installed src-cli is not the recommended version, consider switching actual=%s, recommended=%s", actual.String(), latest.String())
+	} else if actual.LessThan(latest) {
+		return errors.Wrapf(ErrSrcPatchBehind, "consider upgrading actual=%s, latest=%s", actual.String(), latest.String())
 	}
 
 	return nil
 }
+
+// ErrSrcPatchBehind is the specific error if the currently installed src version is a patch behind the latest version.
+var ErrSrcPatchBehind = errors.New("installed src-cli is not the latest version")
 
 func latestSrcCLIVersion(ctx context.Context, client *apiclient.BaseClient, options apiclient.EndpointOptions) (_ string, err error) {
 	req, err := apiclient.NewRequest(http.MethodGet, options.URL, ".api/src-cli/version", nil)

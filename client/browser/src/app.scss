@@ -1,4 +1,4 @@
-@import '../../branded/src/global-styles/colors';
+@import 'wildcard/src/global-styles/colors';
 
 :root {
     --border-color: rgba(0, 0, 0, 0.125);
@@ -6,11 +6,6 @@
     --code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
     --font-weight-normal: 400;
     --font-weight-bold: 700;
-}
-
-.sg-icon .icon {
-    @extend .icon-inline;
-    display: flex;
 }
 
 // Note that we define this before selection highlights so that it will override
@@ -28,11 +23,11 @@
     }
 }
 
-@import '../../branded/src/global-styles/functions.scss';
-@import '../../branded/src/global-styles/variables.scss';
-@import '../../branded/src/global-styles/mixins.scss';
-@import '../../branded/src/global-styles/utilities/text';
-@import '../../branded/src/global-styles/utilities/screenreaders';
-@import '../../shared/src/global-styles/icons';
+@import 'wildcard/src/global-styles/functions';
+@import 'wildcard/src/global-styles/variables';
+@import 'wildcard/src/global-styles/mixins';
+@import 'wildcard/src/global-styles/utilities/text';
+@import 'wildcard/src/global-styles/utilities/screenreaders';
+@import 'wildcard/src/global-styles/icons';
 @import './highlight';
 @import './shared';

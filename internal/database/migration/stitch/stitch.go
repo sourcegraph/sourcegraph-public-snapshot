@@ -152,7 +152,7 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 		}
 
 		return shared.MigrationBounds{}, errors.Newf(
-			"migration %d unexpectedly edited in release %s:\nup.sql:\n%s\n\ndown.sql:\n%s\n",
+			"a migration (%d) from a previous version was unexpectedly edited in this release - if this change was intentional add this migration to the allowedOverrideMap  %s:\nup.sql:\n%s\n\ndown.sql:\n%s\n",
 			newDefinition.ID,
 			rev,
 			cmp.Diff(
@@ -207,6 +207,7 @@ var allowedOverrideMap = map[int]struct{}{
 	1528395786: {}, // https://github.com/sourcegraph/sourcegraph/pull/18667 - drive-by edit of empty migration
 	1528395701: {}, // https://github.com/sourcegraph/sourcegraph/pull/16203 - rewritten to avoid * in select
 	1528395730: {}, // https://github.com/sourcegraph/sourcegraph/pull/15972 - drops/re-created view to avoid dependencies
+	1663871069: {}, // https://github.com/sourcegraph/sourcegraph/pull/43390 - fixes malformed published value
 
 	// codeintel
 	1000000020: {}, // https://github.com/sourcegraph/sourcegraph/pull/28772 - rewritten to be idempotent

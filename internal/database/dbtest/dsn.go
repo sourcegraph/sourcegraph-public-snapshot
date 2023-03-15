@@ -27,8 +27,8 @@ func GetDSN() (*url.URL, error) {
 	}
 
 	username := ""
-	if user, err := user.Current(); err == nil {
-		username = user.Username
+	if osUser, err := user.Current(); err == nil {
+		username = osUser.Username
 	}
 
 	dsn := postgresdsn.New("", username, getenv)

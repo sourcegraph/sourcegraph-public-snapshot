@@ -1,21 +1,22 @@
 import * as React from 'react'
 
-import { RouteComponentProps } from 'react-router'
+import { NavigateFunction, Location } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { CardHeader, Card } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { GitCommitFields, Scalars } from '../../graphql-operations'
+import { GitCommitFields, RepositoryComparisonCommitsResult, Scalars } from '../../graphql-operations'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+
+type RepositoryComparisonRepository = Extract<RepositoryComparisonCommitsResult['node'], { __typename?: 'Repository' }>
 
 function queryRepositoryComparisonCommits(args: {
     repo: Scalars['ID']
@@ -23,8 +24,8 @@ function queryRepositoryComparisonCommits(args: {
     head: string | null
     first?: number
     path?: string
-}): Observable<GQL.IGitCommitConnection> {
-    return queryGraphQL(
+}): Observable<RepositoryComparisonRepository['comparison']['commits']> {
+    return queryGraphQL<RepositoryComparisonCommitsResult>(
         gql`
             query RepositoryComparisonCommits($repo: ID!, $base: String, $head: String, $first: Int, $path: String) {
                 node(id: $repo) {
@@ -47,11 +48,11 @@ function queryRepositoryComparisonCommits(args: {
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.node) {
+            if (!data?.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
-            if (!repo.comparison || !repo.comparison.commits || errors) {
+            const repo = data.node as RepositoryComparisonRepository
+            if (!repo.comparison?.commits || errors) {
                 throw createAggregateError(errors)
             }
             return repo.comparison.commits
@@ -59,9 +60,12 @@ function queryRepositoryComparisonCommits(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {
+interface Props extends RepositoryCompareAreaPageProps {
     /** An optional path of a specific file being compared */
     path: string | null
+
+    location: Location
+    navigate: NavigateFunction
 }
 
 /** A page with a list of commits in the comparison. */
@@ -118,15 +122,15 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                         hideSearch={true}
                         noSummaryIfAllNodesVisible={true}
                         updates={this.updates}
-                        history={this.props.history}
-                        location={this.props.location}
                     />
                 </Card>
             </div>
         )
     }
 
-    private queryCommits = (args: { first?: number }): Observable<GQL.IGitCommitConnection> =>
+    private queryCommits = (args: {
+        first?: number
+    }): Observable<RepositoryComparisonRepository['comparison']['commits']> =>
         queryRepositoryComparisonCommits({
             ...args,
             repo: this.props.repo.id,

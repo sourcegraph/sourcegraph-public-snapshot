@@ -1,10 +1,11 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 :root {
-    /* Map out CSS variables to the theme-aware GitHub ones */
-    --body-bg: var(--color-bg-canvas);
-    --border-color: var(--color-border-primary);
-    --secondary: var(--color-auto-gray-2);
+    // Map out CSS variables to the theme-aware GitHub ones
+    // Latest variable, backwards compat (GitHub Enterprise) fallback, last-resort fallback to Sourcegraph color (in case GitHub changes its variables again)
+    --body-bg: var(--color-canvas-default, var(--color-bg-canvas, var(--white)));
+    --border-color: var(--color-border-default, var(--color-border-primary, var(--secondary)));
+    --secondary: var(--color-btn-bg, var(--color-auto-gray-2), var(--gray-06));
 }
 
 [data-color-mode='dark'] {
@@ -15,21 +16,6 @@
     @media (prefers-color-scheme: dark) {
         --mark-bg: var(--mark-bg-dark);
     }
-}
-
-.command-palette-popover {
-    --dropdown-bg: var(--body-bg);
-    --dropdown-border-color: var(--color-border-default);
-    --popover-border-radius: 6px;
-}
-
-.command-palette-action-item {
-    /* Reset GitHub's 44px min-height */
-    min-height: initial;
-
-    /* Reset default user agent button styles */
-    border: none;
-    background-color: transparent;
 }
 
 .action-item {

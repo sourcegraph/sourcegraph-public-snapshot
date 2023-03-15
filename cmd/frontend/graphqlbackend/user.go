@@ -13,15 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -70,9 +69,10 @@ type UserResolver struct {
 
 // NewUserResolver returns a new UserResolver with given user object.
 func NewUserResolver(db database.DB, user *types.User) *UserResolver {
-	return &UserResolver{db: db, user: user, logger: log.Scoped("userResolver", "resolves a specific user").With(
-		log.Object("repo",
-			log.String("user", user.Username))),
+	return &UserResolver{
+		db:     db,
+		user:   user,
+		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
 	}
 }
 
@@ -111,17 +111,9 @@ func (r *UserResolver) DatabaseID() int32 { return r.user.ID }
 // Email returns the user's oldest email, if one exists.
 // Deprecated: use Emails instead.
 func (r *UserResolver) Email(ctx context.Context) (string, error) {
-	// 🚨 SECURITY: Only the authenticated user can view their email on
-	// Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, r.user.ID); err != nil {
-			return "", err
-		}
-	} else {
-		// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-			return "", err
-		}
+	// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		return "", err
 	}
 
 	email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, r.user.ID)
@@ -210,11 +202,11 @@ func (r *UserResolver) SiteAdmin(ctx context.Context) (bool, error) {
 	return r.user.SiteAdmin, nil
 }
 
-func (r *UserResolver) TosAccepted(ctx context.Context) bool {
+func (r *UserResolver) TosAccepted(_ context.Context) bool {
 	return r.user.TosAccepted
 }
 
-func (r *UserResolver) Searchable(ctx context.Context) bool {
+func (r *UserResolver) Searchable(_ context.Context) bool {
 	return r.user.Searchable
 }
 
@@ -250,7 +242,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		}
 	}
 
-	if args.AvatarURL != nil {
+	if args.AvatarURL != nil && len(*args.AvatarURL) > 0 {
 		if len(*args.AvatarURL) > 3000 {
 			return nil, errors.New("avatar URL exceeded 3000 characters")
 		}
@@ -353,6 +345,8 @@ func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 
 func (r *UserResolver) NamespaceName() string { return r.user.Username }
 
+func (r *UserResolver) SCIMControlled() bool { return r.user.SCIMControlled }
+
 func (r *UserResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoResolver, error) {
 	return EnterpriseResolvers.authzResolver.UserPermissionsInfo(ctx, r.ID())
 }
@@ -360,7 +354,8 @@ func (r *UserResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoReso
 func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string
 	NewPassword string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can change their password.
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
@@ -375,7 +370,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, user.ID, "updated the password"); err != nil {
+		if err := backend.NewUserEmailsService(r.db, r.logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "updated the password"); err != nil {
 			log15.Warn("Failed to send email to inform user of password update", "error", err)
 		}
 	}
@@ -384,7 +379,8 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 
 func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	NewPassword string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can create their password.
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
@@ -399,7 +395,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, user.ID, "created a password"); err != nil {
+		if err := backend.NewUserEmailsService(r.db, r.logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "created a password"); err != nil {
 			log15.Warn("Failed to send email to inform user of password creation", "error", err)
 		}
 	}
@@ -477,6 +473,42 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
+func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
+	if envvar.SourcegraphDotComMode() {
+		return nil, errors.New("roles are not available on sourcegraph.com")
+	}
+	userID := r.user.ID
+	connectionStore := &roleConnectionStore{
+		db:     r.db,
+		userID: userID,
+	}
+	return graphqlutil.NewConnectionResolver[RoleResolver](
+		connectionStore,
+		&args.ConnectionResolverArgs,
+		&graphqlutil.ConnectionResolverOptions{
+			AllowNoLimit: true,
+		},
+	)
+}
+
+func (r *UserResolver) Permissions(ctx context.Context) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
+	userID := r.user.ID
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+	connectionStore := &permisionConnectionStore{
+		db:     r.db,
+		userID: userID,
+	}
+	return graphqlutil.NewConnectionResolver[PermissionResolver](
+		connectionStore,
+		&graphqlutil.ConnectionResolverArgs{},
+		&graphqlutil.ConnectionResolverOptions{
+			AllowNoLimit: true,
+		},
+	)
+}
+
 func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {
 	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return false
@@ -512,28 +544,10 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
 }
 
-func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryResolver, error) {
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return nil, err
-	}
-	repos, err := r.db.UserPublicRepos().ListByUser(ctx, r.user.ID)
-	if err != nil {
-		return nil, err
-	}
-	var out []*RepositoryResolver
-	for _, repo := range repos {
-		out = append(out, &RepositoryResolver{
-			logger: r.logger,
-			RepoMatch: result.RepoMatch{
-				ID:   repo.RepoID,
-				Name: api.RepoName(repo.RepoURI),
-			},
-			db:              r.db,
-			gitserverClient: gitserver.NewClient(r.db),
-			innerRepo: &types.Repo{
-				ID: repo.RepoID,
-			},
-		})
-	}
-	return out, nil
+func (r *UserResolver) ToUser() (*UserResolver, bool) {
+	return r, true
+}
+
+func (r *UserResolver) OwnerField() string {
+	return EnterpriseResolvers.ownResolver.UserOwnerField(r)
 }

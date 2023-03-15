@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"path/filepath"
 	"testing"
+
+	"github.com/sourcegraph/log/logtest"
 )
 
 func TestGitserverProxySimple(t *testing.T) {
@@ -16,15 +18,15 @@ func TestGitserverProxySimple(t *testing.T) {
 	}))
 	defer originServer.Close()
 
-	url, err := url.Parse(originServer.URL)
+	originServerURL, err := url.Parse(originServer.URL)
 	if err != nil {
 		t.Fatalf("unexpected error parsing url: %s", err)
 	}
 
 	gs := NewMockGitserverClient()
-	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
+	gs.AddrForRepoFunc.PushReturn(originServerURL.Host)
 
-	proxyServer := httptest.NewServer(gitserverProxy(gs, "/info/refs"))
+	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/info/refs"))
 	defer proxyServer.Close()
 
 	req, err := http.NewRequest("GET", proxyServer.URL, nil)
@@ -55,15 +57,15 @@ func TestGitserverProxyTargetPath(t *testing.T) {
 	}))
 	defer originServer.Close()
 
-	url, err := url.Parse(originServer.URL)
+	originServerURL, err := url.Parse(originServer.URL)
 	if err != nil {
 		t.Fatalf("unexpected error parsing url: %s", err)
 	}
 
 	gs := NewMockGitserverClient()
-	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
+	gs.AddrForRepoFunc.PushReturn(originServerURL.Host)
 
-	proxyServer := httptest.NewServer(gitserverProxy(gs, "/foo"))
+	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/foo"))
 	defer proxyServer.Close()
 
 	req, err := http.NewRequest("GET", proxyServer.URL, nil)
@@ -87,15 +89,15 @@ func TestGitserverProxyHeaders(t *testing.T) {
 	}))
 	defer originServer.Close()
 
-	url, err := url.Parse(originServer.URL)
+	originServerURL, err := url.Parse(originServer.URL)
 	if err != nil {
 		t.Fatalf("unexpected error parsing url: %s", err)
 	}
 
 	gs := NewMockGitserverClient()
-	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
+	gs.AddrForRepoFunc.PushReturn(originServerURL.Host)
 
-	proxyServer := httptest.NewServer(gitserverProxy(gs, "/test"))
+	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/test"))
 	defer proxyServer.Close()
 
 	req, err := http.NewRequest("GET", proxyServer.URL, nil)
@@ -135,15 +137,15 @@ func TestGitserverProxyRedirectWithPayload(t *testing.T) {
 	}))
 	defer originServer.Close()
 
-	url, err := url.Parse(originServer.URL)
+	originServerURL, err := url.Parse(originServer.URL)
 	if err != nil {
 		t.Fatalf("unexpected error parsing url: %s", err)
 	}
 
 	gs := NewMockGitserverClient()
-	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
+	gs.AddrForRepoFunc.PushReturn(originServerURL.Host)
 
-	proxyServer := httptest.NewServer(gitserverProxy(gs, "/test"))
+	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/test"))
 	defer proxyServer.Close()
 
 	req, err := http.NewRequest("POST", proxyServer.URL, bytes.NewReader([]byte("foobarbaz")))

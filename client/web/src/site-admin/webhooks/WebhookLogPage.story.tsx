@@ -37,44 +37,46 @@ const config: Meta = {
 
 export default config
 
-const buildQueryWebhookLogs: (logs: WebhookLogFields[]) => typeof queryWebhookLogs = logs => (
-    { first, after }: Pick<WebhookLogsVariables, 'first' | 'after'>,
-    externalService: SelectedExternalService,
-    onlyErrors: boolean
-) => {
-    const filtered = logs.filter(log => {
-        if (onlyErrors && log.statusCode < 400) {
-            return false
-        }
+const buildQueryWebhookLogs: (logs: WebhookLogFields[]) => typeof queryWebhookLogs =
+    logs =>
+    (
+        { first, after }: Pick<WebhookLogsVariables, 'first' | 'after'>,
+        externalService: SelectedExternalService,
+        onlyErrors: boolean
+    ) => {
+        const filtered = logs.filter(log => {
+            if (onlyErrors && log.statusCode < 400) {
+                return false
+            }
 
-        if (externalService === 'unmatched' && log.externalService) {
-            return false
-        }
-        if (
-            externalService !== 'all' &&
-            externalService !== 'unmatched' &&
-            externalService !== log.externalService?.displayName
-        ) {
-            return false
-        }
+            if (externalService === 'unmatched' && log.externalService) {
+                return false
+            }
+            if (
+                externalService !== 'all' &&
+                externalService !== 'unmatched' &&
+                externalService !== log.externalService?.displayName
+            ) {
+                return false
+            }
 
-        return true
-    })
+            return true
+        })
 
-    first = first ?? 20
-    const afterNumber = after?.length ? +after : 0
-    const page = filtered.slice(afterNumber, afterNumber + first)
-    const cursor = afterNumber + first
+        first = first ?? 20
+        const afterNumber = after?.length ? +after : 0
+        const page = filtered.slice(afterNumber, afterNumber + first)
+        const cursor = afterNumber + first
 
-    return of({
-        nodes: page,
-        pageInfo: {
-            hasNextPage: logs.length > cursor,
-            endCursor: cursor.toString(),
-        },
-        totalCount: logs.length,
-    })
-}
+        return of({
+            nodes: page,
+            pageInfo: {
+                hasNextPage: logs.length > cursor,
+                endCursor: cursor.toString(),
+            },
+            totalCount: logs.length,
+        })
+    }
 
 const buildWebhookLogs = (count: number, externalServiceCount: number): WebhookLogFields[] => {
     const logs: WebhookLogFields[] = []

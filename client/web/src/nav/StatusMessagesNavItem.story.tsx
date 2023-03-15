@@ -39,3 +39,46 @@ export const AllMessageTypes: Story = () => (
 )
 
 AllMessageTypes.storyName = 'All message types'
+
+export const IndexingMessage: Story = () => (
+    <WebStory>
+        {() => (
+            <MockedTestProvider
+                mocks={[
+                    newStatusMessageMock([
+                        {
+                            __typename: 'IndexingProgress',
+                            indexed: 15,
+                            notIndexed: 23,
+                        },
+                    ]),
+                ]}
+            >
+                <StatusMessagesNavItem disablePolling={true} />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+IndexingMessage.storyName = 'Indexing progress'
+
+export const GitUpdatesDisabled: Story = () => (
+    <WebStory>
+        {() => (
+            <MockedTestProvider
+                mocks={[
+                    newStatusMessageMock([
+                        {
+                            __typename: 'GitUpdatesDisabled',
+                            message: 'Repositories will not be cloned or updated.',
+                        },
+                    ]),
+                ]}
+            >
+                <StatusMessagesNavItem disablePolling={true} />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+GitUpdatesDisabled.storyName = 'Code syncing status'

@@ -1,14 +1,16 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
+
+import { renderWithBrandedContext } from '../../../testing'
 import { Button } from '../../Button'
 import { PopoverTrigger } from '../../Popover'
 
 import { FeedbackPrompt } from '.'
 
 const sampleFeedback = {
-    score: 4,
     feedback: 'Lorem ipsum dolor sit amet',
 }
 
@@ -16,8 +18,13 @@ describe('FeedbackPrompt', () => {
     const onSubmit = sinon.stub()
 
     beforeEach(() => {
-        render(
-            <FeedbackPrompt openByDefault={true} onSubmit={onSubmit} productResearchEnabled={true}>
+        renderWithBrandedContext(
+            <FeedbackPrompt
+                openByDefault={true}
+                onSubmit={onSubmit}
+                productResearchEnabled={true}
+                authenticatedUser={null}
+            >
                 <PopoverTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
                     <span>Feedback</span>
                 </PopoverTrigger>
@@ -31,12 +38,11 @@ describe('FeedbackPrompt', () => {
     })
 
     const submitFeedback = () => {
-        userEvent.click(screen.getByLabelText('Very Happy'))
-        fireEvent.change(screen.getByPlaceholderText('What’s going well? What could be better?'), {
+        fireEvent.change(screen.getByLabelText('Send feedback to Sourcegraph'), {
             target: { value: sampleFeedback.feedback },
         })
 
-        expect(screen.getByText('Send')).toBeEnabled()
+        assertAriaEnabled(screen.getByText('Send'))
 
         userEvent.click(screen.getByText('Send'))
     }
@@ -46,13 +52,11 @@ describe('FeedbackPrompt', () => {
     })
 
     test('should enable/disable submit button correctly', () => {
-        userEvent.click(screen.getByLabelText('Very Happy'))
+        assertAriaDisabled(screen.getByText('Send'))
 
-        expect(screen.getByText('Send')).toBeDisabled()
+        userEvent.type(screen.getByLabelText('Send feedback to Sourcegraph'), sampleFeedback.feedback)
 
-        userEvent.type(screen.getByPlaceholderText('What’s going well? What could be better?'), sampleFeedback.feedback)
-
-        expect(screen.getByText('Send')).toBeEnabled()
+        assertAriaEnabled(screen.getByText('Send'))
     })
 
     test('should render submit success correctly', async () => {
@@ -60,8 +64,8 @@ describe('FeedbackPrompt', () => {
 
         submitFeedback()
 
-        expect(await screen.findByText(/thank you for your help/i)).toBeInTheDocument()
-        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback, sampleFeedback.score)
+        expect(await screen.findByText(/thank you/i)).toBeInTheDocument()
+        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback)
 
         expect(document.body).toMatchSnapshot()
     })
@@ -72,7 +76,7 @@ describe('FeedbackPrompt', () => {
         submitFeedback()
 
         expect(await screen.findByText(/something went really wrong/i)).toBeInTheDocument()
-        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback, sampleFeedback.score)
+        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback)
 
         expect(document.body).toMatchSnapshot()
     })

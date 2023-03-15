@@ -2,12 +2,7 @@ package repos
 
 import (
 	"context"
-	"encoding/hex"
-	"hash/fnv"
-	"strings"
 	"time"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -123,94 +118,4 @@ func (r *RateLimitSyncer) SyncServices(ctx context.Context, services []*types.Ex
 		l.SetLimit(limit)
 	}
 	return nil
-}
-
-type ScopeCache interface {
-	Get(string) ([]byte, bool)
-	Set(string, []byte)
-}
-
-// GrantedScopes returns a slice of scopes granted by the service based on the token
-// provided in the config. It makes a request to the code host but responses are cached
-// in Redis based on the token.
-//
-// Currently only GitHub and GitLab external services with user or org namespace are supported,
-// other code hosts will simply return an empty slice
-func GrantedScopes(ctx context.Context, logger log.Logger, cache ScopeCache, db database.DB, svc *types.ExternalService) ([]string, error) {
-	externalServicesStore := db.ExternalServices()
-	if svc.IsSiteOwned() || (svc.Kind != extsvc.KindGitHub && svc.Kind != extsvc.KindGitLab) {
-		return nil, nil
-	}
-	src, err := NewSource(ctx, logger.Scoped("Source", ""), db, svc, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating source")
-	}
-	switch v := src.(type) {
-	case *GitHubSource:
-		// Cached path
-		token := v.config.Token
-		if token == "" {
-			return nil, errors.New("missing token")
-		}
-		key, err := hashToken(token)
-		if err != nil {
-			return nil, err
-		}
-		if result, ok := cache.Get(key); ok && len(result) > 0 {
-			return strings.Split(string(result), ","), nil
-		}
-
-		// Slow path
-		src, err := NewGithubSource(ctx, logger.Scoped("GithubSource", ""), externalServicesStore, svc, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating source")
-		}
-		scopes, err := src.v3Client.GetAuthenticatedOAuthScopes(ctx)
-		if err != nil {
-			return nil, errors.Wrap(err, "getting scopes")
-		}
-		cache.Set(key, []byte(strings.Join(scopes, ",")))
-		return scopes, nil
-
-	case *GitLabSource:
-		// Cached path
-		token := v.config.Token
-		if v.config.TokenType != "oauth" {
-			return nil, errors.New("not an oauth token")
-		}
-		if token == "" {
-			return nil, errors.New("missing token")
-		}
-		key, err := hashToken(token)
-		if err != nil {
-			return nil, err
-		}
-		if result, ok := cache.Get(key); ok && len(result) > 0 {
-			return strings.Split(string(result), ","), nil
-		}
-
-		// Slow path
-		src, err := NewGitLabSource(ctx, logger.Scoped("GitLabSource", ""), db, svc, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating source")
-		}
-		scopes, err := src.client.GetAuthenticatedUserOAuthScopes(ctx)
-		if err != nil {
-			return nil, errors.Wrap(err, "getting scopes")
-		}
-		cache.Set(key, []byte(strings.Join(scopes, ",")))
-		return scopes, nil
-	default:
-		return nil, errors.Errorf("unsupported config type: %T", v)
-	}
-}
-
-func hashToken(token string) (string, error) {
-	h := fnv.New32()
-	_, err := h.Write([]byte(token))
-	if err != nil {
-		return "", errors.Wrap(err, "hashing token")
-	}
-	b := h.Sum(nil)
-	return hex.EncodeToString(b), nil
 }

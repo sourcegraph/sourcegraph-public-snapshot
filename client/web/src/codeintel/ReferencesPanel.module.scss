@@ -1,5 +1,6 @@
 :root {
     --filter-input-height: 2.5rem;
+    --filter-input-padding-y: 0.25rem;
     --group-header-font-size: 0.875rem;
     --group-divider-height: 0.25rem;
     --card-header-height: 1.5rem;
@@ -8,8 +9,8 @@
 .filter {
     height: var(--filter-input-height);
     padding-left: 1rem;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
+    padding-top: var(--filter-input-padding-y);
+    padding-bottom: var(--filter-input-padding-y);
     padding-right: 1rem;
 
     input {
@@ -99,6 +100,7 @@
     display: flex;
     flex-direction: column;
     min-height: 18px;
+    position: relative;
 
     &:not(:last-child) > &--link {
         border-bottom: 1px solid var(--body-bg);
@@ -106,6 +108,21 @@
 
     &--active {
         background-color: var(--color-bg-3);
+    }
+
+    &--active-icon {
+        width: 1.35rem;
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
+        height: calc(100% - 1px);
+        position: absolute;
+        right: 0;
+        top: 0;
+        background-color: var(--color-bg-3);
+        padding-left: 0.25rem;
+        padding-right: 0.1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     &--link:hover {
@@ -181,7 +198,18 @@
     }
 }
 
-.card-header {
+// The nested selector is required to bump the selector specificity and resolve the issue
+// with different selector-order in the production bundle.
+// See https://github.com/sourcegraph/sourcegraph/issues/46081.
+//
+// It's not possible to use the `:where()` selector in the `CardHeader` CSS module because the
+// `typed-scss-modules` package that generates Typescript type definitions for CSS modules
+// relies on the outdated PostCSS version, which doesn't generate `:exports` statements for pseudo selectors correctly.
+// See related issues:
+// - https://github.com/skovy/typed-scss-modules/pull/166
+// - https://github.com/css-modules/css-modules-loader-core/pull/231
+/* stylelint-disable-next-line selector-max-compound-selectors */
+.panel .card-header {
     padding-top: 0.1rem;
     padding-bottom: 0.1rem;
     padding-left: 1rem;
@@ -198,8 +226,6 @@
         padding-left: 1rem;
 
         border: none;
-
-        height: 1.8rem;
 
         background-color: var(--body-bg);
 
@@ -223,7 +249,7 @@
 // Left side of the panel, including token name, filter, list of locations
 .left-sub-panel {
     flex: 1;
-    overflow: auto;
+    overflow: hidden;
     height: 100%;
     background-color: var(--body-bg);
 }
@@ -236,7 +262,7 @@
 
 // Lists of locations (definitions, references, implementations) on the left
 .location-lists {
-    height: calc(100% - var(--filter-input-height) - var(--card-header-height));
+    height: calc(100% - var(--filter-input-height) - 2 * var(--filter-input-padding-y));
     overflow: auto;
 }
 

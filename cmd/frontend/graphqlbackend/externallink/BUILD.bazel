@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "externallink",
+    srcs = [
+        "doc.go",
+        "repository.go",
+        "resolver.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/extsvc",
+        "//internal/gitserver",
+        "//internal/repoupdater/protocol",
+        "//internal/trace/ot",
+        "//internal/types",
+        "@com_github_opentracing_opentracing_go//ext",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "externallink_test",
+    srcs = ["repository_test.go"],
+    embed = [":externallink"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/extsvc/github",
+        "//internal/extsvc/gitlab",
+        "//internal/gitserver",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+    ],
+)

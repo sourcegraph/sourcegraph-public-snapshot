@@ -11,7 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A PackagesSource yields dependency repositories from a package (dependencies) host connection.
@@ -39,15 +41,17 @@ type packagesSource interface {
 	// metadata(): to store gob-encoded structs with implementation-specific metadata.
 }
 
-type packagesDownloadSource interface {
-	// GetPackage sends a request to the package host to get metadata about this package, like the description.
-	GetPackage(ctx context.Context, name reposource.PackageName) (reposource.Package, error)
-}
-
 var _ Source = &PackagesSource{}
 
+// CheckConnection at this point assumes availability and relies on errors returned
+// from the subsequent calls. This is going to be expanded as part of issue #44683
+// to actually only return true if the source can serve requests.
+func (s *PackagesSource) CheckConnection(ctx context.Context) error {
+	return nil
+}
+
 func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	deps, err := s.configDependencies(s.configDeps)
+	staticConfigDeps, err := s.configDependencies()
 	if err != nil {
 		results <- SourceResult{Source: s, Err: err}
 		return
@@ -55,19 +59,19 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 
 	handledPackages := make(map[reposource.PackageName]struct{})
 
-	for _, dep := range deps {
+	for _, dep := range staticConfigDeps {
 		if err := ctx.Err(); err != nil {
 			results <- SourceResult{Source: s, Err: err}
 			return
 		}
 
 		if _, ok := handledPackages[dep.PackageSyntax()]; !ok {
-			_, err := getPackage(ctx, s.src, dep.PackageSyntax())
+			_, err := getPackageFromName(s.src, dep.PackageSyntax())
 			if err != nil {
 				results <- SourceResult{Source: s, Err: err}
 				continue
 			}
-			repo := s.makeRepo(dep)
+			repo := s.packageToRepoType(dep)
 			results <- SourceResult{Source: s, Repo: repo}
 			handledPackages[dep.PackageSyntax()] = struct{}{}
 		}
@@ -86,14 +90,14 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 	}()
 
 	const batchLimit = 100
-	var lastName reposource.PackageName
-	lastName = ""
+	var lastID int
 	for {
-		depRepos, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
-			Scheme:          s.scheme,
-			After:           lastName,
-			Limit:           batchLimit,
-			ExcludeVersions: true,
+		depRepos, _, _, err := s.depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+			Scheme: s.scheme,
+			After:  lastID,
+			Limit:  batchLimit,
+			// deliberate for clarity
+			IncludeBlocked: false,
 		})
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
@@ -103,26 +107,19 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 			break
 		}
 
-		lastName = depRepos[len(depRepos)-1].Name
+		lastID = depRepos[len(depRepos)-1].ID
 
-		// at most batchLimit because of the limit above
-		depReposToHandle := make([]dependencies.Repo, 0, len(depRepos))
 		for _, depRepo := range depRepos {
-			if _, ok := handledPackages[depRepo.Name]; !ok {
-				// don't need to add to handledPackages here, as the results from
-				// depRepos should be unique
-				depReposToHandle = append(depReposToHandle, depRepo)
+			if _, ok := handledPackages[depRepo.Name]; ok {
+				continue
 			}
-		}
-
-		for _, depRepo := range depReposToHandle {
 			if err := sem.Acquire(ctx, 1); err != nil {
 				return
 			}
 			depRepo := depRepo
 			g.Go(func() error {
 				defer sem.Release(1)
-				pkg, err := getPackage(ctx, s.src, depRepo.Name)
+				pkg, err := getPackageFromName(s.src, depRepo.Name)
 				if err != nil {
 					if !errcode.IsNotFound(err) {
 						results <- SourceResult{Source: s, Err: err}
@@ -130,7 +127,7 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 					return nil
 				}
 
-				repo := s.makeRepo(pkg)
+				repo := s.packageToRepoType(pkg)
 				results <- SourceResult{Source: s, Repo: repo}
 
 				return nil
@@ -145,14 +142,23 @@ func (s *PackagesSource) GetRepo(ctx context.Context, repoName string) (*types.R
 		return nil, err
 	}
 
-	pkg, err := getPackage(ctx, s.src, parsedPkg.PackageSyntax())
+	if allowed, err := s.depsSvc.IsPackageRepoAllowed(ctx, s.scheme, parsedPkg.PackageSyntax()); err != nil {
+		return nil, errors.Wrapf(err, "error checking if package repo (%s, %s) is allowed", s.scheme, parsedPkg.PackageSyntax())
+	} else if !allowed {
+		return nil, &repoupdater.ErrNotFound{
+			Repo:       api.RepoName(repoName),
+			IsNotFound: true,
+		}
+	}
+
+	pkg, err := getPackageFromName(s.src, parsedPkg.PackageSyntax())
 	if err != nil {
 		return nil, err
 	}
-	return s.makeRepo(pkg), nil
+	return s.packageToRepoType(pkg), nil
 }
 
-func (s *PackagesSource) makeRepo(dep reposource.Package) *types.Repo {
+func (s *PackagesSource) packageToRepoType(dep reposource.Package) *types.Repo {
 	urn := s.svc.URN()
 	repoName := dep.RepoName()
 	return &types.Repo{
@@ -171,22 +177,22 @@ func (s *PackagesSource) makeRepo(dep reposource.Package) *types.Repo {
 				CloneURL: string(repoName),
 			},
 		},
-		Metadata: metadata(dep),
+		Metadata: packageMetadata(dep),
 	}
 }
 
-func getPackage(ctx context.Context, s packagesSource, name reposource.PackageName) (reposource.Package, error) {
+func getPackageFromName(s packagesSource, name reposource.PackageName) (reposource.Package, error) {
 	switch d := s.(type) {
 	// Downloading package descriptions is disabled due to performance issues, causing sync times to take >12hr.
 	// Don't re-enable the case below without fixing https://github.com/sourcegraph/sourcegraph/issues/39653.
-	//case packagesDownloadSource:
+	// case packagesDownloadSource:
 	//	return d.GetPackage(ctx, name)
 	default:
 		return d.ParsePackageFromName(name)
 	}
 }
 
-func metadata(dep reposource.Package) any {
+func packageMetadata(dep reposource.Package) any {
 	switch d := dep.(type) {
 	case *reposource.MavenVersionedPackage:
 		return &reposource.MavenMetadata{
@@ -210,8 +216,8 @@ func (s *PackagesSource) SetDependenciesService(depsSvc *dependencies.Service) {
 	s.depsSvc = depsSvc
 }
 
-func (s *PackagesSource) configDependencies(deps []string) (dependencies []reposource.VersionedPackage, err error) {
-	for _, dep := range deps {
+func (s *PackagesSource) configDependencies() (dependencies []reposource.VersionedPackage, err error) {
+	for _, dep := range s.configDeps {
 		dependency, err := s.src.ParseVersionedPackageFromConfiguration(dep)
 		if err != nil {
 			return nil, err

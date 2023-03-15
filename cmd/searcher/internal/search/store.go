@@ -19,14 +19,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/mountinfo"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -78,11 +78,16 @@ type Store struct {
 	// MaxCacheSizeBytes.
 	MaxCacheSizeBytes int64
 
+	// BackgroundTimeout is the maximum time spent fetching a working copy
+	// from gitserver. If zero then we will respect the passed in context of a
+	// request.
+	BackgroundTimeout time.Duration
+
 	// Log is the Logger to use.
 	Log log.Logger
 
-	// ObservationContext is used to configure observability in diskcache.
-	ObservationContext *observation.Context
+	// ObservationCtx is used to configure observability in diskcache.
+	ObservationCtx *observation.Context
 
 	// once protects Start
 	once sync.Once
@@ -91,13 +96,10 @@ type Store struct {
 	cache diskcache.Store
 
 	// fetchLimiter limits concurrent calls to FetchTar.
-	fetchLimiter *mutablelimiter.Limiter
+	fetchLimiter *limiter.MutableLimiter
 
 	// zipCache provides efficient access to repo zip files.
 	zipCache zipCache
-
-	// DB is a connection to frontend database
-	DB database.DB
 }
 
 // FilterFunc filters tar files based on their header.
@@ -110,14 +112,19 @@ type FilterFunc func(hdr *tar.Header) bool
 // search request paying the cost of initializing.
 func (s *Store) Start() {
 	s.once.Do(func() {
-		s.fetchLimiter = mutablelimiter.New(15)
+		s.fetchLimiter = limiter.NewMutable(15)
 		s.cache = diskcache.NewStore(s.Path, "store",
-			diskcache.WithBackgroundTimeout(10*time.Minute),
+			diskcache.WithBackgroundTimeout(s.BackgroundTimeout),
 			diskcache.WithBeforeEvict(s.zipCache.delete),
-			diskcache.WithObservationContext(s.ObservationContext),
+			diskcache.WithobservationCtx(s.ObservationCtx),
 		)
-		_ = os.MkdirAll(s.Path, 0700)
+		_ = os.MkdirAll(s.Path, 0o700)
 		metrics.MustRegisterDiskMonitor(s.Path)
+
+		o := mountinfo.CollectorOpts{Namespace: "searcher"}
+		m := mountinfo.NewCollector(s.Log, o, map[string]string{"cacheDir": s.Path})
+		s.ObservationCtx.Registerer.MustRegister(m)
+
 		go s.watchAndEvict()
 		go s.watchConfig()
 	})
@@ -130,7 +137,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 }
 
 func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip")
+	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip") //nolint:staticcheck // OT is deprecated
 	ext.Component.Set(span, "store")
 	var cacheHit bool
 	start := time.Now()
@@ -229,7 +236,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 	ctx, cancel := context.WithCancel(ctx)
 
 	metricFetching.Inc()
-	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")
+	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch") //nolint:staticcheck // OT is deprecated
 	ext.Component.Set(span, "store")
 	span.SetTag("repo", repo)
 	span.SetTag("commit", commit)
@@ -274,7 +281,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 
 	filter.CommitIgnore = func(hdr *tar.Header) bool { return false } // default: don't filter
 	if s.FilterTar != nil {
-		filter.CommitIgnore, err = s.FilterTar(ctx, gitserver.NewClient(s.DB), repo, commit)
+		filter.CommitIgnore, err = s.FilterTar(ctx, gitserver.NewClient(), repo, commit)
 		if err != nil {
 			return nil, errors.Errorf("error while calling FilterTar: %w", err)
 		}
@@ -432,7 +439,7 @@ func (s *Store) watchAndEvict() {
 func (s *Store) watchConfig() {
 	for {
 		// Allow roughly 10 fetches per gitserver
-		limit := 10 * len(gitserver.NewClient(s.DB).Addrs())
+		limit := 10 * len(gitserver.NewClient().Addrs())
 		if limit == 0 {
 			limit = 15
 		}

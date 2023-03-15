@@ -10,9 +10,12 @@
      */
     font-size: inherit;
     border-radius: 0;
+    display: flex;
+    justify-content: stretch;
 }
 
 .list {
+    width: 100%;
     overflow: auto;
 
     [data-reach-combobox-option]:hover {

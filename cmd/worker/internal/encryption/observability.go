@@ -18,14 +18,14 @@ type metrics struct {
 	numErrors           prometheus.Counter
 }
 
-func newMetrics(observationContext *observation.Context) *metrics {
+func newMetrics(observationCtx *observation.Context) *metrics {
 	gaugeVec := func(name, help string) *prometheus.GaugeVec {
 		gaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: name,
 			Help: help,
 		}, []string{"tableName"})
 
-		observationContext.Registerer.MustRegister(gaugeVec)
+		observationCtx.Registerer.MustRegister(gaugeVec)
 		return gaugeVec
 	}
 
@@ -35,7 +35,7 @@ func newMetrics(observationContext *observation.Context) *metrics {
 			Help: help,
 		})
 
-		observationContext.Registerer.MustRegister(counter)
+		observationCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 
@@ -45,7 +45,7 @@ func newMetrics(observationContext *observation.Context) *metrics {
 			Help: help,
 		}, []string{"tableName"})
 
-		observationContext.Registerer.MustRegister(counterVec)
+		observationCtx.Registerer.MustRegister(counterVec)
 		return counterVec
 	}
 

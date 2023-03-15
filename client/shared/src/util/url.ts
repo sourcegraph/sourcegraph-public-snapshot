@@ -11,10 +11,12 @@ import {
 import { Position } from '@sourcegraph/extension-api-types'
 
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
+import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { discreteValueAliases } from '../search/query/filters'
 import { findFilter, FilterKind } from '../search/query/query'
 import { appendContextFilter, omitFilter } from '../search/query/transformer'
+import { SearchMode } from '../search/searchQueryState'
 
 export interface RepoSpec {
     /**
@@ -110,7 +112,7 @@ export interface ModeSpec {
 }
 
 // `panelID` is intended for substitution (e.g. `sub(panel.url, 'panelID', 'implementations')`)
-type BlobViewState = 'def' | 'references' | 'panelID'
+export type BlobViewState = 'def' | 'references' | 'panelID'
 
 export interface ViewStateSpec {
     /**
@@ -227,14 +229,6 @@ export interface RepoRevision extends RepoSpec, RevisionSpec {}
  * A repo resolved to an exact commit
  */
 export interface AbsoluteRepo extends RepoSpec, RevisionSpec, ResolvedRevisionSpec {}
-
-/**
- * A documentation page in a repo
- */
-export interface DocumentationPathID {
-    pathID: string
-}
-export interface RepoDocumentation extends RepoSpec, RevisionSpec, Partial<ResolvedRevisionSpec>, DocumentationPathID {}
 
 /**
  * A file in a repo
@@ -527,8 +521,9 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
+
     searchContextSpec?: string,
-    searchParametersList?: { key: string; value: string }[]
+    searchMode?: SearchMode
 ): string {
     const searchParameters = new URLSearchParams()
     let queryParameter = query
@@ -560,28 +555,82 @@ export function buildSearchURLQuery(
         searchParameters.set('case', caseParameter)
     }
 
-    if (searchParametersList) {
-        for (const queryParameter of searchParametersList) {
-            searchParameters.set(queryParameter.key, queryParameter.value)
-        }
-    }
+    searchParameters.set('sm', (searchMode || SearchMode.Precise).toString())
 
     return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
-export function buildGetStartedURL(source: string, returnTo?: string, forDotcom?: boolean): string {
-    // Still support directing to dotcom signup links when needed
-    const path = forDotcom ? 'https://sourcegraph.com/sign-up' : 'https://signup.sourcegraph.com'
-    const url = new URL(path)
-    url.searchParams.set('utm_medium', 'inproduct')
-    url.searchParams.set('utm_source', source)
-    url.searchParams.set('utm_campaign', 'inproduct-cta')
+/**
+ *
+ * @param authenticatedUser - User email/name for Enterprise form prefill
+ * @param product - CTA source product page, determines dynamic Enterprise description
+ * @returns signup UR string with relevant params attached
+ */
+export const buildEnterpriseTrialURL = (
+    authenticatedUser: Pick<AuthenticatedUser, 'displayName' | 'emails'> | null | undefined,
+    product?: string
+): string => {
+    const url = new URL('https://signup.sourcegraph.com/')
 
-    if (returnTo !== undefined) {
-        url.searchParams.set('returnTo', returnTo)
+    if (product) {
+        url.searchParams.append('p', product)
+    }
+    const primaryEmail = authenticatedUser?.emails.find(email => email.isPrimary)
+    if (primaryEmail) {
+        url.searchParams.append('email', primaryEmail.email)
+    }
+    if (authenticatedUser?.displayName) {
+        url.searchParams.append('name', authenticatedUser.displayName)
     }
 
     return url.toString()
+}
+
+/**
+ * Takes an input URL and adds Sourcegraph App specific query parameters to it. This includes the UTM parameters and app_os.
+ * @param url Original URL
+ * @param campaign Optional utm_campaign value to add to the query params.
+ * @returns URL string with appended query parameters
+ */
+export const addSourcegraphAppOutboundUrlParameters = (url: string, campaign?: string): string => {
+    const urlObject = new URL(url)
+    urlObject.searchParams.append('utm_source', 'sg_app')
+    urlObject.searchParams.append('utm_medium', 'referral')
+
+    if (campaign) {
+        urlObject.searchParams.append('utm_campaign', campaign)
+    }
+
+    const os = detectOS()
+    if (os) {
+        urlObject.searchParams.append('app_os', os)
+    }
+
+    const version = window.context?.version as string | undefined
+    if (version) {
+        urlObject.searchParams.append('app_version', version)
+    }
+    return urlObject.toString()
+}
+
+/*
+ * Detect the user's OS, for analytics purposes and not for feature detection.
+ * Do not rely on this for any feature functionality. Returns undefined if unknown.
+ */
+function detectOS(): 'windows' | 'mac' | 'linux' | undefined {
+    const userAgent = window.navigator.userAgent
+
+    if (userAgent.includes('Windows')) {
+        return 'windows'
+    }
+    if (userAgent.includes('Mac')) {
+        return 'mac'
+    }
+    if (userAgent.includes('Linux')) {
+        return 'linux'
+    }
+
+    return undefined
 }
 
 /** The results of parsing a repo-revision string like "my/repo@my/revision". */

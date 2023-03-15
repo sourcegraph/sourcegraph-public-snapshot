@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"regexp/syntax"
+	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"sync"
 	"time"
 
@@ -12,17 +12,13 @@ import (
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"github.com/sourcegraph/zoekt/stream"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !conf.SearchIndexEnabled() {
-		return nil
-	}
-
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
 		client: search.Indexed(),
@@ -72,6 +68,28 @@ func (r *repositoryTextSearchIndexResolver) Status(ctx context.Context) (*reposi
 	return &repositoryTextSearchIndexStatus{entry: *entry}, nil
 }
 
+func (r *repositoryTextSearchIndexResolver) Host(ctx context.Context) (*repositoryIndexserverHostResolver, error) {
+	// We don't want to let the user wait for too long. If the socket
+	// connection is working, 500ms should be generous.
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*500)
+	defer cancel()
+	host, err := searchzoekt.GetIndexserverHost(ctx, r.repo.RepoName())
+	if err != nil {
+		return nil, nil
+	}
+	return &repositoryIndexserverHostResolver{
+		host,
+	}, nil
+}
+
+type repositoryIndexserverHostResolver struct {
+	host searchzoekt.Host
+}
+
+func (r *repositoryIndexserverHostResolver) Name(ctx context.Context) string {
+	return r.host.Name
+}
+
 type repositoryTextSearchIndexStatus struct {
 	entry zoekt.RepoListEntry
 }
@@ -81,7 +99,7 @@ func (r *repositoryTextSearchIndexStatus) UpdatedAt() gqlutil.DateTime {
 }
 
 func (r *repositoryTextSearchIndexStatus) ContentByteSize() BigInt {
-	return BigInt{r.entry.Stats.ContentBytes}
+	return BigInt(r.entry.Stats.ContentBytes)
 }
 
 func (r *repositoryTextSearchIndexStatus) ContentFilesCount() int32 {
@@ -213,10 +231,10 @@ func (r *skippedIndexedResolver) Count(ctx context.Context) (BigInt, error) {
 	// with "NOT-INDEXED: <reason>"
 	expr, err := syntax.Parse("^NOT-INDEXED: ", syntax.Perl)
 	if err != nil {
-		return BigInt{}, err
+		return 0, err
 	}
 
-	q := &zoektquery.And{[]zoektquery.Q{
+	q := &zoektquery.And{Children: []zoektquery.Q{
 		&zoektquery.Regexp{Regexp: expr, Content: true, CaseSensitive: true},
 		zoektquery.NewSingleBranchesRepos(r.branch, uint32(r.repo.IDInt32())),
 	}}
@@ -230,10 +248,10 @@ func (r *skippedIndexedResolver) Count(ctx context.Context) (BigInt, error) {
 			stats.Add(sr.Stats)
 		}),
 	); err != nil {
-		return BigInt{}, err
+		return 0, err
 	}
 
-	return BigInt{int64(stats.FileCount)}, nil
+	return BigInt(stats.FileCount), nil
 }
 
 func (r *skippedIndexedResolver) Query() string {

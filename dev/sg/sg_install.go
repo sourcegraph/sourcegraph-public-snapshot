@@ -66,23 +66,15 @@ func installAction(cmd *cli.Context) error {
 		}
 	}
 
-	var location string
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
-
-	switch runtime.GOOS {
-	case "linux":
-		location = filepath.Join(homeDir, ".local", "bin", "sg")
-	case "darwin":
-		// We're using something in the home directory because on a fresh macOS
-		// installation the user doesn't have permission to create/open/write
-		// to /usr/local/bin. We're safe with ~/.sg/sg.
-		location = filepath.Join(homeDir, ".sg", "sg")
-	default:
-		return errors.Newf("unsupported platform: %s", runtime.GOOS)
+	locationDir, err := sgInstallDir(homeDir)
+	if err != nil {
+		return err
 	}
+	location := filepath.Join(locationDir, "sg")
 
 	var logoOut bytes.Buffer
 	printLogo(&logoOut)
@@ -229,4 +221,18 @@ func getBool() bool {
 		return true
 	}
 	return false
+}
+
+func sgInstallDir(homeDir string) (string, error) {
+	switch runtime.GOOS {
+	case "linux":
+		return filepath.Join(homeDir, ".local", "bin"), nil
+	case "darwin":
+		// We're using something in the home directory because on a fresh macOS
+		// installation the user doesn't have permission to create/open/write
+		// to /usr/local/bin. We're safe with ~/.sg/sg.
+		return filepath.Join(homeDir, ".sg"), nil
+	default:
+		return "", errors.Newf("unsupported platform: %s", runtime.GOOS)
+	}
 }

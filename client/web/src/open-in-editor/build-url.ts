@@ -1,6 +1,6 @@
 import * as path from 'path'
 
-import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+import type { UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { ExternalServiceKind } from '../graphql-operations'
 
@@ -21,15 +21,16 @@ export function buildRepoBaseNameAndPath(
     externalServiceType: string | undefined,
     filePath: string | undefined
 ): string {
-    const bareRepoNamePieces = repoName
-        .split('/')
-        .slice(serviceTypesWithOwnerInUrl.has((externalServiceType || '').toLowerCase()) ? 2 : 1)
+    const pathPieces = repoName.split('/')
+    const shouldCutOffTwoPieces =
+        pathPieces.length > 2 && serviceTypesWithOwnerInUrl.has((externalServiceType || '').toLowerCase())
+    const bareRepoNamePieces = pathPieces.slice(shouldCutOffTwoPieces ? 2 : 1)
     return path.join(...bareRepoNamePieces, ...(filePath ? [filePath] : []))
 }
 
 export function buildEditorUrl(
     repoBaseNameAndPath: string,
-    range: UIRangeSpec['range'] | undefined,
+    position: UIPositionSpec['position'] | undefined,
     editorSettings: EditorSettings | undefined,
     sourcegraphBaseUrl: string,
     editorIndex = 0
@@ -49,7 +50,7 @@ export function buildEditorUrl(
             : ''
 
     const absolutePath = path.join(projectPath, repoBaseNameAndPath)
-    const { line, column } = range ? { line: range.start.line, column: range.start.character } : { line: 1, column: 1 }
+    const { line, column } = position ? { line: position.line, column: position.character } : { line: 1, column: 1 }
     const url = urlPattern
         .replace('%file', pathPrefix + absolutePath)
         .replace('%line', `${line}`)
@@ -80,7 +81,7 @@ export function getEditorSettingsErrorMessage(
         }).`
     }
 
-    if (!editorSettings.editorIds || !editorSettings.editorIds.length) {
+    if (!editorSettings.editorIds?.length) {
         return `Add \`editorIds\` to your user settings to open files. [Learn more](${learnMoreURL})`
     }
     const validEditorCount = editorSettings.editorIds.map(id => getEditor(id)).filter(editor => editor).length

@@ -1,0 +1,33 @@
+.table {
+    table-layout: auto;
+    max-width: 100%;
+    vertical-align: center;
+
+    th,
+    td {
+        border: none;
+    }
+}
+
+.table-header {
+    width: 1%;
+    white-space: nowrap;
+
+    // Override default th value top in order to adjust webhook
+    // information table layout.
+    vertical-align: baseline !important;
+}
+
+.input {
+    border: none;
+    background-color: inherit !important;
+}
+
+.content-cell {
+    display: flex;
+    align-items: center;
+}
+
+.copy-button {
+    display: inline-block;
+}

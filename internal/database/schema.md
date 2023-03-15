@@ -1,3 +1,25 @@
+# Table "public.access_requests"
+```
+       Column        |           Type           | Collation | Nullable |                   Default                   
+---------------------+--------------------------+-----------+----------+---------------------------------------------
+ id                  | integer                  |           | not null | nextval('access_requests_id_seq'::regclass)
+ created_at          | timestamp with time zone |           | not null | now()
+ updated_at          | timestamp with time zone |           | not null | now()
+ name                | text                     |           | not null | 
+ email               | text                     |           | not null | 
+ additional_info     | text                     |           |          | 
+ status              | text                     |           | not null | 
+ decision_by_user_id | integer                  |           |          | 
+Indexes:
+    "access_requests_pkey" PRIMARY KEY, btree (id)
+    "access_requests_email_key" UNIQUE CONSTRAINT, btree (email)
+    "access_requests_created_at" btree (created_at)
+    "access_requests_status" btree (status)
+Foreign-key constraints:
+    "access_requests_decision_by_user_id_fkey" FOREIGN KEY (decision_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+
+```
+
 # Table "public.access_tokens"
 ```
      Column      |           Type           | Collation | Nullable |                  Default                  
@@ -61,6 +83,7 @@ Indexes:
     "batch_changes_namespace_org_id" btree (namespace_org_id)
     "batch_changes_namespace_user_id" btree (namespace_user_id)
 Check constraints:
+    "batch_change_name_is_valid" CHECK (name ~ '^[\w.-]+$'::text)
     "batch_changes_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
     "batch_changes_name_not_blank" CHECK (name <> ''::text)
 Foreign-key constraints:
@@ -142,7 +165,7 @@ Indexes:
     "batch_spec_resolution_jobs_state" btree (state)
 Foreign-key constraints:
     "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
-    "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE DEFERRABLE
+    "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -167,6 +190,7 @@ Foreign-key constraints:
  cancel                  | boolean                  |           | not null | false
  queued_at               | timestamp with time zone |           |          | now()
  user_id                 | integer                  |           | not null | 
+ version                 | integer                  |           | not null | 1
 Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_workspace_execution_jobs_batch_spec_workspace_id" btree (batch_spec_workspace_id)
@@ -269,7 +293,7 @@ Referenced by:
  batch_change_id   | bigint                   |           |          | 
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
-    "batch_specs_rand_id" btree (rand_id)
+    "batch_specs_unique_rand_id" UNIQUE, btree (rand_id)
 Check constraints:
     "batch_specs_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
@@ -281,6 +305,21 @@ Referenced by:
     TABLE "batch_spec_workspace_files" CONSTRAINT "batch_spec_workspace_files_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE
     TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.cached_available_indexers"
+```
+       Column       |  Type   | Collation | Nullable |                        Default                        
+--------------------+---------+-----------+----------+-------------------------------------------------------
+ id                 | integer |           | not null | nextval('cached_available_indexers_id_seq'::regclass)
+ repository_id      | integer |           | not null | 
+ num_events         | integer |           | not null | 
+ available_indexers | jsonb   |           | not null | 
+Indexes:
+    "cached_available_indexers_pkey" PRIMARY KEY, btree (id)
+    "cached_available_indexers_repository_id" UNIQUE, btree (repository_id)
+    "cached_available_indexers_num_events" btree (num_events DESC) WHERE available_indexers::text <> '{}'::text
 
 ```
 
@@ -374,11 +413,11 @@ Foreign-key constraints:
  type                | text                     |           | not null | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
+    "changeset_specs_unique_rand_id" UNIQUE, btree (rand_id)
     "changeset_specs_batch_spec_id" btree (batch_spec_id)
     "changeset_specs_created_at" btree (created_at)
     "changeset_specs_external_id" btree (external_id)
     "changeset_specs_head_ref" btree (head_ref)
-    "changeset_specs_rand_id" btree (rand_id)
     "changeset_specs_title" btree (title)
 Check constraints:
     "changeset_specs_published_valid_values" CHECK (published = 'true'::text OR published = 'false'::text OR published = '"draft"'::text OR published IS NULL)
@@ -437,6 +476,8 @@ Referenced by:
  cancel                   | boolean                                      |           | not null | false
  detached_at              | timestamp with time zone                     |           |          | 
  computed_state           | text                                         |           | not null | 
+ external_fork_name       | citext                                       |           |          | 
+ previous_failure_message | text                                         |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -796,132 +837,130 @@ Indexes:
 
 ```
 
-# Table "public.codeintel_lockfile_references"
-```
-          Column          |           Type           | Collation | Nullable |                          Default                          
---------------------------+--------------------------+-----------+----------+-----------------------------------------------------------
- id                       | integer                  |           | not null | nextval('codeintel_lockfile_references_id_seq'::regclass)
- repository_name          | text                     |           | not null | 
- revspec                  | text                     |           | not null | 
- package_scheme           | text                     |           | not null | 
- package_name             | text                     |           | not null | 
- package_version          | text                     |           | not null | 
- repository_id            | integer                  |           |          | 
- commit_bytea             | bytea                    |           |          | 
- last_check_at            | timestamp with time zone |           |          | 
- depends_on               | integer[]                |           |          | '{}'::integer[]
- resolution_lockfile      | text                     |           |          | 
- resolution_repository_id | integer                  |           |          | 
- resolution_commit_bytea  | bytea                    |           |          | 
-Indexes:
-    "codeintel_lockfile_references_pkey" PRIMARY KEY, btree (id)
-    "codeintel_lockfile_references_repository_name_revspec_package_r" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_lockfile, resolution_repository_id, resolution_commit_bytea)
-    "codeintel_lockfile_references_last_check_at" btree (last_check_at)
-    "codeintel_lockfile_references_repository_id_commit_bytea" btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL
-    "codeintel_lockfiles_references_depends_on" gin (depends_on gin__int_ops)
-
-```
-
-Tracks a lockfile dependency that might be resolvable to a specific repository-commit pair.
-
-**commit_bytea**: The resolved 40-char revhash of the associated revspec, if it is resolvable on this instance.
-
-**depends_on**: IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`.
-
-**last_check_at**: Timestamp when background job last checked this row for repository resolution
-
-**package_name**: Encodes `reposource.PackageDependency.PackageSyntax`. The name of the dependency as used by the package manager, excluding version information.
-
-**package_scheme**: Encodes `reposource.PackageDependency.Scheme`. The scheme of the dependency (e.g., semanticdb, npm).
-
-**package_version**: Encodes `reposource.PackageDependency.PackageVersion`. The version of the package.
-
-**repository_id**: The identifier of the repo that resolves the associated name, if it is resolvable on this instance.
-
-**repository_name**: Encodes `reposource.PackageDependency.RepoName`. A name that is &#34;globally unique&#34; for a Sourcegraph instance. Used in `repo:...` queries.
-
-**resolution_commit_bytea**: Commit at which lockfile was resolved. Corresponds to `codeintel_lockfiles.commit_bytea`.
-
-**resolution_lockfile**: Relative path of lockfile in which this package was referenced. Corresponds to `codeintel_lockfiles.lockfile`.
-
-**resolution_repository_id**: ID of the repository in which lockfile was resolved. Corresponds to `codeintel_lockfiles.repository_id`.
-
-**revspec**: Encodes `reposource.PackageDependency.GitTagFromVersion`. Returns the git tag associated with the given dependency version, used in `rev:` or `repo:foo@rev` queries.
-
-# Table "public.codeintel_lockfiles"
-```
-              Column              |           Type           | Collation | Nullable |                     Default                     
-----------------------------------+--------------------------+-----------+----------+-------------------------------------------------
- id                               | integer                  |           | not null | nextval('codeintel_lockfiles_id_seq'::regclass)
- repository_id                    | integer                  |           | not null | 
- commit_bytea                     | bytea                    |           | not null | 
- codeintel_lockfile_reference_ids | integer[]                |           | not null | 
- lockfile                         | text                     |           |          | 
- fidelity                         | text                     |           | not null | 'flat'::text
- created_at                       | timestamp with time zone |           | not null | now()
- updated_at                       | timestamp with time zone |           | not null | now()
-Indexes:
-    "codeintel_lockfiles_pkey" PRIMARY KEY, btree (id)
-    "codeintel_lockfiles_repository_id_commit_bytea_lockfile" UNIQUE, btree (repository_id, commit_bytea, lockfile)
-    "codeintel_lockfiles_codeintel_lockfile_reference_ids" gin (codeintel_lockfile_reference_ids gin__int_ops)
-
-```
-
-Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.
-
-**codeintel_lockfile_reference_ids**: A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.
-
-**commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
-
-**created_at**: Time when lockfile was indexed
-
-**fidelity**: Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...
-
-**lockfile**: Relative path of a lockfile in the given repository and the given commit.
-
-**updated_at**: Time when lockfile index was updated
-
-# Table "public.codeintel_path_rank_inputs"
-```
-     Column      |  Type   | Collation | Nullable |                        Default                         
------------------+---------+-----------+----------+--------------------------------------------------------
- id              | bigint  |           | not null | nextval('codeintel_path_rank_inputs_id_seq'::regclass)
- graph_key       | text    |           | not null | 
- input_filename  | text    |           | not null | 
- repository_name | text    |           | not null | 
- payload         | jsonb   |           | not null | 
- processed       | boolean |           | not null | false
-Indexes:
-    "codeintel_path_rank_inputs_pkey" PRIMARY KEY, btree (id)
-    "codeintel_path_rank_inputs_graph_key_input_filename_reposit_key" UNIQUE CONSTRAINT, btree (graph_key, input_filename, repository_name)
-    "codeintel_path_rank_graph_key_id_repository_name_processed" btree (graph_key, id, repository_name) WHERE NOT processed
-
-```
-
-Sharded inputs from Spark jobs that will subsequently be written into `codeintel_path_ranks`.
-
 # Table "public.codeintel_path_ranks"
 ```
-    Column     |  Type   | Collation | Nullable | Default 
----------------+---------+-----------+----------+---------
- repository_id | integer |           | not null | 
- payload       | jsonb   |           | not null | 
+     Column      |           Type           | Collation | Nullable |                     Default                      
+-----------------+--------------------------+-----------+----------+--------------------------------------------------
+ repository_id   | integer                  |           | not null | 
+ payload         | jsonb                    |           | not null | 
+ updated_at      | timestamp with time zone |           | not null | now()
+ graph_key       | text                     |           |          | 
+ num_paths       | integer                  |           |          | 
+ refcount_logsum | double precision         |           |          | 
+ id              | bigint                   |           | not null | nextval('codeintel_path_ranks_id_seq'::regclass)
 Indexes:
-    "codeintel_path_ranks_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
+    "codeintel_path_ranks_pkey" PRIMARY KEY, btree (id)
+    "codeintel_path_ranks_repository_id" UNIQUE, btree (repository_id)
+    "codeintel_path_ranks_graph_key" btree (graph_key, updated_at NULLS FIRST, id)
+    "codeintel_path_ranks_repository_id_updated_at_id" btree (repository_id, updated_at NULLS FIRST, id)
+Triggers:
+    insert_codeintel_path_ranks_statistics BEFORE INSERT ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()
+    update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()
+    update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()
+
+```
+
+# Table "public.codeintel_ranking_definitions"
+```
+     Column      |           Type           | Collation | Nullable |                          Default                          
+-----------------+--------------------------+-----------+----------+-----------------------------------------------------------
+ id              | bigint                   |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
+ upload_id       | integer                  |           | not null | 
+ symbol_name     | text                     |           | not null | 
+ document_path   | text                     |           | not null | 
+ graph_key       | text                     |           | not null | 
+ last_scanned_at | timestamp with time zone |           |          | 
+Indexes:
+    "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_definitions_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
+    "codeintel_ranking_definitions_graph_key_symbol_search" btree (graph_key, symbol_name, upload_id, document_path)
 
 ```
 
 # Table "public.codeintel_ranking_exports"
 ```
-  Column   |           Type           | Collation | Nullable | Default 
------------+--------------------------+-----------+----------+---------
- upload_id | integer                  |           | not null | 
- graph_key | text                     |           | not null | 
- locked_at | timestamp with time zone |           | not null | now()
+    Column     |           Type           | Collation | Nullable |                        Default                        
+---------------+--------------------------+-----------+----------+-------------------------------------------------------
+ upload_id     | integer                  |           |          | 
+ graph_key     | text                     |           | not null | 
+ locked_at     | timestamp with time zone |           | not null | now()
+ id            | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
+ object_prefix | text                     |           |          | 
 Indexes:
-    "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (upload_id, graph_key)
+    "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
 Foreign-key constraints:
-    "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
+
+```
+
+# Table "public.codeintel_ranking_path_counts_inputs"
+```
+    Column     |  Type   | Collation | Nullable |                             Default                              
+---------------+---------+-----------+----------+------------------------------------------------------------------
+ id            | bigint  |           | not null | nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass)
+ document_path | text    |           | not null | 
+ count         | integer |           | not null | 
+ graph_key     | text    |           | not null | 
+ processed     | boolean |           | not null | false
+ repository_id | integer |           | not null | 
+Indexes:
+    "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) WHERE NOT processed
+
+```
+
+# Table "public.codeintel_ranking_references"
+```
+     Column      |           Type           | Collation | Nullable |                         Default                          
+-----------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id              | bigint                   |           | not null | nextval('codeintel_ranking_references_id_seq'::regclass)
+ upload_id       | integer                  |           | not null | 
+ symbol_names    | text[]                   |           | not null | 
+ graph_key       | text                     |           | not null | 
+ last_scanned_at | timestamp with time zone |           |          | 
+Indexes:
+    "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_references_graph_key_id" btree (graph_key, id)
+    "codeintel_ranking_references_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
+    "codeintel_ranking_references_upload_id" btree (upload_id)
+Referenced by:
+    TABLE "codeintel_ranking_references_processed" CONSTRAINT "fk_codeintel_ranking_reference" FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
+
+```
+
+References for a given upload proceduced by background job consuming SCIP indexes.
+
+# Table "public.codeintel_ranking_references_processed"
+```
+             Column             |  Type   | Collation | Nullable |                              Default                               
+--------------------------------+---------+-----------+----------+--------------------------------------------------------------------
+ id                             | integer |           | not null | nextval('codeintel_ranking_references_processed_id_seq'::regclass)
+ graph_key                      | text    |           | not null | 
+ codeintel_ranking_reference_id | integer |           | not null | 
+Indexes:
+    "codeintel_ranking_references_processed_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_references_processed_graph_key_codeintel_rank" UNIQUE, btree (graph_key, codeintel_ranking_reference_id)
+Foreign-key constraints:
+    "fk_codeintel_ranking_reference" FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
+
+```
+
+# Table "public.codeowners"
+```
+     Column     |           Type           | Collation | Nullable |                Default                 
+----------------+--------------------------+-----------+----------+----------------------------------------
+ id             | integer                  |           | not null | nextval('codeowners_id_seq'::regclass)
+ contents       | text                     |           | not null | 
+ contents_proto | bytea                    |           | not null | 
+ repo_id        | integer                  |           | not null | 
+ created_at     | timestamp with time zone |           | not null | now()
+ updated_at     | timestamp with time zone |           | not null | now()
+Indexes:
+    "codeowners_pkey" PRIMARY KEY, btree (id)
+    "codeowners_repo_id_key" UNIQUE CONSTRAINT, btree (repo_id)
+Foreign-key constraints:
+    "codeowners_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
 
@@ -947,20 +986,48 @@ Indexes:
 
 **transition_columns**: Array of changes that occurred to the upload for this entry, in the form of {&#34;column&#34;=&gt;&#34;&lt;column name&gt;&#34;, &#34;old&#34;=&gt;&#34;&lt;previous value&gt;&#34;, &#34;new&#34;=&gt;&#34;&lt;new value&gt;&#34;}.
 
+# Table "public.context_detection_embedding_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                           Default                            
+-------------------+--------------------------+-----------+----------+--------------------------------------------------------------
+ id                | integer                  |           | not null | nextval('context_detection_embedding_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+Indexes:
+    "context_detection_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.critical_and_site_config"
 ```
-   Column   |           Type           | Collation | Nullable |                       Default                        
-------------+--------------------------+-----------+----------+------------------------------------------------------
- id         | integer                  |           | not null | nextval('critical_and_site_config_id_seq'::regclass)
- type       | critical_or_site         |           | not null | 
- contents   | text                     |           | not null | 
- created_at | timestamp with time zone |           | not null | now()
- updated_at | timestamp with time zone |           | not null | now()
+      Column       |           Type           | Collation | Nullable |                       Default                        
+-------------------+--------------------------+-----------+----------+------------------------------------------------------
+ id                | integer                  |           | not null | nextval('critical_and_site_config_id_seq'::regclass)
+ type              | critical_or_site         |           | not null | 
+ contents          | text                     |           | not null | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ author_user_id    | integer                  |           |          | 
+ redacted_contents | text                     |           |          | 
 Indexes:
     "critical_and_site_config_pkey" PRIMARY KEY, btree (id)
     "critical_and_site_config_unique" UNIQUE, btree (id, type)
 
 ```
+
+**author_user_id**: A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user.
+
+**redacted_contents**: This column stores the contents but redacts all secrets. The redacted form is a sha256 hash of the secret appended to the REDACTED string. This is used to generate diffs between two subsequent changes in a way that allows us to detect changes to any secrets while also ensuring that we do not leak it in the diff. A null value indicates that this config was added before this column was added or redacting the secrets during write failed so we skipped writing to this column instead of a hard failure.
 
 # Table "public.discussion_comments"
 ```
@@ -1079,11 +1146,10 @@ Referenced by:
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
-    "event_logs_name" btree (name)
+    "event_logs_name_timestamp" btree (name, "timestamp" DESC)
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
     "event_logs_timestamp_at_utc" btree (date(timezone('UTC'::text, "timestamp")))
-    "event_logs_user_id" btree (user_id)
     "event_logs_user_id_name" btree (user_id, name)
     "event_logs_user_id_timestamp" btree (user_id, "timestamp")
 Check constraints:
@@ -1171,16 +1237,37 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 
 **src_cli_version**: The version of src-cli used by the executor.
 
+# Table "public.executor_job_tokens"
+```
+    Column    |           Type           | Collation | Nullable |                     Default                     
+--------------+--------------------------+-----------+----------+-------------------------------------------------
+ id           | integer                  |           | not null | nextval('executor_job_tokens_id_seq'::regclass)
+ value_sha256 | bytea                    |           | not null | 
+ job_id       | bigint                   |           | not null | 
+ queue        | text                     |           | not null | 
+ repo_id      | bigint                   |           | not null | 
+ created_at   | timestamp with time zone |           | not null | now()
+ updated_at   | timestamp with time zone |           | not null | now()
+Indexes:
+    "executor_job_tokens_pkey" PRIMARY KEY, btree (id)
+    "executor_job_tokens_job_id_queue_repo_id_key" UNIQUE CONSTRAINT, btree (job_id, queue, repo_id)
+    "executor_job_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
+
+```
+
 # Table "public.executor_secret_access_logs"
 ```
        Column       |           Type           | Collation | Nullable |                         Default                         
 --------------------+--------------------------+-----------+----------+---------------------------------------------------------
  id                 | integer                  |           | not null | nextval('executor_secret_access_logs_id_seq'::regclass)
  executor_secret_id | integer                  |           | not null | 
- user_id            | integer                  |           | not null | 
+ user_id            | integer                  |           |          | 
  created_at         | timestamp with time zone |           | not null | now()
+ machine_user       | text                     |           | not null | ''::text
 Indexes:
     "executor_secret_access_logs_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "user_id_or_machine_user" CHECK (user_id IS NULL AND machine_user <> ''::text OR user_id IS NOT NULL AND machine_user = ''::text)
 Foreign-key constraints:
     "executor_secret_access_logs_executor_secret_id_fkey" FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE
     "executor_secret_access_logs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -1457,13 +1544,17 @@ Indexes:
  last_fetched    | timestamp with time zone |           | not null | now()
  last_changed    | timestamp with time zone |           | not null | now()
  repo_size_bytes | bigint                   |           |          | 
- repo_status     | text                     |           |          | 
+ corrupted_at    | timestamp with time zone |           |          | 
+ corruption_logs | jsonb                    |           | not null | '[]'::jsonb
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
+    "gitserver_repo_size_bytes" btree (repo_size_bytes)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
     "gitserver_repos_cloning_status_idx" btree (repo_id) WHERE clone_status = 'cloning'::text
+    "gitserver_repos_last_changed_idx" btree (last_changed, repo_id)
     "gitserver_repos_last_error_idx" btree (repo_id) WHERE last_error IS NOT NULL
     "gitserver_repos_not_cloned_status_idx" btree (repo_id) WHERE clone_status = 'not_cloned'::text
+    "gitserver_repos_not_explicitly_cloned_idx" btree (repo_id) WHERE clone_status <> 'cloned'::text
     "gitserver_repos_shard_id" btree (shard_id, repo_id)
 Foreign-key constraints:
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -1473,6 +1564,10 @@ Triggers:
     trig_recalc_gitserver_repos_statistics_on_update AFTER UPDATE ON gitserver_repos REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_update()
 
 ```
+
+**corrupted_at**: Timestamp of when repo corruption was detected
+
+**corruption_logs**: Log output of repo corruptions that have been detected - encoded as json
 
 # Table "public.gitserver_repos_statistics"
 ```
@@ -1484,6 +1579,7 @@ Triggers:
  cloning      | bigint |           | not null | 0
  cloned       | bigint |           | not null | 0
  failed_fetch | bigint |           | not null | 0
+ corrupted    | bigint |           | not null | 0
 Indexes:
     "gitserver_repos_statistics_pkey" PRIMARY KEY, btree (shard_id)
 
@@ -1492,6 +1588,8 @@ Indexes:
 **cloned**: Number of repositories in gitserver_repos table on this shard that are cloned
 
 **cloning**: Number of repositories in gitserver_repos table on this shard that cloning
+
+**corrupted**: Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table
 
 **failed_fetch**: Number of repositories in gitserver_repos table on this shard where last_error is set
 
@@ -1535,6 +1633,7 @@ Indexes:
  persist_mode      | persistmode              |           | not null | 'record'::persistmode
  queued_at         | timestamp with time zone |           |          | now()
  cancel            | boolean                  |           | not null | false
+ trace_id          | text                     |           |          | 
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "finished_at_insights_query_runner_jobs_idx" btree (finished_at)
@@ -1595,21 +1694,6 @@ Stores data points for a code insight that do not need to be queried directly, b
  completed_at        | timestamp without time zone |           |          | 
 
 ```
-
-# Table "public.last_lockfile_scan"
-```
-        Column         |           Type           | Collation | Nullable | Default 
------------------------+--------------------------+-----------+----------+---------
- repository_id         | integer                  |           | not null | 
- last_lockfile_scan_at | timestamp with time zone |           | not null | 
-Indexes:
-    "last_lockfile_scan_pkey" PRIMARY KEY, btree (repository_id)
-
-```
-
-Tracks the last time repository was checked for lockfile indexing.
-
-**last_lockfile_scan_at**: The last time this repository was considered for lockfile indexing.
 
 # Table "public.lsif_configuration_policies"
 ```
@@ -1715,15 +1799,22 @@ Foreign-key constraints:
 
 # Table "public.lsif_dependency_repos"
 ```
- Column  |  Type  | Collation | Nullable |                      Default                      
----------+--------+-----------+----------+---------------------------------------------------
- id      | bigint |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
- name    | text   |           | not null | 
- version | text   |           | not null | 
- scheme  | text   |           | not null | 
+     Column      |           Type           | Collation | Nullable |                      Default                      
+-----------------+--------------------------+-----------+----------+---------------------------------------------------
+ id              | bigint                   |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
+ name            | text                     |           | not null | 
+ scheme          | text                     |           | not null | 
+ blocked         | boolean                  |           | not null | false
+ last_checked_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
-    "lsif_dependency_repos_unique_triplet" UNIQUE CONSTRAINT, btree (scheme, name, version)
+    "lsif_dependency_repos_unique_scheme_name" UNIQUE, btree (scheme, name)
+    "lsif_dependency_repos_blocked" btree (blocked)
+    "lsif_dependency_repos_last_checked_at" btree (last_checked_at)
+    "lsif_dependency_repos_name_id" btree (name, id)
+    "lsif_dependency_repos_scheme_id" btree (scheme, id)
+Referenced by:
+    TABLE "package_repo_versions" CONSTRAINT "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
 
 ```
 
@@ -1830,9 +1921,11 @@ Stores the configuration used for code intel index jobs for a repository.
  last_heartbeat_at      | timestamp with time zone |           |          | 
  cancel                 | boolean                  |           | not null | false
  should_reindex         | boolean                  |           | not null | false
+ requested_envvars      | text[]                   |           |          | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
+    "lsif_indexes_queued_at_id" btree (queued_at DESC, id)
     "lsif_indexes_repository_id_commit" btree (repository_id, commit)
     "lsif_indexes_state" btree (state)
 Check constraints:
@@ -1940,6 +2033,7 @@ Associates commits with the closest ancestor commit with usable upload data. Tog
  name    | text    |           | not null | 
  version | text    |           |          | 
  dump_id | integer |           | not null | 
+ manager | text    |           | not null | ''::text
 Indexes:
     "lsif_packages_pkey" PRIMARY KEY, btree (id)
     "lsif_packages_dump_id" btree (dump_id)
@@ -1952,6 +2046,8 @@ Foreign-key constraints:
 Associates an upload with the set of packages they provide within a given packages management scheme.
 
 **dump_id**: The identifier of the upload that provides the package.
+
+**manager**: The package manager name.
 
 **name**: The package name.
 
@@ -1967,8 +2063,8 @@ Associates an upload with the set of packages they provide within a given packag
  scheme  | text    |           | not null | 
  name    | text    |           | not null | 
  version | text    |           |          | 
- filter  | bytea   |           |          | 
  dump_id | integer |           | not null | 
+ manager | text    |           | not null | ''::text
 Indexes:
     "lsif_references_pkey" PRIMARY KEY, btree (id)
     "lsif_references_dump_id" btree (dump_id)
@@ -1982,7 +2078,7 @@ Associates an upload with the set of packages they require within a given packag
 
 **dump_id**: The identifier of the upload that references the package.
 
-**filter**: A [bloom filter](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/bloomfilter/bloom_filter.go#L27:6) encoded as gzipped JSON. This bloom filter stores the set of identifiers imported from the package.
+**manager**: The package manager name.
 
 **name**: The package name.
 
@@ -2048,19 +2144,25 @@ Stores the retention policy of code intellience data for a repository.
  uncompressed_size       | bigint                   |           |          | 
  last_referenced_scan_at | timestamp with time zone |           |          | 
  last_traversal_scan_at  | timestamp with time zone |           |          | 
+ last_reconcile_at       | timestamp with time zone |           |          | 
+ content_type            | text                     |           | not null | 'application/x-ndjson+lsif'::text
+ should_reindex          | boolean                  |           | not null | false
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
     "lsif_uploads_associated_index_id" btree (associated_index_id)
     "lsif_uploads_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
     "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
+    "lsif_uploads_last_reconcile_at" btree (last_reconcile_at, id) WHERE state = 'completed'::text
     "lsif_uploads_repository_id_commit" btree (repository_id, commit)
     "lsif_uploads_state" btree (state)
-    "lsif_uploads_uploaded_at" btree (uploaded_at)
+    "lsif_uploads_uploaded_at_id" btree (uploaded_at DESC, id) WHERE state <> 'deleted'::text
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
-    TABLE "codeintel_ranking_exports" CONSTRAINT "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "codeintel_ranking_exports" CONSTRAINT "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
+    TABLE "vulnerability_matches" CONSTRAINT "fk_upload" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "lsif_uploads_vulnerability_scan" CONSTRAINT "fk_upload_id" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
@@ -2076,6 +2178,8 @@ Triggers:
 Stores metadata about an LSIF index uploaded by a user.
 
 **commit**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**content_type**: The content type of the upload record. For now, the default value is `application/x-ndjson+lsif` to backfill existing records. This will change as we remove LSIF support.
 
 **expired**: Whether or not this upload data is no longer protected by any data retention policy.
 
@@ -2116,12 +2220,13 @@ Stores metadata about an LSIF index uploaded by a user.
  uploaded_at         | timestamp with time zone |           | not null | 
  indexer             | text                     |           | not null | 
  indexer_version     | text                     |           |          | 
- upload_size         | integer                  |           |          | 
+ upload_size         | bigint                   |           |          | 
  associated_index_id | integer                  |           |          | 
  transition_columns  | USER-DEFINED[]           |           |          | 
  reason              | text                     |           |          | ''::text
  sequence            | bigint                   |           | not null | nextval('lsif_uploads_audit_logs_seq'::regclass)
  operation           | audit_log_operation      |           | not null | 
+ content_type        | text                     |           | not null | 'application/x-ndjson+lsif'::text
 Indexes:
     "lsif_uploads_audit_logs_timestamp" brin (log_timestamp)
     "lsif_uploads_audit_logs_upload_id" btree (upload_id)
@@ -2164,6 +2269,7 @@ A less hot-path reference count for upload records.
  branch_or_tag_name | text    |           | not null | ''::text
  is_default_branch  | boolean |           | not null | false
 Indexes:
+    "lsif_uploads_visible_at_tip_is_default_branch" btree (upload_id) WHERE is_default_branch
     "lsif_uploads_visible_at_tip_repository_id_upload_id" btree (repository_id, upload_id)
 
 ```
@@ -2175,6 +2281,21 @@ Associates a repository with the set of LSIF upload identifiers that can serve i
 **is_default_branch**: Whether the specified branch is the default of the repository. Always false for tags.
 
 **upload_id**: The identifier of the upload visible from the tip of the specified branch or tag.
+
+# Table "public.lsif_uploads_vulnerability_scan"
+```
+     Column      |            Type             | Collation | Nullable |                           Default                           
+-----------------+-----------------------------+-----------+----------+-------------------------------------------------------------
+ id              | bigint                      |           | not null | nextval('lsif_uploads_vulnerability_scan_id_seq'::regclass)
+ upload_id       | integer                     |           | not null | 
+ last_scanned_at | timestamp without time zone |           | not null | now()
+Indexes:
+    "lsif_uploads_vulnerability_scan_pkey" PRIMARY KEY, btree (id)
+    "lsif_uploads_vulnerability_scan_upload_id" UNIQUE, btree (upload_id)
+Foreign-key constraints:
+    "fk_upload_id" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+
+```
 
 # Table "public.migration_logs"
 ```
@@ -2202,13 +2323,34 @@ Indexes:
  name    | citext  |           | not null | 
  user_id | integer |           |          | 
  org_id  | integer |           |          | 
+ team_id | integer |           |          | 
 Indexes:
     "names_pkey" PRIMARY KEY, btree (name)
 Check constraints:
-    "names_check" CHECK (user_id IS NOT NULL OR org_id IS NOT NULL)
+    "names_check" CHECK (user_id IS NOT NULL OR org_id IS NOT NULL OR team_id IS NOT NULL)
 Foreign-key constraints:
     "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
+    "names_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE
     "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.namespace_permissions"
+```
+   Column    |           Type           | Collation | Nullable |                      Default                      
+-------------+--------------------------+-----------+----------+---------------------------------------------------
+ id          | integer                  |           | not null | nextval('namespace_permissions_id_seq'::regclass)
+ namespace   | text                     |           | not null | 
+ resource_id | integer                  |           | not null | 
+ user_id     | integer                  |           | not null | 
+ created_at  | timestamp with time zone |           | not null | now()
+Indexes:
+    "namespace_permissions_pkey" PRIMARY KEY, btree (id)
+    "unique_resource_permission" UNIQUE, btree (namespace, resource_id, user_id)
+Check constraints:
+    "namespace_not_blank" CHECK (namespace <> ''::text)
+Foreign-key constraints:
+    "namespace_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -2471,6 +2613,211 @@ Stores errors that occurred while performing an out-of-band migration.
 
 **migration_id**: The identifier of the migration.
 
+# Table "public.outbound_webhook_event_types"
+```
+       Column        |  Type  | Collation | Nullable |                         Default                          
+---------------------+--------+-----------+----------+----------------------------------------------------------
+ id                  | bigint |           | not null | nextval('outbound_webhook_event_types_id_seq'::regclass)
+ outbound_webhook_id | bigint |           | not null | 
+ event_type          | text   |           | not null | 
+ scope               | text   |           |          | 
+Indexes:
+    "outbound_webhook_event_types_pkey" PRIMARY KEY, btree (id)
+    "outbound_webhook_event_types_event_type_idx" btree (event_type, scope)
+Foreign-key constraints:
+    "outbound_webhook_event_types_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.outbound_webhook_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                      Default                      
+-------------------+--------------------------+-----------+----------+---------------------------------------------------
+ id                | bigint                   |           | not null | nextval('outbound_webhook_jobs_id_seq'::regclass)
+ event_type        | text                     |           | not null | 
+ scope             | text                     |           |          | 
+ encryption_key_id | text                     |           |          | 
+ payload           | bytea                    |           | not null | 
+ state             | text                     |           | not null | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           | not null | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+Indexes:
+    "outbound_webhook_jobs_pkey" PRIMARY KEY, btree (id)
+    "outbound_webhook_jobs_state_idx" btree (state)
+    "outbound_webhook_payload_process_after_idx" btree (process_after)
+Referenced by:
+    TABLE "outbound_webhook_logs" CONSTRAINT "outbound_webhook_logs_job_id_fkey" FOREIGN KEY (job_id) REFERENCES outbound_webhook_jobs(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.outbound_webhook_logs"
+```
+       Column        |           Type           | Collation | Nullable |                      Default                      
+---------------------+--------------------------+-----------+----------+---------------------------------------------------
+ id                  | bigint                   |           | not null | nextval('outbound_webhook_logs_id_seq'::regclass)
+ job_id              | bigint                   |           | not null | 
+ outbound_webhook_id | bigint                   |           | not null | 
+ sent_at             | timestamp with time zone |           | not null | now()
+ status_code         | integer                  |           | not null | 
+ encryption_key_id   | text                     |           |          | 
+ request             | bytea                    |           | not null | 
+ response            | bytea                    |           | not null | 
+ error               | bytea                    |           | not null | 
+Indexes:
+    "outbound_webhook_logs_pkey" PRIMARY KEY, btree (id)
+    "outbound_webhook_logs_outbound_webhook_id_idx" btree (outbound_webhook_id)
+    "outbound_webhooks_logs_status_code_idx" btree (status_code)
+Foreign-key constraints:
+    "outbound_webhook_logs_job_id_fkey" FOREIGN KEY (job_id) REFERENCES outbound_webhook_jobs(id) ON UPDATE CASCADE ON DELETE CASCADE
+    "outbound_webhook_logs_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.outbound_webhooks"
+```
+      Column       |           Type           | Collation | Nullable |                    Default                    
+-------------------+--------------------------+-----------+----------+-----------------------------------------------
+ id                | bigint                   |           | not null | nextval('outbound_webhooks_id_seq'::regclass)
+ created_by        | integer                  |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_by        | integer                  |           |          | 
+ updated_at        | timestamp with time zone |           | not null | now()
+ encryption_key_id | text                     |           |          | 
+ url               | bytea                    |           | not null | 
+ secret            | bytea                    |           | not null | 
+Indexes:
+    "outbound_webhooks_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "outbound_webhooks_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    "outbound_webhooks_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+Referenced by:
+    TABLE "outbound_webhook_event_types" CONSTRAINT "outbound_webhook_event_types_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "outbound_webhook_logs" CONSTRAINT "outbound_webhook_logs_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.package_repo_filters"
+```
+   Column   |           Type           | Collation | Nullable |                     Default                      
+------------+--------------------------+-----------+----------+--------------------------------------------------
+ id         | integer                  |           | not null | nextval('package_repo_filters_id_seq'::regclass)
+ behaviour  | text                     |           | not null | 
+ scheme     | text                     |           | not null | 
+ matcher    | jsonb                    |           | not null | 
+ deleted_at | timestamp with time zone |           |          | 
+ updated_at | timestamp with time zone |           | not null | statement_timestamp()
+Indexes:
+    "package_repo_filters_pkey" PRIMARY KEY, btree (id)
+    "package_repo_filters_unique_matcher_per_scheme" UNIQUE, btree (scheme, matcher)
+Check constraints:
+    "package_repo_filters_behaviour_is_allow_or_block" CHECK (behaviour = ANY ('{BLOCK,ALLOW}'::text[]))
+    "package_repo_filters_is_pkgrepo_scheme" CHECK (scheme = ANY ('{semanticdb,npm,go,python,rust-analyzer,scip-ruby}'::text[]))
+    "package_repo_filters_valid_oneof_glob" CHECK (matcher ? 'VersionGlob'::text AND (matcher ->> 'VersionGlob'::text) <> ''::text AND (matcher ->> 'PackageName'::text) <> ''::text AND NOT matcher ? 'PackageGlob'::text OR matcher ? 'PackageGlob'::text AND (matcher ->> 'PackageGlob'::text) <> ''::text AND NOT matcher ? 'VersionGlob'::text)
+Triggers:
+    trigger_package_repo_filters_updated_at BEFORE UPDATE ON package_repo_filters FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE FUNCTION func_package_repo_filters_updated_at()
+
+```
+
+# Table "public.package_repo_versions"
+```
+     Column      |           Type           | Collation | Nullable |                      Default                      
+-----------------+--------------------------+-----------+----------+---------------------------------------------------
+ id              | bigint                   |           | not null | nextval('package_repo_versions_id_seq'::regclass)
+ package_id      | bigint                   |           | not null | 
+ version         | text                     |           | not null | 
+ blocked         | boolean                  |           | not null | false
+ last_checked_at | timestamp with time zone |           |          | 
+Indexes:
+    "package_repo_versions_pkey" PRIMARY KEY, btree (id)
+    "package_repo_versions_unique_version_per_package" UNIQUE, btree (package_id, version)
+    "package_repo_versions_blocked" btree (blocked)
+    "package_repo_versions_last_checked_at" btree (last_checked_at)
+Foreign-key constraints:
+    "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
+
+```
+
+# Table "public.permission_sync_jobs"
+```
+        Column        |           Type           | Collation | Nullable |                     Default                      
+----------------------+--------------------------+-----------+----------+--------------------------------------------------
+ id                   | integer                  |           | not null | nextval('permission_sync_jobs_id_seq'::regclass)
+ state                | text                     |           |          | 'queued'::text
+ reason               | text                     |           | not null | 
+ failure_message      | text                     |           |          | 
+ queued_at            | timestamp with time zone |           |          | now()
+ started_at           | timestamp with time zone |           |          | 
+ finished_at          | timestamp with time zone |           |          | 
+ process_after        | timestamp with time zone |           |          | 
+ num_resets           | integer                  |           | not null | 0
+ num_failures         | integer                  |           | not null | 0
+ last_heartbeat_at    | timestamp with time zone |           |          | 
+ execution_logs       | json[]                   |           |          | 
+ worker_hostname      | text                     |           | not null | ''::text
+ cancel               | boolean                  |           | not null | false
+ repository_id        | integer                  |           |          | 
+ user_id              | integer                  |           |          | 
+ triggered_by_user_id | integer                  |           |          | 
+ priority             | integer                  |           | not null | 0
+ invalidate_caches    | boolean                  |           | not null | false
+ cancellation_reason  | text                     |           |          | 
+ no_perms             | boolean                  |           | not null | false
+ permissions_added    | integer                  |           | not null | 0
+ permissions_removed  | integer                  |           | not null | 0
+ permissions_found    | integer                  |           | not null | 0
+ code_host_states     | json[]                   |           |          | 
+Indexes:
+    "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
+    "permission_sync_jobs_unique" UNIQUE, btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
+    "permission_sync_jobs_process_after" btree (process_after)
+    "permission_sync_jobs_repository_id" btree (repository_id)
+    "permission_sync_jobs_state" btree (state)
+    "permission_sync_jobs_user_id" btree (user_id)
+Check constraints:
+    "permission_sync_jobs_for_repo_or_user" CHECK ((user_id IS NULL) <> (repository_id IS NULL))
+Foreign-key constraints:
+    "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    "permission_sync_jobs_triggered_by_user_id_fkey" FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    "permission_sync_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+**cancellation_reason**: Specifies why permissions sync job was cancelled.
+
+**priority**: Specifies numeric priority for the permissions sync job.
+
+**reason**: Specifies why permissions sync job was triggered.
+
+**triggered_by_user_id**: Specifies an ID of a user who triggered a sync.
+
+# Table "public.permissions"
+```
+   Column   |           Type           | Collation | Nullable |                 Default                 
+------------+--------------------------+-----------+----------+-----------------------------------------
+ id         | integer                  |           | not null | nextval('permissions_id_seq'::regclass)
+ namespace  | text                     |           | not null | 
+ action     | text                     |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "permissions_pkey" PRIMARY KEY, btree (id)
+    "permissions_unique_namespace_action" UNIQUE, btree (namespace, action)
+Check constraints:
+    "action_not_blank" CHECK (action <> ''::text)
+    "namespace_not_blank" CHECK (namespace <> ''::text)
+Referenced by:
+    TABLE "role_permissions" CONSTRAINT "role_permissions_permission_id_fkey" FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.phabricator_repos"
 ```
    Column   |           Type           | Collation | Nullable |                    Default                    
@@ -2535,6 +2882,18 @@ Referenced by:
  last_executed    | timestamp with time zone |           |          | 
  latest_result    | timestamp with time zone |           |          | 
  exec_duration_ns | bigint                   |           |          | 
+
+```
+
+# Table "public.redis_key_value"
+```
+  Column   | Type  | Collation | Nullable | Default 
+-----------+-------+-----------+----------+---------
+ namespace | text  |           | not null | 
+ key       | text  |           | not null | 
+ value     | bytea |           | not null | 
+Indexes:
+    "redis_key_value_pkey" PRIMARY KEY, btree (namespace, key) INCLUDE (value)
 
 ```
 
@@ -2616,10 +2975,12 @@ Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
+    "idx_repo_github_topics" gin (((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text)) WHERE external_service_type = 'github'::text
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)
     "repo_description_trgm_idx" gin (lower(description) gin_trgm_ops)
+    "repo_dotcom_indexable_repos_idx" btree (stars DESC NULLS LAST) INCLUDE (id, name) WHERE deleted_at IS NULL AND blocked IS NULL AND (stars >= 5 AND NOT COALESCE(fork, false) AND NOT archived OR lower(name::text) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'::text)
     "repo_fork" btree (fork)
     "repo_hashed_name_idx" btree (sha256(lower(name::text)::bytea)) WHERE deleted_at IS NULL
     "repo_is_not_blocked_idx" btree ((blocked IS NULL))
@@ -2640,23 +3001,51 @@ Referenced by:
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "cm_last_searched" CONSTRAINT "cm_last_searched_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "codeowners" CONSTRAINT "codeowners_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "zoekt_repos" CONSTRAINT "zoekt_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo()
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
+    trig_delete_user_repo_permissions_on_repo_soft_delete AFTER UPDATE ON repo FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_repo_soft_delete()
     trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_delete()
     trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert()
     trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update()
     trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()
+
+```
+
+# Table "public.repo_embedding_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                     Default                     
+-------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                | integer                  |           | not null | nextval('repo_embedding_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ repo_id           | integer                  |           | not null | 
+ revision          | text                     |           | not null | 
+Indexes:
+    "repo_embedding_jobs_pkey" PRIMARY KEY, btree (id)
 
 ```
 
@@ -2713,12 +3102,15 @@ Indexes:
  cloning      | bigint |           | not null | 0
  cloned       | bigint |           | not null | 0
  failed_fetch | bigint |           | not null | 0
+ corrupted    | bigint |           | not null | 0
 
 ```
 
 **cloned**: Number of repositories that are NOT soft-deleted and not blocked and cloned by gitserver
 
 **cloning**: Number of repositories that are NOT soft-deleted and not blocked and currently being cloned by gitserver
+
+**corrupted**: Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table
 
 **failed_fetch**: Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table
 
@@ -2727,6 +3119,40 @@ Indexes:
 **soft_deleted**: Number of repositories that are soft-deleted and not blocked
 
 **total**: Number of repositories that are not soft-deleted and not blocked
+
+# Table "public.role_permissions"
+```
+    Column     |           Type           | Collation | Nullable | Default 
+---------------+--------------------------+-----------+----------+---------
+ role_id       | integer                  |           | not null | 
+ permission_id | integer                  |           | not null | 
+ created_at    | timestamp with time zone |           | not null | now()
+Indexes:
+    "role_permissions_pkey" PRIMARY KEY, btree (permission_id, role_id)
+Foreign-key constraints:
+    "role_permissions_permission_id_fkey" FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE
+    "role_permissions_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.roles"
+```
+   Column   |           Type           | Collation | Nullable |              Default              
+------------+--------------------------+-----------+----------+-----------------------------------
+ id         | integer                  |           | not null | nextval('roles_id_seq'::regclass)
+ created_at | timestamp with time zone |           | not null | now()
+ system     | boolean                  |           | not null | false
+ name       | citext                   |           | not null | 
+Indexes:
+    "roles_pkey" PRIMARY KEY, btree (id)
+    "unique_role_name" UNIQUE, btree (name)
+Referenced by:
+    TABLE "role_permissions" CONSTRAINT "role_permissions_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "user_roles" CONSTRAINT "user_roles_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+**system**: This is used to indicate whether a role is read-only or can be modified.
 
 # Table "public.saved_searches"
 ```
@@ -2753,6 +3179,22 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.search_context_default"
+```
+      Column       |  Type   | Collation | Nullable | Default 
+-------------------+---------+-----------+----------+---------
+ user_id           | integer |           | not null | 
+ search_context_id | bigint  |           | not null | 
+Indexes:
+    "search_context_default_pkey" PRIMARY KEY, btree (user_id)
+Foreign-key constraints:
+    "search_context_default_search_context_id_fkey" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE
+    "search_context_default_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+When a user sets a search context as default, a row is inserted into this table. A user can only have one default search context. If the user has not set their default search context, it will fall back to `global`.
+
 # Table "public.search_context_repos"
 ```
       Column       |  Type   | Collation | Nullable | Default 
@@ -2767,6 +3209,23 @@ Foreign-key constraints:
     "search_context_repos_search_context_id_fk" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE
 
 ```
+
+# Table "public.search_context_stars"
+```
+      Column       |           Type           | Collation | Nullable | Default 
+-------------------+--------------------------+-----------+----------+---------
+ search_context_id | bigint                   |           | not null | 
+ user_id           | integer                  |           | not null | 
+ created_at        | timestamp with time zone |           | not null | now()
+Indexes:
+    "search_context_stars_pkey" PRIMARY KEY, btree (search_context_id, user_id)
+Foreign-key constraints:
+    "search_context_stars_search_context_id_fkey" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE
+    "search_context_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+When a user stars a search context, a row is inserted into this table. If the user unstars the search context, the row is deleted. The global context is not in the database, and therefore cannot be starred.
 
 # Table "public.search_contexts"
 ```
@@ -2794,7 +3253,9 @@ Foreign-key constraints:
     "search_contexts_namespace_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     "search_contexts_namespace_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
 Referenced by:
+    TABLE "search_context_default" CONSTRAINT "search_context_default_search_context_id_fkey" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_search_context_id_fk" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE
+    TABLE "search_context_stars" CONSTRAINT "search_context_stars_search_context_id_fkey" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -2908,6 +3369,51 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.team_members"
+```
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ team_id    | integer                  |           | not null | 
+ user_id    | integer                  |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "team_members_team_id_user_id_key" PRIMARY KEY, btree (team_id, user_id)
+Foreign-key constraints:
+    "team_members_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+    "team_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.teams"
+```
+     Column     |           Type           | Collation | Nullable |              Default              
+----------------+--------------------------+-----------+----------+-----------------------------------
+ id             | integer                  |           | not null | nextval('teams_id_seq'::regclass)
+ name           | citext                   |           | not null | 
+ display_name   | text                     |           |          | 
+ readonly       | boolean                  |           | not null | false
+ parent_team_id | integer                  |           |          | 
+ creator_id     | integer                  |           |          | 
+ created_at     | timestamp with time zone |           | not null | now()
+ updated_at     | timestamp with time zone |           | not null | now()
+Indexes:
+    "teams_pkey" PRIMARY KEY, btree (id)
+    "teams_name" UNIQUE, btree (name)
+Check constraints:
+    "teams_display_name_max_length" CHECK (char_length(display_name) <= 255)
+    "teams_name_max_length" CHECK (char_length(name::text) <= 255)
+    "teams_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
+Foreign-key constraints:
+    "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
+    "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "names" CONSTRAINT "names_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "team_members" CONSTRAINT "team_members_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+    TABLE "teams" CONSTRAINT "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
+
+```
+
 # Table "public.temporary_settings"
 ```
    Column   |           Type           | Collation | Nullable |                    Default                     
@@ -2995,9 +3501,14 @@ Foreign-key constraints:
 Indexes:
     "user_external_accounts_pkey" PRIMARY KEY, btree (id)
     "user_external_accounts_account" UNIQUE, btree (service_type, service_id, client_id, account_id) WHERE deleted_at IS NULL
+    "user_external_accounts_user_id_scim_service_type" UNIQUE, btree (user_id, service_type) WHERE service_type = 'scim'::text
     "user_external_accounts_user_id" btree (user_id) WHERE deleted_at IS NULL
 Foreign-key constraints:
     "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+Referenced by:
+    TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_user_external_account_id_fkey" FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE
+Triggers:
+    trig_delete_user_repo_permissions_on_external_account_soft_dele AFTER UPDATE ON user_external_accounts FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_external_account_soft_delete()
 
 ```
 
@@ -3028,6 +3539,7 @@ Indexes:
  updated_at      | timestamp with time zone |           | not null | 
  synced_at       | timestamp with time zone |           |          | 
  object_ids_ints | integer[]                |           | not null | '{}'::integer[]
+ migrated        | boolean                  |           |          | true
 Indexes:
     "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 
@@ -3045,6 +3557,46 @@ Indexes:
 Foreign-key constraints:
     "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.user_repo_permissions"
+```
+          Column          |           Type           | Collation | Nullable |                      Default                      
+--------------------------+--------------------------+-----------+----------+---------------------------------------------------
+ id                       | integer                  |           | not null | nextval('user_repo_permissions_id_seq'::regclass)
+ user_id                  | integer                  |           |          | 
+ repo_id                  | integer                  |           | not null | 
+ user_external_account_id | integer                  |           |          | 
+ created_at               | timestamp with time zone |           | not null | now()
+ updated_at               | timestamp with time zone |           | not null | now()
+ source                   | text                     |           | not null | 'sync'::text
+Indexes:
+    "user_repo_permissions_pkey" PRIMARY KEY, btree (id)
+    "user_repo_permissions_perms_unique_idx" UNIQUE, btree (user_id, user_external_account_id, repo_id)
+    "user_repo_permissions_repo_id_idx" btree (repo_id)
+    "user_repo_permissions_source_idx" btree (source)
+    "user_repo_permissions_updated_at_idx" btree (updated_at)
+    "user_repo_permissions_user_external_account_id_idx" btree (user_external_account_id)
+Foreign-key constraints:
+    "user_repo_permissions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    "user_repo_permissions_user_external_account_id_fkey" FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE
+    "user_repo_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.user_roles"
+```
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ user_id    | integer                  |           | not null | 
+ role_id    | integer                  |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "user_roles_pkey" PRIMARY KEY, btree (user_id, role_id)
+Foreign-key constraints:
+    "user_roles_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
+    "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -3081,6 +3633,7 @@ Check constraints:
     "users_username_max_length" CHECK (char_length(username::text) <= 255)
     "users_username_valid_chars" CHECK (username ~ '^\w(?:\w|[-.](?=\w))*-?$'::citext)
 Referenced by:
+    TABLE "access_requests" CONSTRAINT "access_requests_decision_by_user_id_fkey" FOREIGN KEY (decision_by_user_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
     TABLE "aggregated_user_statistics" CONSTRAINT "aggregated_user_statistics_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -3088,7 +3641,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "batch_spec_execution_cache_entries" CONSTRAINT "batch_spec_execution_cache_entries_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "batch_spec_resolution_jobs" CONSTRAINT "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE DEFERRABLE
+    TABLE "batch_spec_resolution_jobs" CONSTRAINT "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
     TABLE "batch_spec_workspace_execution_last_dequeues" CONSTRAINT "batch_spec_workspace_execution_last_dequeues_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
     TABLE "batch_specs" CONSTRAINT "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -3115,6 +3668,7 @@ Referenced by:
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "namespace_permissions" CONSTRAINT "namespace_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "notebook_stars" CONSTRAINT "notebook_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "notebooks" CONSTRAINT "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "notebooks" CONSTRAINT "notebooks_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
@@ -3122,23 +3676,34 @@ Referenced by:
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "outbound_webhooks" CONSTRAINT "outbound_webhooks_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "outbound_webhooks" CONSTRAINT "outbound_webhooks_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_triggered_by_user_id_fkey" FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "product_subscriptions" CONSTRAINT "product_subscriptions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "registry_extension_releases" CONSTRAINT "registry_extension_releases_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_user_id_fkey" FOREIGN KEY (publisher_user_id) REFERENCES users(id)
     TABLE "saved_searches" CONSTRAINT "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "search_context_default" CONSTRAINT "search_context_default_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "search_context_stars" CONSTRAINT "search_context_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_contexts" CONSTRAINT "search_contexts_namespace_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "team_members" CONSTRAINT "team_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "teams" CONSTRAINT "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "temporary_settings" CONSTRAINT "temporary_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "user_roles" CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "webhooks" CONSTRAINT "webhooks_created_by_user_id_fkey" FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "webhooks" CONSTRAINT "webhooks_updated_by_user_id_fkey" FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 Triggers:
+    trig_delete_user_repo_permissions_on_user_soft_delete AFTER UPDATE ON users FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_user_soft_delete()
     trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change()
     trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE FUNCTION soft_delete_user_reference_on_external_service()
 
@@ -3152,6 +3717,7 @@ Triggers:
  version       | text                     |           | not null | 
  updated_at    | timestamp with time zone |           | not null | now()
  first_version | text                     |           | not null | 
+ auto_upgrade  | boolean                  |           | not null | false
 Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 Triggers:
@@ -3159,30 +3725,87 @@ Triggers:
 
 ```
 
-# Table "public.webhook_build_jobs"
+# Table "public.vulnerabilities"
 ```
-      Column       |           Type           | Collation | Nullable |                    Default                     
--------------------+--------------------------+-----------+----------+------------------------------------------------
- repo_id           | integer                  |           |          | 
- repo_name         | text                     |           |          | 
- extsvc_kind       | text                     |           |          | 
- queued_at         | timestamp with time zone |           |          | now()
- id                | integer                  |           | not null | nextval('webhook_build_jobs_id_seq'::regclass)
- state             | text                     |           | not null | 'queued'::text
- failure_message   | text                     |           |          | 
- started_at        | timestamp with time zone |           |          | 
- finished_at       | timestamp with time zone |           |          | 
- process_after     | timestamp with time zone |           |          | 
- num_resets        | integer                  |           | not null | 0
- num_failures      | integer                  |           | not null | 0
- execution_logs    | json[]                   |           |          | 
- last_heartbeat_at | timestamp with time zone |           |          | 
- worker_hostname   | text                     |           | not null | ''::text
- org               | text                     |           |          | 
- extsvc_id         | integer                  |           |          | 
+    Column    |           Type           | Collation | Nullable |                   Default                   
+--------------+--------------------------+-----------+----------+---------------------------------------------
+ id           | integer                  |           | not null | nextval('vulnerabilities_id_seq'::regclass)
+ source_id    | text                     |           | not null | 
+ summary      | text                     |           | not null | 
+ details      | text                     |           | not null | 
+ cpes         | text[]                   |           | not null | 
+ cwes         | text[]                   |           | not null | 
+ aliases      | text[]                   |           | not null | 
+ related      | text[]                   |           | not null | 
+ data_source  | text                     |           | not null | 
+ urls         | text[]                   |           | not null | 
+ severity     | text                     |           | not null | 
+ cvss_vector  | text                     |           | not null | 
+ cvss_score   | text                     |           | not null | 
+ published_at | timestamp with time zone |           | not null | 
+ modified_at  | timestamp with time zone |           |          | 
+ withdrawn_at | timestamp with time zone |           |          | 
 Indexes:
-    "webhook_build_jobs_queued_at_idx" btree (queued_at)
-    "webhook_build_jobs_state" btree (state)
+    "vulnerabilities_pkey" PRIMARY KEY, btree (id)
+    "vulnerabilities_source_id" UNIQUE, btree (source_id)
+Referenced by:
+    TABLE "vulnerability_affected_packages" CONSTRAINT "fk_vulnerabilities" FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE
+
+```
+
+# Table "public.vulnerability_affected_packages"
+```
+       Column       |  Type   | Collation | Nullable |                           Default                           
+--------------------+---------+-----------+----------+-------------------------------------------------------------
+ id                 | integer |           | not null | nextval('vulnerability_affected_packages_id_seq'::regclass)
+ vulnerability_id   | integer |           | not null | 
+ package_name       | text    |           | not null | 
+ language           | text    |           | not null | 
+ namespace          | text    |           | not null | 
+ version_constraint | text[]  |           | not null | 
+ fixed              | boolean |           | not null | 
+ fixed_in           | text    |           |          | 
+Indexes:
+    "vulnerability_affected_packages_pkey" PRIMARY KEY, btree (id)
+    "vulnerability_affected_packages_vulnerability_id_package_name" UNIQUE, btree (vulnerability_id, package_name)
+Foreign-key constraints:
+    "fk_vulnerabilities" FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "vulnerability_affected_symbols" CONSTRAINT "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
+    TABLE "vulnerability_matches" CONSTRAINT "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
+
+```
+
+# Table "public.vulnerability_affected_symbols"
+```
+              Column               |  Type   | Collation | Nullable |                          Default                           
+-----------------------------------+---------+-----------+----------+------------------------------------------------------------
+ id                                | integer |           | not null | nextval('vulnerability_affected_symbols_id_seq'::regclass)
+ vulnerability_affected_package_id | integer |           | not null | 
+ path                              | text    |           | not null | 
+ symbols                           | text[]  |           | not null | 
+Indexes:
+    "vulnerability_affected_symbols_pkey" PRIMARY KEY, btree (id)
+    "vulnerability_affected_symbols_vulnerability_affected_package_i" UNIQUE, btree (vulnerability_affected_package_id, path)
+Foreign-key constraints:
+    "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
+
+```
+
+# Table "public.vulnerability_matches"
+```
+              Column               |  Type   | Collation | Nullable |                      Default                      
+-----------------------------------+---------+-----------+----------+---------------------------------------------------
+ id                                | integer |           | not null | nextval('vulnerability_matches_id_seq'::regclass)
+ upload_id                         | integer |           | not null | 
+ vulnerability_affected_package_id | integer |           | not null | 
+Indexes:
+    "vulnerability_matches_pkey" PRIMARY KEY, btree (id)
+    "vulnerability_matches_upload_id_vulnerability_affected_package_" UNIQUE, btree (upload_id, vulnerability_affected_package_id)
+    "vulnerability_matches_vulnerability_affected_package_id" btree (vulnerability_affected_package_id)
+Foreign-key constraints:
+    "fk_upload" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
 
 ```
 
@@ -3223,6 +3846,7 @@ Foreign-key constraints:
  uuid               | uuid                     |           | not null | gen_random_uuid()
  created_by_user_id | integer                  |           |          | 
  updated_by_user_id | integer                  |           |          | 
+ name               | text                     |           | not null | 
 Indexes:
     "webhooks_pkey" PRIMARY KEY, btree (id)
     "webhooks_uuid_key" UNIQUE CONSTRAINT, btree (uuid)
@@ -3241,6 +3865,8 @@ Webhooks registered in Sourcegraph instance.
 **code_host_urn**: URN of a code host. This column maps to external_service_id column of repo table.
 
 **created_by_user_id**: ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).
+
+**name**: Descriptive name of a webhook.
 
 **secret**: Secret used to decrypt webhook payload (if supported by the code host).
 
@@ -3285,6 +3911,7 @@ Foreign-key constraints:
     j.cancel,
     j.queued_at,
     j.user_id,
+    j.version,
     q.place_in_global_queue,
     q.place_in_user_queue
    FROM (batch_spec_workspace_execution_jobs j
@@ -3470,6 +4097,7 @@ Foreign-key constraints:
     u.execution_logs,
     u.local_steps,
     u.should_reindex,
+    u.requested_envvars,
     r.name AS repository_name
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))
@@ -3500,6 +4128,8 @@ Foreign-key constraints:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.content_type,
+    u.should_reindex,
     u.expired,
     u.last_retention_scan_at,
     r.name AS repository_name,
@@ -3507,6 +4137,25 @@ Foreign-key constraints:
    FROM (lsif_uploads u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
+```
+
+# View "public.outbound_webhooks_with_event_types"
+
+## View query:
+
+```sql
+ SELECT outbound_webhooks.id,
+    outbound_webhooks.created_by,
+    outbound_webhooks.created_at,
+    outbound_webhooks.updated_by,
+    outbound_webhooks.updated_at,
+    outbound_webhooks.encryption_key_id,
+    outbound_webhooks.url,
+    outbound_webhooks.secret,
+    array_to_json(ARRAY( SELECT json_build_object('id', outbound_webhook_event_types.id, 'outbound_webhook_id', outbound_webhook_event_types.outbound_webhook_id, 'event_type', outbound_webhook_event_types.event_type, 'scope', outbound_webhook_event_types.scope) AS json_build_object
+           FROM outbound_webhook_event_types
+          WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
+   FROM outbound_webhooks;
 ```
 
 # View "public.reconciler_changesets"
@@ -3552,8 +4201,10 @@ Foreign-key constraints:
     c.worker_hostname,
     c.ui_publication_state,
     c.last_heartbeat_at,
+    c.external_fork_name,
     c.external_fork_namespace,
-    c.detached_at
+    c.detached_at,
+    c.previous_failure_message
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1
@@ -3620,24 +4271,6 @@ Foreign-key constraints:
 
 - bool
 - rollout
-
-# Type lsif_index_state
-
-- queued
-- processing
-- completed
-- errored
-- failed
-
-# Type lsif_upload_state
-
-- uploading
-- queued
-- processing
-- completed
-- errored
-- deleted
-- failed
 
 # Type persistmode
 

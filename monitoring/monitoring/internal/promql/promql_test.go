@@ -46,7 +46,7 @@ func TestValidate(t *testing.T) {
 	}
 }
 
-func TestInject(t *testing.T) {
+func TestInjectMatchers(t *testing.T) {
 	for _, tc := range []struct {
 		name       string
 		expression string
@@ -99,7 +99,7 @@ func TestInject(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := Inject(tc.expression, tc.matchers, tc.vars)
+			got, err := InjectMatchers(tc.expression, tc.matchers, tc.vars)
 			if (err != nil) != tc.wantErr {
 				t.Errorf("unexpected result '%+v'", err)
 			}
@@ -150,17 +150,70 @@ func TestInjectAsAlert(t *testing.T) {
 			wantErr:    true,
 		},
 		{
-			name:       "fancy example",
+			name:       "variable used as regexp match",
 			expression: `src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}`,
 			vars:       VariableApplier{"queue": "foobar"},
 			want:       "src_executor_processor_handlers{sg_job=~\"^sourcegraph-executors.*\"}",
 			wantErr:    false,
+		},
+		{
+			name:       "variable used as regexp match without '${...:regex}'",
+			expression: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^$source.*"})) >= 3600)`,
+			vars:       VariableApplier{"source": "frontend"},
+			want:       `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^$source.*"})) >= 3600)`,
+			wantErr:    true,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := InjectAsAlert(tc.expression, tc.matchers, tc.vars)
 			if (err != nil) != tc.wantErr {
 				t.Errorf("unexpected result '%+v'", err)
+			} else if err != nil {
+				t.Logf("got expected error '%s'", err.Error())
+			}
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestInjectGroupings(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		expression string
+		groupings  []string
+		vars       VariableApplier
+
+		want    string
+		wantErr bool
+	}{
+		{
+			name:       "with existing by()",
+			expression: `max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)`,
+			groupings:  []string{"project_id"},
+			want:       `max by (type, project_id) (src_repoupdater_perms_syncer_perms_gap_seconds)`,
+			wantErr:    false,
+		},
+		{
+			name:       "without existing by()",
+			expression: `max(src_repoupdater_perms_syncer_perms_gap_seconds)`,
+			groupings:  []string{"project_id"},
+			want:       `max by (project_id) (src_repoupdater_perms_syncer_perms_gap_seconds)`,
+			wantErr:    false,
+		},
+		{
+			name:       "repeated and without existing by()",
+			expression: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`,
+			groupings:  []string{"project_id"},
+			want:       `max by (project_id) ((max by (project_id) (src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`,
+			wantErr:    false,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := InjectGroupings(tc.expression, tc.groupings, tc.vars)
+			if (err != nil) != tc.wantErr {
+				t.Errorf("unexpected result '%+v'", err)
+			} else if err != nil {
+				t.Logf("got expected error '%s'", err.Error())
 			}
 			assert.Equal(t, tc.want, got)
 		})

@@ -4,13 +4,12 @@ import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { createAggregateError, numberWithCommas, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Badge, Icon } from '@sourcegraph/wildcard'
+import { Badge, Icon, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
-import { Timestamp } from '../components/time/Timestamp'
 import {
     GitRefConnectionFields,
     GitRefFields,
@@ -41,6 +40,8 @@ export interface GitReferenceNodeProps {
     nodeLinkClassName?: string
 
     ariaLabel?: string
+
+    isPackageVersion?: boolean
 }
 
 export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<GitReferenceNodeProps>> = ({
@@ -53,8 +54,10 @@ export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<G
     icon: ReferenceIcon,
     nodeLinkClassName,
     ariaLabel,
+    isPackageVersion,
 }) => {
     const mostRecentSig =
+        !isPackageVersion &&
         node.target.commit &&
         (node.target.commit.committer && node.target.commit.committer.date > node.target.commit.author.date
             ? node.target.commit.committer
@@ -71,18 +74,18 @@ export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<G
                 data-testid="git-ref-node"
                 aria-label={ariaLabel}
             >
-                <span className="d-flex align-items-center">
+                <span className="d-flex flex-wrap align-items-center">
                     {ReferenceIcon && <Icon className="mr-1" as={ReferenceIcon} aria-hidden={true} />}
                     {/*
                     a11y-ignore
                     Rule: "color-contrast" (Elements must have sufficient color contrast)
                     GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
                 */}
-                    <Badge className="a11y-ignore px-1 py-0" as="code">
+                    <Badge className="a11y-ignore px-1 py-0 mr-2 text-break text-wrap text-justify" as="code">
                         {node.displayName}
                     </Badge>
                     {mostRecentSig && (
-                        <small className="pl-2">
+                        <small>
                             Updated <Timestamp date={mostRecentSig.date} />{' '}
                             {mostRecentSig.person && <>by {mostRecentSig.person.displayName}</>}
                         </small>
@@ -178,7 +181,7 @@ export const queryGitReferences = memoizeObservable(
                 args.withBehindAhead !== undefined ? args.withBehindAhead : args.type === GitRefType.GIT_BRANCH,
         }).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node || data.node.__typename !== 'Repository' || !data.node.gitRefs) {
+                if (data?.node?.__typename !== 'Repository' || !data?.node?.gitRefs) {
                     throw createAggregateError(errors)
                 }
                 return data.node.gitRefs

@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .tree-page {
     // For the other sub-pages in the RepoArea, we use a child selector to add the
     // border and radius to the sub-page containers. Since we use the Container
@@ -15,19 +17,19 @@
 .header {
     width: 100%;
     max-width: var(--media-xl);
+    padding-left: 0;
+    flex: 1 1 auto;
 }
 
-.git-commit-node {
-    padding-left: 0;
+.menu {
+    .text {
+        @media (--sm-breakpoint-down) {
+            display: none;
+        }
+    }
+    width: 100%;
+    flex-shrink: 0;
     padding-right: 0;
-
-    &-message-subject {
-        opacity: 0.9;
-    }
-
-    :global(.btn) {
-        opacity: 0.85;
-    }
 }
 
 .container {
@@ -35,9 +37,4 @@
     height: 100%;
     flex: 1;
     background-color: var(--code-bg);
-}
-
-.section {
-    width: 100%;
-    max-width: var(--media-xl);
 }

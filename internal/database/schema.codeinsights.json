@@ -67,15 +67,6 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "insight_dirty_queries_id_seq",
-      "TypeName": "integer",
-      "StartValue": 1,
-      "MinimumValue": 1,
-      "MaximumValue": 2147483647,
-      "Increment": 1,
-      "CycleOption": "NO"
-    },
-    {
       "Name": "insight_series_backfill_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -86,6 +77,15 @@
     },
     {
       "Name": "insight_series_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "insight_series_incomplete_points_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -113,6 +113,15 @@
     },
     {
       "Name": "insights_background_jobs_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "insights_data_retention_jobs_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -167,6 +176,188 @@
     }
   ],
   "Tables": [
+    {
+      "Name": "archived_insight_series_recording_times",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "insight_series_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "recording_time",
+          "Index": 2,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "snapshot",
+          "Index": 3,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "archived_insight_series_recor_insight_series_id_recording_t_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX archived_insight_series_recor_insight_series_id_recording_t_key ON archived_insight_series_recording_times USING btree (insight_series_id, recording_time)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (insight_series_id, recording_time)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "insight_series_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "insight_series",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "archived_series_points",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "capture",
+          "Index": 7,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "original_repo_name_id",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_name_id",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "series_id",
+          "Index": 1,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "time",
+          "Index": 2,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "value",
+          "Index": 3,
+          "TypeName": "double precision",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [],
+      "Constraints": [
+        {
+          "Name": "check_repo_fields_specifity",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (repo_id IS NULL AND repo_name_id IS NULL AND original_repo_name_id IS NULL OR repo_id IS NOT NULL AND repo_name_id IS NOT NULL AND original_repo_name_id IS NOT NULL)"
+        },
+        {
+          "Name": "insight_series_series_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "insight_series",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (series_id) REFERENCES insight_series(series_id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
     {
       "Name": "commit_index",
       "Comment": "",
@@ -683,122 +874,6 @@
       "Triggers": []
     },
     {
-      "Name": "insight_dirty_queries",
-      "Comment": "Stores queries that were unsuccessful or otherwise flagged as incomplete or incorrect.",
-      "Columns": [
-        {
-          "Name": "dirty_at",
-          "Index": 4,
-          "TypeName": "timestamp without time zone",
-          "IsNullable": false,
-          "Default": "CURRENT_TIMESTAMP",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "Timestamp when this query was marked dirty."
-        },
-        {
-          "Name": "for_time",
-          "Index": 6,
-          "TypeName": "timestamp without time zone",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "Timestamp for which the original data point was recorded or intended to be recorded."
-        },
-        {
-          "Name": "id",
-          "Index": 1,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "nextval('insight_dirty_queries_id_seq'::regclass)",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "insight_series_id",
-          "Index": 2,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "query",
-          "Index": 3,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "Sourcegraph query string that was executed."
-        },
-        {
-          "Name": "reason",
-          "Index": 5,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "Human readable string indicating the reason the query was marked dirty."
-        }
-      ],
-      "Indexes": [
-        {
-          "Name": "insight_dirty_queries_pkey",
-          "IsPrimaryKey": true,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX insight_dirty_queries_pkey ON insight_dirty_queries USING btree (id)",
-          "ConstraintType": "p",
-          "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "insight_dirty_queries_insight_series_id_fk_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX insight_dirty_queries_insight_series_id_fk_idx ON insight_dirty_queries USING btree (insight_series_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        }
-      ],
-      "Constraints": [
-        {
-          "Name": "insight_dirty_queries_insight_series_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "insight_series",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE"
-        }
-      ],
-      "Triggers": []
-    },
-    {
       "Name": "insight_series",
       "Comment": "Data series that comprise code insights.",
       "Columns": [
@@ -1037,6 +1112,19 @@
           "Comment": ""
         },
         {
+          "Name": "repository_criteria",
+          "Index": 23,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The search criteria used to determine the repositories that are included in this series."
+        },
+        {
           "Name": "sample_interval_unit",
           "Index": 13,
           "TypeName": "time_unit",
@@ -1228,6 +1316,109 @@
       "Triggers": []
     },
     {
+      "Name": "insight_series_incomplete_points",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('insight_series_incomplete_points_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "reason",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "series_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "time",
+          "Index": 4,
+          "TypeName": "timestamp without time zone",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "insight_series_incomplete_points_pk",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX insight_series_incomplete_points_pk ON insight_series_incomplete_points USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "insight_series_incomplete_points_unique_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX insight_series_incomplete_points_unique_idx ON insight_series_incomplete_points USING btree (series_id, reason, \"time\", repo_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "insight_series_incomplete_points_series_id_fk",
+          "ConstraintType": "f",
+          "RefTableName": "insight_series",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "insight_series_recording_times",
       "Comment": "",
       "Columns": [
@@ -1405,6 +1596,19 @@
         {
           "Name": "series_limit",
           "Index": 13,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "series_num_samples",
+          "Index": 14,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -1931,6 +2135,221 @@
           "ConstraintDefinition": "FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE"
         }
       ],
+      "Triggers": []
+    },
+    {
+      "Name": "insights_data_retention_jobs",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 13,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "execution_logs",
+          "Index": 11,
+          "TypeName": "json[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "failure_message",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "finished_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('insights_data_retention_jobs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_heartbeat_at",
+          "Index": 10,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_failures",
+          "Index": 9,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_resets",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "process_after",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "queued_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "series_id",
+          "Index": 14,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "series_id_string",
+          "Index": 15,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "started_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "state",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "'queued'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "worker_hostname",
+          "Index": 12,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "insights_data_retention_jobs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX insights_data_retention_jobs_pkey ON insights_data_retention_jobs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -2858,7 +3277,7 @@
   "Views": [
     {
       "Name": "insights_jobs_backfill_in_progress",
-      "Definition": " SELECT jobs.id,\n    jobs.state,\n    jobs.failure_message,\n    jobs.queued_at,\n    jobs.started_at,\n    jobs.finished_at,\n    jobs.process_after,\n    jobs.num_resets,\n    jobs.num_failures,\n    jobs.last_heartbeat_at,\n    jobs.execution_logs,\n    jobs.worker_hostname,\n    jobs.cancel,\n    jobs.backfill_id,\n    isb.state AS backfill_state,\n    isb.estimated_cost\n   FROM (insights_background_jobs jobs\n     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))\n  WHERE (isb.state = 'processing'::text);"
+      "Definition": " SELECT jobs.id,\n    jobs.state,\n    jobs.failure_message,\n    jobs.queued_at,\n    jobs.started_at,\n    jobs.finished_at,\n    jobs.process_after,\n    jobs.num_resets,\n    jobs.num_failures,\n    jobs.last_heartbeat_at,\n    jobs.execution_logs,\n    jobs.worker_hostname,\n    jobs.cancel,\n    jobs.backfill_id,\n    isb.state AS backfill_state,\n    isb.estimated_cost,\n    width_bucket(isb.estimated_cost, (0)::double precision, max((isb.estimated_cost + (1)::double precision)) OVER (), 4) AS cost_bucket\n   FROM (insights_background_jobs jobs\n     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))\n  WHERE (isb.state = 'processing'::text);"
     },
     {
       "Name": "insights_jobs_backfill_new",

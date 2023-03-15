@@ -2,13 +2,13 @@ import React, { useState } from 'react'
 
 import * as H from 'history'
 import SearchIcon from 'mdi-react/SearchIcon'
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 
 import { createAggregateError, escapeRevspecForURL } from '@sourcegraph/common'
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useDebounce } from '@sourcegraph/wildcard'
 
-import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import { ConnectionSummary } from '../../components/FilteredConnection/ui'
 import { GitRefFields, RepositoryGitRefsResult, RepositoryGitRefsVariables } from '../../graphql-operations'
 import { GitReferenceNodeProps, REPOSITORY_GIT_REFS } from '../GitReference'
@@ -25,6 +25,8 @@ interface GitReferencePopoverNodeProps extends Pick<GitReferenceNodeProps, 'node
     getPathFromRevision: (href: string, revision: string) => string
 
     isSpeculative?: boolean
+
+    isPackageVersion?: boolean
 }
 
 const GitReferencePopoverNode: React.FunctionComponent<React.PropsWithChildren<GitReferencePopoverNodeProps>> = ({
@@ -35,6 +37,7 @@ const GitReferencePopoverNode: React.FunctionComponent<React.PropsWithChildren<G
     getPathFromRevision,
     isSpeculative,
     onClick,
+    isPackageVersion,
 }) => {
     let isCurrent: boolean
     if (currentRevision) {
@@ -50,6 +53,7 @@ const GitReferencePopoverNode: React.FunctionComponent<React.PropsWithChildren<G
             active={isCurrent}
             onClick={onClick}
             icon={isSpeculative ? SearchIcon : undefined}
+            isPackageVersion={isPackageVersion}
         />
     )
 }
@@ -113,6 +117,8 @@ interface RevisionsPopoverReferencesProps {
 
     showSpeculativeResults?: boolean
 
+    isPackage?: boolean
+
     onSelect?: (node: GitRefFields) => void
 
     tabLabel: string
@@ -134,12 +140,13 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
     showSpeculativeResults,
     onSelect,
     tabLabel,
+    isPackage,
 }) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
     const location = useLocation()
 
-    const response = useConnection<RepositoryGitRefsResult, RepositoryGitRefsVariables, GitRefFields>({
+    const response = useShowMorePagination<RepositoryGitRefsResult, RepositoryGitRefsVariables, GitRefFields>({
         query: REPOSITORY_GIT_REFS,
         variables: {
             query,
@@ -149,7 +156,7 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
             withBehindAhead: false,
         },
         getConnection: ({ data, errors }) => {
-            if (!data || !data.node || data.node.__typename !== 'Repository' || !data.node.gitRefs) {
+            if (data?.node?.__typename !== 'Repository' || !data?.node?.gitRefs) {
                 throw createAggregateError(errors)
             }
             return data.node.gitRefs
@@ -190,6 +197,7 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
                     getPathFromRevision={getPathFromRevision}
                     location={location}
                     onClick={() => onSelect?.(node)}
+                    isPackageVersion={isPackage}
                 />
             ))}
             {showSpeculativeResults && response.connection && query && (

@@ -91,13 +91,12 @@ export const List: Story = () => (
 )
 
 export const WorkspaceSelected: Story = () => (
-    <WebStory>
+    <WebStory path="/:workspaceID" initialEntries={['/workspace2']}>
         {props => (
             <MockedTestProvider link={MOCKS}>
                 <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={mockFullBatchSpec()}>
                     <ExecutionWorkspaces
                         {...props}
-                        selectedWorkspaceID="workspace2"
                         queryWorkspacesList={queryWorkspacesList}
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                     />
@@ -110,7 +109,7 @@ export const WorkspaceSelected: Story = () => (
 WorkspaceSelected.storyName = 'with workspace selected'
 
 export const LocallyExecutedSpec: Story = () => (
-    <WebStory>
+    <WebStory path="/:workspaceID" initialEntries={['/"spec1234"']}>
         {props => (
             <MockedTestProvider link={MOCKS}>
                 <BatchSpecContextProvider
@@ -118,11 +117,7 @@ export const LocallyExecutedSpec: Story = () => (
                     batchSpec={mockFullBatchSpec({ source: BatchSpecSource.LOCAL })}
                 >
                     <div className="container">
-                        <ExecutionWorkspaces
-                            {...props}
-                            selectedWorkspaceID="spec1234"
-                            queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-                        />
+                        <ExecutionWorkspaces {...props} queryChangesetSpecFileDiffs={queryEmptyFileDiffs} />
                     </div>
                 </BatchSpecContextProvider>
             </MockedTestProvider>

@@ -1,4 +1,4 @@
-# Experimental support for developing in nix. Please reach out to @keegan if
+# Experimental support for developing in nix. Please reach out to @keegan or @noah if
 # you encounter any issues.
 #
 # Things it does differently:
@@ -8,39 +8,14 @@
 #
 # Status: everything works on linux. Go1.17 is currently broken on
 # darwin. https://github.com/NixOS/nixpkgs/commit/9675a865c9c3eeec36c06361f7215e109925654c
-
+{ pkgs }:
 let
-  # Pin a specific version of universal-ctags to the same version as in cmd/symbols/ctags-install-alpine.sh.
-  ctags-overlay = (self: super: {
-    universal-ctags = super.universal-ctags.overrideAttrs (old: {
-      version = "5.9.20220403.0";
-      src = super.fetchFromGitHub {
-        owner = "universal-ctags";
-        repo = "ctags";
-        rev = "f95bb3497f53748c2b6afc7f298cff218103ab90";
-        sha256 = "sha256-pd89KERQj6K11Nue3YFNO+NLOJGqcMnHkeqtWvMFk38=";
-      };
-      # disable checks, else we get `make[1]: *** No rule to make target 'optlib/cmake.c'.  Stop.`
-      doCheck = false;
-      checkFlags = [ ];
-    });
-  });
-  # Pin a specific version of nixpkgs to ensure we get the same packages.
-  # To update find a recent commit to nixpkgs. To get the sha256 pass the URL to nix-prefetch-url --unpack
-  pkgs = import
-    (fetchTarball {
-      url =
-        "https://github.com/NixOS/nixpkgs/archive/5e66f427c661955f08d55f654e82bab1b1a7abc1.tar.gz";
-      sha256 = "1rhyn1hrgpsl1ydihan3xb2azz4bghghg451a49sr5vh3v6yz5sy";
-    })
-    { overlays = [ ctags-overlay ]; };
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
   # like zoekt expects.
   universal-ctags = pkgs.writeScriptBin "universal-ctags" ''
     #!${pkgs.stdenv.shell}
     exec ${pkgs.universal-ctags}/bin/ctags "$@"
   '';
-
 in
 pkgs.mkShell {
   name = "sourcegraph-dev";
@@ -60,7 +35,7 @@ pkgs.mkShell {
     universal-ctags
 
     # Build our backend.
-    go_1_19
+    go_1_20
 
     # Lots of our tooling and go tests rely on git et al.
     git
@@ -76,14 +51,25 @@ pkgs.mkShell {
     # Web tools. Need node 16.7 so we use unstable. Yarn should also be built
     # against it.
     nodejs-16_x
-    (yarn.override { nodejs = nodejs-16_x; })
+    (nodejs-16_x.pkgs.pnpm.override {
+      version = "7.28.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/pnpm/-/pnpm-7.28.0.tgz";
+        sha512 = "sha512-XDTYvZf3xF/kaX0pcdh9GWpak9tV5uDGuNCjkN1SFa0UE350mJGpszmM/j2rVyfoOOFzVR73GNdN3Purd4rXlg==";
+      };
+    })
     nodePackages.typescript
 
+    # Rust utils for syntax-highlighter service,
+    # currently not pinned to the same versions.
     cargo
     rustc
     rustfmt
     libiconv
     clippy
+
+    # The future?
+    bazel_6
   ];
 
   # Startup postgres
@@ -91,6 +77,7 @@ pkgs.mkShell {
     . ./dev/nix/shell-hook.sh
   '';
 
+  # Fix for using Delve https://github.com/sourcegraph/sourcegraph/pull/35885
   hardeningDisable = [ "fortify" ];
 
   # By explicitly setting this environment variable we avoid starting up

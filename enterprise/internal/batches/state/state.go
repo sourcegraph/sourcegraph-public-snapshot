@@ -4,8 +4,12 @@ import (
 	"context"
 	"io"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	adobatches "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -112,6 +116,8 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 
 	case *bbcs.AnnotatedPullRequest:
 		return computeBitbucketCloudBuildState(c.UpdatedAt, m, events)
+	case *azuredevops.AnnotatedPullRequest:
+		return computeAzureDevOpsBuildState(m)
 	}
 
 	return btypes.ChangesetCheckStateUnknown
@@ -251,6 +257,34 @@ func parseBitbucketCloudBuildState(s bitbucketcloud.PullRequestStatusState) btyp
 	}
 }
 
+func computeAzureDevOpsBuildState(apr *azuredevops.AnnotatedPullRequest) btypes.ChangesetCheckState {
+	stateMap := make(map[string]btypes.ChangesetCheckState)
+
+	// States from last sync.
+	for _, status := range apr.Statuses {
+		stateMap[strconv.Itoa(status.ID)] = parseAzureDevOpsBuildState(status.State)
+	}
+
+	states := make([]btypes.ChangesetCheckState, 0, len(stateMap))
+	for _, v := range stateMap {
+		states = append(states, v)
+	}
+	return combineCheckStates(states)
+}
+
+func parseAzureDevOpsBuildState(s adobatches.PullRequestStatusState) btypes.ChangesetCheckState {
+	switch s {
+	case adobatches.PullRequestBuildStatusStateError, adobatches.PullRequestBuildStatusStateFailed:
+		return btypes.ChangesetCheckStateFailed
+	case adobatches.PullRequestBuildStatusStatePending:
+		return btypes.ChangesetCheckStatePending
+	case adobatches.PullRequestBuildStatusStateSucceeded:
+		return btypes.ChangesetCheckStatePassed
+	default:
+		return btypes.ChangesetCheckStateUnknown
+	}
+}
+
 func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
 	// We should only consider the latest commit. This could be from a sync or a webhook that
 	// has occurred later
@@ -356,16 +390,16 @@ func combineCheckStates(states []btypes.ChangesetCheckState) btypes.ChangesetChe
 
 	switch {
 	case stateMap[btypes.ChangesetCheckStateUnknown]:
-		// If are pending, overall is Pending
+		// If there are unknown states, overall is Pending.
 		return btypes.ChangesetCheckStateUnknown
 	case stateMap[btypes.ChangesetCheckStatePending]:
-		// If are pending, overall is Pending
+		// If there are pending states, overall is Pending.
 		return btypes.ChangesetCheckStatePending
 	case stateMap[btypes.ChangesetCheckStateFailed]:
-		// If no pending, but have errors then overall is Failed
+		// If there are no pending states, but we have errors then overall is Failed.
 		return btypes.ChangesetCheckStateFailed
 	case stateMap[btypes.ChangesetCheckStatePassed]:
-		// No pending or errors then overall is Passed
+		// No pending or error states then overall is Passed.
 		return btypes.ChangesetCheckStatePassed
 	}
 
@@ -515,6 +549,21 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 		default:
 			return "", errors.Errorf("unknown Bitbucket Cloud pull request state: %s", m.State)
 		}
+	case *azuredevops.AnnotatedPullRequest:
+		switch m.Status {
+		case adobatches.PullRequestStatusAbandoned:
+			s = btypes.ChangesetExternalStateClosed
+		case adobatches.PullRequestStatusCompleted:
+			s = btypes.ChangesetExternalStateMerged
+		case adobatches.PullRequestStatusActive:
+			if m.IsDraft {
+				s = btypes.ChangesetExternalStateDraft
+			} else {
+				s = btypes.ChangesetExternalStateOpen
+			}
+		default:
+			return "", errors.Errorf("unknown Azure DevOps pull request state: %s", m.Status)
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -583,7 +632,24 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 				states[btypes.ChangesetReviewStatePending] = true
 			}
 		}
-
+	case *azuredevops.AnnotatedPullRequest:
+		for _, reviewer := range m.Reviewers {
+			// Vote represents the status of a review on Azure DevOps. Here are possible values for Vote:
+			//
+			//   10: approved
+			//   5 : approved with suggestions
+			//   0 : no vote
+			//  -5 : waiting for author
+			//  -10: rejected
+			switch reviewer.Vote {
+			case 10:
+				states[btypes.ChangesetReviewStateApproved] = true
+			case 5, -5, -10:
+				states[btypes.ChangesetReviewStateChangesRequested] = true
+			default:
+				states[btypes.ChangesetReviewStatePending] = true
+			}
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -614,11 +680,11 @@ func selectReviewState(states map[btypes.ChangesetReviewState]bool) btypes.Chang
 // computeDiffStat computes the up to date diffstat for the changeset, based on
 // the values in c.SyncState.
 func computeDiffStat(ctx context.Context, client gitserver.Client, c *btypes.Changeset, repo api.RepoName) (*diff.Stat, error) {
-	iter, err := client.Diff(ctx, gitserver.DiffOptions{
+	iter, err := client.Diff(ctx, authz.DefaultSubRepoPermsChecker, gitserver.DiffOptions{
 		Repo: repo,
 		Base: c.SyncState.BaseRefOid,
 		Head: c.SyncState.HeadRefOid,
-	}, authz.DefaultSubRepoPermsChecker)
+	})
 	if err != nil {
 		return nil, err
 	}

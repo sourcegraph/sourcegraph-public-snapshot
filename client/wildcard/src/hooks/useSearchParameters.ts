@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 
 /**
  * Return a new search parameters object based on the current URL.

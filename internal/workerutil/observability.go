@@ -68,7 +68,7 @@ func WithDurationBuckets(buckets []float64) ObservabilityOption {
 //
 // The given labels are emitted on each metric. If WithSampler option is not passed,
 // traces will have a 1 in 2 probability of being sampled.
-func NewMetrics(observationContext *observation.Context, prefix string, opts ...ObservabilityOption) WorkerObservability {
+func NewMetrics(observationCtx *observation.Context, prefix string, opts ...ObservabilityOption) WorkerObservability {
 	options := &observabilityOptions{
 		durationBuckets: prometheus.DefBuckets,
 		traceSampler: func(job Record) bool {
@@ -93,7 +93,10 @@ func NewMetrics(observationContext *observation.Context, prefix string, opts ...
 			Help: help,
 		}, keys)
 
-		observationContext.Registerer.MustRegister(gaugeVec)
+		// TODO(sqs): TODO(single-binary): Ideally we would be using MustRegister here, not the
+		// IgnoreDuplicate variant. This is a bit of a hack to allow 2 executor instances to run in a
+		// single binary deployment.
+		gaugeVec = metrics.MustRegisterIgnoreDuplicate(observationCtx.Registerer, gaugeVec)
 		return gaugeVec.WithLabelValues(values...)
 	}
 
@@ -103,16 +106,16 @@ func NewMetrics(observationContext *observation.Context, prefix string, opts ...
 	)
 
 	return WorkerObservability{
-		logger:       observationContext.Logger,
+		logger:       observationCtx.Logger,
 		traceSampler: options.traceSampler,
-		operations:   newOperations(observationContext, prefix, keys, values, options.durationBuckets),
+		operations:   newOperations(observationCtx, prefix, keys, values, options.durationBuckets),
 		numJobs:      newLenientConcurrencyGauge(numJobs, time.Second*5),
 	}
 }
 
-func newOperations(observationContext *observation.Context, prefix string, keys, values []string, durationBuckets []float64) *operations {
-	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+func newOperations(observationCtx *observation.Context, prefix string, keys, values []string, durationBuckets []float64) *operations {
+	redMetrics := metrics.NewREDMetrics(
+		observationCtx.Registerer,
 		prefix,
 		metrics.WithLabels(append(keys, "op")...),
 		metrics.WithCountHelp("Total number of method invocations."),
@@ -120,10 +123,10 @@ func newOperations(observationContext *observation.Context, prefix string, keys,
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("worker.%s", name),
+		return observationCtx.Operation(observation.Op{
+			Name:              name,
 			MetricLabelValues: append(append([]string{}, values...), name),
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 

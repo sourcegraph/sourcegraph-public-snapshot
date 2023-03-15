@@ -1,0 +1,51 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Timestamp absolute time with formatting 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+  >
+    01:02:00
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Timestamp mocked current time 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+  >
+    about 22 hours ago
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Timestamp noAbout 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+  >
+    22 hours ago
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Timestamp noAgo 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+  >
+    about 22 hours
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Timestamp with time time 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+  >
+    about 21 hours ago
+  </span>
+</DocumentFragment>
+`;

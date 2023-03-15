@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -30,6 +31,7 @@ func TestFeatureFlagStore(t *testing.T) {
 	t.Run("AnonymousUserFlags", testAnonymousUserFlags)
 	t.Run("UserlessFeatureFlags", testUserlessFeatureFlags)
 	t.Run("OrganizationFeatureFlag", testOrgFeatureFlag)
+	t.Run("GetFeatureFlag", testGetFeatureFlag)
 }
 
 func errorContains(s string) require.ErrorAssertionFunc {
@@ -505,6 +507,22 @@ func testUserFlags(t *testing.T) {
 		require.Equal(t, expected, got)
 	})
 
+	t.Run("newer org override beats older org override", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		o1 := mkOrg("o1")
+		o2 := mkOrg("o2")
+		u1 := mkUser("u", o1.ID, o2.ID)
+		mkFFBoolVar("f1", 10000)
+		mkFFBoolVar("f2", 0)
+		mkOrgOverride(o1.ID, "f2", true)
+		mkOrgOverride(o2.ID, "f2", false)
+
+		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": false}
+		require.Equal(t, expected, got)
+	})
+
 	t.Run("delete flag with override", func(t *testing.T) {
 		t.Cleanup(cleanup(t, db))
 		o1 := mkOrg("o1")
@@ -700,5 +718,34 @@ func testOrgFeatureFlag(t *testing.T) {
 		got, err := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f1")
 		require.NoError(t, err)
 		require.Equal(t, false, got)
+	})
+}
+
+func testGetFeatureFlag(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	flagStore := db.FeatureFlags()
+	t.Run("no value", func(t *testing.T) {
+		ctx := context.Background()
+		ff, err := flagStore.GetFeatureFlag(ctx, "does-not-exist")
+		require.Equal(t, err, sql.ErrNoRows)
+		require.Nil(t, ff)
+	})
+	t.Run("true value", func(t *testing.T) {
+		ctx := context.Background()
+		_, err := flagStore.CreateBool(ctx, "is-true", true)
+		require.NoError(t, err)
+		ff, err := flagStore.GetFeatureFlag(ctx, "is-true")
+		require.NoError(t, err)
+		require.True(t, ff.Bool.Value)
+	})
+	t.Run("false value", func(t *testing.T) {
+		ctx := context.Background()
+		_, err := flagStore.CreateBool(ctx, "is-false", true)
+		require.NoError(t, err)
+		ff, err := flagStore.GetFeatureFlag(ctx, "is-false")
+		require.NoError(t, err)
+		require.True(t, ff.Bool.Value)
 	})
 }

@@ -3,6 +3,8 @@ package logging
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"log"
 	"os"
 
 	"github.com/fatih/color"
@@ -145,6 +147,10 @@ func Init(options ...Option) {
 	lvl, err := log15.LvlFromString(env.LogLevel)
 	if err == nil {
 		handler = log15.LvlFilterHandler(lvl, handler)
+	}
+	if env.LogLevel == "none" {
+		handler = log15.DiscardHandler()
+		log.SetOutput(io.Discard)
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, handler))
 }

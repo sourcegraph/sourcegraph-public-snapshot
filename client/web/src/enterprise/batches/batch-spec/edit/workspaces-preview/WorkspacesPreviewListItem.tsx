@@ -20,11 +20,13 @@ interface WorkspacesPreviewListItemProps {
     exclude: (repo: string, branch: string) => void
     /** Whether or not the item presented should be read-only. */
     isReadOnly?: boolean
+    /** Whether using cached results is disabled. */
+    cacheDisabled?: boolean
 }
 
 export const WorkspacesPreviewListItem: React.FunctionComponent<
     React.PropsWithChildren<WorkspacesPreviewListItemProps>
-> = ({ workspace, isStale, exclude, isReadOnly = false }) => {
+> = ({ workspace, isStale, exclude, cacheDisabled, isReadOnly = false }) => {
     const [toBeExcluded, setToBeExcluded] = useState(false)
 
     const handleExclude = useCallback(() => {
@@ -41,13 +43,13 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<
             return <ExcludeIcon />
         }
         if (workspace.cachedResultFound) {
-            return <CachedIcon />
+            return <CachedIcon cacheDisabled={cacheDisabled} />
         }
         if (workspace.stepCacheResultCount > 0) {
-            return <PartiallyCachedIcon count={workspace.stepCacheResultCount} />
+            return <PartiallyCachedIcon cacheDisabled={cacheDisabled} count={workspace.stepCacheResultCount} />
         }
         return undefined
-    }, [toBeExcluded, workspace.cachedResultFound, workspace.stepCacheResultCount])
+    }, [cacheDisabled, toBeExcluded, workspace.cachedResultFound, workspace.stepCacheResultCount])
 
     return (
         <ListItem className={!isReadOnly && isStale ? styles.stale : undefined}>

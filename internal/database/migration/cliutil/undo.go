@@ -31,7 +31,7 @@ func Undo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		r, err := setupRunner(ctx, factory, schemaNameFlag.Get(cmd))
+		r, err := setupRunner(factory, schemaNameFlag.Get(cmd))
 		if err != nil {
 			return err
 		}

@@ -13,8 +13,8 @@ Administration is usually handled by site administrators are the admins responsi
 - [PostgreSQL configuration](config/postgres-conf.md)
 - [Using external services (PostgreSQL, Redis, S3/GCS)](external_services/index.md)
 - <span class="badge badge-experimental">Experimental</span> [Validation](validation.md)
-- <span class="badge badge-experimental">Experimental</span> [Executors](executors.md)
-- <span class="badge badge-experimental">Experimental</span> [Deploy executors](deploy_executors.md)
+- <span class="badge badge-beta">Beta</span> [Executors](executors/index.md)
+- <span class="badge badge-beta">Beta</span> [Deploy executors](executors/deploy_executors.md)
 
 ## [Upgrade Sourcegraph](updates/index.md)
 
@@ -37,20 +37,26 @@ Administration is usually handled by site administrators are the admins responsi
   - [Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate](ssl_https_self_signed_cert_nginx.md)
 - [User authentication](auth/index.md)
   - [User data deletion](user_data_deletion.md)
+- <span class="badge badge-beta">Beta</span> [Provision users through SCIM](scim.md)
 - [Setting the URL for your instance](url.md)
-- [Repository permissions](repo/permissions.md)
+- [Repository permissions](permissions/index.md)
   - [Row-level security](repo/row_level_security.md)
 - [Batch Changes](../batch_changes/how-tos/site_admin_configuration.md)
+- [Configure incoming webhooks](config/webhooks.md)
 
 For deployment configuration, please refer to the relevant [installation guide](deploy/index.md).
 
 ## [Observability](observability.md)
 
 - [Monitoring guide](how-to/monitoring-guide.md)
-- [Metrics and dashboards](./observability/metrics.md)
-- [Alerting](./observability/alerting.md)
-- [Tracing](./observability/tracing.md)
-- [Logs](./observability/logs.md)
+- [Metrics and dashboards](observability/metrics.md)
+- [Alerting](observability/alerting.md)
+- [Tracing](observability/tracing.md)
+- [Logs](observability/logs.md)
+- [Outbound request log](observability/outbound-request-log.md)
+- [OpenTelemetry](observability/opentelemetry.md)
+- [Health checks](observability/health_checks.md)
+- [Troubleshooting guide](observability/troubleshooting.md)
 
 ## Features
 
@@ -62,7 +68,7 @@ For deployment configuration, please refer to the relevant [installation guide](
 - [Pings](pings.md)
 - [Pricing and subscriptions](subscriptions/index.md)
 - [Search](search.md)
-- [Sourcegraph extensions and extension registry](extensions/index.md)
 - [Usage statistics](usage_statistics.md)
 - [User feedback surveys](user_surveys.md)
+- [Audit logs](audit_log.md)
 

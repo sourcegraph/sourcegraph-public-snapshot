@@ -2,8 +2,8 @@ import expect from 'expect'
 import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
+import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    SearchGraphQlOperations,
     commitHighlightResult,
     commitSearchStreamEvents,
     diffSearchStreamEvents,
@@ -11,8 +11,8 @@ import {
     mixedSearchStreamEvents,
     highlightFileResult,
     symbolSearchStreamEvents,
-} from '@sourcegraph/search'
-import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+    ownerSearchStreamEvents,
+} from '@sourcegraph/shared/src/search/integration'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
@@ -22,7 +22,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
+import { createEditorAPI, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
 const mockDefaultStreamEvents: SearchEvent[] = [
     {
@@ -55,16 +55,14 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     { type: 'done', data: {} },
 ]
 
-const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     IsSearchContextAvailable: () => ({
         isSearchContextAvailable: true,
     }),
 }
 
-const commonSearchGraphQLResultsWithUser: Partial<
-    WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations
-> = {
+const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonSearchGraphQLResults,
     UserAreaUserProfile: () => ({
         user: {
@@ -78,6 +76,11 @@ const commonSearchGraphQLResultsWithUser: Partial<
             viewerCanAdminister: true,
             builtinAuth: true,
             tags: [],
+            createdAt: '2020-03-02T11:52:15Z',
+            roles: {
+                __typename: 'RoleConnection',
+                nodes: [],
+            },
         },
     }),
 }
@@ -128,10 +131,10 @@ describe('Search', () => {
 
     describe('Filter completion', () => {
         withSearchQueryInput(editorName => {
-            test(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
+            test.skip(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
                 testContext.overrideGraphQL({
                     ...commonSearchGraphQLResults,
-                    ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                    ...createViewerSettingsGraphQLOverride(),
                 })
 
                 await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
@@ -150,7 +153,7 @@ describe('Search', () => {
             test.skip(`Typing in the search field shows relevant suggestions (${editorName})`, async () => {
                 testContext.overrideGraphQL({
                     ...commonSearchGraphQLResults,
-                    ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                    ...createViewerSettingsGraphQLOverride(),
                 })
                 testContext.overrideSearchStreamEvents([
                     {
@@ -220,14 +223,7 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
-                        RegistryExtensions: () => ({
-                            extensionRegistry: {
-                                __typename: 'ExtensionRegistry',
-                                extensions: { error: null, nodes: [] },
-                                featuredExtensions: null,
-                            },
-                        }),
+                        ...createViewerSettingsGraphQLOverride(),
                     })
                 })
 
@@ -266,7 +262,7 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                        ...createViewerSettingsGraphQLOverride(),
                     })
                 })
 
@@ -277,15 +273,20 @@ describe('Search', () => {
                     await editor.focus()
                     await driver.page.keyboard.type('test')
                     await driver.page.click('.test-case-sensitivity-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&case=yes')
+                    await driver.page.click('aria/Search[role="button"]')
+                    await driver.assertWindowLocation(
+                        '/search?q=context:global+test&patternType=standard&case=yes&sm=1'
+                    )
                 })
 
                 test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
-                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=standard&case=yes')
+                    await driver.page.goto(
+                        driver.sourcegraphBaseUrl + '/search?q=test&patternType=standard&case=yes&sm=1'
+                    )
                     await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-case-sensitivity-toggle')
                     await driver.page.click('.test-case-sensitivity-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&sm=1')
                 })
             })
         })
@@ -297,7 +298,7 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                        ...createViewerSettingsGraphQLOverride(),
                     })
                 })
 
@@ -308,7 +309,8 @@ describe('Search', () => {
                     await editor.focus()
                     await driver.page.keyboard.type('test')
                     await driver.page.click('.test-structural-search-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
+                    await driver.page.click('aria/Search[role="button"]')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural&sm=1')
                 })
 
                 test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
@@ -317,7 +319,7 @@ describe('Search', () => {
                     await editor.focus()
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural&sm=0')
                 })
 
                 test('Clicking toggle turns off structural search and reverts to default pattern type', async () => {
@@ -325,7 +327,7 @@ describe('Search', () => {
                     await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&sm=0')
                 })
             })
         })
@@ -340,7 +342,7 @@ describe('Search', () => {
 
             await driver.page.waitForSelector('.test-search-button', { visible: true })
             await driver.page.click('.test-search-button')
-            await driver.assertWindowLocation('/search?q=context:global+test+hello&patternType=regexp')
+            await driver.assertWindowLocation('/search?q=context:global+test+hello&patternType=regexp&sm=0')
         })
     })
 
@@ -382,7 +384,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-search-result', { visible: true })
 
             const results = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-search-result-label')].map(label =>
+                [...document.querySelectorAll('[data-testid="result-container-header"]')].map(label =>
                     (label.textContent || '').trim()
                 )
             )
@@ -484,11 +486,29 @@ describe('Search', () => {
             testContext.overrideSearchStreamEvents(symbolSearchStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-            await driver.page.waitForSelector('.test-file-match-children-item', {
+            await driver.page.waitForSelector('[data-testid="symbol-search-result"]', {
                 visible: true,
             })
 
             await percySnapshotWithVariants(driver.page, 'Streaming search symbols', {
+                waitForCodeHighlighting: true,
+            })
+            await accessibilityAudit(driver.page)
+        })
+
+        test('owner results', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                ...highlightFileResult,
+            })
+            testContext.overrideSearchStreamEvents(ownerSearchStreamEvents)
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('[data-testid="owner-search-result"]', {
+                visible: true,
+            })
+
+            await percySnapshotWithVariants(driver.page, 'Streaming search owners', {
                 waitForCodeHighlighting: true,
             })
             await accessibilityAudit(driver.page)
@@ -499,18 +519,28 @@ describe('Search', () => {
         test('is styled correctly, with saved searches', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                savedSearches: () => ({
-                    savedSearches: [
-                        {
-                            description: 'Demo',
-                            id: 'U2F2ZWRTZWFyY2g6NQ==',
-                            namespace: { __typename: 'User', id: 'user123', namespaceName: 'test' },
-                            notify: false,
-                            notifySlack: false,
-                            query: 'context:global Batch Change patternType:literal',
-                            slackWebhookURL: null,
+                SavedSearches: () => ({
+                    savedSearches: {
+                        nodes: [
+                            {
+                                __typename: 'SavedSearch',
+                                description: 'Demo',
+                                id: 'U2F2ZWRTZWFyY2g6NQ==',
+                                namespace: { __typename: 'User', id: 'user123', namespaceName: 'test' },
+                                notify: false,
+                                notifySlack: false,
+                                query: 'context:global Batch Change patternType:literal',
+                                slackWebhookURL: null,
+                            },
+                        ],
+                        totalCount: 1,
+                        pageInfo: {
+                            startCursor: 'U2F2ZWRTZWFyY2g6NQ==',
+                            endCursor: 'U2F2ZWRTZWFyY2g6NQ==',
+                            hasNextPage: false,
+                            hasPreviousPage: false,
                         },
-                    ],
+                    },
                 }),
             })
 
@@ -534,7 +564,7 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                        ...createViewerSettingsGraphQLOverride(),
                     })
                 })
 
@@ -556,7 +586,7 @@ describe('Search', () => {
                 driver.page.waitForNavigation(),
                 driver.page.click('[data-testid="search-type-submit"]'),
             ])
-            await driver.assertWindowLocation('/search?q=context:global+test+type:commit&patternType=standard')
+            await driver.assertWindowLocation('/search?q=context:global+test+type:commit&patternType=standard&sm=0')
         })
     })
 })

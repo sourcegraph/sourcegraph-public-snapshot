@@ -1,11 +1,15 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
+import { truncate } from 'lodash'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
+import { NavigateFunction } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
     createRectangle,
+    createLinkClickHandler,
     Icon,
     Link,
     Popover,
@@ -17,7 +21,11 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
-import { BlameHunk } from '../blame/useBlameHunks'
+import { replaceRevisionInURL } from '../../util/url'
+import { BlameHunk, BlameHunkData } from '../blame/useBlameHunks'
+import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
+
+import { useBlameRecencyColor } from './BlameRecency'
 
 import styles from './BlameDecoration.module.scss'
 
@@ -101,88 +109,181 @@ const usePopover = ({
     return { isOpen, open, close, openWithTimeout, closeWithTimeout }
 }
 
-export const BlameDecoration: React.FunctionComponent<{
+interface BlameDecorationProps {
     line: number // 1-based line number
     blameHunk?: BlameHunk
+    firstCommitDate?: BlameHunkData['firstCommitDate']
+    externalURLs?: BlameHunkData['externalURLs']
+    navigate: NavigateFunction
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
-}> = ({ line, blameHunk, onSelect, onDeselect }) => {
-    const id = line?.toString() || ''
+    hideRecency: boolean
+}
+
+export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
+    line,
+    blameHunk,
+    onSelect,
+    onDeselect,
+    firstCommitDate,
+    externalURLs,
+    hideRecency,
+    navigate,
+}) => {
+    const hunkStartLine = blameHunk?.startLine ?? line
+    const id = hunkStartLine?.toString() || ''
     const onOpen = useCallback(() => {
-        onSelect?.(line)
+        onSelect?.(hunkStartLine)
         eventLogger.log('GitBlamePopupViewed')
-    }, [onSelect, line])
-    const onClose = useCallback(() => onDeselect?.(line), [onDeselect, line])
+    }, [onSelect, hunkStartLine])
+    const onClose = useCallback(() => onDeselect?.(hunkStartLine), [onDeselect, hunkStartLine])
     const { isOpen, open, close, closeWithTimeout, openWithTimeout } = usePopover({
         id,
-        timeout: 250,
+        timeout: 50,
         onOpen,
         onClose,
     })
 
-    const onPopoverOpenChange = useCallback((event: PopoverOpenEvent) => (event.isOpen ? close() : open()), [
-        close,
-        open,
-    ])
+    const onPopoverOpenChange = useCallback(
+        (event: PopoverOpenEvent) => (event.isOpen ? close() : open()),
+        [close, open]
+    )
+
+    // Prevent hitting the backend (full page reloads) for links that stay inside the app.
+    const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(navigate), [navigate])
+
+    const recencyColor = useBlameRecencyColor(blameHunk?.displayInfo.commitDate, firstCommitDate)
 
     if (!blameHunk) {
         return null
     }
+    const displayInfo = blameHunk.displayInfo
+
+    const isFirstInHunk = blameHunk?.startLine === line ?? false
 
     return (
-        <Popover isOpen={isOpen} onOpenChange={onPopoverOpenChange} key={id}>
-            <PopoverTrigger
-                as={Link}
-                to={blameHunk.displayInfo.linkURL}
-                target="_blank"
-                rel="noreferrer noopener"
-                className={classNames(styles.popoverTrigger, 'px-2')}
-                onFocus={open}
-                onBlur={close}
-                onMouseEnter={openWithTimeout}
-                onMouseLeave={closeWithTimeout}
-            >
-                <span
-                    className={styles.content}
-                    data-line-decoration-attachment-content={true}
-                    data-contents={blameHunk.displayInfo.message}
+        <div className={classNames(styles.blame)}>
+            {hideRecency ? null : (
+                <div
+                    className={classNames(styles.recency, isFirstInHunk ? styles.recencyFirstInHunk : null)}
+                    // eslint-disable-next-line react/forbid-dom-props
+                    style={{ backgroundColor: firstCommitDate ? recencyColor : 'transparent' }}
                 />
-            </PopoverTrigger>
+            )}
+            {isFirstInHunk ? (
+                <Popover isOpen={isOpen} onOpenChange={onPopoverOpenChange} key={id}>
+                    <PopoverTrigger
+                        as={Link}
+                        to={blameHunk.displayInfo.linkURL}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className={classNames(styles.popoverTrigger, 'px-2')}
+                        onFocus={open}
+                        onBlur={close}
+                        onMouseEnter={openWithTimeout}
+                        onMouseLeave={closeWithTimeout}
+                    >
+                        {hideRecency ? (
+                            <span className={styles.content} data-line-decoration-attachment-content={true}>
+                                {`${displayInfo.dateString} • ${displayInfo.displayName}${
+                                    displayInfo.username
+                                } [${truncate(displayInfo.message, { length: 45 })}]`}
+                            </span>
+                        ) : (
+                            <>
+                                <span className={styles.date} data-line-decoration-attachment-content={true}>
+                                    {displayInfo.dateString}
+                                </span>
+                                {blameHunk.author.person ? (
+                                    <>
+                                        <span className={styles.author} data-line-decoration-attachment-content={true}>
+                                            <UserAvatar
+                                                inline={true}
+                                                className={styles.avatar}
+                                                style={{ top: 1 }}
+                                                user={
+                                                    blameHunk.author.person.user
+                                                        ? blameHunk.author.person.user
+                                                        : blameHunk.author.person
+                                                }
+                                                size={16}
+                                            />
+                                        </span>
+                                    </>
+                                ) : (
+                                    <span className={styles.author} data-line-decoration-attachment-content={true}>
+                                        {`${displayInfo.username}${displayInfo.displayName}`}
+                                    </span>
+                                )}
+                                <span className={styles.content} data-line-decoration-attachment-content={true}>
+                                    {blameHunk.author.person ? (
+                                        <>
+                                            {`${displayInfo.displayName}${displayInfo.username}`.split(' ')[0]}
+                                            {' • '}
+                                        </>
+                                    ) : null}
+                                    {displayInfo.message}
+                                </span>
+                            </>
+                        )}
+                    </PopoverTrigger>
 
-            <PopoverContent
-                targetPadding={createRectangle(0, 0, 8, 8)}
-                position={Position.topStart}
-                focusLocked={false}
-                returnTargetFocus={false}
-                onMouseEnter={resetAllTimeouts}
-                onMouseLeave={close}
-                className={styles.popoverContent}
-            >
-                <div className="py-1">
-                    <div className={classNames(styles.head, 'px-3 my-2')}>
-                        <span className={styles.author}>{blameHunk.displayInfo.displayName}</span>{' '}
-                        {blameHunk.displayInfo.timestampString}
-                    </div>
-                    <hr className={classNames(styles.separator, 'm-0')} />
-                    <div className={classNames('px-3 d-flex align-items-center', styles.body)}>
-                        <Icon
-                            aria-hidden={true}
-                            as={SourceCommitIcon}
-                            className={classNames('mr-2 flex-shrink-0', styles.icon)}
-                        />
-                        <Link
-                            to={blameHunk.displayInfo.linkURL}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            className={styles.link}
-                            onClick={logCommitClick}
-                        >
-                            {blameHunk.message}
-                        </Link>
-                    </div>
-                </div>
-            </PopoverContent>
-        </Popover>
+                    <PopoverContent
+                        constraintPadding={createRectangle(150, 0, 0, 0)}
+                        position={Position.topStart}
+                        focusLocked={false}
+                        returnTargetFocus={false}
+                        onMouseEnter={resetAllTimeouts}
+                        onMouseLeave={close}
+                        className={styles.popoverContent}
+                    >
+                        <div className="py-1">
+                            <div className={classNames(styles.head, 'px-3 my-2')}>
+                                <span className={styles.author}>{blameHunk.displayInfo.displayName}</span>{' '}
+                                {blameHunk.displayInfo.timestampString}
+                            </div>
+                            <hr className={classNames(styles.separator, 'm-0')} />
+                            <div className={classNames('d-flex align-items-center', styles.block, styles.body)}>
+                                <Icon
+                                    aria-hidden={true}
+                                    as={SourceCommitIcon}
+                                    className={classNames('mr-2 flex-shrink-0', styles.icon)}
+                                />
+                                <div>
+                                    <CommitMessageWithLinks
+                                        message={blameHunk.message}
+                                        to={blameHunk.displayInfo.linkURL}
+                                        className={styles.link}
+                                        onClick={logCommitClick}
+                                        externalURLs={externalURLs}
+                                    />
+                                </div>
+                            </div>
+                            {blameHunk.commit.parents.length > 0 && (
+                                <>
+                                    <hr className={classNames(styles.separator, 'm-0')} />
+                                    <div className={classNames('px-3', styles.block)}>
+                                        <Link
+                                            to={
+                                                window.location.origin +
+                                                replaceRevisionInURL(
+                                                    window.location.href,
+                                                    blameHunk.commit.parents[0].oid
+                                                )
+                                            }
+                                            onClick={handleParentCommitLinkClick}
+                                            className={styles.footerLink}
+                                        >
+                                            View blame prior to this change
+                                        </Link>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            ) : null}
+        </div>
     )
 }
 

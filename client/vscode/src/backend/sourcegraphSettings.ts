@@ -14,11 +14,7 @@ import {
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
 
-export function initializeSourcegraphSettings({
-    context,
-}: {
-    context: vscode.ExtensionContext
-}): {
+export function initializeSourcegraphSettings({ context }: { context: vscode.ExtensionContext }): {
     settings: Observable<SettingsCascadeOrError<Settings>>
     refreshSettings: () => void
 } {

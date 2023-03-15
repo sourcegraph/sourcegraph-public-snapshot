@@ -56,7 +56,7 @@ func IsSupportedShell(ctx context.Context) bool {
 
 // GuessUserShell inspect the current environment to infer the shell the current user is running
 // and which configuration file it depends on.
-func GuessUserShell() (shellPath string, shellrc string, shell Shell, error error) {
+func GuessUserShell() (shellPath string, shellConfigPath string, shell Shell, error error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", "", "", err
@@ -71,16 +71,23 @@ func GuessUserShell() (shellPath string, shellrc string, shell Shell, error erro
 	}
 	switch {
 	case strings.Contains(shellPath, "bash"):
-		shellrc = ".bashrc"
+		shellrc := ".bashrc"
 		shell = BashShell
+		shellConfigPath = filepath.Join(home, shellrc)
 	case strings.Contains(shellPath, "zsh"):
-		shellrc = ".zshrc"
+		shellrc := ".zshrc"
 		shell = ZshShell
+		basePath, ok := os.LookupEnv("ZDOTDIR")
+		if !ok {
+			basePath = home
+		}
+		shellConfigPath = filepath.Join(basePath, shellrc)
 	case strings.Contains(shellPath, "fish"):
-		shellrc = ".config/fish/config.fish"
+		shellrc := ".config/fish/config.fish"
 		shell = FishShell
+		shellConfigPath = filepath.Join(home, shellrc)
 	}
-	return shellPath, filepath.Join(home, shellrc), shell, nil
+	return shellPath, shellConfigPath, shell, nil
 }
 
 // Context extends ctx with the UserContext of the current user.

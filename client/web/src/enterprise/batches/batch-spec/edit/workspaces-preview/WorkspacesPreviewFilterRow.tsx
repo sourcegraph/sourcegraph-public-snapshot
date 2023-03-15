@@ -1,9 +1,8 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { FC, useCallback, useRef, useState } from 'react'
 
-import { useHistory } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Input } from '@sourcegraph/wildcard'
+import { Input, Form } from '@sourcegraph/wildcard'
 
 import { WorkspacePreviewFilters } from './useWorkspaces'
 
@@ -14,13 +13,13 @@ export interface WorkspacePreviewFilterRowProps {
     onFiltersChange: (newFilters: WorkspacePreviewFilters) => void
 }
 
-export const WorkspacePreviewFilterRow: React.FunctionComponent<
-    React.PropsWithChildren<WorkspacePreviewFilterRowProps>
-> = ({ disabled, onFiltersChange }) => {
-    const history = useHistory()
+export const WorkspacePreviewFilterRow: FC<WorkspacePreviewFilterRowProps> = ({ disabled, onFiltersChange }) => {
+    const navigate = useNavigate()
+    const location = useLocation()
+
     const searchElement = useRef<HTMLInputElement | null>(null)
     const [search, setSearch] = useState<string | undefined>(() => {
-        const searchParameters = new URLSearchParams(history.location.search)
+        const searchParameters = new URLSearchParams(location.search)
         return searchParameters.get('search') ?? undefined
     })
 
@@ -31,21 +30,21 @@ export const WorkspacePreviewFilterRow: React.FunctionComponent<
             setSearch(value)
 
             // Update the location, too.
-            const searchParameters = new URLSearchParams(history.location.search)
+            const searchParameters = new URLSearchParams(location.search)
             if (value) {
                 searchParameters.set('search', value)
             } else {
                 searchParameters.delete('search')
             }
-            if (history.location.search !== searchParameters.toString()) {
-                history.replace({ ...history.location, search: searchParameters.toString() })
+            if (location.search !== searchParameters.toString()) {
+                navigate({ search: searchParameters.toString() }, { replace: true })
             }
             // Update the filters in the parent component.
             onFiltersChange({
                 search: value || null,
             })
         },
-        [history, onFiltersChange]
+        [navigate, location.search, onFiltersChange]
     )
 
     return (

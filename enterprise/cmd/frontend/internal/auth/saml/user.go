@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -93,12 +94,9 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 // authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
 func getOrCreateUser(ctx context.Context, db database.DB, allowSignup bool, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
-	serializedData, err := json.Marshal(info.accountData)
-	if err != nil {
+	var data extsvc.AccountData
+	if err := SetExternalAccountData(&data, info); err != nil {
 		return nil, "", err
-	}
-	data := extsvc.AccountData{
-		Data: extsvc.NewUnencryptedData(serializedData),
 	}
 
 	username, err := auth.NormalizeUsername(info.unnormalizedUsername)
@@ -149,5 +147,77 @@ func (v samlAssertionValues) GetMap(key string) map[string]bool {
 			return output
 		}
 	}
+	return nil
+}
+
+type SAMLValues struct {
+	Values map[string]SAMLAttribute `json:"Values,omitempty"`
+}
+
+type SAMLAttribute struct {
+	Values []SAMLValue `json:"Values"`
+}
+
+type SAMLValue struct {
+	Value string
+}
+
+// GetExternalAccountData returns the deserialized JSON blob from user external accounts table
+func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (val *SAMLValues, err error) {
+	if data.Data != nil {
+		val, err = encryption.DecryptJSON[SAMLValues](ctx, data.Data)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return val, nil
+}
+
+func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
+	data, err := GetExternalAccountData(ctx, accountData)
+	if err != nil {
+		return nil, err
+	}
+
+	values := data.Values
+	if values == nil {
+		return nil, nil
+	}
+
+	var displayName string
+	candidates := []string{
+		"nickname",
+		"login",
+		"username",
+		"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+		"emailaddress",
+		"http://schemas.xmlsoap.org/claims/EmailAddress",
+		"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+	}
+	for _, key := range candidates {
+		candidate, ok := values[key]
+		if ok && len(candidate.Values) > 0 && candidate.Values[0].Value != "" {
+			displayName = candidate.Values[0].Value
+			break
+		}
+	}
+	if displayName == "" {
+		return nil, nil
+	}
+	return &extsvc.PublicAccountData{
+		DisplayName: &displayName,
+	}, nil
+}
+
+// SetExternalAccountData sets the user and token into the external account data blob.
+func SetExternalAccountData(data *extsvc.AccountData, info *authnResponseInfo) error {
+	// TODO: leverage the whole info object instead of just storing JSON blob without any structure
+	serializedData, err := json.Marshal(info.accountData)
+	if err != nil {
+		return err
+	}
+
+	data.Data = extsvc.NewUnencryptedData(serializedData)
 	return nil
 }

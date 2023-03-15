@@ -25,7 +25,7 @@ public class BrowserOpener {
         }
     }
 
-    public static void openInBrowser(@NotNull Project project, @NotNull URI uri) {
+    private static void openInBrowser(@NotNull Project project, @NotNull URI uri) {
         try {
             BrowserUtil.browse(uri);
         } catch (Exception e) {

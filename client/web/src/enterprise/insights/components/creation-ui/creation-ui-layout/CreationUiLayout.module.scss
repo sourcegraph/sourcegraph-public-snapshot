@@ -16,14 +16,18 @@
         display: flex;
         flex-direction: column;
         grid-column: 1/2;
+        padding: 1rem;
     }
 
     &__live-preview {
         position: sticky;
+        display: flex;
+        flex-direction: column;
         top: 1rem;
         align-self: start;
-        min-height: 22rem;
+        min-height: 24rem;
         grid-column: 2/3;
+        margin-top: -1.5rem;
     }
 
     @media (--md-breakpoint-down) {
@@ -33,7 +37,6 @@
 
         &__live-preview {
             position: static;
-            min-height: 20rem;
 
             grid-column: 1/3;
             grid-row: 1/2;

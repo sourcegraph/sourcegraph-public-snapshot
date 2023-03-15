@@ -4,8 +4,8 @@ import path from 'path'
 import { subDays } from 'date-fns'
 import expect from 'expect'
 
-import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
@@ -123,12 +123,6 @@ const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookField
                     symbolKind: block.symbolInput?.symbolKind ?? SymbolKind.UNKNOWN,
                 },
             }
-        case NotebookBlockType.COMPUTE:
-            return {
-                __typename: 'ComputeBlock',
-                id: block.id,
-                computeInput: block.computeInput ?? '',
-            }
     }
 }
 
@@ -145,8 +139,7 @@ const mockSymbolStreamEvents: SearchEvent[] = [
                     {
                         name: 'func',
                         containerName: 'class',
-                        url:
-                            'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3',
+                        url: 'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3',
                         kind: SymbolKind.FUNCTION,
                         line: 1,
                     },
@@ -176,17 +169,6 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     ...commonWebGraphQlResults,
     ...highlightFileResult,
     ...viewerSettings,
-    GetTemporarySettings: () => ({
-        temporarySettings: {
-            __typename: 'TemporarySettings',
-            contents: JSON.stringify({
-                'user.daysActiveCount': 1,
-                'user.lastDayActive': new Date().toDateString(),
-                'search.usedNonGlobalContext': true,
-                'search.notebooks.gettingStartedTabSeen': true,
-            }),
-        },
-    }),
     ResolveRepoRev: () => createResolveRepoRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FetchNotebook: ({ id }) => ({
         node: notebookFixture(id, 'Notebook Title', [
@@ -221,6 +203,14 @@ describe('Search Notebook', () => {
         })
         testContext.overrideGraphQL(commonSearchGraphQLResults)
         testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
+        testContext.overrideJsContext({
+            temporarySettings: {
+                __typename: 'TemporarySettings',
+                contents: JSON.stringify({
+                    'search.notebooks.gettingStartedTabSeen': true,
+                }),
+            },
+        })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())

@@ -2,15 +2,15 @@ import React from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 
-import { SearchResultStyles as styles, ResultContainer, CommitSearchResultMatch } from '@sourcegraph/search-ui'
+import { SearchResultStyles as styles, LegacyResultContainer, CommitSearchResultMatch } from '@sourcegraph/branded'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl } from '@sourcegraph/shared/src/search/stream'
-// eslint-disable-next-line no-restricted-imports
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Button, Code } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
+
 interface Props extends PlatformContextProps<'requestGraphQL'> {
     result: CommitMatch
     repoName: string
@@ -94,7 +94,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <ResultContainer
+        <LegacyResultContainer
             as={as}
             index={index}
             icon={icon}

@@ -1,11 +1,12 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import * as H from 'history'
+import { Route, Routes } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { assertAriaDisabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../../auth'
 import { CreateCodeMonitorVariables } from '../../graphql-operations'
@@ -17,18 +18,15 @@ describe('CreateCodeMonitorPage', () => {
     const mockUser = {
         id: 'userID',
         username: 'username',
-        email: 'user@me.com',
+        emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
         siteAdmin: true,
     } as AuthenticatedUser
 
-    const history = H.createMemoryHistory()
     const props = {
-        location: history.location,
         authenticatedUser: mockUser,
         breadcrumbs: [{ depth: 0, breadcrumb: null }],
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
-        history,
         deleteCodeMonitor: sinon.spy((id: string) => NEVER),
         createCodeMonitor: sinon.spy((monitor: CreateCodeMonitorVariables) =>
             of({ description: mockCodeMonitor.node.description })
@@ -55,8 +53,13 @@ describe('CreateCodeMonitorPage', () => {
 
         renderWithBrandedContext(
             <MockedTestProvider>
-                <CreateCodeMonitorPage {...props} location={{ ...history.location, search }} />
-            </MockedTestProvider>
+                <Routes>
+                    <Route path="/code-monitoring/new" element={<CreateCodeMonitorPage {...props} />} />
+                </Routes>
+            </MockedTestProvider>,
+            {
+                route: '/code-monitoring/new?' + search,
+            }
         )
         const nameInput = screen.getByTestId('name-input')
         userEvent.type(nameInput, 'Test updated')
@@ -80,8 +83,13 @@ describe('CreateCodeMonitorPage', () => {
 
         renderWithBrandedContext(
             <MockedTestProvider>
-                <CreateCodeMonitorPage {...props} location={{ ...history.location, search }} />
-            </MockedTestProvider>
+                <Routes>
+                    <Route path="/code-monitoring/new" element={<CreateCodeMonitorPage {...props} />} />
+                </Routes>
+            </MockedTestProvider>,
+            {
+                route: '/code-monitoring/new?' + search,
+            }
         )
         const nameInput = screen.getByTestId('name-input')
         userEvent.type(nameInput, 'Test updated')
@@ -102,10 +110,13 @@ describe('CreateCodeMonitorPage', () => {
     test('Actions area button is disabled while trigger is incomplete', () => {
         renderWithBrandedContext(
             <MockedTestProvider>
-                <CreateCodeMonitorPage {...props} />
-            </MockedTestProvider>
+                <Routes>
+                    <Route path="/code-monitoring/new" element={<CreateCodeMonitorPage {...props} />} />
+                </Routes>
+            </MockedTestProvider>,
+            { route: '/code-monitoring/new' }
         )
         const actionButton = screen.getByTestId('form-action-toggle-email')
-        expect(actionButton).toBeDisabled()
+        assertAriaDisabled(actionButton)
     })
 })

@@ -41,11 +41,12 @@ upgrade \
 **Notes**:
 
 - Successive invocations of this command will re-attempt the last failed or attempted (but incomplete) migration. This command run as if the `-ignore-single-{dirty,pending}-log` flags supplied by the commands `up`, `upto`, and `downto` were enabled.
+- This command checks that the schema of the database is in the correct state for the current version, if schema drift is detected it must be resolved before completing the upgrade. [Learn more here.](./schema-drift.md).
 - Successive invocations of this command may *cause* database drift when partial progress is made. When making a subsequent upgrade attempt, invoke this command with `-skip-drift-check` ignore the failing startup check.
 
 ### drift
 
-The `drift` command describes the current (live) database schema and compares it against the expected schema at the given version. The output of this command will include all relevant schema differences that could affect application correctness and performance. When schema drift is detected, a diff of the expected and actual Postgres object definitions will be shown, along with instructions on how to manually resolve the disparity.
+The `drift` command describes the current (live) database schema and compares it against the expected schema at the given version. The output of this command will include all relevant schema differences that could affect application correctness and performance. When schema drift is detected, a diff of the expected and actual Postgres object definitions will be shown, along with instructions on how to manually resolve the disparity. [Learn more here.](./schema-drift.md)
 
 ```
 drift \
@@ -56,7 +57,7 @@ drift \
 
 **Required arguments**:
 
-- `-db`: The target schema to inspect.
+- `-db`: The target schema to inspect. *Ex: frontend, codeintel, codeinsights*
 
 **Mutually exclusive arguments**:
 
@@ -188,7 +189,7 @@ upto \
 
 ### downto
 
-The `downto` command revert any applied migrations that are children of the given targets - this effectively "resets" the schema to the target version.
+The `downto` command revert any applied migrations that are children of the given targets—this effectively "resets" the schema to the target version.
 
 ```
 downto \
@@ -265,7 +266,7 @@ Run the following commands in the root of your `deploy-sourcegraph` fork.
 
 First, modify the `migrator` manifest to update two fields: the `spec.template.spec.containers[0].args` field, which selects the target operation, and the `spec.template.spec.containers[0].image` field, which controls the version of the migrator binary (and, consequently, the set of embedded migration definitions).
 
-The following example uses `yq`, but these values can also be updated manually in thee `configure/migrator/migrator.Job.yaml` file.
+The following example uses `yq`, but these values may also be updated manually by opening the `configure/migrator/migrator.Job.yaml` file in an editor of your choice and editing the `image` and `args` key value pairs.
 
 ```bash
 export MIGRATOR_SOURCEGRAPH_VERSION="..."
@@ -280,6 +281,14 @@ yq eval -i \
 yq eval -i \
   '.spec.template.spec.containers[0].args = ["add", "quoted", "arguments"]' \
   configure/migrator/migrator.Job.yaml
+```
+
+The above `yq` commands alter the `configure/migrator/migrator.Job.yaml` file. For example producing the following key pairs:
+```yaml
+image: "index.docker.io/sourcegraph/migrator:4.1.3@sha256:0dc6543f0a755e46d962ba572d501559915716fa55beb3aa644a52f081fcd57e"
+```
+```yaml
+args: ["upgrade", "--from=3.40.2", "--to=4.1.2"]
 ```
 
 Next, apply the job and wait for it to complete.
@@ -307,6 +316,25 @@ job.batch/migrator condition met
 ```
 
 The log output of the `migrator` should include `INFO`-level logs and successfully terminate with `migrator exited with code 0`. If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](../../../admin/how-to/dirty_database.md). A dirty database will not affect your ability to use Sourcegraph however it will need to be resolved to upgrade further. If you are unable to resolve the issues, contact support at <mailto:support@sourcegraph.com> for further assistance. Otherwise, you are now safe to upgrade Sourcegraph.
+
+### Helm Kubernetes
+
+Running migrator operations in helm takes advantage of the [sourcegraph-migrator helm charts](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph-migrator). You can learn more about general operations and find some examples in the repo where the charts are defined.
+
+Generally the migrator is run via the `helm upgrade`, for example:
+```
+helm upgrade --install -n sourcegraph --set "migrator.args={drift,--db=frontend,--version=v3.39.1}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version 4.4.2
+```
+In the example above the `drift` operation is run with flags `-db` and `-version`. The migrator is run using image version `v4.4.2`.
+
+Arguments are set with the `--set "migrator.args={operation-arg,flag-arg-1,flag-arg-2}` portion of the command. Just like you would run commands in terminal, these are the args you are telling the migrator to run on initialization.
+
+In the most general form running operations follows this template:
+```
+helm upgrade --install -n <your namespace> --set "migrator.args={<arg1>,<arg2>,<arg3>}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version <migrator image version> 
+```
+
+> NOTE: You can troubleshoot a migrators operations with the command `kubectl -n sourcegraph logs -l job=migrator -f`. This will show you logs from the migrator jobs operation steps.
 
 ### Docker / Docker compose
 

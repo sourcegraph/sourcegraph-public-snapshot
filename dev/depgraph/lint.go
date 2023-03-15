@@ -6,7 +6,7 @@ import (
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
+	depgraph "github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/lints"
 )
 
@@ -29,7 +29,7 @@ func lint(ctx context.Context, args []string) error {
 		return err
 	}
 
-	graph, err := graph.Load(root)
+	graph, err := depgraph.Load(root)
 	if err != nil {
 		return err
 	}

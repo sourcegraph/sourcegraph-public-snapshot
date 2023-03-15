@@ -71,7 +71,13 @@ func NewHandler(logger log.Logger) http.Handler {
 
 		// Otherwise, let's build a new release cache and start a fresh updater.
 		rc := config.NewReleaseCache(logger)
-		handler.updater = goroutine.NewPeriodicGoroutine(ctx, config.interval, rc)
+		handler.updater = goroutine.NewPeriodicGoroutine(
+			ctx,
+			"srccli.github-release-cache",
+			"caches src-cli versions polled periodically",
+			config.interval,
+			rc,
+		)
 		go goroutine.MonitorBackgroundRoutines(ctx, handler.updater)
 
 		handler.rc = rc

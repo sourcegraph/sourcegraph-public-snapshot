@@ -4,10 +4,8 @@ import { Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
 import { Popover, PopoverContent, PopoverOpenEvent, PopoverTail, PopoverTrigger, Position } from '..'
+import { BrandedStory } from '../../../stories/BrandedStory'
 import { Button } from '../../Button'
 import { createRectangle, Point, Strategy } from '../tether'
 
@@ -16,7 +14,7 @@ import styles from './Popover.story.module.scss'
 const config: Meta = {
     title: 'wildcard/Popover',
     component: Popover,
-    decorators: [story => <BrandedStory styles={webStyles}>{() => story()}</BrandedStory>],
+    decorators: [story => <BrandedStory>{() => story()}</BrandedStory>],
     parameters: {
         design: [
             {
@@ -493,7 +491,7 @@ export const WithVirtualTarget: Story = () => {
     )
 }
 
-export const WithTail: Story = (args= {}) => (
+export const WithTail: Story = (args = {}) => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -513,7 +511,7 @@ export const WithTail: Story = (args= {}) => (
                     </div>
                 </PopoverContent>
 
-                <PopoverTail size={args.size}/>
+                <PopoverTail size={args.size} />
             </Popover>
         </div>
     </ScrollCenterBox>
@@ -523,8 +521,8 @@ WithTail.argTypes = {
     size: {
         control: 'radio',
         options: ['sm', 'md', 'lg'],
-        defaultValue: 'sm'
-    }
+        defaultValue: 'sm',
+    },
 }
 
 interface ScrollCenterBoxProps extends React.HTMLAttributes<HTMLDivElement> {

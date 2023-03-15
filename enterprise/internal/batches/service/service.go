@@ -7,16 +7,19 @@ import (
 	"sync"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 	"gopkg.in/yaml.v2"
 
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -52,7 +55,7 @@ func NewWithClock(store *store.Store, clock func() time.Time) *Service {
 			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer", "batches sourcer")),
 		)),
 		clock:      clock,
-		operations: newOperations(store.ObservationContext()),
+		operations: newOperations(store.ObservationCtx()),
 	}
 
 	return svc
@@ -98,18 +101,18 @@ var (
 )
 
 // newOperations generates a singleton of the operations struct.
-// TODO: We should create one per observationContext.
-func newOperations(observationContext *observation.Context) *operations {
+// TODO: We should create one per observationCtx.
+func newOperations(observationCtx *observation.Context) *operations {
 	operationsOnce.Do(func() {
 		m := metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"batches_service",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
 		)
 
 		op := func(name string) *observation.Operation {
-			return observationContext.Operation(observation.Op{
+			return observationCtx.Operation(observation.Op{
 				Name:              fmt.Sprintf("batches.service.%s", name),
 				MetricLabelValues: []string{name},
 				Metrics:           m,
@@ -184,7 +187,7 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		return nil, err
 	}
 
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 
 	batchSpec := &btypes.BatchSpec{
@@ -268,7 +271,7 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		return nil, err
 	}
 
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 
 	batchSpec := &btypes.BatchSpec{
@@ -337,7 +340,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	spec.UserID = a.UID
 
 	if len(opts.ChangesetSpecRandIDs) == 0 {
@@ -430,7 +433,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	spec.UserID = a.UID
 
 	spec.BatchChangeID = opts.BatchChange
@@ -477,18 +480,6 @@ type createBatchSpecForExecutionOpts struct {
 // transaction, possibly creating ChangesetSpecs if the spec contains
 // importChangesets statements, and finally creating a BatchSpecResolutionJob.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
-	// The global env is always mocked to be empty for executors, so we just
-	// want to throw a validation error here for now.
-	var errs error
-	for i, step := range opts.spec.Spec.Steps {
-		if !step.Env.IsStatic() {
-			errs = errors.Append(errs, batcheslib.NewValidationError(errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1)))
-		}
-	}
-	if errs != nil {
-		return errs
-	}
-
 	opts.spec.CreatedFromRaw = true
 	opts.spec.AllowIgnored = opts.allowIgnored
 	opts.spec.AllowUnsupported = opts.allowUnsupported
@@ -521,6 +512,7 @@ var ErrBatchSpecResolutionIncomplete = errors.New("cannot execute batch spec, wo
 
 type ExecuteBatchSpecOpts struct {
 	BatchSpecRandID string
+	NoCache         *bool
 }
 
 // ExecuteBatchSpec creates BatchSpecWorkspaceExecutionJobs for every created
@@ -566,20 +558,40 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 		return nil, ErrBatchSpecResolutionErrored{resolutionJob.FailureMessage}
 
 	case btypes.BatchSpecResolutionJobStateCompleted:
-		err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
-		if err != nil {
-			return nil, err
-		}
-		err = tx.MarkSkippedBatchSpecWorkspaces(ctx, batchSpec.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		return batchSpec, nil
+		// Continue below the switch statement.
 
 	default:
 		return nil, ErrBatchSpecResolutionIncomplete
 	}
+
+	// If the batch spec nocache flag doesn't match what's been provided in the API,
+	// update the batch spec state in the db.
+	if opts.NoCache != nil && batchSpec.NoCache != *opts.NoCache {
+		batchSpec.NoCache = *opts.NoCache
+		if err := tx.UpdateBatchSpec(ctx, batchSpec); err != nil {
+			return nil, err
+		}
+	}
+
+	// Disable caching if requested.
+	if batchSpec.NoCache {
+		err = tx.DisableBatchSpecWorkspaceExecutionCache(ctx, batchSpec.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.MarkSkippedBatchSpecWorkspaces(ctx, batchSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return batchSpec, nil
 }
 
 var ErrBatchSpecNotCancelable = errors.New("batch spec is not in cancelable state")
@@ -716,7 +728,7 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	spec.UserID = a.UID
 
 	// Start transaction.
@@ -797,6 +809,32 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 	}
 
 	return spec, s.store.CreateChangesetSpec(ctx, spec)
+}
+
+// CreateChangesetSpecs validates the given raw spec inputs and creates the ChangesetSpecs.
+func (s *Service) CreateChangesetSpecs(ctx context.Context, rawSpecs []string, userID int32) (specs []*btypes.ChangesetSpec, err error) {
+	ctx, _, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	specs = make([]*btypes.ChangesetSpec, len(rawSpecs))
+
+	for i, rawSpec := range rawSpecs {
+		spec, err := btypes.NewChangesetSpecFromRaw(rawSpec)
+		if err != nil {
+			return nil, err
+		}
+
+		// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
+		// the repository or not.
+		if _, err = s.store.Repos().Get(ctx, spec.BaseRepoID); err != nil {
+			return nil, err
+		}
+
+		spec.UserID = userID
+		specs[i] = spec
+	}
+
+	return specs, s.store.CreateChangesetSpec(ctx, specs...)
 }
 
 // changesetSpecNotFoundErr is returned by CreateBatchSpec if a
@@ -963,6 +1001,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		return nil, err
 	}
 
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeClose, bgql.MarshalBatchChangeID(batchChange.ID))
 	if !closeChangesets {
 		return batchChange, nil
 	}
@@ -994,6 +1033,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeDelete, bgql.MarshalBatchChangeID(batchChange.ID))
 	return s.store.DeleteBatchChange(ctx, id)
 }
 
@@ -1260,7 +1300,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 	defer func() { err = tx.Done(err) }()
 
-	userID := actor.FromContext(ctx).UID
+	userID := sgactor.FromContext(ctx).UID
 	changesetJobs := make([]*btypes.ChangesetJob, 0, len(cs))
 	for _, changeset := range cs {
 		changesetJobs = append(changesetJobs, &btypes.ChangesetJob{
@@ -1594,7 +1634,6 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		IDs:          opts.Changesets,
 		EnforceAuthz: true,
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -1667,4 +1706,8 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	}
 
 	return availableBulkOperations, nil
+}
+
+func (s *Service) enqueueBatchChangeWebhook(ctx context.Context, eventType string, id graphql.ID) {
+	webhooks.EnqueueBatchChange(ctx, s.logger, s.store, eventType, id)
 }

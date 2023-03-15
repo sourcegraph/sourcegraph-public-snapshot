@@ -298,13 +298,19 @@ func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gi
 			return errors.Wrap(err, "getting source project")
 		}
 
-		ns, err := project.Namespace()
+		name, err := project.Name()
 		if err != nil {
 			return errors.Wrap(err, "parsing project name")
 		}
+		ns, err := project.Namespace()
+		if err != nil {
+			return errors.Wrap(err, "parsing project namespace")
+		}
 
+		mr.SourceProjectName = name
 		mr.SourceProjectNamespace = ns
 	} else {
+		mr.SourceProjectName = ""
 		mr.SourceProjectNamespace = ""
 	}
 
@@ -544,40 +550,59 @@ func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, squash 
 	return c.Changeset.SetMetadata(updated)
 }
 
-// GetNamespaceFork returns a repo pointing to a fork of the given repo in
-// the given namespace, ensuring that the fork exists and is a fork of the
-// target repo.
-func (s *GitLabSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
-	return s.getFork(ctx, targetRepo, &namespace)
+func (*GitLabSource) IsPushResponseArchived(s string) bool {
+	return strings.Contains(s, "ERROR: You are not allowed to push code to this project")
 }
 
-// GetUserFork returns a repo pointing to a fork of the given repo in the
-// currently authenticated user's namespace.
-func (s *GitLabSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
-	return s.getFork(ctx, targetRepo, nil)
+func (s GitLabSource) GetFork(ctx context.Context, targetRepo *types.Repo, namespace, n *string) (*types.Repo, error) {
+	return getGitLabForkInternal(ctx, targetRepo, s.client, namespace, n)
 }
 
-func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, namespace *string) (*types.Repo, error) {
-	targetMeta, ok := targetRepo.Metadata.(*gitlab.Project)
-	if !ok {
-		return nil, errors.New("target repo is not a GitLab project")
-	}
+type gitlabClientFork interface {
+	ForkProject(ctx context.Context, project *gitlab.Project, namespace *string, name string) (*gitlab.Project, error)
+}
 
-	fork, err := s.client.ForkProject(ctx, targetMeta, namespace)
+func getGitLabForkInternal(ctx context.Context, targetRepo *types.Repo, client gitlabClientFork, namespace, n *string) (*types.Repo, error) {
+	tr := targetRepo.Metadata.(*gitlab.Project)
+
+	targetNamespace, err := tr.Namespace()
 	if err != nil {
-		return nil, errors.Wrap(err, "forking project")
+		return nil, errors.Wrap(err, "getting target project namespace")
 	}
 
-	// Now we make a copy of the target repo, but with its sources and metadata updated ƒto
+	// It's possible to nest namespaces on GitLab, so we need to remove any internal "/"s
+	// to make the namespace repo-name-friendly when we use it to form the fork repo name.
+	targetNamespace = strings.ReplaceAll(targetNamespace, "/", "-")
+
+	var name string
+	if n != nil {
+		name = *n
+	} else {
+		targetName, err := tr.Name()
+		if err != nil {
+			return nil, errors.Wrap(err, "getting target project name")
+		}
+		name = DefaultForkName(targetNamespace, targetName)
+	}
+
+	// `client.ForkProject` returns an existing fork if it has already been created. It also automatically uses the currently authenticated user's namespace if none is provided.
+	fork, err := client.ForkProject(ctx, tr, namespace, name)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching fork or forking project")
+	}
+
+	if fork.ForkedFromProject == nil {
+		return nil, errors.New("project is not a fork")
+	} else if fork.ForkedFromProject.ID != tr.ID {
+		return nil, errors.New("project was not forked from the target project")
+	}
+
+	// Now we make a copy of targetRepo, but with its sources and metadata updated to
 	// point to the fork
-	forkRepo, err := CopyRepoAsFork(targetRepo, fork, targetMeta.PathWithNamespace, fork.PathWithNamespace)
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, tr.PathWithNamespace, fork.PathWithNamespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "updating target repo sources")
+		return nil, errors.Wrap(err, "updating target repo sources and metadata")
 	}
 
 	return forkRepo, nil
-}
-
-func (*GitLabSource) IsPushResponseArchived(s string) bool {
-	return strings.Contains(s, "ERROR: You are not allowed to push code to this project")
 }

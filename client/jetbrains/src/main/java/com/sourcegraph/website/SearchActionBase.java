@@ -1,6 +1,7 @@
 package com.sourcegraph.website;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -13,10 +14,14 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.find.SourcegraphVirtualFile;
-import com.sourcegraph.git.GitUtil;
-import com.sourcegraph.git.RepoInfo;
+import com.sourcegraph.vcs.RepoInfo;
+import com.sourcegraph.vcs.RepoUtil;
+import com.sourcegraph.vcs.VCSType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public abstract class SearchActionBase extends DumbAwareAction {
     public void actionPerformedMode(@NotNull AnActionEvent event, @NotNull Scope scope) {
@@ -31,34 +36,56 @@ public abstract class SearchActionBase extends DumbAwareAction {
         VirtualFile currentFile = FileDocumentManager.getInstance().getFile(FileEditorManager.getInstance(project).getSelectedTextEditor().getDocument());
         assert currentFile != null; // selectedText != null, so this can't be null.
 
-        String url;
         if (currentFile instanceof SourcegraphVirtualFile) {
+            String url;
             SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
             String repoUrl = (scope == Scope.REPOSITORY) ? sourcegraphFile.getRepoUrl() : null;
             url = URLBuilder.buildEditorSearchUrl(project, selectedText, repoUrl, null);
+            BrowserOpener.openInBrowser(project, url);
         } else {
-            RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
-            String remoteUrl = (scope == Scope.REPOSITORY) ? repoInfo.remoteUrl : null;
-            String branchName = (scope == Scope.REPOSITORY) ? repoInfo.branchName : null;
-            url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
+            // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
+            ApplicationManager.getApplication().executeOnPooledThread(
+                () -> {
+                    String url;
+                    RepoInfo repoInfo = RepoUtil.getRepoInfo(project, currentFile);
+                    String remoteUrl = (scope == Scope.REPOSITORY) ? repoInfo.remoteUrl : null;
+                    String remoteBranchName = (scope == Scope.REPOSITORY) ? repoInfo.remoteBranchName : null;
+                    if (repoInfo.vcsType == VCSType.PERFORCE) {
+                        // Our "editor" backend doesn't support Perforce, but we have all the info we need, so we'll go to the final URL directly.
+                        String codeHostUrl = (scope == Scope.REPOSITORY) ? repoInfo.getCodeHostUrl() : null;
+                        String repoName = (scope == Scope.REPOSITORY) ? repoInfo.getRepoName() : null;
+                        url = URLBuilder.buildDirectSearchUrl(project, selectedText, codeHostUrl, repoName);
+                    } else {
+                        url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, remoteBranchName);
+                    }
+                    BrowserOpener.openInBrowser(project, url);
+                }
+            );
         }
-
-        BrowserOpener.openInBrowser(project, url);
     }
 
-    enum Scope {
+    protected enum Scope {
         REPOSITORY,
         ANYWHERE
     }
 
     @Override
-    public void update(@NotNull AnActionEvent e) {
-        final Project project = e.getProject();
+    public void update(@NotNull AnActionEvent event) {
+        final Project project = event.getProject();
         if (project == null) {
             return;
         }
-        String selectedText = getSelectedText(project);
-        e.getPresentation().setEnabled(selectedText != null && selectedText.length() > 0);
+        // This must run on EDT (Event Dispatch Thread) because it interacts with the editor.
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                String selectedText = getSelectedText(project);
+                event.getPresentation().setEnabled(selectedText != null && selectedText.length() > 0);
+            } catch (Exception exception) {
+                Logger logger = Logger.getLogger(SearchActionBase.class.getName());
+                logger.log(Level.WARNING, "Problem while getting selected text", exception);
+                event.getPresentation().setEnabled(false);
+            }
+        });
     }
 
     @Nullable

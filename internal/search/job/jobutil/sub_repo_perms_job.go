@@ -39,7 +39,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applySubRepoFiltering(ctx, clients.Logger, checker, event.Results)
+		event.Results, err = applySubRepoFiltering(ctx, checker, clients.Logger, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -73,7 +73,7 @@ func (s *subRepoPermsFilterJob) MapChildren(fn job.MapFunc) job.Job {
 
 // applySubRepoFiltering filters a set of matches using the provided
 // authz.SubRepoPermissionChecker
-func applySubRepoFiltering(ctx context.Context, logger log.Logger, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
+func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, logger log.Logger, matches []result.Match) ([]result.Match, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return matches, nil
 	}
@@ -115,10 +115,11 @@ func applySubRepoFiltering(ctx context.Context, logger log.Logger, checker authz
 				}
 			}
 		case *result.RepoMatch:
-			// Repo filtering is taking care of by our usual repo filtering logic
+			// Repo filtering is taken care of by our usual repo filtering logic
 			filtered = append(filtered, m)
+			// Owner matches are found after the sub-repo permissions filtering, hence why we don't have
+			// an OwnerMatch case here.
 		}
-
 	}
 
 	if errs == nil {

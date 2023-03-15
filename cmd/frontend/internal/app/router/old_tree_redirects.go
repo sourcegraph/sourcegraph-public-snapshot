@@ -18,11 +18,11 @@ const revSuffixNoDots = `{Rev:(?:@(?:(?:[^@=/.-]|(?:[^=/@.]{2,}))/)*(?:[^@=/.-]|
 func addOldTreeRedirectRoute(matchRouter *mux.Router) {
 	matchRouter.Path("/" + routevar.Repo + revSuffixNoDots + `/.tree{Path:.*}`).Methods("GET").Name(OldTreeRedirect).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		v := mux.Vars(r)
-		path := path.Clean(v["Path"])
-		if !strings.HasPrefix(path, "/") && path != "" {
-			path = "/" + path
+		cleanedPath := path.Clean(v["Path"])
+		if !strings.HasPrefix(cleanedPath, "/") && cleanedPath != "" {
+			cleanedPath = "/" + cleanedPath
 		}
 
-		http.Redirect(w, r, URLToRepoTreeEntry(api.RepoName(v["Repo"]), v["Rev"], path).String(), http.StatusMovedPermanently)
+		http.Redirect(w, r, URLToRepoTreeEntry(api.RepoName(v["Repo"]), v["Rev"], cleanedPath).String(), http.StatusMovedPermanently)
 	})
 }

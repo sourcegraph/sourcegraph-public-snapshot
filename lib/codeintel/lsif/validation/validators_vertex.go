@@ -21,17 +21,17 @@ func validateMetaDataVertex(ctx *ValidationContext, lineContext reader.LineConte
 		return false
 	}
 
-	url, err := url.Parse(metaData.ProjectRoot)
+	projectRootURL, err := url.Parse(metaData.ProjectRoot)
 	if err != nil {
 		ctx.AddError("project root is not a valid URL").AddContext(lineContext)
 		return false
 	}
-	if url.Scheme == "" {
+	if projectRootURL.Scheme == "" {
 		ctx.AddError("project root is not a valid URL").AddContext(lineContext)
 		return false
 	}
 
-	ctx.ProjectRoot = url
+	ctx.ProjectRoot = projectRootURL
 	return true
 }
 
@@ -44,17 +44,17 @@ func validateDocumentVertex(ctx *ValidationContext, lineContext reader.LineConte
 		return false
 	}
 
-	url, err := url.Parse(uri)
+	documentUrl, err := url.Parse(uri)
 	if err != nil {
 		ctx.AddError("document uri is not a valid URL").AddContext(lineContext)
 		return false
 	}
-	if url.Scheme == "" {
+	if documentUrl.Scheme == "" {
 		ctx.AddError("document uri is not a valid URL").AddContext(lineContext)
 		return false
 	}
 
-	if ctx.ProjectRoot != nil && !strings.HasPrefix(url.String(), ctx.ProjectRoot.String()) {
+	if ctx.ProjectRoot != nil && !strings.HasPrefix(documentUrl.String(), ctx.ProjectRoot.String()) {
 		ctx.AddError("document is not relative to project root").AddContext(lineContext)
 		return false
 	}

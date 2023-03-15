@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
+	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -517,6 +518,55 @@ read    group   Dev1    *   -//-depot/-main/.../dev/foo.java
 			canReadAll:    []string{"dev/bar.java", "/-minus/dev/bar.java"},
 			cannotReadAny: []string{"dev/foo.java"},
 		},
+		{
+			name:  "Root matching",
+			depot: "//depot/main/",
+			protects: `
+read    group   Dev1    *   //depot/main/.../*.java
+`,
+			canReadAll:    []string{"dev/bar.java", "foo.java", "/foo.java"},
+			cannotReadAny: []string{"dev/foo.go"},
+		},
+		{
+			name:  "Root matching, multiple levels",
+			depot: "//depot/main/",
+			protects: `
+read    group   Dev1    *   //depot/main/.../.../*.java
+`,
+			canReadAll:    []string{"/foo/dev/bar.java", "foo.java", "/foo.java"},
+			cannotReadAny: []string{"dev/foo.go"},
+		},
+		{
+			// In this case, Perforce still shows the parent directory
+			name:  "Files in side directory hidden",
+			depot: "//depot/main/",
+			protects: `
+read    group   Dev1    *   //depot/main/...
+read    group   Dev1    *   -//depot/main/dir/*.java
+`,
+			canReadAll:    []string{"dir/"},
+			cannotReadAny: []string{"dir/foo.java", "dir/bar.java"},
+		},
+		{
+			// Directory excluded, but file inside included: Directory visible
+			name:  "Directory excluded",
+			depot: "//depot/main/",
+			protects: `
+read    group   Dev1    *   //depot/main/...
+read    group   Dev1    *   -//depot/main/dir/...
+read    group   Dev1    *   //depot/main/dir/file.java
+`,
+			canReadAll: []string{"dir/file.java", "dir/"},
+		},
+		{
+			// Should still be able to browse directories
+			name:  "Rules start with wildcard",
+			depot: "//depot/main/",
+			protects: `
+read    group   Dev1    *   //depot/main/.../*.go
+`,
+			canReadAll: []string{"dir/file.go", "dir/"},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := logtest.Scoped(t)
@@ -575,7 +625,7 @@ read    group   Dev1    *   -//-depot/-main/.../dev/foo.java
 			} else if ok && tc.noRules {
 				t.Fatal("expected no rules")
 			}
-			checker, err := authz.NewSimpleChecker(api.RepoName(tc.depot), rules.Paths)
+			checker, err := srp.NewSimpleChecker(api.RepoName(tc.depot), rules.Paths)
 			if err != nil {
 				t.Fatal(err)
 			}

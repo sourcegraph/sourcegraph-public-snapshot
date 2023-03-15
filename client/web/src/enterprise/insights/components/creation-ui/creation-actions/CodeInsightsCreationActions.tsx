@@ -2,8 +2,7 @@ import { FC } from 'react'
 
 import { noop } from 'lodash'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { LimitedAccessLabel } from '../../limited-access-label/LimitedAccessLabel'

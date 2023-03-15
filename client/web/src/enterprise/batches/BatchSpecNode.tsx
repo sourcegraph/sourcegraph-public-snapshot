@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import {
     mdiCheckCircle,
@@ -6,26 +6,48 @@ import {
     mdiCancel,
     mdiAlertCircle,
     mdiChevronDown,
-    mdiChevronRight,
+    mdiChevronUp,
     mdiStar,
     mdiPencil,
+    mdiFileDownload,
+    mdiFileDocumentOutline,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { useQuery } from '@sourcegraph/http-client'
 import { BatchSpecSource, BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Icon, H3, H4, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Code,
+    Link,
+    Icon,
+    H3,
+    H4,
+    Tooltip,
+    Text,
+    Button,
+    LoadingSpinner,
+    Alert,
+    AnchorLink,
+} from '@sourcegraph/wildcard'
 
 import { Duration } from '../../components/time/Duration'
-import { Timestamp } from '../../components/time/Timestamp'
-import { BatchSpecListFields, Scalars } from '../../graphql-operations'
+import {
+    BatchSpecListFields,
+    Scalars,
+    PartialBatchSpecWorkspaceFileFields,
+    BatchSpecWorkspaceFileResult,
+    BatchSpecWorkspaceFileVariables,
+} from '../../graphql-operations'
 
+import { BATCH_SPEC_WORKSPACE_FILE, generateFileDownloadLink } from './backend'
 import { BatchSpec } from './BatchSpec'
+import { humanizeSize } from './utils/size'
 
 import styles from './BatchSpecNode.module.scss'
 
-export interface BatchSpecNodeProps extends ThemeProps {
+export interface BatchSpecNodeProps {
     node: BatchSpecListFields
     currentSpecID?: Scalars['ID']
     /** Used for testing purposes. Sets the current date */
@@ -35,7 +57,6 @@ export interface BatchSpecNodeProps extends ThemeProps {
 export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<BatchSpecNodeProps>> = ({
     node,
     currentSpecID,
-    isLightTheme,
     now = () => new Date(),
 }) => {
     const [isExpanded, setIsExpanded] = useState(currentSpecID === node.id)
@@ -44,14 +65,14 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
     }, [isExpanded])
 
     return (
-        <>
+        <li className={styles.node}>
             <span className={styles.nodeSeparator} />
             <Button
                 variant="icon"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
             </Button>
             <div className="d-flex flex-column justify-content-center align-items-center px-2 pb-1">
                 <StateIcon source={node.source} state={node.state} />
@@ -105,16 +126,185 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
             </div>
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
-                    <H4>Input spec</H4>
-                    <BatchSpec
-                        isLightTheme={isLightTheme}
-                        name={node.description.name}
-                        originalInput={node.originalInput}
-                        className={classNames(styles.batchSpec, 'mb-0')}
-                    />
+                    <BatchSpecInfo spec={node} />
                 </div>
             )}
+        </li>
+    )
+}
+
+interface BatchSpecInfoProps {
+    spec: Pick<BatchSpecListFields, 'originalInput' | 'id' | 'files' | 'description'>
+}
+
+type BatchWorkspaceFile = {
+    isSpecFile: boolean
+} & Omit<PartialBatchSpecWorkspaceFileFields, '__typename'>
+
+export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spec }) => {
+    const specFile: BatchWorkspaceFile = {
+        binary: false,
+        isSpecFile: true,
+        name: 'spec_file.yaml',
+        id: spec.id,
+        byteSize: spec.originalInput.length,
+        url: '',
+    }
+    const [selectedFile, setSelectedFile] = useState<BatchWorkspaceFile>(specFile)
+
+    if (spec.files && spec.files.totalCount > 0) {
+        const mountedFiles: BatchWorkspaceFile[] = spec.files.nodes.map(file => ({
+            isSpecFile: false,
+            ...file,
+        }))
+        const allFiles = [specFile, ...mountedFiles]
+
+        return (
+            <div className={styles.specFilesContainer}>
+                <ul className={styles.specFilesList}>
+                    {allFiles.map(file => (
+                        <li
+                            key={file.id}
+                            className={classNames(styles.specFilesListNode, {
+                                [styles.specFilesListActiveNode]: file.id === selectedFile.id,
+                            })}
+                        >
+                            <Button
+                                title={file.name}
+                                className={styles.specFilesListNodeButton}
+                                onClick={() => setSelectedFile(file)}
+                            >
+                                {file.name}
+                            </Button>
+                        </li>
+                    ))}
+                </ul>
+
+                {selectedFile.isSpecFile ? (
+                    <BatchSpec
+                        name={spec.description.name}
+                        originalInput={spec.originalInput}
+                        className={classNames(styles.batchSpec, 'mb-0')}
+                    />
+                ) : (
+                    <BatchWorkspaceFileContent file={selectedFile} specId={spec.id} />
+                )}
+            </div>
+        )
+    }
+
+    return (
+        <>
+            <H4>Input spec</H4>
+            <BatchSpec
+                name={spec.description.name}
+                originalInput={spec.originalInput}
+                className={classNames(styles.batchSpec, 'mb-0')}
+            />
         </>
+    )
+}
+
+interface BatchWorkspaceFileContentProps {
+    specId: string
+    file: BatchWorkspaceFile
+}
+
+const BatchWorkspaceFileContent: React.FunctionComponent<BatchWorkspaceFileContentProps> = ({ file, specId }) => {
+    if (file.binary) {
+        return <BinaryBatchWorkspaceFile file={file} specId={specId} />
+    }
+
+    return <NonBinaryBatchWorkspaceFile id={file.id} />
+}
+
+const BinaryBatchWorkspaceFile: React.FunctionComponent<BatchWorkspaceFileContentProps> = ({ file }) => {
+    const [loading, setIsLoading] = useState<boolean>(true)
+    const [downloadUrl, setDownloadUrl] = useState<string>('')
+    const [downloadError, setDownloadError] = useState<Error | null>(null)
+
+    useEffect(() => {
+        generateFileDownloadLink(file.url)
+            .then(fileUrl => setDownloadUrl(fileUrl))
+            .catch(error => setDownloadError(error))
+            .finally(() => setIsLoading(false))
+    }, [file.url])
+
+    if (loading) {
+        return <LoadingSpinner />
+    }
+
+    if (downloadError) {
+        return (
+            <Alert variant="danger" className={styles.fileError}>
+                <Text>Error fetching file content: {downloadError?.message}</Text>
+            </Alert>
+        )
+    }
+
+    return (
+        <div className={styles.specFileBinary}>
+            <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} className={styles.specFileBinaryIcon} />
+            <Text className={styles.specFileBinaryName}>
+                {file.name} <span className={styles.specFileBinarySize}>{humanizeSize(file.byteSize)}</span>
+            </Text>
+            <Button
+                outline={true}
+                variant="secondary"
+                size="sm"
+                to={downloadUrl}
+                download={file.name}
+                className="mt-1"
+                as={AnchorLink}
+            >
+                <Icon aria-hidden={true} svgPath={mdiFileDownload} className="mr-1" />
+                {'  '}
+                Download file
+            </Button>
+        </div>
+    )
+}
+
+const NonBinaryBatchWorkspaceFile: React.FunctionComponent<Pick<BatchWorkspaceFile, 'id'>> = ({ id }) => {
+    const { data, loading, error } = useQuery<BatchSpecWorkspaceFileResult, BatchSpecWorkspaceFileVariables>(
+        BATCH_SPEC_WORKSPACE_FILE,
+        {
+            variables: { id },
+            fetchPolicy: 'cache-first',
+        }
+    )
+
+    if (loading) {
+        return <LoadingSpinner />
+    }
+
+    if (error) {
+        return (
+            <Alert variant="danger" className={styles.fileError}>
+                <Text>Error fetching file content: {error?.message}</Text>
+            </Alert>
+        )
+    }
+
+    if (!data || data.node?.__typename !== 'BatchSpecWorkspaceFile') {
+        return (
+            <Alert variant="danger" className={styles.fileError}>
+                <Text>Not a valid BatchSpecWorkspaceFile</Text>
+            </Alert>
+        )
+    }
+
+    const { html } = data.node.highlight
+
+    return (
+        <pre className={styles.blobWrapper}>
+            <Code
+                className={styles.blobCode}
+                dangerouslySetInnerHTML={{
+                    __html: html,
+                }}
+            />
+        </pre>
     )
 }
 

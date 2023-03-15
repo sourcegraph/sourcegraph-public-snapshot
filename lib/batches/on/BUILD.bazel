@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "on",
+    srcs = ["aggregator.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches/on",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    timeout = "short",
+    name = "on_test",
+    srcs = ["aggregator_test.go"],
+    embed = [":on"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

@@ -3,7 +3,7 @@ package printer
 import (
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 )
@@ -27,11 +27,11 @@ func TestSexp(t *testing.T) {
 					}
 
 					t.Run("simpleJob", func(t *testing.T) {
-						autogold.Equal(t, autogold.Raw(SexpVerbose(simpleJob, v, pretty)))
+						autogold.ExpectFile(t, autogold.Raw(SexpVerbose(simpleJob, v, pretty)))
 					})
 
 					t.Run("bigJob", func(t *testing.T) {
-						autogold.Equal(t, autogold.Raw(SexpVerbose(bigJob, v, pretty)))
+						autogold.ExpectFile(t, autogold.Raw(SexpVerbose(bigJob, v, pretty)))
 					})
 				})
 			}

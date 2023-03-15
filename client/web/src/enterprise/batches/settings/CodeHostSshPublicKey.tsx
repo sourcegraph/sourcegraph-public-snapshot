@@ -15,6 +15,7 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
     [ExternalServiceKind.BITBUCKETSERVER]:
         'https://confluence.atlassian.com/bitbucketserver/ssh-user-keys-for-personal-use-776639793.html',
     [ExternalServiceKind.AWSCODECOMMIT]: 'unsupported',
+    [ExternalServiceKind.AZUREDEVOPS]: 'unsupported',
     [ExternalServiceKind.BITBUCKETCLOUD]: 'unsupported',
     [ExternalServiceKind.GERRIT]: 'unsupported',
     [ExternalServiceKind.GITOLITE]: 'unsupported',

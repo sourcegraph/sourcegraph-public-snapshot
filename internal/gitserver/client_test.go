@@ -17,13 +17,10 @@ import (
 	"strings"
 	"sync"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -34,6 +31,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -43,45 +43,6 @@ func newMockDB() database.DB {
 	gr := database.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	return db
-}
-
-func TestClient_RequestRepoMigrate(t *testing.T) {
-	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
-	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
-
-	expected := "http://172.16.8.2:8080"
-
-	cli := gitserver.NewTestClient(
-		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
-			switch r.URL.String() {
-			// Ensure that the request was received by the "expected" gitserver instance - where
-			// expected is the gitserver instance according to the Rendezvous hashing scheme.
-			// For anything else apart from this we return an error.
-			case expected + "/repo-update":
-				var req protocol.RepoUpdateRequest
-				err := json.NewDecoder(r.Body).Decode(&req)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if req.CloneFromShard != "http://172.16.8.1:8080" {
-					t.Fatalf("expected cloneFromShard to be \"http://172.16.8.1:8080\", got %q", req.CloneFromShard)
-				}
-				return &http.Response{
-					StatusCode: 200,
-					Body:       io.NopCloser(bytes.NewBufferString("{}")),
-				}, nil
-			default:
-				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
-			}
-		}),
-		newMockDB(),
-		addrs,
-	)
-
-	_, err := cli.RequestRepoMigrate(context.Background(), repo, "172.16.8.1:8080", "172.16.8.2:8080")
-	if err != nil {
-		t.Fatalf("expected URL %q, but got err %q", expected, err)
-	}
 }
 
 func TestClient_Remove(t *testing.T) {
@@ -105,7 +66,6 @@ func TestClient_Remove(t *testing.T) {
 				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
 			}
 		}),
-		newMockDB(),
 		addrs,
 	)
 
@@ -164,7 +124,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	cli := gitserver.NewTestClient(&http.Client{}, newMockDB(), addrs)
+	cli := gitserver.NewTestClient(&http.Client{}, addrs)
 
 	ctx := context.Background()
 	for name, test := range tests {
@@ -315,95 +275,6 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 	return dir
 }
 
-func TestAddrForRepo(t *testing.T) {
-	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
-	pinned := map[string]string{
-		"repo2": "gitserver-1",
-	}
-
-	testCases := []struct {
-		name string
-		repo api.RepoName
-		want string
-	}{
-		{
-			name: "repo1",
-			repo: api.RepoName("repo1"),
-			want: "gitserver-3",
-		},
-		{
-			name: "check we normalise",
-			repo: api.RepoName("repo1.git"),
-			want: "gitserver-3",
-		},
-		{
-			name: "another repo",
-			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
-			want: "gitserver-2",
-		},
-		{
-			name: "pinned repo", // different server address that the hashing function would normally yield
-			repo: api.RepoName("repo2"),
-			want: "gitserver-1",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := gitserver.AddrForRepo(context.Background(), "gitserver", newMockDB(), tc.repo, gitserver.GitServerAddresses{
-				Addresses:     addrs,
-				PinnedServers: pinned,
-			})
-			if err != nil {
-				t.Fatal("Error during getting gitserver address")
-			}
-			if got != tc.want {
-				t.Fatalf("Want %q, got %q", tc.want, got)
-			}
-		})
-	}
-}
-
-func TestRendezvousAddrForRepo(t *testing.T) {
-	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
-
-	testCases := []struct {
-		name string
-		repo api.RepoName
-		want string
-	}{
-		{
-			name: "repo1",
-			repo: api.RepoName("repo1"),
-			want: "gitserver-1",
-		},
-		{
-			name: "check we normalise",
-			repo: api.RepoName("repo1.git"),
-			want: "gitserver-1",
-		},
-		{
-			name: "another repo",
-			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
-			want: "gitserver-3",
-		},
-		{
-			name: "yet another repo",
-			repo: api.RepoName("gitlab.com/foo/bar"),
-			want: "gitserver-2",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := gitserver.RendezvousAddrForRepo(tc.repo, addrs)
-			if got != tc.want {
-				t.Fatalf("Want %q, got %q", tc.want, got)
-			}
-		})
-	}
-}
-
 func TestClient_P4Exec(t *testing.T) {
 	_ = gitserver.CreateRepoDir(t)
 	tests := []struct {
@@ -423,6 +294,12 @@ func TestClient_P4Exec(t *testing.T) {
 			password: "pa$$word",
 			args:     []string{"protects"},
 			handler: func(w http.ResponseWriter, r *http.Request) {
+				if r.ProtoMajor == 2 {
+					// Ignore attempted gRPC connections
+					w.WriteHeader(http.StatusNotImplemented)
+					return
+				}
+
 				body, err := io.ReadAll(r.Body)
 				if err != nil {
 					t.Fatal(err)
@@ -442,6 +319,12 @@ func TestClient_P4Exec(t *testing.T) {
 		{
 			name: "error response",
 			handler: func(w http.ResponseWriter, r *http.Request) {
+				if r.ProtoMajor == 2 {
+					// Ignore attempted gRPC connections
+					w.WriteHeader(http.StatusNotImplemented)
+					return
+				}
+
 				w.WriteHeader(http.StatusBadRequest)
 				_, _ = w.Write([]byte("example error"))
 			},
@@ -452,12 +335,12 @@ func TestClient_P4Exec(t *testing.T) {
 	ctx := context.Background()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(test.handler)
-			defer server.Close()
+			testServer := httptest.NewServer(test.handler)
+			defer testServer.Close()
 
-			u, _ := url.Parse(server.URL)
+			u, _ := url.Parse(testServer.URL)
 			addrs := []string{u.Host}
-			cli := gitserver.NewTestClient(&http.Client{}, newMockDB(), addrs)
+			cli := gitserver.NewTestClient(&http.Client{}, addrs)
 
 			rc, _, err := cli.P4Exec(ctx, test.host, test.user, test.password, test.args...)
 			if diff := cmp.Diff(test.wantErr, fmt.Sprintf("%v", err)); diff != "" {
@@ -517,7 +400,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	}}
 
 	db := newMockDB()
-	srv := httptest.NewServer((&server.Server{
+	s := server.Server{
 		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
@@ -527,12 +410,19 @@ func TestClient_ResolveRevisions(t *testing.T) {
 			return &server.GitRepoSyncer{}, nil
 		},
 		DB: db,
-	}).Handler())
+	}
+
+	grpcServer := defaults.NewServer(logtest.Scoped(t))
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
+
+	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+	srv := httptest.NewServer(handler)
+
 	defer srv.Close()
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	cli := gitserver.NewTestClient(&http.Client{}, db, addrs)
+	cli := gitserver.NewTestClient(&http.Client{}, addrs)
 
 	ctx := context.Background()
 	for _, test := range tests {
@@ -550,85 +440,6 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		})
 	}
 
-}
-
-func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	ctx := context.Background()
-	client := gitserver.NewTestClient(&http.Client{}, newMockDB(), []string{"gitserver1", "gitserver2"})
-	setPinnedRepos(map[string]string{
-		"repo1": "gitserver2",
-	})
-
-	addr, err := client.AddrForRepo(ctx, "repo1")
-	if err != nil {
-		t.Fatal("Error during getting gitserver address")
-	}
-	require.Equal(t, "gitserver2", addr)
-
-	// simulate config change - site admin manually changes the pinned repo config
-	setPinnedRepos(map[string]string{
-		"repo1": "gitserver1",
-	})
-
-	addr, err = client.AddrForRepo(ctx, "repo1")
-	if err != nil {
-		t.Fatal("Error during getting gitserver address")
-	}
-	require.Equal(t, "gitserver1", addr)
-}
-
-func setPinnedRepos(pinned map[string]string) {
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			GitServerPinnedRepos: pinned,
-		},
-	}})
-}
-
-func TestClient_AddrForRepo_Rendezvous(t *testing.T) {
-	ctx := context.Background()
-	client := gitserver.NewTestClient(&http.Client{}, newMockDB(), []string{"gitserver1", "gitserver2"})
-
-	tests := []struct {
-		name     string
-		repoName api.RepoName
-		cursor   string
-		wantAddr string
-	}{
-		{
-			name:     "Rendezvous hashing is not used before migration",
-			repoName: api.RepoName("repoA"),
-			cursor:   "",
-			wantAddr: "gitserver1",
-		},
-		{
-			name:     "Rendezvous hashing is not used for not yet migrated repos",
-			repoName: api.RepoName("repoA"),
-			cursor:   "repo",
-			wantAddr: "gitserver1",
-		},
-		{
-			name:     "Rendezvous hashing is used for already migrated repos",
-			repoName: api.RepoName("repoA"),
-			cursor:   "repoZ",
-			wantAddr: "gitserver2",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			migration.MigrationMocks.GetCursor = func(ctx context.Context, db dbutil.DB) (string, error) {
-				return tc.cursor, nil
-			}
-			defer migration.ResetMigrationMocks()
-
-			addr, err := client.AddrForRepo(ctx, tc.repoName)
-			if err != nil {
-				t.Fatal("Error during getting gitserver address")
-			}
-			require.Equal(t, tc.wantAddr, addr)
-		})
-	}
 }
 
 func TestClient_BatchLog(t *testing.T) {
@@ -654,7 +465,6 @@ func TestClient_BatchLog(t *testing.T) {
 			body := io.NopCloser(strings.NewReader(strings.TrimSpace(string(encoded))))
 			return &http.Response{StatusCode: 200, Body: body}, nil
 		}),
-		newMockDB(),
 		addrs,
 	)
 
@@ -747,4 +557,40 @@ func TestLocalGitCommand(t *testing.T) {
 	if command.ExitStatus() != 0 {
 		t.Fatalf("Local git command finished with non-zero status. Status: %d", command.ExitStatus())
 	}
+}
+
+func TestClient_ReposStats(t *testing.T) {
+	const gitserverAddr = "172.16.8.1:8080"
+	now := time.Now().UTC()
+	addrs := []string{gitserverAddr}
+
+	expected := fmt.Sprintf("http://%s", gitserverAddr)
+	wantStats := protocol.ReposStats{
+		UpdatedAt:   now,
+		GitDirBytes: 1337,
+	}
+
+	cli := gitserver.NewTestClient(
+		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			switch r.URL.String() {
+			case expected + "/repos-stats":
+				encoded, _ := json.Marshal(wantStats)
+				body := io.NopCloser(strings.NewReader(strings.TrimSpace(string(encoded))))
+				return &http.Response{
+					StatusCode: 200,
+					Body:       body,
+				}, nil
+			default:
+				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
+			}
+		}),
+		addrs,
+	)
+
+	gotStatsMap, err := cli.ReposStats(context.Background())
+	if err != nil {
+		t.Fatalf("expected URL %q, but got err %q", expected, err)
+	}
+
+	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
 }

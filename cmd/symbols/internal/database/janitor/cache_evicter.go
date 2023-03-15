@@ -30,11 +30,13 @@ var (
 )
 
 func NewCacheEvicter(interval time.Duration, cache diskcache.Store, maxCacheSizeBytes int64, metrics *Metrics) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &cacheEvicter{
-		cache:             cache,
-		maxCacheSizeBytes: maxCacheSizeBytes,
-		metrics:           metrics,
-	})
+	return goroutine.NewPeriodicGoroutine(context.Background(), "codeintel.symbols-cache-evictor", "evicts entries from the symbols cache",
+		interval, &cacheEvicter{
+			cache:             cache,
+			maxCacheSizeBytes: maxCacheSizeBytes,
+			metrics:           metrics,
+		},
+	)
 }
 
 // Handle periodically checks the size of the cache and evicts/deletes items.

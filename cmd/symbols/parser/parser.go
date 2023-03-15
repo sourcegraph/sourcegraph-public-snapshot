@@ -9,6 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/std"
@@ -39,18 +40,18 @@ type parser struct {
 }
 
 func NewParser(
+	observationCtx *observation.Context,
 	parserPool *parserPool,
 	repositoryFetcher fetcher.RepositoryFetcher,
 	requestBufferSize int,
 	numParserProcesses int,
-	observationContext *observation.Context,
 ) Parser {
 	return &parser{
 		parserPool:         parserPool,
 		repositoryFetcher:  repositoryFetcher,
 		requestBufferSize:  requestBufferSize,
 		numParserProcesses: numParserProcesses,
-		operations:         newOperations(observationContext),
+		operations:         newOperations(observationCtx),
 	}
 }
 
@@ -145,7 +146,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	if err != nil {
 		return err
 	}
-	trace.Log(otlog.Event("acquired parser from pool"))
+	trace.AddEvent("parser", attribute.String("event", "acquired parser from pool"))
 
 	defer func() {
 		if err == nil {
@@ -172,7 +173,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	if err != nil {
 		return errors.Wrap(err, "parser.Parse")
 	}
-	trace.Log(otlog.Int("numEntries", len(entries)))
+	trace.AddEvent("parser.Parse", attribute.Int("numEntries", len(entries)))
 
 	lines := strings.Split(string(parseRequest.Data), "\n")
 

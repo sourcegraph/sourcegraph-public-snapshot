@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "rcache",
+    srcs = [
+        "fifo_list.go",
+        "rcache.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/rcache",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/redispool",
+        "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "rcache_test",
+    srcs = [
+        "fifo_list_test.go",
+        "rcache_test.go",
+    ],
+    embed = [":rcache"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

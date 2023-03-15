@@ -2,51 +2,61 @@ import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, PageHeader, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
 
+import { CallToActionBanner } from '../../../../../components/CallToActionBanner'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
+import { eventLogger } from '../../../../../tracking/eventLogger'
+import { CodeInsightsLimitedAccessAppBanner } from '../../../components/code-insights-page/limit-access-banner/CodeInsightsLimitAccessAppBanner'
 import { CodeInsightsLandingPageContext, CodeInsightsLandingPageType } from '../CodeInsightsLandingPageContext'
-import { CodeInsightsLearnMore } from '../getting-started/components/code-insights-learn-more/CodeInsightsLearnMore'
-import { CodeInsightsTemplates } from '../getting-started/components/code-insights-templates/CodeInsightsTemplates'
+import { CodeInsightsDescription } from '../getting-started/components/code-insights-description/CodeInsightsDescription'
 
 import { CodeInsightsExamplesPicker } from './components/code-insights-examples-picker/CodeInsightsExamplesPicker'
-import { SourcegraphInstallLocallyIcon } from './components/SourcegraphInstallLocallyIcon'
 
 import styles from './CodeInsightsDotComGetStarted.module.scss'
 
 const DOT_COM_CONTEXT = { mode: CodeInsightsLandingPageType.Cloud }
 
-export interface CodeInsightsDotComGetStartedProps extends TelemetryProps {}
+export interface CodeInsightsDotComGetStartedProps extends TelemetryProps {
+    authenticatedUser: AuthenticatedUser | null
+}
 
 export const CodeInsightsDotComGetStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeInsightsDotComGetStartedProps>
 > = props => {
     const { telemetryService } = props
+    const isSourcegraphDotCom = window.context.sourcegraphDotComMode
+    const isSourcegraphApp = window.context.sourcegraphAppMode
 
     useEffect(() => {
         telemetryService.logViewEvent('CloudInsightsGetStartedPage')
     }, [telemetryService])
 
-    const handleScheduleDemoClick = (): void => {
-        telemetryService.log('CloudCodeInsightsGetStartedScheduleDemo')
-    }
-
-    const handleExploreUseCasesClick = (): void => {
-        telemetryService.log('CloudCodeInsightsGetStartedExploreUseCases')
-    }
-
-    const handleInstallLocalInstanceClick = (): void => {
-        telemetryService.log('CloudCodeInsightsGetStartedInstallInstance')
-    }
-
     return (
         <CodeInsightsLandingPageContext.Provider value={DOT_COM_CONTEXT}>
             <Page>
                 <PageTitle title="Code Insights" />
-                <PageHeader path={[{ icon: CodeInsightsIcon, text: 'Insights' }]} className="mb-4" />
+                <PageHeader
+                    path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
+                    actions={
+                        isSourcegraphDotCom ? (
+                            <Button
+                                as={Link}
+                                to="https://about.sourcegraph.com"
+                                variant="primary"
+                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryInsights' })}
+                            >
+                                Get Sourcegraph Enterprise
+                            </Button>
+                        ) : null
+                    }
+                    className="mb-4"
+                />
+                {isSourcegraphApp && <CodeInsightsLimitedAccessAppBanner authenticatedUser={props.authenticatedUser} />}
                 <main className="pb-5">
                     <Card as={CardBody} className={styles.heroSection}>
                         <aside className={styles.heroVideoBlock}>
@@ -71,117 +81,21 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                                 />
                             </video>
                         </aside>
-
-                        <section className={styles.hereDescriptionBlock}>
-                            <H2 className={classNames(styles.heroTitle)}>
-                                Draw insights from your codebase about how different initiatives are tracking over time
-                            </H2>
-
-                            <Text>
-                                Create customizable, visual dashboards with meaningful codebase signals your team can
-                                use to answer questions about what's in your code and how your code is changing.
-                                Anything you can search, you can create a Code Insight for.
-                            </Text>
-
-                            <H3 className={classNames(styles.hereBulletTitle)}>Use Code Insights to...</H3>
-
-                            <ul>
-                                <li>Track migrations, adoption, and deprecations</li>
-                                <li>Detect versions of languages, packages, or infrastructure</li>
-                                <li>Ensure removal of security vulnerabilities</li>
-                                <li>Track code smells, ownership, and configurations</li>
-                            </ul>
-
-                            <footer className={styles.heroFooter}>
-                                <Button
-                                    variant="primary"
-                                    as={Link}
-                                    to="https://about.sourcegraph.com/contact/request-code-insights-demo?utm_medium=direct-traffic&utm_source=in-product&utm_campaign=code-insights-getting-started"
-                                    target="_blank"
-                                    rel="noopener"
-                                    onClick={handleScheduleDemoClick}
-                                >
-                                    Schedule a demo
-                                </Button>
-
-                                <Button
-                                    variant="secondary"
-                                    as={Link}
-                                    to="/help/code_insights/references/common_use_cases"
-                                    onClick={handleExploreUseCasesClick}
-                                >
-                                    Explore use cases
-                                </Button>
-                            </footer>
-                        </section>
+                        <CodeInsightsDescription className={styles.heroDescriptionBlock} />
                     </Card>
 
-                    <section className={styles.quoteSection}>
-                        <H2>Trusted by leading engineering teams around the world:</H2>
-
-                        <q className={styles.quote}>
-                            As we’ve grown, so has the need to better track and communicate our progress and goals
-                            across the engineering team and broader company. With Code Insights, our data and migration
-                            tracking is accurate across our entire codebase, and our engineers and managers can shift
-                            out of manual spreadsheets and spend more time working on code.
-                        </q>
-
-                        <span className={styles.quoteAuthor}>Balázs Tóthfalussy, Engineering Manager</span>
-
-                        <img
-                            className={styles.quoteLogo}
-                            width={82}
-                            height={30}
-                            src="https://storage.googleapis.com/sourcegraph-assets/code_insights/prezi-logo-lg.png"
-                            alt="Prezi logotype"
-                        />
-                    </section>
+                    <CallToActionBanner variant="filled">
+                        To track Insights across your team's private repositories,{' '}
+                        <Link
+                            to="https://about.sourcegraph.com"
+                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Insights' })}
+                        >
+                            get Sourcegraph Enterprise
+                        </Link>
+                        .
+                    </CallToActionBanner>
 
                     <CodeInsightsExamplesPicker telemetryService={telemetryService} />
-
-                    <section className={styles.installLocallySection}>
-                        <Card as={CardBody} className={styles.installLocallyRequirements}>
-                            <H3>Code Insights requirements</H3>
-                            <ul className={styles.installLocallyRequirementsList}>
-                                <li>Create up to 2 code insights for free</li>
-                                <li>Get unlimited insights with an Enterprise plan (or trial)</li>
-                            </ul>
-                        </Card>
-
-                        <Card as={CardBody} className={styles.installLocallyGetStarted}>
-                            <SourcegraphInstallLocallyIcon className="flex-shrink-0" />
-                            <div>
-                                <H3>Install locally to get started</H3>
-
-                                <Text>
-                                    Code Insights requires a local Sourcegraph installation via Docker Compose or
-                                    Kubernetes. You can check it out for free by installing locally.
-                                </Text>
-
-                                <Button
-                                    as={Link}
-                                    variant="primary"
-                                    to="/help/admin/install?utm_medium=direct-traffic&utm_source=in-product&utm_campaign=code-insights-getting-started"
-                                    onClick={handleInstallLocalInstanceClick}
-                                >
-                                    Install local instance
-                                </Button>
-                            </div>
-                        </Card>
-                    </section>
-
-                    <CodeInsightsTemplates className={styles.templateSection} telemetryService={telemetryService} />
-
-                    <iframe
-                        src="https://www.youtube.com/embed/fMCUJQHfbUA"
-                        title="YouTube video player"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen={true}
-                        className={styles.videoSection}
-                    />
-
-                    <CodeInsightsLearnMore className={styles.learnMoreSection} telemetryService={telemetryService} />
                 </main>
             </Page>
         </CodeInsightsLandingPageContext.Provider>

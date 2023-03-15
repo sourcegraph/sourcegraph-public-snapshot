@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -22,29 +22,35 @@ interface UseExecuteBatchSpecResult {
  *
  * @param batchSpecID The current batch spec ID.
  */
-export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID']): UseExecuteBatchSpecResult => {
+export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID'], noCache?: boolean): UseExecuteBatchSpecResult => {
     const [submitBatchSpec, { loading }] = useMutation<ExecuteBatchSpecResult, ExecuteBatchSpecVariables>(
         EXECUTE_BATCH_SPEC
     )
 
     const [executionError, setExecutionError] = useState<Error>()
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const executeBatchSpec = useCallback(() => {
         if (!batchSpecID) {
             return
         }
 
-        submitBatchSpec({ variables: { batchSpec: batchSpecID } })
+        submitBatchSpec({
+            variables: {
+                batchSpec: batchSpecID,
+                noCache: noCache === undefined ? null : noCache,
+            },
+        })
             .then(({ data }) => {
                 if (data?.executeBatchSpec) {
-                    history.replace(
-                        `${data.executeBatchSpec.namespace.url}/batch-changes/${data.executeBatchSpec.description.name}/executions/${data.executeBatchSpec.id}`
+                    navigate(
+                        `${data.executeBatchSpec.namespace.url}/batch-changes/${data.executeBatchSpec.description.name}/executions/${data.executeBatchSpec.id}`,
+                        { replace: true }
                     )
                 }
             })
             .catch(setExecutionError)
-    }, [submitBatchSpec, history, batchSpecID])
+    }, [submitBatchSpec, noCache, navigate, batchSpecID])
 
     return {
         executeBatchSpec,

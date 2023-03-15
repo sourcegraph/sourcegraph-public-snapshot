@@ -2,13 +2,9 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import {
-    EMPTY_SETTINGS_CASCADE,
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
+import { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
 import { GET_LICENSE_AND_USAGE_INFO } from '../list/backend'
 import { getLicenseAndUsageInfoResult } from '../list/testData'
@@ -29,29 +25,22 @@ const config: Meta = {
 
 export default config
 
-const FIXTURE_ORG: SettingsOrgSubject = {
+const MOCK_ORGANIZATION = {
     __typename: 'Org',
-    name: 'sourcegraph',
-    displayName: 'Sourcegraph',
-    id: 'a',
-    viewerCanAdminister: true,
+    name: 'acme-corp',
+    displayName: 'ACME Corporation',
+    id: 'acme-corp-id',
 }
 
-const FIXTURE_USER: SettingsUserSubject = {
+const mockAuthenticatedUser = {
     __typename: 'User',
     username: 'alice',
     displayName: 'alice',
     id: 'b',
-    viewerCanAdminister: true,
-}
-
-const SETTINGS_CASCADE = {
-    ...EMPTY_SETTINGS_CASCADE,
-    subjects: [
-        { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
-        { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
-    ],
-}
+    organizations: {
+        nodes: [MOCK_ORGANIZATION],
+    },
+} as AuthenticatedUser
 
 const buildMocks = (isLicensed = true, hasBatchChanges = true) =>
     new WildcardMockLink([
@@ -66,7 +55,7 @@ export const NewBatchChange: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
-                <ConfigurationForm {...props} settingsCascade={SETTINGS_CASCADE} />
+                <ConfigurationForm authenticatedUser={mockAuthenticatedUser} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -74,13 +63,29 @@ export const NewBatchChange: Story = () => (
 
 NewBatchChange.storyName = 'New batch change'
 
+export const NewOrgBatchChange: Story = () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={buildMocks()}>
+                <ConfigurationForm
+                    {...props}
+                    initialNamespaceID={MOCK_ORGANIZATION.id}
+                    authenticatedUser={mockAuthenticatedUser}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+NewOrgBatchChange.storyName = 'New batch change with new Org'
+
 export const ExistingBatchChange: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
                 <ConfigurationForm
                     {...props}
-                    settingsCascade={SETTINGS_CASCADE}
+                    authenticatedUser={mockAuthenticatedUser}
                     isReadOnly={true}
                     batchChange={{
                         name: 'My existing batch change',
@@ -107,8 +112,8 @@ export const LicenseAlert: Story = () => (
             <MockedTestProvider link={buildMocks(false)}>
                 <ConfigurationForm
                     {...props}
-                    settingsCascade={SETTINGS_CASCADE}
                     isReadOnly={true}
+                    authenticatedUser={mockAuthenticatedUser}
                     batchChange={{
                         name: 'My existing batch change',
                         namespace: {

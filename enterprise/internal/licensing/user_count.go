@@ -7,14 +7,16 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/log"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 var (
-	pool      = redispool.Store
-	keyPrefix = "license_user_count:"
+	// cacheStore is used to cache the output from the database. We use Store
+	// since we want it to be durable.
+	cacheStore = redispool.Store
+	keyPrefix  = "license_user_count:"
 
 	started bool
 )
@@ -29,39 +31,33 @@ type UsersStore interface {
 
 // setMaxUsers sets the max users associated with a license key if the new max count is greater than the previous max.
 func setMaxUsers(key string, count int) error {
-	c := pool.Get()
-	defer c.Close()
-
-	lastMax, _, err := getMaxUsers(c, key)
+	lastMax, _, err := getMaxUsers(key)
 	if err != nil {
 		return err
 	}
 
 	if count > lastMax {
-		err = c.Send("HSET", maxUsersKey(), key, count)
+		err := cacheStore.HSet(maxUsersKey(), key, count)
 		if err != nil {
 			return err
 		}
-		return c.Send("HSET", maxUsersTimeKey(), key, time.Now().Format("2006-01-02 15:04:05 UTC"))
+		return cacheStore.HSet(maxUsersTimeKey(), key, time.Now().Format("2006-01-02 15:04:05 UTC"))
 	}
 	return nil
 }
 
 // GetMaxUsers gets the max users associated with a license key.
 func GetMaxUsers(signature string) (int, string, error) {
-	c := pool.Get()
-	defer c.Close()
-
 	if signature == "" {
 		// No license key is in use.
 		return 0, "", nil
 	}
 
-	return getMaxUsers(c, signature)
+	return getMaxUsers(signature)
 }
 
-func getMaxUsers(c redis.Conn, key string) (int, string, error) {
-	lastMax, err := redis.String(c.Do("HGET", maxUsersKey(), key))
+func getMaxUsers(key string) (int, string, error) {
+	lastMax, err := cacheStore.HGet(maxUsersKey(), key).String()
 	if err != nil && err != redis.ErrNil {
 		return 0, "", err
 	}
@@ -72,7 +68,7 @@ func getMaxUsers(c redis.Conn, key string) (int, string, error) {
 			return 0, "", err
 		}
 	}
-	lastMaxDate, err := redis.String(c.Do("HGET", maxUsersTimeKey(), key))
+	lastMaxDate, err := cacheStore.HGet(maxUsersTimeKey(), key).String()
 	if err != nil && err != redis.ErrNil {
 		return 0, "", err
 	}
@@ -81,7 +77,7 @@ func getMaxUsers(c redis.Conn, key string) (int, string, error) {
 
 // checkMaxUsers runs periodically, and if a license key is in use, updates the
 // record of maximum count of user accounts in use.
-func checkMaxUsers(ctx context.Context, s UsersStore, signature string) error {
+func checkMaxUsers(ctx context.Context, logger log.Logger, s UsersStore, signature string) error {
 	if signature == "" {
 		// No license key is in use.
 		return nil
@@ -89,12 +85,12 @@ func checkMaxUsers(ctx context.Context, s UsersStore, signature string) error {
 
 	count, err := s.Count(ctx)
 	if err != nil {
-		log15.Error("licensing.checkMaxUsers: error getting user count", "error", err)
+		logger.Error("error getting user count", log.Error(err))
 		return err
 	}
 	err = setMaxUsers(signature, count)
 	if err != nil {
-		log15.Error("licensing.checkMaxUsers: error setting new max users", "error", err)
+		logger.Error("error setting new max users", log.Error(err))
 		return err
 	}
 	return nil
@@ -133,7 +129,7 @@ func ActualUserCountDate(ctx context.Context) (string, error) {
 }
 
 // StartMaxUserCount starts checking for a new count of max user accounts periodically.
-func StartMaxUserCount(s UsersStore) {
+func StartMaxUserCount(logger log.Logger, s UsersStore) {
 	if started {
 		panic("already started")
 	}
@@ -144,10 +140,10 @@ func StartMaxUserCount(s UsersStore) {
 	for {
 		_, signature, err := GetConfiguredProductLicenseInfoWithSignature()
 		if err != nil {
-			log15.Error("licensing.startMaxUserCount: error getting configured license info")
+			logger.Error("error getting configured license info", log.Error(err))
 		} else if signature != "" {
 			ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
-			_ = checkMaxUsers(ctx, s, signature) // updates global state on its own, can safely ignore return value
+			_ = checkMaxUsers(ctx, logger, s, signature) // updates global state on its own, can safely ignore return value
 			cancel()
 		}
 		time.Sleep(delay)

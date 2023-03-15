@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -133,9 +134,9 @@ func parseVersions(lines []string, migrationsDir string) []int {
 
 // rootRelative removes the repo root prefix from the given path.
 func rootRelative(path string) string {
-	if root, _ := root.RepositoryRoot(); root != "" {
+	if repoRoot, _ := root.RepositoryRoot(); repoRoot != "" {
 		sep := string(os.PathSeparator)
-		rootWithTrailingSep := strings.TrimRight(root, sep) + sep
+		rootWithTrailingSep := strings.TrimRight(repoRoot, sep) + sep
 		return strings.TrimPrefix(path, rootWithTrailingSep)
 	}
 

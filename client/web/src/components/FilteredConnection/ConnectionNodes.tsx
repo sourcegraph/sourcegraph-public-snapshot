@@ -1,10 +1,8 @@
 import * as React from 'react'
 
-import * as H from 'history'
-
 import { Connection } from './ConnectionType'
-import { ConnectionList, ShowMoreButton, SummaryContainer, ConnectionSummary } from './ui'
-import { hasID, hasNextPage, hasDisplayName } from './utils'
+import { ConnectionList, ConnectionSummary, ShowMoreButton, SummaryContainer } from './ui'
+import { hasDisplayName, hasID, hasNextPage } from './utils'
 
 /**
  * Props for the FilteredConnection component's result nodes and associated summary/pagination controls.
@@ -83,7 +81,7 @@ export interface ConnectionNodesDisplayProps {
 
     withCenteredSummary?: boolean
 
-    /** A function that generates an aria label given a node display name */
+    /** A function that generates an aria label given a node display name. */
     ariaLabelFunction?: (displayName: string) => string
 }
 
@@ -92,8 +90,6 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>
         ConnectionNodesState {
     /** The fetched connection data or an error (if an error occurred). */
     connection: C
-
-    location: H.Location
 
     onShowMore: () => void
 }

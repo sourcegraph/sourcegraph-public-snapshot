@@ -1,6 +1,5 @@
 import { render, fireEvent } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { MemoryRouter } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -13,7 +12,11 @@ import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { mockCodeMonitorNodes } from './testing/util'
 
 const additionalProps = {
-    authenticatedUser: { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser,
+    authenticatedUser: {
+        id: 'foobar',
+        username: 'alice',
+        emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
+    } as AuthenticatedUser,
     fetchUserCodeMonitors: ({ id, first, after }: ListUserCodeMonitorsVariables) =>
         of({
             nodes: mockCodeMonitorNodes,
@@ -26,27 +29,28 @@ const additionalProps = {
     toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     isLightTheme: false,
+    isSourcegraphApp: false,
 }
 
-const generateMockFetchMonitors = (count: number) => ({ id, first, after }: ListUserCodeMonitorsVariables) => {
-    const result: ListCodeMonitors = {
-        nodes: mockCodeMonitorNodes.slice(0, count),
-        pageInfo: {
-            endCursor: `foo${count}`,
-            hasNextPage: count > 10,
-        },
-        totalCount: count,
+const generateMockFetchMonitors =
+    (count: number) =>
+    ({ id, first, after }: ListUserCodeMonitorsVariables) => {
+        const result: ListCodeMonitors = {
+            nodes: mockCodeMonitorNodes.slice(0, count),
+            pageInfo: {
+                endCursor: `foo${count}`,
+                hasNextPage: count > 10,
+            },
+            totalCount: count,
+        }
+        return of(result)
     }
-    return of(result)
-}
 
 describe('CodeMonitoringListPage', () => {
     test('Clicking enabled toggle calls toggleCodeMonitorEnabled', () => {
         const component = render(
             <MemoryRouter initialEntries={['/code-monitoring']}>
-                <CompatRouter>
-                    <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
-                </CompatRouter>
+                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
             </MemoryRouter>
         )
         const toggle = component.getByTestId('toggle-monitor-enabled')
@@ -57,9 +61,7 @@ describe('CodeMonitoringListPage', () => {
     test('Switching tabs from getting started to empty list works', () => {
         const component = render(
             <MemoryRouter initialEntries={['/code-monitoring']}>
-                <CompatRouter>
-                    <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
-                </CompatRouter>
+                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
             </MemoryRouter>
         )
         const codeMonitorsButton = component.getByRole('button', { name: 'Code monitors' })
@@ -72,9 +74,7 @@ describe('CodeMonitoringListPage', () => {
     test('Switching tabs from list to getting started works', () => {
         const component = render(
             <MemoryRouter initialEntries={['/code-monitoring']}>
-                <CompatRouter>
-                    <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
-                </CompatRouter>
+                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
             </MemoryRouter>
         )
         const gettingStartedButton = component.getByRole('button', { name: 'Getting started' })

@@ -1,6 +1,5 @@
 import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote, proxyMarker } from 'comlink'
-import { Observable, Observer, PartialObserver, Subscription } from 'rxjs'
-import { Subscribable, Unsubscribable } from 'sourcegraph'
+import { Unsubscribable, Subscribable, Observable, Observer, PartialObserver, Subscription } from 'rxjs'
 
 import { hasProperty, AbortError } from '@sourcegraph/common'
 
@@ -71,7 +70,7 @@ export const isPromiseLike = (value: unknown): value is PromiseLike<unknown> =>
     typeof value === 'object' && value !== null && hasProperty('then')(value) && typeof value.then === 'function'
 
 /**
- * Reports whether value is a {@link sourcegraph.Subscribable}.
+ * Reports whether value is a {@link Subscribable}.
  */
 export const isSubscribable = (value: unknown): value is Subscribable<unknown> =>
     typeof value === 'object' &&
@@ -131,7 +130,7 @@ export const observableFromAsyncIterable = <T>(iterable: AsyncIterable<T>): Obse
  * NOTE2: for testing purposes only!!
  */
 export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
-    (new Proxy(object, {
+    new Proxy(object, {
         get: (a, property) => {
             if (property === 'then') {
                 // Promise.resolve(pretendRemote(..)) checks if this is a Promise
@@ -147,7 +146,7 @@ export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
             }
             throw new Error(`unspecified property in the stub: "${property.toString()}"`)
         },
-    }) as unknown) as Remote<T>
+    }) as unknown as Remote<T>
 
 /**
  * For proxySubscribables to be passed as stubs to pretendRemote.
@@ -159,7 +158,7 @@ export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
 export const pretendProxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
     [proxyMarker]: true,
     subscribe(observer): Unsubscribable & ProxyMarked {
-        const subscription = subscribable.subscribe((observer as unknown) as PartialObserver<T>)
+        const subscription = subscribable.subscribe(observer as unknown as PartialObserver<T>)
 
         return {
             [proxyMarker]: true,

@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gerrit",
+    srcs = [
+        "account.go",
+        "client.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/encryption",
+        "//internal/extsvc",
+        "//internal/extsvc/auth",
+        "//internal/httpcli",
+        "//internal/ratelimit",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "gerrit_test",
+    srcs = ["client_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":gerrit"],
+    deps = [
+        "//internal/httpcli",
+        "//internal/httptestutil",
+        "//internal/lazyregexp",
+        "//internal/testutil",
+        "@com_github_dnaeon_go_vcr//cassette",
+    ],
+)

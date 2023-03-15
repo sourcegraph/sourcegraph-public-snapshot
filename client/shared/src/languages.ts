@@ -471,6 +471,10 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'vim':
             return 'vim'
 
+        // XLSG
+        case 'xlsg':
+            return 'xlsg'
+
         // XML
         case 'xml':
         case 'adml':
@@ -564,6 +568,9 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'xul':
         case 'zcml':
             return 'xml'
+
+        case 'zig':
+            return 'zig'
 
         // YAML
         case 'yml':

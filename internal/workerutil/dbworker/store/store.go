@@ -3,8 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -14,10 +12,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,19 +30,6 @@ type HeartbeatOptions struct {
 }
 
 func (o *HeartbeatOptions) ToSQLConds(formatQuery func(query string, args ...any) *sqlf.Query) []*sqlf.Query {
-	conds := []*sqlf.Query{}
-	if o.WorkerHostname != "" {
-		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
-	}
-	return conds
-}
-
-type CanceledJobsOptions struct {
-	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
-	WorkerHostname string
-}
-
-func (o *CanceledJobsOptions) ToSQLConds(formatQuery func(query string, args ...any) *sqlf.Query) []*sqlf.Query {
 	conds := []*sqlf.Query{}
 	if o.WorkerHostname != "" {
 		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
@@ -80,18 +68,18 @@ func (o *MarkFinalOptions) ToSQLConds(formatQuery func(query string, args ...any
 	return conds
 }
 
-// ErrExecutionLogEntryNotUpdated is retured by AddExecutionLogEntry and UpdateExecutionLogEntry, when
+// ErrExecutionLogEntryNotUpdated is returned by AddExecutionLogEntry and UpdateExecutionLogEntry, when
 // the log entry was not updated.
 var ErrExecutionLogEntryNotUpdated = errors.New("execution log entry not updated")
 
 // Store is the persistence layer for the dbworker package that handles worker-side operations backed by a Postgres
 // database. See Options for details on the required shape of the database tables (e.g. table column names/types).
-type Store interface {
+type Store[T workerutil.Record] interface {
 	basestore.ShareableStore
 
 	// With creates a new instance of Store using the underlying database
 	// handle of the other ShareableStore.
-	With(other basestore.ShareableStore) Store
+	With(other basestore.ShareableStore) Store[T]
 
 	// QueuedCount returns the number of queued and errored records. If includeProcessing
 	// is true it returns the number of queued _and_ processing records.
@@ -101,14 +89,15 @@ type Store interface {
 	MaxDurationInQueue(ctx context.Context) (time.Duration, error)
 
 	// Dequeue selects the first queued record matching the given conditions and updates the state to processing. If there
-	// is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
+	// is such a record, it is returned. If there is no such unclaimed record, a nil record and a nil cancel function
 	// will be returned along with a false-valued flag. This method must not be called from within a transaction.
 	//
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, bool, error)
+	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (T, bool, error)
 
-	// Heartbeat marks the given record as currently being processed.
-	Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error)
+	// Heartbeat marks the given records as currently being processed and returns the list of records that are
+	// still known to the database (to detect lost jobs) and jobs that are marked as to be canceled.
+	Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs, cancelIDs []int, err error)
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 	// the next dequeue of this record can be performed.
@@ -117,11 +106,11 @@ type Store interface {
 	// AddExecutionLogEntry adds an executor log entry to the record and returns the ID of the new entry (which can be
 	// used with UpdateExecutionLogEntry) and a possible error. When the record is not found (due to options not matching
 	// or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
-	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error)
+	AddExecutionLogEntry(ctx context.Context, id int, entry executor.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error)
 
 	// UpdateExecutionLogEntry updates the executor log entry with the given ID on the given record. When the record is not
 	// found (due to options not matching or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
-	UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) error
+	UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry executor.ExecutionLogEntry, options ExecutionLogEntryOptions) error
 
 	// MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 	// the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
@@ -144,48 +133,21 @@ type Store interface {
 	// identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
 	// respectively.
 	ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error)
-
-	// CanceledJobs returns all the jobs that are to be canceled. To cancel a running job, the `cancel` field is set
-	// to true. These jobs will be found eventually and then canceled. They will end up in canceled state.
-	CanceledJobs(ctx context.Context, knownIDs []int, options CanceledJobsOptions) (canceledIDs []int, err error)
 }
 
-type ExecutionLogEntry workerutil.ExecutionLogEntry
-
-func (e *ExecutionLogEntry) Scan(value any) error {
-	b, ok := value.([]byte)
-	if !ok {
-		return errors.Errorf("value is not []byte: %T", value)
-	}
-
-	return json.Unmarshal(b, &e)
-}
-
-func (e ExecutionLogEntry) Value() (driver.Value, error) {
-	return json.Marshal(e)
-}
-
-func ExecutionLogEntries(raw []workerutil.ExecutionLogEntry) (entries []ExecutionLogEntry) {
-	for _, entry := range raw {
-		entries = append(entries, ExecutionLogEntry(entry))
-	}
-
-	return entries
-}
-
-type store struct {
+type store[T workerutil.Record] struct {
 	*basestore.Store
-	options                         Options
+	options                         Options[T]
 	columnReplacer                  *strings.Replacer
 	modifiedColumnExpressionMatches [][]MatchingColumnExpressions
 	operations                      *operations
 	logger                          log.Logger
 }
 
-var _ Store = &store{}
+var _ Store[workerutil.Record] = &store[workerutil.Record]{}
 
 // Options configure the behavior of Store over a particular set of tables, columns, and expressions.
-type Options struct {
+type Options[T workerutil.Record] struct {
 	// Name denotes the name of the store used to distinguish log messages and emitted metrics. The
 	// store constructor will fail if this field is not supplied.
 	Name string
@@ -236,7 +198,7 @@ type Options struct {
 	ViewName string
 
 	// Scan is the function used to scan a resultset into a slice of the expected type.
-	Scan ResultsetScanFn
+	Scan ResultsetScanFn[T]
 
 	// OrderByExpression is the SQL expression used to order candidate records when selecting the next
 	// batch of work to perform. This expression may use the alias provided in `ViewName`, if one was
@@ -286,19 +248,14 @@ type Options struct {
 //
 // See the `CloseRows` function in the store/base package for suggested
 // implementation details.
-type ResultsetScanFn func(rows *sql.Rows, err error) ([]workerutil.Record, error)
+type ResultsetScanFn[T workerutil.Record] func(rows *sql.Rows, err error) ([]T, error)
 
-// New creates a new store with the given database handle and options.
-func New(logger log.Logger, handle basestore.TransactableHandle, options Options) Store {
-	return NewWithMetrics(handle, options, &observation.TestContext)
+func New[T workerutil.Record](observationCtx *observation.Context, handle basestore.TransactableHandle, options Options[T]) Store[T] {
+	return newStore(observationCtx, handle, options)
 }
 
-func NewWithMetrics(handle basestore.TransactableHandle, options Options, observationContext *observation.Context) Store {
-	return newStore(handle, options, observationContext)
-}
-
-func newStore(handle basestore.TransactableHandle, options Options, observationContext *observation.Context) *store {
-	logger := observationContext.Logger
+func newStore[T workerutil.Record](observationCtx *observation.Context, handle basestore.TransactableHandle, options Options[T]) *store[T] {
+	logger := observationCtx.Logger
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/dbworker/store:newStore")
 	}
@@ -344,20 +301,20 @@ func newStore(handle basestore.TransactableHandle, options Options, observationC
 		}
 	}
 
-	return &store{
+	return &store[T]{
 		Store:                           basestore.NewWithHandle(handle),
 		options:                         options,
 		columnReplacer:                  strings.NewReplacer(replacements...),
 		modifiedColumnExpressionMatches: modifiedColumnExpressionMatches,
-		operations:                      newOperations(options.Name, observationContext),
+		operations:                      newOperations(observationCtx, options.Name),
 		logger:                          logger,
 	}
 }
 
 // With creates a new Store with the given basestore.Shareable store as the
 // underlying basestore.Store.
-func (s *store) With(other basestore.ShareableStore) Store {
-	return &store{
+func (s *store[T]) With(other basestore.ShareableStore) Store[T] {
+	return &store[T]{
 		Store:                           s.Store.With(other),
 		options:                         s.options,
 		columnReplacer:                  s.columnReplacer,
@@ -387,7 +344,7 @@ var columnNames = []string{
 }
 
 // QueuedCount returns the number of queued records matching the given conditions.
-func (s *store) QueuedCount(ctx context.Context, includeProcessing bool) (_ int, err error) {
+func (s *store[T]) QueuedCount(ctx context.Context, includeProcessing bool) (_ int, err error) {
 	ctx, _, endObservation := s.operations.queuedCount.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -416,14 +373,14 @@ WHERE
 
 // MaxDurationInQueue returns the longest duration for which a job associated with this store instance has
 // been in the queued state (including errored records that can be retried in the future). This method returns
-// an duration of zero if there are no jobs ready for processing.
+// a duration of zero if there are no jobs ready for processing.
 //
 // If records backed by this store do not have an initial state of 'queued', or if it is possible to requeue
 // records outside of this package, manual care should be taken to set the queued_at column to the proper time.
 // This method makes no guarantees otherwise.
 //
 // See https://github.com/sourcegraph/sourcegraph/issues/32624.
-func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err error) {
+func (s *store[T]) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err error) {
 	ctx, _, endObservation := s.operations.maxDurationInQueue.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -497,7 +454,7 @@ var columnsUpdatedByDequeue = []string{
 }
 
 // Dequeue selects the first queued record matching the given conditions and updates the state to processing. If there
-// is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
+// is such a record, it is returned. If there is no such unclaimed record, a nil record and a nil cancel function
 // will be returned along with a false-valued flag. This method must not be called from within a transaction.
 //
 // A background goroutine that continuously updates the record's last modified time will be started. The returned cancel
@@ -505,12 +462,12 @@ var columnsUpdatedByDequeue = []string{
 // Most often, this will be when the handler moves the record into a terminal state.
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (_ workerutil.Record, _ bool, err error) {
+func (s *store[T]) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (ret T, _ bool, err error) {
 	ctx, trace, endObservation := s.operations.dequeue.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if s.InTransaction() {
-		return nil, false, ErrDequeueTransaction
+		return ret, false, ErrDequeueTransaction
 	}
 
 	now := s.now()
@@ -553,15 +510,15 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		quote(s.options.ViewName),
 	)))
 	if err != nil {
-		return nil, false, err
+		return ret, false, err
 	}
 	if len(records) > 1 {
-		return nil, false, errors.Newf("more than one record dequeued: %d", len(records))
+		return ret, false, errors.Newf("more than one record dequeued: %d", len(records))
 	}
 	if len(records) == 0 {
-		return nil, false, nil
+		return ret, false, nil
 	}
-	trace.Log(otlog.Int("recordID", records[0].RecordID()))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("recordID", records[0].RecordID()))
 
 	return records[0], true, nil
 }
@@ -622,7 +579,7 @@ WHERE
 // Note that this method only considers select expressions like `alias.ColumnName` and not something
 // more complex like `SomeFunction(alias.ColumnName) + 1`. We issue a warning on construction of a
 // new store configured in this way to indicate this (probably) unwanted behavior.
-func (s *store) makeDequeueSelectExpressions(updatedColumns map[string]*sqlf.Query) []*sqlf.Query {
+func (s *store[T]) makeDequeueSelectExpressions(updatedColumns map[string]*sqlf.Query) []*sqlf.Query {
 	selectExpressions := make([]*sqlf.Query, len(s.options.ColumnExpressions))
 	copy(selectExpressions, s.options.ColumnExpressions)
 
@@ -640,7 +597,7 @@ func (s *store) makeDequeueSelectExpressions(updatedColumns map[string]*sqlf.Que
 
 // makeDequeueUpdateStatements constructs the set of SQL statements that update values of the target table
 // in the dequeue query.
-func (s *store) makeDequeueUpdateStatements(updatedColumns map[string]*sqlf.Query) []*sqlf.Query {
+func (s *store[T]) makeDequeueUpdateStatements(updatedColumns map[string]*sqlf.Query) []*sqlf.Query {
 	updateStatements := make([]*sqlf.Query, 0, len(updatedColumns))
 	for columnName, updateValue := range updatedColumns {
 		updateStatements = append(updateStatements, sqlf.Sprintf(columnName+"=%s", updateValue))
@@ -649,30 +606,36 @@ func (s *store) makeDequeueUpdateStatements(updatedColumns map[string]*sqlf.Quer
 	return updateStatements
 }
 
-func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error) {
+func (s *store[T]) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs, cancelIDs []int, err error) {
 	ctx, _, endObservation := s.operations.heartbeat.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if len(ids) == 0 {
-		return []int{}, nil
-	}
-
-	sqlIDs := make([]*sqlf.Query, 0, len(ids))
-	for _, id := range ids {
-		sqlIDs = append(sqlIDs, sqlf.Sprintf("%s", id))
+		return []int{}, []int{}, nil
 	}
 
 	quotedTableName := quote(s.options.TableName)
 
 	conds := []*sqlf.Query{
-		s.formatQuery("{id} IN (%s)", sqlf.Join(sqlIDs, ",")),
+		s.formatQuery("{id} = ANY (%s)", pq.Array(ids)),
 		s.formatQuery("{state} = 'processing'"),
 	}
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
-	knownIDs, err = basestore.ScanInts(s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(conds, "AND"), quotedTableName, s.now())))
+	scanner := basestore.NewMapScanner(func(scanner dbutil.Scanner) (id int, cancel bool, err error) {
+		err = scanner.Scan(&id, &cancel)
+		return
+	})
+	jobMap, err := scanner(s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(conds, "AND"), quotedTableName, s.now())))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	for id, cancel := range jobMap {
+		knownIDs = append(knownIDs, id)
+		if cancel {
+			cancelIDs = append(cancelIDs, id)
+		}
 	}
 
 	if len(knownIDs) != len(ids) {
@@ -699,7 +662,7 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 		}
 	}
 
-	return knownIDs, nil
+	return knownIDs, cancelIDs, nil
 }
 
 const updateCandidateQuery = `
@@ -720,39 +683,12 @@ SET
 	{last_heartbeat_at} = %s
 WHERE
 	{id} IN (SELECT {id} FROM alive_candidates)
-RETURNING {id}
-`
-
-func (s *store) CanceledJobs(ctx context.Context, knownIDs []int, options CanceledJobsOptions) (canceledIDs []int, err error) {
-	ctx, _, endObservation := s.operations.canceledJobs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	quotedTableName := quote(s.options.TableName)
-
-	conds := []*sqlf.Query{
-		s.formatQuery("{cancel} IS TRUE"),
-		s.formatQuery("{state} = 'processing'"),
-		s.formatQuery("{id} = ANY(%s)", pq.Array(knownIDs)),
-	}
-	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
-
-	return basestore.ScanInts(s.Query(ctx, s.formatQuery(canceledJobsQuery, quotedTableName, sqlf.Join(conds, "AND"))))
-}
-
-const canceledJobsQuery = `
-SELECT
-	{id}
-FROM
-	%s
-WHERE
-	%s
-ORDER BY
-	{id} ASC
+RETURNING {id}, {cancel}
 `
 
 // Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 // the next dequeue of this record can be performed.
-func (s *store) Requeue(ctx context.Context, id int, after time.Time) (err error) {
+func (s *store[T]) Requeue(ctx context.Context, id int, after time.Time) (err error) {
 	ctx, _, endObservation := s.operations.requeue.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("id", id),
 		otlog.String("after", after.String()),
@@ -781,7 +717,7 @@ WHERE {id} = %s
 // AddExecutionLogEntry adds an executor log entry to the record and returns the ID of the new entry (which can be
 // used with UpdateExecutionLogEntry) and a possible error. When the record is not found (due to options not matching
 // or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
-func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error) {
+func (s *store[T]) AddExecutionLogEntry(ctx context.Context, id int, entry executor.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error) {
 	ctx, _, endObservation := s.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("id", id),
 	}})
@@ -795,7 +731,7 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 	entryID, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		addExecutionLogEntryQuery,
 		quote(s.options.TableName),
-		ExecutionLogEntry(entry),
+		entry,
 		sqlf.Join(conds, "AND"),
 	)))
 	if err != nil {
@@ -831,7 +767,7 @@ RETURNING array_length({execution_logs}, 1)
 
 // UpdateExecutionLogEntry updates the executor log entry with the given ID on the given record. When the record is not
 // found (due to options not matching or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
-func (s *store) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (err error) {
+func (s *store[T]) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry executor.ExecutionLogEntry, options ExecutionLogEntryOptions) (err error) {
 	ctx, _, endObservation := s.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("recordID", recordID),
 		otlog.Int("entryID", entryID),
@@ -848,7 +784,7 @@ func (s *store) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID i
 		updateExecutionLogEntryQuery,
 		quote(s.options.TableName),
 		entryID,
-		ExecutionLogEntry(entry),
+		entry,
 		sqlf.Join(conds, "AND"),
 	)))
 	if err != nil {
@@ -888,7 +824,7 @@ RETURNING
 // MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 // the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
 // indicating if the record was updated.
-func (s *store) MarkComplete(ctx context.Context, id int, options MarkFinalOptions) (_ bool, err error) {
+func (s *store[T]) MarkComplete(ctx context.Context, id int, options MarkFinalOptions) (_ bool, err error) {
 	ctx, _, endObservation := s.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("id", id),
 	}})
@@ -914,7 +850,7 @@ RETURNING {id}
 // MarkErrored attempts to update the state of the record to errored. This method will only have an effect
 // if the current state of the record is processing. A requeued record or a record already marked with an
 // error will not be updated. This method returns a boolean flag indicating if the record was updated.
-func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
+func (s *store[T]) MarkErrored(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
 	ctx, _, endObservation := s.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("id", id),
 	}})
@@ -944,7 +880,7 @@ RETURNING {id}
 // MarkFailed attempts to update the state of the record to failed. This method will only have an effect
 // if the current state of the record is processing. A requeued record or a record already marked with an
 // error will not be updated. This method returns a boolean flag indicating if the record was updated.
-func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
+func (s *store[T]) MarkFailed(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
 	ctx, _, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("id", id),
 	}})
@@ -978,7 +914,7 @@ const defaultResetFailureMessage = "job processor died while handling this messa
 // more than `MaxNumResets` times will be marked as failed. This method returns a pair of maps from record
 // identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
 // respectively.
-func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error) {
+func (s *store[T]) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error) {
 	ctx, trace, endObservation := s.operations.resetStalled.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -999,7 +935,7 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	trace.Log(otlog.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
 
 	resetFailureMessage := s.options.ResetFailureMessage
 	if resetFailureMessage == "" {
@@ -1021,7 +957,7 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	trace.Log(otlog.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
 
 	return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, nil
 }
@@ -1085,11 +1021,11 @@ WHERE {id} IN (SELECT {id} FROM stalled)
 RETURNING {id}, {last_heartbeat_at}
 `
 
-func (s *store) formatQuery(query string, args ...any) *sqlf.Query {
+func (s *store[T]) formatQuery(query string, args ...any) *sqlf.Query {
 	return sqlf.Sprintf(s.columnReplacer.Replace(query), args...)
 }
 
-func (s *store) now() time.Time {
+func (s *store[T]) now() time.Time {
 	return s.options.clock.Now().UTC()
 }
 
@@ -1102,7 +1038,7 @@ WHERE
 	{id} = %s
 `
 
-func (s *store) fetchDebugInformationForJob(ctx context.Context, recordID int) (debug string, err error) {
+func (s *store[T]) fetchDebugInformationForJob(ctx context.Context, recordID int) (debug string, err error) {
 	debug, ok, err := basestore.ScanFirstNullString(s.Query(ctx, s.formatQuery(
 		fetchDebugInformationForJob,
 		quote(extractTableName(s.options.TableName)),
@@ -1147,10 +1083,10 @@ type MatchingColumnExpressions struct {
 }
 
 // matchModifiedColumnExpressions returns a slice of columns to which each of the
-// given column expressions refers. Column references that do not refere to a member
+// given column expressions refers. Column references that do not refer to a member
 // of the columnsUpdatedByDequeue slice are ignored. Each match indicates the column
 // name and whether or not the expression is an exact reference or a reference within
-// a more complex expression (arithmetic, function call argument, etc).
+// a more complex expression (arithmetic, function call argument, etc.).
 //
 // The output slice has the same number of elements as the input column expressions
 // and the results are ordered in parallel with the given column expressions.

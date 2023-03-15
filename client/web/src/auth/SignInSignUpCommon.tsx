@@ -6,7 +6,7 @@ import { Input, InputProps } from '@sourcegraph/wildcard'
 
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 
-interface CommonInputProps extends InputProps {
+interface CommonInputProps extends InputProps, React.InputHTMLAttributes<HTMLInputElement> {
     inputRef?: React.Ref<HTMLInputElement>
 }
 

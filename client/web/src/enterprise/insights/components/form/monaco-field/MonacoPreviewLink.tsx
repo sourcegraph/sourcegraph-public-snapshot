@@ -1,7 +1,6 @@
-import React, { useMemo } from 'react'
+import { useMemo, FC, PropsWithChildren } from 'react'
 
 import classNames from 'classnames'
-import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -12,11 +11,12 @@ import styles from './MonacoPreviewLink.module.scss'
 export interface MonacoPreviewLinkProps {
     query: string
     patternType: SearchPatternType
+    tabIndex?: number
     className?: string
 }
 
-export const MonacoPreviewLink: React.FunctionComponent<React.PropsWithChildren<MonacoPreviewLinkProps>> = props => {
-    const { query, patternType, className } = props
+export const MonacoPreviewLink: FC<PropsWithChildren<MonacoPreviewLinkProps>> = props => {
+    const { query, patternType, tabIndex, className, children } = props
     const queryURL = useMemo(() => `/search?${buildSearchURLQuery(query, patternType, false)}`, [patternType, query])
 
     return (
@@ -27,8 +27,9 @@ export const MonacoPreviewLink: React.FunctionComponent<React.PropsWithChildren<
             as={Link}
             target="_blank"
             rel="noopener noreferrer"
+            tabIndex={tabIndex}
         >
-            Preview results <LinkExternalIcon size={18} className={styles.previewLink} />
+            {children}
         </Button>
     )
 }

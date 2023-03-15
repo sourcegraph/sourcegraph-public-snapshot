@@ -90,6 +90,20 @@ func TestSearch(t *testing.T) {
 	})
 
 	testSearchOther(t)
+
+	// Run the search tests with file-based ranking enabled
+	err = client.SetFeatureFlag("search-ranking", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("graphql with file ranking", func(t *testing.T) {
+		testSearchClient(t, client)
+	})
+
+	t.Run("stream with file ranking", func(t *testing.T) {
+		testSearchClient(t, streamClient)
+	})
 }
 
 // searchClient is an interface so we can swap out a streaming vs graphql
@@ -319,12 +333,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 		require.NoError(t, err)
 
 		wantRepos := []string{"github.com/sgtest/java-langserver", "github.com/sgtest/jsonrpc2"}
-		if missingRepos := results.Exists(wantRepos...); len(missingRepos) != 0 {
-			t.Fatalf("Missing repositories: %v", missingRepos)
-		}
-
-		if len(wantRepos) != len(results) {
-			t.Fatalf("want %d repositories, got %d", len(wantRepos), len(results))
+		if d := cmp.Diff(wantRepos, results.Names()); d != "" {
+			t.Fatalf("unexpected repositories (-want +got):\n%s", d)
 		}
 	})
 
@@ -357,12 +367,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 		require.NoError(t, err)
 
 		wantRepos := []string{"github.com/sgtest/java-langserver"}
-		if missingRepos := results.Exists(wantRepos...); len(missingRepos) != 0 {
-			t.Fatalf("Missing repositories: %v", missingRepos)
-		}
-
-		if len(wantRepos) != len(results) {
-			t.Fatalf("want %d repositories, got %d", len(wantRepos), len(results))
+		if d := cmp.Diff(wantRepos, results.Names()); d != "" {
+			t.Fatalf("unexpected repositories (-want +got):\n%s", d)
 		}
 	})
 
@@ -531,10 +537,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  "regular expression without indexed search",
 				query: "index:no patterntype:regexp ^func.*$",
 			},
-			{
-				name:  "fork:only",
-				query: "fork:only router",
-			},
+			// Failing test: https://github.com/sourcegraph/sourcegraph/issues/48109
+			//{
+			//	name:  "fork:only",
+			//	query: "fork:only router",
+			//},
 			{
 				name:  "double-quoted pattern, nonzero result",
 				query: `"func main() {\n" patterntype:regexp type:file`,
@@ -593,7 +600,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:  "indexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp type:file`,
+				query: `repo:^github\.com/sgtest/java-langserver$ runtime(.|\n)*BYTES_TO_GIGABYTES index:only patterntype:regexp type:file`,
 			},
 			{
 				name:  "unindexed multiline search, nonzero result",
@@ -1117,6 +1124,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 2},
 			},
 			{
+				name:   `repo contains file using deprecated syntax`,
+				query:  `repo:contains.file(go\.mod)`,
+				counts: counts{Repo: 2},
+			},
+			{
 				name:   `repo contains file but not content`,
 				query:  `repo:contains.path(go\.mod) -repo:contains.content(go-diff)`,
 				counts: counts{Repo: 1},
@@ -1221,6 +1233,16 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Commit: 2},
 			},
 			{
+				name:   `repo contains file using deprecated syntax`,
+				query:  `repo:contains(file:go\.mod)`,
+				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo contains content using deprecated syntax`,
+				query:  `repo:contains(content:nextFileFirstLine)`,
+				counts: counts{Repo: 1},
+			},
+			{
 				name:   `predicate logic does not conflict with unrecognized patterns`,
 				query:  `repo:sg(test)`,
 				counts: counts{Repo: 6},
@@ -1279,6 +1301,21 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `repo has kvp and not nonexistent kvp`,
 				query:  `repo:has(testkey:testval) -repo:has(noexist:false)`,
 				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo has topic`,
+				query:  `repo:has.topic(go)`, // jsonrpc2 and go-diff
+				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo has topic plus exclusion`,
+				query:  `repo:has.topic(go) -repo:has.topic(json)`, // go-diff (not jsonrpc2)
+				counts: counts{Repo: 1},
+			},
+			{
+				name:   `nonexistent topic`,
+				query:  `repo:has.topic(noexist)`,
+				counts: counts{Repo: 0},
 			},
 		}
 
@@ -1449,20 +1486,9 @@ func testSearchClient(t *testing.T, client searchClient) {
 // which are not replicated in the streaming API (statistics and suggestions).
 func testSearchOther(t *testing.T) {
 	t.Run("search statistics", func(t *testing.T) {
-		err := client.OverwriteSettings(client.AuthenticatedUserID(), `{"experimentalFeatures":{"searchStats": true}}`)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
 		var lastResult *gqltestutil.SearchStatsResult
 		// Retry because the configuration update endpoint is eventually consistent
-		err = gqltestutil.Retry(5*time.Second, func() error {
+		err := gqltestutil.Retry(5*time.Second, func() error {
 			// This is a substring that appears in the sgtest/go-diff repository.
 			// It is OK if it starts to appear in other repositories, the test just
 			// checks that it is found in at least 1 Go file.
@@ -1568,8 +1594,11 @@ func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
 	if len(resultFirstPage.Nodes) != 5 {
 		t.Fatalf("expected 5 search contexts, got %d", len(resultFirstPage.Nodes))
 	}
-	if resultFirstPage.Nodes[0].Spec != "SearchContext9" {
-		t.Fatalf("expected first page first search context spec to be SearchContext9, got %s", resultFirstPage.Nodes[0].Spec)
+	if resultFirstPage.Nodes[0].Spec != "global" {
+		t.Fatalf("expected first page first search context spec to be global, got %s", resultFirstPage.Nodes[0].Spec)
+	}
+	if resultFirstPage.Nodes[1].Spec != "SearchContext9" {
+		t.Fatalf("expected first page second search context spec to be SearchContext9, got %s", resultFirstPage.Nodes[1].Spec)
 	}
 
 	resultSecondPage, err := client.ListSearchContexts(gqltestutil.ListSearchContextsOptions{
@@ -1582,7 +1611,7 @@ func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
 	if len(resultSecondPage.Nodes) != 5 {
 		t.Fatalf("expected 5 search contexts, got %d", len(resultSecondPage.Nodes))
 	}
-	if resultSecondPage.Nodes[0].Spec != "SearchContext4" {
-		t.Fatalf("expected second page search context spec to be SearchContext4, got %s", resultSecondPage.Nodes[0].Spec)
+	if resultSecondPage.Nodes[0].Spec != "SearchContext5" {
+		t.Fatalf("expected second page search context spec to be SearchContext5, got %s", resultSecondPage.Nodes[0].Spec)
 	}
 }

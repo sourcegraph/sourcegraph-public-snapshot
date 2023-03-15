@@ -1,7 +1,9 @@
 
 # Management Operations
 
-## Manage storage
+> ⚠️ We recommend new users use our [machine image](../machine-images/index.md) or [script-install](../single-node/script.md) instructions, which are easier and offer more flexibility when configuring Sourcegraph. Existing customers can reach out to our Customer Engineering team support@sourcegraph.com if they wish to migrate to these deployment models.
+
+---
 
 The Sourcegraph Docker Compose yaml file uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount).
 
@@ -62,7 +64,7 @@ gitserver-0                 /sbin/tini -- /usr/local/b ...   Up
 grafana                     /entry.sh                        Up                      3000/tcp, 0.0.0.0:3370->3370/tcp
 jaeger                      /go/bin/all-in-one-linux - ...   Up                      0.0.0.0:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, 5775/udp, 0.0.0.0:5778->5778/tcp,
                                                                                      0.0.0.0:6831->6831/tcp, 6831/udp, 0.0.0.0:6832->6832/tcp, 6832/udp
-minio                       /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
+blobstore                   /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
 pgsql                       /postgres.sh                     Up (healthy)            5432/tcp
 precise-code-intel-worker   /sbin/tini -- /usr/local/b ...   Up (health: starting)   3188/tcp
 prometheus                  /bin/prom-wrapper                Up                      0.0.0.0:9090->9090/tcp
@@ -108,7 +110,7 @@ docker-compose -f db-only-migrate.docker-compose.yaml up -d
 3\. Copy the database files into the containers
 
 ```bash
-docker cp sourcegraph_db.out pgsql:/tmp/sourecgraph_db.out
+docker cp sourcegraph_db.out pgsql:/tmp/sourcegraph_db.out
 docker cp codeintel_db.out codeintel-db:/tmp/codeintel_db.out
 ```
 
@@ -140,7 +142,7 @@ gitserver-0                 /sbin/tini -- /usr/local/b ...   Up
 grafana                     /entry.sh                        Up                      3000/tcp, 0.0.0.0:3370->3370/tcp
 jaeger                      /go/bin/all-in-one-linux - ...   Up                      0.0.0.0:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, 5775/udp, 0.0.0.0:5778->5778/tcp,
                                                                                      0.0.0.0:6831->6831/tcp, 6831/udp, 0.0.0.0:6832->6832/tcp, 6832/udp
-minio                       /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
+blobstore                   /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
 pgsql                       /postgres.sh                     Up (healthy)            5432/tcp
 precise-code-intel-worker   /sbin/tini -- /usr/local/b ...   Up (health: starting)   3188/tcp
 prometheus                  /bin/prom-wrapper                Up                      0.0.0.0:9090->9090/tcp
@@ -176,7 +178,7 @@ docker-compose -f db-only-migrate.docker-compose.yaml up -d
 3\. Copy the database files into the containers
 
 ```bash
-docker cp sourcegraph_db.out pgsql:/tmp/sourecgraph_db.out
+docker cp sourcegraph_db.out pgsql:/tmp/sourcegraph_db.out
 docker cp codeintel_db.out codeintel-db:/tmp/codeintel_db.out
 ```
 
@@ -208,7 +210,7 @@ gitserver-0                 /sbin/tini -- /usr/local/b ...   Up
 grafana                     /entry.sh                        Up                      3000/tcp, 0.0.0.0:3370->3370/tcp
 jaeger                      /go/bin/all-in-one-linux - ...   Up                      0.0.0.0:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, 5775/udp, 0.0.0.0:5778->5778/tcp,
                                                                                      0.0.0.0:6831->6831/tcp, 6831/udp, 0.0.0.0:6832->6832/tcp, 6832/udp
-minio                       /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
+blobstore                   /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
 pgsql                       /postgres.sh                     Up (healthy)            5432/tcp
 precise-code-intel-worker   /sbin/tini -- /usr/local/b ...   Up (health: starting)   3188/tcp
 prometheus                  /bin/prom-wrapper                Up                      0.0.0.0:9090->9090/tcp

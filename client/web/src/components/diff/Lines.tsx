@@ -1,12 +1,8 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import { DecorationAttachmentRenderOptions, ThemableDecorationStyle } from 'sourcegraph'
 
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { decorationAttachmentStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { createLinkUrl, RouterLink, Tooltip } from '@sourcegraph/wildcard'
+import { createLinkUrl, RouterLink } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType } from '../../graphql-operations'
 
@@ -27,11 +23,8 @@ interface Line {
     persistLines: boolean
     anchor: string
     html: string
-    lineStyle: ThemableDecorationStyle
-    decorations: (TextDocumentDecoration & Record<'after', DecorationAttachmentRenderOptions>)[]
     className: string
     dataPart: 'head' | 'base'
-    isLightTheme: boolean
 }
 
 interface LineType {
@@ -70,11 +63,8 @@ export const Line: React.FunctionComponent<React.PropsWithChildren<Line>> = ({
     id,
     anchor,
     html,
-    lineStyle,
-    decorations,
     className,
     dataPart,
-    isLightTheme,
 }) => {
     const hunkStyles = lineType(kind)
 
@@ -97,8 +87,6 @@ export const Line: React.FunctionComponent<React.PropsWithChildren<Line>> = ({
             )}
             <td
                 className={classNames('align-baseline', diffHunkStyles.content, hunkStyles.hunkContent, className)}
-                // eslint-disable-next-line react/forbid-dom-props
-                style={lineStyle}
                 data-diff-marker={diffHunkTypeIndicators[kind]}
             >
                 <div className={classNames('d-inline', styles.lineCode)}>
@@ -107,19 +95,6 @@ export const Line: React.FunctionComponent<React.PropsWithChildren<Line>> = ({
                         dangerouslySetInnerHTML={{ __html: html }}
                         data-diff-marker={diffHunkTypeIndicators[kind]}
                     />
-                    {decorations.map((decoration, index) => {
-                        const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
-                        return (
-                            <React.Fragment key={index}>
-                                {' '}
-                                <Tooltip content={decoration.after.hoverMessage}>
-                                    <LinkOrSpan className="d-inline-block" to={decoration.after.linkURL} style={style}>
-                                        {decoration.after.contentText}
-                                    </LinkOrSpan>
-                                </Tooltip>
-                            </React.Fragment>
-                        )
-                    })}
                 </div>
             </td>
         </>

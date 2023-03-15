@@ -21,12 +21,17 @@ func checkInstanceState(ctx context.Context) error {
 }
 
 func instanceStateDiff(ctx context.Context) (string, error) {
-	commitsByRepo, err := internal.CommitsByRepo(indexDir)
+	extensionAndCommitsByRepo, err := internal.ExtensionAndCommitsByRepo(indexDir)
 	if err != nil {
 		return "", err
 	}
 	expectedCommitsByRepo := map[string][]string{}
-	for repoName, commits := range commitsByRepo {
+	for repoName, extensionAndCommits := range extensionAndCommitsByRepo {
+		commits := make([]string, 0, len(extensionAndCommits))
+		for _, e := range extensionAndCommits {
+			commits = append(commits, e.Commit)
+		}
+
 		sort.Strings(commits)
 		expectedCommitsByRepo[internal.MakeTestRepoName(repoName)] = commits
 	}

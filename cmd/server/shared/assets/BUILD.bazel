@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+filegroup(
+    name = "nginx",
+    srcs = glob(["nginx/**"]),
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "assets",
+    srcs = ["assets.go"],
+    embedsrcs = [
+        "nginx.conf",
+        "nginx/sourcegraph_backend.conf",
+        "nginx/sourcegraph_http.conf",
+        "nginx/sourcegraph_main.conf",
+        "nginx/sourcegraph_server.conf",
+        "redis-cache.conf.tmpl",
+        "redis-store.conf.tmpl",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/server/shared/assets",
+    visibility = ["//visibility:public"],
+)

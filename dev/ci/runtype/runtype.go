@@ -13,13 +13,17 @@ type RunType int
 const (
 	// RunTypes should be defined by order of precedence.
 
-	PullRequest RunType = iota // pull request build
+	PullRequest    RunType = iota // pull request build
+	BazelExpBranch                // branch that runs specific bazel steps
+	WolfiExpBranch                // branch that only builds wolfi images
 
 	// Nightly builds - must be first because they take precedence
 
 	ReleaseNightly // release branch nightly healthcheck builds
 	BextNightly    // browser extension nightly build
 	VsceNightly    // vs code extension nightly build
+	AppRelease     // app release build
+	AppInsiders    // app insiders build
 
 	// Release branches
 
@@ -106,6 +110,17 @@ func (t RunType) Matcher() *RunTypeMatcher {
 			BranchExact: true,
 		}
 
+	case AppRelease:
+		return &RunTypeMatcher{
+			Branch:      "app/release",
+			BranchExact: true,
+		}
+	case AppInsiders:
+		return &RunTypeMatcher{
+			Branch:      "app/insiders",
+			BranchExact: true,
+		}
+
 	case TaggedRelease:
 		return &RunTypeMatcher{
 			TagPrefix: "v",
@@ -130,7 +145,14 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch: "main-dry-run/",
 		}
-
+	case BazelExpBranch:
+		return &RunTypeMatcher{
+			Branch: "bzl/",
+		}
+	case WolfiExpBranch:
+		return &RunTypeMatcher{
+			Branch: "wolfi/",
+		}
 	case ImagePatch:
 		return &RunTypeMatcher{
 			Branch:                 "docker-images-patch/",
@@ -163,13 +185,20 @@ func (t RunType) String() string {
 	switch t {
 	case PullRequest:
 		return "Pull request"
-
+	case BazelExpBranch:
+		return "Bazel Exp Branch"
+	case WolfiExpBranch:
+		return "Wolfi Exp Branch"
 	case ReleaseNightly:
 		return "Release branch nightly healthcheck build"
 	case BextNightly:
 		return "Browser extension nightly release build"
 	case VsceNightly:
 		return "VS Code extension nightly release build"
+	case AppRelease:
+		return "App release build"
+	case AppInsiders:
+		return "App insiders build"
 	case TaggedRelease:
 		return "Tagged release"
 	case ReleaseBranch:

@@ -18,7 +18,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sun, 12 Jun 2022 12:51:45 GMT
+      - Tue, 24 Jan 2023 14:16:44 GMT
       Pragma:
       - no-cache
       Server:
@@ -26,9 +26,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@157E7ZCx771x3281103x0'
+      - '@TCJ96Jx856x13039222x12'
       X-Asessionid:
-      - 81jid2
+      - 1ae79q3
       X-Auserid:
       - "1"
       X-Ausername:
@@ -47,7 +47,9 @@ interactions:
     url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOURCEGRAPH/repos?limit=1000
     method: GET
   response:
-    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"slug":"jsonrpc2","id":10066,"name":"jsonrpc2","hierarchyId":"baae97879aa9c31e1fe9","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOURCEGRAPH","id":28,"name":"Sourcegraph
+    body: '{"size":2,"limit":1000,"isLastPage":true,"values":[{"slug":"empty-repo-1","id":10193,"name":"empty-repo-1","description":"This
+      repo is fast to clone and is intended to be used for e2e tests","hierarchyId":"a04e257492de47c8f071","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOURCEGRAPH","id":28,"name":"Sourcegraph
+      e2e testing","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOURCEGRAPH"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@bitbucket.sgdev.org:7999/sourcegraph/empty-repo-1.git","name":"ssh"},{"href":"https://bitbucket.sgdev.org/scm/sourcegraph/empty-repo-1.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOURCEGRAPH/repos/empty-repo-1/browse"}]}},{"slug":"jsonrpc2","id":10066,"name":"jsonrpc2","hierarchyId":"baae97879aa9c31e1fe9","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOURCEGRAPH","id":28,"name":"Sourcegraph
       e2e testing","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOURCEGRAPH"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@bitbucket.sgdev.org:7999/sourcegraph/jsonrpc2.git","name":"ssh"},{"href":"https://bitbucket.sgdev.org/scm/sourcegraph/jsonrpc2.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOURCEGRAPH/repos/jsonrpc2/browse"}]}}],"start":0}'
     headers:
       Cache-Control:
@@ -56,7 +58,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sun, 12 Jun 2022 12:51:45 GMT
+      - Tue, 24 Jan 2023 14:16:45 GMT
       Pragma:
       - no-cache
       Server:
@@ -64,9 +66,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@157E7ZCx771x3281104x0'
+      - '@TCJ96Jx856x13039271x12'
       X-Asessionid:
-      - bozo50
+      - 11a56lm
       X-Auserid:
       - "1"
       X-Ausername:

@@ -1,17 +1,20 @@
 import React, { useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
+import {
+    ProductSubscriptionsDotComResult,
+    ProductSubscriptionsDotComVariables,
+    SiteAdminProductSubscriptionFields,
+} from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
 import {
@@ -21,20 +24,12 @@ import {
     SiteAdminProductSubscriptionNodeProps,
 } from './SiteAdminProductSubscriptionNode'
 
-interface Props extends RouteComponentProps<{}> {}
-
-class FilteredSiteAdminProductSubscriptionConnection extends FilteredConnection<
-    GQL.IProductSubscription,
-    SiteAdminProductSubscriptionNodeProps
-> {}
+interface Props {}
 
 /**
  * Displays the product subscriptions that have been created on Sourcegraph.com.
  */
-export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
-}) => {
+export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscriptions'), [])
     return (
         <div className="site-admin-product-subscriptions-page">
@@ -46,7 +41,7 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
                     Create product subscription
                 </Button>
             </div>
-            <FilteredSiteAdminProductSubscriptionConnection
+            <FilteredConnection<SiteAdminProductSubscriptionFields, SiteAdminProductSubscriptionNodeProps>
                 className="mt-3"
                 listComponent="table"
                 listClassName="table"
@@ -55,8 +50,6 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
                 queryConnection={queryProductSubscriptions}
                 headComponent={SiteAdminProductSubscriptionNodeHeader}
                 nodeComponent={SiteAdminProductSubscriptionNode}
-                history={history}
-                location={location}
             />
         </div>
     )
@@ -65,8 +58,8 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
 function queryProductSubscriptions(args: {
     first?: number
     query?: string
-}): Observable<GQL.IProductSubscriptionConnection> {
-    return queryGraphQL(
+}): Observable<ProductSubscriptionsDotComResult['dotcom']['productSubscriptions']> {
+    return queryGraphQL<ProductSubscriptionsDotComResult>(
         gql`
             query ProductSubscriptionsDotCom($first: Int, $account: ID, $query: String) {
                 dotcom {
@@ -86,7 +79,7 @@ function queryProductSubscriptions(args: {
         {
             first: args.first,
             query: args.query,
-        } as GQL.IProductSubscriptionsOnDotcomQueryArguments
+        } as Partial<ProductSubscriptionsDotComVariables>
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.dotcom.productSubscriptions)

@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -65,8 +66,13 @@ func TestPermissionLevels(t *testing.T) {
 
 	// Global test data that we reuse in every test
 	adminID := bt.CreateTestUser(t, db, true).ID
+	role, _ := assignBatchChangesWritePermissionToUser(ctx, t, db, adminID)
+
 	userID := bt.CreateTestUser(t, db, false).ID
+	bt.AssignRoleToUser(ctx, t, db, userID, role.ID)
+
 	nonOrgUserID := bt.CreateTestUser(t, db, false).ID
+	bt.AssignRoleToUser(ctx, t, db, nonOrgUserID, role.ID)
 
 	// Create an organisation that only has userID in it.
 	orgID := bt.CreateTestOrg(t, db, "org", userID).ID
@@ -278,7 +284,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					graphqlID := string(marshalBatchChangeID(tc.batchChange))
+					graphqlID := string(bgql.MarshalBatchChangeID(tc.batchChange))
 
 					var res struct{ Node apitest.BatchChange }
 
@@ -605,7 +611,7 @@ func TestPermissionLevels(t *testing.T) {
 					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 					expectedIDs := make(map[string]bool, len(tc.wantBatchChanges))
 					for _, c := range tc.wantBatchChanges {
-						graphqlID := string(marshalBatchChangeID(c))
+						graphqlID := string(bgql.MarshalBatchChangeID(c))
 						expectedIDs[graphqlID] = true
 					}
 
@@ -618,7 +624,7 @@ func TestPermissionLevels(t *testing.T) {
 							batchChanges(viewerCanAdminister: %t) { totalCount, nodes { id } }
 						}
 					}
-					}`, tc.viewerCanAdminister, marshalChangesetID(changeset.ID), tc.viewerCanAdminister)
+					}`, tc.viewerCanAdminister, bgql.MarshalChangesetID(changeset.ID), tc.viewerCanAdminister)
 					var res struct {
 						BatchChanges apitest.BatchChangeConnection
 						Node         apitest.Changeset
@@ -1005,8 +1011,8 @@ query($includeLocallyExecutedSpecs: Boolean) {
 
 							mutation := m.mutationFunc(
 								string(graphqlbackend.MarshalUserID(tc.batchChangeAuthor)),
-								string(marshalBatchChangeID(batchChangeID)),
-								string(marshalChangesetID(changeset.ID)),
+								string(bgql.MarshalBatchChangeID(batchChangeID)),
+								string(bgql.MarshalChangesetID(changeset.ID)),
 								string(marshalBatchSpecRandID(batchSpecRandID)),
 							)
 
@@ -1072,7 +1078,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 						_, bsID := createBatchSpec(t, bstore, namespace{userID: userID})
 						bcID := createBatchChange(t, bstore, namespace{userID: userID}, "testing", userID, bsID)
 
-						batchChangeID := string(marshalBatchChangeID(bcID))
+						batchChangeID := string(bgql.MarshalBatchChangeID(bcID))
 						namespaceID := string(graphqlbackend.MarshalUserID(tc.currentUser))
 						if tc.currentUser == 0 {
 							// If we don't have a currentUser we try to create
@@ -1424,7 +1430,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 
 		batchChange := &btypes.BatchChange{
-			Name:            "my batch change",
+			Name:            "my-batch-change",
 			CreatorID:       userID,
 			NamespaceUserID: userID,
 			LastApplierID:   userID,
@@ -1446,7 +1452,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 		input := map[string]any{
-			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
+			"batchChange": string(bgql.MarshalBatchChangeID(batchChange.ID)),
 		}
 		testBatchChangeResponse(t, s, userCtx, input, wantBatchChangeResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
@@ -1497,7 +1503,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// should not be returned, since that would leak information about the
 		// hidden changesets.
 		input = map[string]any{
-			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
+			"batchChange": string(bgql.MarshalBatchChangeID(batchChange.ID)),
 			"checkState":  string(btypes.ChangesetCheckStatePassed),
 		}
 		wantCheckStateResponse := want
@@ -1509,7 +1515,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testBatchChangeResponse(t, s, userCtx, input, wantCheckStateResponse)
 
 		input = map[string]any{
-			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
+			"batchChange": string(bgql.MarshalBatchChangeID(batchChange.ID)),
 			"reviewState": string(btypes.ChangesetReviewStateChangesRequested),
 		}
 		wantReviewStateResponse := wantCheckStateResponse
@@ -1743,7 +1749,7 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 	t.Helper()
 
 	var res struct{ Node apitest.Changeset }
-	query := fmt.Sprintf(queryChangesetPermLevels, marshalChangesetID(id))
+	query := fmt.Sprintf(queryChangesetPermLevels, bgql.MarshalChangesetID(id))
 	apitest.MustExec(ctx, t, s, nil, &res, query)
 
 	if have, want := res.Node.Typename, wantType; have != want {
@@ -1830,11 +1836,11 @@ func testBatchSpecWorkspacesResponse(t *testing.T, s *graphql.Schema, ctx contex
 		t.Fatalf("unexpected workspaces total count (-want +got):\n%s", diff)
 	}
 
-	types := map[string]int{}
+	typeCounts := map[string]int{}
 	for _, c := range response.Node.WorkspaceResolution.Workspaces.Nodes {
-		types[c.Typename]++
+		typeCounts[c.Typename]++
 	}
-	if diff := cmp.Diff(w.types, types); diff != "" {
+	if diff := cmp.Diff(w.types, typeCounts); diff != "" {
 		t.Fatalf("unexpected workspace types (-want +got):\n%s", diff)
 	}
 }

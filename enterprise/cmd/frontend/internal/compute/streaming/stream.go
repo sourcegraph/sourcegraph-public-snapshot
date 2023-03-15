@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -25,10 +26,11 @@ import (
 const maxRequestDuration = time.Minute
 
 // NewComputeStreamHandler is an http handler which streams back compute results.
-func NewComputeStreamHandler(logger log.Logger, db database.DB) http.Handler {
+func NewComputeStreamHandler(logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs) http.Handler {
 	return &streamHandler{
 		logger:              logger,
 		db:                  db,
+		enterpriseJobs:      enterpriseJobs,
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}
@@ -37,6 +39,7 @@ func NewComputeStreamHandler(logger log.Logger, db database.DB) http.Handler {
 type streamHandler struct {
 	logger              log.Logger
 	db                  database.DB
+	enterpriseJobs      jobutil.EnterpriseJobs
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
 }
@@ -91,9 +94,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer eventWriter.Event("done", map[string]any{})
 
 	// Log events to trace
-	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
+	eventWriter.StatHook = eventStreamOTHook(tr.LogFields) //nolint:staticcheck // Deprecated: Ok until we update the observation package
 
-	events, getResults := NewComputeStream(ctx, h.logger, h.db, searchQuery, computeQuery.Command)
+	events, getResults := NewComputeStream(ctx, h.logger, h.db, h.enterpriseJobs, searchQuery, computeQuery.Command)
 	events = batchEvents(events, 50*time.Millisecond)
 
 	// Store marshalled matches and flush periodically or when we go over

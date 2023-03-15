@@ -20,7 +20,7 @@ func TestNewAuthzProviders(t *testing.T) {
 	db := database.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(database.NewMockExternalServiceStore())
 	t.Run("no authorization", func(t *testing.T) {
-		providers, problems, warnings, invalidConnections := NewAuthzProviders(
+		initResults := NewAuthzProviders(
 			db,
 			[]*ExternalConnection{
 				{
@@ -37,17 +37,17 @@ func TestNewAuthzProviders(t *testing.T) {
 			false,
 		)
 
-		assert := assert.New(t)
+		assertion := assert.New(t)
 
-		assert.Len(providers, 0, "unexpected a providers: %+v", providers)
-		assert.Len(problems, 0, "unexpected problems: %+v", problems)
-		assert.Len(warnings, 0, "unexpected warnings: %+v", warnings)
-		assert.Len(invalidConnections, 0, "unexpected invalidConnections: %+v", invalidConnections)
+		assertion.Len(initResults.Providers, 0, "unexpected a providers: %+v", initResults.Providers)
+		assertion.Len(initResults.Problems, 0, "unexpected problems: %+v", initResults.Problems)
+		assertion.Len(initResults.Warnings, 0, "unexpected warnings: %+v", initResults.Warnings)
+		assertion.Len(initResults.InvalidConnections, 0, "unexpected invalidConnections: %+v", initResults.InvalidConnections)
 	})
 
 	t.Run("no matching auth provider", func(t *testing.T) {
-		licensing.MockCheckFeatureError("")
-		providers, problems, warnings, invalidConnections := NewAuthzProviders(
+		t.Cleanup(licensing.TestingSkipFeatureChecks())
+		initResults := NewAuthzProviders(
 			db,
 			[]*ExternalConnection{
 				{
@@ -68,20 +68,20 @@ func TestNewAuthzProviders(t *testing.T) {
 			false,
 		)
 
-		require.Len(t, providers, 1, "expect exactly one provider")
-		assert.NotNil(t, providers[0])
+		require.Len(t, initResults.Providers, 1, "expect exactly one provider")
+		assert.NotNil(t, initResults.Providers[0])
 
-		assert.Empty(t, problems)
-		assert.Empty(t, invalidConnections)
+		assert.Empty(t, initResults.Problems)
+		assert.Empty(t, initResults.InvalidConnections)
 
-		require.Len(t, warnings, 1, "expect exactly one warning")
-		assert.Contains(t, warnings[0], "no authentication provider")
+		require.Len(t, initResults.Warnings, 1, "expect exactly one warning")
+		assert.Contains(t, initResults.Warnings[0], "no authentication provider")
 	})
 
 	t.Run("matching auth provider found", func(t *testing.T) {
 		t.Run("default case", func(t *testing.T) {
-			licensing.MockCheckFeatureError("")
-			providers, problems, warnings, invalidConnections := NewAuthzProviders(
+			t.Cleanup(licensing.TestingSkipFeatureChecks())
+			initResults := NewAuthzProviders(
 				db,
 				[]*ExternalConnection{
 					{
@@ -101,17 +101,17 @@ func TestNewAuthzProviders(t *testing.T) {
 				false,
 			)
 
-			require.Len(t, providers, 1, "expect exactly one provider")
-			assert.NotNil(t, providers[0])
+			require.Len(t, initResults.Providers, 1, "expect exactly one provider")
+			assert.NotNil(t, initResults.Providers[0])
 
-			assert.Empty(t, problems)
-			assert.Empty(t, warnings)
-			assert.Empty(t, invalidConnections)
+			assert.Empty(t, initResults.Problems)
+			assert.Empty(t, initResults.Warnings)
+			assert.Empty(t, initResults.InvalidConnections)
 		})
 
 		t.Run("license does not have ACLs feature", func(t *testing.T) {
-			licensing.MockCheckFeatureError("failed")
-			providers, problems, warnings, invalidConnections := NewAuthzProviders(
+			t.Cleanup(licensing.MockCheckFeatureError("failed"))
+			initResults := NewAuthzProviders(
 				db,
 				[]*ExternalConnection{
 					{
@@ -132,15 +132,15 @@ func TestNewAuthzProviders(t *testing.T) {
 
 			expectedError := []string{"failed"}
 			expInvalidConnectionErr := []string{"github"}
-			assert.Equal(t, expectedError, problems)
-			assert.Equal(t, expInvalidConnectionErr, invalidConnections)
-			assert.Empty(t, providers)
-			assert.Empty(t, warnings)
+			assert.Equal(t, expectedError, initResults.Problems)
+			assert.Equal(t, expInvalidConnectionErr, initResults.InvalidConnections)
+			assert.Empty(t, initResults.Providers)
+			assert.Empty(t, initResults.Warnings)
 		})
 
 		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
-			licensing.MockCheckFeatureError("")
-			providers, problems, warnings, invalidConnections := NewAuthzProviders(
+			t.Cleanup(licensing.TestingSkipFeatureChecks())
+			initResults := NewAuthzProviders(
 				db,
 				[]*ExternalConnection{
 					{
@@ -164,24 +164,25 @@ func TestNewAuthzProviders(t *testing.T) {
 				false,
 			)
 
-			require.Len(t, providers, 1, "expect exactly one provider")
-			assert.NotNil(t, providers[0])
-			assert.Nil(t, providers[0].(*Provider).groupsCache, "expect groups cache to be disabled")
+			require.Len(t, initResults.Providers, 1, "expect exactly one provider")
+			assert.NotNil(t, initResults.Providers[0])
+			assert.Nil(t, initResults.Providers[0].(*Provider).groupsCache, "expect groups cache to be disabled")
 
-			assert.Empty(t, problems)
+			assert.Empty(t, initResults.Problems)
 
-			require.Len(t, warnings, 1, "expect exactly one warning")
-			assert.Contains(t, warnings[0], "allowGroupsPermissionsSync")
-			assert.Empty(t, invalidConnections)
+			require.Len(t, initResults.Warnings, 1, "expect exactly one warning")
+			assert.Contains(t, initResults.Warnings[0], "allowGroupsPermissionsSync")
+			assert.Empty(t, initResults.InvalidConnections)
 		})
 
 		t.Run("groups cache and allowGroupsPermissionsSync enabled", func(t *testing.T) {
+			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			github.MockGetAuthenticatedOAuthScopes = func(context.Context) ([]string, error) {
 				return []string{"read:org"}, nil
 			}
 			db := database.NewMockDB()
 			db.ExternalServicesFunc.SetDefaultReturn(database.NewMockExternalServiceStore())
-			providers, problems, warnings, invalidConnections := NewAuthzProviders(
+			initResults := NewAuthzProviders(
 				db,
 				[]*ExternalConnection{
 					{
@@ -205,16 +206,17 @@ func TestNewAuthzProviders(t *testing.T) {
 				false,
 			)
 
-			require.Len(t, providers, 1, "expect exactly one provider")
-			assert.NotNil(t, providers[0])
-			assert.NotNil(t, providers[0].(*Provider).groupsCache, "expect groups cache to be enabled")
+			require.Len(t, initResults.Providers, 1, "expect exactly one provider")
+			assert.NotNil(t, initResults.Providers[0])
+			assert.NotNil(t, initResults.Providers[0].(*Provider).groupsCache, "expect groups cache to be enabled")
 
-			assert.Empty(t, problems)
-			assert.Empty(t, warnings)
-			assert.Empty(t, invalidConnections)
+			assert.Empty(t, initResults.Problems)
+			assert.Empty(t, initResults.Warnings)
+			assert.Empty(t, initResults.InvalidConnections)
 		})
 
 		t.Run("github app installation id available", func(t *testing.T) {
+			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
 
 			conf.Mock(&conf.Unified{
@@ -232,7 +234,7 @@ func TestNewAuthzProviders(t *testing.T) {
 
 			db := database.NewMockDB()
 			db.ExternalServicesFunc.SetDefaultReturn(database.NewMockExternalServiceStore())
-			providers, problems, warnings, invalidConnections := NewAuthzProviders(
+			initResults := NewAuthzProviders(
 				db,
 				[]*ExternalConnection{
 					{
@@ -260,12 +262,12 @@ func TestNewAuthzProviders(t *testing.T) {
 				false,
 			)
 
-			require.Len(t, providers, 1, "expect exactly one provider")
-			assert.NotNil(t, providers[0])
+			require.Len(t, initResults.Providers, 1, "expect exactly one provider")
+			assert.NotNil(t, initResults.Providers[0])
 
-			assert.Empty(t, problems)
-			assert.Empty(t, warnings)
-			assert.Empty(t, invalidConnections)
+			assert.Empty(t, initResults.Problems)
+			assert.Empty(t, initResults.Warnings)
+			assert.Empty(t, initResults.InvalidConnections)
 		})
 	})
 }

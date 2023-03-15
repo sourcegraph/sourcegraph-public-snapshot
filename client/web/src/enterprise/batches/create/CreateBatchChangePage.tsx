@@ -2,9 +2,9 @@ import React from 'react'
 
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, PageHeader } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { Page } from '../../../components/Page'
@@ -22,7 +22,8 @@ import { useSearchTemplate } from './useSearchTemplate'
 
 import layoutStyles from '../batch-spec/Layout.module.scss'
 
-export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings>, ThemeProps {
+export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings> {
+    authenticatedUser: AuthenticatedUser | null
     // TODO: This can go away once we only have the new SSBC create page
     headingElement: 'h1' | 'h2'
     initialNamespaceID?: Scalars['ID']
@@ -63,7 +64,7 @@ const TABS_CONFIG: TabsConfig[] = [{ key: 'configuration', isEnabled: true }]
 
 const NewBatchChangePageContent: React.FunctionComponent<
     React.PropsWithChildren<Omit<CreateBatchChangePageProps, 'headingElement'>>
-> = ({ settingsCascade, initialNamespaceID }) => {
+> = ({ settingsCascade, initialNamespaceID, authenticatedUser }) => {
     const { renderTemplate: insightRenderTemplate, insightTitle } = useInsightTemplates(settingsCascade)
     const { renderTemplate: searchRenderTemplate, searchQuery } = useSearchTemplate()
     return (
@@ -76,10 +77,10 @@ const NewBatchChangePageContent: React.FunctionComponent<
             </div>
             <TabBar activeTabKey="configuration" tabsConfig={TABS_CONFIG} />
             <ConfigurationForm
+                authenticatedUser={authenticatedUser}
                 // the insight render template takes precendence over the search query render
                 renderTemplate={insightRenderTemplate || searchRenderTemplate}
                 insightTitle={insightTitle}
-                settingsCascade={settingsCascade}
                 initialNamespaceID={initialNamespaceID}
             />
         </div>

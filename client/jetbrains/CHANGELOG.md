@@ -14,15 +14,50 @@
 
 ### Security
 
+## [2.1.2]
+
+### Added
+
+- Compatibility with IntelliJ 2022.3
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [2.1.1]
+
+### Added
+
+- Now the name of the remote can contain slashes
+
+### Fixed
+
+- “Open in Browser” and “Copy Link” features now open the correct branch when it exists on the remote. [pull/44739](https://github.com/sourcegraph/sourcegraph/pull/44739)
+- Fixed a bug where if the tracked branch had a different name from the local branch, the local branch name was used in the URL, incorrectly
+
+## [2.1.0]
+
+### Added
+
+- Perforce support [pull/43807](https://github.com/sourcegraph/sourcegraph/pull/43807)
+- Multi-repo project support [pull/43807](https://github.com/sourcegraph/sourcegraph/pull/43807)
+
+### Changed
+
+- Now using the VCS API bundled with the IDE rather than relying on the `git`
+  command [pull/43807](https://github.com/sourcegraph/sourcegraph/pull/43807)
+
 ## [2.0.2]
 
 ### Added
 
 - Added feature to specify auth headers [pull/42692](https://github.com/sourcegraph/sourcegraph/pull/42692)
-
-### Changed
-
-### Deprecated
 
 ### Removed
 
@@ -33,8 +68,6 @@
 - Remove pointer cursor in the web view. [pull/41845](https://github.com/sourcegraph/sourcegraph/pull/41845)
 - Updated “Learn more” URL to link the blog post in the update notification [pull/41846](https://github.com/sourcegraph/sourcegraph/pull/41846)
 - Made the plugin compatible with versions 3.42.0 and below [pull/42105](https://github.com/sourcegraph/sourcegraph/pull/42105)
-
-### Security
 
 ## [2.0.1]
 

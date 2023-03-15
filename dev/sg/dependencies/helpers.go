@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"os"
 	"os/user"
@@ -234,7 +234,7 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 		}
 
 		elems := strings.Split(out, " ")
-		if len(elems) != 3 {
+		if len(elems) != 3 && len(elems) != 5 {
 			return errors.Newf("unexpected output from git: %s", out)
 		}
 
@@ -245,12 +245,12 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 
 func checkSrcCliVersion(versionConstraint string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		lines, err := usershell.Command(ctx, "src version").StdOut().Run().Lines()
+		lines, err := usershell.Command(ctx, "src version -client-only").StdOut().Run().Lines()
 		if err != nil {
 			return errors.Wrapf(err, "failed to run 'src version'")
 		}
 
-		if len(lines) < 2 {
+		if len(lines) < 1 {
 			return errors.Newf("unexpected output from src: %s", strings.Join(lines, "\n"))
 		}
 		out := lines[0]
@@ -261,6 +261,11 @@ func checkSrcCliVersion(versionConstraint string) func(context.Context) error {
 		}
 
 		trimmed := strings.TrimSpace(elems[2])
+
+		// If the user is using a local dev build, let them get away.
+		if trimmed == "dev" {
+			return nil
+		}
 		return check.Version("src", trimmed, versionConstraint)
 	}
 }
@@ -284,7 +289,7 @@ func getToolVersionConstraint(ctx context.Context, tool string) (string, error) 
 	return fmt.Sprintf("~> %s", version), nil
 }
 
-func getPackageManagerConstraint(ctx context.Context, tool string) (string, error) {
+func getPackageManagerConstraint(tool string) (string, error) {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to determine repository root location")
@@ -296,7 +301,7 @@ func getPackageManagerConstraint(ctx context.Context, tool string) (string, erro
 	}
 	defer jsonFile.Close()
 
-	jsonData, err := ioutil.ReadAll(jsonFile)
+	jsonData, err := io.ReadAll(jsonFile)
 	if err != nil {
 		return "", errors.Wrap(err, "Read package.json")
 	}
@@ -316,7 +321,7 @@ func getPackageManagerConstraint(ctx context.Context, tool string) (string, erro
 	}
 
 	if version == "" {
-		return "", errors.Newf("yarn version is not found in package.json")
+		return "", errors.Newf("pnpm version is not found in package.json")
 	}
 
 	return fmt.Sprintf("~> %s", version), nil
@@ -345,17 +350,17 @@ func checkGoVersion(ctx context.Context, out *std.Output, args CheckArgs) error 
 	return check.Version("go", strings.TrimPrefix(parts[2], "go"), constraint)
 }
 
-func checkYarnVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
-	if err := check.InPath("yarn")(ctx); err != nil {
+func checkPnpmVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
+	if err := check.InPath("pnpm")(ctx); err != nil {
 		return err
 	}
 
-	constraint, err := getPackageManagerConstraint(ctx, "yarn")
+	constraint, err := getPackageManagerConstraint("pnpm")
 	if err != nil {
 		return err
 	}
 
-	cmd := "yarn --version"
+	cmd := "pnpm --version"
 	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
@@ -365,7 +370,7 @@ func checkYarnVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 		return errors.Newf("no output from %q", cmd)
 	}
 
-	return check.Version("yarn", trimmed, constraint)
+	return check.Version("pnpm", trimmed, constraint)
 }
 
 func checkNodeVersion(ctx context.Context, out *std.Output, args CheckArgs) error {

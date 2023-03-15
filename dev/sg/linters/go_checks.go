@@ -3,10 +3,10 @@ package linters
 import (
 	"bytes"
 	"context"
-	"io"
 	"strings"
 
 	"github.com/sourcegraph/run"
+	"go.bobheadxi.dev/streamline/pipeline"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -20,17 +20,16 @@ var (
 )
 
 func goLint() *linter {
-	return runCheck("Go lint", func(ctx context.Context, out *std.Output, args *repo.State) error {
+	check := runCheck("Go lint", func(ctx context.Context, out *std.Output, args *repo.State) error {
 		return root.Run(run.Bash(ctx, "dev/check/go-lint.sh")).
-			Map(func(ctx context.Context, line []byte, dst io.Writer) (int, error) {
+			Pipeline(pipeline.Filter(func(line []byte) bool {
 				// Ignore go mod download stuff
-				if bytes.HasPrefix(line, []byte("go: downloading ")) {
-					return 0, nil
-				}
-				return dst.Write(line)
-			}).
+				return !bytes.HasPrefix(line, []byte("go: downloading "))
+			})).
 			StreamLines(out.Write)
 	})
+	check.LegacyAnnotations = true
+	return check
 }
 
 func lintSGExit() *linter {
@@ -87,10 +86,10 @@ func lintLoggingLibraries() *linter {
 			"dev/sg/linters",
 			// We allow one usage of a direct zap import here
 			"internal/observation/fields.go",
+			// Inits old loggers
+			"internal/logging/main.go",
 			// Dependencies require direct usage of zap
 			"cmd/frontend/internal/app/otlpadapter",
-			// Not worth fixing the deprecated package
-			"cmd/frontend/internal/usagestatsdeprecated",
 		},
 		ErrorFunc: func(bannedImport string) error {
 			return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,

@@ -176,10 +176,7 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChang
 		pl.AddOp(btypes.ReconcilerOperationReattach)
 	}
 
-	delta, err := compareChangesetSpecs(previousSpec, currentSpec, wantedChangeset.UiPublicationState)
-	if err != nil {
-		return pl, nil
-	}
+	delta := compareChangesetSpecs(previousSpec, currentSpec, wantedChangeset.UiPublicationState)
 	pl.Delta = delta
 
 	switch wantedChangeset.PublicationState {
@@ -277,11 +274,11 @@ func reopenAfterDetach(ch *btypes.Changeset) bool {
 	return ch.AttachedTo(ch.OwnedByBatchChangeID)
 }
 
-func compareChangesetSpecs(previous, current *btypes.ChangesetSpec, uiPublicationState *btypes.ChangesetUiPublicationState) (*ChangesetSpecDelta, error) {
+func compareChangesetSpecs(previous, current *btypes.ChangesetSpec, uiPublicationState *btypes.ChangesetUiPublicationState) *ChangesetSpecDelta {
 	delta := &ChangesetSpecDelta{}
 
 	if previous == nil {
-		return delta, nil
+		return delta
 	}
 
 	if previous.Title != current.Title {
@@ -330,7 +327,7 @@ func compareChangesetSpecs(previous, current *btypes.ChangesetSpec, uiPublicatio
 		delta.AuthorEmailChanged = true
 	}
 
-	return delta, nil
+	return delta
 }
 
 type ChangesetSpecDelta struct {

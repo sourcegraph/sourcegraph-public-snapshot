@@ -3,6 +3,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    background-color: var(--dropdown-bg);
 }
 
 .suggestions-list {
@@ -11,6 +12,7 @@
         padding: 0.5rem;
     }
 
+    [aria-selected='true'],
     [data-reach-combobox-option]:hover {
         background-color: var(--body-bg);
     }

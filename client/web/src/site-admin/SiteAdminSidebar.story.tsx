@@ -21,6 +21,7 @@ export const AdminSidebarItems: Story = () => (
                 {...webProps}
                 groups={siteAdminSidebarGroups}
                 isSourcegraphDotCom={false}
+                isSourcegraphApp={false}
                 batchChangesEnabled={false}
                 batchChangesExecutionEnabled={false}
                 batchChangesWebhookLogsEnabled={false}
@@ -33,7 +34,6 @@ AdminSidebarItems.storyName = 'Admin Sidebar Items'
 AdminSidebarItems.parameters = {
     design: {
         type: 'figma',
-        url:
-            'https://www.figma.com/file/cT23UcGqbdjdV4H2yxweIu/%2311775-Map-the-current-information-architecture-%5BApproved%5D?node-id=68%3A1',
+        url: 'https://www.figma.com/file/cT23UcGqbdjdV4H2yxweIu/%2311775-Map-the-current-information-architecture-%5BApproved%5D?node-id=68%3A1',
     },
 }

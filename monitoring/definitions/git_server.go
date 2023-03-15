@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -19,6 +20,8 @@ func GitServer() *monitoring.Dashboard {
 		ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 	}
 
+	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
+
 	return &monitoring.Dashboard{
 		Name:        "gitserver",
 		Title:       "Git Server",
@@ -34,6 +37,7 @@ func GitServer() *monitoring.Dashboard {
 				},
 				Multi: true,
 			},
+			grpcMethodVariable,
 		},
 		Groups: []monitoring.Group{
 			{
@@ -94,14 +98,25 @@ func GitServer() *monitoring.Dashboard {
 							Name:        "disk_space_remaining",
 							Description: "disk space remaining by instance",
 							Query:       `(src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100`,
-							Warning:     monitoring.Alert().LessOrEqual(25),
-							Critical:    monitoring.Alert().LessOrEqual(15),
+							// Warning alert when we have disk space remaining that is
+							// approaching the default SRC_REPOS_DESIRED_PERCENT_FREE
+							Warning: monitoring.Alert().Less(15),
+							// Critical alert when we have less space remaining than the
+							// default SRC_REPOS_DESIRED_PERCENT_FREE some amount of time.
+							// This means that gitserver should be evicting repos, but it's
+							// either filling up faster than it can evict, or there is an
+							// issue with the janitor job.
+							Critical: monitoring.Alert().Less(10).For(10 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.Percentage).
 								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
+							Interpretation: `
+								Indicates disk space remaining for each gitserver instance, which is used to determine when to start evicting least-used repository clones from disk (default 10%, configured by 'SRC_REPOS_DESIRED_PERCENT_FREE').
+							`,
 							NextSteps: `
-								- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
+								- On a warning alert, you may want to provision more disk space: Sourcegraph may be about to start evicting repositories due to disk pressure, which may result in decreased performance, users having to wait for repositories to clone, etc.
+								- On a critical alert, you need to provision more disk space: Sourcegraph should be evicting repositories from disk, but is either filling up faster than it can evict, or there is an issue with the janitor job.
 							`,
 						},
 					},
@@ -259,6 +274,22 @@ func GitServer() *monitoring.Dashboard {
 							`,
 						},
 						shared.FrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerRepoManagement).Observable(),
+					},
+					{
+						{
+							Name:          "src_gitserver_repo_count",
+							Description:   "number of repositories on gitserver",
+							Query:         "src_gitserver_repo_count",
+							NoAlert:       true,
+							Panel:         monitoring.Panel().LegendFormat("repo count"),
+							Owner:         monitoring.ObservableOwnerRepoManagement,
+							MultiInstance: true,
+							Interpretation: `
+								This metric is only for informational purposes. It indicates the total number of repositories on gitserver.
+
+								It does not indicate any problems with the instance.
+							`,
+						},
 					},
 				},
 			},
@@ -453,6 +484,7 @@ func GitServer() *monitoring.Dashboard {
 					},
 				},
 			},
+
 			{
 				Title:  "Search",
 				Hidden: true,
@@ -499,6 +531,27 @@ func GitServer() *monitoring.Dashboard {
 					},
 				},
 			},
+			shared.NewDiskMetricsGroup(
+				shared.DiskMetricsGroupOptions{
+					DiskTitle: "repos",
+
+					MetricMountNameLabel: "reposDir",
+					MetricNamespace:      "gitserver",
+
+					ServiceName:         "gitserver",
+					InstanceFilterRegex: `${shard:regex}`,
+				},
+				monitoring.ObservableOwnerRepoManagement,
+			),
+
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					ServiceName:     "gitserver",
+					MetricNamespace: "gitserver",
+
+					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex: `${shard:regex}`,
+				}, monitoring.ObservableOwnerSearchCore),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),

@@ -2,9 +2,7 @@
 
 exports[`ActionItem "open" command renders as link 1`] = `
 <DocumentFragment>
-  <span
-    data-state="closed"
-  >
+  <span>
     <a
       class="anchorLink btn btnLink test-action-item actionItemLink"
       href="https://example.com/bar"
@@ -18,9 +16,7 @@ exports[`ActionItem "open" command renders as link 1`] = `
 
 exports[`ActionItem "open" command renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined 1`] = `
 <DocumentFragment>
-  <span
-    data-state="closed"
-  >
+  <span>
     <a
       class="anchorLink btn btnLink test-action-item actionItemLink"
       href="https://other.com/foo"
@@ -36,9 +32,7 @@ exports[`ActionItem "open" command renders as link that opens in a new tab, but 
 
 exports[`ActionItem "open" command renders as link with icon and opens a new tab for a different origin 1`] = `
 <DocumentFragment>
-  <span
-    data-state="closed"
-  >
+  <span>
     <a
       class="anchorLink btn btnLink test-action-item actionItemLink"
       href="https://other.com/foo"
@@ -70,7 +64,6 @@ exports[`ActionItem actionItem variant 1`] = `
   <button
     aria-label="d"
     class="test-action-item"
-    data-state="closed"
     type="button"
   >
     <img
@@ -87,7 +80,6 @@ exports[`ActionItem non-actionItem variant 1`] = `
   <button
     aria-label="d"
     class="test-action-item"
-    data-state="closed"
     type="button"
   >
     <img
@@ -105,7 +97,6 @@ exports[`ActionItem non-pressed actionItem 1`] = `
     aria-pressed="false"
     class="test-action-item"
     data-action-item-pressed="false"
-    data-state="closed"
     type="button"
   >
      b 
@@ -115,10 +106,7 @@ exports[`ActionItem non-pressed actionItem 1`] = `
 
 exports[`ActionItem noop command 1`] = `
 <DocumentFragment>
-  <span
-    class=""
-    data-state="closed"
-  >
+  <span>
     <img
       alt="d"
       src="u"
@@ -134,7 +122,6 @@ exports[`ActionItem pressed toggle actionItem 1`] = `
     aria-pressed="true"
     class="test-action-item"
     data-action-item-pressed="true"
-    data-state="closed"
     type="button"
   >
      b 
@@ -147,7 +134,6 @@ exports[`ActionItem run command 1`] = `
   <button
     aria-label="d"
     class="test-action-item"
-    data-state="closed"
     type="button"
   >
     <img
@@ -164,7 +150,6 @@ exports[`ActionItem run command 2`] = `
   <button
     aria-label="d"
     class="test-action-item"
-    data-state="closed"
     type="button"
   >
     <img
@@ -181,24 +166,6 @@ exports[`ActionItem run command with error 1`] = `
   <button
     aria-label="d"
     class="test-action-item"
-    data-state="closed"
-    type="button"
-  >
-    <img
-      alt="d"
-      src="u"
-    />
-     g: t 
-  </button>
-</DocumentFragment>
-`;
-
-exports[`ActionItem run command with error with showInlineError 1`] = `
-<DocumentFragment>
-  <button
-    aria-label="Error: x"
-    class="test-action-item"
-    data-state="closed"
     type="button"
   >
     <img
@@ -212,83 +179,59 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 <DocumentFragment>
-  <span
-    class="tooltipWrapper"
-    data-state="closed"
+  <button
+    aria-disabled="true"
+    aria-label="d"
+    class="test-action-item actionItemLoading"
+    type="button"
   >
+    <img
+      alt="d"
+      src="u"
+    />
+     g: t 
     <div
-      class="tooltipTriggerContainer"
+      class="loader"
+      data-testid="action-item-spinner"
     >
       <div
-        class="tooltipTriggerDisabledOverlay"
-        tabindex="0"
+        aria-label="Loading"
+        aria-live="polite"
+        class="mdi-icon loadingSpinner"
+        data-loading-spinner="true"
+        role="img"
       />
-      <button
-        aria-label="d"
-        class="test-action-item actionItemLoading"
-        disabled=""
-        type="button"
-      >
-        <img
-          alt="d"
-          src="u"
-        />
-         g: t 
-        <div
-          class="loader"
-          data-testid="action-item-spinner"
-        >
-          <div
-            aria-label="Loading"
-            aria-live="polite"
-            class="mdi-icon loadingSpinner"
-            role="img"
-          />
-        </div>
-      </button>
     </div>
-  </span>
+  </button>
 </DocumentFragment>
 `;
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <DocumentFragment>
-  <span
-    class="tooltipWrapper"
-    data-state="closed"
+  <button
+    aria-disabled="true"
+    aria-label="d"
+    class="test-action-item actionItemLoading"
+    type="button"
   >
+    <img
+      alt="d"
+      src="u"
+    />
+     g: t 
     <div
-      class="tooltipTriggerContainer"
+      class="loader"
+      data-testid="action-item-spinner"
     >
       <div
-        class="tooltipTriggerDisabledOverlay"
-        tabindex="0"
+        aria-label="Loading"
+        aria-live="polite"
+        class="mdi-icon loadingSpinner"
+        data-loading-spinner="true"
+        role="img"
       />
-      <button
-        aria-label="d"
-        class="test-action-item actionItemLoading"
-        disabled=""
-        type="button"
-      >
-        <img
-          alt="d"
-          src="u"
-        />
-         g: t 
-        <div
-          class="loader"
-          data-testid="action-item-spinner"
-        >
-          <div
-            aria-label="Loading"
-            aria-live="polite"
-            class="mdi-icon loadingSpinner"
-            role="img"
-          />
-        </div>
-      </button>
     </div>
-  </span>
+  </button>
 </DocumentFragment>
 `;
 
@@ -297,7 +240,6 @@ exports[`ActionItem title element 1`] = `
   <button
     aria-label="d"
     class="test-action-item"
-    data-state="closed"
     type="button"
   >
     <span>

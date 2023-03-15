@@ -6,23 +6,11 @@ import {
     ParsedRepoURI,
     parseQueryAndHash,
     parseRepoRevision,
-    RepoDocumentation,
     RepoFile,
 } from '@sourcegraph/shared/src/util/url'
 
 export function toTreeURL(target: RepoFile): string {
     return `/${encodeRepoRevision(target)}/-/tree/${target.filePath}`
-}
-
-export function toDocumentationURL(target: RepoDocumentation): string {
-    return `/${encodeRepoRevision(target)}/-/docs${target.pathID}`
-}
-
-export function toDocumentationSingleSymbolURL(target: RepoDocumentation): string {
-    const hash = target.pathID.indexOf('#')
-    const path = hash === -1 ? target.pathID : target.pathID.slice(0, hash)
-    const qualifier = hash === -1 ? '' : target.pathID.slice(hash + '#'.length)
-    return `/${encodeRepoRevision(target)}/-/docs${path}?${qualifier}`
 }
 
 /**

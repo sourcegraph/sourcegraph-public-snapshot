@@ -1,0 +1,9 @@
+ALTER TABLE names DROP CONSTRAINT IF EXISTS names_check;
+
+ALTER TABLE names DROP COLUMN IF EXISTS team_id;
+
+ALTER TABLE names ADD CONSTRAINT names_check CHECK (user_id IS NOT NULL OR org_id IS NOT NULL);
+
+DROP TABLE IF EXISTS team_members;
+
+DROP TABLE IF EXISTS teams;

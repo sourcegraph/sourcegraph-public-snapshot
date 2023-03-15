@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -217,6 +219,8 @@ var siteConfigSecrets = []struct {
 	{readPath: `auth\.unlockAccountLinkSigningKey`, editPaths: []string{"auth.unlockAccountLinkSigningKey"}},
 	{readPath: `dotcom.srcCliVersionCache.github.token`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "token"}},
 	{readPath: `dotcom.srcCliVersionCache.github.webhookSecret`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "webhookSecret"}},
+	{readPath: `embeddings.accessToken`, editPaths: []string{"embeddings", "accessToken"}},
+	{readPath: `completions.accessToken`, editPaths: []string{"completions", "accessToken"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for
@@ -240,6 +244,9 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		if ap.Gitlab != nil {
 			oldSecrets[ap.Gitlab.ClientID] = ap.Gitlab.ClientSecret
 		}
+		if ap.Bitbucketcloud != nil {
+			oldSecrets[ap.Bitbucketcloud.ClientKey] = ap.Bitbucketcloud.ClientSecret
+		}
 	}
 
 	newCfg, err := ParseConfig(conftypes.RawUnified{
@@ -257,6 +264,9 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		}
 		if ap.Gitlab != nil && ap.Gitlab.ClientSecret == redactedSecret {
 			ap.Gitlab.ClientSecret = oldSecrets[ap.Gitlab.ClientID]
+		}
+		if ap.Bitbucketcloud != nil && ap.Bitbucketcloud.ClientSecret == redactedSecret {
+			ap.Bitbucketcloud.ClientSecret = oldSecrets[ap.Bitbucketcloud.ClientKey]
 		}
 	}
 	unredactedSite, err := jsonc.Edit(input, newCfg.AuthProviders, "auth.providers")
@@ -284,12 +294,29 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 	return formattedSite, err
 }
 
-// RedactSecrets redacts defined list of secrets from the given configuration. It
-// returns empty configuration if any error occurs during redacting process to
-// prevent accidental leak of secrets in the configuration.
-//
-// Updates to this function should also being reflected in the UnredactSecrets.
 func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
+	return redactConfSecrets(raw, false)
+}
+
+func RedactAndHashSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
+	return redactConfSecrets(raw, true)
+}
+
+// redactConfSecrets redacts defined list of secrets from the given configuration. It returns empty
+// configuration if any error occurs during redacting process to prevent accidental leak of secrets
+// in the configuration.
+//
+// Updates to this function should also be reflected in the UnredactSecrets.
+func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty conftypes.RawUnified, err error) {
+	getRedactedSecret := func(_ string) string { return redactedSecret }
+	if hashSecrets {
+		getRedactedSecret = func(secret string) string {
+			hash := hashutil.ToSHA256Bytes([]byte(secret))
+			digest := hex.EncodeToString(hash)
+			return "REDACTED-DATA-CHUNK" + "-" + digest[:10]
+		}
+	}
+
 	cfg, err := ParseConfig(raw)
 	if err != nil {
 		return empty, errors.Wrap(err, "parse config")
@@ -297,13 +324,16 @@ func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err er
 
 	for _, ap := range cfg.AuthProviders {
 		if ap.Openidconnect != nil {
-			ap.Openidconnect.ClientSecret = redactedSecret
+			ap.Openidconnect.ClientSecret = getRedactedSecret(ap.Openidconnect.ClientSecret)
 		}
 		if ap.Github != nil {
-			ap.Github.ClientSecret = redactedSecret
+			ap.Github.ClientSecret = getRedactedSecret(ap.Github.ClientSecret)
 		}
 		if ap.Gitlab != nil {
-			ap.Gitlab.ClientSecret = redactedSecret
+			ap.Gitlab.ClientSecret = getRedactedSecret(ap.Gitlab.ClientSecret)
+		}
+		if ap.Bitbucketcloud != nil {
+			ap.Bitbucketcloud.ClientSecret = getRedactedSecret(ap.Bitbucketcloud.ClientSecret)
 		}
 	}
 	redactedSite := raw.Site
@@ -315,12 +345,12 @@ func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err er
 	}
 
 	for _, secret := range siteConfigSecrets {
-		v := gjson.Get(redactedSite, secret.readPath).String()
-		if v == "" {
+		val := gjson.Get(redactedSite, secret.readPath).String()
+		if val == "" {
 			continue
 		}
 
-		redactedSite, err = jsonc.Edit(redactedSite, redactedSecret, secret.editPaths...)
+		redactedSite, err = jsonc.Edit(redactedSite, getRedactedSecret(val), secret.editPaths...)
 		if err != nil {
 			return empty, errors.Wrapf(err, `redact %q`, strings.Join(secret.editPaths, " > "))
 		}

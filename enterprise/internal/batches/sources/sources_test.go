@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"sort"
 	"strconv"
 	"testing"
 
@@ -96,23 +97,16 @@ func TestLoadExternalService(t *testing.T) {
 
 	ctx := context.Background()
 
-	globalES := types.ExternalService{
+	externalService := types.ExternalService{
 		ID:          1,
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GitHub global",
+		DisplayName: "GitHub",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 	}
-	userOwnedES := types.ExternalService{
-		ID:              2,
-		Kind:            extsvc.KindGitHub,
-		DisplayName:     "GitHub user owned",
-		NamespaceUserID: 1234,
-		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
-	}
-	newerGlobalES := types.ExternalService{
-		ID:          3,
+	newerExternalService := types.ExternalService{
+		ID:          2,
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GitHub global newer",
+		DisplayName: "GitHub newer",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 	}
 
@@ -126,16 +120,12 @@ func TestLoadExternalService(t *testing.T) {
 			ServiceID:   "https://github.com/",
 		},
 		Sources: map[string]*types.SourceInfo{
-			globalES.URN(): {
-				ID:       globalES.URN(),
+			externalService.URN(): {
+				ID:       externalService.URN(),
 				CloneURL: "https://github.com/sourcegraph/sourcegraph",
 			},
-			userOwnedES.URN(): {
-				ID:       userOwnedES.URN(),
-				CloneURL: "https://123@github.com/sourcegraph/sourcegraph",
-			},
-			newerGlobalES.URN(): {
-				ID:       newerGlobalES.URN(),
+			newerExternalService.URN(): {
+				ID:       newerExternalService.URN(),
 				CloneURL: "https://123456@github.com/sourcegraph/sourcegraph",
 			},
 		},
@@ -144,35 +134,21 @@ func TestLoadExternalService(t *testing.T) {
 	ess := database.NewMockExternalServiceStore()
 	ess.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		sources := make([]*types.ExternalService, 0)
-		if _, ok := repo.Sources[globalES.URN()]; ok {
-			sources = append(sources, &globalES)
+		if _, ok := repo.Sources[newerExternalService.URN()]; ok {
+			sources = append(sources, &newerExternalService)
 		}
-		if _, ok := repo.Sources[userOwnedES.URN()]; ok {
-			sources = append(sources, &userOwnedES)
-		}
-		if _, ok := repo.Sources[newerGlobalES.URN()]; ok {
-			sources = append(sources, &newerGlobalES)
-		}
+		// Simulate original ORDER BY ID DESC.
+		sort.SliceStable(sources, func(i, j int) bool { return sources[i].ID > sources[j].ID })
 		return sources, nil
 	})
 
 	// Expect the newest public external service with a token to be returned.
-	svc, err := loadExternalService(ctx, ess, database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
+	ids := repo.ExternalServiceIDs()
+	svc, err := loadExternalService(ctx, ess, database.ExternalServicesListOptions{IDs: ids})
 	if err != nil {
 		t.Fatalf("invalid error, expected nil, got %v", err)
 	}
-	if have, want := svc.ID, newerGlobalES.ID; have != want {
-		t.Fatalf("invalid external service returned, want=%d have=%d", want, have)
-	}
-
-	// Now delete the global external services and expect the user owned external service to be returned.
-	delete(repo.Sources, newerGlobalES.URN())
-	delete(repo.Sources, globalES.URN())
-	svc, err = loadExternalService(ctx, ess, database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
-	if err != nil {
-		t.Fatalf("invalid error, expected nil, got %v", err)
-	}
-	if have, want := svc.ID, userOwnedES.ID; have != want {
+	if have, want := svc.ID, newerExternalService.ID; have != want {
 		t.Fatalf("invalid external service returned, want=%d have=%d", want, have)
 	}
 }
@@ -531,7 +507,7 @@ func TestGetRemoteRepo(t *testing.T) {
 			forkNamespace := "fork"
 			want := &types.Repo{}
 			css := NewMockForkableChangesetSource()
-			css.GetNamespaceForkFunc.SetDefaultReturn(want, nil)
+			css.GetForkFunc.SetDefaultReturn(want, nil)
 
 			// This should succeed, since loadRemoteRepo() should early return with
 			// forks disabled.
@@ -540,7 +516,7 @@ func TestGetRemoteRepo(t *testing.T) {
 			})
 			assert.Nil(t, err)
 			assert.Same(t, want, remoteRepo)
-			mockassert.CalledOnce(t, css.GetNamespaceForkFunc)
+			mockassert.CalledOnce(t, css.GetForkFunc)
 		})
 	})
 
@@ -561,27 +537,27 @@ func TestGetRemoteRepo(t *testing.T) {
 			t.Run("success", func(t *testing.T) {
 				want := &types.Repo{}
 				css := NewMockForkableChangesetSource()
-				css.GetUserForkFunc.SetDefaultReturn(want, nil)
+				css.GetForkFunc.SetDefaultReturn(want, nil)
 
 				have, err := GetRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
 					ForkNamespace: &forkNamespace,
 				})
 				assert.Nil(t, err)
 				assert.Same(t, want, have)
-				mockassert.CalledOnce(t, css.GetUserForkFunc)
+				mockassert.CalledOnce(t, css.GetForkFunc)
 			})
 
 			t.Run("error from the source", func(t *testing.T) {
 				want := errors.New("source error")
 				css := NewMockForkableChangesetSource()
-				css.GetUserForkFunc.SetDefaultReturn(nil, want)
+				css.GetForkFunc.SetDefaultReturn(nil, want)
 
 				repo, err := GetRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
 					ForkNamespace: &forkNamespace,
 				})
 				assert.Nil(t, repo)
 				assert.Contains(t, err.Error(), want.Error())
-				mockassert.CalledOnce(t, css.GetUserForkFunc)
+				mockassert.CalledOnce(t, css.GetForkFunc)
 			})
 		})
 	})

@@ -88,30 +88,37 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 	return patterns, parameters
 }
 
+// transformPatterns applies stops words and stemming. The returned slice
+// contains the lowercased patterns and their stems minus the stop words.
 func transformPatterns(patterns []string) []string {
-	transformedPatterns := []string{}
+	var transformedPatterns []string
 	transformedPatternsSet := stringSet{}
+
+	// To eliminate a possible source of non-determinism of search results, we
+	// want transformPatterns to be a pure function. Hence we maintain a slice
+	// of transformed patterns (transformedPatterns) in addition to
+	// transformedPatternsSet.
+	add := func(pattern string) {
+		if transformedPatternsSet.Has(pattern) {
+			return
+		}
+		transformedPatternsSet.Add(pattern)
+		transformedPatterns = append(transformedPatterns, pattern)
+	}
+
 	for _, pattern := range patterns {
 		patternLowerCase := strings.ToLower(pattern)
 
 		if stopWords.Has(patternLowerCase) {
 			continue
 		}
+		add(patternLowerCase)
 
 		stemmed, err := snowball.Stem(patternLowerCase, "english", false)
-		var transformedPattern string
-		if err == nil && strings.HasPrefix(patternLowerCase, stemmed) {
-			transformedPattern = stemmed
-		} else {
-			transformedPattern = patternLowerCase
-		}
-
-		if transformedPatternsSet.Has(transformedPattern) {
+		if err != nil {
 			continue
 		}
-
-		transformedPatternsSet.Add(transformedPattern)
-		transformedPatterns = append(transformedPatterns, transformedPattern)
+		add(stemmed)
 	}
 
 	return transformedPatterns

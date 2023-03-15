@@ -43,6 +43,7 @@ var validSelectors = object{
 	File: {
 		"directory": nil,
 		"path":      nil,
+		"owners":    nil,
 	},
 	Repository: nil,
 	Symbol: object{
@@ -86,5 +87,5 @@ func SelectPathFromString(s string) (SelectPath, error) {
 		}
 		cur = child
 	}
-	return SelectPath(fields), nil
+	return fields, nil
 }

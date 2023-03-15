@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"net/url"
@@ -59,7 +58,7 @@ func feedbackAction(ctx *cli.Context) error {
 	}
 	body = addSGInformation(ctx, body)
 
-	if err := sendFeedback(ctx.Context, title, "developer-experience", body); err != nil {
+	if err := sendFeedback(title, "developer-experience", body); err != nil {
 		return err
 	}
 	return nil
@@ -130,7 +129,7 @@ Flags: {{ inline_code .Flags}}
 	return buf.String()
 }
 
-func sendFeedback(ctx context.Context, title, category, body string) error {
+func sendFeedback(title, category, body string) error {
 	values := make(url.Values)
 	values["category"] = []string{category}
 	values["title"] = []string{title}

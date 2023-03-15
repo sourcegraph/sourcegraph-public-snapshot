@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "search",
+    srcs = [
+        "alert.go",
+        "env.go",
+        "repo_revs.go",
+        "repo_status.go",
+        "types.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/endpoint",
+        "//internal/errcode",
+        "//internal/featureflag",
+        "//internal/gitserver/gitdomain",
+        "//internal/search/backend",
+        "//internal/search/filter",
+        "//internal/search/limits",
+        "//internal/search/query",
+        "//internal/search/result",
+        "//internal/trace",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_sourcegraph_zoekt//:zoekt",
+        "@com_github_sourcegraph_zoekt//query",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "search_test",
+    srcs = [
+        "alert_test.go",
+        "repo_status_test.go",
+    ],
+    embed = [":search"],
+    deps = [
+        "//internal/api",
+        "//internal/search/query",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,48 +1,50 @@
-import React, { useContext, useMemo, useEffect } from 'react'
+import { FC, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce, Icon, Input, H2, H3, Text } from '@sourcegraph/wildcard'
-
 import {
-    getDefaultInputProps,
-    useField,
+    Button,
+    Card,
+    Link,
+    Icon,
+    Input,
+    Text,
+    Label,
     useForm,
-    InsightQueryInput,
-    RepositoriesField,
-    insightRepositoriesValidator,
-    insightRepositoriesAsyncValidator,
-} from '../../../../../components'
-import { CodeInsightsBackendContext } from '../../../../../core'
-import { useUiFeatures } from '../../../../../hooks'
+    useField,
+    useDebounce,
+    getDefaultInputProps,
+} from '@sourcegraph/wildcard'
+
+import { GetExampleRepositoryResult, GetExampleRepositoryVariables } from '../../../../../../../graphql-operations'
+import { InsightQueryInput, RepositoriesField, insightRepositoriesValidator } from '../../../../../components'
 import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
+import { CodeInsightsDescription } from '../code-insights-description/CodeInsightsDescription'
 
 import { DynamicInsightPreview } from './DynamicInsightPreview'
 
 import styles from './DynamicCodeInsightExample.module.scss'
 
 interface CodeInsightExampleFormValues {
-    repositories: string
+    repositories: string[]
     query: string
 }
 
 const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
-    repositories: 'github.com/sourcegraph/sourcegraph',
+    repositories: [],
     query: 'TODO',
 }
 
 interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
-export const DynamicCodeInsightExample: React.FunctionComponent<
-    React.PropsWithChildren<DynamicCodeInsightExampleProps>
-> = props => {
+export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = props => {
     const { telemetryService, ...otherProps } = props
 
-    const { getFirstExampleRepository } = useContext(CodeInsightsBackendContext)
-    const { licensed } = useUiFeatures()
+    const { repositoryUrl, loading: repositoryValueLoading } = useExampleRepositoryUrl()
 
     const form = useForm<CodeInsightExampleFormValues>({
         initialValues: INITIAL_INSIGHT_VALUES,
@@ -53,9 +55,9 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
     const repositories = useField({
         name: 'repositories',
         formApi: form.formAPI,
+        disabled: repositoryValueLoading,
         validators: {
             sync: insightRepositoriesValidator,
-            async: insightRepositoriesAsyncValidator,
         },
     })
 
@@ -67,16 +69,14 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
     const debouncedQuery = useDebounce(query.input.value, 1000)
     const debouncedRepositories = useDebounce(repositories.input.value, 1000)
 
-    const derivedRepositoryURL = useObservable(useMemo(() => getFirstExampleRepository(), [getFirstExampleRepository]))
-
     const { onChange: setRepositoryValue } = repositories.input
 
     useEffect(() => {
         // This is to prevent resetting the name in an endless loop
-        if (derivedRepositoryURL) {
-            setRepositoryValue(derivedRepositoryURL)
+        if (repositoryUrl) {
+            setRepositoryValue([repositoryUrl])
         }
-    }, [setRepositoryValue, derivedRepositoryURL])
+    }, [setRepositoryValue, repositoryUrl])
 
     useEffect(() => {
         if (debouncedQuery !== INITIAL_INSIGHT_VALUES.query) {
@@ -94,7 +94,10 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
         telemetryService.log('InsightsGetStartedPrimaryCTAClick')
     }
 
-    const hasValidLivePreview = repositories.meta.validState === 'VALID' && query.meta.validState === 'VALID'
+    const hasValidLivePreview =
+        !repositoryValueLoading && repositories.meta.validState === 'VALID' && query.meta.validState === 'VALID'
+
+    const { status: repositoryStatus, ...repositoryProps } = getDefaultInputProps(repositories)
 
     return (
         <Card {...otherProps} className={classNames(styles.wrapper, otherProps.className)}>
@@ -112,6 +115,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
                     label="Data series search query"
                     required={true}
                     as={InsightQueryInput}
+                    repoQuery={null}
                     repositories={repositories.input.value}
                     patternType={getQueryPatternTypeFilter(query.input.value)}
                     placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
@@ -119,70 +123,34 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
                     className="mt-3 mb-0"
                 />
 
-                <Input
-                    as={RepositoriesField}
-                    required={true}
-                    label="Repositories"
-                    placeholder="Example: github.com/sourcegraph/sourcegraph"
-                    {...getDefaultInputProps(repositories)}
-                    className="mt-3 mb-0"
+                <Label htmlFor="repositories-id" className="mt-3">
+                    Repositories
+                </Label>
+                <RepositoriesField
+                    id="repositories-id"
+                    description="Find and choose at least 1 repository to run insight"
+                    placeholder="Search repositories..."
+                    status={repositoryValueLoading ? 'loading' : repositoryStatus}
+                    {...repositoryProps}
                 />
             </form>
 
-            <section>
-                <H2 className={classNames(styles.cardTitle)}>
-                    Draw insights from your codebase about how different initiatives track over time
-                </H2>
-
-                <Text>
-                    Create visual dashboards with meaningful, customizable codebase signals your team can use to answer
-                    questions about how your code is changing and what’s in your code {'\u2014'} questions that were
-                    difficult or impossible to answer before.
-                </Text>
-
-                <H3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</H3>
-
-                <ul>
-                    <li>Track migrations, adoption, and deprecations</li>
-                    <li>Detect versions of languages, packages, or infrastructure</li>
-                    <li>Ensure removal of security vulnerabilities</li>
-                    <li>Track code smells, ownership, and configurations</li>
-                </ul>
-
+            <div>
+                <CodeInsightsDescription />
                 <footer className={styles.footer}>
-                    {licensed ? (
-                        <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
-                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create your first insight
-                        </Button>
-                    ) : (
-                        <Button
-                            as={Link}
-                            variant="primary"
-                            to="http://about.sourcegraph.com/contact/request-code-insights-demo"
-                            target="_blank"
-                            rel="noopener"
-                            onClick={handleGetStartedClick}
-                        >
-                            Schedule a demo
-                        </Button>
-                    )}
-
-                    {!licensed && (
-                        <Button as={Link} variant="secondary" to="/insights/about#code-insights-templates">
-                            Explore use cases
-                        </Button>
-                    )}
+                    <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create your first insight
+                    </Button>
                 </footer>
-
                 <CalloutArrow className={styles.calloutBlockHorizontal} />
-            </section>
+            </div>
 
             <CalloutArrow className={styles.calloutBlockVertical} />
         </Card>
     )
 }
 
-const CalloutArrow: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = props => (
+const CalloutArrow: FC<{ className?: string }> = props => (
     <Text className={classNames(styles.calloutBlock, props.className)}>
         <svg
             width="59"
@@ -200,3 +168,50 @@ const CalloutArrow: React.FunctionComponent<React.PropsWithChildren<{ className?
         <span className="text-muted">This insight is interactive! Type any search query or change the repo.</span>
     </Text>
 )
+
+export const GET_EXAMPLE_REPOSITORY = gql`
+    query GetExampleRepository {
+        todoRepo: search(patternType: literal, version: V2, query: "select:repo TODO count:1") {
+            results {
+                repositories {
+                    name
+                }
+            }
+        }
+        firstRepo: search(patternType: literal, version: V2, query: "select:repo count:1") {
+            results {
+                repositories {
+                    name
+                }
+            }
+        }
+    }
+`
+
+interface UseExampleRepositoryUrlReturn {
+    repositoryUrl?: string
+    loading: boolean
+}
+
+function useExampleRepositoryUrl(): UseExampleRepositoryUrlReturn {
+    const { data, loading, error } = useQuery<GetExampleRepositoryResult, GetExampleRepositoryVariables>(
+        GET_EXAMPLE_REPOSITORY,
+        { fetchPolicy: 'cache-and-network' }
+    )
+
+    if (loading || !data) {
+        return { loading: true }
+    }
+
+    if (error) {
+        return { repositoryUrl: 'github.com/sourcegraph/sourcegraph', loading: false }
+    }
+
+    const firstRepository = data.firstRepo?.results?.repositories[0]?.name
+    const todoRepository = data.todoRepo?.results?.repositories[0]?.name
+
+    return {
+        loading: false,
+        repositoryUrl: todoRepository ?? firstRepository ?? 'github.com/sourcegraph/sourcegraph',
+    }
+}

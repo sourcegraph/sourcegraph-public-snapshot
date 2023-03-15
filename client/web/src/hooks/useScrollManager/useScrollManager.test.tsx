@@ -1,10 +1,10 @@
 import { useRef } from 'react'
 
 import { act, fireEvent, screen } from '@testing-library/react'
-import { Route } from 'react-router'
+import { Routes, Route } from 'react-router-dom'
 import { spy, assert } from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { useScrollManager } from './useScrollManager'
 
@@ -20,10 +20,10 @@ const TestPage = ({ id }: { id: string }) => {
 }
 
 const TestApp = () => (
-    <main>
-        <Route path="/page-1" render={() => <TestPage id="page-1" />} />
-        <Route path="/page-2" render={() => <TestPage id="page-2" />} />
-    </main>
+    <Routes>
+        <Route path="/page-1" element={<TestPage id="page-1" />} />
+        <Route path="/page-2" element={<TestPage id="page-2" />} />
+    </Routes>
 )
 
 describe('useScrollManager', () => {
@@ -44,7 +44,7 @@ describe('useScrollManager', () => {
 
         const wrapper = renderWithBrandedContext(<TestApp />)
         act(() => {
-            wrapper.history.push('/page-1')
+            wrapper.navigateRef.current?.('/page-1')
         })
         // Called when pushing history
         assert.callCount(scrollToMock, 1)
@@ -57,7 +57,7 @@ describe('useScrollManager', () => {
 
         // Navigate to other page
         act(() => {
-            wrapper.history.push('/page-2')
+            wrapper.navigateRef.current?.('/page-2')
         })
         // Called when pushing history
         assert.callCount(scrollToMock, 2)
@@ -70,7 +70,7 @@ describe('useScrollManager', () => {
 
         // Navigate backwards to first page
         act(() => {
-            wrapper.history.goBack()
+            wrapper.navigateRef.current?.(-1)
         })
         // Check that we attempt to scroll back to the correct position
         assert.callCount(scrollToMock, 3)
@@ -78,7 +78,7 @@ describe('useScrollManager', () => {
 
         // Navigate forwards to second page
         act(() => {
-            wrapper.history.goForward()
+            wrapper.navigateRef.current?.(1)
         })
         // Check that we attempt to scroll back to the correct position
         assert.callCount(scrollToMock, 4)
@@ -86,7 +86,7 @@ describe('useScrollManager', () => {
 
         // Navigate directly to the first page
         act(() => {
-            wrapper.history.push('/page-1')
+            wrapper.navigateRef.current?.('/page-1')
         })
         // Check that we attempted to scroll back to top on push
         assert.callCount(scrollToMock, 5)
@@ -94,7 +94,7 @@ describe('useScrollManager', () => {
 
         // Replace history with second page
         act(() => {
-            wrapper.history.replace('/page-2')
+            wrapper.navigateRef.current?.('/page-2', { replace: true })
         })
         // Check that we did not attempt to scroll on history replace
         assert.callCount(scrollToMock, 5)

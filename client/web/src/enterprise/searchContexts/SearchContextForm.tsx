@@ -1,24 +1,24 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps, useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
+import { SyntaxHighlightedSearchQuery, LazyQueryInput } from '@sourcegraph/branded'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { QueryState, SearchContextFields, SearchContextProps } from '@sourcegraph/search'
-import { SyntaxHighlightedSearchQuery, LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import {
     Scalars,
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
     SearchPatternType,
+    SearchContextFields,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/schema'
+import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Container,
     Button,
@@ -30,11 +30,11 @@ import {
     Link,
     Code,
     Input,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../components/AwayPrompt'
-import { useExperimentalFeatures } from '../../stores'
 
 import { fetchRepositoriesByNames } from './backend'
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
@@ -111,9 +111,7 @@ function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searc
 const LOADING = 'loading' as const
 
 export interface SearchContextFormProps
-    extends RouteComponentProps,
-        ThemeProps,
-        TelemetryProps,
+    extends TelemetryProps,
         Pick<SearchContextProps, 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
     searchContext?: SearchContextFields
@@ -138,20 +136,14 @@ type RepositoriesParseResult =
       }
     | {
           type: 'repositories'
-          repositories: ISearchContextRepositoryRevisionsInput[]
+          repositories: SearchContextRepositoryRevisionsInput[]
       }
 
 export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<SearchContextFormProps>> = props => {
-    const {
-        authenticatedUser,
-        onSubmit,
-        searchContext,
-        deleteSearchContext,
-        isSourcegraphDotCom,
-        platformContext,
-    } = props
-    const history = useHistory()
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
+    const { authenticatedUser, onSubmit, searchContext, deleteSearchContext, isSourcegraphDotCom, platformContext } =
+        props
+    const navigate = useNavigate()
+    const isLightTheme = useIsLightTheme()
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -234,7 +226,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         map(repositories => {
                             const repositoryNameToID = new Map(repositories.map(({ id, name }) => [name, id]))
                             const errors: Error[] = []
-                            const validRepositories: ISearchContextRepositoryRevisionsInput[] = []
+                            const validRepositories: SearchContextRepositoryRevisionsInput[] = []
                             for (const { repository, revisions } of config) {
                                 const repositoryID = repositoryNameToID.get(repository)
                                 if (repositoryID) {
@@ -297,7 +289,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             catchError(error => [asError(error)]),
                             tap(successOrError => {
                                 if (!isErrorLike(successOrError) && successOrError !== LOADING) {
-                                    history.push('/contexts?order=updated-at-desc', ALLOW_NAVIGATION)
+                                    navigate('/contexts?order=updated-at-desc', { state: ALLOW_NAVIGATION })
                                 }
                             })
                         )
@@ -312,7 +304,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                 queryState,
                 visibility,
                 selectedNamespace,
-                history,
+                navigate,
                 searchContext,
                 contextType,
             ]
@@ -320,8 +312,8 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
     )
 
     const onCancel = useCallback(() => {
-        history.push('/contexts')
-    }, [history])
+        navigate('/contexts')
+    }, [navigate])
 
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const toggleDeleteModal = useCallback(() => setShowDeleteModal(show => !show), [setShowDeleteModal])
@@ -368,33 +360,33 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                     {searchContextSpecPreview}
                 </div>
                 <hr aria-hidden={true} className={classNames('my-4', styles.searchContextFormDivider)} />
-                <div>
-                    <div className="mb-2">
-                        Description <span className="text-muted">(optional)</span>
-                    </div>
-                    <TextArea
-                        className="w-100"
-                        data-testid="search-context-description-input"
-                        maxLength={MAX_DESCRIPTION_LENGTH}
-                        value={description}
-                        rows={5}
-                        onChange={event => {
-                            const value = event.target.value
-                            if (value.length <= MAX_DESCRIPTION_LENGTH) {
-                                setDescription(event.target.value)
-                            }
-                        }}
-                    />
-                    <div className="mt-1 text-muted">
-                        <small>
+                <TextArea
+                    label={
+                        <>
+                            Description <span className="text-muted">(optional)</span>
+                        </>
+                    }
+                    message={
+                        <span className="font-weight-normal">
                             <span>Markdown formatting is supported</span>
                             <span aria-hidden={true} className="px-1">
                                 &middot;
                             </span>
                             <span>{MAX_DESCRIPTION_LENGTH - description.length} characters remaining</span>
-                        </small>
-                    </div>
-                </div>
+                        </span>
+                    }
+                    className="w-100 mb-2"
+                    data-testid="search-context-description-input"
+                    maxLength={MAX_DESCRIPTION_LENGTH}
+                    value={description}
+                    rows={5}
+                    onChange={event => {
+                        const value = event.target.value
+                        if (value.length <= MAX_DESCRIPTION_LENGTH) {
+                            setDescription(event.target.value)
+                        }
+                    }}
+                />
                 <div className={classNames('mt-3', styles.searchContextFormVisibility)}>
                     <div className="mb-3">Visibility</div>
                     {visibilityRadioButtons.map((radio, index) => (
@@ -429,7 +421,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         <Link
                             target="_blank"
                             rel="noopener"
-                            to="https://docs.sourcegraph.com/code_search/how-to/search_contexts#beta-query-based-search-contexts"
+                            to="/help/code_search/how-to/search_contexts#beta-query-based-search-contexts"
                         >
                             search query
                         </Link>
@@ -451,9 +443,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             }
                         />
                         <div className={styles.searchContextFormQuery} data-testid="search-context-dynamic-query">
-                            <LazyMonacoQueryInput
-                                editorComponent={editorComponent}
-                                isLightTheme={props.isLightTheme}
+                            <LazyQueryInput
                                 patternType={SearchPatternType.regexp}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 caseSensitive={true}
@@ -492,6 +482,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         <div className={styles.searchContextFormStaticConfig}>
                             <SearchContextRepositoriesFormArea
                                 {...props}
+                                isLightTheme={isLightTheme}
                                 onChange={onRepositoriesConfigChange}
                                 validateRepositories={validateRepositories}
                                 repositories={searchContext?.repositories}

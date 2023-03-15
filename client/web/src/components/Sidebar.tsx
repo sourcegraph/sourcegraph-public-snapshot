@@ -1,9 +1,9 @@
-import React from 'react'
+import React, { FC, PropsWithChildren } from 'react'
 
 import { mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
 import kebabCase from 'lodash/kebabCase'
-import { useRouteMatch } from 'react-router-dom'
+import { useMatch } from 'react-router-dom'
 
 import {
     AnchorLink,
@@ -19,30 +19,39 @@ import {
 
 import styles from './Sidebar.module.scss'
 
+interface SidebarNavItemProps {
+    to: string
+    className?: string
+    source?: string
+    onClick?: () => void
+    exact?: boolean
+}
+
 /**
  * Item of `SideBarGroup`.
  */
-export const SidebarNavItem: React.FunctionComponent<
-    React.PropsWithChildren<{
-        to: string
-        className?: string
-        exact?: boolean
-        source?: string
-    }>
-> = ({ children, className, to, exact, source }) => {
+export const SidebarNavItem: FC<PropsWithChildren<SidebarNavItemProps>> = ({
+    children,
+    className,
+    to,
+    source,
+    onClick,
+    exact = false,
+}) => {
+    // Match nested routes too.
+    const routeMatch = useMatch(to + (exact ? '' : '/*'))
     const buttonClassNames = classNames('text-left d-flex', styles.linkInactive, className)
-    const routeMatch = useRouteMatch({ path: to, exact })
 
     if (source === 'server') {
         return (
-            <ButtonLink as={AnchorLink} to={to} className={classNames(buttonClassNames, className)}>
+            <ButtonLink as={AnchorLink} to={to} className={classNames(buttonClassNames, className)} onClick={onClick}>
                 {children}
             </ButtonLink>
         )
     }
 
     return (
-        <ButtonLink to={to} className={buttonClassNames} variant={routeMatch?.isExact ? 'primary' : undefined}>
+        <ButtonLink to={to} className={buttonClassNames} variant={routeMatch ? 'primary' : undefined} onClick={onClick}>
             {children}
         </ButtonLink>
     )

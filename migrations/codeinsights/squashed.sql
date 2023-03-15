@@ -30,6 +30,23 @@ CREATE TYPE time_unit AS ENUM (
     'YEAR'
 );
 
+CREATE TABLE archived_insight_series_recording_times (
+    insight_series_id integer NOT NULL,
+    recording_time timestamp with time zone NOT NULL,
+    snapshot boolean NOT NULL
+);
+
+CREATE TABLE archived_series_points (
+    series_id text NOT NULL,
+    "time" timestamp with time zone NOT NULL,
+    value double precision NOT NULL,
+    repo_id integer,
+    repo_name_id integer,
+    original_repo_name_id integer,
+    capture text,
+    CONSTRAINT check_repo_fields_specifity CHECK ((((repo_id IS NULL) AND (repo_name_id IS NULL) AND (original_repo_name_id IS NULL)) OR ((repo_id IS NOT NULL) AND (repo_name_id IS NOT NULL) AND (original_repo_name_id IS NOT NULL))))
+);
+
 CREATE TABLE commit_index (
     committed_at timestamp with time zone NOT NULL,
     repo_id integer NOT NULL,
@@ -121,35 +138,6 @@ CREATE SEQUENCE dashboard_insight_view_id_seq
 
 ALTER SEQUENCE dashboard_insight_view_id_seq OWNED BY dashboard_insight_view.id;
 
-CREATE TABLE insight_dirty_queries (
-    id integer NOT NULL,
-    insight_series_id integer,
-    query text NOT NULL,
-    dirty_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    reason text NOT NULL,
-    for_time timestamp without time zone NOT NULL
-);
-
-COMMENT ON TABLE insight_dirty_queries IS 'Stores queries that were unsuccessful or otherwise flagged as incomplete or incorrect.';
-
-COMMENT ON COLUMN insight_dirty_queries.query IS 'Sourcegraph query string that was executed.';
-
-COMMENT ON COLUMN insight_dirty_queries.dirty_at IS 'Timestamp when this query was marked dirty.';
-
-COMMENT ON COLUMN insight_dirty_queries.reason IS 'Human readable string indicating the reason the query was marked dirty.';
-
-COMMENT ON COLUMN insight_dirty_queries.for_time IS 'Timestamp for which the original data point was recorded or intended to be recorded.';
-
-CREATE SEQUENCE insight_dirty_queries_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE insight_dirty_queries_id_seq OWNED BY insight_dirty_queries.id;
-
 CREATE TABLE insight_series (
     id integer NOT NULL,
     series_id text NOT NULL,
@@ -172,7 +160,8 @@ CREATE TABLE insight_series (
     backfill_attempts integer DEFAULT 0 NOT NULL,
     needs_migration boolean,
     backfill_completed_at timestamp without time zone,
-    supports_augmentation boolean DEFAULT true NOT NULL
+    supports_augmentation boolean DEFAULT true NOT NULL,
+    repository_criteria text
 );
 
 COMMENT ON TABLE insight_series IS 'Data series that comprise code insights.';
@@ -196,6 +185,8 @@ COMMENT ON COLUMN insight_series.deleted_at IS 'Timestamp of a soft-delete of th
 COMMENT ON COLUMN insight_series.generation_method IS 'Specifies the execution method for how this series is generated. This helps the system understand how to generate the time series data.';
 
 COMMENT ON COLUMN insight_series.just_in_time IS 'Specifies if the series should be resolved just in time at query time, or recorded in background processing.';
+
+COMMENT ON COLUMN insight_series.repository_criteria IS 'The search criteria used to determine the repositories that are included in this series.';
 
 CREATE TABLE insight_series_backfill (
     id integer NOT NULL,
@@ -225,6 +216,24 @@ CREATE SEQUENCE insight_series_id_seq
 
 ALTER SEQUENCE insight_series_id_seq OWNED BY insight_series.id;
 
+CREATE TABLE insight_series_incomplete_points (
+    id integer NOT NULL,
+    series_id integer NOT NULL,
+    reason text NOT NULL,
+    "time" timestamp without time zone NOT NULL,
+    repo_id integer
+);
+
+CREATE SEQUENCE insight_series_incomplete_points_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE insight_series_incomplete_points_id_seq OWNED BY insight_series_incomplete_points.id;
+
 CREATE TABLE insight_series_recording_times (
     insight_series_id integer,
     recording_time timestamp with time zone,
@@ -244,7 +253,8 @@ CREATE TABLE insight_view (
     default_filter_search_contexts text[],
     series_sort_mode series_sort_mode_enum,
     series_sort_direction series_sort_direction_enum,
-    series_limit integer
+    series_limit integer,
+    series_num_samples integer
 );
 
 COMMENT ON TABLE insight_view IS 'Views for insight data series. An insight view is an abstraction on top of an insight data series that allows for lightweight modifications to filters or metadata without regenerating the underlying series.';
@@ -341,6 +351,34 @@ CREATE SEQUENCE insights_background_jobs_id_seq
 
 ALTER SEQUENCE insights_background_jobs_id_seq OWNED BY insights_background_jobs.id;
 
+CREATE TABLE insights_data_retention_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    series_id integer NOT NULL,
+    series_id_string text DEFAULT ''::text NOT NULL
+);
+
+CREATE SEQUENCE insights_data_retention_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE insights_data_retention_jobs_id_seq OWNED BY insights_data_retention_jobs.id;
+
 CREATE VIEW insights_jobs_backfill_in_progress AS
  SELECT jobs.id,
     jobs.state,
@@ -357,7 +395,8 @@ CREATE VIEW insights_jobs_backfill_in_progress AS
     jobs.cancel,
     jobs.backfill_id,
     isb.state AS backfill_state,
-    isb.estimated_cost
+    isb.estimated_cost,
+    width_bucket(isb.estimated_cost, (0)::double precision, max((isb.estimated_cost + (1)::double precision)) OVER (), 4) AS cost_bucket
    FROM (insights_background_jobs jobs
      JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))
   WHERE (isb.state = 'processing'::text);
@@ -514,17 +553,19 @@ ALTER TABLE ONLY dashboard_grants ALTER COLUMN id SET DEFAULT nextval('dashboard
 
 ALTER TABLE ONLY dashboard_insight_view ALTER COLUMN id SET DEFAULT nextval('dashboard_insight_view_id_seq'::regclass);
 
-ALTER TABLE ONLY insight_dirty_queries ALTER COLUMN id SET DEFAULT nextval('insight_dirty_queries_id_seq'::regclass);
-
 ALTER TABLE ONLY insight_series ALTER COLUMN id SET DEFAULT nextval('insight_series_id_seq'::regclass);
 
 ALTER TABLE ONLY insight_series_backfill ALTER COLUMN id SET DEFAULT nextval('insight_series_backfill_id_seq'::regclass);
+
+ALTER TABLE ONLY insight_series_incomplete_points ALTER COLUMN id SET DEFAULT nextval('insight_series_incomplete_points_id_seq'::regclass);
 
 ALTER TABLE ONLY insight_view ALTER COLUMN id SET DEFAULT nextval('insight_view_id_seq'::regclass);
 
 ALTER TABLE ONLY insight_view_grants ALTER COLUMN id SET DEFAULT nextval('insight_view_grants_id_seq'::regclass);
 
 ALTER TABLE ONLY insights_background_jobs ALTER COLUMN id SET DEFAULT nextval('insights_background_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY insights_data_retention_jobs ALTER COLUMN id SET DEFAULT nextval('insights_data_retention_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY metadata ALTER COLUMN id SET DEFAULT nextval('metadata_id_seq'::regclass);
 
@@ -533,6 +574,9 @@ ALTER TABLE ONLY repo_iterator ALTER COLUMN id SET DEFAULT nextval('repo_iterato
 ALTER TABLE ONLY repo_iterator_errors ALTER COLUMN id SET DEFAULT nextval('repo_iterator_errors_id_seq'::regclass);
 
 ALTER TABLE ONLY repo_names ALTER COLUMN id SET DEFAULT nextval('repo_names_id_seq'::regclass);
+
+ALTER TABLE ONLY archived_insight_series_recording_times
+    ADD CONSTRAINT archived_insight_series_recor_insight_series_id_recording_t_key UNIQUE (insight_series_id, recording_time);
 
 ALTER TABLE ONLY commit_index_metadata
     ADD CONSTRAINT commit_index_metadata_pkey PRIMARY KEY (repo_id);
@@ -549,11 +593,11 @@ ALTER TABLE ONLY dashboard_insight_view
 ALTER TABLE ONLY dashboard
     ADD CONSTRAINT dashboard_pk PRIMARY KEY (id);
 
-ALTER TABLE ONLY insight_dirty_queries
-    ADD CONSTRAINT insight_dirty_queries_pkey PRIMARY KEY (id);
-
 ALTER TABLE ONLY insight_series_backfill
     ADD CONSTRAINT insight_series_backfill_pk PRIMARY KEY (id);
+
+ALTER TABLE ONLY insight_series_incomplete_points
+    ADD CONSTRAINT insight_series_incomplete_points_pk PRIMARY KEY (id);
 
 ALTER TABLE ONLY insight_series
     ADD CONSTRAINT insight_series_pkey PRIMARY KEY (id);
@@ -572,6 +616,9 @@ ALTER TABLE ONLY insight_view_series
 
 ALTER TABLE ONLY insights_background_jobs
     ADD CONSTRAINT insights_background_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY insights_data_retention_jobs
+    ADD CONSTRAINT insights_data_retention_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY metadata
     ADD CONSTRAINT metadata_pkey PRIMARY KEY (id);
@@ -602,9 +649,9 @@ CREATE INDEX dashboard_insight_view_dashboard_id_fk_idx ON dashboard_insight_vie
 
 CREATE INDEX dashboard_insight_view_insight_view_id_fk_idx ON dashboard_insight_view USING btree (insight_view_id);
 
-CREATE INDEX insight_dirty_queries_insight_series_id_fk_idx ON insight_dirty_queries USING btree (insight_series_id);
-
 CREATE INDEX insight_series_deleted_at_idx ON insight_series USING btree (deleted_at);
+
+CREATE UNIQUE INDEX insight_series_incomplete_points_unique_idx ON insight_series_incomplete_points USING btree (series_id, reason, "time", repo_id);
 
 CREATE INDEX insight_series_next_recording_after_idx ON insight_series USING btree (next_recording_after);
 
@@ -661,14 +708,20 @@ ALTER TABLE ONLY dashboard_insight_view
 ALTER TABLE ONLY dashboard_insight_view
     ADD CONSTRAINT dashboard_insight_view_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY insight_dirty_queries
-    ADD CONSTRAINT insight_dirty_queries_insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
-
 ALTER TABLE ONLY insight_series_backfill
     ADD CONSTRAINT insight_series_backfill_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY insight_series_recording_times
     ADD CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY archived_insight_series_recording_times
+    ADD CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY insight_series_incomplete_points
+    ADD CONSTRAINT insight_series_incomplete_points_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY archived_series_points
+    ADD CONSTRAINT insight_series_series_id_fkey FOREIGN KEY (series_id) REFERENCES insight_series(series_id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;

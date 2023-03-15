@@ -1,7 +1,6 @@
 import * as comlink from 'comlink'
-import { from, Subscription } from 'rxjs'
+import { from, Subscription, Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
-import { Unsubscribable } from 'sourcegraph'
 
 import { logger } from '@sourcegraph/common'
 
@@ -45,14 +44,7 @@ export async function createExtensionHostClientConnection(
     initData: Omit<InitData, 'initialSettings'>,
     platformContext: Pick<
         PlatformContext,
-        | 'settings'
-        | 'updateSettings'
-        | 'getGraphQLClient'
-        | 'requestGraphQL'
-        | 'telemetryService'
-        | 'sideloadedExtensionURL'
-        | 'getScriptURLForExtension'
-        | 'clientApplication'
+        'settings' | 'updateSettings' | 'getGraphQLClient' | 'requestGraphQL' | 'telemetryService' | 'clientApplication'
     >
 ): Promise<{
     subscription: Unsubscribable

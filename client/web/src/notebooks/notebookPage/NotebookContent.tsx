@@ -3,29 +3,27 @@ import React, { useMemo } from 'react'
 import { noop } from 'lodash'
 import { Observable } from 'rxjs'
 
-import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { Block, BlockInit } from '..'
 import { NotebookFields } from '../../graphql-operations'
+import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { SearchStreamingProps } from '../../search'
 import { CopyNotebookProps } from '../notebook'
 import { NotebookComponent } from '../notebook/NotebookComponent'
 
 export interface NotebookContentProps
     extends SearchStreamingProps,
-        ThemeProps,
         TelemetryProps,
         Omit<
             StreamingSearchResultsListProps,
-            'allExpanded' | 'extensionsController' | 'platformContext' | 'executedQuery'
+            'allExpanded' | 'platformContext' | 'executedQuery' | 'enableOwnershipSearch'
         >,
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     viewerCanManage: boolean
@@ -46,16 +44,14 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         onUpdateBlocks,
         globbing,
         streamSearch,
-        isLightTheme,
         telemetryService,
         searchContextsEnabled,
+        ownEnabled,
         isSourcegraphDotCom,
         fetchHighlightedFileLineRanges,
         authenticatedUser,
-        showSearchContext,
         settingsCascade,
         platformContext,
-        extensionsController,
         outlineContainerElement,
         isEmbedded,
     }) => {
@@ -79,12 +75,6 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
                                 type: 'symbol',
                                 input: { ...block.symbolInput, revision: block.symbolInput.revision ?? '' },
                             }
-                        case 'ComputeBlock':
-                            return {
-                                id: block.id,
-                                type: 'compute',
-                                input: block.computeInput,
-                            }
                     }
                 }),
             [blocks]
@@ -94,16 +84,14 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
             <NotebookComponent
                 globbing={globbing}
                 streamSearch={streamSearch}
-                isLightTheme={isLightTheme}
                 telemetryService={telemetryService}
                 searchContextsEnabled={searchContextsEnabled}
+                ownEnabled={ownEnabled}
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                 authenticatedUser={authenticatedUser}
-                showSearchContext={showSearchContext}
                 settingsCascade={settingsCascade}
                 platformContext={platformContext}
-                extensionsController={extensionsController}
                 isReadOnly={!viewerCanManage}
                 blocks={initializerBlocks}
                 onSerializeBlocks={viewerCanManage ? onUpdateBlocks : noop}
@@ -115,3 +103,5 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         )
     }
 )
+
+NotebookContent.displayName = 'NotebookContent'

@@ -4,6 +4,7 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -27,20 +28,20 @@ func NewAuthzProviders(
 	db database.DB,
 	cfg schema.SiteConfiguration,
 	conns []*types.GitLabConnection,
-) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string,
-) {
+) *atypes.ProviderInitResult {
+	initResults := &atypes.ProviderInitResult{}
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
 		p, err := newAuthzProvider(db, c.URN, c.Authorization, c.Url, c.Token, gitlab.TokenType(c.TokenType), cfg.AuthProviders)
 		if err != nil {
-			invalidConnections = append(invalidConnections, extsvc.TypeGitLab)
-			problems = append(problems, err.Error())
+			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeGitLab)
+			initResults.Problems = append(initResults.Problems, err.Error())
 		} else if p != nil {
-			ps = append(ps, p)
+			initResults.Providers = append(initResults.Providers, p)
 		}
 	}
 
-	return ps, problems, warnings, invalidConnections
+	return initResults
 }
 
 func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization, instanceURL, token string, tokenType gitlab.TokenType, ps []schema.AuthProviders) (authz.Provider, error) {
@@ -126,7 +127,7 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 
 // NewOAuthProvider is a mockable constructor for new OAuthProvider instances.
 var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
-	return newOAuthProvider(op, nil, nil)
+	return newOAuthProvider(op, nil)
 }
 
 // NewSudoProvider is a mockable constructor for new SudoProvider instances.

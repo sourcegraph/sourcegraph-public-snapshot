@@ -1,4 +1,6 @@
-.card {
+// :where() is used to fix the CSS ordering issue with the Toast component
+// See https: //github.com/sourcegraph/sourcegraph/issues/42217
+:where(.card) {
     --card-bg: var(--color-bg-1);
     --card-border-color: var(--border-color-2);
     --card-border-radius: var(--border-radius);
@@ -16,7 +18,12 @@
     border-width: 1px;
     border-style: solid;
     border-color: var(--card-border-color);
-    border-radius: var(--card-border-radius);
+    // By using the :where() selector for this class, the specificity is always
+    // zero. This caused issues with some reset classes that would take on a
+    // higher specificity and override the border-radius.
+    //
+    // See https://github.com/sourcegraph/sourcegraph/pull/46274
+    border-radius: var(--card-border-radius) !important;
 }
 
 button.card {

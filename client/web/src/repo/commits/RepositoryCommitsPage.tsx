@@ -1,24 +1,37 @@
-import React, { useEffect, useCallback } from 'react'
+import { FC, useEffect, useMemo } from 'react'
 
-import * as H from 'history'
-import { Observable, of } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { useLocation } from 'react-router-dom'
 
-import { createAggregateError } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Heading, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Code, Heading, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+import {
+    ConnectionContainer,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
-import { GitCommitFields, RepositoryFields, Scalars } from '../../graphql-operations'
+import {
+    GitCommitFields,
+    RepositoryFields,
+    RepositoryGitCommitsResult,
+    RepositoryGitCommitsVariables,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { basename } from '../../util/path'
+import { parseBrowserRepoURL } from '../../util/url'
 import { externalLinkFieldsFragment } from '../backend'
+import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
-import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
+import { GitCommitNode } from './GitCommitNode'
 
 import styles from './RepositoryCommitsPage.module.scss'
 
@@ -70,104 +83,163 @@ export const gitCommitFragment = gql`
     ${externalLinkFieldsFragment}
 `
 
-const fetchGitCommits = (args: {
-    repo: Scalars['ID']
-    revspec: string
-    first?: number
-    query?: string
-}): Observable<GQL.IGitCommitConnection> =>
-    queryGraphQL(
-        gql`
-            query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $query: String) {
-                node(id: $repo) {
-                    ... on Repository {
-                        commit(rev: $revspec) {
-                            ancestors(first: $first, query: $query) {
-                                nodes {
-                                    ...GitCommitFields
-                                }
-                                pageInfo {
-                                    hasNextPage
-                                }
-                            }
+const REPOSITORY_GIT_COMMITS_PER_PAGE = 20
+
+const REPOSITORY_GIT_COMMITS_QUERY = gql`
+    query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
+        node(id: $repo) {
+            ... on Repository {
+                externalURLs {
+                    url
+                    serviceKind
+                }
+                commit(rev: $revspec) {
+                    ancestors(first: $first, path: $filePath, afterCursor: $afterCursor) {
+                        nodes {
+                            ...GitCommitFields
+                        }
+                        pageInfo {
+                            hasNextPage
+                            endCursor
                         }
                     }
                 }
             }
-            ${gitCommitFragment}
-        `,
-        args
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.node) {
-                throw createAggregateError(errors)
-            }
-            const repo = data.node as GQL.IRepository
-            if (!repo.commit || !repo.commit.ancestors) {
-                throw createAggregateError(errors)
-            }
-            return repo.commit.ancestors
-        })
-    )
+        }
+    }
+    ${gitCommitFragment}
+`
 
-export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSetters {
-    repo: RepositoryFields | undefined
-
-    history: H.History
-    location: H.Location
+export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSetters, TelemetryProps {
+    repo: RepositoryFields
 }
 
-const BREADCRUMB = { key: 'commits', element: <>Commits</> }
+// A page that shows a repository's commits at the current revision.
+export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
+    const { useBreadcrumb, repo } = props
 
-/** A page that shows a repository's commits at the current revision. */
-export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChildren<RepositoryCommitsPageProps>> = ({
-    useBreadcrumb,
-    ...props
-}) => {
+    const location = useLocation()
+    const { filePath = '' } = parseBrowserRepoURL(location.pathname)
+
+    const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
+        RepositoryGitCommitsResult,
+        RepositoryGitCommitsVariables,
+        GitCommitFields
+    >({
+        query: REPOSITORY_GIT_COMMITS_QUERY,
+        variables: {
+            repo: repo.id,
+            revspec: props.revision,
+            filePath: filePath ?? null,
+            first: REPOSITORY_GIT_COMMITS_PER_PAGE,
+            afterCursor: null,
+        },
+        getConnection: result => {
+            const { node } = dataOrThrowErrors(result)
+            if (!node) {
+                return { nodes: [] }
+            }
+            if (node.__typename !== 'Repository') {
+                return { nodes: [] }
+            }
+            if (!node.commit?.ancestors) {
+                return { nodes: [] }
+            }
+            return node?.commit?.ancestors
+        },
+        options: {
+            fetchPolicy: 'cache-first',
+            useAlternateAfterCursor: true,
+        },
+    })
+
     useEffect(() => {
-        eventLogger.logViewEvent('RepositoryCommits')
+        eventLogger.logPageView('RepositoryCommits')
     }, [])
 
-    useBreadcrumb(BREADCRUMB)
-
-    const queryCommits = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> => {
-            if (!props.repo?.id) {
-                return of()
+    useBreadcrumb(
+        useMemo(() => {
+            if (!filePath || !repo) {
+                return
             }
-
-            return fetchGitCommits({ ...args, repo: props.repo?.id, revspec: props.revision })
-        },
-        [props.repo?.id, props.revision]
+            return {
+                key: 'treePath',
+                className: 'flex-shrink-past-contents',
+                element: (
+                    <FilePathBreadcrumbs
+                        key="path"
+                        repoName={repo.name}
+                        revision={props.revision}
+                        filePath={filePath}
+                        isDir={true}
+                        telemetryService={props.telemetryService}
+                    />
+                ),
+            }
+        }, [filePath, repo, props.revision, props.telemetryService])
+    )
+    // We need to resolve the Commits breadcrumb at the same time as the
+    // filePath, so that the order is correct (otherwise Commits will show
+    // before the path)
+    useBreadcrumb(
+        useMemo(() => {
+            if (!repo) {
+                return
+            }
+            return { key: 'commits', element: <>Commits</> }
+        }, [repo])
     )
 
-    if (!props.repo) {
-        return <LoadingSpinner />
+    const getPageTitle = (): string => {
+        const repoString = displayRepoName(repo.name)
+        if (filePath) {
+            return `Commits - ${basename(filePath)} - ${repoString}`
+        }
+        return `Commits - ${repoString}`
     }
 
     return (
         <div className={styles.repositoryCommitsPage} data-testid="commits-page">
-            <PageTitle title="Commits" />
+            <PageTitle title={getPageTitle()} />
+
             <div className={styles.content}>
-                <Heading as="h2" styleAs="h1">
-                    View commits from this repository
-                </Heading>
-                <FilteredConnection<
-                    GitCommitFields,
-                    Pick<GitCommitNodeProps, 'className' | 'compact' | 'wrapperElement'>
-                >
-                    listClassName="list-group list-group-flush"
-                    noun="commit"
-                    pluralNoun="commits"
-                    queryConnection={queryCommits}
-                    nodeComponent={GitCommitNode}
-                    nodeComponentProps={{ className: 'list-group-item', wrapperElement: 'li' }}
-                    defaultFirst={20}
-                    autoFocus={true}
-                    history={props.history}
-                    hideSearch={true}
-                    location={props.location}
-                />
+                <ConnectionContainer>
+                    <Heading as="h2" styleAs="h1">
+                        {filePath ? (
+                            <>
+                                View commits inside <Code>{basename(filePath)}</Code>
+                            </>
+                        ) : (
+                            <>View commits from this repository</>
+                        )}
+                    </Heading>
+
+                    <Heading as="h3" styleAs="h2">
+                        Changes
+                    </Heading>
+
+                    {error && <ErrorAlert error={error} className="w-100 mb-0" />}
+                    <ConnectionList className="list-group list-group-flush w-100">
+                        {connection?.nodes.map(node => (
+                            <GitCommitNode key={node.id} className="list-group-item" wrapperElement="li" node={node} />
+                        ))}
+                    </ConnectionList>
+                    {loading && <ConnectionLoading />}
+                    {connection && (
+                        <SummaryContainer centered={true}>
+                            <ConnectionSummary
+                                centered={true}
+                                first={REPOSITORY_GIT_COMMITS_PER_PAGE}
+                                connection={connection}
+                                noun="commit"
+                                pluralNoun="commits"
+                                hasNextPage={hasNextPage}
+                                emptyElement={null}
+                            />
+                            {hasNextPage ? <ShowMoreButton centered={true} onClick={fetchMore} /> : null}
+                        </SummaryContainer>
+                    )}
+                </ConnectionContainer>
             </div>
         </div>
     )

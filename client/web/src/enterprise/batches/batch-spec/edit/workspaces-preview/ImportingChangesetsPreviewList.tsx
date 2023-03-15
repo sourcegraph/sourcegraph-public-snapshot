@@ -2,10 +2,9 @@ import React from 'react'
 
 import { mdiImport } from '@mdi/js'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Icon, H3, H4 } from '@sourcegraph/wildcard'
+import { Icon, H3, H4, LinkOrSpan } from '@sourcegraph/wildcard'
 
-import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
+import { UseShowMorePaginationResult } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionList,
@@ -14,13 +13,17 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../../../components/FilteredConnection/ui'
+import { BatchSpecImportingChangesetsResult } from '../../../../../graphql-operations'
 
 import { ImportingChangesetFields } from './useImportingChangesets'
 
 import styles from './ImportingChangesetsPreviewList.module.scss'
 
 interface ImportingChangesetsPreviewListProps {
-    importingChangesetsConnection: UseConnectionResult<ImportingChangesetFields>
+    importingChangesetsConnection: UseShowMorePaginationResult<
+        BatchSpecImportingChangesetsResult,
+        ImportingChangesetFields
+    >
     /**
      * Whether or not the changesets in this list are up-to-date with the current batch
      * spec input YAML in the editor.
@@ -37,7 +40,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<
         <H4 as={H3} className="align-self-start w-100 mt-4">
             Importing changesets
         </H4>
-        <ConnectionList className="list-group list-group-flush w-100">
+        <ConnectionList className="list-group list-group-flush w-100" aria-label="changesets to be imported">
             {connection?.nodes.map(node =>
                 node.__typename === 'VisibleChangesetSpec' ? (
                     <li className="w-100" key={node.id}>

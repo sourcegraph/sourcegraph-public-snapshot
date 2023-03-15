@@ -11,9 +11,9 @@ type Operations struct {
 	Search *observation.Operation
 }
 
-func NewOperations(observationContext *observation.Context) *Operations {
-	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+func NewOperations(observationCtx *observation.Context) *Operations {
+	redMetrics := metrics.NewREDMetrics(
+		observationCtx.Registerer,
 		"codeintel_symbols_api",
 		metrics.WithLabels("op", "parseAmount"),
 		metrics.WithCountHelp("Total number of method invocations."),
@@ -21,10 +21,10 @@ func NewOperations(observationContext *observation.Context) *Operations {
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.symbols.api.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 

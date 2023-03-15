@@ -1,8 +1,8 @@
-import { Route, Routes } from 'react-router-dom-v5-compat'
+import { Route, Routes } from 'react-router-dom'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../auth'
 import { SourcegraphContext } from '../jscontext'
@@ -44,7 +44,6 @@ describe('SignUpPage', () => {
                                     context={{
                                         allowSignup: true,
                                         sourcegraphDotComMode: false,
-                                        experimentalFeatures: { enablePostSignupFlow: false },
                                         authMinPasswordLength: 12,
                                         authProviders,
                                         xhrHeaders: {},
@@ -74,7 +73,6 @@ describe('SignUpPage', () => {
                                     context={{
                                         allowSignup: true,
                                         sourcegraphDotComMode: true,
-                                        experimentalFeatures: { enablePostSignupFlow: false },
                                         authMinPasswordLength: 12,
                                         authProviders,
                                         xhrHeaders: {},
@@ -95,7 +93,7 @@ describe('SignUpPage', () => {
         const mockUser = {
             id: 'userID',
             username: 'username',
-            email: 'user@me.com',
+            emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
             siteAdmin: true,
         } as AuthenticatedUser
 
@@ -112,7 +110,6 @@ describe('SignUpPage', () => {
                                     context={{
                                         allowSignup: true,
                                         sourcegraphDotComMode: false,
-                                        experimentalFeatures: { enablePostSignupFlow: false },
                                         authMinPasswordLength: 12,
                                         authProviders,
                                         xhrHeaders: {},

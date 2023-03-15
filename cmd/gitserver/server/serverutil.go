@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -53,8 +54,8 @@ func (dir GitDir) Set(cmd *exec.Cmd) {
 }
 
 func (s *Server) dir(name api.RepoName) GitDir {
-	path := string(protocol.NormalizeRepo(name))
-	return GitDir(filepath.Join(s.ReposDir, filepath.FromSlash(path), ".git"))
+	p := string(protocol.NormalizeRepo(name))
+	return GitDir(filepath.Join(s.ReposDir, filepath.FromSlash(p), ".git"))
 }
 
 func (s *Server) name(dir GitDir) api.RepoName {
@@ -81,8 +82,8 @@ func isAlwaysCloningTest(name api.RepoName) bool {
 }
 
 func isAlwaysCloningTestRemoteURL(remoteURL *vcs.URL) bool {
-	return (strings.EqualFold(remoteURL.Host, "github.com") &&
-		strings.EqualFold(remoteURL.Path, "sourcegraphtest/alwayscloningtest"))
+	return strings.EqualFold(remoteURL.Host, "github.com") &&
+		strings.EqualFold(remoteURL.Path, "sourcegraphtest/alwayscloningtest")
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
@@ -164,14 +165,14 @@ var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
 
 // runWith runs the command after applying the remote options. If progress is not
 // nil, all output is written to it in a separate goroutine.
-func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+func runWith(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
 		// variables like http_proxy/etc.
-		if cmd.Env == nil {
-			cmd.Env = os.Environ()
+		if cmd.Unwrap().Env == nil {
+			cmd.Unwrap().Env = os.Environ()
 		}
-		configureRemoteGitCommand(cmd, tlsExternal())
+		configureRemoteGitCommand(cmd.Unwrap(), tlsExternal())
 	}
 
 	var b interface {
@@ -185,8 +186,8 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		r, w := io.Pipe()
 		defer w.Close()
 		mr := io.MultiWriter(&pw, w)
-		cmd.Stdout = mr
-		cmd.Stderr = mr
+		cmd.Unwrap().Stdout = mr
+		cmd.Unwrap().Stderr = mr
 		go func() {
 			if _, err := io.Copy(progress, r); err != nil {
 				logger.Error("error while copying progress", log.Error(err))
@@ -195,12 +196,12 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		b = &pw
 	} else {
 		var buf bytes.Buffer
-		cmd.Stdout = &buf
-		cmd.Stderr = &buf
+		cmd.Unwrap().Stdout = &buf
+		cmd.Unwrap().Stderr = &buf
 		b = &buf
 	}
 
-	_, err := runCommand(ctx, cmd)
+	_, err := runCommand(ctx, cmd) // TODO
 	return b.Bytes(), err
 }
 
@@ -360,7 +361,7 @@ var repoRemoteRefs = func(ctx context.Context, remoteURL *vcs.URL, prefix string
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	_, err := runCommand(ctx, cmd)
+	_, err := runCommand(ctx, wrexec.Wrap(ctx, nil, cmd))
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {
@@ -602,20 +603,7 @@ func mapToLoggerField(m map[string]any) []log.Field {
 	return LogFields
 }
 
-// isPaused returns true if a file "SG_PAUSE" is present in dir. If the file is
-// present, its first 40 bytes are returned as first argument.
-func isPaused(dir string) (string, bool) {
-	f, err := os.Open(filepath.Join(dir, "SG_PAUSE"))
-	if err != nil {
-		return "", false
-	}
-	defer f.Close()
-	b := make([]byte, 40)
-	io.ReadFull(f, b)
-	return string(b), true
-}
-
-// bestEffortWalk is a filepath.Walk which ignores errors that can be passed
+// bestEffortWalk is a filepath.WalkDir which ignores errors that can be passed
 // to walkFn. This is a common pattern used in gitserver for best effort work.
 //
 // Note: We still respect errors returned by walkFn.
@@ -623,18 +611,12 @@ func isPaused(dir string) (string, bool) {
 // filepath.Walk can return errors if we run into permission errors or a file
 // disappears between readdir and the stat of the file. In either case this
 // error can be ignored for best effort code.
-func bestEffortWalk(root string, walkFn func(path string, info fs.FileInfo) error) error {
-	logger := log.Scoped("bestEffortWalk", "bestEffortWalk is a filepath.Walk which ignores errors that can be passed to walkFn")
-	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+func bestEffortWalk(root string, walkFn func(path string, entry fs.DirEntry) error) error {
+	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
 
-		if msg, ok := isPaused(path); ok {
-			logger.Warn("bestEffortWalk paused", log.String("dir", path), log.String("reason", msg))
-			return filepath.SkipDir
-		}
-
-		return walkFn(path, info)
+		return walkFn(path, d)
 	})
 }

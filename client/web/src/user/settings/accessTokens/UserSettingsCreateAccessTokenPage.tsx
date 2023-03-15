@@ -1,12 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { RouteComponentProps } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 import { concat, Subject } from 'rxjs'
 import { catchError, concatMap, tap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -21,6 +19,8 @@ import {
     Input,
     Text,
     Label,
+    ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
@@ -30,10 +30,7 @@ import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
 
-interface Props
-    extends Pick<UserSettingsAreaRouteContext, 'user'>,
-        Pick<RouteComponentProps<{}>, 'history' | 'match'>,
-        TelemetryProps {
+interface Props extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {
     /**
      * Called when a new access token is created and should be temporarily displayed to the user.
      */
@@ -47,9 +44,9 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
     telemetryService,
     onDidCreateAccessToken,
     user,
-    history,
-    match,
 }) => {
+    const navigate = useNavigate()
+
     useMemo(() => {
         telemetryService.logViewEvent('NewAccessToken')
     }, [telemetryService])
@@ -83,7 +80,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                             createAccessToken(user.id, scopes, note).pipe(
                                 tap(result => {
                                     // Go back to access tokens list page and display the token secret value.
-                                    history.push(`${match.url.replace(/\/new$/, '')}`)
+                                    navigate('..', { relative: 'path' })
                                     onDidCreateAccessToken(result)
                                 }),
                                 catchError(error => [asError(error)])
@@ -91,7 +88,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         )
                     )
                 ),
-            [history, match.url, note, onDidCreateAccessToken, scopes, submits, user.id]
+            [navigate, note, onDidCreateAccessToken, scopes, submits, user.id]
         )
     )
 
@@ -167,12 +164,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         )}{' '}
                         Generate token
                     </Button>
-                    <Button
-                        className="ml-2 test-create-access-token-cancel"
-                        to={match.url.replace(/\/new$/, '')}
-                        variant="secondary"
-                        as={Link}
-                    >
+                    <Button className="ml-2 test-create-access-token-cancel" to="." variant="secondary" as={Link}>
                         Cancel
                     </Button>
                 </div>

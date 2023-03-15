@@ -1,0 +1,10 @@
+[
+  {
+    "Kind": "GITHUB",
+    "DisplayName": "Github repos",
+    "Config": {
+      "url": "https://github.com",
+      "repos": ["sourcegraph/automation-testing"]
+    }
+  }
+]

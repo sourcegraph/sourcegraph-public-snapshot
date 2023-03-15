@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -36,6 +36,8 @@ func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateSched
 		stop context.CancelFunc
 	)
 
+	logger = logger.Scoped("RunScheduler", "git fetch scheduler")
+
 	conf.Watch(func() {
 		c := conf.Get()
 
@@ -48,6 +50,7 @@ func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateSched
 			return
 		}
 
+		logger.Debug("config changed")
 		if stop != nil {
 			stop()
 			logger.Info("stopped previous scheduler")
@@ -213,7 +216,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				// if it doesn't exist or update it if it does. The timeout of this request depends
 				// on the value of conf.GitLongCommandTimeout() or if the passed context has a set
 				// deadline shorter than the value of this config.
-				resp, err := requestRepoUpdate(ctx, s.db, repo, 1*time.Second)
+				resp, err := requestRepoUpdate(ctx, repo, 1*time.Second)
 				if err != nil {
 					schedError.WithLabelValues("requestRepoUpdate").Inc()
 					subLogger.Error("error requesting repo update", log.Error(err), log.String("uri", string(repo.Name)))
@@ -266,15 +269,15 @@ func getCustomInterval(logger log.Logger, c *conf.Unified, repoName string) time
 }
 
 // requestRepoUpdate sends a request to gitserver to request an update.
-var requestRepoUpdate = func(ctx context.Context, db database.DB, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
-	return gitserver.NewClient(db).RequestRepoUpdate(ctx, repo.Name, since)
+var requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
+	return gitserver.NewClient().RequestRepoUpdate(ctx, repo.Name, since)
 }
 
 // configuredLimiter returns a mutable limiter that is
 // configured with the maximum number of concurrent update
 // requests that repo-updater should send to gitserver.
-var configuredLimiter = func() *mutablelimiter.Limiter {
-	limiter := mutablelimiter.New(1)
+var configuredLimiter = func() *limiter.MutableLimiter {
+	limiter := limiter.NewMutable(1)
 	conf.Watch(func() {
 		limiter.SetLimit(conf.GitMaxConcurrentClones())
 	})

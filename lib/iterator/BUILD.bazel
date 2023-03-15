@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "iterator",
+    srcs = [
+        "functions.go",
+        "iterator.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/iterator",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    timeout = "short",
+    name = "iterator_test",
+    srcs = [
+        "functions_test.go",
+        "iterator_test.go",
+    ],
+    deps = [
+        ":iterator",
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

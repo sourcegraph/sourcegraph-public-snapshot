@@ -71,8 +71,8 @@ func (s *Store) Load() ([]*Repo, error) {
 	return repos, nil
 }
 
-var saveRepoStmt = `UPDATE repos SET 
-failed = ?, 
+var saveRepoStmt = `UPDATE repos SET
+failed = ?,
 created = ?,
 pushed = ?,
 git_url = ?,

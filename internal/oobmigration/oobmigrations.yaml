@@ -88,3 +88,67 @@
   introduced_version_minor: 43
   deprecated_version_major: 4
   deprecated_version_minor: 0
+- id: 17
+  team: code-insights
+  component: codeinsights-db.insight_series
+  description: Save historical recording times for all existing insights
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 4
+  introduced_version_minor: 3
+  deprecated_version_major: 4
+  deprecated_version_minor: 4
+- id: 18
+  team: code-insights
+  component: db.insights_backfillerv2_migration
+  description: Migrates insight series from the v1 backfiller to v2.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 4
+  introduced_version_minor: 3
+  deprecated_version_major: 4
+  deprecated_version_minor: 4
+- id: 19
+  team: batch-changes
+  component: frontend-db.user_roles
+  description: Assigns roles to existing users
+  non_destructive: true
+  is_enterprise: false
+  introduced_version_major: 4
+  introduced_version_minor: 5
+  deprecated_version_major: 4
+  deprecated_version_minor: 6
+- id: 20
+  team: code-intelligence
+  component: codeintel-db.lsif_data_*
+  description: Convert LSIF data to SCIP.
+  non_destructive: false
+  is_enterprise: true
+  introduced_version_major: 4
+  introduced_version_minor: 5
+  deprecated_version_major: 4
+  deprecated_version_minor: 6
+- id: 21
+  team: batch-changes
+  component: frontend-db.changesets
+  description: Populate external_fork_name column for existing changesets published on Bitbucket Server and Cloud.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 4
+  introduced_version_minor: 5
+- id: 22
+  team: iam
+  component: frontend-db.user_repo_permissions
+  description: Migrate data from user_permissions table to unified user_repo_permissions.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 5
+  introduced_version_minor: 0
+- id: 23
+  team: batch-changes
+  component: frontend-db.batch_specs
+  description: Re-ID empty batch specs belonging to draft batch changes.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 5
+  introduced_version_minor: 0

@@ -20,10 +20,6 @@ func parseConfigData(data string, cfg any) error {
 		if v.ExperimentalFeatures == nil {
 			v.ExperimentalFeatures = &schema.ExperimentalFeatures{}
 		}
-
-		if v.ExperimentalFeatures.EnableLegacyExtensions == nil {
-			v.ExperimentalFeatures.EnableLegacyExtensions = func() *bool { b := false; return &b }()
-		}
 	}
 	return nil
 }

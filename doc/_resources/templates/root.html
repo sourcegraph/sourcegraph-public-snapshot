@@ -10,16 +10,22 @@
 			<title>{{block "title" .}}Home{{end}} - Sourcegraph docs</title>
             <link rel="icon" type="image/png" href="https://about.sourcegraph.com/sourcegraph-mark.png" />
 			<link rel="stylesheet" type="text/css" href="{{asset "docsite.css"}}" />
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+            <link
+                href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap"
+                rel="stylesheet"
+            />
             <script src="{{asset "docsite.js"}}"></script>
             <script src="{{asset "railroad.js"}}"></script>
 			<meta name="viewport" content="width=device-width, initial-scale=1" />
 			{{block "seo" . }}{{end}}
 			{{block "head" .}}{{end}}
-            
+
             <!-- Plausible -->
             <script src="https://plausible.io/js/plausible.js" defer data-domain="docs.sourcegraph.com"></script>
             <!-- End Plausible -->
-            
+
             <!-- Google Tag Manager -->
             <script>
                 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -33,12 +39,23 @@
 
         <!-- Default to light theme if no JavaScript -->
 		<body class="theme-light">
+            <script>
+                // If dark theme is requested, set it immediately to avoid flashing.
+                // The rest of theme handling happens in docsite.js.
+                const pref = localStorage.getItem('theme-preference') || 'auto'
+                if (pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.body.classList.remove('theme-light')
+                    document.body.classList.add('theme-dark')
+                }
+            </script>
+
             <!-- Google Tag Manager (noscript) -->
             <noscript>
                 <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7"
                 height="0" width="0" style="display:none;visibility:hidden"></iframe>
             </noscript>
             <!-- End Google Tag Manager (noscript) -->
+
 			<aside id="sidebar">
                 <header>
 				    <h1 id="logo"><a href="/">
@@ -142,7 +159,6 @@
                 <li><a href="/admin/config">Configuration</a></li>
                 <li><a href="/admin/external_service">Code hosts</a></li>
                 <li><a href="/admin/auth">User authentication</a></li>
-                <li><a href="/admin/extensions">Extension registry</a></li>
                 <li><a href="/admin/observability">Observability</a></li>
                 <li><a href="/admin/faq">FAQ</a></li>
                 <li><a href="/admin/troubleshooting">Troubleshooting</a></li>

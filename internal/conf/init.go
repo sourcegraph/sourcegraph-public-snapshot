@@ -22,10 +22,26 @@ func Init() {
 	// package dependency cycles, since conf itself uses httpcli's internal
 	// client. This is gross, and the whole conf package is gross.
 	go Watch(func() {
-		before := httpcli.TLSExternalConfig()
-		after := Get().ExperimentalFeatures.TlsExternal
-		if !reflect.DeepEqual(before, after) {
-			httpcli.SetTLSExternalConfig(after)
+		// TLS external config
+		tlsBefore := httpcli.TLSExternalConfig()
+		tlsAfter := Get().ExperimentalFeatures.TlsExternal
+		if !reflect.DeepEqual(tlsBefore, tlsAfter) {
+			httpcli.SetTLSExternalConfig(tlsAfter)
+		}
+
+		// Outbound request log limit and redact headers
+		outboundRequestLogLimitBefore := httpcli.OutboundRequestLogLimit()
+		outboundRequestLogLimitAfter := int32(Get().OutboundRequestLogLimit)
+		if outboundRequestLogLimitBefore != outboundRequestLogLimitAfter {
+			httpcli.SetOutboundRequestLogLimit(outboundRequestLogLimitAfter)
+		}
+		redactOutboundRequestHeadersBefore := httpcli.RedactOutboundRequestHeaders()
+		redactOutboundRequestHeadersAfter := true
+		if Get().RedactOutboundRequestHeaders != nil {
+			redactOutboundRequestHeadersAfter = *Get().RedactOutboundRequestHeaders
+		}
+		if redactOutboundRequestHeadersBefore != redactOutboundRequestHeadersAfter {
+			httpcli.SetRedactOutboundRequestHeaders(redactOutboundRequestHeadersAfter)
 		}
 	})
 }

@@ -85,9 +85,7 @@ function importingFailed(node: ExternalChangesetFields): boolean {
     return node.state === ChangesetState.FAILED && !hasHeadReference(node)
 }
 
-function hasHeadReference(
-    node: ExternalChangesetFields
-): node is ExternalChangesetFields & {
+function hasHeadReference(node: ExternalChangesetFields): node is ExternalChangesetFields & {
     currentSpec: typeof node.currentSpec & {
         description: { __typename: 'GitBranchChangesetDescription' }
     }

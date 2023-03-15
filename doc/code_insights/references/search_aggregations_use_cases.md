@@ -55,6 +55,12 @@ See every email address hardcoded, by frequency
 /(\w+)\@sourcegraph\.com/
 ```
 
+### How can we see all our different tracer calls to remove unnecessary ones or encourage proper usage?
+See all your tracer calls to track the growth of, or minimize spend on, tools like Datadog. 
+```sgquery
+/tracer\.trace\(([\s"'\w@\/:^.#,+-=]+)\)/
+```
+
 
 ## By repository
 

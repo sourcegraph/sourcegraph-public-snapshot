@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gqlutil",
+    srcs = ["datetime.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/gqlutil",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    timeout = "short",
+    name = "gqlutil_test",
+    srcs = ["datetime_test.go"],
+    embed = [":gqlutil"],
+    deps = ["@com_github_stretchr_testify//require"],
+)

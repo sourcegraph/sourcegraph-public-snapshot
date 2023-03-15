@@ -29,6 +29,11 @@ func TestExtractToken(t *testing.T) {
 		},
 		{
 			config: `{"token": "deadbeef"}`,
+			kind:   KindAzureDevOps,
+			want:   "deadbeef",
+		},
+		{
+			config: `{"token": "deadbeef"}`,
 			kind:   KindBitbucketServer,
 			want:   "deadbeef",
 		},
@@ -68,13 +73,13 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			name:   "GitLab default",
 			config: `{"url": "https://example.com/"}`,
 			kind:   KindGitLab,
-			want:   10.0,
+			want:   rate.Inf,
 		},
 		{
 			name:   "GitHub default",
 			config: `{"url": "https://example.com/"}`,
 			kind:   KindGitHub,
-			want:   1.3888888888888888,
+			want:   rate.Inf,
 		},
 		{
 			name:   "Bitbucket Server default",

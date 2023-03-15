@@ -2,17 +2,10 @@ import { FC, ReactNode } from 'react'
 
 import { noop } from 'lodash'
 
-import {
-    CreationUiLayout,
-    CreationUIForm,
-    CreationUIPreview,
-    useField,
-    FormChangeEvent,
-    SubmissionErrors,
-    useForm,
-    insightRepositoriesValidator,
-    insightRepositoriesAsyncValidator,
-} from '../../../../../components'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { useField, FormChangeEvent, SubmissionErrors, useForm } from '@sourcegraph/wildcard'
+
+import { CreationUiLayout, CreationUIForm, CreationUIPreview, useRepoFields } from '../../../../../components'
 import { LineChartLivePreview } from '../../LineChartLivePreview'
 import { CaptureGroupFormFields } from '../types'
 
@@ -20,12 +13,13 @@ import { CaptureGroupCreationForm, RenderPropertyInputs } from './CaptureGoupCre
 import { QUERY_VALIDATORS, STEP_VALIDATORS, TITLE_VALIDATORS } from './validators'
 
 const INITIAL_VALUES: CaptureGroupFormFields = {
-    repositories: '',
+    repositories: [],
     groupSearchQuery: '',
     title: '',
     step: 'months',
     stepValue: '2',
-    allRepos: false,
+    repoMode: 'search-query',
+    repoQuery: { query: '' },
     dashboardReferenceCount: 0,
 }
 
@@ -42,39 +36,27 @@ interface CaptureGroupCreationContentProps {
 export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> = props => {
     const { touched, initialValues = {}, className, children, onSubmit, onChange = noop } = props
 
+    const repoFieldVariation = useExperimentalFeatures(features => features.codeInsightsRepoUI)
+    const isSearchQueryORUrlsList = repoFieldVariation === 'search-query-or-strict-list'
+
+    // Enforce "search-query" initial value if we're in the single search query UI mode
+    const fixedInitialValues = isSearchQueryORUrlsList
+        ? { ...INITIAL_VALUES, ...initialValues }
+        : { ...INITIAL_VALUES, ...initialValues, repoMode: 'search-query' as const }
+
     const form = useForm<CaptureGroupFormFields>({
-        initialValues: { ...INITIAL_VALUES, ...initialValues },
+        initialValues: fixedInitialValues,
         touched,
         onSubmit,
         onChange,
     })
 
+    const { repoMode, repoQuery, repositories } = useRepoFields({ formApi: form.formAPI })
+
     const title = useField({
         name: 'title',
         formApi: form.formAPI,
         validators: { sync: TITLE_VALIDATORS },
-    })
-
-    const allReposMode = useField({
-        name: 'allRepos',
-        formApi: form.formAPI,
-        onChange: (checked: boolean) => {
-            // Reset form values in case if All repos mode was activated
-            if (checked) {
-                repositories.input.onChange('')
-            }
-        },
-    })
-
-    const repositories = useField({
-        name: 'repositories',
-        formApi: form.formAPI,
-        validators: {
-            // Turn off any validations for the repositories' field in we are in all repos mode
-            sync: !allReposMode.input.value ? insightRepositoriesValidator : undefined,
-            async: !allReposMode.input.value ? insightRepositoriesAsyncValidator : undefined,
-        },
-        disabled: allReposMode.input.value,
     })
 
     const query = useField({
@@ -96,7 +78,8 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
 
     const handleFormReset = (): void => {
         title.input.onChange('')
-        repositories.input.onChange('')
+        repoQuery.input.onChange({ query: '' })
+        repositories.input.onChange([])
         query.input.onChange('')
         step.input.onChange('months')
         stepValue.input.onChange('1')
@@ -106,14 +89,15 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
     }
 
     const hasFilledValue =
-        form.values.title !== '' || form.values.repositories !== '' || form.values.groupSearchQuery !== ''
+        form.values.title !== '' ||
+        form.values.repositories.length > 0 ||
+        form.values.repoQuery.query !== '' ||
+        form.values.groupSearchQuery !== ''
 
     const areAllFieldsForPreviewValid =
-        repositories.meta.validState === 'VALID' &&
+        (repositories.meta.validState === 'VALID' || repoQuery.meta.validState === 'VALID') &&
         stepValue.meta.validState === 'VALID' &&
-        query.meta.validState === 'VALID' &&
-        // For all repos mode we are not able to show the live preview chart
-        !allReposMode.input.value
+        query.meta.validState === 'VALID'
 
     return (
         <CreationUiLayout className={className}>
@@ -122,12 +106,13 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
                 as={CaptureGroupCreationForm}
                 form={form}
                 title={title}
+                repoMode={repoMode}
+                repoQuery={repoQuery}
                 repositories={repositories}
                 step={step}
                 stepValue={stepValue}
                 query={query}
                 isFormClearActive={hasFilledValue}
-                allReposMode={allReposMode}
                 dashboardReferenceCount={initialValues.dashboardReferenceCount}
                 onFormReset={handleFormReset}
             >
@@ -137,8 +122,9 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
             <CreationUIPreview
                 as={LineChartLivePreview}
                 disabled={!areAllFieldsForPreviewValid}
-                isAllReposMode={allReposMode.input.value}
                 repositories={repositories.meta.value}
+                repoMode={repoMode.meta.value}
+                repoQuery={repoQuery.meta.value.query}
                 series={captureGroupPreviewSeries(query.meta.value)}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
@@ -147,7 +133,7 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
     )
 }
 
-function captureGroupPreviewSeries(query: string): any {
+function captureGroupPreviewSeries(query: string): any[] {
     return [
         {
             generatedFromCaptureGroup: true,

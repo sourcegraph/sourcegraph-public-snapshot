@@ -6,9 +6,8 @@ Noticing problems with <code>node_modules/</code> or package versions? Try
 running this command to clear the local package cache.
 
 ```bash
-yarn cache clean
-rm -rf node_modules
-yarn
+rm -rf node_modules ./client/*/node_modules
+pnpm install --force
 ```
 
 ## Node version out of date

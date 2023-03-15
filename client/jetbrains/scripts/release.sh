@@ -8,11 +8,11 @@ git diff-index --quiet HEAD || (echo "Please commit your changes before releasin
 
 # Make sure we have all dependencies
 pushd "../.." > /dev/null
-yarn && yarn generate
+pnpm install && pnpm generate
 popd > /dev/null || exit
 
 # Build the JavaScript artifacts
-yarn build
+pnpm build
 
 # Build the release candidate and publish it onto the registry
 ./gradlew publishPlugin

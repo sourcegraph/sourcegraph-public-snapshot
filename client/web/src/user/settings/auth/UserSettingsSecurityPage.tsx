@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import {
@@ -15,19 +13,21 @@ import {
     Input,
     Label,
     Text,
+    ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { PageTitle } from '../../../components/PageTitle'
 import {
-    UserAreaUserFields,
-    ExternalAccountFields,
-    MinExternalAccountsVariables,
-    UpdatePasswordVariables,
-    UpdatePasswordResult,
-    CreatePasswordVariables,
     CreatePasswordResult,
+    CreatePasswordVariables,
+    UpdatePasswordResult,
+    UpdatePasswordVariables,
+    UserAreaUserFields,
+    UserExternalAccountFields,
+    UserExternalAccountsWithAccountDataVariables,
 } from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -37,8 +37,10 @@ import { CREATE_PASSWORD, USER_EXTERNAL_ACCOUNTS, UPDATE_PASSWORD } from '../bac
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 
 // pick only the fields we need
-type MinExternalAccount = Pick<ExternalAccountFields, 'id' | 'serviceID' | 'serviceType' | 'accountData'>
-export type UserExternalAccount = UserExternalAccountsResult['user']['externalAccounts']['nodes'][0]
+export type UserExternalAccount = Pick<
+    UserExternalAccountFields,
+    'id' | 'serviceID' | 'serviceType' | 'publicAccountData'
+>
 type ServiceType = AuthProvider['serviceType']
 
 export type ExternalAccountsByType = Partial<Record<ServiceType, UserExternalAccount>>
@@ -48,7 +50,7 @@ export type AccountByServiceID = Partial<Record<string, UserExternalAccount>>
 interface UserExternalAccountsResult {
     user: {
         externalAccounts: {
-            nodes: MinExternalAccount[]
+            nodes: UserExternalAccount[]
         }
     }
 }
@@ -63,7 +65,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     const [oldPassword, setOldPassword] = useState<string>('')
     const [newPassword, setNewPassword] = useState<string>('')
     const [newPasswordConfirmation, setNewPasswordConfirmation] = useState<string>('')
-    const [accounts, setAccounts] = useState<{ fetched?: MinExternalAccount[]; lastRemoved?: string }>({
+    const [accounts, setAccounts] = useState<{ fetched?: UserExternalAccount[]; lastRemoved?: string }>({
         fetched: [],
         lastRemoved: '',
     })
@@ -76,13 +78,13 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
         return []
     }
 
-    const { data, loading } = useQuery<UserExternalAccountsResult, MinExternalAccountsVariables>(
-        USER_EXTERNAL_ACCOUNTS,
-        {
-            variables: { username: props.user.username },
-            onError: handleError,
-        }
-    )
+    const { data, loading, refetch } = useQuery<
+        UserExternalAccountsResult,
+        UserExternalAccountsWithAccountDataVariables
+    >(USER_EXTERNAL_ACCOUNTS, {
+        variables: { username: props.user.username },
+        onError: handleError,
+    })
 
     let newPasswordConfirmationField: HTMLInputElement | null = null
     const setNewPasswordConfirmationField = (element: HTMLInputElement | null): void => {
@@ -104,6 +106,12 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     const onAccountRemoval = (removeId: string, name: string): void => {
         // keep every account that doesn't match removeId
         setAccounts({ fetched: accounts.fetched?.filter(({ id }) => id !== removeId), lastRemoved: name })
+    }
+
+    const onAccountAdd = (): void => {
+        refetch({ username: props.user.username })
+            .then(() => {})
+            .catch(handleError)
     }
 
     const onOldPasswordFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -187,7 +195,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
                 headingElement="h2"
                 path={[{ text: 'Account security' }]}
                 description="Connect your account with a third-party login service to make signing in easier."
-                className="mb-3"
+                className="mb-3 user-settings-account-security-page"
             />
 
             {/* external accounts not fetched yet */}
@@ -205,6 +213,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
                         authProviders={props.context.authProviders}
                         onDidError={handleError}
                         onDidRemove={onAccountRemoval}
+                        onDidAdd={onAccountAdd}
                     />
                 </Container>
             )}

@@ -409,7 +409,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	h := &UploadHandler[testUploadMetadata]{
 		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
-		operations:  NewOperations("test", &observation.TestContext),
+		operations:  NewOperations(&observation.TestContext, "test"),
 		logger:      logtest.Scoped(t),
 	}
 	h.handleEnqueue(w, r)
@@ -444,7 +444,7 @@ func newTestUploadHandler(t *testing.T, dbStore DBStore[testUploadMetadata], upl
 		logtest.Scoped(t),
 		dbStore,
 		uploadStore,
-		NewOperations("test", &observation.TestContext),
+		NewOperations(&observation.TestContext, "test"),
 		metadataFromRequest,
 	)
 }

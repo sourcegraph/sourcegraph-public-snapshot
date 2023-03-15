@@ -13,12 +13,12 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -116,7 +116,7 @@ func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, 
 func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
 	Organization graphql.ID
 }) ([]*organizationInvitationResolver, error) {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
@@ -160,7 +160,7 @@ func newExpiryTime() time.Time {
 func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	Token string
 }) (*organizationInvitationResolver, error) {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
@@ -291,7 +291,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 	OrganizationInvitation graphql.ID
 	ResponseType           string
 }) (*EmptyResponse, error) {
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
@@ -326,7 +326,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 		}
 		if shouldMarkAsVerified && accept {
 			// ignore errors here as this is a best-effort action
-			r.db.UserEmails().SetVerified(ctx, a.UID, invitation.RecipientEmail, shouldMarkAsVerified)
+			_ = r.db.UserEmails().SetVerified(ctx, a.UID, invitation.RecipientEmail, shouldMarkAsVerified)
 		}
 	} else if invitation.RecipientUserID > 0 && invitation.RecipientUserID != a.UID {
 		// 🚨 SECURITY: Fail if the org invitation's recipient is not the one given
@@ -345,14 +345,8 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 			return nil, err
 		}
 
-		// Schedule permission sync for user that accepted the invite
-		err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{a.UID}})
-		if err != nil {
-			log15.Warn("schemaResolver.RespondToOrganizationInvitation.SchedulePermsSync",
-				"userID", a.UID,
-				"error", err,
-			)
-		}
+		// Schedule permission sync for user that accepted the invite. Internally it will log an error if enqueuing fails.
+		permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{a.UID}, Reason: database.ReasonUserAcceptedOrgInvite})
 	}
 	return &EmptyResponse{}, nil
 }
@@ -544,7 +538,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		orgName = org.Name
 	}
 
-	return txemail.Send(ctx, txemail.Message{
+	return txemail.Send(ctx, "org_invite", txemail.Message{
 		To:       []string{recipientEmail},
 		Template: emailTemplates,
 		Data: struct {

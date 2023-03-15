@@ -1,188 +1,192 @@
-import { Redirect } from 'react-router'
+import { Navigate, useLocation } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { siteAdminAreaRoutes } from '../../site-admin/routes'
+import { otherSiteAdminRoutes, UsersManagement } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
+import { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
-import type { ExecutorsListPageProps } from '../executors/ExecutorsListPage'
+import { SiteAdminRolesPageProps } from '../rbac/SiteAdminRolesPage'
 
-export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = ([
-    ...siteAdminAreaRoutes,
-    {
-        path: '/license',
-        render: lazyComponent(
-            () => import('./productSubscription/SiteAdminProductSubscriptionPage'),
-            'SiteAdminProductSubscriptionPage'
-        ),
-        exact: true,
-    },
-    {
-        path: '/dotcom/customers',
-        render: lazyComponent(
-            () => import('./dotcom/customers/SiteAdminCustomersPage'),
-            'SiteAdminProductCustomersPage'
-        ),
-        condition: () => SHOW_BUSINESS_FEATURES,
-        exact: true,
-    },
-    {
-        path: '/dotcom/product/subscriptions/new',
-        render: lazyComponent(
-            () => import('./dotcom/productSubscriptions/SiteAdminCreateProductSubscriptionPage'),
-            'SiteAdminCreateProductSubscriptionPage'
-        ),
-        condition: () => SHOW_BUSINESS_FEATURES,
-        exact: true,
-    },
-    {
-        path: '/dotcom/product/subscriptions/:subscriptionUUID',
-        render: lazyComponent(
-            () => import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionPage'),
-            'SiteAdminProductSubscriptionPage'
-        ),
-        condition: () => SHOW_BUSINESS_FEATURES,
-        exact: true,
-    },
-    {
-        path: '/dotcom/product/subscriptions',
-        render: lazyComponent(
-            () => import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionsPage'),
-            'SiteAdminProductSubscriptionsPage'
-        ),
-        condition: () => SHOW_BUSINESS_FEATURES,
-        exact: true,
-    },
-    {
-        path: '/dotcom/product/licenses',
-        render: lazyComponent(
-            () => import('./dotcom/productSubscriptions/SiteAdminProductLicensesPage'),
-            'SiteAdminProductLicensesPage'
-        ),
-        condition: () => SHOW_BUSINESS_FEATURES,
-        exact: true,
-    },
-    {
-        path: '/auth/providers',
-        render: lazyComponent(
-            () => import('./SiteAdminAuthenticationProvidersPage'),
-            'SiteAdminAuthenticationProvidersPage'
-        ),
-        exact: true,
-    },
-    {
-        path: '/auth/external-accounts',
-        render: lazyComponent(() => import('./SiteAdminExternalAccountsPage'), 'SiteAdminExternalAccountsPage'),
-        exact: true,
-    },
-    window.context.enableLegacyExtensions
-        ? {
-              path: '/registry/extensions',
-              render: lazyComponent(
-                  () => import('./SiteAdminRegistryExtensionsPage'),
-                  'SiteAdminRegistryExtensionsPage'
-              ),
-              exact: true,
-          }
-        : undefined,
+import { RoleAssignmentModalProps } from './UserManagement/components/RoleAssignmentModal'
 
-    {
-        path: '/batch-changes',
-        exact: true,
-        render: lazyComponent(
-            () => import('../batches/settings/BatchChangesSiteConfigSettingsArea'),
-            'BatchChangesSiteConfigSettingsArea'
-        ),
-        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
-    },
-    {
-        path: '/batch-changes/specs',
-        exact: true,
-        render: lazyComponent(() => import('../batches/BatchSpecsPage'), 'BatchSpecsPage'),
-        condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
-            batchChangesEnabled && batchChangesExecutionEnabled,
-    },
-    {
-        path: '/batch-changes/webhook-logs',
-        exact: true,
-        render: lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage'),
-        condition: ({ batchChangesEnabled, batchChangesWebhookLogsEnabled }) =>
-            batchChangesEnabled && batchChangesWebhookLogsEnabled,
-    },
+const SiteAdminProductSubscriptionPage = lazyComponent(
+    () => import('./productSubscription/SiteAdminProductSubscriptionPage'),
+    'SiteAdminProductSubscriptionPage'
+)
+const SiteAdminProductCustomersPage = lazyComponent(
+    () => import('./dotcom/customers/SiteAdminCustomersPage'),
+    'SiteAdminProductCustomersPage'
+)
+const SiteAdminCreateProductSubscriptionPage = lazyComponent(
+    () => import('./dotcom/productSubscriptions/SiteAdminCreateProductSubscriptionPage'),
+    'SiteAdminCreateProductSubscriptionPage'
+)
+const DotComSiteAdminProductSubscriptionPage = lazyComponent(
+    () => import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionPage'),
+    'SiteAdminProductSubscriptionPage'
+)
+const SiteAdminProductSubscriptionsPage = lazyComponent(
+    () => import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionsPage'),
+    'SiteAdminProductSubscriptionsPage'
+)
+const SiteAdminProductLicensesPage = lazyComponent(
+    () => import('./dotcom/productSubscriptions/SiteAdminProductLicensesPage'),
+    'SiteAdminProductLicensesPage'
+)
+const SiteAdminAuthenticationProvidersPage = lazyComponent(
+    () => import('./SiteAdminAuthenticationProvidersPage'),
+    'SiteAdminAuthenticationProvidersPage'
+)
+const SiteAdminExternalAccountsPage = lazyComponent(
+    () => import('./SiteAdminExternalAccountsPage'),
+    'SiteAdminExternalAccountsPage'
+)
+const BatchChangesSiteConfigSettingsArea = lazyComponent(
+    () => import('../batches/settings/BatchChangesSiteConfigSettingsArea'),
+    'BatchChangesSiteConfigSettingsArea'
+)
+const BatchSpecsPage = lazyComponent<BatchSpecsPageProps, 'BatchSpecsPage'>(
+    () => import('../batches/BatchSpecsPage'),
+    'BatchSpecsPage'
+)
+const WebhookLogPage = lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage')
+const AdminCodeIntelArea = lazyComponent(() => import('../codeintel/admin/AdminCodeIntelArea'), 'AdminCodeIntelArea')
+const SiteAdminLsifUploadPage = lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage')
+const ExecutorsSiteAdminArea = lazyComponent(
+    () => import('../executors/ExecutorsSiteAdminArea'),
+    'ExecutorsSiteAdminArea'
+)
 
-    // Code graph upload routes
-    {
-        path: '/code-intelligence',
-        exact: false,
-        render: props => <Redirect to={props.location.pathname.replace('/code-intelligence/', '/code-graph/')} />,
-    },
-    {
-        path: '/code-graph/uploads',
-        render: lazyComponent(() => import('../codeintel/uploads/pages/CodeIntelUploadsPage'), 'CodeIntelUploadsPage'),
-        exact: true,
-    },
+const SiteAdminRolesPage = lazyComponent<SiteAdminRolesPageProps, 'SiteAdminRolesPage'>(
+    () => import('../rbac/SiteAdminRolesPage'),
+    'SiteAdminRolesPage'
+)
 
-    {
-        path: '/code-graph/uploads/:id',
-        render: lazyComponent(() => import('../codeintel/uploads/pages/CodeIntelUploadPage'), 'CodeIntelUploadPage'),
-        exact: true,
-    },
+const RoleAssignmentModal = lazyComponent<RoleAssignmentModalProps, 'RoleAssignmentModal'>(
+    () => import('./UserManagement/components/RoleAssignmentModal'),
+    'RoleAssignmentModal'
+)
 
-    // Auto-indexing routes
-    {
-        path: '/code-graph/indexes',
-        render: lazyComponent(() => import('../codeintel/indexes/pages/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),
-        exact: true,
-        condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-    },
-    {
-        path: '/code-graph/indexes/:id',
-        render: lazyComponent(() => import('../codeintel/indexes/pages/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
-        exact: true,
-        condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-    },
+const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/CodeInsightsJobs'), 'CodeInsightsJobs')
 
-    // Code graph configuration
-    {
-        path: '/code-graph/configuration',
-        render: lazyComponent(
-            () => import('../codeintel/configuration/pages/CodeIntelConfigurationPage'),
-            'CodeIntelConfigurationPage'
-        ),
-        exact: true,
-    },
-    {
-        path: '/code-graph/configuration/:id',
-        render: lazyComponent(
-            () => import('../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'),
-            'CodeIntelConfigurationPolicyPage'
-        ),
-        exact: true,
-    },
-    {
-        path: '/code-graph/inference-configuration',
-        render: lazyComponent(
-            () => import('../codeintel/configuration/pages/CodeIntelInferenceConfigurationPage'),
-            'CodeIntelInferenceConfigurationPage'
-        ),
-        exact: true,
-    },
+const SiteAdminCodyPage = lazyComponent(() => import('./cody/SiteAdminCodyPage'), 'SiteAdminCodyPage')
 
-    // Legacy routes
-    {
-        path: '/lsif-uploads/:id',
-        render: lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage'),
-        exact: true,
-    },
+export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
+    [
+        ...otherSiteAdminRoutes,
+        {
+            path: '/users',
+            render: () => (
+                <UsersManagement
+                    isEnterprise={true}
+                    renderAssignmentModal={(onCancel, onSuccess, user) => (
+                        <RoleAssignmentModal onCancel={onCancel} onSuccess={onSuccess} user={user} />
+                    )}
+                />
+            ),
+        },
+        {
+            path: '/license',
+            render: () => <SiteAdminProductSubscriptionPage />,
+        },
+        {
+            path: '/dotcom/customers',
+            render: () => <SiteAdminProductCustomersPage />,
+            condition: () => SHOW_BUSINESS_FEATURES,
+        },
+        {
+            path: '/dotcom/product/subscriptions/new',
+            render: props => <SiteAdminCreateProductSubscriptionPage {...props} />,
+            condition: () => SHOW_BUSINESS_FEATURES,
+        },
+        {
+            path: '/dotcom/product/subscriptions/:subscriptionUUID',
+            render: () => <DotComSiteAdminProductSubscriptionPage />,
+            condition: () => SHOW_BUSINESS_FEATURES,
+        },
+        {
+            path: '/dotcom/product/subscriptions',
+            render: () => <SiteAdminProductSubscriptionsPage />,
+            condition: () => SHOW_BUSINESS_FEATURES,
+        },
+        {
+            path: '/dotcom/product/licenses',
+            render: () => <SiteAdminProductLicensesPage />,
+            condition: () => SHOW_BUSINESS_FEATURES,
+        },
+        {
+            path: '/auth/providers',
+            render: () => <SiteAdminAuthenticationProvidersPage />,
+        },
+        {
+            path: '/auth/external-accounts',
+            render: () => <SiteAdminExternalAccountsPage />,
+        },
+        {
+            path: '/batch-changes',
+            render: () => <BatchChangesSiteConfigSettingsArea />,
+            condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        },
+        {
+            path: '/batch-changes/specs',
+            render: () => <BatchSpecsPage />,
+            condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+                batchChangesEnabled && batchChangesExecutionEnabled,
+        },
+        {
+            path: '/batch-changes/webhook-logs',
+            render: () => <WebhookLogPage />,
+            condition: ({ batchChangesEnabled, batchChangesWebhookLogsEnabled }) =>
+                batchChangesEnabled && batchChangesWebhookLogsEnabled,
+        },
 
-    // Executor routes
-    {
-        path: '/executors',
-        render: lazyComponent<ExecutorsListPageProps, 'ExecutorsListPage'>(
-            () => import('../executors/ExecutorsListPage'),
-            'ExecutorsListPage'
-        ),
-        exact: true,
-        condition: () => Boolean(window.context?.executorsEnabled),
-    },
-] as readonly (SiteAdminAreaRoute | undefined)[]).filter(Boolean) as readonly SiteAdminAreaRoute[]
+        // Enterprise maintenance area
+
+        {
+            exact: true,
+            path: '/code-insights-jobs',
+            render: () => <CodeInsightsJobsPage />,
+        },
+
+        // Code intelligence redirect
+        {
+            path: '/code-intelligence/*',
+            render: () => <NavigateToCodeGraph />,
+        },
+        // Code graph routes
+        {
+            path: '/code-graph/*',
+            render: props => <AdminCodeIntelArea {...props} />,
+        },
+        {
+            path: '/lsif-uploads/:id',
+            render: () => <SiteAdminLsifUploadPage />,
+        },
+
+        // Executor routes
+        {
+            path: '/executors/*',
+            render: () => <ExecutorsSiteAdminArea />,
+            condition: () => Boolean(window.context?.executorsEnabled),
+        },
+
+        // Cody configuration
+        {
+            path: '/cody',
+            render: props => <SiteAdminCodyPage {...props} />,
+            condition: () => Boolean(window.context?.embeddingsEnabled),
+        },
+        // rbac-related routes
+        {
+            path: '/roles',
+            exact: true,
+            render: props => <SiteAdminRolesPage {...props} />,
+        },
+    ] as readonly (SiteAdminAreaRoute | undefined)[]
+).filter(Boolean) as readonly SiteAdminAreaRoute[]
+
+function NavigateToCodeGraph(): JSX.Element {
+    const location = useLocation()
+    return <Navigate to={location.pathname.replace('/code-intelligence', '/code-graph')} />
+}

@@ -2,10 +2,10 @@ import { FC, useEffect, useState, memo } from 'react'
 
 import { mdiArrowExpand } from '@mdi/js'
 
-import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
+import { SearchAggregationMode, SearchPatternType } from '../../../graphql-operations'
 import {
     AggregationChartCard,
     AggregationModeControls,
@@ -41,7 +41,7 @@ interface SearchAggregationsProps extends TelemetryProps {
      * That should update the query and re-trigger search (but this should be connected
      * to this UI through its consumer)
      */
-    onQuerySubmit: (newQuery: string) => void
+    onQuerySubmit: (newQuery: string, updatedSearchQuery: string) => void
 }
 
 export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
@@ -58,6 +58,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         proactive,
         caseSensitive,
         extendedTimeout,
+        telemetryService,
     })
 
     // When query is updated reset extendedTimeout as per business rules
@@ -69,9 +70,9 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         // Clearing the aggregation mode on drill down would provide a better experience
         // in most cases and preserve the desired behavior of the capture group search
         // when the original query had multiple capture groups
-        setAggregationMode(null)
+        const updatedSearchQuery = setAggregationMode(null)
 
-        onQuerySubmit(query)
+        onQuerySubmit(query, updatedSearchQuery)
         telemetryService.log(
             GroupResultsPing.ChartBarClick,
             { aggregationMode, index, uiMode: 'sidebar' },
@@ -112,7 +113,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
     }
 
     return (
-        <article className="pt-2">
+        <div className="pt-2">
             <AggregationModeControls
                 availability={data?.searchQueryAggregate?.modeAvailability}
                 loading={loading}
@@ -153,6 +154,8 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
                     </footer>
                 </>
             )}
-        </article>
+        </div>
     )
 })
+
+SearchAggregations.displayName = 'SearchAggregations'

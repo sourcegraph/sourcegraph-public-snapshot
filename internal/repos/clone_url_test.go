@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -45,6 +46,27 @@ func TestAWSCodeCloneURLs(t *testing.T) {
 
 	got := awsCodeCloneURL(logtest.Scoped(t), repo, &cfg)
 	want := "https://username:password@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go"
+	if got != want {
+		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+	}
+}
+
+func TestAzureDevOpsCloneURL(t *testing.T) {
+	cfg := schema.AzureDevOpsConnection{
+		// the remote url used for clone has the username attached,
+		// so we double-check that it gets replaced properly.
+		Url:      "https://admin@dev.azure.com",
+		Username: "admin",
+		Token:    "pa$$word",
+	}
+
+	repo := &azuredevops.Repository{
+		ID:       "test-project",
+		CloneURL: "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+	}
+
+	got := azureDevOpsCloneURL(logtest.Scoped(t), repo, &cfg)
+	want := "https://admin:pa$$word@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure"
 	if got != want {
 		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
 	}
@@ -166,7 +188,7 @@ func TestGitHubCloneURLs(t *testing.T) {
 		Want        string
 	}{
 		{"https://github.com", "https://github.com/foo/bar", "", "", "https://github.com/foo/bar"},
-		{"https://github.com", "https://github.com/foo/bar", "abcd", "", "https://abcd@github.com/foo/bar"},
+		{"https://github.com", "https://github.com/foo/bar", "abcd", "", "https://oauth2:abcd@github.com/foo/bar"},
 		{"https://github.com", "https://github.com/foo/bar", "abcd", "ssh", "git@github.com:foo/bar.git"},
 	}
 

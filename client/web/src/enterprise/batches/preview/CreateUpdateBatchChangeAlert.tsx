@@ -1,12 +1,11 @@
 import React, { useCallback, useContext, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
+import { useNavigate } from 'react-router-dom'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Button, Code, Link, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Button, Code, Link, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -22,12 +21,13 @@ export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
     toBeArchived: number
     batchChange: BatchSpecFields['appliesToBatchChange']
     viewerCanAdminister: boolean
-    history: H.History
 }
 
 export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
     React.PropsWithChildren<CreateUpdateBatchChangeAlertProps>
-> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, history, telemetryService }) => {
+> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, telemetryService }) => {
+    const navigate = useNavigate()
+
     const batchChangeID = batchChange?.id
 
     // `BatchChangePreviewContext` is responsible for managing the overrideable
@@ -68,19 +68,19 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                 : await createBatchChange({ batchSpec: specID, publicationStates })
 
             if (toBeArchived > 0) {
-                history.push(`${batchChange.url}?archivedCount=${toBeArchived}&archivedBy=${specID}`)
+                navigate(`${batchChange.url}?archivedCount=${toBeArchived}&archivedBy=${specID}`)
             } else {
-                history.push(batchChange.url)
+                navigate(batchChange.url)
             }
             telemetryService.logViewEvent(`BatchChangeDetailsPageAfter${batchChangeID ? 'Create' : 'Update'}`)
         } catch (error) {
             setIsLoading(error)
         }
-    }, [canApply, specID, setIsLoading, history, batchChangeID, telemetryService, toBeArchived, publicationStates])
+    }, [canApply, specID, setIsLoading, navigate, batchChangeID, telemetryService, toBeArchived, publicationStates])
 
     return (
         <>
-            <Alert className="mb-3 d-block d-md-flex align-items-center body-lead" variant="info">
+            <Alert className="mb-3 d-block d-md-flex align-items-center body-lead" variant="info" aria-live="off">
                 <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
                     {batchChange ? (
                         <>

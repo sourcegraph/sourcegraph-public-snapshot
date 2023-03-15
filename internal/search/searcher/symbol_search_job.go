@@ -4,16 +4,15 @@ import (
 	"context"
 	"sort"
 
-	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/conc/pool"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -34,10 +33,11 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	run := parallel.NewRun(conf.SearchSymbolsParallelism())
+	p := pool.New().
+		WithContext(ctx).
+		WithCancelOnError().
+		WithFirstError().
+		WithMaxGoroutines(conf.SearchSymbolsParallelism())
 
 	for _, repoRevs := range s.Repos {
 		repoRevs := repoRevs
@@ -47,11 +47,9 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 		if len(repoRevs.Revs) == 0 {
 			continue
 		}
-		run.Acquire()
-		goroutine.Go(func() {
-			defer run.Release()
 
-			matches, err := searchInRepo(ctx, clients.DB, repoRevs, s.PatternInfo, s.Limit)
+		p.Go(func(ctx context.Context) error {
+			matches, err := searchInRepo(ctx, repoRevs, s.PatternInfo, s.Limit)
 			status, limitHit, err := search.HandleRepoSearchResult(repoRevs.Repo.ID, repoRevs.Revs, len(matches) > s.Limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
@@ -61,17 +59,13 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 				},
 			})
 			if err != nil {
-				tr.LogFields(log.String("repo", string(repoRevs.Repo.Name)), log.Error(err))
-				// Only record error if we haven't timed out.
-				if ctx.Err() == nil {
-					cancel()
-					run.Error(err)
-				}
+				tr.SetAttributes(attribute.String("repo", string(repoRevs.Repo.Name)), attribute.String("error", err.Error()))
 			}
+			return err
 		})
 	}
 
-	return nil, run.Wait()
+	return nil, p.Wait()
 }
 
 func (s *SymbolSearchJob) Name() string {
@@ -95,8 +89,8 @@ func (s *SymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 func (s *SymbolSearchJob) Children() []job.Describer       { return nil }
 func (s *SymbolSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
-func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
+func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -112,7 +106,7 @@ func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.Reposito
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := gitserver.NewClient(db).ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{})
+	commitID, err := gitserver.NewClient().ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}

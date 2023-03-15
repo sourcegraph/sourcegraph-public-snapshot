@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "servicecatalog",
+    srcs = ["servicecatalog.go"],
+    embedsrcs = ["service-catalog.yaml"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/servicecatalog",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "servicecatalog_test",
+    srcs = ["servicecatalog_test.go"],
+    embed = [":servicecatalog"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

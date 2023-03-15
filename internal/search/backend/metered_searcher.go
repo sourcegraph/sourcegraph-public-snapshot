@@ -13,7 +13,9 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -69,6 +71,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		event = honey.NewEvent("search-zoekt")
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
+		event.AddField("actor", actor.FromContext(ctx).UIDString())
 		for _, t := range tags {
 			event.AddField(t.Key, t.Value)
 		}
@@ -86,13 +89,21 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			log.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
 			log.Int("opts.shard_repo_max_match_count", opts.ShardRepoMaxMatchCount),
 			log.Int("opts.total_max_match_count", opts.TotalMaxMatchCount),
-			log.Int("opts.shard_max_important_match", opts.ShardMaxImportantMatch),
-			log.Int("opts.total_max_important_match", opts.TotalMaxImportantMatch),
 			log.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
+			log.Int64("opts.flush_wall_time_ms", opts.FlushWallTime.Milliseconds()),
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
+			log.Bool("opts.use_document_ranks", opts.UseDocumentRanks),
 		}
-		tr.LogFields(fields...)
+		tr.LogFields(fields...) //nolint:staticcheck // TODO when upgrading the observation package
 		event.AddLogFields(fields)
+	}
+
+	// We wrap our queries in GobCache, this gives us a convenient way to find
+	// out the marshalled size of the query.
+	if gobCache, ok := q.(*query.GobCache); ok {
+		b, _ := gobCache.GobEncode()
+		tr.SetAttributes(attribute.Int("query.size", len(b)))
+		event.AddField("query.size", len(b))
 	}
 
 	if isLeaf && opts != nil && policy.ShouldTrace(ctx) {
@@ -100,7 +111,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		spanContext := make(map[string]string)
 		if span := opentracing.SpanFromContext(ctx); span == nil {
 			m.log.Warn("ctx does not have a trace span associated with it")
-		} else if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
+		} else if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil { //nolint:staticcheck // Drop once we get rid of OpenTracing
 			newOpts := *opts
 			newOpts.SpanContext = spanContext
 			opts = &newOpts
@@ -114,7 +125,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	if isLeaf {
 		ctx = rpc.WithClientTrace(ctx, &rpc.ClientTrace{
 			WriteRequestStart: func() {
-				tr.LogFields(log.String("event", "rpc.write_request_start"))
+				tr.SetAttributes(attribute.String("event", "rpc.write_request_start"))
 				writeRequestStart = time.Now()
 			},
 
@@ -123,7 +134,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 				if err != nil {
 					fields = append(fields, log.String("rpc.write_request.error", err.Error()))
 				}
-				tr.LogFields(fields...)
+				tr.LogFields(fields...) //nolint:staticcheck // TODO when updating the observation package
 				writeRequestDone = time.Now()
 			},
 		})
@@ -144,13 +155,13 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		first.Do(func() {
 			if isLeaf {
 				if !writeRequestStart.IsZero() {
-					tr.LogFields(
-						log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
-						log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+					tr.SetAttributes(
+						attribute.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
+						attribute.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
 					)
 				}
-				tr.LogFields(
-					log.Int64("stream.latency_ms", time.Since(start).Milliseconds()),
+				tr.SetAttributes(
+					attribute.Int64("stream.latency_ms", time.Since(start).Milliseconds()),
 				)
 			}
 		})
@@ -197,11 +208,12 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		log.Int("stats.shards_skipped_filter", statsAgg.ShardsSkippedFilter),
 		log.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
 		log.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
+		log.String("stats.flush_reason", statsAgg.FlushReason.String()),
 	}
-	tr.LogFields(fields...)
+	tr.LogFields(fields...) //nolint:staticcheck // TODO when updating the observation package
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if err != nil {
-		event.AddField("error", err)
+		event.AddField("error", err.Error())
 	}
 	event.AddLogFields(fields)
 	event.Send()
@@ -225,7 +237,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	if m.hostname == "" {
 		cat = "ListAll"
 	} else {
-		if opts == nil || !opts.Minimal {
+		if opts == nil || !opts.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 			cat = "List"
 		} else {
 			cat = "ListMinimal"
@@ -240,14 +252,14 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	qStr := queryString(q)
 
 	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
-	tr.LogFields(trace.Stringer("opts", opts))
+	tr.LogFields(trace.Stringer("opts", opts)) //nolint:staticcheck // TODO deal with stringer thing
 
 	event := honey.NoopEvent()
 	if honey.Enabled() && cat == "ListAll" {
 		event = honey.NewEvent("search-zoekt")
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
-		event.AddField("opts.minimal", opts != nil && opts.Minimal)
+		event.AddField("opts.minimal", opts != nil && opts.Minimal) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 		for _, t := range tags {
 			event.AddField(t.Key, t.Value)
 		}
@@ -263,10 +275,11 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if zsl != nil {
 		event.AddField("repos", len(zsl.Repos))
-		event.AddField("minimal_repos", len(zsl.Minimal))
+		event.AddField("minimal_repos", len(zsl.Minimal)) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+		event.AddField("stats.crashes", zsl.Crashes)
 	}
 	if err != nil {
-		event.AddField("error", err)
+		event.AddField("error", err.Error())
 	}
 	event.Send()
 
@@ -274,7 +287,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	tr.SetError(err)
 	if zsl != nil {
-		tr.LogFields(log.Int("repos", len(zsl.Repos)))
+		tr.SetAttributes(attribute.Int("repos", len(zsl.Repos)))
 	}
 	tr.Finish()
 

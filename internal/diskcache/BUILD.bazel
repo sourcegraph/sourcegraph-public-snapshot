@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "diskcache",
+    srcs = [
+        "cache.go",
+        "context.go",
+        "observability.go",
+        "url_mutex.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/diskcache",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_opentracing_opentracing_go//ext",
+        "@com_github_opentracing_opentracing_go//log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "diskcache_test",
+    srcs = ["cache_test.go"],
+    embed = [":diskcache"],
+    deps = ["//internal/observation"],
+)

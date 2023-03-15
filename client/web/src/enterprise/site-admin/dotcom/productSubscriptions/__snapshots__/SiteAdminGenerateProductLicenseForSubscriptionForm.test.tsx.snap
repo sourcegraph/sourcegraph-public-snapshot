@@ -9,6 +9,74 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
       class=""
     >
       <div
+        aria-live="polite"
+        class="alert alertInfo"
+        role="alert"
+      >
+        Please read the 
+        <a
+          class="anchorLink"
+          href="https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer"
+        >
+          guide for how to create a license key for a new prospect or new customer.
+        </a>
+      </div>
+      <div
+        class="form-group"
+      >
+        <label
+          class="label"
+          for="site-admin-create-product-subscription-page__customer_input"
+        >
+          Customer
+        </label>
+        <div
+          class="container loader-input loaderInput"
+        >
+          <input
+            class="form-control with-invalid-icon"
+            id="site-admin-create-product-subscription-page__customer_input"
+            type="text"
+            value="foo"
+          />
+        </div>
+        <small
+          class="form-text text-muted"
+        >
+          Name of the customer. Defaults to the Account name from the subscription.
+        </small>
+      </div>
+      <div
+        class="form-group"
+      >
+        <div
+          class="form-group mb-0"
+        >
+          <label
+            class="label"
+            for="site-admin-create-product-subscription-page__plan_select"
+          >
+            Plan
+          </label>
+          <select
+            class="form-control"
+            id="site-admin-create-product-subscription-page__plan_select"
+            label="Plan"
+          >
+            <option
+              value="enterprise-1"
+            >
+              enterprise-1
+            </option>
+          </select>
+        </div>
+        <small
+          class="form-text text-muted"
+        >
+          Subscription plan. Required parameter.
+        </small>
+      </div>
+      <div
         class="form-group"
       >
         <label
@@ -18,46 +86,26 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
           Tags
         </label>
         <div
-          class="container loader-input loaderInput form-control"
+          class="container loader-input loaderInput mb-0"
         >
           <input
             class="form-control with-invalid-icon"
             id="site-admin-create-product-subscription-page__tags"
-            list="knownPlans"
+            list="known-tags"
             type="text"
             value=""
           />
         </div>
         <datalist
-          id="knownPlans"
-        >
-          <option
-            value="true-up"
-          />
-          <option
-            value="trial"
-          />
-          <option
-            value="starter,trial"
-          />
-          <option
-            value="starter,true-up"
-          />
-          <option
-            value="dev"
-          />
-        </datalist>
+          id="known-tags"
+        />
+        <div
+          class="mt-1"
+        />
         <small
           class="form-text text-muted"
         >
-          Tags restrict a license. Please refer to 
-          <a
-            class="anchorLink"
-            href="https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer"
-          >
-            How to create a license key for a new prospect or new customer
-          </a>
-           for a complete guide.
+          Comma separated list of tags. Tags restrict a license.
         </small>
       </div>
       <div
@@ -86,27 +134,27 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
       >
         <label
           class="label"
-          for="site-admin-create-product-subscription-page__validDays"
+          for="site-admin-create-product-subscription-page__expiresAt"
         >
-          Valid for (days)
+          Expires At
         </label>
         <div
           class="container loader-input loaderInput"
         >
           <input
             class="form-control with-invalid-icon"
-            id="site-admin-create-product-subscription-page__validDays"
-            max="2000"
-            min="1"
-            type="number"
-            value="1"
+            id="site-admin-create-product-subscription-page__expiresAt"
+            max="2011-06-25"
+            min="2006-01-03"
+            type="date"
+            value="2007-01-03"
           />
         </div>
         <small
           class="form-text text-muted"
         >
           <span>
-            Valid until Jan 3, 2006, 11:59:59 PM (1 day remaining)
+            Valid until Jan 3, 2007, 11:59:59 PM (1 year remaining)
           </span>
         </small>
         <small
@@ -146,6 +194,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         </small>
       </div>
       <button
+        aria-disabled="false"
         class="btn btnPrimary"
         type="submit"
       >

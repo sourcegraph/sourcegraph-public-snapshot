@@ -16,10 +16,12 @@ import {
     UpdateSavedSearchVariables,
     Scalars,
     SavedSearchFields,
+    ReposByQueryResult,
+    SavedSearchResult,
 } from '../graphql-operations'
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
-    return queryGraphQL(
+    return queryGraphQL<ReposByQueryResult>(
         gql`
             query ReposByQuery($query: String!) {
                 search(query: $query) {
@@ -35,7 +37,7 @@ export function fetchReposByQuery(query: string): Observable<{ name: string; url
         { query }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.search || !data.search.results || !data.search.results.repositories) {
+            if (!data?.search?.results?.repositories) {
                 throw createAggregateError(errors)
             }
             return data.search.results.repositories
@@ -59,26 +61,26 @@ const savedSearchFragment = gql`
     }
 `
 
-export function fetchSavedSearches(): Observable<SavedSearchFields[]> {
-    return queryGraphQL(gql`
-        query savedSearches {
-            savedSearches {
+export const savedSearchesQuery = gql`
+    query SavedSearches($namespace: ID!, $first: Int, $last: Int, $after: String, $before: String) {
+        savedSearches(namespace: $namespace, first: $first, last: $last, after: $after, before: $before) {
+            nodes {
                 ...SavedSearchFields
             }
-        }
-        ${savedSearchFragment}
-    `).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.savedSearches) {
-                throw createAggregateError(errors)
+            totalCount
+            pageInfo {
+                hasNextPage
+                hasPreviousPage
+                endCursor
+                startCursor
             }
-            return data.savedSearches
-        })
-    )
-}
+        }
+    }
+    ${savedSearchFragment}
+`
 
 export function fetchSavedSearch(id: Scalars['ID']): Observable<SavedSearchFields> {
-    return queryGraphQL(
+    return queryGraphQL<SavedSearchResult>(
         gql`
             query SavedSearch($id: ID!) {
                 node(id: $id) {
@@ -250,14 +252,12 @@ function fetchEvents(userId: Scalars['ID'], first: number, eventName: string): O
 
     return result.pipe(
         map(dataOrThrowErrors),
-        map(
-            (data: EventLogsDataResult): EventLogResult => {
-                if (!data.node || data.node.__typename !== 'User') {
-                    throw new Error('User not found')
-                }
-                return data.node.eventLogs
+        map((data: EventLogsDataResult): EventLogResult => {
+            if (!data.node || data.node.__typename !== 'User') {
+                throw new Error('User not found')
             }
-        )
+            return data.node.eventLogs
+        })
     )
 }
 

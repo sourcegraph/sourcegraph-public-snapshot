@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -48,6 +49,8 @@ func serveSignOutHandler(db database.DB) http.HandlerFunc {
 			log15.Error("serveSignOutHandler", "err", err)
 		}
 
+		auth.SetSignOutCookie(w)
+
 		if ssoSignOutHandler != nil {
 			ssoSignOutHandler(w, r)
 		}
@@ -87,4 +90,16 @@ func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEven
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+
+	logEvent := &database.Event{
+		Name:            string(name),
+		URL:             r.URL.Host,
+		UserID:          uint32(a.UID),
+		AnonymousUserID: "backend",
+		Argument:        marshalled,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	db.EventLogs().Insert(ctx, logEvent)
 }

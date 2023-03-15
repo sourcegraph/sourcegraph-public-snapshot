@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react'
+import { FC, useCallback } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
 import { DiffStat } from '../../../../../components/diff/DiffStat'
 import {
@@ -22,15 +22,12 @@ export interface WorkspacesListItemProps {
     executionURL: string
 }
 
-export const WorkspacesListItem: React.FunctionComponent<React.PropsWithChildren<WorkspacesListItemProps>> = ({
-    node: workspace,
-    selectedNode,
-    executionURL,
-}) => {
-    const history = useHistory()
+export const WorkspacesListItem: FC<WorkspacesListItemProps> = ({ node: workspace, selectedNode, executionURL }) => {
+    const navigate = useNavigate()
+
     const onSelect = useCallback(
-        () => history.push({ ...history.location, pathname: `${executionURL}/execution/workspaces/${workspace.id}` }),
-        [history, executionURL, workspace.id]
+        () => navigate({ pathname: `${executionURL}/execution/workspaces/${workspace.id}` }),
+        [navigate, executionURL, workspace.id]
     )
 
     const statusIndicator = (

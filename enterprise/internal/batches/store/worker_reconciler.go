@@ -5,6 +5,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -18,14 +19,14 @@ const reconcilerMaxNumRetries = 60
 // makes to process a changeset when it stalls (process crashes, etc.).
 const reconcilerMaxNumResets = 60
 
-var reconcilerWorkerStoreOpts = dbworkerstore.Options{
+var reconcilerWorkerStoreOpts = dbworkerstore.Options[*types.Changeset]{
 	Name:                 "batches_reconciler_worker_store",
 	TableName:            "changesets",
 	ViewName:             "reconciler_changesets changesets",
 	AlternateColumnNames: map[string]string{"state": "reconciler_state"},
-	ColumnExpressions:    changesetColumns,
+	ColumnExpressions:    ChangesetColumns,
 
-	Scan: dbworkerstore.BuildWorkerScan(buildRecordScanner(scanChangeset)),
+	Scan: dbworkerstore.BuildWorkerScan(buildRecordScanner(ScanChangeset)),
 
 	// Order changesets by state, so that freshly enqueued changesets have
 	// higher priority.
@@ -39,6 +40,6 @@ var reconcilerWorkerStoreOpts = dbworkerstore.Options{
 	MaxNumRetries: reconcilerMaxNumRetries,
 }
 
-func NewReconcilerWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
-	return dbworkerstore.NewWithMetrics(handle, reconcilerWorkerStoreOpts, observationContext)
+func NewReconcilerWorkerStore(observationCtx *observation.Context, handle basestore.TransactableHandle) dbworkerstore.Store[*types.Changeset] {
+	return dbworkerstore.New(observationCtx, handle, reconcilerWorkerStoreOpts)
 }

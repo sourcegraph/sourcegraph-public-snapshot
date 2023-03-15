@@ -7,14 +7,18 @@ import (
 
 type WorkspacesExecutionInput struct {
 	BatchChangeAttributes template.BatchChangeAttributes
-	Repository            WorkspaceRepo             `json:"repository"`
-	Branch                WorkspaceBranch           `json:"branch"`
-	Path                  string                    `json:"path"`
-	OnlyFetchWorkspace    bool                      `json:"onlyFetchWorkspace"`
-	Steps                 []Step                    `json:"steps"`
-	SearchResultPaths     []string                  `json:"searchResultPaths"`
-	CachedStepResultFound bool                      `json:"cachedStepResultFound"`
-	CachedStepResult      execution.AfterStepResult `json:"cachedStepResult,omitempty"`
+	Repository            WorkspaceRepo   `json:"repository"`
+	Branch                WorkspaceBranch `json:"branch"`
+	Path                  string          `json:"path"`
+	OnlyFetchWorkspace    bool            `json:"onlyFetchWorkspace"`
+	Steps                 []Step          `json:"steps"`
+	SearchResultPaths     []string        `json:"searchResultPaths"`
+	// CachedStepResultFound is only required for V1 executions.
+	// TODO: Remove me once V2 is the only execution format.
+	CachedStepResultFound bool `json:"cachedStepResultFound"`
+	// CachedStepResult is only required for V1 executions.
+	// TODO: Remove me once V2 is the only execution format.
+	CachedStepResult execution.AfterStepResult `json:"cachedStepResult,omitempty"`
 }
 
 type WorkspaceRepo struct {

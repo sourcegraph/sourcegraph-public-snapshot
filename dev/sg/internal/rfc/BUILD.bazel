@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rfc",
+    srcs = ["rfc.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/rfc",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/open",
+        "//dev/sg/internal/secrets",
+        "//dev/sg/internal/std",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_grafana_regexp//:regexp",
+        "@org_golang_google_api//drive/v3:drive",
+        "@org_golang_google_api//option",
+        "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_oauth2//google",
+    ],
+)

@@ -18,7 +18,15 @@ import {
 
 import { ContributableMenu, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, isErrorLike, isExternalLink, logger } from '@sourcegraph/common'
+import {
+    asError,
+    compatNavigate,
+    ErrorLike,
+    HistoryOrNavigate,
+    isErrorLike,
+    isExternalLink,
+    logger,
+} from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { Context } from '@sourcegraph/template-parser'
 
@@ -164,50 +172,45 @@ export function getHoverActionsContext(
             )
         ),
     ]).pipe(
-        map(
-            ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => {
-                const fileUrl =
-                    definitionURLOrError !== LOADING && !isErrorLike(definitionURLOrError) && definitionURLOrError?.url
-                        ? definitionURLOrError.url
-                        : ''
+        map(([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => {
+            const fileUrl =
+                definitionURLOrError !== LOADING && !isErrorLike(definitionURLOrError) && definitionURLOrError?.url
+                    ? definitionURLOrError.url
+                    : ''
 
-                const hoveredFileUrl = urlToFile(
-                    { ...hoverContext, position: hoverContext },
-                    { part: hoverContext.part }
-                )
+            const hoveredFileUrl = urlToFile({ ...hoverContext, position: hoverContext }, { part: hoverContext.part })
 
-                return {
-                    'goToDefinition.showLoading': definitionURLOrError === LOADING,
-                    'goToDefinition.url':
-                        (definitionURLOrError !== LOADING &&
-                            !isErrorLike(definitionURLOrError) &&
-                            definitionURLOrError?.url) ||
-                        null,
-                    'goToDefinition.notFound':
-                        definitionURLOrError !== LOADING &&
+            return {
+                'goToDefinition.showLoading': definitionURLOrError === LOADING,
+                'goToDefinition.url':
+                    (definitionURLOrError !== LOADING &&
                         !isErrorLike(definitionURLOrError) &&
-                        definitionURLOrError === null,
-                    'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
+                        definitionURLOrError?.url) ||
+                    null,
+                'goToDefinition.notFound':
+                    definitionURLOrError !== LOADING &&
+                    !isErrorLike(definitionURLOrError) &&
+                    definitionURLOrError === null,
+                'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
 
-                    'findReferences.url':
-                        hasReferenceProvider && showFindReferences
-                            ? urlToFile(
-                                  { ...hoverContext, position: hoverContext, viewState: 'references' },
-                                  { part: hoverContext.part }
-                              )
-                            : null,
+                'findReferences.url':
+                    hasReferenceProvider && showFindReferences
+                        ? urlToFile(
+                              { ...hoverContext, position: hoverContext, viewState: 'references' },
+                              { part: hoverContext.part }
+                          )
+                        : null,
 
-                    'panel.url': urlToFile(
-                        { ...hoverContext, position: hoverContext, viewState: 'panelID' },
-                        { part: hoverContext.part }
-                    ),
+                'panel.url': urlToFile(
+                    { ...hoverContext, position: hoverContext, viewState: 'panelID' },
+                    { part: hoverContext.part }
+                ),
 
-                    // Store hoverPosition for the goToDefinition action's commandArguments to refer to.
-                    hoverPosition: parameters,
-                    hoveredOnDefinition: hoveredFileUrl === fileUrl,
-                }
+                // Store hoverPosition for the goToDefinition action's commandArguments to refer to.
+                hoverPosition: parameters,
+                hoveredOnDefinition: hoveredFileUrl === fileUrl,
             }
-        ),
+        }),
         distinctUntilChanged((a, b) => isEqual(a, b))
     )
 }
@@ -230,103 +233,107 @@ export interface UIDefinitionURL {
  *
  * @internal
  */
-export const getDefinitionURL = (
-    { urlToFile, requestGraphQL }: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>,
-    { getWorkspaceRoots }: { getWorkspaceRoots: () => Observable<WorkspaceRootWithMetadata[]> },
-    parameters: TextDocumentPositionParameters & URLToFileContext
-) => (locations: Observable<MaybeLoadingResult<Location[]>>): Observable<MaybeLoadingResult<UIDefinitionURL | null>> =>
-    combineLatest([locations, getWorkspaceRoots()]).pipe(
-        switchMap(
-            ([{ isLoading, result: definitions }, workspaceRoots]): Observable<
-                Partial<MaybeLoadingResult<UIDefinitionURL | null>>
-            > => {
-                if (definitions.length === 0) {
-                    return of<MaybeLoadingResult<UIDefinitionURL | null>>({ isLoading, result: null })
-                }
-
-                // Get unique definitions.
-                definitions = uniqWith(definitions, isEqual)
-
-                if (definitions.length > 1) {
-                    // Open the panel to show all definitions.
-                    const uri = withWorkspaceRootInputRevision(
-                        workspaceRoots || [],
-                        parseRepoURI(parameters.textDocument.uri)
-                    )
-                    return of<MaybeLoadingResult<UIDefinitionURL | null>>({
-                        isLoading,
-                        result: {
-                            url: urlToFile(
-                                {
-                                    ...uri,
-                                    revision: uri.revision || '',
-                                    filePath: uri.filePath || '',
-                                    position: {
-                                        line: parameters.position.line + 1,
-                                        character: parameters.position.character + 1,
-                                    },
-                                    viewState: 'def',
-                                },
-                                { part: parameters.part }
-                            ),
-                            multiple: true,
-                        },
-                    })
-                }
-                const defer = definitions[0]
-
-                // Preserve the input revision (e.g., a Git branch name instead of a Git commit SHA) if the result is
-                // inside one of the current roots. This avoids navigating the user from (e.g.) a URL with a nice Git
-                // branch name to a URL with a full Git commit SHA.
-                const uri = withWorkspaceRootInputRevision(workspaceRoots || [], parseRepoURI(defer.uri))
-                if (defer.range) {
-                    uri.position = {
-                        line: defer.range.start.line + 1,
-                        character: defer.range.start.character + 1,
+export const getDefinitionURL =
+    (
+        { urlToFile, requestGraphQL }: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>,
+        { getWorkspaceRoots }: { getWorkspaceRoots: () => Observable<WorkspaceRootWithMetadata[]> },
+        parameters: TextDocumentPositionParameters & URLToFileContext
+    ) =>
+    (locations: Observable<MaybeLoadingResult<Location[]>>): Observable<MaybeLoadingResult<UIDefinitionURL | null>> =>
+        combineLatest([locations, getWorkspaceRoots()]).pipe(
+            switchMap(
+                ([{ isLoading, result: definitions }, workspaceRoots]): Observable<
+                    Partial<MaybeLoadingResult<UIDefinitionURL | null>>
+                > => {
+                    if (definitions.length === 0) {
+                        return of<MaybeLoadingResult<UIDefinitionURL | null>>({ isLoading, result: null })
                     }
-                }
 
-                // When returning a single definition, include the repo's
-                // `rawRepoName`, to allow building URLs on the code host.
-                return concat(
-                    // While we resolve the raw repo name, emit isLoading with the previous result
-                    // (merged in the scan() below)
-                    [{ isLoading: true }],
-                    resolveRawRepoName({ ...uri, requestGraphQL }).pipe(
-                        map(rawRepoName => ({
-                            url: urlToFile(
-                                { ...uri, revision: uri.revision || '', filePath: uri.filePath || '', rawRepoName },
-                                { part: parameters.part }
-                            ),
-                            multiple: false,
-                        })),
-                        map(result => ({ isLoading, result }))
+                    // Get unique definitions.
+                    definitions = uniqWith(definitions, isEqual)
+
+                    if (definitions.length > 1) {
+                        // Open the panel to show all definitions.
+                        const uri = withWorkspaceRootInputRevision(
+                            workspaceRoots || [],
+                            parseRepoURI(parameters.textDocument.uri)
+                        )
+                        return of<MaybeLoadingResult<UIDefinitionURL | null>>({
+                            isLoading,
+                            result: {
+                                url: urlToFile(
+                                    {
+                                        ...uri,
+                                        revision: uri.revision || '',
+                                        filePath: uri.filePath || '',
+                                        position: {
+                                            line: parameters.position.line + 1,
+                                            character: parameters.position.character + 1,
+                                        },
+                                        viewState: 'def',
+                                    },
+                                    { part: parameters.part }
+                                ),
+                                multiple: true,
+                            },
+                        })
+                    }
+                    const defer = definitions[0]
+
+                    // Preserve the input revision (e.g., a Git branch name instead of a Git commit SHA) if the result is
+                    // inside one of the current roots. This avoids navigating the user from (e.g.) a URL with a nice Git
+                    // branch name to a URL with a full Git commit SHA.
+                    const uri = withWorkspaceRootInputRevision(workspaceRoots || [], parseRepoURI(defer.uri))
+                    if (defer.range) {
+                        uri.position = {
+                            line: defer.range.start.line + 1,
+                            character: defer.range.start.character + 1,
+                        }
+                    }
+
+                    // When returning a single definition, include the repo's
+                    // `rawRepoName`, to allow building URLs on the code host.
+                    return concat(
+                        // While we resolve the raw repo name, emit isLoading with the previous result
+                        // (merged in the scan() below)
+                        [{ isLoading: true }],
+                        resolveRawRepoName({ ...uri, requestGraphQL }).pipe(
+                            map(rawRepoName => ({
+                                url: urlToFile(
+                                    { ...uri, revision: uri.revision || '', filePath: uri.filePath || '', rawRepoName },
+                                    { part: parameters.part }
+                                ),
+                                multiple: false,
+                            })),
+                            map(result => ({ isLoading, result }))
+                        )
                     )
-                )
-            }
-        ),
-        // Merge partial updates
-        scan(
-            (previous, current) => ({ ...previous, ...current }),
-            ((): MaybeLoadingResult<UIDefinitionURL | null> => ({ isLoading: true, result: null }))()
+                }
+            ),
+            // Merge partial updates
+            scan(
+                (previous, current) => ({ ...previous, ...current }),
+                ((): MaybeLoadingResult<UIDefinitionURL | null> => ({ isLoading: true, result: null }))()
+            )
         )
-    )
 
 /**
  * Registers contributions for hover-related functionality.
  */
 export function registerHoverContributions({
     extensionsController,
-    platformContext: { urlToFile, requestGraphQL },
-    history,
+    platformContext: { urlToFile, requestGraphQL, clientApplication },
+    historyOrNavigate,
+    getLocation,
     locationAssign,
 }: {
     extensionsController: Pick<Controller, 'extHostAPI' | 'registerCommand'>
-    platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
+    platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL' | 'clientApplication'>
 } & {
-    history: H.History
+    historyOrNavigate: HistoryOrNavigate
+    locationAssign: typeof globalThis.location.assign
+    getLocation: () => H.Location
     /** Implementation of `window.location.assign()` used to navigate to external URLs. */
-    locationAssign: typeof location.assign
 }): { contributionsPromise: Promise<void> } & Unsubscribable {
     const subscriptions = new Subscription()
 
@@ -399,9 +406,8 @@ export function registerHoverContributions({
                 extensionsController.registerCommand({
                     command: 'goToDefinition',
                     run: async (parametersString: string) => {
-                        const parameters: TextDocumentPositionParameters & URLToFileContext = JSON.parse(
-                            parametersString
-                        )
+                        const parameters: TextDocumentPositionParameters & URLToFileContext =
+                            JSON.parse(parametersString)
 
                         const { result } = await wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
                             .pipe(
@@ -424,7 +430,7 @@ export function registerHoverContributions({
                         if (!result) {
                             throw new Error('No definition found.')
                         }
-                        if (result.url === H.createPath(history.location)) {
+                        if (result.url === H.createPath(getLocation())) {
                             // The user might be confused if they click "Go to definition" and don't go anywhere, which
                             // occurs if they are *already* on the definition. Give a helpful tip if they do this.
                             //
@@ -441,9 +447,11 @@ export function registerHoverContributions({
                         if (isExternalLink(result.url)) {
                             // External links must be navigated to through the browser
                             locationAssign(result.url)
+                        } else if (typeof historyOrNavigate === 'function') {
+                            // Use react router to handle in-app navigation
+                            historyOrNavigate(result.url)
                         } else {
-                            // Use history library to handle in-app navigation
-                            history.push(result.url)
+                            compatNavigate(historyOrNavigate, result.url)
                         }
                     },
                 })
@@ -471,8 +479,7 @@ export function registerHoverContributions({
                         // logic is implemented in the observable pipe that sets findReferences.url above.
                         {
                             action: 'findReferences',
-                            when:
-                                'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
+                            when: 'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
                             disabledWhen: 'false',
                         },
                     ],
@@ -481,7 +488,12 @@ export function registerHoverContributions({
             subscriptions.add(syncRemoteSubscription(referencesContributionPromise))
 
             let implementationsContributionPromise: Promise<unknown> = Promise.resolve()
-            if (window.context?.enableLegacyExtensions === false) {
+            /**
+             * Register find implementations contributions only for Sourcegraph web app.
+             * Other client applications (browser extension, VSCode extension) use code-intel extensions bundles with
+             * "Find implementations" action defined (see https://github.com/sourcegraph/sourcegraph/pull/49025 description).
+             */
+            if (clientApplication === 'sourcegraph') {
                 const promise = extensionHostAPI.registerContributions({
                     actions: [
                         ...languageSpecs.map(spec => ({

@@ -46,7 +46,7 @@ The following sections guide you through the migration process.
 
 ### Deploying Sourcegraph
 
-We offer several methods for deploying Sourcegraph for various requirements - see [Getting started](../../index.md#getting-started) to learn more about how to get started with Sourcegraph.
+We offer several methods for deploying Sourcegraph for various requirements—see [Getting started](../../index.md#getting-started) to learn more about how to get started with Sourcegraph.
 
 Choose a deployment option and follow the instructions. When you've signed into your Sourcegraph instance as a site admin, continue to the next section.
 

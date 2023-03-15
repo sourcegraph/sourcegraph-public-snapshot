@@ -7,8 +7,9 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -43,7 +44,7 @@ sg live -n 50 s2
 			Usage:   "Number of commits to check for live version",
 		},
 	},
-	BashComplete: cliutil.CompleteOptions(func() (options []string) {
+	BashComplete: completions.CompleteOptions(func() (options []string) {
 		return append(environmentNames(), `https\://...`)
 	}),
 }
@@ -59,6 +60,10 @@ func constructLiveCmdLongHelp() string {
 		fmt.Fprintf(&out, "\n* %s", name)
 	}
 
+	fmt.Fprintf(&out, "\n\n")
+	fmt.Fprintf(&out, "See more information about the deployments schedule here:\n")
+	fmt.Fprintf(&out, "https://handbook.sourcegraph.com/departments/engineering/teams/dev-experience/#sourcegraph-instances-operated-by-us")
+
 	return out.String()
 }
 
@@ -66,11 +71,11 @@ func liveExec(ctx *cli.Context) error {
 	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No environment specified"))
-		return cliutil.NewEmptyExitErr(1)
+		return exit.NewEmptyExitErr(1)
 	}
 	if len(args) != 1 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: Too many arguments"))
-		return cliutil.NewEmptyExitErr(1)
+		return exit.NewEmptyExitErr(1)
 	}
 
 	e, ok := getEnvironment(args[0])
@@ -79,7 +84,7 @@ func liveExec(ctx *cli.Context) error {
 			e = environment{Name: customURL.Host, URL: customURL.String()}
 		} else {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: Environment %q not found, or is not a valid URL :(", args[0]))
-			return cliutil.NewEmptyExitErr(1)
+			return exit.NewEmptyExitErr(1)
 		}
 	}
 

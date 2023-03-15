@@ -104,6 +104,8 @@ func TestIndex(t *testing.T) {
 	}
 
 	gitRun("init")
+	// Needed in CI
+	gitRun("config", "user.email", "test@sourcegraph.com")
 
 	git, err := NewSubprocessGit(gitDir)
 	fatalIfError(err, "NewSubprocessGit")
@@ -114,7 +116,7 @@ func TestIndex(t *testing.T) {
 
 	createParser := func() (ctags.Parser, error) { return mockParser{}, nil }
 
-	service, err := NewService(db, git, newMockRepositoryFetcher(git), createParser, 1, 1, false, 1, 1, 1)
+	service, err := NewService(db, git, newMockRepositoryFetcher(git), createParser, 1, 1, false, 1, 1, 1, false)
 	fatalIfError(err, "NewService")
 
 	verifyBlobs := func() {
@@ -130,12 +132,12 @@ func TestIndex(t *testing.T) {
 			gotPathSet[blob.Path] = struct{}{}
 		}
 		gotPaths := []string{}
-		for path := range gotPathSet {
-			gotPaths = append(gotPaths, path)
+		for gotPath := range gotPathSet {
+			gotPaths = append(gotPaths, gotPath)
 		}
 		wantPaths := []string{}
-		for path := range state {
-			wantPaths = append(wantPaths, path)
+		for wantPath := range state {
+			wantPaths = append(wantPaths, wantPath)
 		}
 		sort.Strings(gotPaths)
 		sort.Strings(wantPaths)
@@ -153,8 +155,8 @@ func TestIndex(t *testing.T) {
 		}
 
 		// Make sure the symbols match.
-		for path, gotSymbols := range gotPathToSymbols {
-			wantSymbols := state[path]
+		for gotPath, gotSymbols := range gotPathToSymbols {
+			wantSymbols := state[gotPath]
 			sort.Strings(gotSymbols)
 			sort.Strings(wantSymbols)
 			if diff := cmp.Diff(gotSymbols, wantSymbols); diff != "" {
@@ -286,8 +288,8 @@ func (f *mockRepositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo
 	ch := make(chan fetcher.ParseRequestOrError)
 
 	go func() {
-		for _, path := range paths {
-			_, err := f.git.catFileStdin.Write([]byte(fmt.Sprintf("%s:%s\n", commit, path)))
+		for _, p := range paths {
+			_, err := f.git.catFileStdin.Write([]byte(fmt.Sprintf("%s:%s\n", commit, p)))
 			if err != nil {
 				ch <- fetcher.ParseRequestOrError{
 					Err: errors.Wrap(err, "writing to cat-file stdin"),
@@ -342,7 +344,7 @@ func (f *mockRepositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo
 
 			ch <- fetcher.ParseRequestOrError{
 				ParseRequest: fetcher.ParseRequest{
-					Path: path,
+					Path: p,
 					Data: fileContents,
 				},
 			}

@@ -4,9 +4,12 @@ import { getReasonPhrase } from 'http-status-codes'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 
-import { WebhookLogMessageFields, WebhookLogRequestFields } from '../../graphql-operations'
+import { WebhookLogFields } from '../../graphql-operations'
 
 import styles from './MessagePanel.module.scss'
+
+type WebhookLogMessageFields = Pick<WebhookLogFields['request'], 'headers' | 'body'>
+type WebhookLogRequestFields = Pick<WebhookLogFields['request'], 'method' | 'url' | 'version'>
 
 export interface Props {
     className?: string

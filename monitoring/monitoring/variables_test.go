@@ -47,26 +47,54 @@ func TestVariableExampleValue(t *testing.T) {
 }
 
 func TestVariableApplier(t *testing.T) {
-	vars := newVariableApplier([]ContainerVariable{
-		{
-			Name: "foo",
-			Options: ContainerVariableOptions{
-				Options: []string{"1m"},
+	t.Run("with intervals", func(t *testing.T) {
+		vars := newVariableApplier([]ContainerVariable{
+			{
+				Name: "foo",
+				Options: ContainerVariableOptions{
+					Options: []string{"1m"},
+				},
 			},
-		},
-		{
-			Name: "bar",
-			OptionsLabelValues: ContainerVariableOptionsLabelValues{
-				ExampleOption: "hello-world",
+			{
+				Name: "bar",
+				OptionsLabelValues: ContainerVariableOptionsLabelValues{
+					ExampleOption: "hello-world",
+				},
 			},
-		},
+		})
+
+		var expression = `metric{bar="$bar"}[$foo]`
+
+		applied := vars.ApplySentinelValues(expression)
+		assert.Equal(t, `metric{bar="$bar"}[57m]`, applied) // sentinel value is 60-len(name)
+
+		reverted := vars.RevertDefaults(expression, applied)
+		assert.Equal(t, `metric{bar="$bar"}[$foo]`, reverted)
 	})
 
-	var expression = `metric{bar="$bar"}[$foo]`
+	t.Run("without intervals", func(t *testing.T) {
+		vars := newVariableApplierWith([]ContainerVariable{
+			{
+				Name: "foo",
+				Options: ContainerVariableOptions{
+					Options: []string{"1m"},
+				},
+			},
+			{
+				Name: "bar",
+				OptionsLabelValues: ContainerVariableOptionsLabelValues{
+					ExampleOption: "hello-world",
+				},
+			},
+		}, false)
 
-	applied := vars.ApplySentinelValues(expression)
-	assert.Equal(t, `metric{bar="$bar"}[57m]`, applied) // sentinel value is 60-len(name)
+		var expression = `metric{bar="$bar"}[$foo]`
 
-	reverted := vars.RevertDefaults(expression, applied)
-	assert.Equal(t, `metric{bar="$bar"}[$foo]`, reverted)
+		applied := vars.ApplySentinelValues(expression)
+		// no replacement for intervals
+		assert.Equal(t, `metric{bar="$bar"}[$foo]`, applied)
+
+		reverted := vars.RevertDefaults(expression, applied)
+		assert.Equal(t, `metric{bar="$bar"}[$foo]`, reverted)
+	})
 }

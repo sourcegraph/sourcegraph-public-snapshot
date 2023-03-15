@@ -54,8 +54,8 @@ var (
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, bstore SyncStore, cf *httpcli.Factory, observationContext *observation.Context) *SyncRegistry {
-	logger := observationContext.Logger.Scoped("SyncRegistry", "starts a syncer for each code host and updates them")
+func NewSyncRegistry(ctx context.Context, observationCtx *observation.Context, bstore SyncStore, cf *httpcli.Factory) *SyncRegistry {
+	logger := observationCtx.Logger.Scoped("SyncRegistry", "starts a syncer for each code host and updates them")
 	ctx, cancel := context.WithCancel(ctx)
 	return &SyncRegistry{
 		ctx:            ctx,
@@ -65,7 +65,7 @@ func NewSyncRegistry(ctx context.Context, bstore SyncStore, cf *httpcli.Factory,
 		httpFactory:    cf,
 		priorityNotify: make(chan []int64, 500),
 		syncers:        make(map[string]*changesetSyncer),
-		metrics:        makeMetrics(observationContext),
+		metrics:        makeMetrics(observationCtx),
 	}
 }
 
@@ -81,8 +81,9 @@ func (s *SyncRegistry) Start() {
 
 	externalServiceSyncer := goroutine.NewPeriodicGoroutine(
 		s.ctx,
+		"batchchanges.codehost-syncer", "Batch Changes syncer external service sync",
 		externalServiceSyncerInterval,
-		goroutine.NewHandlerWithErrorMessage("Batch Changes syncer external service sync", func(ctx context.Context) error {
+		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return s.syncCodeHosts(ctx)
 		}),
 	)
@@ -285,8 +286,8 @@ type syncerMetrics struct {
 	behindSchedule          *prometheus.GaugeVec
 }
 
-func makeMetrics(observationContext *observation.Context) *syncerMetrics {
-	metrics := &syncerMetrics{
+func makeMetrics(observationCtx *observation.Context) *syncerMetrics {
+	m := &syncerMetrics{
 		syncs: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "src_repoupdater_changeset_syncer_syncs",
 			Help: "Total number of changeset syncs",
@@ -314,14 +315,14 @@ func makeMetrics(observationContext *observation.Context) *syncerMetrics {
 			Help: "The number of changesets behind schedule",
 		}, []string{"codehost"}),
 	}
-	observationContext.Registerer.MustRegister(metrics.syncs)
-	observationContext.Registerer.MustRegister(metrics.priorityQueued)
-	observationContext.Registerer.MustRegister(metrics.syncDuration)
-	observationContext.Registerer.MustRegister(metrics.computeScheduleDuration)
-	observationContext.Registerer.MustRegister(metrics.scheduleSize)
-	observationContext.Registerer.MustRegister(metrics.behindSchedule)
+	observationCtx.Registerer.MustRegister(m.syncs)
+	observationCtx.Registerer.MustRegister(m.priorityQueued)
+	observationCtx.Registerer.MustRegister(m.syncDuration)
+	observationCtx.Registerer.MustRegister(m.computeScheduleDuration)
+	observationCtx.Registerer.MustRegister(m.scheduleSize)
+	observationCtx.Registerer.MustRegister(m.behindSchedule)
 
-	return metrics
+	return m
 }
 
 // Run will start the process of changeset syncing. It is long running
@@ -409,7 +410,7 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 			s.metrics.syncs.WithLabelValues(labelValues...).Inc()
 
 			if err != nil {
-				s.logger.Error("Syncing changeset", log.Error(err))
+				s.logger.Warn("Syncing changeset", log.Int64("changesetID", next.changesetID), log.Error(err))
 				// We'll continue and remove it as it'll get retried on next schedule
 			}
 
@@ -494,7 +495,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	return SyncChangeset(ctx, s.syncStore, gitserver.NewClient(s.syncStore.DatabaseDB()), source, repo, cs)
+	return SyncChangeset(ctx, s.syncStore, gitserver.NewClient(), source, repo, cs)
 }
 
 // SyncChangeset refreshes the metadata of the given changeset and

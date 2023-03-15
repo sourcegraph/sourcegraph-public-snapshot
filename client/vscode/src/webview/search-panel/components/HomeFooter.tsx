@@ -2,10 +2,9 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { QueryState } from '@sourcegraph/search'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { QueryState } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Card, Text } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../alias/ModalVideo'
@@ -14,7 +13,7 @@ import { SearchExample, exampleQueries } from './SearchExamples'
 
 import styles from './HomeFooter.module.scss'
 
-export interface HomeFooterProps extends TelemetryProps, ThemeProps {
+export interface HomeFooterProps extends TelemetryProps {
     setQuery: (newState: QueryState) => void
 }
 interface SearchExamplesProps extends TelemetryProps {

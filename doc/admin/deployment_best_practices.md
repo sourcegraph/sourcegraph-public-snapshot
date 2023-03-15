@@ -50,18 +50,18 @@ Sourcegraph Server is best used for trying out Sourcegraph. It's not intended fo
 
 _It is possible to migrate your data to a Docker-Compose or Kubernetes deployment, contact your Customer Engineer or reach out to support and we'll be happy to assist you in upgrading your deployment._
 
-## Additional Support Information
+## Additional support information
 
-### Precise Code navigation and Batch Changes
+### Precise code navigation and Batch Changes
 
 - The list of languages currently supported for precise code navigation can be found [here](https://docs.sourcegraph.com/code_navigation/references/indexers)
 - Requirements to set-up Batch Changes can be found [here](https://docs.sourcegraph.com/batch_changes/references/requirements)
 
-### Browsers Extensions
+### Browser extensions
 
 - Sourcegraph and its extensions are supported on the latest versions of Chrome, Firefox, and Safari.
 
-### Editor Extensions
+### Editor extensions
 
 Only the latest versions of IDEs are generally supported, but most versions within a few months up-to-date generally work.
 
@@ -80,5 +80,3 @@ Only the latest versions of IDEs are generally supported, but most versions with
   - DataGrip
   - Rider
   - Android Studio
-- Sublime Text 3: [https://github.com/sourcegraph/sourcegraph-sublime](https://github.com/sourcegraph/sourcegraph-sublime); we don't yet support Sublime Text 2 or 4
-- Atom: [https://github.com/sourcegraph/sourcegraph-atom](https://github.com/sourcegraph/sourcegraph-atom)

@@ -55,6 +55,9 @@ type MonikerData struct {
 
 // PackageInformationData indicates a globally unique namespace for a moniker.
 type PackageInformationData struct {
+	// Name of the package manager.
+	Manager string
+
 	// Name of the package that contains the moniker.
 	Name string
 
@@ -215,6 +218,7 @@ type DocumentationSearchResult struct {
 // Package pairs a package name and the dump that provides it.
 type Package struct {
 	Scheme  string
+	Manager string
 	Name    string
 	Version string
 }
@@ -230,6 +234,7 @@ type PackageReference struct {
 // and parallelizing the work, while the Maps version can be modified for e.g. local development
 // via the REPL or patching for incremental indexing.
 type GroupedBundleDataChans struct {
+	ProjectRoot       string
 	Meta              MetaData
 	Documents         chan KeyedDocumentData
 	ResultChunks      chan IndexedResultChunkData

@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "batch",
+    srcs = [
+        "batch.go",
+        "observability.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/batch",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/database/dbconn",
+        "//internal/database/dbutil",
+        "//internal/honey",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "batch_test",
+    srcs = ["batch_test.go"],
+    embed = [":batch"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/database/dbtest",
+        "//internal/database/dbutil",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

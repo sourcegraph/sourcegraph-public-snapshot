@@ -1,0 +1,2 @@
+name: add no_perms column to permission_sync_jobs table
+parents: [1671463799, 1674952295]

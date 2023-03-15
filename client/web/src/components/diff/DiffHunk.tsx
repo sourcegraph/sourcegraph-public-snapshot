@@ -1,19 +1,11 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
 import * as React from 'react'
 
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 
-import { isDefined, property } from '@sourcegraph/common'
-import {
-    decorationAttachmentStyleForTheme,
-    DecorationMapByLine,
-    decorationStyleForTheme,
-} from '@sourcegraph/shared/src/api/extension/api/decorations'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { createLinkUrl, Link, Tooltip } from '@sourcegraph/wildcard'
+import { createLinkUrl, Link } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
@@ -31,12 +23,11 @@ const diffHunkTypeDescriptions: Record<DiffHunkLineType, string> = {
     UNCHANGED: 'unchanged line',
     DELETED: 'deleted line',
 }
-interface DiffHunkProps extends ThemeProps {
+interface DiffHunkProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
     hunk: FileDiffHunkFields
     lineNumbers: boolean
-    decorations: Record<'head' | 'base', DecorationMapByLine>
     /**
      * Reflect selected line in url
      *
@@ -47,11 +38,9 @@ interface DiffHunkProps extends ThemeProps {
 
 export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkProps>> = ({
     fileDiffAnchor,
-    decorations,
     hunk,
     lineNumbers,
     persistLines = true,
-    isLightTheme,
 }) => {
     let oldLine = hunk.oldRange.startLine
     let newLine = hunk.newRange.startLine
@@ -68,16 +57,6 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                 }
                 const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
                 const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
-                const decorationsForLine = [
-                    // If the line was deleted, look for decorations in the base revision
-                    ...((line.kind === DiffHunkLineType.DELETED && decorations.base.get(oldLine - 1)) || []),
-                    // If the line wasn't deleted, look for decorations in the head revision
-                    ...((line.kind !== DiffHunkLineType.DELETED && decorations.head.get(newLine - 1)) || []),
-                ]
-                const lineStyle = decorationsForLine
-                    .filter(decoration => decoration.isWholeLine)
-                    .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
-                    .reduce((style, decoration) => ({ ...style, ...decoration }), {})
                 return (
                     /*
                         a11y-ignore
@@ -136,29 +115,9 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                                 )}
                             </>
                         )}
-
-                        {/* Needed for decorations */}
-                        <td
-                            className={styles.content}
-                            /* eslint-disable-next-line react/forbid-dom-props */
-                            style={lineStyle}
-                            data-diff-marker={diffHunkTypeIndicators[line.kind]}
-                        >
+                        <td className={styles.content} data-diff-marker={diffHunkTypeIndicators[line.kind]}>
                             <VisuallyHidden>{diffHunkTypeDescriptions[line.kind]}</VisuallyHidden>
                             <div className="d-inline-block" dangerouslySetInnerHTML={{ __html: line.html }} />
-                            {decorationsForLine.filter(property('after', isDefined)).map((decoration, index) => {
-                                const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
-                                return (
-                                    <React.Fragment key={index}>
-                                        {' '}
-                                        <Tooltip content={decoration.after.hoverMessage}>
-                                            <LinkOrSpan to={decoration.after.linkURL} style={style}>
-                                                {decoration.after.contentText}
-                                            </LinkOrSpan>
-                                        </Tooltip>
-                                    </React.Fragment>
-                                )
-                            })}
                         </td>
                     </tr>
                 )

@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { Connection } from '../../../../../components/FilteredConnection'
-import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
+import { UseShowMorePaginationResult } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -11,6 +11,7 @@ import {
     ShowMoreButton,
 } from '../../../../../components/FilteredConnection/ui'
 import {
+    BatchSpecWorkspacesPreviewResult,
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
@@ -20,7 +21,8 @@ import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
 interface WorkspacesPreviewListProps {
     /** The current workspaces preview connection result used to render the list. */
-    workspacesConnection: UseConnectionResult<
+    workspacesConnection: UseShowMorePaginationResult<
+        BatchSpecWorkspacesPreviewResult,
         PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
     >
     /**
@@ -52,6 +54,8 @@ interface WorkspacesPreviewListProps {
     error?: string
     /** Whether or not the items presented in the list are read-only. */
     isReadOnly?: boolean
+    /** Whether using cached results is disabled. */
+    cacheDisabled?: boolean
 }
 
 export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChildren<WorkspacesPreviewListProps>> = ({
@@ -61,6 +65,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
     cached,
     workspacesConnection: { connection, hasNextPage, fetchMore },
     error,
+    cacheDisabled,
     isReadOnly,
 }) => {
     const connectionOrCached = showCached && cached ? cached : connection
@@ -68,11 +73,12 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
     return (
         <ConnectionContainer className="w-100">
             {error && <ConnectionError errors={[error]} />}
-            <ConnectionList className="list-group list-group-flush w-100" aria-label="Workspace results found">
+            <ConnectionList className="list-group list-group-flush w-100" aria-label="workspace results found">
                 {connectionOrCached?.nodes?.map(node => (
                     <WorkspacesPreviewListItem
                         key={node.id}
                         workspace={node}
+                        cacheDisabled={cacheDisabled}
                         isStale={isStale}
                         exclude={excludeRepo}
                         isReadOnly={isReadOnly}

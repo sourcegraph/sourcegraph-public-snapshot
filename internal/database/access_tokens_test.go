@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -39,12 +40,12 @@ func TestAccessTokens_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
+	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 0)
 	tid0, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertSecurityEventAccessTokenCreatedCount(t, db, 1)
+	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 1)
 
 	got, err := db.AccessTokens().GetByID(ctx, tid0)
 	if err != nil {
@@ -89,10 +90,74 @@ func TestAccessTokens_Create(t *testing.T) {
 	}
 }
 
-func assertSecurityEventAccessTokenCreatedCount(t *testing.T, db DB, expectedCount int) {
+func TestAccessTokens_Delete(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+
+	ctx := context.Background()
+
+	subject, err := db.Users().Create(ctx, NewUser{
+		Email:                 "a@example.com",
+		Username:              "u1",
+		Password:              "p1",
+		EmailVerificationCode: "c1",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	creator, err := db.Users().Create(ctx, NewUser{
+		Email:                 "a2@example.com",
+		Username:              "u2",
+		Password:              "p2",
+		EmailVerificationCode: "c2",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create context with valid actor; required by logging
+	subjectActor := actor.FromUser(subject.ID)
+	ctxWithActor := actor.WithActor(context.Background(), subjectActor)
+
+	tid0, _, err := db.AccessTokens().Create(ctxWithActor, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, tv1, err := db.AccessTokens().Create(ctxWithActor, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tid2, _, err := db.AccessTokens().Create(ctxWithActor, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertSecurityEventCount(t, db, SecurityEventAccessTokenDeleted, 0)
+	err = db.AccessTokens().DeleteByID(ctxWithActor, tid0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertSecurityEventCount(t, db, SecurityEventAccessTokenDeleted, 1)
+	err = db.AccessTokens().DeleteByToken(ctxWithActor, tv1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertSecurityEventCount(t, db, SecurityEventAccessTokenDeleted, 2)
+
+	assertSecurityEventCount(t, db, SecurityEventAccessTokenHardDeleted, 0)
+	err = db.AccessTokens().HardDeleteByID(ctxWithActor, tid2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertSecurityEventCount(t, db, SecurityEventAccessTokenHardDeleted, 1)
+}
+
+func assertSecurityEventCount(t *testing.T, db DB, event SecurityEventName, expectedCount int) {
 	t.Helper()
 
-	row := db.SecurityEventLogs().Handle().QueryRowContext(context.Background(), "SELECT count(name) FROM security_event_logs WHERE name = $1", SecurityEventAccessTokenCreated)
+	row := db.SecurityEventLogs().Handle().QueryRowContext(context.Background(), "SELECT count(name) FROM security_event_logs WHERE name = $1", event)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		t.Fatal("couldn't read security events count")
@@ -126,12 +191,12 @@ func TestAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
+	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 0)
 	_, _, err = db.AccessTokens().CreateInternal(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
+	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 0)
 
 }
 

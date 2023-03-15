@@ -186,15 +186,15 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 					ExternalServiceType: extsvc.TypeBitbucketCloud,
 					ExternalServiceID:   "https://bitbucket.org",
 				}
-				auth := &auth.BasicAuth{}
+				basicAuth := &auth.BasicAuth{}
 
 				// Attempt to create with the invalid context.
-				cred, err := fx.db.Create(tc.ctx, scope, auth)
+				cred, err := fx.db.Create(tc.ctx, scope, basicAuth)
 				assert.Error(t, err)
 				assert.Nil(t, cred)
 
 				// Now we'll create a credential so we can test update.
-				cred, err = fx.db.Create(fx.internalCtx, scope, auth)
+				cred, err = fx.db.Create(fx.internalCtx, scope, basicAuth)
 				require.NoError(t, err)
 				require.NotNil(t, cred)
 
@@ -207,7 +207,7 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 
 	// Instead of two of every animal, we want one of every authenticator. Same,
 	// same.
-	for name, auth := range createUserCredentialAuths(t) {
+	for name, authenticator := range createUserCredentialAuths(t) {
 		t.Run(name, func(t *testing.T) {
 			scope := UserCredentialScope{
 				Domain:              name,
@@ -216,7 +216,7 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 				ExternalServiceID:   "https://github.com",
 			}
 
-			cred, err := fx.db.Create(fx.userCtx, scope, auth)
+			cred, err := fx.db.Create(fx.userCtx, scope, authenticator)
 			assert.NoError(t, err)
 			assert.NotNil(t, cred)
 			assert.NotZero(t, cred.ID)
@@ -229,10 +229,10 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 
 			have, err := cred.Authenticator(fx.userCtx)
 			assert.NoError(t, err)
-			assert.Equal(t, auth, have)
+			assert.Equal(t, authenticator, have)
 
 			// Ensure that trying to insert again fails.
-			second, err := fx.db.Create(fx.userCtx, scope, auth)
+			second, err := fx.db.Create(fx.userCtx, scope, authenticator)
 			assert.Error(t, err)
 			assert.Nil(t, second)
 

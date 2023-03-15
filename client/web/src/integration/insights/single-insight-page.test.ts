@@ -114,6 +114,7 @@ describe('Code insights single insight page', () => {
 
         assert.deepStrictEqual(variables.seriesDisplayOptions, {
             limit: 2,
+            numSamples: null,
             sortOptions: {
                 direction: 'ASC',
                 mode: 'LEXICOGRAPHICAL',

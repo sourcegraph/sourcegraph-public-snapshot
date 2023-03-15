@@ -19,8 +19,8 @@ func scheduleUpgrade(from, to Version, migrations []yamlMigration) ([]MigrationI
 
 		interval := migrationInterval{
 			id:         m.ID,
-			introduced: Version{m.IntroducedVersionMajor, m.IntroducedVersionMinor},
-			deprecated: Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor},
+			introduced: Version{Major: m.IntroducedVersionMajor, Minor: m.IntroducedVersionMinor},
+			deprecated: Version{Major: *m.DeprecatedVersionMajor, Minor: *m.DeprecatedVersionMinor},
 		}
 
 		// Only add intervals that are deprecated within the migration range: `from < deprecated <= to`
@@ -59,10 +59,7 @@ func scheduleUpgrade(from, to Version, migrations []yamlMigration) ([]MigrationI
 	// Finally, we reconstruct the return value, which pairs each of our chosen versions with the
 	// set of migrations that need to finish prior to continuing the upgrade process.
 
-	interrupts, err := makeCoveringSet(intervals, points)
-	if err != nil {
-		return nil, err
-	}
+	interrupts := makeCoveringSet(intervals, points)
 
 	// Sort ascending
 	sort.Slice(interrupts, func(i, j int) bool {
@@ -80,7 +77,7 @@ type migrationInterval struct {
 // makeCoveringSet returns a slice of migration interrupts each represeting a target instance version
 // and the set of out of band migrations that must complete before migrating away from that version.
 // We assume that the given points are ordered in the direction of migration (e.g., asc for upgrades).
-func makeCoveringSet(intervals []migrationInterval, points []Version) ([]MigrationInterrupt, error) {
+func makeCoveringSet(intervals []migrationInterval, points []Version) []MigrationInterrupt {
 	coveringSet := make(map[Version][]int, len(intervals))
 
 	// Flip the order of points to delay the oob migration runs as late as possible. This allows
@@ -109,5 +106,5 @@ outer:
 		interrupts = append(interrupts, MigrationInterrupt{version, ids})
 	}
 
-	return interrupts, nil
+	return interrupts
 }

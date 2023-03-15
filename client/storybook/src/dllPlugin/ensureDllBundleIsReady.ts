@@ -8,16 +8,16 @@ import { ROOT_PATH } from '@sourcegraph/build-config'
 
 import { dllPluginConfig, storybookWorkspacePath } from '../webpack.config.common'
 
-// Build DLL bundle with `yarn build:dll-bundle` if it's not available.
+// Build DLL bundle with `pnpm build:dll-bundle` if it's not available.
 export const ensureDllBundleIsReady = (): void => {
     signale.start(`Checking if DLL bundle is available: ${path.relative(ROOT_PATH, dllPluginConfig.path)}`)
 
     // eslint-disable-next-line no-sync
     if (!fs.existsSync(dllPluginConfig.path)) {
         signale.warn('DLL bundle not found!')
-        signale.await('Building new DLL bundle with `yarn build:dll-bundle`')
+        signale.await('Building new DLL bundle with `pnpm build:dll-bundle`')
 
-        spawnSync('yarn', ['build:dll-bundle'], {
+        spawnSync('pnpm', ['build:dll-bundle'], {
             stdio: 'inherit',
             cwd: storybookWorkspacePath,
         })

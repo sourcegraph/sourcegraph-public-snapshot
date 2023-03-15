@@ -2,11 +2,10 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { createBrowserHistory } from 'history'
 import { EMPTY, NEVER, of } from 'rxjs'
 
-import { SearchQueryStateStoreProvider } from '@sourcegraph/search'
+import { SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    extensionsController,
     HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULTS_WITH_METADATA,
@@ -14,7 +13,7 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
+import { useNavbarQueryState } from '../../stores'
 
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
@@ -33,18 +32,14 @@ const streamingSearchResult: AggregateStreamingSearchResults = {
 }
 
 const defaultProps: StreamingSearchResultsProps = {
-    extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 
-    history,
-    location: history.location,
     authenticatedUser: {
         url: '/users/alice',
         displayName: 'Alice',
         username: 'alice',
-        email: 'alice@email.test',
+        emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
     } as AuthenticatedUser,
-    isLightTheme: true,
 
     settingsCascade: {
         subjects: null,
@@ -57,10 +52,12 @@ const defaultProps: StreamingSearchResultsProps = {
     fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
     isSourcegraphDotCom: false,
     searchContextsEnabled: true,
+    searchAggregationEnabled: true,
+    codeMonitoringEnabled: true,
+    ownEnabled: true,
 }
 
 const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ codeMonitoring: true, showSearchContext: true })
     useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis' })
     return <Story />
 }
@@ -292,6 +289,38 @@ export const ServerSideAlertNoResults: Story = () => {
 }
 
 ServerSideAlertNoResults.storyName = 'server-side alert with no results'
+
+export const ServerSideAlertUnownedResults: Story = () => {
+    const result: AggregateStreamingSearchResults = {
+        state: 'complete',
+        results: [],
+        filters: [],
+        progress: {
+            durationMs: 500,
+            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
+            skipped: [],
+        },
+        alert: {
+            proposedQueries: [],
+            kind: 'unowned-results',
+            title: 'Some results have no owners',
+            description:
+                'For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring Sourcegraph Own](https://docs.sourcegraph.com/own).',
+        },
+    }
+
+    return (
+        <WebStory>
+            {() => (
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />
+                </SearchQueryStateStoreProvider>
+            )}
+        </WebStory>
+    )
+}
+
+ServerSideAlertUnownedResults.storyName = 'server-side alert with unowned results'
 
 export const ErrorWithNoResults: Story = () => {
     const result: AggregateStreamingSearchResults = {

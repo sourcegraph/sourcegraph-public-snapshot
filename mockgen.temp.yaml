@@ -6,23 +6,19 @@
   path: github.com/prometheus/client_golang/api/prometheus/v1
   interfaces:
     - API
-- filename: enterprise/cmd/frontend/internal/registry/stores/dbmocks/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores
-  interfaces:
-    - ExtensionStore
-    - ReleaseStore
 - filename: enterprise/internal/database/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/database
   interfaces:
     - CodeMonitorStore
     - EnterpriseDB
     - PermsStore
+    - SubRepoPermsStore
+    - CodeownersStore
 - filename: enterprise/internal/insights/discovery/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
   interfaces:
     - IndexableReposLister
     - RepoStore
-    - SettingStore
 - filename: enterprise/internal/insights/store/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
   interfaces:
@@ -33,10 +29,14 @@
   path: github.com/sourcegraph/sourcegraph/internal/authz
   interfaces:
     - SubRepoPermissionChecker
+- filename: enterprise/internal/authz/subrepoperms/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms
+  interfaces:
     - SubRepoPermissionsGetter
 - filename: internal/database/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/database
   interfaces:
+    - AccessRequestStore
     - AccessTokenStore
     - AuthzStore
     - BitbucketProjectPermissionsStore
@@ -52,18 +52,19 @@
     - OrgInvitationStore
     - OrgMemberStore
     - OrgStore
+    - OutboundWebhookStore
+    - OutboundWebhookJobStore
+    - OutboundWebhookLogStore
     - PhabricatorStore
     - RepoStore
     - SavedSearchStore
     - SearchContextsStore
     - SecurityEventLogsStore
     - SettingsStore
-    - SubRepoPermsStore
     - TemporarySettingsStore
     - UserCredentialsStore
     - UserEmailsStore
     - UserExternalAccountsStore
-    - UserPublicRepoStore
     - UserStore
     - WebhookStore
     - WebhookLogStore
@@ -71,6 +72,12 @@
     - ExecutorSecretStore
     - ExecutorSecretAccessLogStore
     - ZoektReposStore
+    - PermissionSyncJobStore
+    - TeamStore
+    - RoleStore
+    - UserRoleStore
+    - PermissionStore
+    - RolePermissionStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:
@@ -104,3 +111,16 @@
   interfaces:
     - Store
     - DistributedStore
+- filename: cmd/frontend/backend/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/backend
+  interfaces:
+    - UserEmailsService
+    - ReposService
+- filename: enterprise/internal/embeddings/background/repo/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo
+  interfaces:
+    - RepoEmbeddingJobsStore
+- filename: enterprise/internal/executor/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store
+  interfaces:
+    - JobTokenStore

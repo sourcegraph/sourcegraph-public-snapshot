@@ -644,10 +644,7 @@ func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsO
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q, err := getRewirerMappingsQuery(opts)
-	if err != nil {
-		return nil, err
-	}
+	q := getRewirerMappingsQuery(opts)
 
 	if err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.RewirerMapping
@@ -709,7 +706,7 @@ func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsO
 	return mappings, err
 }
 
-func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) (*sqlf.Query, error) {
+func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
 	// If there's a text search, we want to add the appropriate WHERE clauses to
 	// the query. Note that we need to use different WHERE clauses depending on
 	// which part of the big UNION below we're in; more detail on that is
@@ -739,7 +736,7 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) (*sqlf.Query, error) {
 		detachTextSearch,
 		currentState,
 		opts.LimitOffset.SQL(),
-	), nil
+	)
 }
 
 func getRewirerMappingTextSearch(terms []search.TextSearchTerm) (detachTextSearch, viewTextSearch *sqlf.Query) {

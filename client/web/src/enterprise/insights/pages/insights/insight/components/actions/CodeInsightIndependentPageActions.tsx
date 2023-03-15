@@ -1,25 +1,27 @@
 import { FunctionComponent, useRef, useState } from 'react'
 
 import { mdiLinkVariant } from '@mdi/js'
-import { useHistory } from 'react-router'
+import { escapeRegExp } from 'lodash'
+import { useNavigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
+import { DownloadFileButton } from '../../../../../components/DownloadFileButton'
 import { ConfirmDeleteModal } from '../../../../../components/modals/ConfirmDeleteModal'
-import { Insight } from '../../../../../core'
+import { Insight, isLangStatsInsight } from '../../../../../core'
 import { useCopyURLHandler } from '../../../../../hooks/use-copy-url-handler'
 
 import styles from './CodeInsightIndependentPageActions.module.scss'
 
 interface Props extends TelemetryProps {
-    insight: Pick<Insight, 'title' | 'id' | 'type'>
+    insight: Insight
 }
 
 export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props => {
     const { insight, telemetryService } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const copyLinkButtonReference = useRef<HTMLButtonElement | null>(null)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -46,6 +48,18 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
 
     return (
         <div className={styles.container}>
+            {!isLangStatsInsight(insight) && (
+                <Tooltip content="This will create a CVS archive of all data for this Code Insight, including data that has been archived. This will only include data that you are permitted to see.">
+                    <DownloadFileButton
+                        fileName={escapeRegExp(insight.title)}
+                        fileUrl={`/.api/insights/export/${insight.id}`}
+                        variant="secondary"
+                    >
+                        Export data as CSV
+                    </DownloadFileButton>
+                </Tooltip>
+            )}
+
             <Tooltip content={isCopied ? 'Copied!' : undefined}>
                 <Button variant="secondary" ref={copyLinkButtonReference} onClick={handleCopyLinkClick}>
                     <Icon aria-hidden={true} svgPath={mdiLinkVariant} /> Copy link
@@ -66,7 +80,7 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
             <ConfirmDeleteModal
                 insight={insight}
                 showModal={showDeleteConfirm}
-                onConfirm={() => history.push('/insights/dashboards/all')}
+                onConfirm={() => navigate('/insights/all')}
                 onCancel={() => setShowDeleteConfirm(false)}
             />
         </div>

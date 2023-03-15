@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -49,9 +49,9 @@ func TestScopedRepoIteratorForEach(t *testing.T) {
 	}
 
 	t.Run("expect_equal_repo_names", func(t *testing.T) {
-		autogold.Want("expect_equal_repo_names", []string{"github.com/org/repo", "gitlab.com/org1/repo1"}).Equal(t, gotNames)
+		autogold.Expect([]string{"github.com/org/repo", "gitlab.com/org1/repo1"}).Equal(t, gotNames)
 	})
 	t.Run("expect_equal_repo_ids", func(t *testing.T) {
-		autogold.Want("expect_equal_repo_ids", []api.RepoID{api.RepoID(5), api.RepoID(6)}).Equal(t, gotIds)
+		autogold.Expect([]api.RepoID{api.RepoID(5), api.RepoID(6)}).Equal(t, gotIds)
 	})
 }

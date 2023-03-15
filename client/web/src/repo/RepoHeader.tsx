@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 
 import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
+import { useLocation } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
@@ -12,7 +12,6 @@ import { Menu, MenuList, Position, Icon } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { ActionItemsToggle, ActionItemsToggleProps } from '../extensions/components/ActionItemsBar'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { useBreakpoint } from '../util/dom'
 
@@ -82,7 +81,7 @@ export interface RepoHeaderContribution {
      * Render function called with RepoHeaderContext.
      * Use `actionType` to determine how to render the component.
      */
-    children: (context: RepoHeaderContext) => React.ReactElement
+    children: (context: RepoHeaderContext) => JSX.Element | null
 }
 
 /**
@@ -118,7 +117,7 @@ export interface RepoHeaderContext {
 
 export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
 
-interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, ActionItemsToggleProps {
+interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps {
     /**
      * An array of render functions for action buttons that can be configured *in addition* to action buttons
      * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
@@ -141,8 +140,10 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
 
     authenticatedUser: AuthenticatedUser | null
 
-    location: H.Location
-    history: H.History
+    // This is used for testing purposes only because we're using CSS media
+    // queries to determine the container height and in storybook we can't
+    // control these.
+    forceWrap?: boolean
 }
 
 /**
@@ -154,16 +155,18 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
     onLifecyclePropsChange,
     ...props
 }) => {
+    const location = useLocation()
     const [repoHeaderContributions, setRepoHeaderContributions] = useState<RepoHeaderContribution[]>([])
     const repoHeaderContributionStore = useMemo(
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
         [setRepoHeaderContributions]
     )
+    const isLargeHook = useBreakpoint('sm')
+    const isLarge = props.forceWrap ? false : isLargeHook
+
     useEffect(() => {
         onLifecyclePropsChange(repoHeaderContributionStore.props)
     }, [onLifecyclePropsChange, repoHeaderContributionStore.props])
-
-    const isLarge = useBreakpoint('lg')
 
     const context: Omit<RepoHeaderContext, 'actionType'> = useMemo(
         () => ({
@@ -192,10 +195,13 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
     )
 
     return (
-        <nav data-testid="repo-header" className={classNames('navbar navbar-expand', styles.repoHeader)}>
+        <nav data-testid="repo-header" className={classNames('navbar navbar-expand', 'px-3', styles.repoHeader)}>
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
-                <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
+                <Breadcrumbs
+                    breadcrumbs={props.breadcrumbs}
+                    className={classNames('justify-content-start', !props.forceWrap ? styles.breadcrumbWrap : '')}
+                />
             </div>
             <ul className="navbar-nav">
                 {leftActions.map((a, index) => (
@@ -206,7 +212,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
             </ul>
             <div className={styles.spacer} />
             <ErrorBoundary
-                location={props.location}
+                location={location}
                 // To be clear to users that this isn't an error reported by extensions
                 // about e.g. the code they're viewing.
                 render={error => (
@@ -218,7 +224,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                 )}
             >
                 {isLarge ? (
-                    <ul className="navbar-nav">
+                    <ul className={classNames('navbar-nav', styles.actionList)}>
                         {rightActions.map((a, index) => (
                             <li className={classNames('nav-item', styles.actionListItem)} key={a.id || index}>
                                 {a.element}
@@ -241,12 +247,6 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                         </li>
                     </ul>
                 )}
-                <ul className="navbar-nav">
-                    <ActionItemsToggle
-                        useActionItemsToggle={props.useActionItemsToggle}
-                        extensionsController={props.extensionsController}
-                    />
-                </ul>
             </ErrorBoundary>
         </nav>
     )

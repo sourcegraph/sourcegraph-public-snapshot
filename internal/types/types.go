@@ -136,6 +136,14 @@ func (r *Repo) ExternalServiceIDs() []int64 {
 	return ids
 }
 
+func (r *Repo) ToExternalServiceRepository() *ExternalServiceRepository {
+	return &ExternalServiceRepository{
+		ID:         r.ID,
+		Name:       r.Name,
+		ExternalID: r.ExternalRepo.ID,
+	}
+}
+
 // BlockedRepoError is returned by a Repo IsBlocked method.
 type BlockedRepoError struct {
 	Name   api.RepoName
@@ -557,26 +565,37 @@ type GitserverRepo struct {
 	LastChanged time.Time
 	// Size of the repository in bytes.
 	RepoSizeBytes int64
-	UpdatedAt     time.Time
+	// Time when corruption of repo was detected
+	CorruptedAt time.Time
+	UpdatedAt   time.Time
+	// A log of the different types of corruption that was detected on this repo. The order of the log entries are
+	// stored from most recent to least recent and capped at 10 entries. See LogCorruption on Gitserverrepo store.
+	CorruptionLogs []RepoCorruptionLog
+}
+
+// RepoCorruptionLog represents a corruption event that has been detected on a repo.
+type RepoCorruptionLog struct {
+	// When the corruption event was detected
+	Timestamp time.Time `json:"time"`
+	// Why the repo is considered to be corrupt. Can be git output stderr output or a short reason like "missing head"
+	Reason string `json:"reason"`
 }
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {
-	ID              int64
-	Kind            string
-	DisplayName     string
-	Config          *extsvc.EncryptableConfig
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       time.Time
-	LastSyncAt      time.Time
-	NextSyncAt      time.Time
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-	Unrestricted    bool       // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault    bool       // Whether this external service is our default public service on Cloud
-	HasWebhooks     *bool      // Whether this external service has webhooks configured; calculated from Config
-	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	ID             int64
+	Kind           string
+	DisplayName    string
+	Config         *extsvc.EncryptableConfig
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      time.Time
+	LastSyncAt     time.Time
+	NextSyncAt     time.Time
+	Unrestricted   bool       // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault   bool       // Whether this external service is our default public service on Cloud
+	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
+	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
 }
 
 type ExternalServiceRepo struct {
@@ -611,6 +630,20 @@ type ExternalServiceSyncJob struct {
 	ReposUnmodified int32
 }
 
+// ExternalServiceNamespace represents a namespace on an external service that can have ownership over repositories
+type ExternalServiceNamespace struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	ExternalID string `json:"external_id"`
+}
+
+// ExternalServiceRepository represents a repository on an external service that may not necessarily be sync'd with sourcegraph
+type ExternalServiceRepository struct {
+	ID         api.RepoID   `json:"id"`
+	Name       api.RepoName `json:"name"`
+	ExternalID string       `json:"external_id"`
+}
+
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {
@@ -619,9 +652,6 @@ func (e *ExternalService) URN() string {
 
 // IsDeleted returns true if the external service is deleted.
 func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
-
-// IsSiteOwned returns true if the external service is owned by the site.
-func (e *ExternalService) IsSiteOwned() bool { return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0 }
 
 // Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
@@ -690,6 +720,12 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 	clone := e.Clone()
 	clone.Apply(opts...)
 	return clone
+}
+
+// SupportsRepoExclusion returns true when given external service supports repo
+// exclusion.
+func (e *ExternalService) SupportsRepoExclusion() bool {
+	return extsvc.SupportsRepoExclusion(e.Kind)
 }
 
 // ExternalServices is a utility type with convenience methods for operating on
@@ -789,6 +825,94 @@ type User struct {
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	Searchable            bool
+	SCIMControlled        bool
+}
+
+// UserForSCIM extends user with email addresses and SCIM external ID.
+type UserForSCIM struct {
+	User
+	Emails          []string
+	SCIMExternalID  string
+	SCIMAccountData string
+}
+
+type SystemRole string
+
+const (
+	// UserSystemRole represents the role associated with all users on a Sourcegraph instance.
+	UserSystemRole SystemRole = "USER"
+
+	// SiteAdministratorSystemRole represents the role associated with Site Administrators
+	// on a sourcegraph instance.
+	SiteAdministratorSystemRole SystemRole = "SITE_ADMINISTRATOR"
+)
+
+type Role struct {
+	ID        int32
+	Name      string
+	System    bool
+	CreatedAt time.Time
+}
+
+// A PermissionNamespace represents a distinct context within which permission policies
+// are defined and enforced.
+type PermissionNamespace string
+
+func (n PermissionNamespace) String() string {
+	return string(n)
+}
+
+// Valid checks if a namespace is valid and supported by the Sourcegraph RBAC system.
+func (n PermissionNamespace) Valid() bool {
+	switch n {
+	case BatchChangesNamespace:
+		return true
+	default:
+		return false
+	}
+}
+
+// BatchChangesNamespace represents the Batch Changes namespace.
+const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
+
+type Permission struct {
+	ID        int32
+	Namespace PermissionNamespace
+	Action    string
+	CreatedAt time.Time
+}
+
+// DisplayName returns an human-readable string for permissions.
+func (p *Permission) DisplayName() string {
+	// Based on the zanzibar representation for data relations:
+	// <namespace>:<object_id>#<relation>@<user_id | user_group>
+	return fmt.Sprintf("%s#%s", p.Namespace, p.Action)
+}
+
+type RolePermission struct {
+	RoleID       int32
+	PermissionID int32
+	CreatedAt    time.Time
+}
+
+type UserRole struct {
+	RoleID    int32
+	UserID    int32
+	CreatedAt time.Time
+}
+
+type NamespacePermission struct {
+	ID         int64
+	Namespace  PermissionNamespace
+	ResourceID int64
+	UserID     int32
+	CreatedAt  time.Time
+}
+
+func (n *NamespacePermission) DisplayName() string {
+	// Based on the zanzibar representation for data relations:
+	// <namespace>:<object_id>#@<user_id | user_group>
+	return fmt.Sprintf("%s:%d@%d", n.Namespace, n.ResourceID, n.UserID)
 }
 
 type OrgMemberAutocompleteSearchItem struct {
@@ -813,11 +937,6 @@ type OrgMembership struct {
 	UserID    int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
-}
-
-type OrgStats struct {
-	OrgID             int32
-	CodeHostRepoCount int32
 }
 
 type PhabricatorRepo struct {
@@ -856,9 +975,10 @@ type UserDates struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type SiteUsageStatistics struct {
-	DAUs []*SiteActivityPeriod
-	WAUs []*SiteActivityPeriod
-	MAUs []*SiteActivityPeriod
+	DAUs  []*SiteActivityPeriod
+	WAUs  []*SiteActivityPeriod
+	MAUs  []*SiteActivityPeriod
+	RMAUs []*SiteActivityPeriod
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -1181,18 +1301,22 @@ type SearchEventLatencies struct {
 // SiteUsageSummary is an alternate view of SiteUsageStatistics which is
 // calculated in the database layer.
 type SiteUsageSummary struct {
-	Month                   time.Time
-	Week                    time.Time
-	Day                     time.Time
-	UniquesMonth            int32
-	UniquesWeek             int32
-	UniquesDay              int32
-	RegisteredUniquesMonth  int32
-	RegisteredUniquesWeek   int32
-	RegisteredUniquesDay    int32
-	IntegrationUniquesMonth int32
-	IntegrationUniquesWeek  int32
-	IntegrationUniquesDay   int32
+	RollingMonth                   time.Time
+	Month                          time.Time
+	Week                           time.Time
+	Day                            time.Time
+	UniquesRollingMonth            int32
+	UniquesMonth                   int32
+	UniquesWeek                    int32
+	UniquesDay                     int32
+	RegisteredUniquesRollingMonth  int32
+	RegisteredUniquesMonth         int32
+	RegisteredUniquesWeek          int32
+	RegisteredUniquesDay           int32
+	IntegrationUniquesRollingMonth int32
+	IntegrationUniquesMonth        int32
+	IntegrationUniquesWeek         int32
+	IntegrationUniquesDay          int32
 }
 
 // SearchAggregatedEvent represents the total events, unique users, and
@@ -1239,11 +1363,14 @@ type Event struct {
 // GrowthStatistics represents the total users that were created,
 // deleted, resurrected, churned and retained over the current month.
 type GrowthStatistics struct {
-	DeletedUsers     int32
-	CreatedUsers     int32
-	ResurrectedUsers int32
-	ChurnedUsers     int32
-	RetainedUsers    int32
+	DeletedUsers           int32
+	CreatedUsers           int32
+	ResurrectedUsers       int32
+	ChurnedUsers           int32
+	RetainedUsers          int32
+	PendingAccessRequests  int32
+	ApprovedAccessRequests int32
+	RejectedAccessRequests int32
 }
 
 // IDEExtensionsUsage represents the daily, weekly and monthly numbers
@@ -1304,9 +1431,6 @@ type MigratedExtensionsUsageStatistics struct {
 	SearchExportPerformedUniqueUsers *int32
 	SearchExportFailed               *int32
 	SearchExportFailedUniqueUsers    *int32
-
-	GoImportsSearchQueryTransformed            *int32
-	GoImportsSearchQueryTransformedUniqueUsers *int32
 
 	OpenInEditor []*MigratedExtensionsOpenInEditorUsageStatistics
 }
@@ -1458,7 +1582,9 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsChartBarClick                []GroupResultPing
 	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
 	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
+	WeeklyGroupResultsSearches                     []GroupResultSearchPing
 	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
+	WeeklyDataExportClicks                         *int32
 }
 
 type GroupResultPing struct {
@@ -1469,6 +1595,12 @@ type GroupResultPing struct {
 }
 
 type GroupResultExpandedViewPing struct {
+	AggregationMode *string
+	Count           *int32
+}
+
+type GroupResultSearchPing struct {
+	Name            PingName
 	AggregationMode *string
 	Count           *int32
 }
@@ -1599,7 +1731,49 @@ type NotebooksUsageStatistics struct {
 	NotebookAddedQueryBlocksCount    *int32
 	NotebookAddedFileBlocksCount     *int32
 	NotebookAddedSymbolBlocksCount   *int32
-	NotebookAddedComputeBlocksCount  *int32
+}
+
+type OwnershipUsageStatistics struct {
+	// Whether the `search-ownership` feature flag is on anywhere on the instance.
+	FeatureFlagOn *bool `json:"feature_flag_on,omitempty"`
+
+	// Statistics about ownership data in repositories
+	ReposCount *OwnershipUsageReposCounts `json:"repos_count,omitempty"`
+
+	// Activity of selecting owners as search results using
+	// `select:file.owners`.
+	SelectFileOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"select_file_owners_search,omitempty"`
+
+	// Activity of using a `file:has.owner` predicate in search.
+	FileHasOwnerSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owner_search,omitempty"`
+
+	// Opening ownership panel.
+	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`
+}
+
+type OwnershipUsageReposCounts struct {
+	// Total number of repositories. Can be used in computing adoption
+	// ratio as denominator to number of repos with ownership.
+	Total *int32 `json:"total,omitempty"`
+
+	// Number of repos in an instance that have ownership
+	// data (of any source, either CODEOWNERS file or API).
+	WithOwnership *int32 `json:"with_ownership,omitempty"`
+
+	// Number of repos in an instance that have ownership
+	// data ingested through the API.
+	WithIngestedOwnership *int32 `json:"with_ingested_ownership,omitempty"`
+}
+
+type OwnershipUsageStatisticsActiveUsers struct {
+	// Daily-Active Users
+	DAU *int32 `json:"dau,omitempty"`
+
+	// Weekly-Active Users
+	WAU *int32 `json:"wau,omitempty"`
+
+	// Monthly-Active Users
+	MAU *int32 `json:"mau,omitempty"`
 }
 
 // Secret represents the secrets table
@@ -1650,6 +1824,15 @@ type SearchContext struct {
 	// Query is the Sourcegraph query that defines this search context
 	// e.g. repo:^github\.com/org rev:bar archive:no f:sub/dir
 	Query string
+
+	// Whether the search context is auto-defined by Sourcegraph. Auto-defined search contexts are not editable by users.
+	AutoDefined bool
+
+	// Whether the search context is the default for the user. If the user hasn't explicitly set a default or is not authenticated, the global search context is used.
+	Default bool
+
+	// Whether the user has starred the context. If the user is not authenticated, this field is always false.
+	Starred bool
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
@@ -1677,12 +1860,14 @@ func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSe
 }
 
 // Webhook defines the information we need to handle incoming webhooks from a
-// code host
+// code host.
 type Webhook struct {
-	// The primary key, used for sorting and pagination
+	// The primary key, used for sorting and pagination.
 	ID int32
-	// UUID is the ID we display externally and will appear in the webhook URL
-	UUID         uuid.UUID
+	// UUID is the ID we display externally and will appear in the webhook URL.
+	UUID uuid.UUID
+	// Name is a descriptive webhook name which is shown on the UI for convenience.
+	Name         string
 	CodeHostKind string
 	CodeHostURN  extsvc.CodeHostBaseURL
 	// Secret can be in one of three states:
@@ -1700,3 +1885,69 @@ type Webhook struct {
 	CreatedByUserID int32
 	UpdatedByUserID int32
 }
+
+// OutboundRequestLogItem represents a single outbound request made by Sourcegraph.
+type OutboundRequestLogItem struct {
+	ID                 string              `json:"id"`
+	StartedAt          time.Time           `json:"startedAt"`
+	Method             string              `json:"method"` // The request method (GET, POST, etc.)
+	URL                string              `json:"url"`
+	RequestHeaders     map[string][]string `json:"requestHeaders"`
+	RequestBody        string              `json:"requestBody"`
+	StatusCode         int32               `json:"statusCode"` // The response status code
+	ResponseHeaders    map[string][]string `json:"responseHeaders"`
+	Duration           float64             `json:"duration"`
+	ErrorMessage       string              `json:"errorMessage"`
+	CreationStackFrame string              `json:"creationStackFrame"`
+	CallStackFrame     string              `json:"callStackFrame"` // Should be "CallStack" once this is final
+}
+
+type SlowRequest struct {
+	Index     string         `json:"index"`
+	Start     time.Time      `json:"start"`
+	Duration  time.Duration  `json:"duration"`
+	UserID    int32          `json:"userId"`
+	Name      string         `json:"name"`
+	Source    string         `json:"source"`
+	Variables map[string]any `json:"variables"`
+	Errors    []string       `json:"errors"`
+	Query     string         `json:"query"`
+	Filepath  string         `json:"filepath"`
+}
+
+type Team struct {
+	ID           int32
+	Name         string
+	DisplayName  string
+	ReadOnly     bool
+	ParentTeamID int32
+	CreatorID    int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type TeamMember struct {
+	UserID    int32
+	TeamID    int32
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type AccessRequestStatus string
+
+type AccessRequest struct {
+	ID               int32
+	Name             string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	Email            string
+	AdditionalInfo   string
+	Status           AccessRequestStatus
+	DecisionByUserID *int32
+}
+
+const (
+	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
+	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
+	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
+)

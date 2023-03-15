@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/api/iterator"
 )
 
 type gcsAPI interface {
@@ -14,8 +15,8 @@ type gcsAPI interface {
 type gcsBucketHandle interface {
 	Attrs(ctx context.Context) (*storage.BucketAttrs, error)
 	Create(ctx context.Context, projectID string, attrs *storage.BucketAttrs) error
-	Update(ctx context.Context, attrs storage.BucketAttrsToUpdate) error
 	Object(name string) gcsObjectHandle
+	Objects(ctx context.Context, q *storage.Query) gcsObjectIterator
 }
 
 type gcsObjectHandle interface {
@@ -25,6 +26,11 @@ type gcsObjectHandle interface {
 	ComposerFrom(sources ...gcsObjectHandle) gcsComposer
 }
 
+type gcsObjectIterator interface {
+	Next() (*storage.ObjectAttrs, error)
+	PageInfo() *iterator.PageInfo
+}
+
 type gcsComposer interface {
 	Run(ctx context.Context) (*storage.ObjectAttrs, error)
 }
@@ -32,6 +38,7 @@ type gcsComposer interface {
 type gcsAPIShim struct{ client *storage.Client }
 type bucketHandleShim struct{ handle *storage.BucketHandle }
 type objectHandleShim struct{ handle *storage.ObjectHandle }
+type objectIteratorShim struct{ handle *storage.ObjectIterator }
 
 type composerShim struct {
 	handle  *storage.ObjectHandle
@@ -41,6 +48,7 @@ type composerShim struct {
 var _ gcsAPI = &gcsAPIShim{}
 var _ gcsBucketHandle = &bucketHandleShim{}
 var _ gcsObjectHandle = &objectHandleShim{}
+var _ gcsObjectIterator = &objectIteratorShim{}
 var _ gcsComposer = &composerShim{}
 
 func (s *gcsAPIShim) Bucket(name string) gcsBucketHandle {
@@ -55,13 +63,12 @@ func (s *bucketHandleShim) Create(ctx context.Context, projectID string, attrs *
 	return s.handle.Create(ctx, projectID, attrs)
 }
 
-func (s *bucketHandleShim) Update(ctx context.Context, attrs storage.BucketAttrsToUpdate) error {
-	_, err := s.handle.Update(ctx, attrs)
-	return err
-}
-
 func (s *bucketHandleShim) Object(name string) gcsObjectHandle {
 	return &objectHandleShim{handle: s.handle.Object(name)}
+}
+
+func (s *bucketHandleShim) Objects(ctx context.Context, q *storage.Query) gcsObjectIterator {
+	return &objectIteratorShim{handle: s.handle.Objects(ctx, q)}
 }
 
 func (s *objectHandleShim) Delete(ctx context.Context) error {
@@ -85,6 +92,14 @@ func (s *objectHandleShim) ComposerFrom(sources ...gcsObjectHandle) gcsComposer 
 	}
 
 	return &composerShim{handle: s.handle, sources: handles}
+}
+
+func (s *objectIteratorShim) Next() (*storage.ObjectAttrs, error) {
+	return s.handle.Next()
+}
+
+func (s *objectIteratorShim) PageInfo() *iterator.PageInfo {
+	return s.handle.PageInfo()
 }
 
 func (s *composerShim) Run(ctx context.Context) (*storage.ObjectAttrs, error) {

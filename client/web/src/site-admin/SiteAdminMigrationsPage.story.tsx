@@ -1,5 +1,4 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import * as H from 'history'
 import { Observable, of } from 'rxjs'
 
 import { WebStory } from '../components/WebStory'
@@ -29,7 +28,6 @@ export const InvalidPreIntroduction: Story = () => (
                 {...props}
                 fetchAllMigrations={(): Observable<OutOfBandMigrationFields[]> => of(migrations)}
                 fetchSiteUpdateCheck={() => of({ productVersion: '3.23.2' })}
-                history={H.createMemoryHistory()}
                 now={now}
             />
         )}
@@ -46,7 +44,6 @@ export const DowngradeWarning: Story = () => (
                 {...props}
                 fetchAllMigrations={(): Observable<OutOfBandMigrationFields[]> => of(migrations)}
                 fetchSiteUpdateCheck={() => of({ productVersion: '3.24.2' })}
-                history={H.createMemoryHistory()}
                 now={now}
             />
         )}
@@ -63,7 +60,6 @@ export const NoWarnings: Story = () => (
                 {...props}
                 fetchAllMigrations={(): Observable<OutOfBandMigrationFields[]> => of(migrations)}
                 fetchSiteUpdateCheck={() => of({ productVersion: '3.25.2' })}
-                history={H.createMemoryHistory()}
                 now={now}
             />
         )}
@@ -80,7 +76,6 @@ export const UpgradeWarning: Story = () => (
                 {...props}
                 fetchAllMigrations={(): Observable<OutOfBandMigrationFields[]> => of(migrations)}
                 fetchSiteUpdateCheck={() => of({ productVersion: '3.26.2' })}
-                history={H.createMemoryHistory()}
                 now={now}
             />
         )}
@@ -97,7 +92,6 @@ export const InvalidPostDeprecation: Story = () => (
                 {...props}
                 fetchAllMigrations={(): Observable<OutOfBandMigrationFields[]> => of(migrations)}
                 fetchSiteUpdateCheck={() => of({ productVersion: '3.27.2' })}
-                history={H.createMemoryHistory()}
                 now={now}
             />
         )}

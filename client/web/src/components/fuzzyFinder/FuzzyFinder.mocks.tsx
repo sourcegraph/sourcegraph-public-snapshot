@@ -7,7 +7,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { FileNamesResult, FuzzyFinderRepoResult, FuzzyFinderSymbolsResult, SymbolKind } from '../../graphql-operations'
-import { ThemePreference } from '../../theme'
+import { UserHistory } from '../useUserHistory'
 
 import { FUZZY_GIT_LSFILES_QUERY } from './FuzzyFiles'
 import { FuzzyFinderContainer } from './FuzzyFinder'
@@ -33,14 +33,8 @@ export const FuzzyWrapper: React.FunctionComponent<FuzzyWrapperProps> = props =>
             location={history.location}
             settingsCascade={{ final: { experimentalFeatures: props.experimentalFeatures }, subjects: null }}
             telemetryService={NOOP_TELEMETRY_SERVICE}
-            themeState={{
-                current: {
-                    enhancedThemePreference: ThemePreference.Light,
-                    themePreference: ThemePreference.Light,
-                    setThemePreference: () => {},
-                },
-            }}
             initialQuery={props.initialQuery}
+            userHistory={new UserHistory()}
         />
     )
 }
@@ -98,7 +92,7 @@ export const FUZZY_REPOS_MOCK: MockedResponse<FuzzyFinderRepoResult> = {
 export const FUZZY_SYMBOLS_MOCK: MockedResponse<FuzzyFinderSymbolsResult> = {
     request: {
         query: getDocumentNode(FUZZY_SYMBOLS_QUERY),
-        variables: { query: 'repo:github.com/sourcegraph/sourcegraph@main type:symbol count:10' },
+        variables: { query: 'repo:^github\\.com/sourcegraph/sourcegraph$@main type:symbol count:10' },
     },
     result: {
         data: {

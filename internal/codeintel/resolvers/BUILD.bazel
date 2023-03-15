@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "resolvers",
+    srcs = [
+        "all.go",
+        "hack.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/gqlutil",
+        "//internal/markdown",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+    ],
+)

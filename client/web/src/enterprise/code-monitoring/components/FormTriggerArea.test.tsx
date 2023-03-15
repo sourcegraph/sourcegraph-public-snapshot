@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { FormTriggerArea } from './FormTriggerArea'
 
@@ -115,7 +115,6 @@ describe('FormTriggerArea', () => {
                     onQueryChange={sinon.spy()}
                     setTriggerCompleted={sinon.spy()}
                     startExpanded={false}
-                    isLightTheme={true}
                     isSourcegraphDotCom={testCase.isSourcegraphDotCom}
                 />
             )
@@ -168,7 +167,6 @@ describe('FormTriggerArea', () => {
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
-                isLightTheme={true}
                 isSourcegraphDotCom={false}
             />
         )
@@ -187,7 +185,6 @@ describe('FormTriggerArea', () => {
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
-                isLightTheme={true}
                 isSourcegraphDotCom={false}
             />
         )

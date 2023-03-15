@@ -1,7 +1,8 @@
 package adr
 
 import (
-	"regexp"
+	"github.com/grafana/regexp"
+
 	"strings"
 )
 

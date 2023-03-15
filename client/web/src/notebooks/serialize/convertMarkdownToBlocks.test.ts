@@ -90,8 +90,7 @@ https://sourcegraph.com/github.com/sourcegraph/sourcegraph@branch/-/blob/client/
             {
                 type: 'md',
                 input: {
-                    text:
-                        '## Second title v2\n\nLink to a file is inside text https://sourcegraph.com/github.com/sourcegraph/sourcegraph@feature/-/blob/client/web/index.ts\n\n',
+                    text: '## Second title v2\n\nLink to a file is inside text https://sourcegraph.com/github.com/sourcegraph/sourcegraph@feature/-/blob/client/web/index.ts\n\n',
                 },
             },
             {

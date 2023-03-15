@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
@@ -68,12 +69,21 @@ type Metadata struct {
 	PreviewImage string
 }
 
+type PreloadedAsset struct {
+	// The as property. E.g. `image`
+	As string
+	// The href property. It should be set to a resolved path using `assetsutil.URL`
+	Href string
+}
+
 type Common struct {
 	Injected InjectedHTML
 	Metadata *Metadata
 	Context  jscontext.JSContext
 	Title    string
 	Error    *pageError
+
+	PreloadedAssets *[]PreloadedAsset
 
 	Manifest *assets.WebpackManifest
 
@@ -125,7 +135,7 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 //	}
 //
 // In the case of a repository that is cloning, a Common data structure is
-// returned but it has an incomplete RevSpec.
+// returned but it has a nil Repo.
 func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
 	logger := sglog.Scoped("commonHandler", "")
 	if mockNewCommon != nil {
@@ -141,6 +151,16 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		w.Header().Set("X-Robots-Tag", "noindex")
 	}
 
+	var preloadedAssets *[]PreloadedAsset
+	preloadedAssets = nil
+	if globals.Branding() == nil || (globals.Branding().Dark == nil && globals.Branding().Light == nil) {
+		preloadedAssets = &[]PreloadedAsset{
+			// sourcegraph-mark.svg is always loaded as part of the layout component unless a custom
+			// branding is defined
+			{As: "image", Href: assetsutil.URL("/img/sourcegraph-mark.svg").String() + "?v2"},
+		}
+	}
+
 	common := &Common{
 		Injected: InjectedHTML{
 			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
@@ -148,9 +168,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			BodyTop:    template.HTML(conf.Get().HtmlBodyTop),
 			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
 		},
-		Context:  jscontext.NewJSContextFromRequest(r, db),
-		Title:    title,
-		Manifest: manifest,
+		Context:         jscontext.NewJSContextFromRequest(r, db),
+		Title:           title,
+		Manifest:        manifest,
+		PreloadedAssets: preloadedAssets,
 		Metadata: &Metadata{
 			Title:       globals.Branding().BrandName,
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
@@ -311,6 +332,12 @@ func serveHome(db database.DB) handlerFunc {
 			return nil // request was handled
 		}
 
+		// we only allow HEAD requests on sourcegraph.com.
+		if r.Method == "HEAD" {
+			w.WriteHeader(http.StatusOK)
+			return nil
+		}
+
 		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
 		r.URL.Path = "/search"
 		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
@@ -423,7 +450,7 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient(db))
+		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient())
 		if handled {
 			return nil
 		}
@@ -454,7 +481,7 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient(db))
+		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient())
 		if handled {
 			return nil
 		}

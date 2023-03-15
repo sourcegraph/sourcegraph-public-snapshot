@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "api",
+    srcs = [
+        "progress.go",
+        "types.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/streaming/api",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/api"],
+)
+
+go_test(
+    timeout = "short",
+    name = "api_test",
+    srcs = ["progress_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":api"],
+    deps = [
+        "//internal/api",
+        "//internal/testutil",
+    ],
+)

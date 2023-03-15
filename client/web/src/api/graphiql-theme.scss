@@ -11,7 +11,9 @@
  * extensibility.
  **/
 
-@import 'graphiql/graphiql.css';
+@use 'wildcard/src/global-styles/forms';
+
+@import 'graphiql/graphiql';
 
 /* stylelint-disable selector-class-pattern */
 /* stylelint-disable declaration-property-unit-allowed-list */
@@ -73,13 +75,16 @@
         color: var(--text-muted) !important;
     }
     .variable-editor-title,
-    .result-window .CodeMirror-gutters,
     .historyPaneWrap,
     .history-contents,
     .doc-explorer,
     .doc-explorer-contents,
     .execute-options {
         background: var(--color-bg-2);
+    }
+
+    .result-window .CodeMirror-gutters {
+        background-color: var(--theme-bg-plain);
     }
 
     .doc-explorer-title-bar {
@@ -211,6 +216,12 @@
                 background-color: var(--color-bg-3);
             }
         }
+    }
+
+    .editor-drag-bar {
+        background: var(--color-bg-2);
+        border: none;
+        width: 0.35rem;
     }
 }
 

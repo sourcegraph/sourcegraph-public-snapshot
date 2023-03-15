@@ -2,9 +2,6 @@ package schema
 
 import "github.com/sourcegraph/go-jsonschema/jsonschema"
 
-// TODO: This file is manually updated and must remain in sync with extension.schema.json. It does
-// not need to contain all fields, only those used by Go code.
-
 // SourcegraphExtensionManifest description: The Sourcegraph extension manifest describes the extension and the features it provides.
 type SourcegraphExtensionManifest struct {
 	ActivationEvents []string             `json:"activationEvents"`

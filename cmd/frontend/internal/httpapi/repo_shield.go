@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,7 +35,7 @@ func badgeValueFmt(totalRefs int) string {
 	return " " + desc
 }
 
-func serveRepoShield(db database.DB) func(http.ResponseWriter, *http.Request) error {
+func serveRepoShield() func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		value, err := badgeValue(r)
 		if err != nil {

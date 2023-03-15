@@ -30,10 +30,12 @@ go build \
   -o "$BUILDDIR"/.bin/prom-wrapper ./cmd/prom-wrapper
 
 # Cross-compile monitoring generator before building the image.
+pushd "../../monitoring"
 go build \
   -trimpath \
-  -o "$BUILDDIR"/.bin/monitoring-generator ../../monitoring
+  -o "$BUILDDIR"/.bin/monitoring-generator .
 
+# Final pre-build stage.
 pushd "$BUILDDIR"
 
 # Note: This chmod is so that both the `sourcegraph` user and host system user (what `whoami` reports on

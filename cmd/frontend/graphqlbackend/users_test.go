@@ -2,11 +2,16 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -52,6 +57,273 @@ func TestUsers(t *testing.T) {
 	})
 }
 
+func TestUsers_Pagination(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.ListFunc.SetDefaultHook(func(ctx context.Context, opt *database.UsersListOptions) ([]*types.User, error) {
+		if opt.LimitOffset.Offset == 2 {
+			return []*types.User{
+				{Username: "user3"},
+				{Username: "user4"},
+			}, nil
+		}
+		return []*types.User{
+			{Username: "user1"},
+			{Username: "user2"}}, nil
+	})
+	users.CountFunc.SetDefaultReturn(4, nil)
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					users(first: 2) {
+						nodes { username }
+						totalCount
+						pageInfo { hasNextPage, endCursor }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"users": {
+						"nodes": [
+							{
+								"username": "user1"
+							},
+							{
+								"username": "user2"
+							}
+						],
+						"totalCount": 4,
+						"pageInfo": {
+							"hasNextPage": true,
+							"endCursor": "2"
+						 }
+					}
+				}
+			`,
+		},
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					users(first: 2, after: "2") {
+						nodes { username }
+						totalCount
+						pageInfo { hasNextPage, endCursor }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"users": {
+						"nodes": [
+							{
+								"username": "user3"
+							},
+							{
+								"username": "user4"
+							}
+						],
+						"totalCount": 4,
+						"pageInfo": {
+							"hasNextPage": false,
+							"endCursor": null
+						 }
+					}
+				}
+			`,
+		},
+	})
+}
+
+func TestUsers_Pagination_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	schema := mustParseGraphQLSchema(t, db)
+
+	org, err := db.Orgs().Create(ctx, "acme", nil)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+	newUsers := []struct{ username string }{
+		{username: "user1"},
+		{username: "user2"},
+		{username: "user3"},
+		{username: "user4"},
+	}
+	users := make([]*types.User, len(newUsers))
+	for i, newUser := range newUsers {
+		user, err := db.Users().Create(ctx, database.NewUser{Username: newUser.username})
+		if err != nil {
+			t.Fatal(err)
+			return
+		}
+		users[i] = user
+		_, err = db.OrgMembers().Create(ctx, org.ID, user.ID)
+		if err != nil {
+			t.Fatal(err)
+			return
+		}
+	}
+
+	admin := users[0]
+	nonadmin := users[1]
+
+	tests := []usersQueryTest{
+		// no args
+		{
+			ctx:            actor.WithActor(ctx, actor.FromUser(admin.ID)),
+			wantUsers:      []string{"user1", "user2", "user3", "user4"},
+			wantTotalCount: 4,
+		},
+		// first: 1
+		{
+			ctx:            actor.WithActor(ctx, actor.FromUser(admin.ID)),
+			args:           "first: 1",
+			wantUsers:      []string{"user1"},
+			wantTotalCount: 4,
+		},
+		// first: 2
+		{
+			ctx:            actor.WithActor(ctx, actor.FromUser(admin.ID)),
+			args:           "first: 2",
+			wantUsers:      []string{"user1", "user2"},
+			wantTotalCount: 4,
+		},
+		// first: 2, after: 2
+		{
+			ctx:            actor.WithActor(ctx, actor.FromUser(admin.ID)),
+			args:           "first: 2, after: \"2\"",
+			wantUsers:      []string{"user3", "user4"},
+			wantTotalCount: 4,
+		},
+		// first: 1, after: 2
+		{
+			ctx:            actor.WithActor(ctx, actor.FromUser(admin.ID)),
+			args:           "first: 1, after: \"2\"",
+			wantUsers:      []string{"user3"},
+			wantTotalCount: 4,
+		},
+		// no admin on dotcom
+		{
+			ctx:       actor.WithActor(ctx, actor.FromUser(nonadmin.ID)),
+			wantError: "must be site admin",
+			dotcom:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.args, func(t *testing.T) {
+			runUsersQuery(t, schema, tt)
+		})
+	}
+}
+
+type usersQueryTest struct {
+	args string
+	ctx  context.Context
+
+	wantError string
+
+	wantUsers []string
+
+	wantNoTotalCount bool
+	wantTotalCount   int
+	dotcom           bool
+}
+
+func runUsersQuery(t *testing.T, schema *graphql.Schema, want usersQueryTest) {
+	t.Helper()
+
+	if want.dotcom {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		t.Cleanup(func() {
+			envvar.MockSourcegraphDotComMode(orig)
+		})
+	}
+
+	type node struct {
+		Username string `json:"username"`
+	}
+
+	type pageInfo struct {
+		HasNextPage bool `json:"hasNextPage"`
+	}
+
+	type users struct {
+		Nodes      []node `json:"nodes"`
+		TotalCount *int   `json:"totalCount"`
+	}
+
+	type expected struct {
+		Users users `json:"users"`
+	}
+
+	nodes := make([]node, 0, len(want.wantUsers))
+	for _, username := range want.wantUsers {
+		nodes = append(nodes, node{Username: username})
+	}
+
+	ex := expected{
+		Users: users{
+			Nodes:      nodes,
+			TotalCount: &want.wantTotalCount,
+		},
+	}
+
+	if want.wantNoTotalCount {
+		ex.Users.TotalCount = nil
+	}
+
+	marshaled, err := json.Marshal(ex)
+	if err != nil {
+		t.Fatalf("failed to marshal expected repositories query result: %s", err)
+	}
+
+	var query string
+	if want.args != "" {
+		query = fmt.Sprintf(`{ users(%s) { nodes { username } totalCount } } `, want.args)
+	} else {
+		query = `{ users { nodes { username } totalCount } }`
+	}
+
+	if want.wantError != "" {
+		RunTest(t, &Test{
+			Context:        want.ctx,
+			Schema:         schema,
+			Query:          query,
+			ExpectedResult: `null`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Message: want.wantError,
+					Path:    []any{"users"},
+				},
+			},
+		})
+	} else {
+		RunTest(t, &Test{
+			Context:        want.ctx,
+			Schema:         schema,
+			Query:          query,
+			ExpectedResult: string(marshaled),
+		})
+	}
+}
 func TestUsers_InactiveSince(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

@@ -448,6 +448,61 @@ FROM batch_spec_workspaces
 WHERE %s
 `
 
+const disableBatchSpecWorkspaceExecutionCacheQueryFmtstr = `
+WITH batch_spec AS (
+	SELECT
+		id
+	FROM
+		batch_specs
+	WHERE
+		id = %s
+		AND
+		no_cache
+),
+candidate_batch_spec_workspaces AS (
+	SELECT
+		id, changeset_spec_ids
+	FROM
+		batch_spec_workspaces
+	WHERE
+		batch_spec_workspaces.batch_spec_id = (SELECT id FROM batch_spec)
+	ORDER BY id
+),
+removable_changeset_specs AS (
+	SELECT
+		id
+	FROM
+		changeset_specs
+	WHERE
+		id IN (SELECT jsonb_object_keys(changeset_spec_ids)::bigint FROM candidate_batch_spec_workspaces)
+	ORDER BY id
+),
+removed_changeset_specs AS (
+	DELETE FROM changeset_specs
+	WHERE
+		id IN (SELECT id FROM removable_changeset_specs)
+)
+UPDATE
+	batch_spec_workspaces
+SET
+	cached_result_found = FALSE,
+	changeset_spec_ids = '{}',
+	step_cache_results = '{}'
+WHERE
+	id IN (SELECT id FROM candidate_batch_spec_workspaces)
+`
+
+// DisableBatchSpecWorkspaceExecutionCache removes caching information from workspaces prior to execution.
+func (s *Store) DisableBatchSpecWorkspaceExecutionCache(ctx context.Context, batchSpecID int64) (err error) {
+	ctx, _, endObservation := s.operations.disableBatchSpecWorkspaceExecutionCache.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSpecID", int(batchSpecID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(disableBatchSpecWorkspaceExecutionCacheQueryFmtstr, batchSpecID)
+	return s.Exec(ctx, q)
+}
+
 func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) error {
 	var stepCacheResults json.RawMessage
 

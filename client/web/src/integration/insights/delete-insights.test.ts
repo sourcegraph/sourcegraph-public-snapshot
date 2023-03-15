@@ -37,11 +37,13 @@ describe('Code insights page', () => {
             // settings. We have to mock them by mocking user settings cascade.
             // userSettings: settings,
             overrides: {
-                GetInsights: () => ({
+                GetAllInsightConfigurations: () => ({
                     __typename: 'Query',
                     insightViews: {
                         __typename: 'InsightViewConnection',
                         nodes: [createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' })],
+                        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+                        totalCount: 1,
                     },
                 }),
                 GetInsightView: () => ({
@@ -62,7 +64,7 @@ describe('Code insights page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/all')
         await driver.page.waitForSelector('svg circle')
 
         const variables = await testContext.waitForGraphQLRequest(async () => {

@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -67,7 +68,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	batchChangeAPIID := string(marshalBatchChangeID(batchChange.ID))
+	batchChangeAPIID := string(bgql.MarshalBatchChangeID(batchChange.ID))
 	namespaceAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 	apiUser := &apitest.User{DatabaseID: userID, SiteAdmin: true}
 	wantBatchChange := apitest.BatchChange{
@@ -219,7 +220,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 func assertBatchSpecsInResponse(t *testing.T, ctx context.Context, s *graphql.Schema, batchChangeID int64, wantBatchSpecs ...*btypes.BatchSpec) {
 	t.Helper()
 
-	batchChangeAPIID := string(marshalBatchChangeID(batchChangeID))
+	batchChangeAPIID := string(bgql.MarshalBatchChangeID(batchChangeID))
 
 	input := map[string]any{
 		"batchChange":                 batchChangeAPIID,

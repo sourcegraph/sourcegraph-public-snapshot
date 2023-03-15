@@ -10,7 +10,7 @@ import { logger } from '@sourcegraph/common'
  * const rxjsObservable = fromObservableQuery(client.watchQuery(query))
  * ```
  */
-export function fromObservableQuery<T extends object, Variables = OperationVariables>(
+export function fromObservableQuery<T extends object, Variables extends OperationVariables = OperationVariables>(
     observableQuery: ObservableQuery<T, Variables>
 ): Observable<ApolloQueryResult<T>> {
     return new Observable<ApolloQueryResult<T>>(subscriber => {

@@ -6,7 +6,7 @@ Date: 2022-07-21
 
 It was common in the past to treat gitserver as a simple wrapper around git where users could send any combination of git arguments.
 
-This made it difficult to provide a consistent API to users of gitserver as well as making it difficult to apply certain security checks and filtering. 
+This made it difficult to provide a consistent API to users of gitserver as well as making it difficult to apply certain security checks and filtering.
 
 ## Decision
 
@@ -16,4 +16,5 @@ It should no longer be possible to send "raw" commands to gitserver. All communi
 
 When new functionality is required, it should be added to the gitserver client interface or existing methods should be updated. 
 
-Currently, the interface is pretty large but, we have plans to clean it up over time.
+Currently, [the interface](../background-information/gitserver-api.md) is pretty large but we have plans to clean it up over time.
+

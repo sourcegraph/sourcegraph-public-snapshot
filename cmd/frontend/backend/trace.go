@@ -30,7 +30,7 @@ var requestGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
 func trace(ctx context.Context, server, method string, arg any, err *error) (context.Context, func()) {
 	requestGauge.WithLabelValues(server + "." + method).Inc()
 
-	span, ctx := ot.StartSpanFromContext(ctx, server+"."+method)
+	span, ctx := ot.StartSpanFromContext(ctx, server+"."+method) //nolint:staticcheck // OT is deprecated
 	span.SetTag("Server", server)
 	span.SetTag("Method", method)
 	span.SetTag("Argument", fmt.Sprintf("%#v", arg))

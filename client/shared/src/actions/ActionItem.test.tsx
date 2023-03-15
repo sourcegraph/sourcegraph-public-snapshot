@@ -3,9 +3,11 @@ import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { NEVER } from 'rxjs'
 
-import { createBarrier } from '../api/integration-test/testHelpers'
+import { assertAriaEnabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { renderWithBrandedContext } from '../testing'
+import { createBarrier } from '../testing/testHelpers'
 
 import { ActionItem } from './ActionItem'
 
@@ -185,34 +187,8 @@ describe('ActionItem', () => {
         // to result in the setState call.)
         userEvent.click(screen.getByRole('button'))
 
-        // we should wait for the button to be enabled again after got errors. Otherwise it will be flaky
-        await waitFor(() => expect(screen.getByLabelText('d')).toBeEnabled())
-
-        expect(asFragment()).toMatchSnapshot()
-    })
-
-    test('run command with error with showInlineError', async () => {
-        const { asFragment } = render(
-            <ActionItem
-                active={true}
-                action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                variant="actionItem"
-                showInlineError={true}
-                location={history.location}
-                extensionsController={{
-                    ...NOOP_EXTENSIONS_CONTROLLER,
-                    executeCommand: () => Promise.reject(new Error('x')),
-                }}
-                platformContext={NOOP_PLATFORM_CONTEXT}
-            />
-        )
-
-        // Run command (which will reject with an error). (Use setTimeout to wait for the executeCommand resolution
-        // to result in the setState call.)
-        userEvent.click(screen.getByRole('button'))
-
-        await waitFor(() => expect(screen.getByLabelText('Error: x')).toBeInTheDocument())
+        // we should wait for the button to be enabled again after got errors. Otherwise, it will be flaky
+        await waitFor(() => assertAriaEnabled(screen.getByLabelText('d')))
 
         expect(asFragment()).toMatchSnapshot()
     })

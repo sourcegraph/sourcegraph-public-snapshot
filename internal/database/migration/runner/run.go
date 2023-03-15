@@ -201,10 +201,10 @@ func (r *Runner) applyMigrations(
 			return err
 		}
 
-		for _, definition := range definitions {
-			if up && definition.IsCreateIndexConcurrently {
+		for _, def := range definitions {
+			if up && def.IsCreateIndexConcurrently {
 				// Handle execution of `CREATE INDEX CONCURRENTLY` specially
-				if unlocked, err := r.createIndexConcurrently(ctx, schemaContext, definition, earlyUnlock); err != nil {
+				if unlocked, err := r.createIndexConcurrently(ctx, schemaContext, def, earlyUnlock); err != nil {
 					return err
 				} else if unlocked {
 					// We've forfeited our lock, but want to continue applying the remaining migrations (if any).
@@ -214,7 +214,7 @@ func (r *Runner) applyMigrations(
 				}
 			} else {
 				// Apply all other types of migrations uniformly
-				if err := r.applyMigration(ctx, schemaContext, operation, definition, privilegedMode); err != nil {
+				if err := r.applyMigration(ctx, schemaContext, operation, def, privilegedMode); err != nil {
 					return err
 				}
 			}
@@ -266,9 +266,9 @@ func (r *Runner) checkPrivilegedState(
 
 	// Gather only the privileged definitions
 	privilegedDefinitions := make([]definition.Definition, 0, len(definitions))
-	for _, definition := range definitions {
-		if definition.Privileged {
-			privilegedDefinitions = append(privilegedDefinitions, definition)
+	for _, def := range definitions {
+		if def.Privileged {
+			privilegedDefinitions = append(privilegedDefinitions, def)
 		}
 	}
 	if len(privilegedDefinitions) == 0 {
@@ -278,8 +278,8 @@ func (r *Runner) checkPrivilegedState(
 
 	// Extract IDs from privileged definitions
 	privilegedDefinitionIDs := make([]int, 0, len(privilegedDefinitions))
-	for _, definition := range privilegedDefinitions {
-		privilegedDefinitionIDs = append(privilegedDefinitionIDs, definition.ID)
+	for _, def := range privilegedDefinitions {
+		privilegedDefinitionIDs = append(privilegedDefinitionIDs, def.ID)
 	}
 
 	if privilegedMode == RefusePrivilegedMigrations {
@@ -415,7 +415,24 @@ pollIndexStatusLoop:
 		}
 
 		if exists && indexStatus.IsValid {
-			// Index exists and is valid; nothing to do
+			// Index exists and is valid; nothing to do. We'll return here, but we need to ensure
+			// we add a migration log here before moving on.
+			//
+			// This was a particular problem when we would create an index concurrently on DotCom
+			// ahead of a merge+rollout to confirm expected performance changes. When the migrator
+			// runs, it sees a valid index and exits without adding a log. This causes the frontend
+			// to fail as it's still missing proof that the index's migration was ran.
+			//
+			// This doesn't happen normally, where the migration log is missing AND the index does
+			// not yet exist (or is invalid). This may have affected customers that have previously
+			// downgraded.
+			noop := func() error {
+				return nil
+			}
+			if err := schemaContext.store.WithMigrationLog(ctx, definition, true, noop); err != nil {
+				return false, errors.Wrapf(err, "failed to create migration log %d", definition.ID)
+			}
+
 			return unlocked, nil
 		}
 
@@ -541,15 +558,15 @@ func filterAppliedDefinitions(
 	appliedVersionMap := intSet(schemaVersion.appliedVersions)
 
 	filtered := make([]definition.Definition, 0, len(definitions))
-	for _, definition := range definitions {
-		if _, ok := appliedVersionMap[definition.ID]; ok == up {
+	for _, def := range definitions {
+		if _, ok := appliedVersionMap[def.ID]; ok == up {
 			// Either
 			// - needs to be applied and already applied, or
 			// - needs to be unapplied and not currently applied.
 			continue
 		}
 
-		filtered = append(filtered, definition)
+		filtered = append(filtered, def)
 	}
 
 	return filtered
@@ -560,8 +577,8 @@ func filterAppliedDefinitions(
 // transaction, and the source of each query will be identified via a SQL comment.
 func concatenateSQL(definitions []definition.Definition, up bool) string {
 	migrationContents := make([]string, 0, len(definitions))
-	for _, definition := range definitions {
-		migrationContents = append(migrationContents, fmt.Sprintf("-- Migration %d\n%s\n", definition.ID, strings.TrimSpace(renderQuery(definition, up))))
+	for _, def := range definitions {
+		migrationContents = append(migrationContents, fmt.Sprintf("-- Migration %d\n%s\n", def.ID, strings.TrimSpace(renderQuery(def, up))))
 	}
 
 	return fmt.Sprintf("BEGIN;\n\n%s\nCOMMIT;\n", strings.Join(migrationContents, "\n"))
@@ -575,7 +592,6 @@ func renderQuery(definition definition.Definition, up bool) string {
 	}
 
 	return query.Query(sqlf.PostgresBindVar)
-
 }
 
 // hashDefinitionIDs returns a deterministic hash of the given definition IDs.

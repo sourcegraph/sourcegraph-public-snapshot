@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -122,14 +122,18 @@ func NewTestTemplateDataForNewSearchResults(monitorDescription string) *Template
 }
 
 func sendEmail(ctx context.Context, db database.DB, userID int32, template txtypes.Templates, data any) error {
-	email, _, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
+	email, verified, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return errors.Errorf("unable to send email to user ID %d with unknown email address", userID)
 		}
 		return errors.Errorf("internalapi.Client.UserEmailsGetEmail for userID=%d: %w", userID, err)
 	}
-	if err := internalapi.Client.SendEmail(ctx, txtypes.Message{
+	if !verified {
+		return errors.Newf("unable to send email to user ID %d's unverified primary email address", userID)
+	}
+
+	if err := internalapi.Client.SendEmail(ctx, "code-monitor", txtypes.Message{
 		To:       []string{email},
 		Template: template,
 		Data:     data,
@@ -201,7 +205,7 @@ type DisplayResult struct {
 	Content    string
 }
 
-func toDisplayResult(result *result.CommitMatch, externalURL *url.URL) *DisplayResult {
+func toDisplayResult(result *searchresult.CommitMatch, externalURL *url.URL) *DisplayResult {
 	resultType := "Message"
 	if result.DiffPreview != nil {
 		resultType = "Diff"
@@ -209,9 +213,9 @@ func toDisplayResult(result *result.CommitMatch, externalURL *url.URL) *DisplayR
 
 	var content string
 	if result.DiffPreview != nil {
-		content = truncateString(result.DiffPreview.Content, 10)
+		content = truncateString(result.DiffPreview.Content)
 	} else {
-		content = truncateString(result.MessagePreview.Content, 10)
+		content = truncateString(result.MessagePreview.Content)
 	}
 
 	return &DisplayResult{

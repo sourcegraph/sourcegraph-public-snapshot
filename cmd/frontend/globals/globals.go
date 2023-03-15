@@ -4,6 +4,7 @@ package globals
 import (
 	"net/url"
 	"reflect"
+	"sync"
 	"sync/atomic"
 
 	"github.com/inconshreveable/log15"
@@ -12,53 +13,45 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var externalURLWatchers uint32
-
-var defaultexternalURL = &url.URL{
+var defaultExternalURL = &url.URL{
 	Scheme: "http",
 	Host:   "example.com",
 }
 
 var externalURL = func() atomic.Value {
 	var v atomic.Value
-	v.Store(defaultexternalURL)
+	v.Store(defaultExternalURL)
 	return v
 }()
 
+var watchExternalURLOnce sync.Once
+
 // WatchExternalURL watches for changes in the `externalURL` site configuration
 // so that changes are reflected in what is returned by the ExternalURL function.
-// In case the setting is not set, defaultURL is used.
-// This should only be called once and will panic otherwise.
-func WatchExternalURL(defaultURL *url.URL) {
-	if atomic.AddUint32(&externalURLWatchers, 1) != 1 {
-		panic("WatchExternalURL called more than once")
-	}
-
-	if defaultURL == nil {
-		defaultURL = defaultexternalURL
-	}
-
-	conf.Watch(func() {
-		after := defaultURL
-		if val := conf.Get().ExternalURL; val != "" {
-			var err error
-			if after, err = url.Parse(val); err != nil {
-				log15.Error("globals.ExternalURL", "value", val, "error", err)
-				return
+func WatchExternalURL() {
+	watchExternalURLOnce.Do(func() {
+		conf.Watch(func() {
+			after := defaultExternalURL
+			if val := conf.Get().ExternalURL; val != "" {
+				var err error
+				if after, err = url.Parse(val); err != nil {
+					log15.Error("globals.ExternalURL", "value", val, "error", err)
+					return
+				}
 			}
-		}
 
-		if before := ExternalURL(); !reflect.DeepEqual(before, after) {
-			SetExternalURL(after)
-			if before.Host != "example.com" {
-				log15.Info(
-					"globals.ExternalURL",
-					"updated", true,
-					"before", before,
-					"after", after,
-				)
+			if before := ExternalURL(); !reflect.DeepEqual(before, after) {
+				SetExternalURL(after)
+				if before.Host != "example.com" {
+					log15.Info(
+						"globals.ExternalURL",
+						"updated", true,
+						"before", before,
+						"after", after,
+					)
+				}
 			}
-		}
+		})
 	})
 }
 
@@ -86,34 +79,31 @@ var permissionsUserMapping = func() atomic.Value {
 	return v
 }()
 
-var permissionsUserMappingWatchers uint32
+var watchPermissionsUserMappingOnce sync.Once
 
 // WatchPermissionsUserMapping watches for changes in the `permissions.userMapping` site configuration
 // so that changes are reflected in what is returned by the PermissionsUserMapping function.
-// This should only be called once and will panic otherwise.
 func WatchPermissionsUserMapping() {
-	if atomic.AddUint32(&permissionsUserMappingWatchers, 1) != 1 {
-		panic("WatchPermissionsUserMapping called more than once")
-	}
+	watchPermissionsUserMappingOnce.Do(func() {
+		conf.Watch(func() {
+			after := conf.Get().PermissionsUserMapping
+			if after == nil {
+				after = defaultPermissionsUserMapping
+			} else if after.BindID != "email" && after.BindID != "username" {
+				log15.Error("globals.PermissionsUserMapping", "BindID", after.BindID, "error", "not a valid value")
+				return
+			}
 
-	conf.Watch(func() {
-		after := conf.Get().PermissionsUserMapping
-		if after == nil {
-			after = defaultPermissionsUserMapping
-		} else if after.BindID != "email" && after.BindID != "username" {
-			log15.Error("globals.PermissionsUserMapping", "BindID", after.BindID, "error", "not a valid value")
-			return
-		}
-
-		if before := PermissionsUserMapping(); !reflect.DeepEqual(before, after) {
-			SetPermissionsUserMapping(after)
-			log15.Info(
-				"globals.PermissionsUserMapping",
-				"updated", true,
-				"before", before,
-				"after", after,
-			)
-		}
+			if before := PermissionsUserMapping(); !reflect.DeepEqual(before, after) {
+				SetPermissionsUserMapping(after)
+				log15.Info(
+					"globals.PermissionsUserMapping",
+					"updated", true,
+					"before", before,
+					"after", after,
+				)
+			}
+		})
 	})
 }
 
@@ -162,7 +152,7 @@ func WatchBranding() {
 
 		if before := Branding(); !reflect.DeepEqual(before, after) {
 			SetBranding(after)
-			log15.Info(
+			log15.Debug(
 				"globals.Branding",
 				"updated", true,
 				"before", before,

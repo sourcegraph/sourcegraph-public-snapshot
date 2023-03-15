@@ -2,10 +2,12 @@ package server
 
 import (
 	"os/exec"
+	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 func TestDecomposePerforceRemoteURL(t *testing.T) {
@@ -97,7 +99,7 @@ func TestSpecifyCommandInErrorMessage(t *testing.T) {
 			name:     "empty error message",
 			errorMsg: "",
 			command: &exec.Cmd{
-				Args: []string{"p4", "ping", "-c", "1"},
+				Args: []string{"p4", "login", "-s"},
 			},
 			expectedMsg: "",
 		},
@@ -105,7 +107,7 @@ func TestSpecifyCommandInErrorMessage(t *testing.T) {
 			name:     "error message without phrase to replace",
 			errorMsg: "Some error",
 			command: &exec.Cmd{
-				Args: []string{"p4", "ping", "-c", "1"},
+				Args: []string{"p4", "login", "-s"},
 			},
 			expectedMsg: "Some error",
 		},
@@ -123,11 +125,11 @@ func TestSpecifyCommandInErrorMessage(t *testing.T) {
 		},
 		{
 			name:     "error message with phrase to replace, valid input Cmd",
-			errorMsg: "error cloning repo: repo perforce/path/to/depot not cloneable: exit status 1 (output follows)\n\nYou don't have permission for this operation.",
+			errorMsg: "error cloning repo: repo perforce/path/to/depot not cloneable: exit status 1 (output follows)\n\nPerforce password (P4PASSWD) invalid or unset.",
 			command: &exec.Cmd{
-				Args: []string{"p4", "ping", "-c", "1"},
+				Args: []string{"p4", "login", "-s"},
 			},
-			expectedMsg: "error cloning repo: repo perforce/path/to/depot not cloneable: exit status 1 (output follows)\n\nYou don't have permission for `p4 ping -c 1`.",
+			expectedMsg: "error cloning repo: repo perforce/path/to/depot not cloneable: exit status 1 (output follows)\n\nPerforce password (P4PASSWD) invalid or unset.",
 		},
 	}
 
@@ -137,4 +139,39 @@ func TestSpecifyCommandInErrorMessage(t *testing.T) {
 			assert.Equal(t, test.expectedMsg, actualMsg)
 		})
 	}
+}
+
+func TestP4DepotSyncer_p4CommandEnv(t *testing.T) {
+	syncer := &PerforceDepotSyncer{
+		Client: "client",
+		P4Home: "p4home",
+	}
+	vars := syncer.p4CommandEnv("host", "username", "password")
+	assertEnv := func(key, value string) {
+		var match string
+		for _, s := range vars {
+			parts := strings.SplitN(s, "=", 2)
+			if len(parts) != 2 {
+				t.Errorf("Expected 2 parts, got %d in %q", len(parts), s)
+				continue
+			}
+			if parts[0] != key {
+				continue
+			}
+			// Last match wins
+			if parts[1] == value {
+				match = parts[1]
+			}
+		}
+		if match == "" {
+			t.Errorf("No match found for %q", key)
+		} else if match != value {
+			t.Errorf("Want %q, got %q", value, match)
+		}
+	}
+	assertEnv("HOME", "p4home")
+	assertEnv("P4CLIENT", "client")
+	assertEnv("P4PORT", "host")
+	assertEnv("P4USER", "username")
+	assertEnv("P4PASSWD", "password")
 }

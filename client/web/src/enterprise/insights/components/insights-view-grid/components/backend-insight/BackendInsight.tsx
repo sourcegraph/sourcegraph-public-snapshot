@@ -3,23 +3,25 @@ import { forwardRef, HTMLAttributes, useContext, useRef, useState } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { asError } from '@sourcegraph/common'
+import { isDefined } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
+import { Link, useDebounce, useDeepMemo, Text } from '@sourcegraph/wildcard'
 
-import {
-    SeriesDisplayOptionsInput,
-    GetInsightViewResult,
-    GetInsightViewVariables,
-} from '../../../../../../graphql-operations'
+import { GetInsightViewResult, GetInsightViewVariables } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
-import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
+import {
+    BackendInsight,
+    BackendInsightData,
+    CodeInsightsBackendContext,
+    InsightFilters,
+    isComputeInsight,
+    useSaveInsightAsNewView,
+} from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
-import { FORM_ERROR, SubmissionErrors } from '../../../form'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
 import { useVisibility } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
@@ -30,7 +32,7 @@ import {
     DrillDownFiltersPopover,
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
-    parseSeriesLimit,
+    InsightIncompleteAlert,
 } from './components'
 
 import styles from './BackendInsight.module.scss'
@@ -41,18 +43,21 @@ interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement
 }
 
 export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((props, ref) => {
-    const { telemetryService, insight, resizing, children, ...otherProps } = props
+    const { telemetryService, insight, resizing, children, className, ...attributes } = props
 
-    const { currentDashboard, dashboards } = useContext(InsightContext)
-    const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    const { currentDashboard } = useContext(InsightContext)
+    const { updateInsight } = useContext(CodeInsightsBackendContext)
+    const [saveNewView] = useSaveInsightAsNewView({ dashboard: currentDashboard })
 
     const cardElementRef = useMergeRefs([ref])
     const { wasEverVisible, isVisible } = useVisibility(cardElementRef)
 
     const seriesToggleState = useSeriesToggle()
+
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(insight.filters)
+
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
@@ -75,14 +80,18 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                     searchContexts: [debouncedFilters.context],
                 },
                 seriesDisplayOptions: {
-                    limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
+                    numSamples: debouncedFilters.seriesDisplayOptions.numSamples,
+                    limit: debouncedFilters.seriesDisplayOptions.limit,
                     sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
                 },
             },
             onCompleted: data => {
-                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
+                // This query requests a list of 1 insight view if there is an error and the insightView
+                // will be null and error is populated
+                const node = data.insightViews.nodes[0]
+
                 seriesToggleState.setSelectedSeriesIds([])
-                setInsightData(parsedData)
+                setInsightData(isDefined(node) ? createBackendInsightData({ ...insight, filters }, node) : undefined)
             },
         }
     )
@@ -101,56 +110,29 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
         startPolling(insightPollingInterval(insight))
     }
 
-    async function handleFilterSave(filters: InsightFilters): Promise<SubmissionErrors> {
-        try {
-            const seriesDisplayOptions: SeriesDisplayOptionsInput = {
-                limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
-                sortOptions: filters.seriesDisplayOptions.sortOptions,
-            }
-            const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions }
+    async function handleFilterSave(filters: InsightFilters): Promise<void> {
+        const insightWithNewFilters = { ...insight, filters }
 
-            await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
+        await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 
-            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
-
-            setOriginalInsightFilters(filters)
-            setIsFiltersOpen(false)
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
+        setOriginalInsightFilters(filters)
+        setIsFiltersOpen(false)
     }
 
-    const handleInsightFilterCreation = async (
-        values: DrillDownInsightCreationFormValues
-    ): Promise<SubmissionErrors> => {
+    const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<void> => {
         const { insightName } = values
 
-        if (!currentDashboard) {
-            return
-        }
+        await saveNewView({
+            insight,
+            filters,
+            title: insightName,
+            dashboard: currentDashboard,
+        })
 
-        try {
-            const newInsight = {
-                ...insight,
-                title: insightName,
-                filters,
-            }
-
-            await createInsight({
-                insight: newInsight,
-                dashboard: currentDashboard,
-            }).toPromise()
-
-            telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
-            setOriginalInsightFilters(filters)
-            setIsFiltersOpen(false)
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
+        setOriginalInsightFilters(filters)
+        setIsFiltersOpen(false)
     }
 
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
@@ -160,33 +142,52 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
 
     return (
         <InsightCard
-            {...otherProps}
+            {...attributes}
             ref={cardElementRef}
             data-testid={`insight-card.${insight.id}`}
-            aria-label="Insight card"
-            className={classNames(otherProps.className, { [styles.cardWithFilters]: isFiltersOpen })}
+            aria-label={`${insight.title} insight`}
+            role="listitem"
+            className={classNames(className, { [styles.cardWithFilters]: isFiltersOpen })}
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >
             <InsightCardHeader
                 title={
                     <Link
-                        to={`${window.location.origin}/insights/insight/${insight.id}`}
+                        to={`${window.location.origin}/insights/${insight.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label="Go to the insight page"
                     >
                         {insight.title}
                     </Link>
                 }
+                subtitle={
+                    isFetchingHistoricalData && (
+                        <Text size="small" className="text-muted">
+                            Datapoints shown may be undercounted.{' '}
+                            <Link
+                                to="/help/code_insights/explanations/current_limitations_of_code_insights#performance-speed-considerations-for-a-data-series-running-over-all-repositories"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Processing
+                            </Link>{' '}
+                            time may vary depending on the insight’s scope.
+                        </Text>
+                    )
+                }
             >
                 {isVisible && (
                     <>
+                        {insightData?.incompleteAlert && <InsightIncompleteAlert alert={insightData.incompleteAlert} />}
                         <DrillDownFiltersPopover
                             isOpen={isFiltersOpen}
                             anchor={cardElementRef}
                             initialFiltersValue={filters}
                             originalFiltersValue={originalInsightFilters}
+                            // It doesn't make sense to have max series per point for compute insights
+                            // because there is always only one point per series
+                            isNumSamplesFilterAvailable={!isComputeInsight(insight)}
                             onFilterChange={setFilters}
                             onFilterSave={handleFilterSave}
                             onInsightCreate={handleInsightFilterCreation}
@@ -195,7 +196,6 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                         <InsightContextMenu
                             insight={insight}
                             currentDashboard={currentDashboard}
-                            dashboards={dashboards}
                             zeroYAxisMin={zeroYAxisMin}
                             onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
                         />

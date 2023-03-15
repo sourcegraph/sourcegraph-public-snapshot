@@ -1,7 +1,8 @@
 # How to identify and resolve index corruption in Postgres v14.0 - v14.3
 
 A bug has ben identified in PostgreSQL 14.0-14.3 that can cause database index corruption in indexes created concurrently. Sourcegraph [utilizes](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+CREATE+INDEX+AND+CONCURRENTLY&patternType=standard) concurrent index creation, and if you are on these versions, you may experience slow queries or database corruption. To learn more about this bug see postgres's [out-of-cycle release announcment](https://www.postgresql.org/message-id/165473835807.573551.1512237163040609764%40wrigleys.postgresql.org) or [migops article](https://www.migops.com/blog/important-postgresql-14-update-to-avoid-silent-corruption-of-indexes/) on the subject.
-> NOTE: **If you are running a default Sourcegraph deployment with internal databases, it is likely Postgres is running in version 12 and your instance will be uneffect by this bug.**
+
+> NOTE: If you are running a default Sourcegraph deployment with default Postgres image values, it is likely Postgres is running in version 12 and your instance will be unaffected by this bug.
 
 ## Identify your database version
 To identify which version of Sourcegraph you are running in a default Sourcegraph deployment. You can access your database via the `docker` or `kubectl` cli tools and run the following command:

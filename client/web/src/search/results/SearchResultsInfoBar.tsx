@@ -1,51 +1,44 @@
 import React, { useMemo, useState } from 'react'
 
-import { mdiChevronDoubleUp, mdiChevronDoubleDown } from '@mdi/js'
+import { mdiChevronDoubleDown, mdiChevronDoubleUp } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 
-import { ContributableMenu } from '@sourcegraph/client-api'
-import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/search'
-import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
 import {
+    CreateAction,
+    getBatchChangeCreateAction,
     getCodeMonitoringCreateAction,
     getInsightsCreateAction,
     getSearchContextCreateAction,
-    getBatchChangeCreateAction,
-    CreateAction,
 } from './createActions'
 import { SearchActionsMenu } from './SearchActionsMenu'
 
 import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
-    extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
+    extends TelemetryProps,
         PlatformContextProps<'settings' | 'sourcegraphURL'>,
-        TelemetryProps,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
-    history: H.History
     /** The currently authenticated user or null */
-    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'displayName' | 'emails'> | null
 
-    /**
-     * Whether the code insights feature flag is enabled.
-     */
     enableCodeInsights?: boolean
     enableCodeMonitoring: boolean
 
-    /** The search query and if any results were found */
+    /** The search query and results */
     query?: string
-    resultsFound: boolean
+    results?: AggregateStreamingSearchResults
 
     batchChangesEnabled?: boolean
     /** Whether running batch changes server-side is enabled */
@@ -58,8 +51,6 @@ export interface SearchResultsInfoBarProps
     // Saved queries
     onSaveQueryClick: () => void
 
-    location: H.Location
-
     className?: string
 
     stats: JSX.Element
@@ -68,6 +59,11 @@ export interface SearchResultsInfoBarProps
 
     sidebarCollapsed: boolean
     setSidebarCollapsed: (collapsed: boolean) => void
+
+    isSourcegraphDotCom: boolean
+
+    isRankingEnabled: boolean
+    setRankingEnabled: (enabled: boolean) => void
 }
 
 /**
@@ -82,19 +78,15 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [props.query]
     )
 
-    const canCreateMonitorFromQuery = useMemo(() => {
-        if (globalTypeFilter) {
-            return false
-        }
-        return globalTypeFilter === 'diff' || globalTypeFilter === 'commit'
-    }, [globalTypeFilter])
+    const canCreateMonitorFromQuery = useMemo(
+        () => globalTypeFilter === 'diff' || globalTypeFilter === 'commit',
+        [globalTypeFilter]
+    )
 
-    const canCreateBatchChangeFromQuery = useMemo(() => {
-        if (!globalTypeFilter) {
-            return true
-        }
-        return globalTypeFilter !== 'diff' && globalTypeFilter !== 'commit'
-    }, [globalTypeFilter])
+    const canCreateBatchChangeFromQuery = useMemo(
+        () => globalTypeFilter !== 'diff' && globalTypeFilter !== 'commit',
+        [globalTypeFilter]
+    )
 
     // When adding a new create action check and update the $collapse-breakpoint in CreateActions.module.scss.
     // The collapse breakpoint indicates at which window size we hide the buttons and show the collapsed menu instead.
@@ -112,16 +104,10 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     )
                 ),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
-                getInsightsCreateAction(
-                    props.query,
-                    props.patternType,
-                    props.authenticatedUser,
-                    props.enableCodeInsights
-                ),
+                getInsightsCreateAction(props.query, props.patternType, window.context?.codeInsightsEnabled),
             ].filter((button): button is CreateAction => button !== null),
         [
             props.authenticatedUser,
-            props.enableCodeInsights,
             props.patternType,
             props.query,
             props.batchChangesEnabled,
@@ -137,15 +123,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [props.enableCodeMonitoring, props.patternType, props.query]
     )
 
-    const extraContext = useMemo(
-        () => ({
-            searchQuery: props.query || null,
-            patternType: props.patternType,
-            caseSensitive: props.caseSensitive,
-        }),
-        [props.query, props.patternType, props.caseSensitive]
-    )
-
     // Show/hide mobile filters menu
     const [showMobileFilters, setShowMobileFilters] = useState(false)
     const onShowMobileFiltersClicked = (): void => {
@@ -154,7 +131,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         props.onShowMobileFiltersChanged?.(newShowFilters)
     }
 
-    const { extensionsController } = props
+    // Show/hide ranking toggle
+    const [rankingEnabled] = useFeatureFlag('search-ranking')
 
     return (
         <aside
@@ -168,38 +146,18 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                 <div className={styles.expander} />
 
+                {rankingEnabled && (
+                    <Label className={styles.toggle}>
+                        Intelligent ranking{' '}
+                        <Toggle
+                            value={props.isRankingEnabled}
+                            onToggle={() => props.setRankingEnabled(!props.isRankingEnabled)}
+                            title="Enable Ranking"
+                            className="mr-2"
+                        />
+                    </Label>
+                )}
                 <ul className="nav align-items-center">
-                    {extensionsController !== null && window.context.enableLegacyExtensions ? (
-                        <ActionsContainer
-                            {...props}
-                            extensionsController={extensionsController}
-                            extraContext={extraContext}
-                            menu={ContributableMenu.SearchResultsToolbar}
-                        >
-                            {actionItems => (
-                                <>
-                                    {actionItems.map(actionItem => (
-                                        <ActionItem
-                                            {...props}
-                                            {...actionItem}
-                                            extensionsController={extensionsController}
-                                            key={actionItem.action.id}
-                                            showLoadingSpinnerDuringExecution={false}
-                                            className="mr-2 text-decoration-none"
-                                            actionItemStyleProps={{
-                                                actionItemVariant: 'secondary',
-                                                actionItemSize: 'sm',
-                                                actionItemOutline: true,
-                                            }}
-                                        />
-                                    ))}
-                                </>
-                            )}
-                        </ActionsContainer>
-                    ) : null}
-
-                    <li className={styles.divider} aria-hidden="true" />
-
                     <SearchActionsMenu
                         query={props.query}
                         patternType={props.patternType}
@@ -208,10 +166,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         createActions={createActions}
                         createCodeMonitorAction={createCodeMonitorAction}
                         canCreateMonitor={canCreateMonitorFromQuery}
-                        resultsFound={props.resultsFound}
+                        results={props.results}
                         allExpanded={props.allExpanded}
                         onExpandAllResultsToggle={props.onExpandAllResultsToggle}
                         onSaveQueryClick={props.onSaveQueryClick}
+                        telemetryService={props.telemetryService}
                     />
                 </ul>
 

@@ -3,6 +3,7 @@ package bk
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -16,12 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// https://buildkite.com/sourcegraph
+// BuildkiteOrg is a Sourcegraph org in Buildkite. See: is https://buildkite.com/sourcegraph
 const BuildkiteOrg = "sourcegraph"
-
-type buildkiteSecrets struct {
-	Token string `json:"token"`
-}
 
 type Build struct {
 	buildkite.Build
@@ -164,6 +161,19 @@ func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string
 	return artifacts, nil
 }
 
+// DownloadArtifact downloads the Buildkite artifact into the provider io.Writer
+func (c *Client) DownloadArtifact(artifact buildkite.Artifact, w io.Writer) error {
+	url := artifact.DownloadURL
+	if url == nil {
+		return errors.New("unable to download artifact, nil download url")
+	}
+	_, err := c.bk.Artifacts.DownloadArtifactByURL(*url, w)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetJobAnnotationByBuildNumber retrieves all annotations that are present on a build and maps them to the job ID that the
 // annotation is for. Each annotation is retrieved by looking at all the artifacts on a build. If a Job has a annoation, then
 // an artifact will be uploaded by the job. The annotation artifact's name will have the following format "annoations/{BUILDKITE_JOB_ID}-annotation.md"
@@ -173,7 +183,7 @@ func (c *Client) GetJobAnnotationsByBuildNumber(ctx context.Context, pipeline st
 		return nil, err
 	}
 
-	var result JobAnnotations = make(JobAnnotations, 0)
+	result := make(JobAnnotations, 0)
 	for _, a := range artifacts {
 		if strings.Contains(*a.Dirname, "annotations") && strings.HasSuffix(*a.Filename, "-annotation.md") {
 			var buf bytes.Buffer

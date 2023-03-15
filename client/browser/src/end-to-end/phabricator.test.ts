@@ -78,7 +78,7 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     // Activate the repo and wait for it to clone
     await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/')
     const activateButton = await driver.page.waitForSelector('a[href="/source/jrpc/edit/activate/"]')
-    const buttonLabel = (await (await activateButton!.getProperty('textContent')).jsonValue()).trim()
+    const buttonLabel = (await (await activateButton!.getProperty('textContent')).jsonValue<string>()).trim()
     // Don't click if it says "Deactivate Repository"
     if (buttonLabel === 'Activate Repository') {
         await activateButton!.click()

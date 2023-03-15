@@ -28,8 +28,7 @@ const {
   getStatoscopePlugin,
 } = require('@sourcegraph/build-config')
 
-const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
-const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
+const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG, writeIndexHTMLPlugin } = require('./dev/utils')
 const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const {
@@ -74,7 +73,11 @@ const hotLoadablePaths = ['branded', 'shared', 'web', 'wildcard'].map(workspace 
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 const styleLoader = IS_DEVELOPMENT ? 'style-loader' : MiniCssExtractPlugin.loader
 
-const extensionHostWorker = /main\.worker\.ts$/
+// Used to ensure that we include all initial chunks into the Webpack manifest.
+const initialChunkNames = {
+  react: 'react',
+  opentelemetry: 'opentelemetry',
+}
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -97,18 +100,18 @@ const config = {
     IS_PERSISTENT_CACHE_ENABLED &&
     getCacheConfig({ invalidateCacheFiles: [path.resolve(__dirname, 'babel.config.js')] }),
   optimization: {
-    minimize: IS_PRODUCTION,
+    minimize: IS_PRODUCTION && !INTEGRATION_TESTS,
     minimizer: [getTerserPlugin(), new CssMinimizerWebpackPlugin()],
     splitChunks: {
       cacheGroups: {
-        react: {
+        [initialChunkNames.react]: {
           test: /[/\\]node_modules[/\\](react|react-dom)[/\\]/,
-          name: 'react',
+          name: initialChunkNames.react,
           chunks: 'all',
         },
-        opentelemetry: {
+        [initialChunkNames.opentelemetry]: {
           test: /[/\\]node_modules[/\\](@opentelemetry)[/\\]/,
-          name: 'opentelemetry',
+          name: initialChunkNames.opentelemetry,
           chunks: 'all',
         },
       },
@@ -144,7 +147,9 @@ const config = {
     globalObject: 'self',
     pathinfo: false,
   },
-  devtool: IS_PRODUCTION ? 'source-map' : WEBPACK_DEVELOPMENT_DEVTOOL,
+  // Inline source maps for integration tests to preserve readable stack traces.
+  // See related issue here: https://github.com/puppeteer/puppeteer/issues/985
+  devtool: IS_PRODUCTION ? (INTEGRATION_TESTS ? 'inline-source-map' : 'source-map') : WEBPACK_DEVELOPMENT_DEVTOOL,
   plugins: [
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),
@@ -158,16 +163,18 @@ const config = {
           : 'styles/[name].bundle.css',
     }),
     getMonacoWebpackPlugin(),
-    !WEBPACK_SERVE_INDEX &&
-      new WebpackManifestPlugin({
-        writeToFileEmit: true,
-        fileName: 'webpack.manifest.json',
-        // Only output files that are required to run the application.
-        filter: ({ isInitial, name }) => isInitial || name?.includes('react'),
-      }),
-    ...(WEBPACK_SERVE_INDEX ? getHTMLWebpackPlugins() : []),
+    new WebpackManifestPlugin({
+      writeToFileEmit: true,
+      fileName: 'webpack.manifest.json',
+      seed: {
+        environment: NODE_ENV,
+      },
+      // Only output files that are required to run the application.
+      filter: ({ isInitial, name }) =>
+        isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),
+    }),
+    ...(WEBPACK_SERVE_INDEX && IS_PRODUCTION ? [writeIndexHTMLPlugin] : []),
     WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
-    isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     IS_PRODUCTION &&
       new CompressionPlugin({
@@ -227,6 +234,12 @@ const config = {
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
     mainFields: ['es2015', 'module', 'browser', 'main'],
+    fallback: {
+      path: require.resolve('path-browserify'),
+      punycode: require.resolve('punycode'),
+      util: require.resolve('util'),
+      events: require.resolve('events'),
+    },
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
@@ -240,7 +253,6 @@ const config = {
       {
         test: /\.[jt]sx?$/,
         include: hotLoadablePaths,
-        exclude: extensionHostWorker,
         use: [
           {
             loader: 'babel-loader',
@@ -253,7 +265,7 @@ const config = {
       },
       {
         test: /\.[jt]sx?$/,
-        exclude: [...hotLoadablePaths, extensionHostWorker],
+        exclude: hotLoadablePaths,
         use: [getBabelLoader()],
       },
       {
@@ -269,24 +281,8 @@ const config = {
       },
       getMonacoCSSRule(),
       getMonacoTTFRule(),
-      {
-        test: extensionHostWorker,
-        use: [{ loader: 'worker-loader', options: { inline: 'no-fallback' } }, getBabelLoader()],
-      },
       { test: /\.ya?ml$/, type: 'asset/source' },
       { test: /\.(png|woff2)$/, type: 'asset/resource' },
-      {
-        test: /\.elm$/,
-        exclude: /elm-stuff/,
-        use: {
-          loader: 'elm-webpack-loader',
-          options: {
-            cwd: path.resolve(ROOT_PATH, 'client/web/src/search/results/components/compute'),
-            report: 'json',
-            pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
-          },
-        },
-      },
     ],
   },
 }

@@ -1,10 +1,10 @@
-import { InsightExecutionType, InsightType, InsightFilters, InsightDashboardReference } from './common'
+import { InsightType, InsightFilters, InsightDashboardReference } from './common'
 import { CaptureGroupInsight } from './types/capture-group-insight'
 import { ComputeInsight } from './types/compute-insight'
 import { LangStatsInsight } from './types/lang-stat-insight'
 import { SearchBasedInsight, SearchBasedInsightSeries } from './types/search-insight'
 
-export { InsightType, InsightExecutionType }
+export { InsightType }
 
 export type {
     InsightDashboardReference,
@@ -27,13 +27,8 @@ export type Insight = SearchBasedInsight | LangStatsInsight | CaptureGroupInsigh
  */
 export type BackendInsight = SearchBasedInsight | CaptureGroupInsight | ComputeInsight
 
-/**
- * Extension insights - insights that are processed in FE runtime via search API.
- */
-export type RuntimeInsight = LangStatsInsight
-
 export function isBackendInsight(insight: Insight): insight is BackendInsight {
-    return insight.executionType === InsightExecutionType.Backend
+    return isSearchBasedInsight(insight) || isCaptureGroupInsight(insight) || isComputeInsight(insight)
 }
 
 export function isSearchBasedInsight(insight: Insight): insight is SearchBasedInsight {

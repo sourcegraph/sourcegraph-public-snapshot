@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -116,23 +117,23 @@ func TestSearch(t *testing.T) {
 			gsClient := gitserver.NewMockClient()
 			gsClient.ResolveRevisionFunc.SetDefaultHook(tc.repoRevsMock)
 
-			sr := newSchemaResolver(db, gsClient)
-			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{}))
+			sr := newSchemaResolver(db, gsClient, jobutil.NewUnimplementedEnterpriseJobs())
+			gqlSchema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&requestTracer{}))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			result := schema.Exec(context.Background(), testSearchGQLQuery, "", vars)
-			if len(result.Errors) > 0 {
-				t.Fatalf("graphQL query returned errors: %+v", result.Errors)
+			response := gqlSchema.Exec(context.Background(), testSearchGQLQuery, "", vars)
+			if len(response.Errors) > 0 {
+				t.Fatalf("graphQL query returned errors: %+v", response.Errors)
 			}
-			var search struct {
+			var searchStruct struct {
 				Results Results
 			}
-			if err := json.Unmarshal(result.Data, &search); err != nil {
+			if err := json.Unmarshal(response.Data, &searchStruct); err != nil {
 				t.Fatalf("parsing JSON response: %v", err)
 			}
-			gotResults := search.Results
+			gotResults := searchStruct.Results
 			if !reflect.DeepEqual(gotResults, tc.wantResults) {
 				t.Fatalf("results = %+v, want %+v", gotResults, tc.wantResults)
 			}
@@ -290,7 +291,16 @@ func TestExactlyOneRepo(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("exactly one repo", func(t *testing.T) {
-			if got := searchrepos.ExactlyOneRepo(c.repoFilters); got != c.want {
+			parsedFilters := make([]query.ParsedRepoFilter, len(c.repoFilters))
+			for i, repoFilter := range c.repoFilters {
+				parsedFilter, err := query.ParseRepositoryRevisions(repoFilter)
+				if err != nil {
+					t.Fatalf("unexpected error parsing repo filter %s", repoFilter)
+				}
+				parsedFilters[i] = parsedFilter
+			}
+
+			if got := searchrepos.ExactlyOneRepo(parsedFilters); got != c.want {
 				t.Errorf("got %t, want %t", got, c.want)
 			}
 		})
@@ -321,9 +331,9 @@ func BenchmarkSearchResults(b *testing.B) {
 	minimalRepos, zoektRepos := generateRepos(500_000)
 	zoektFileMatches := generateZoektMatches(1000)
 
-	z := zoektRPC(b, &searchbackend.FakeSearcher{
-		Repos:  zoektRepos,
-		Result: &zoekt.SearchResult{Files: zoektFileMatches},
+	z := zoektRPC(b, &searchbackend.FakeStreamer{
+		Repos:   zoektRepos,
+		Results: []*zoekt.SearchResult{{Files: zoektFileMatches}},
 	})
 
 	ctx := context.Background()
@@ -343,7 +353,7 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
-			client: client.NewSearchClient(logtest.Scoped(b), db, z, nil),
+			client: client.NewSearchClient(logtest.Scoped(b), db, z, nil, jobutil.NewUnimplementedEnterpriseJobs()),
 			db:     db,
 			SearchInputs: &search.Inputs{
 				Plan:         plan,

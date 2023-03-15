@@ -137,18 +137,18 @@ func (h *FileHandler) exists(r *http.Request) (statusCode int, err error) {
 	}
 }
 
-func getPathParts(r *http.Request) (string, string, error) {
-	batchSpecRandID := mux.Vars(r)["spec"]
-	if batchSpecRandID == "" {
+func getPathParts(r *http.Request) (string, string, error) { //nolint:unparam // unused return val 0 is kept for semantics
+	rawBatchSpecRandID := mux.Vars(r)["spec"]
+	if rawBatchSpecRandID == "" {
 		return "", "", errors.New("spec ID not provided")
 	}
 
-	batchSpecWorkspaceFileRandID := mux.Vars(r)["file"]
-	if batchSpecWorkspaceFileRandID == "" {
+	rawBatchSpecWorkspaceFileRandID := mux.Vars(r)["file"]
+	if rawBatchSpecWorkspaceFileRandID == "" {
 		return "", "", errors.New("file ID not provided")
 	}
 
-	return batchSpecRandID, batchSpecWorkspaceFileRandID, nil
+	return rawBatchSpecRandID, rawBatchSpecWorkspaceFileRandID, nil
 }
 
 const maxUploadSize = 10 << 20 // 10MB
@@ -220,7 +220,7 @@ func (h *FileHandler) upload(r *http.Request) (resp uploadResponse, statusCode i
 	// stored in temporary files on disk. The reason for parsing the whole request in one go is because data cannot be
 	// "streamed" or "appended" to the bytea type column. Data for the bytea column must be inserted in one go.
 	//
-	// When we move to using a blob store (MinIO/S3/GCS), we can stream the parts instead. This means we won't need to
+	// When we move to using a blob store (Blobstore/S3/GCS), we can stream the parts instead. This means we won't need to
 	// parse the entire request body up front. We will be able to iterate over and write the parts/chunks one at a time
 	// - thus avoiding putting everything into memory.
 	// See example: https://sourcegraph.com/github.com/rfielding/uploader@master/-/blob/uploader.go?L167

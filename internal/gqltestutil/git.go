@@ -104,3 +104,57 @@ query Files($repoName: String!, $revision: String!) {
 
 	return resp.Data.Repository.Commit.Message, nil
 }
+
+// GitGetCommitSymbols returns symbols of all files in a given commit.
+func (c *Client) GitGetCommitSymbols(repoName, revision string) ([]SimplifiedSymbolNode, error) {
+	const gqlQuery = `
+query CommitSymbols($repoName: String!, $revision: String!) {
+	repository(name: $repoName) {
+		commit(rev: $revision) {
+            symbols(query: "") {
+				nodes {
+					name
+					kind
+					location {
+						resource {
+							path
+						}
+					}
+				}
+			}
+		}
+	}
+}
+`
+	variables := map[string]any{
+		"repoName": repoName,
+		"revision": revision,
+	}
+	var resp struct {
+		Data struct {
+			Repository struct {
+				Commit struct {
+					Symbols struct {
+						Nodes []SimplifiedSymbolNode `json:"nodes"`
+					} `json:"symbols"`
+				} `json:"commit"`
+			} `json:"repository"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", gqlQuery, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.Repository.Commit.Symbols.Nodes, nil
+}
+
+type SimplifiedSymbolNode struct {
+	Name     string `json:"name"`
+	Kind     string `json:"kind"`
+	Location struct {
+		Resource struct {
+			Path string `json:"path"`
+		} `json:"resource"`
+	} `json:"location"`
+}

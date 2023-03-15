@@ -6,7 +6,7 @@ import * as sourcegraph from '../api'
 import { cache } from '../util'
 
 import { graphqlIdToRepoId, queryGraphQL } from './graphql'
-import { isDefined, sortUnique } from './helpers'
+import { isDefined } from './helpers'
 import { parseGitURI } from './uri'
 
 /**
@@ -145,31 +145,6 @@ export class API {
 
         return (await queryGraphQL<IntrospectionResponse>(introspectionQuery)).__type.fields.some(
             field => field.name === 'isFork'
-        )
-    }
-
-    /**
-     * Determines via introspection if the GraphQL API has implementations available
-     *
-     * TODO(tjdevries) - Remove this when we no longer need to support pre-3.XX releases (not yet released)
-     */
-    public async hasImplementationsField(): Promise<boolean> {
-        const introspectionQuery = gql`
-            query LegacyImplementationsIntrospectionQuery {
-                __type(name: "GitBlobLSIFData") {
-                    fields {
-                        name
-                    }
-                }
-            }
-        `
-
-        interface IntrospectionResponse {
-            __type: { fields: { name: string }[] }
-        }
-
-        return (await queryGraphQL<IntrospectionResponse>(introspectionQuery)).__type.fields.some(
-            field => field.name === 'implementations'
         )
     }
 
@@ -319,183 +294,6 @@ export class API {
     }
 
     /**
-     * Retrieves the revhash of an input rev for a repository. Throws an error if the
-     * repository is not known to the Sourcegraph instance. Returns undefined if the
-     * input rev is not known to the Sourcegraph instance.
-     *
-     * @param repoName The repository's name.
-     * @param revision The revision.
-     */
-    public async resolveRev(repoName: string, revision: string): Promise<string | undefined> {
-        const query = gql`
-            query LegacyResolveRev($repoName: String!, $rev: String!) {
-                repository(name: $repoName) {
-                    commit(rev: $rev) {
-                        oid
-                    }
-                }
-            }
-        `
-
-        interface Response {
-            repository: {
-                commit?: {
-                    oid: string
-                }
-            }
-        }
-
-        const data = await queryGraphQL<Response>(query, { repoName, rev: revision })
-        return data.repository.commit?.oid
-    }
-
-    /**
-     * Retrieve a sorted and deduplicated list of repository names that contain the
-     * given search query.
-     *
-     * @param searchQuery The input to the search function.
-     */
-    public async findReposViaSearch(searchQuery: string): Promise<string[]> {
-        const query = gql`
-            query LegacyCodeIntelSearch($query: String!) {
-                search(query: $query) {
-                    results {
-                        results {
-                            ... on FileMatch {
-                                repository {
-                                    name
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        `
-
-        interface Response {
-            search: {
-                results: {
-                    results: {
-                        // empty if not a FileMatch
-                        repository?: { name: string }
-                    }[]
-                }
-            }
-        }
-
-        const data = await queryGraphQL<Response>(query, { query: searchQuery })
-        return sortUnique(data.search.results.results.map(result => result.repository?.name)).filter(isDefined)
-    }
-
-    /**
-     * Retrieve all raw manifests for every extension that exists in the Sourcegraph
-     * extension registry.
-     */
-    public async getExtensionManifests(): Promise<string[]> {
-        const query = gql`
-            query LegacyExtensionManifests {
-                extensionRegistry {
-                    extensions {
-                        nodes {
-                            extensionID
-                            manifest {
-                                raw
-                            }
-                        }
-                    }
-                }
-            }
-        `
-
-        interface Response {
-            extensionRegistry: {
-                extensions: {
-                    nodes: {
-                        manifest?: { raw: string }
-                    }[]
-                }
-            }
-        }
-
-        const data = await queryGraphQL<Response>(query)
-        return data.extensionRegistry.extensions.nodes.map(extension => extension.manifest?.raw).filter(isDefined)
-    }
-
-    /**
-     * Retrieve the version of the Sourcegraph instance.
-     */
-    public async productVersion(): Promise<string> {
-        const query = gql`
-            query LegacyProductVersion {
-                site {
-                    productVersion
-                }
-            }
-        `
-
-        interface Response {
-            site: {
-                productVersion: string
-            }
-        }
-
-        const data = await queryGraphQL<Response>(query)
-        return data.site.productVersion
-    }
-
-    /**
-     * Retrieve the identifier of the current user.
-     *
-     * Note: this method does not throw on an unauthenticated request.
-     */
-    public async getUser(): Promise<string | undefined> {
-        const query = gql`
-            query LegacyCurrentUser {
-                currentUser {
-                    id
-                }
-            }
-        `
-
-        interface Response {
-            currentUser?: { id: string }
-        }
-
-        const data = await queryGraphQL<Response>(query)
-        return data.currentUser?.id
-    }
-
-    /**
-     * Creates a `user:all` scoped access token. Returns the newly created token.
-     *
-     * @param user The identifier of the user for which to create an access token.
-     * @param note A note to attach to the access token.
-     */
-    public async createAccessToken(user: string, note: string): Promise<string> {
-        const query = gql`
-            mutation LegacyCreateAccessToken($user: ID!, $note: String!, $scopes: [String!]!) {
-                createAccessToken(user: $user, note: $note, scopes: $scopes) {
-                    token
-                }
-            }
-        `
-
-        interface Response {
-            createAccessToken: {
-                id: string
-                token: string
-            }
-        }
-
-        const data = await queryGraphQL<Response>(query, {
-            user,
-            note,
-            scopes: ['user:all'],
-        })
-        return data.createAccessToken.token
-    }
-
-    /**
      * Get the content of a file. Throws an error if the repository is not known to
      * the Sourcegraph instance. Returns undefined if the input rev or the file is
      * not known to the Sourcegraph instance.
@@ -575,8 +373,10 @@ export class API {
             __type: { fields: { name: string }[] }
         }
 
-        return (await queryGraphQL<IntrospectionResponse>(introspectionQuery)).__type.fields.some(
-            field => field.name === 'stencil'
+        return Boolean(
+            (await queryGraphQL<IntrospectionResponse>(introspectionQuery)).__type?.fields.some(
+                field => field.name === 'stencil'
+            )
         )
     }
 }
@@ -671,11 +471,11 @@ export interface RepoCommitPath {
     path: string
 }
 
-export type LocalCodeIntelPayload = {
+type LocalCodeIntelPayload = {
     symbols: LocalSymbol[]
 } | null
 
-export interface LocalSymbol {
+interface LocalSymbol {
     hover?: string
     def: Range
     refs?: Range[]
@@ -701,7 +501,7 @@ const isInRange = (position: sourcegraph.Position, range: Range): boolean => {
 }
 
 /** The response envelope for all blob queries. */
-export interface GenericBlobResponse<R> {
+interface GenericBlobResponse<R> {
     repository: { commit: { blob: R | null } | null } | null
 }
 
@@ -710,6 +510,7 @@ type LocalCodeIntelResponse = GenericBlobResponse<{ localCodeIntel: string }>
 const localCodeIntelQuery = gql`
     query LocalCodeIntel($repository: String!, $commit: String!, $path: String!) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
                 blob(path: $path) {
                     localCodeIntel

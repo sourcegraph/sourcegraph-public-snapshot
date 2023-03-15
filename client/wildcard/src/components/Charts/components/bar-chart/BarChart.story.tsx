@@ -2,9 +2,7 @@ import { Meta, Story } from '@storybook/react'
 import { ParentSize } from '@visx/responsive'
 import { ResizableBox } from 'react-resizable'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
+import { BrandedStory } from '../../../../stories/BrandedStory'
 import { Badge } from '../../../Badge'
 import { H2, Text } from '../../../Typography'
 
@@ -12,11 +10,7 @@ import { BarChart } from './BarChart'
 
 const StoryConfig: Meta = {
     title: 'wildcard/Charts',
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
     parameters: {
         chromatic: { disableSnapshots: false, enableDarkMode: true },
     },
@@ -212,9 +206,11 @@ const StackedBarExample = () => (
         </Text>
 
         <BarChart
+            stacked={true}
             width={400}
             height={400}
-            data={LANGUAGE_USAGE_DATA}
+            data={LANGUAGE_USAGE_GROUPED_BY_REPO_DATA}
+            getCategory={getGroup}
             getDatumName={getName}
             getDatumValue={getValue}
             getDatumColor={getColor}

@@ -2,7 +2,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 
-import { extensionsController, HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { FileBlockInput } from '../..'
 import { WebStory } from '../../../components/WebStory'
@@ -26,6 +26,7 @@ const noopBlockCallbacks = {
     onDeleteBlock: noop,
     onMoveBlock: noop,
     onDuplicateBlock: noop,
+    onNewBlock: noop,
 }
 
 const fileBlockInput: FileBlockInput = {
@@ -46,10 +47,9 @@ export const Default: Story = () => (
                 output={of(HIGHLIGHTED_FILE_LINES_LONG[0])}
                 isSelected={true}
                 isReadOnly={false}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 isSourcegraphDotCom={false}
                 globbing={false}
-                extensionsController={extensionsController}
             />
         )}
     </WebStory>
@@ -66,10 +66,9 @@ export const EditMode: Story = () => (
                 output={of(HIGHLIGHTED_FILE_LINES_LONG[0])}
                 isSelected={true}
                 isReadOnly={false}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 isSourcegraphDotCom={false}
                 globbing={false}
-                extensionsController={extensionsController}
             />
         )}
     </WebStory>
@@ -88,10 +87,9 @@ export const ErrorFetchingFile: Story = () => (
                 output={of(new Error('File not found'))}
                 isSelected={true}
                 isReadOnly={false}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 isSourcegraphDotCom={false}
                 globbing={false}
-                extensionsController={extensionsController}
             />
         )}
     </WebStory>

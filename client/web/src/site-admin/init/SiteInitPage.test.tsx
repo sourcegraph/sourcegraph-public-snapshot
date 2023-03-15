@@ -1,6 +1,4 @@
-import { createMemoryHistory } from 'history'
-
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SiteInitPage } from './SiteInitPage'
 
@@ -16,10 +14,8 @@ describe('SiteInitPage', () => {
     })
 
     test('site already initialized', () => {
-        const history = createMemoryHistory({ initialEntries: ['/'] })
-        renderWithBrandedContext(
+        const result = renderWithBrandedContext(
             <SiteInitPage
-                isLightTheme={true}
                 needsSiteInit={false}
                 authenticatedUser={null}
                 context={{
@@ -29,16 +25,16 @@ describe('SiteInitPage', () => {
                     authMinPasswordLength: 12,
                 }}
             />,
-            { history }
+            { route: '/init', path: '/init', extraRoutes: [{ path: '/search', element: null }] }
         )
-        expect(history.location.pathname).toEqual('/search')
+
+        expect(result.locationRef.current?.pathname).toEqual('/search')
     })
 
     test('unexpected authed user', () =>
         expect(
             renderWithBrandedContext(
                 <SiteInitPage
-                    isLightTheme={true}
                     needsSiteInit={true}
                     authenticatedUser={{ username: 'alice' }}
                     context={{
@@ -55,7 +51,6 @@ describe('SiteInitPage', () => {
         expect(
             renderWithBrandedContext(
                 <SiteInitPage
-                    isLightTheme={true}
                     needsSiteInit={true}
                     authenticatedUser={null}
                     context={{

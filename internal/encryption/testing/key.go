@@ -3,10 +3,10 @@ package testing
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TestKey is an encryption.Key that just base64 encodes the plaintext, to make

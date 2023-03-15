@@ -16,14 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// ReposourceCloneURLToRepoName maps a Git clone URL (format documented here:
+// RepoSourceCloneURLToRepoName maps a Git clone URL (format documented here:
 // https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo name if there
 // exists a code host configuration that matches the clone URL. Implicitly, it includes a code host
 // configuration for github.com, even if one is not explicitly specified. Returns the empty string and nil
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
-func ReposourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (repoName api.RepoName, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "ReposourceCloneURLToRepoName")
+func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (repoName api.RepoName, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "RepoSourceCloneURLToRepoName") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	if repoName := reposource.CustomCloneURLToRepoName(cloneURL); repoName != "" {
@@ -44,6 +44,7 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
 			extsvc.KindBitbucketServer,
+			extsvc.KindBitbucketCloud,
 			extsvc.KindAWSCodeCommit,
 			extsvc.KindGitolite,
 			extsvc.KindPhabricator,
@@ -102,7 +103,7 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 }
 
 func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.ExternalService) (api.RepoName, error) {
-	span, _ := ot.StartSpanFromContext(ctx, "getRepoNameFromService")
+	span, _ := ot.StartSpanFromContext(ctx, "getRepoNameFromService") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 	span.SetTag("ExternalService.ID", svc.ID)
 	span.SetTag("ExternalService.Kind", svc.Kind)
@@ -123,6 +124,9 @@ func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.Ext
 		host = c.Url
 	case *schema.BitbucketServerConnection:
 		rs = reposource.BitbucketServer{BitbucketServerConnection: c}
+		host = c.Url
+	case *schema.BitbucketCloudConnection:
+		rs = reposource.BitbucketCloud{BitbucketCloudConnection: c}
 		host = c.Url
 	case *schema.AWSCodeCommitConnection:
 		rs = reposource.AWS{AWSCodeCommitConnection: c}

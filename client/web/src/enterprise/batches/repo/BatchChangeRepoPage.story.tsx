@@ -1,6 +1,8 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
+import { mockAuthenticatedUser } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+
 import { WebStory } from '../../../components/WebStory'
 import { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
@@ -55,14 +57,16 @@ const queryEmptyRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
         },
     })
 
-const queryRepoBatchChanges = (nodes: RepoBatchChange[]): typeof _queryRepoBatchChanges => () =>
-    of({
-        batchChanges: {
-            totalCount: Object.values(nodes).length,
-            nodes: Object.values(nodes),
-            pageInfo: { endCursor: null, hasNextPage: false },
-        },
-    })
+const queryRepoBatchChanges =
+    (nodes: RepoBatchChange[]): typeof _queryRepoBatchChanges =>
+    () =>
+        of({
+            batchChanges: {
+                totalCount: Object.values(nodes).length,
+                nodes: Object.values(nodes),
+                pageInfo: { endCursor: null, hasNextPage: false },
+            },
+        })
 
 const queryList = queryRepoBatchChanges(NODES)
 const queryNone = queryRepoBatchChanges([])
@@ -103,6 +107,8 @@ export const ListOfBatchChanges: Story = () => (
             <BatchChangeRepoPage
                 {...props}
                 repo={repoDefaults}
+                authenticatedUser={mockAuthenticatedUser}
+                isSourcegraphDotCom={false}
                 queryRepoBatchChangeStats={queryRepoBatchChangeStats}
                 queryRepoBatchChanges={queryList}
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
@@ -119,6 +125,8 @@ export const NoBatchChanges: Story = () => (
             <BatchChangeRepoPage
                 {...props}
                 repo={repoDefaults}
+                authenticatedUser={mockAuthenticatedUser}
+                isSourcegraphDotCom={false}
                 queryRepoBatchChangeStats={queryEmptyRepoBatchChangeStats}
                 queryRepoBatchChanges={queryNone}
             />

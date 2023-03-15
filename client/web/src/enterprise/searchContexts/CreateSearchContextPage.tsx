@@ -1,18 +1,18 @@
 import React, { useCallback } from 'react'
 
 import { mdiMagnify } from '@mdi/js'
-import { Redirect, RouteComponentProps } from 'react-router'
+import { Navigate, useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
-import { SearchContextFields, SearchContextProps } from '@sourcegraph/search'
 import {
     Scalars,
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
+    SearchContextFields,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -24,9 +24,7 @@ import { parseSearchURLQuery } from '../../search'
 import { SearchContextForm } from './SearchContextForm'
 
 export interface CreateSearchContextPageProps
-    extends RouteComponentProps,
-        ThemeProps,
-        TelemetryProps,
+    extends TelemetryProps,
         Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser
@@ -38,7 +36,9 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<
 > = props => {
     const { authenticatedUser, createSearchContext, platformContext } = props
 
-    const query = parseSearchURLQuery(props.location.search)
+    const location = useLocation()
+
+    const query = parseSearchURLQuery(location.search)
 
     const onSubmit = useCallback(
         (
@@ -50,7 +50,7 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<
     )
 
     if (!authenticatedUser) {
-        return <Redirect to="/sign-in" />
+        return <Navigate to="/sign-in" replace={true} />
     }
 
     return (

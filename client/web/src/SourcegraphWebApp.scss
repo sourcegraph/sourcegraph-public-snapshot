@@ -3,21 +3,16 @@ This is the main entry point for all styles for the web app.
 It should import all component stylesheets.
 */
 
+@use 'wildcard/src/global-styles/colors';
+
 // Global libraries styles
-@import 'react-grid-layout/css/styles.css';
-@import 'react-resizable/css/styles.css';
+@import 'react-grid-layout/css/styles';
 
 // Use duplicate selectors for the light-theme
 // stylelint-disable no-duplicate-selectors
 
-@import '../../branded/src/global-styles/index.scss';
-
-// stylelint-disable-next-line selector-max-id
-html,
-body,
-#root {
-    height: 100%;
-}
+// Global styles
+@import 'wildcard/src/global-styles';
 
 // Document highlight is the background color for tokens which are matched with
 // a result from a document highlight provider. e.g. for references of the token
@@ -36,7 +31,7 @@ body,
     text-decoration: inherit;
 
     &:focus {
-        background-color: rgba($blue, 0.1);
+        background-color: rgba(var(--blue), 0.1);
     }
 }
 
@@ -67,39 +62,9 @@ body,
     }
 }
 
-.spacer {
-    flex: 1;
-}
-
-.flex-1 {
-    flex: 1;
-}
-
-.flex-bounded {
-    flex: 1;
-    min-width: 0;
-}
-
-.flex-shrink-past-contents {
-    flex-shrink: 1;
-    min-width: 0;
-}
-
-// Global styles provided by @reach packages. Should be imported once in the global scope.
-@import '@reach/combobox/styles.css';
-@import '@reach/menu-button/styles.css';
-
 // Pages
 @import './api/ApiConsole';
 
 :root {
     --max-homepage-container-width: 65rem;
-    // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
-    --reach-menu-button: 1;
-    --reach-accordion: 1;
-    // Media breakpoints
-    --media-sm: 576px;
-    --media-md: 768px;
-    --media-lg: 992px;
-    --media-xl: 1200px;
 }

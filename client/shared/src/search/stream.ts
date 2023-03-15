@@ -1,14 +1,13 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
-/* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
-import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { SearchMode } from '@sourcegraph/search'
 
-import { SearchPatternType } from '../graphql-operations'
-import { SymbolKind } from '../schema'
+import type { AggregableBadge } from '../codeintel/legacy-extensions/api'
+import { SearchPatternType, SymbolKind } from '../graphql-operations'
+
+import { SearchMode } from './searchQueryState'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance.
@@ -30,7 +29,7 @@ export type SearchEvent =
     | { type: 'error'; data: ErrorLike }
     | { type: 'done'; data: {} }
 
-export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch
+export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch | OwnerMatch
 
 export interface PathMatch {
     type: 'path'
@@ -41,6 +40,7 @@ export interface PathMatch {
     repoLastFetched?: string
     branches?: string[]
     commit?: string
+    debug?: string
 }
 
 export interface ContentMatch {
@@ -55,6 +55,7 @@ export interface ContentMatch {
     lineMatches?: LineMatch[]
     chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
+    debug?: string
 }
 
 export interface DecoratedHunk {
@@ -103,6 +104,7 @@ export interface SymbolMatch {
     branches?: string[]
     commit?: string
     symbols: MatchedSymbol[]
+    debug?: string
 }
 
 export interface MatchedSymbol {
@@ -129,6 +131,8 @@ export interface CommitMatch {
     message: string
     authorName: string
     authorDate: string
+    committerName: string
+    committerDate: string
     repoStars?: number
     repoLastFetched?: string
 
@@ -149,6 +153,32 @@ export interface RepositoryMatch {
     private?: boolean
     branches?: string[]
     descriptionMatches?: Range[]
+}
+
+export type OwnerMatch = PersonMatch | TeamMatch
+
+export interface BaseOwnerMatch {
+    handle?: string
+    email?: string
+}
+
+export interface PersonMatch extends BaseOwnerMatch {
+    type: 'person'
+    handle?: string
+    email?: string
+    user?: {
+        username: string
+        displayName?: string
+        avatarURL?: string
+    }
+}
+
+export interface TeamMatch extends BaseOwnerMatch {
+    type: 'team'
+    name: string
+    displayName?: string
+    handle?: string
+    email?: string
 }
 
 /**
@@ -192,6 +222,7 @@ export interface Skipped {
      * - shard-timeout :: we ran out of time before searching a shard/repository.
      * - repository-cloning :: we could not search a repository because it is not cloned.
      * - repository-missing :: we could not search a repository because it is not cloned and we failed to find it on the remote code host.
+     * - backend-missing :: we may be missing results due to a backend being transiently down.
      * - excluded-fork :: we did not search a repository because it is a fork.
      * - excluded-archive :: we did not search a repository because it is archived.
      * - display :: we hit the display limit, so we stopped sending results from the backend.
@@ -203,6 +234,7 @@ export interface Skipped {
         | 'shard-timedout'
         | 'repository-cloning'
         | 'repository-missing'
+        | 'backend-missing'
         | 'excluded-fork'
         | 'excluded-archive'
         | 'display'
@@ -234,7 +266,8 @@ export interface Filter {
     kind: 'file' | 'repo' | 'lang' | 'utility'
 }
 
-export type AlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
+export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
+export type AlertKind = SmartSearchAlertKind | 'unowned-results'
 
 interface Alert {
     title: string
@@ -435,6 +468,7 @@ export interface StreamSearchOptions {
     patternType: SearchPatternType
     caseSensitive: boolean
     trace: string | undefined
+    featureOverrides?: string[]
     searchMode?: SearchMode
     sourcegraphURL?: string
     decorationKinds?: string[]
@@ -450,6 +484,7 @@ function initiateSearchStream(
         patternType,
         caseSensitive,
         trace,
+        featureOverrides,
         decorationKinds,
         decorationContextLines,
         searchMode = SearchMode.Precise,
@@ -476,7 +511,10 @@ function initiateSearchStream(
         if (trace) {
             parameters.push(['trace', trace])
         }
-        const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
+        for (const value of featureOverrides || []) {
+            parameters.push(['feat', value])
+        }
+        const parameterEncoded = parameters.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&')
 
         const eventSource = new EventSource(`${sourcegraphURL}/search/stream?${parameterEncoded}`)
         subscriptions.add(() => eventSource.close())
@@ -558,6 +596,29 @@ export function getCommitMatchUrl(commitMatch: CommitMatch): string {
     return '/' + encodeURI(commitMatch.repository) + '/-/commit/' + commitMatch.oid
 }
 
+export function getOwnerMatchUrl(ownerMatch: OwnerMatch, ignoreUnknownPerson: boolean = false): string {
+    if (ownerMatch.type === 'person' && ownerMatch.user) {
+        return '/users/' + encodeURI(ownerMatch.user.username)
+    }
+    if (ownerMatch.type === 'team') {
+        return '/teams/' + encodeURI(ownerMatch.name)
+    }
+    if (ownerMatch.email) {
+        return `mailto:${ownerMatch.email}`
+    }
+
+    if (ignoreUnknownPerson) {
+        return ''
+    }
+    // Unknown person with only a handle.
+    // We can't ignore this person and return an empty string, we
+    // need some unique dummy data here because this is used
+    // as the key in the virtual list. We can't use the index.
+    // In the future we may be able to link to the
+    // person's profile page in the external code host.
+    return '/unknown-person/' + encodeURI(ownerMatch.handle || 'unknown')
+}
+
 export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
         case 'path':
@@ -568,6 +629,9 @@ export function getMatchUrl(match: SearchMatch): string {
             return getCommitMatchUrl(match)
         case 'repo':
             return getRepoMatchUrl(match)
+        case 'person':
+        case 'team':
+            return getOwnerMatchUrl(match)
     }
 }
 

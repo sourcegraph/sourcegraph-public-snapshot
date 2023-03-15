@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Card, H2, Text } from '@sourcegraph/wildcard'
 
-import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -116,7 +116,7 @@ export const CodeMonitoringLogs: React.FunctionComponent<
     const pageSize = 20
     const runPageSize = 20
 
-    const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
+    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
         MonitorTriggerEventsResult,
         MonitorTriggerEventsVariables,
         CodeMonitorWithEvents

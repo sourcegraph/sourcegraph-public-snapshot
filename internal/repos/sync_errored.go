@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -28,10 +27,10 @@ var totalErroredRepos = promauto.NewGauge(prometheus.GaugeOpts{
 
 func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiter *ratelimit.InstrumentedLimiter) {
 	for {
-		s.Logger.Info("running worker for SyncReposWithLastErrors", log.Time("time", time.Now()))
+		s.ObsvCtx.Logger.Info("running worker for SyncReposWithLastErrors", log.Time("time", time.Now()))
 		err := s.SyncReposWithLastErrors(ctx, rateLimiter)
 		if err != nil {
-			s.Logger.Error("Error syncing repos w/ errors", log.Error(err))
+			s.ObsvCtx.Logger.Error("Error syncing repos w/ errors", log.Error(err))
 		}
 
 		// Wait and run task again
@@ -46,25 +45,30 @@ func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimit
 func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *ratelimit.InstrumentedLimiter) error {
 	erroredRepoGauge.Set(0)
 	s.setTotalErroredRepos(ctx)
-	err := s.Store.GitserverReposStore().IterateWithNonemptyLastError(ctx, func(repo api.RepoName) error {
+	repoNames, err := s.Store.GitserverReposStore().ListReposWithLastError(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to list gitserver_repos with last_error not null")
+	}
+
+	for _, repoName := range repoNames {
 		err := rateLimiter.Wait(ctx)
 		if err != nil {
 			return errors.Errorf("error waiting for rate limiter: %s", err)
 		}
-		_, err = s.SyncRepo(ctx, repo, false)
+		_, err = s.SyncRepo(ctx, repoName, false)
 		if err != nil {
-			s.Logger.Error("error syncing repo", log.String("repo", string(repo)), log.Error(err))
+			s.ObsvCtx.Logger.Error("error syncing repo", log.String("repo", string(repoName)), log.Error(err))
 		}
 		erroredRepoGauge.Inc()
-		return nil
-	})
+	}
+
 	return err
 }
 
 func (s *Syncer) setTotalErroredRepos(ctx context.Context) {
 	totalErrored, err := s.Store.GitserverReposStore().TotalErroredCloudDefaultRepos(ctx)
 	if err != nil {
-		s.Logger.Error("error fetching count of total errored repos", log.Error(err))
+		s.ObsvCtx.Logger.Error("error fetching count of total errored repos", log.Error(err))
 		return
 	}
 	totalErroredRepos.Set(float64(totalErrored))

@@ -4,10 +4,8 @@ import { Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import SearchIcon from 'mdi-react/SearchIcon'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
 import { H1, H2, Text, Tooltip, ButtonLink, Code } from '../..'
+import { BrandedStory } from '../../../stories/BrandedStory'
 import { Button } from '../Button'
 import { ButtonGroup } from '../ButtonGroup'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
@@ -18,11 +16,7 @@ const config: Meta = {
     title: 'wildcard/Button',
     component: Button,
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
 
     parameters: {
         component: Button,
@@ -241,6 +235,54 @@ export const Group: Story = () => {
                     ))}
                 </ButtonGroup>{' '}
                 Example with primary outline buttons
+            </div>
+            <div className="mb-2">
+                <ButtonGroup aria-label="Basic example">
+                    {(['Left', 'Middle', 'Right'] as const).map(option => (
+                        <Button
+                            key={option}
+                            className={classNames(option === active && 'active')}
+                            onClick={() => setActive(option)}
+                            aria-pressed={option === active}
+                            variant="secondary"
+                        >
+                            {option}
+                        </Button>
+                    ))}
+                </ButtonGroup>{' '}
+                Example with secondary buttons
+            </div>
+            <div className="mb-2">
+                <ButtonGroup aria-label="Basic example">
+                    {(['Left', 'Middle', 'Right'] as const).map(option => (
+                        <Button
+                            key={option}
+                            className={classNames(option === active && 'active')}
+                            onClick={() => setActive(option)}
+                            aria-pressed={option === active}
+                            variant="primary"
+                        >
+                            {option}
+                        </Button>
+                    ))}
+                </ButtonGroup>{' '}
+                Example with primary buttons
+            </div>
+            <div className="mb-2">
+                <ButtonGroup aria-label="Basic example">
+                    {(['Left', 'Middle', 'Right'] as const).map(option => (
+                        <Button
+                            key={option}
+                            className={classNames(option === active && 'active')}
+                            onClick={() => setActive(option)}
+                            aria-pressed={option === active}
+                            variant="link"
+                        >
+                            {option}
+                        </Button>
+                    ))}
+                </ButtonGroup>{' '}
+                Example with link buttons
             </div>
 
             <H2 className="mt-3">With Tooltips</H2>

@@ -193,6 +193,7 @@
     },
     "webhooks": {
       "description": "An array of webhook configurations",
+      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice",
       "type": "array",
       "items": {
         "type": "object",

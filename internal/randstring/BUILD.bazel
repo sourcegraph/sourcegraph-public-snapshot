@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "randstring",
+    srcs = ["string.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/randstring",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    timeout = "short",
+    name = "randstring_test",
+    srcs = ["string_test.go"],
+    embed = [":randstring"],
+)

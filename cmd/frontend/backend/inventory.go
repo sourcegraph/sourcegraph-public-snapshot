@@ -50,7 +50,7 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			return gsClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return gsClient.NewFileReader(ctx, repo, commitID, path, authz.DefaultSubRepoPermsChecker)
+			return gsClient.NewFileReader(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, path)
 		},
 		CacheGet: func(e fs.FileInfo) (inventory.Inventory, bool) {
 			cacheKey := cacheKey(e)

@@ -6,6 +6,7 @@ import (
 	"net/textproto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -29,4 +30,10 @@ func (p provider) CachedInfo() *providers.Info {
 	return &providers.Info{
 		DisplayName: fmt.Sprintf("HTTP authentication proxy (%q header)", textproto.CanonicalMIMEHeaderKey(p.c.UsernameHeader)),
 	}
+}
+
+func (p *provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
+	return &extsvc.PublicAccountData{
+		DisplayName: &account.AccountID,
+	}, nil
 }

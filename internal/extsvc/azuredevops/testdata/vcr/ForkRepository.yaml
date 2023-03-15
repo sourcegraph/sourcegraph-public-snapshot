@@ -1,0 +1,58 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"name":"sgtestazureforks2","project":{"id":"dc493f7d-0b57-4de2-a59b-3f74ff3ea334"},"parentRepository":{"id":"c4d186ef-18a6-4de4-a610-aa9ebd4e1faa","project":{"id":"dc493f7d-0b57-4de2-a59b-3f74ff3ea334"}}}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json
+    url: https://dev.azure.com/sgtestazure/_apis/git/repositories?api-version=7.0
+    method: POST
+  response:
+    body: '{"id":"4c066745-c514-4a79-a099-2fed5e49dea3","name":"sgtestazureforks2","url":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/4c066745-c514-4a79-a099-2fed5e49dea3","project":{"id":"dc493f7d-0b57-4de2-a59b-3f74ff3ea334","name":"sgtestazure","url":"https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334","state":"wellFormed","revision":11,"visibility":"private","lastUpdateTime":"2023-01-20T19:22:47.403Z"},"size":0,"remoteUrl":"https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazureforks2","sshUrl":"git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazureforks2","webUrl":"https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazureforks2","isFork":true,"_links":{"self":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/4c066745-c514-4a79-a099-2fed5e49dea3"},"project":{"href":"vstfs:///Classification/TeamProject/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"},"web":{"href":"https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazureforks2"},"ssh":{"href":"git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazureforks2"},"commits":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/4c066745-c514-4a79-a099-2fed5e49dea3/commits"},"refs":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/4c066745-c514-4a79-a099-2fed5e49dea3/refs"},"pullRequests":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/4c066745-c514-4a79-a099-2fed5e49dea3/pullRequests"},"items":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/4c066745-c514-4a79-a099-2fed5e49dea3/items"},"pushes":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/4c066745-c514-4a79-a099-2fed5e49dea3/pushes"},"forkSyncOperation":{"href":"https://dev.azure.com/sgtestazure/_apis/git/repositories/4c066745-c514-4a79-a099-2fed5e49dea3/forkSyncRequests/11"}},"isDisabled":false,"isInMaintenance":false}'
+    headers:
+      Access-Control-Expose-Headers:
+      - Request-Context
+      Activityid:
+      - ec0317dc-6de6-443a-8e8d-4fceff1a4a68
+      Cache-Control:
+      - no-cache, no-store, must-revalidate
+      Content-Length:
+      - "2170"
+      Content-Type:
+      - application/json; charset=utf-8; api-version=7.0
+      Date:
+      - Tue, 21 Feb 2023 17:22:26 GMT
+      Expires:
+      - "-1"
+      P3p:
+      - CP="CAO DSP COR ADMa DEV CONo TELo CUR PSA PSD TAI IVDo OUR SAMi BUS DEM NAV
+        STA UNI COM INT PHY ONL FIN PUR LOC CNT"
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:72d31d95-1757-44f5-b910-a46611808454
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      X-Cache:
+      - CONFIG_NOCACHE
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Msedge-Ref:
+      - 'Ref A: E8FFE2F1E9E242B7818E4DEB2170D0F3 Ref B: YTO01EDGE0521 Ref C: 2023-02-21T17:22:27Z'
+      X-Tfs-Processid:
+      - a7f74035-c47a-4ba0-b7b6-b4e3986cae1e
+      X-Tfs-Session:
+      - ec0317dc-6de6-443a-8e8d-4fceff1a4a68
+      X-Vss-E2eid:
+      - ec0317dc-6de6-443a-8e8d-4fceff1a4a68
+      X-Vss-Senderdeploymentid:
+      - 4ff21e82-8865-0b2e-ffe8-9598818f8190
+      X-Vss-Userdata:
+      - 473dec3e-03d7-6147-b106-0b0a7f766a92:idan.varsano@sourcegraph.com
+    status: 201 Created
+    code: 201
+    duration: ""

@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 
 	"github.com/docker/docker-credential-helpers/credentials"
+	"github.com/sourcegraph/conc/pool"
 	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -29,14 +29,14 @@ func UpdateCompose(path string, creds credentials.Credentials, pinTag string) er
 
 		std.Out.WriteNoticef("Checking %q", path)
 
-		composeFile, err := os.ReadFile(path)
-		if err != nil {
+		composeFile, innerErr := os.ReadFile(path)
+		if innerErr != nil {
 			return errors.Wrapf(err, "couldn't read %s", path)
 		}
 
 		checked++
-		newComposeFile, err := updateComposeFile(composeFile, creds, pinTag)
-		if err != nil {
+		newComposeFile, innerErr := updateComposeFile(composeFile, creds, pinTag)
+		if innerErr != nil {
 			return err
 		}
 		if newComposeFile == nil {
@@ -75,7 +75,7 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 		original string
 		new      string
 	}
-	checks := group.NewWithResults[*replace]().WithMaxConcurrency(10)
+	checks := pool.NewWithResults[*replace]().WithMaxGoroutines(10)
 	for name, entry := range services {
 		name := name
 		service, ok := entry.(map[string]any)

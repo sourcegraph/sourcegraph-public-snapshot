@@ -5,13 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"math/rand"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/dineshappavoo/basex"
+	"github.com/google/uuid"
+
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
@@ -50,15 +49,16 @@ func (s SQLColumns) FmtStr() string {
 	return fmt.Sprintf("(%s)", strings.Join(elems, ", "))
 }
 
-// seededRand is used in RandomID() to generate a "random" number.
-var seededRand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
-
 // ErrNoResults is returned by Store method calls that found no results.
 var ErrNoResults = errors.New("no results")
 
 // RandomID generates a random ID to be used for identifiers in the database.
 func RandomID() (string, error) {
-	return basex.Encode(strconv.Itoa(seededRand.Int()))
+	random, err := uuid.NewRandom()
+	if err != nil {
+		return "", err
+	}
+	return random.String(), nil
 }
 
 // Store exposes methods to read and write batches domain models
@@ -66,33 +66,33 @@ func RandomID() (string, error) {
 type Store struct {
 	logger log.Logger
 	*basestore.Store
-	key                encryption.Key
-	now                func() time.Time
-	operations         *operations
-	observationContext *observation.Context
+	key            encryption.Key
+	now            func() time.Time
+	operations     *operations
+	observationCtx *observation.Context
 }
 
 // New returns a new Store backed by the given database.
-func New(db database.DB, observationContext *observation.Context, key encryption.Key) *Store {
-	return NewWithClock(db, observationContext, key, timeutil.Now)
+func New(db database.DB, observationCtx *observation.Context, key encryption.Key) *Store {
+	return NewWithClock(db, observationCtx, key, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given database and
 // clock for timestamps.
-func NewWithClock(db database.DB, observationContext *observation.Context, key encryption.Key, clock func() time.Time) *Store {
+func NewWithClock(db database.DB, observationCtx *observation.Context, key encryption.Key, clock func() time.Time) *Store {
 	return &Store{
-		logger:             observationContext.Logger,
-		Store:              basestore.NewWithHandle(db.Handle()),
-		key:                key,
-		now:                clock,
-		operations:         newOperations(observationContext),
-		observationContext: observationContext,
+		logger:         observationCtx.Logger,
+		Store:          basestore.NewWithHandle(db.Handle()),
+		key:            key,
+		now:            clock,
+		operations:     newOperations(observationCtx),
+		observationCtx: observationCtx,
 	}
 }
 
-// ObservationContext returns the observation context wrapped in this store.
-func (s *Store) ObservationContext() *observation.Context {
-	return s.observationContext
+// observationCtx returns the observation context wrapped in this store.
+func (s *Store) ObservationCtx() *observation.Context {
+	return s.observationCtx
 }
 
 // Clock returns the clock used by the Store.
@@ -111,12 +111,12 @@ var _ basestore.ShareableStore = &Store{}
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{
-		logger:             s.logger,
-		Store:              s.Store.With(other),
-		key:                s.key,
-		operations:         s.operations,
-		observationContext: s.observationContext,
-		now:                s.now,
+		logger:         s.logger,
+		Store:          s.Store.With(other),
+		key:            s.key,
+		operations:     s.operations,
+		observationCtx: s.observationCtx,
+		now:            s.now,
 	}
 }
 
@@ -129,12 +129,12 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 		return nil, err
 	}
 	return &Store{
-		logger:             s.logger,
-		Store:              txBase,
-		key:                s.key,
-		operations:         s.operations,
-		observationContext: s.observationContext,
-		now:                s.now,
+		logger:         s.logger,
+		Store:          txBase,
+		key:            s.key,
+		operations:     s.operations,
+		observationCtx: s.observationCtx,
+		now:            s.now,
 	}, nil
 }
 
@@ -145,7 +145,7 @@ func (s *Store) Repos() database.RepoStore {
 
 // ExternalServices returns a database.ExternalServiceStore using the same connection as this store.
 func (s *Store) ExternalServices() database.ExternalServiceStore {
-	return database.ExternalServicesWith(s.observationContext.Logger, s)
+	return database.ExternalServicesWith(s.observationCtx.Logger, s)
 }
 
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
@@ -271,6 +271,7 @@ type operations struct {
 	deleteBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	cancelBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	retryBatchSpecWorkspaceExecutionJobs               *observation.Operation
+	disableBatchSpecWorkspaceExecutionCache            *observation.Operation
 
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
@@ -288,18 +289,18 @@ var (
 )
 
 // newOperations generates a singleton of the operations struct.
-// TODO: We should create one per observationContext.
-func newOperations(observationContext *observation.Context) *operations {
+// TODO: We should create one per observationCtx.
+func newOperations(observationCtx *observation.Context) *operations {
 	operationsOnce.Do(func() {
 		m := metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"batches_dbstore",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
 		)
 
 		op := func(name string) *observation.Operation {
-			return observationContext.Operation(observation.Op{
+			return observationCtx.Operation(observation.Op{
 				Name:              fmt.Sprintf("batches.dbstore.%s", name),
 				MetricLabelValues: []string{name},
 				Metrics:           m,
@@ -414,6 +415,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			deleteBatchSpecWorkspaceExecutionJobs:              op("DeleteBatchSpecWorkspaceExecutionJobs"),
 			cancelBatchSpecWorkspaceExecutionJobs:              op("CancelBatchSpecWorkspaceExecutionJobs"),
 			retryBatchSpecWorkspaceExecutionJobs:               op("RetryBatchSpecWorkspaceExecutionJobs"),
+			disableBatchSpecWorkspaceExecutionCache:            op("DisableBatchSpecWorkspaceExecutionCache"),
 
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),

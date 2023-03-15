@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "jobselector",
+    srcs = [
+        "iface.go",
+        "job_selector.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/codeintel/autoindexing/internal/store",
+        "//enterprise/internal/codeintel/shared/types",
+        "//internal/api",
+        "//internal/env",
+        "//lib/codeintel/autoindex/config",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

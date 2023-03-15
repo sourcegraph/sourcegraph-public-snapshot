@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "frontend_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/frontend/shared",
+        "//cmd/sourcegraph-oss/osscmd",
+    ],
+)
+
+go_binary(
+    name = "frontend",
+    embed = [":frontend_lib"],
+    visibility = ["//visibility:public"],
+)

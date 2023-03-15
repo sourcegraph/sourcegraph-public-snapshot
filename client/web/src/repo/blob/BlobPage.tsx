@@ -1,48 +1,65 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Redirect } from 'react-router'
-import { Observable, of } from 'rxjs'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
-    useCurrentSpan,
-    TraceSpanProvider,
     createActiveSpan,
     reactManualTracer,
+    TraceSpanProvider,
+    useCurrentSpan,
 } from '@sourcegraph/observability-client'
-import { SearchContextProps } from '@sourcegraph/search'
-import { FetchFileParameters, StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { HighlightResponseFormat, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { RepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { Alert, Button, LoadingSpinner, useEventObservable, useObservable } from '@sourcegraph/wildcard'
+import { ModeSpec, parseQueryAndHash, RepoFile } from '@sourcegraph/shared/src/util/url'
+import {
+    Alert,
+    Button,
+    ButtonLink,
+    ErrorMessage,
+    Icon,
+    LoadingSpinner,
+    Text,
+    useEventObservable,
+    useObservable,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { Scalars } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
+import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
+import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
+import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { SearchStreamingProps } from '../../search'
-import { useNotepad, useExperimentalFeatures } from '../../stores'
+import { useNotepad } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
+import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
+import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { isPackageServiceType } from '../packages/isPackageServiceType'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
@@ -51,10 +68,12 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
-import { fetchBlob, fetchStencil } from './backend'
-import { Blob, BlobInfo } from './Blob'
-import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
+import { fetchBlob } from './backend'
+import { BlobLoadingSpinner } from './BlobLoadingSpinner'
+import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
+import { LegacyBlob } from './LegacyBlob'
+import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
@@ -71,23 +90,24 @@ interface BlobPageProps
         PlatformContextProps,
         TelemetryProps,
         ExtensionsControllerProps,
-        ThemeProps,
         HoverThresholdProps,
         BreadcrumbSetters,
         SearchStreamingProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
-        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled'> {
-    location: H.Location
-    history: H.History
+        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
+        NotebookProps,
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     repoID?: Scalars['ID']
     repoUrl?: string
+    repoServiceType?: string
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    className?: string
 }
 
 /**
@@ -98,26 +118,27 @@ interface BlobPageInfo extends Optional<BlobInfo, 'commitID'> {
     aborted: boolean
 }
 
-export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageProps>> = props => {
+export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ...props }) => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
-    let renderMode = getModeFromURL(props.location)
-    const { repoName, revision, repoID, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
-    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
-    const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
-        features => features.enableLazyBlobSyntaxHighlighting ?? false
-    )
-    const enableTokenKeyboardNavigation =
-        props.codeIntelligenceEnabled &&
-        isSettingsValid(props.settingsCascade) &&
-        props.settingsCascade.final['codeIntel.blobKeyboardNavigation'] === 'token'
+    let renderMode = getModeFromURL(location)
+    const { repoID, repoName, repoServiceType, revision, commitID, filePath, useBreadcrumb, mode } = props
+    const { enableCodeMirror, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(features => ({
+        enableCodeMirror: features.enableCodeMirrorFileView ?? true,
+        enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? true,
+    }))
+    const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
 
-    const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
-        props.location.search,
-        props.location.hash,
-    ])
+    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
+    const enableOwnershipPanel = ownFeatureFlagEnabled && props.ownEnabled
+
+    const lineOrRange = useMemo(
+        () => parseQueryAndHash(location.search, location.hash),
+        [location.search, location.hash]
+    )
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
@@ -170,18 +191,11 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
      * Intention is to use this whilst we wait for syntax highlighting,
      * so the user has useful content rather than a loading spinner
      */
-    const formattedBlobInfoOrError = useObservable(
-        useMemo(() => {
-            // Note: Lazy syntax highlighting is currently buggy in CodeMirror.
-            // GitHub issue to fix: https://github.com/sourcegraph/sourcegraph/issues/41413
-            if (!enableLazyBlobSyntaxHighlighting || enableCodeMirror) {
-                return of(undefined)
-            }
 
-            return createActiveSpan(
-                reactManualTracer,
-                { name: 'formattedBlobInfoOrError', parentSpan: span },
-                fetchSpan =>
+    const formattedBlobInfoOrError = useObservable(
+        useMemo(
+            () =>
+                createActiveSpan(reactManualTracer, { name: 'formattedBlobInfoOrError', parentSpan: span }, fetchSpan =>
                     fetchBlob({
                         repoName,
                         revision,
@@ -203,6 +217,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                                 // Properties used in `BlobPage` but not `Blob`
                                 richHTML: blob.richHTML,
                                 aborted: false,
+                                lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
+                                externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
                             }
 
                             fetchSpan.end()
@@ -210,8 +226,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             return blobInfo
                         })
                     )
-            )
-        }, [enableCodeMirror, enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
+                ),
+            [filePath, mode, repoName, revision, span]
+        )
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
@@ -262,6 +279,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             // Properties used in `BlobPage` but not `Blob`
                             richHTML: blob.richHTML,
                             aborted: blob.highlight.aborted,
+                            lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
+                            externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
                         }
                         return blobInfo
                     }),
@@ -269,24 +288,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 ),
             [repoName, revision, filePath, enableCodeMirror, mode]
         )
-    )
-
-    /**
-     * Fetches stencil ranges for the current document.
-     * Used to provide keyboard navigation within the blob view.
-     */
-    const stencil = useObservable(
-        useMemo(() => {
-            if (!enableTokenKeyboardNavigation) {
-                return of(undefined)
-            }
-
-            return fetchStencil({
-                repoName,
-                revision,
-                filePath,
-            })
-        }, [enableTokenKeyboardNavigation, filePath, repoName, revision])
     )
 
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
@@ -312,14 +313,17 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         return `${repoString}`
     }
 
-    const [isBlameVisible] = useBlameVisibility()
-    const blameDecorations = useBlameHunks({ repoName, revision, filePath }, props.platformContext.sourcegraphURL)
+    const [isBlameVisible] = useBlameVisibility(isPackage)
+    const blameHunks = useBlameHunks(
+        { isPackage, repoName, revision, filePath, enableCodeMirror },
+        props.platformContext.sourcegraphURL
+    )
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&
             !isErrorLike(blobInfoOrError) &&
             blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
-            showSearchNotebook
+            props.notebooksEnabled
     )
 
     const onCopyNotebook = useCallback(
@@ -345,6 +349,38 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
+            {window.context.isAuthenticatedUser && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={112}
+                    id="open-in-editor-action"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {({ actionType }) => (
+                        <OpenInEditorActionItem
+                            platformContext={props.platformContext}
+                            externalServiceType={props.repoServiceType}
+                            actionType={actionType}
+                            source="repoHeader"
+                        />
+                    )}
+                </RepoHeaderContributionPortal>
+            )}
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={111}
+                id="toggle-blame-action"
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            >
+                {({ actionType }) => (
+                    <ToggleBlameAction
+                        actionType={actionType}
+                        source="repoHeader"
+                        renderMode={renderMode}
+                        isPackage={isPackage}
+                    />
+                )}
+            </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"
                 priority={20}
@@ -355,8 +391,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     <ToggleHistoryPanel
                         {...context}
                         key="toggle-blob-panel"
-                        location={props.location}
-                        history={props.history}
+                        location={location}
+                        navigate={navigate}
+                        isPackage={isPackage}
                     />
                 )}
             </RepoHeaderContributionPortal>
@@ -370,6 +407,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     {context => <ToggleLineWrap {...context} key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
                 </RepoHeaderContributionPortal>
             )}
+
             <RepoHeaderContributionPortal
                 position="right"
                 priority={30}
@@ -387,6 +425,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     />
                 )}
             </RepoHeaderContributionPortal>
+            {enableOwnershipPanel && repoID && (
+                <HistoryAndOwnBar repoID={repoID} revision={revision} filePath={filePath} />
+            )}
         </>
     )
 
@@ -396,7 +437,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         // they cannot easily determine eagerly if a file path is a tree or a blob.
         // We don't have error names on GraphQL errors.
         if (/not a blob/i.test(blobInfoOrError.message)) {
-            return <Redirect to={toTreeURL(props)} />
+            return <Navigate to={toTreeURL(props)} replace={true} />
         }
         return (
             <>
@@ -409,13 +450,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     if (blobInfoOrError === undefined) {
         // Render placeholder for layout before content is fetched.
         return (
-            <div className={styles.placeholder}>
+            <div className={classNames(styles.placeholder, className)}>
                 {alwaysRender}
-                {!enableLazyBlobSyntaxHighlighting && (
-                    <div className="d-flex mt-3 justify-content-center">
-                        <LoadingSpinner />
-                    </div>
-                )}
+                {!enableLazyBlobSyntaxHighlighting && <BlobLoadingSpinner />}
             </div>
         )
     }
@@ -423,7 +460,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     // File not found:
     if (blobInfoOrError === null) {
         return (
-            <div className={styles.placeholder}>
+            <div className={classNames(styles.placeholder, className)}>
                 <HeroPage
                     icon={MapSearchIcon}
                     title="Not found"
@@ -433,12 +470,46 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         )
     }
 
-    const BlobComponent = enableCodeMirror ? CodeMirrorBlob : Blob
+    // LFS file:
+    if (blobInfoOrError.lfs) {
+        const externalUrl = blobInfoOrError.externalURLs?.[0]
+        const externalService = externalUrl && serviceKindDisplayNameAndIcon(externalUrl.serviceKind)
+
+        return (
+            <div className={classNames(styles.placeholder, className)}>
+                <HeroPage
+                    icon={FileAlertIcon}
+                    title="Stored with Git LFS"
+                    subtitle={
+                        <div>
+                            <Text className={styles.lfsText}>
+                                This file is stored in Git Large File Storage and cannot be viewed inside Sourcegraph.
+                            </Text>
+                            {externalUrl && externalService && (
+                                <ButtonLink
+                                    variant="secondary"
+                                    to={externalUrl.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-3"
+                                >
+                                    <Icon as={externalService.icon} aria-hidden={true} className="mr-1" />
+                                    View file on {externalService.displayName}
+                                </ButtonLink>
+                            )}
+                        </div>
+                    }
+                />
+            </div>
+        )
+    }
+
+    const BlobComponent = enableCodeMirror ? CodeMirrorBlob : LegacyBlob
 
     return (
-        <>
+        <div className={className}>
             {alwaysRender}
-            {repoID && commitID && <BlobPanel {...props} repoID={repoID} commitID={commitID} />}
+            {repoID && commitID && <BlobPanel {...props} repoID={repoID} commitID={commitID} isPackage={isPackage} />}
             {blobInfoOrError.richHTML && (
                 <RepoHeaderContributionPortal
                     position="right"
@@ -461,18 +532,13 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         {...props}
                         markdown={blobInfoOrError.content}
                         onCopyNotebook={onCopyNotebook}
-                        showSearchContext={showSearchContext}
                         exportedFileName={basename(blobInfoOrError.filePath)}
                         className={styles.border}
                     />
                 </React.Suspense>
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
-                <RenderedFile
-                    dangerousInnerHTML={blobInfoOrError.richHTML}
-                    location={props.location}
-                    className={styles.border}
-                />
+                <RenderedFile dangerousInnerHTML={blobInfoOrError.richHTML} className={styles.border} />
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
                 <div>
@@ -498,27 +564,21 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     <BlobComponent
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
-                        blobInfo={{ ...blobInfoOrError, commitID, stencil }}
+                        blobInfo={{ ...blobInfoOrError, commitID }}
                         wrapCode={wrapCode}
                         platformContext={props.platformContext}
                         extensionsController={props.extensionsController}
                         settingsCascade={props.settingsCascade}
                         onHoverShown={props.onHoverShown}
-                        history={props.history}
-                        isLightTheme={isLightTheme}
                         telemetryService={props.telemetryService}
-                        location={props.location}
-                        disableStatusBar={!window.context.enableLegacyExtensions}
-                        disableDecorations={false}
                         role="region"
                         ariaLabel="File blob"
                         isBlameVisible={isBlameVisible}
-                        blameHunks={blameDecorations}
+                        blameHunks={blameHunks}
                         overrideBrowserSearchKeybinding={true}
-                        tokenKeyboardNavigation={enableTokenKeyboardNavigation}
                     />
                 </TraceSpanProvider>
             )}
-        </>
+        </div>
     )
 }

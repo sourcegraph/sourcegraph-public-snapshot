@@ -44,9 +44,9 @@ export function getProxyAgent(): ((url: URL | string) => HttpsProxyAgentInterfac
             if (protocol === undefined) {
                 return undefined
             }
-            const ProxyAgent = ((protocol === 'http'
+            const ProxyAgent = (protocol === 'http'
                 ? HttpProxyAgent
-                : HttpsProxyAgent) as unknown) as HttpsProxyAgentConstructor
+                : HttpsProxyAgent) as unknown as HttpsProxyAgentConstructor
             return new ProxyAgent({
                 protocol: proxyProtocol === 'http' || proxyProtocol === 'https' ? proxyProtocol : 'https',
                 ...(proxyHost ? { host: proxyHost } : null),

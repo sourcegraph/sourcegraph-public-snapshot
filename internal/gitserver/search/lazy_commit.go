@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
@@ -18,7 +18,7 @@ type LazyCommit struct {
 	*RawCommit
 
 	// diff is the parsed output from the diff fetcher, cached here for performance
-	diff        []*diff.FileDiff
+	diff        []*godiff.FileDiff
 	diffFetcher *DiffFetcher
 
 	// LowerBuf is a re-usable buffer for doing case-transformations on the fields of LazyCommit
@@ -49,7 +49,7 @@ func (l *LazyCommit) RawDiff() ([]byte, error) {
 }
 
 // Diff fetches the diff, then parses it with go-diff, caching the result
-func (l *LazyCommit) Diff() ([]*diff.FileDiff, error) {
+func (l *LazyCommit) Diff() ([]*godiff.FileDiff, error) {
 	if l.diff != nil {
 		return l.diff, nil
 	}
@@ -59,7 +59,7 @@ func (l *LazyCommit) Diff() ([]*diff.FileDiff, error) {
 		return nil, err
 	}
 
-	r := diff.NewMultiFileDiffReader(bytes.NewReader(rawDiff))
+	r := godiff.NewMultiFileDiffReader(bytes.NewReader(rawDiff))
 	diff, err := r.ReadAllFiles()
 	if err != nil {
 		return nil, err
@@ -86,14 +86,32 @@ func (l *LazyCommit) SourceRefs() []string {
 }
 
 func (l *LazyCommit) ModifiedFiles() []string {
-	files := make([]string, 0, len(l.RawCommit.ModifiedFiles))
-	for _, b := range l.RawCommit.ModifiedFiles {
-		f := strings.TrimSpace(string(b))
-		if len(b) == 0 {
-			// Filter out empty strings
-			continue
+	files := make([]string, 0, len(l.RawCommit.ModifiedFiles)/2)
+	i := 0
+	for i < len(l.RawCommit.ModifiedFiles) {
+		if len(l.RawCommit.ModifiedFiles[i]) == 0 {
+			// SAFETY: don't trust input
+			return files
 		}
-		files = append(files, f)
+		switch l.RawCommit.ModifiedFiles[i][0] {
+		case 'R':
+			// SAFETY: don't assume that we have the right number of things
+			if i+2 >= len(l.RawCommit.ModifiedFiles) {
+				return files
+			}
+			// A rename entry will be followed by two file names
+			files = append(files, string(l.RawCommit.ModifiedFiles[i+1]))
+			files = append(files, string(l.RawCommit.ModifiedFiles[i+2]))
+			i += 3
+		default:
+			// SAFETY: don't assume that we have the right number of things
+			if i+1 >= len(l.RawCommit.ModifiedFiles) {
+				return files
+			}
+			// Any entry that is not a rename entry will only be followed by one file name
+			files = append(files, string(l.RawCommit.ModifiedFiles[i+1]))
+			i += 2
+		}
 	}
 	return files
 }

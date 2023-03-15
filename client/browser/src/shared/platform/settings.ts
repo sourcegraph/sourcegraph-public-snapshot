@@ -11,7 +11,6 @@ import {
     SettingsCascade,
     SettingsCascadeOrError,
     SettingsSubject,
-    SubjectSettingsContents,
 } from '@sourcegraph/shared/src/settings/settings'
 
 import { observeStorageKey, storage } from '../../browser-extension/web-extension-api/storage'
@@ -50,6 +49,7 @@ const createStorageSettingsCascade: () => Observable<SettingsCascade> = () => {
         id: 'Client',
         displayName: 'Client',
         viewerCanAdminister: true,
+        latestSettings: null,
     }
 
     return storageObservable.pipe(
@@ -100,30 +100,68 @@ const configurationCascadeFragment = gql`
     fragment ConfigurationCascadeFields on ConfigurationCascade {
         subjects {
             __typename
-            ... on Org {
-                name
-                displayName
-            }
-            ... on User {
-                username
-                displayName
-            }
-            ... on Site {
-                siteID
-                allowSiteSettingsEdits
-            }
-            id
-            latestSettings {
-                id
-                contents
-            }
-            settingsURL
-            viewerCanAdminister
+            ...OrgSettingFields
+            ...UserSettingFields
+            ...SiteSettingFields
+            ...DefaultSettingFields
         }
         merged {
             contents
             messages
         }
+    }
+
+    fragment OrgSettingFields on Org {
+        __typename
+        latestSettings {
+            id
+            contents
+        }
+        id
+        settingsURL
+        viewerCanAdminister
+
+        name
+        displayName
+    }
+
+    fragment UserSettingFields on User {
+        __typename
+        latestSettings {
+            id
+            contents
+        }
+        id
+        settingsURL
+        viewerCanAdminister
+
+        username
+        displayName
+    }
+
+    fragment SiteSettingFields on Site {
+        __typename
+        latestSettings {
+            id
+            contents
+        }
+        id
+        settingsURL
+        viewerCanAdminister
+
+        siteID
+        allowSiteSettingsEdits
+    }
+
+    fragment DefaultSettingFields on DefaultSettings {
+        __typename
+        latestSettings {
+            id
+            contents
+        }
+        id
+        settingsURL
+        viewerCanAdminister
     }
 `
 
@@ -132,11 +170,9 @@ const configurationCascadeFragment = gql`
  *
  * TODO(sqs): This uses the DEPRECATED GraphQL Query.viewerConfiguration and ConfigurationCascade for backcompat.
  */
-export function fetchViewerSettings(
-    requestGraphQL: PlatformContext['requestGraphQL']
-): Observable<{
+export function fetchViewerSettings(requestGraphQL: PlatformContext['requestGraphQL']): Observable<{
     final: string
-    subjects: (SettingsSubject & SubjectSettingsContents)[]
+    subjects: SettingsSubject[]
 }> {
     return from(
         requestGraphQL<ViewerConfigurationResult>({

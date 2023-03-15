@@ -251,11 +251,10 @@ where last_fetched < now() - interval '8 hours'
 		Help: "The number of deleted repos that are still cloned on disk",
 	}, func() float64 {
 		count, err := scanCount(`
-select count(*) from
-gitserver_repos
-where clone_status = 'cloned'
-and exists
-  (select from repo where id = repo_id and (deleted_at is not null or blocked is not null))
+SELECT
+	COALESCE(SUM(cloned), 0)
+FROM
+	repo_statistics
 `)
 		if err != nil {
 			logger.Error("Failed to count purgeable repos", log.Error(err))

@@ -19,8 +19,11 @@ func WebhookEventType(r *http.Request) string {
 
 func ParseWebhookEvent(eventType string, payload []byte) (e any, err error) {
 	switch eventType {
-	case "ping":
+	case "ping", "diagnostics:ping":
 		return PingEvent{}, nil
+	case "repo:refs_changed":
+		e = &PushEvent{}
+		return e, json.Unmarshal(payload, e)
 	case "repo:build_status":
 		e = &BuildStatusEvent{}
 		return e, json.Unmarshal(payload, e)
@@ -36,6 +39,10 @@ func ParseWebhookEvent(eventType string, payload []byte) (e any, err error) {
 }
 
 type PingEvent struct{}
+
+type PushEvent struct {
+	Repository Repo `json:"repository"`
+}
 
 type PullRequestActivityEvent struct {
 	Date        time.Time      `json:"date"`

@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	bstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -41,7 +41,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	store := bstore.NewWithClock(db, &observation.TestContext, nil, clock)
 	svc := New(store)
 
 	t.Run("BatchSpec without changesetSpecs", func(t *testing.T) {
@@ -1215,7 +1215,7 @@ func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, bat
 		t.Fatalf("batch change ID is zero")
 	}
 
-	changesets, _, err := svc.store.ListChangesets(ctx, store.ListChangesetsOpts{
+	changesets, _, err := svc.store.ListChangesets(ctx, bstore.ListChangesetsOpts{
 		BatchChangeID:   batchChange.ID,
 		IncludeArchived: true,
 	})

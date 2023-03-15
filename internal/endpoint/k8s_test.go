@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/sourcegraph/log/logtest"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +35,7 @@ import (
 var integration = flag.Bool("integration", false, "Run integration tests")
 
 func TestIntegrationK8SNotReadyAddressesBug(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if !*integration {
 		t.Skip("Not running integration tests")
 	}
@@ -41,7 +43,7 @@ func TestIntegrationK8SNotReadyAddressesBug(t *testing.T) {
 	urlspec := "k8s+rpc://indexed-search"
 	m := Map{
 		urlspec:   urlspec,
-		discofunk: k8sDiscovery(urlspec, "dogfood-k8s", localClient),
+		discofunk: k8sDiscovery(logger, urlspec, "dogfood-k8s", localClient),
 	}
 
 	began := time.Now()
@@ -68,17 +70,18 @@ func TestIntegrationK8SStatefulSetEquivalence(t *testing.T) {
 	if !*integration {
 		t.Skip("Not running integration tests")
 	}
+	logger := logtest.Scoped(t)
 
 	u1 := "k8s+rpc://indexed-search:6070?kind=sts"
 	m1 := Map{
 		urlspec:   u1,
-		discofunk: k8sDiscovery(u1, "prod", localClient),
+		discofunk: k8sDiscovery(logger, u1, "prod", localClient),
 	}
 
 	u2 := "k8s+rpc://indexed-search:6070"
 	m2 := Map{
 		urlspec:   u2,
-		discofunk: k8sDiscovery(u2, "prod", localClient),
+		discofunk: k8sDiscovery(logger, u2, "prod", localClient),
 	}
 
 	have, _ := m1.Endpoints()

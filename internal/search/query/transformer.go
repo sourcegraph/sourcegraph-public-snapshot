@@ -1,12 +1,11 @@
 package query
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -41,252 +40,19 @@ func LowercaseFieldNames(nodes []Node) []Node {
 	})
 }
 
+const CountAllLimit = 99999999
+
+var countAllLimitStr = strconv.Itoa(CountAllLimit)
+
 // SubstituteCountAll replaces count:all with count:99999999.
 func SubstituteCountAll(nodes []Node) []Node {
 	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == FieldCount && strings.ToLower(value) == "all" {
-			return Parameter{Field: field, Value: "99999999", Negated: negated, Annotation: annotation}
+			c := countAllLimitStr
+			return Parameter{Field: field, Value: c, Negated: negated, Annotation: annotation}
 		}
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
-}
-
-var ErrBadGlobPattern = errors.New("syntax error in glob pattern")
-
-// translateCharacterClass translates character classes like [a-zA-Z].
-func translateCharacterClass(r []rune, startIx int) (int, string, error) {
-	sb := strings.Builder{}
-	i := startIx
-	lenR := len(r)
-
-	switch r[i] {
-	case '!':
-		if i < lenR-1 && r[i+1] == ']' {
-			// the character class cannot contain just "!"
-			return -1, "", ErrBadGlobPattern
-		}
-		sb.WriteRune('^')
-		i++
-	case '^':
-		sb.WriteString("//^")
-		i++
-	}
-
-	for i < lenR {
-		if r[i] == ']' {
-			if i > startIx {
-				break
-			}
-			sb.WriteRune(r[i])
-			i++
-			continue
-		}
-
-		lo := r[i]
-		sb.WriteRune(r[i]) // lo
-		i++
-		if i == lenR {
-			// no closing bracket
-			return -1, "", ErrBadGlobPattern
-		}
-
-		// lo = hi
-		if r[i] != '-' {
-			continue
-		}
-
-		sb.WriteRune(r[i]) // -
-		i++
-		if i == lenR {
-			// no closing bracket
-			return -1, "", ErrBadGlobPattern
-		}
-
-		if r[i] == ']' {
-			continue
-		}
-
-		hi := r[i]
-		if lo > hi {
-			// range is reversed
-			return -1, "", ErrBadGlobPattern
-		}
-		sb.WriteRune(r[i]) // hi
-		i++
-	}
-	if i == lenR {
-		return -1, "", ErrBadGlobPattern
-	}
-	return i - startIx, sb.String(), nil
-}
-
-var globSpecialSymbols = map[rune]struct{}{
-	'\\': {},
-	'*':  {},
-	'?':  {},
-	'[':  {},
-}
-
-// globToRegex converts a glob string to a regular expression.
-// We support: *, ?, and character classes [...].
-func globToRegex(value string) (string, error) {
-	if value == "" {
-		return value, nil
-	}
-
-	r := []rune(value)
-	l := len(r)
-	sb := strings.Builder{}
-
-	// Add regex anchor "^" as prefix to all patterns
-	sb.WriteRune('^')
-
-	for i := 0; i < l; i++ {
-		switch r[i] {
-		case '*':
-			// **
-			if i < l-1 && r[i+1] == '*' {
-				sb.WriteString(".*?")
-			} else {
-				sb.WriteString("[^/]*?")
-			}
-			// Skip repeated '*'.
-			for i < l-1 && r[i+1] == '*' {
-				i++
-			}
-		case '?':
-			sb.WriteRune('.')
-		case '\\':
-			// trailing backslashes are not allowed
-			if i == l-1 {
-				return "", ErrBadGlobPattern
-			}
-
-			sb.WriteRune('\\')
-			i++
-
-			// we only support escaping of special characters
-			if _, ok := globSpecialSymbols[r[i]]; !ok {
-				return "", ErrBadGlobPattern
-			}
-			sb.WriteRune(r[i])
-		case '[':
-			if i == l-1 {
-				return "", ErrBadGlobPattern
-			}
-			sb.WriteRune('[')
-			i++
-
-			advanced, s, err := translateCharacterClass(r, i)
-			if err != nil {
-				return "", err
-			}
-
-			i += advanced
-			sb.WriteString(s)
-
-			sb.WriteRune(']')
-		default:
-			sb.WriteString(regexp.QuoteMeta(string(r[i])))
-		}
-	}
-	// add regex anchor '$' as suffix to all patterns
-	sb.WriteRune('$')
-	return sb.String(), nil
-}
-
-// globError carries the error message and the name of
-// field where the error occurred.
-type globError struct {
-	field string
-	err   error
-}
-
-func (g globError) Error() string {
-	return g.err.Error()
-}
-
-// reporevToRegex is a wrapper around globToRegex that takes care of
-// treating repo and rev (as in repo@rev) separately during translation
-// from glob to regex.
-func reporevToRegex(value string) (string, error) {
-	reporev := strings.SplitN(value, "@", 2)
-	containsNoRev := len(reporev) == 1
-	repo := reporev[0]
-	if containsNoRev && ContainsNoGlobSyntax(repo) && !LooksLikeGitHubRepo(repo) {
-		repo = fuzzifyGlobPattern(repo)
-	}
-	repo, err := globToRegex(repo)
-	if err != nil {
-		return "", err
-	}
-	value = repo
-	if len(reporev) > 1 {
-		value = value + "@" + reporev[1]
-	}
-	return value, nil
-}
-
-var globSyntax = lazyregexp.New(`[][*?]`)
-
-func ContainsNoGlobSyntax(value string) bool {
-	return !globSyntax.MatchString(value)
-}
-
-var gitHubRepoPath = lazyregexp.New(`github\.com\/([a-z\d]+-)*[a-z\d]+\/(.+)`)
-
-// LooksLikeGitHubRepo returns whether string value looks like a valid
-// GitHub repo path. This condition is used to guess whether we should
-// make a pattern fuzzy, or try it as an exact match.
-func LooksLikeGitHubRepo(value string) bool {
-	return gitHubRepoPath.MatchString(value)
-}
-
-func fuzzifyGlobPattern(value string) string {
-	if value == "" {
-		return value
-	}
-	if strings.HasPrefix(value, "github.com") {
-		return value + "**"
-	}
-	return "**" + value + "**"
-}
-
-// Globbing translates glob to regexp for fields repo, file, and repohasfile.
-func Globbing(nodes []Node) ([]Node, error) {
-	var globErrors []globError
-
-	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
-		var err error
-		switch field {
-		case FieldRepo:
-			value, err = reporevToRegex(value)
-		case FieldFile, FieldRepoHasFile:
-			if ContainsNoGlobSyntax(value) {
-				value = fuzzifyGlobPattern(value)
-			}
-			value, err = globToRegex(value)
-		}
-		if err != nil {
-			globErrors = append(globErrors, globError{field: field, err: err})
-		}
-		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
-	})
-
-	if len(globErrors) == 1 {
-		return nil, errors.Errorf("invalid glob syntax in field %s: ", globErrors[0].field)
-	}
-
-	if len(globErrors) > 1 {
-		fields := globErrors[0].field + ":"
-
-		for _, e := range globErrors[1:] {
-			fields += fmt.Sprintf(", %s:", e.field)
-		}
-		return nil, errors.Errorf("invalid glob syntax in fields %s", fields)
-	}
-
-	return nodes, nil
 }
 
 func toNodes(parameters []Parameter) []Node {
@@ -318,8 +84,8 @@ func naturallyOrdered(node Node, reverse bool) bool {
 	// (like post-order DFS).
 	rightmostParameterPos := 0
 	rightmostPatternPos := 0
-	leftmostParameterPos := (1 << 30)
-	leftmostPatternPos := (1 << 30)
+	leftmostParameterPos := 1 << 30
+	leftmostPatternPos := 1 << 30
 	v := &Visitor{
 		Parameter: func(_, _ string, _ bool, a Annotation) {
 			if a.Range.Start.Column > rightmostParameterPos {
@@ -807,11 +573,11 @@ func ConcatRevFilters(b Basic) Basic {
 	if revision == "" {
 		return b
 	}
-	modified := MapField(nodes, FieldRepo, func(value string, negated bool, _ Annotation) Node {
-		if !negated {
-			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated}
+	modified := MapField(nodes, FieldRepo, func(value string, negated bool, ann Annotation) Node {
+		if !negated && !ann.Labels.IsSet(IsPredicate) {
+			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated, Annotation: ann}
 		}
-		return Parameter{Value: value, Field: FieldRepo, Negated: negated}
+		return Parameter{Value: value, Field: FieldRepo, Negated: negated, Annotation: ann}
 	})
 	return Basic{Parameters: toParameters(modified), Pattern: b.Pattern}
 }

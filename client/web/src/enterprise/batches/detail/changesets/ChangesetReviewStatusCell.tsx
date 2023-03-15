@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiTimerSand, mdiGateArrowRight, mdiCommentOutline, mdiDelta, mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, ChangesetReviewState } from '../../../../graphql-operations'
 
@@ -38,8 +38,12 @@ export const ChangesetReviewStatusPending: React.FunctionComponent<React.PropsWi
             className
         )}
     >
-        <Icon svgPath={mdiTimerSand} inline={false} aria-hidden={true} />
-        <span className="text-muted">Pending</span>
+        <Tooltip content="A review for this changeset is still pending">
+            <Icon svgPath={mdiTimerSand} aria-label="A review for this changeset is still pending" inline={false} />
+        </Tooltip>
+        <span aria-hidden={true} className="text-muted">
+            Pending
+        </span>
     </div>
 )
 export const ChangesetReviewStatusDismissed: React.FunctionComponent<
@@ -51,8 +55,10 @@ export const ChangesetReviewStatusDismissed: React.FunctionComponent<
             className
         )}
     >
-        <Icon svgPath={mdiGateArrowRight} inline={false} aria-hidden={true} />
-        <span className="text-muted">Dismissed</span>
+        <Icon svgPath={mdiGateArrowRight} aria-label="This changeset's review has been dismissed" inline={false} />
+        <span aria-hidden={true} className="text-muted">
+            Dismissed
+        </span>
     </div>
 )
 export const ChangesetReviewStatusCommented: React.FunctionComponent<
@@ -64,8 +70,16 @@ export const ChangesetReviewStatusCommented: React.FunctionComponent<
             className
         )}
     >
-        <Icon svgPath={mdiCommentOutline} inline={false} aria-hidden={true} />
-        <span className="text-muted">Commented</span>
+        <Tooltip content="Comments have been left on this changeset by a reviewer">
+            <Icon
+                svgPath={mdiCommentOutline}
+                aria-label="Comments have been left on this changeset by a reviewer"
+                inline={false}
+            />
+        </Tooltip>
+        <span aria-hidden={true} className="text-muted">
+            Commented
+        </span>
     </div>
 )
 export const ChangesetReviewStatusChangesRequested: React.FunctionComponent<
@@ -77,8 +91,10 @@ export const ChangesetReviewStatusChangesRequested: React.FunctionComponent<
             className
         )}
     >
-        <Icon svgPath={mdiDelta} inline={false} aria-hidden={true} />
-        <span className="text-muted">Changes requested</span>
+        <Icon svgPath={mdiDelta} aria-label="Changes have been requested by a reviewer" inline={false} />
+        <span aria-hidden={true} className="text-muted">
+            Changes requested
+        </span>
     </div>
 )
 export const ChangesetReviewStatusApproved: React.FunctionComponent<
@@ -90,7 +106,11 @@ export const ChangesetReviewStatusApproved: React.FunctionComponent<
             className
         )}
     >
-        <Icon svgPath={mdiCheckCircle} inline={false} aria-hidden={true} />
-        <span className="text-muted">Approved</span>
+        <Tooltip content="This changeset has been approved by a reviewer">
+            <Icon svgPath={mdiCheckCircle} aria-label="This changeset has been approved by a reviewer" inline={false} />
+        </Tooltip>
+        <span aria-hidden={true} className="text-muted">
+            Approved
+        </span>
     </div>
 )

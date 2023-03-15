@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -22,9 +25,9 @@ type uploadMeta struct {
 // Uploads are performed concurrently given the limiter instance as well as the set of
 // flags supplied by the user. This function returns a slice of uploadMeta containing
 // the graphql identifier of the uploaded resources.
-func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *internal.Limiter) ([]uploadMeta, error) {
+func uploadAll(ctx context.Context, extensionAndCommitsByRepo map[string][]internal.ExtensionAndCommit, limiter *internal.Limiter) ([]uploadMeta, error) {
 	n := 0
-	for _, commits := range commitsByRepo {
+	for _, commits := range extensionAndCommitsByRepo {
 		n += len(commits)
 	}
 
@@ -32,8 +35,11 @@ func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *
 	errCh := make(chan error, n)
 	uploadCh := make(chan uploadMeta, n)
 
-	for repoName, commits := range commitsByRepo {
-		for i, commit := range commits {
+	for repoName, extensionAndCommits := range extensionAndCommitsByRepo {
+		for i, extensionAndCommit := range extensionAndCommits {
+			commit := extensionAndCommit.Commit
+			extension := extensionAndCommit.Extension
+
 			wg.Add(1)
 
 			go func(repoName, commit, file string) {
@@ -60,7 +66,7 @@ func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *
 					repoName: repoName,
 					commit:   commit,
 				}
-			}(repoName, commit, fmt.Sprintf("%s.%d.%s.dump", repoName, i, commit))
+			}(repoName, commit, fmt.Sprintf("%s.%d.%s.%s", strings.Replace(repoName, "/", ".", 1), i, commit, extension))
 		}
 	}
 
@@ -97,8 +103,32 @@ func upload(ctx context.Context, repoName, commit, file string) (string, error) 
 		args = append(args, fmt.Sprintf("-%s=%s", k, v))
 	}
 
+	tempDir, err := os.MkdirTemp("", "codeintel-qa")
+	if err != nil {
+		return "", err
+	}
+	defer os.RemoveAll(tempDir)
+
+	src, err := os.Open(filepath.Join(indexDir, file))
+	if err != nil {
+		return "", err
+	}
+	defer src.Close()
+
+	dst, err := os.OpenFile(filepath.Join(tempDir, file), os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+	if _, err := io.Copy(dst, src); err != nil {
+		_ = dst.Close()
+		return "", err
+	}
+	if err := dst.Close(); err != nil {
+		return "", err
+	}
+
 	cmd := exec.CommandContext(ctx, "src", append([]string{"lsif", "upload", "-json"}, args...)...)
-	cmd.Dir = indexDir
+	cmd.Dir = tempDir
 	cmd.Env = []string{
 		fmt.Sprintf("SRC_ENDPOINT=%s", internal.SourcegraphEndpoint),
 		fmt.Sprintf("SRC_ACCESS_TOKEN=%s", internal.SourcegraphAccessToken),
@@ -106,7 +136,7 @@ func upload(ctx context.Context, repoName, commit, file string) (string, error) 
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", errors.Wrap(err, fmt.Sprintf("failed to upload index: %s", output))
+		return "", errors.Wrap(err, fmt.Sprintf("failed to upload index for %s@%s: %s", repoName, commit, output))
 	}
 
 	resp := struct {

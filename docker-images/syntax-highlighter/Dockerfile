@@ -1,15 +1,34 @@
+# syntax=docker/dockerfile:1.3-labs
+
 ###################################
 # Build syntect_server statically #
 ###################################
 
-FROM rust:1.58-alpine3.14@sha256:fbc0cfaa6261179ca7653cc2b20ca9c3e936f3416a911a27a28694f8fb23b8b4 as ss
-RUN apk add --no-cache musl-dev>=1.1.24-r10
+# Keep Rust version in sync with /WORKSPACE
+# and docker-images/syntax-highlighter/rust-toolchain.toml
+FROM rust:1.68.0-alpine3.17@sha256:d119a621ae12f84ec0c5fed77c24795120ed1c7874b2428b5a6ccc0f294dbe18 as ss
+RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base
 COPY . /repo
 WORKDIR /repo
+RUN cargo fetch
+
+ARG TARGETARCH
+
+# Because .cargo/config.toml doesnt support triplet-specific env
+RUN <<EOF
+if [ "${TARGETARCH}" = "arm64" ]; then
+	cat <<- FOE >> .cargo/config.toml
+	[env]
+	CFLAGS="-mno-outline-atomics"
+	FOE
+fi;
+EOF
+
 RUN cargo test --release --workspace
 RUN cargo rustc --release
 RUN ls ./target
-RUN cp ./target/release/syntect_server /syntect_server
+
+RUN cp ./target/release/syntect_server /syntax_highlighter
 
 ################################
 # Build http-server-stabilizer #
@@ -17,16 +36,19 @@ RUN cp ./target/release/syntect_server /syntect_server
 FROM golang:1.19-alpine@sha256:70df3b8f9f099da7f60f0b32480015165e3d0b51bfacf9e255b59f3dd6bd2828 as hss
 
 RUN apk add --no-cache git>=2.26.3
-RUN git clone --branch v1.0.5 --single-branch https://github.com/sourcegraph/http-server-stabilizer /repo
+RUN git clone --branch v1.1.0 --single-branch https://github.com/sourcegraph/http-server-stabilizer /repo
 WORKDIR /repo
 RUN go build -o /http-server-stabilizer .
 
 #######################
 # Compile final image #
 #######################
-FROM sourcegraph/alpine-3.14:174825_2022-09-28_291dca5d9725@sha256:0bfed82a206a1f313b7276521375dc4d27caa45c324f99e7da0453cecbd31980
-COPY --from=ss syntect_server /
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5
+COPY --from=ss syntax_highlighter /
 COPY --from=hss http-server-stabilizer /
+
+# even with everything, we can't get this to statically link
+RUN apk add --no-cache libstdc++
 
 EXPOSE 9238
 ENV ROCKET_ENV "production"
@@ -52,4 +74,4 @@ ENV ROCKET_KEEP_ALIVE=0
 ENV WORKERS=4
 
 ENV QUIET=true
-CMD ["sh", "-c", "/http-server-stabilizer -listen=:9238 -prometheus-app-name=syntect_server -workers=$WORKERS -- env ROCKET_PORT={{.Port}} /syntect_server"]
+CMD ["sh", "-c", "/http-server-stabilizer -listen=:9238 -prometheus-app-name=syntax_highlighter -workers=$WORKERS -- env ROCKET_PORT={{.Port}} /syntax_highlighter"]

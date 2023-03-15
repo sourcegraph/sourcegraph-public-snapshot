@@ -5,18 +5,13 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
-import {
-    IEditor,
-    LazyMonacoQueryInput,
-    LazyMonacoQueryInputProps,
-} from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
-import { SearchContextDropdown } from '@sourcegraph/search-ui/src/input/SearchContextDropdown'
+import { IEditor, LazyQueryInput } from '@sourcegraph/branded'
+import { SearchContextDropdown } from '@sourcegraph/branded/src/search-ui/input/SearchContextDropdown'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { Search } from '../jetbrains-icons/Search'
 
@@ -26,11 +21,9 @@ import styles from './JetBrainsSearchBox.module.scss'
 
 export interface JetBrainsSearchBoxProps
     extends Omit<JetBrainsTogglesProps, 'navbarSearchQuery' | 'submitSearch' | 'clearSearch'>,
-        ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL'>,
-        Pick<LazyMonacoQueryInputProps, 'editorComponent'> {
+        PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     showSearchContext: boolean
@@ -96,13 +89,12 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                     <>
                         <SearchContextDropdown
                             authenticatedUser={props.authenticatedUser}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
                             searchContextsEnabled={props.searchContextsEnabled}
                             showSearchContextManagement={props.showSearchContextManagement}
-                            defaultSearchContextSpec={props.defaultSearchContextSpec}
                             setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             fetchSearchContexts={props.fetchSearchContexts}
-                            fetchAutoDefinedSearchContexts={props.fetchAutoDefinedSearchContexts}
                             getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
                             telemetryService={props.telemetryService}
                             platformContext={props.platformContext}
@@ -123,13 +115,12 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                     <div className={styles.searchBoxFocusContainerIcon}>
                         <Search />
                     </div>
-                    <LazyMonacoQueryInput
+                    <LazyQueryInput
                         preventNewLine={true}
                         autoFocus={props.autoFocus}
                         caseSensitive={props.caseSensitive}
                         fetchStreamSuggestions={props.fetchStreamSuggestions}
                         globbing={props.globbing}
-                        isLightTheme={props.isLightTheme}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         onChange={props.onChange}
                         onSubmit={props.onSubmit}
@@ -139,7 +130,6 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
                         placeholder="Enter search query..."
-                        editorComponent="codemirror6"
                     />
                     <JetBrainsToggles
                         patternType={props.patternType}

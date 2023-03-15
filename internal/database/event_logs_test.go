@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -200,40 +202,43 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	// Several of the events will belong to a Sourcegraph employee admin user
+	// Several of the events will belong to Sourcegraph employee admin user and Sourcegraph Operator user account
 	sgAdmin, err := db.Users().Create(ctx, NewUser{Username: "sourcegraph-admin"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+	err = db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil)
+	require.NoError(t, err)
+	soLoganID, err := db.UserExternalAccounts().CreateUserAndSave(
+		ctx,
+		NewUser{
+			Username: "sourcegraph-operator-logan",
+		},
+		extsvc.AccountSpec{
+			ServiceType: "sourcegraph-operator",
+		},
+		extsvc.AccountData{},
+	)
+	require.NoError(t, err)
 
 	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	user2, err := db.Users().Create(ctx, NewUser{Username: "b"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	user3, err := db.Users().Create(ctx, NewUser{Username: "c"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	user4, err := db.Users().Create(ctx, NewUser{Username: "d"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	now := time.Now()
 	startDate, _ := calcStartDate(now, Daily, 3)
 	secondDay := startDate.Add(time.Hour * 24)
 	thirdDay := startDate.Add(time.Hour * 24 * 2)
 
+	soPublicArgument := json.RawMessage(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegraphOperatorKey))
 	events := []*Event{
 		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: startDate}),
 		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: startDate}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID.ID), Timestamp: startDate, PublicArgument: soPublicArgument}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID.ID), Timestamp: startDate, PublicArgument: soPublicArgument}),
 		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: startDate}),
 		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: startDate}),
 
@@ -241,32 +246,26 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: secondDay}),
 		makeTestEvent(&Event{UserID: uint32(user2.ID), Timestamp: secondDay}),
 		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID.ID), Timestamp: secondDay, PublicArgument: soPublicArgument}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID.ID), Timestamp: secondDay, PublicArgument: soPublicArgument}),
 
 		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: thirdDay}),
 		makeTestEvent(&Event{UserID: uint32(user2.ID), Timestamp: thirdDay}),
 		makeTestEvent(&Event{UserID: uint32(user3.ID), Timestamp: thirdDay}),
 		makeTestEvent(&Event{UserID: uint32(user4.ID), Timestamp: thirdDay}),
 	}
-
-	for _, e := range events {
-		if err := db.EventLogs().Insert(ctx, e); err != nil {
-			t.Fatal(err)
-		}
-	}
+	err = db.EventLogs().BulkInsert(ctx, events)
+	require.NoError(t, err)
 
 	values, err := db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	assertUsageValue(t, values.DAUs[0], startDate.Add(time.Hour*24*2), 4, 4, 0, 0)
-	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 3, 3, 0, 0)
-	assertUsageValue(t, values.DAUs[2], startDate, 2, 2, 0, 0)
+	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 4, 4, 0, 0)
+	assertUsageValue(t, values.DAUs[2], startDate, 3, 3, 0, 0)
 
-	values, err = db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, &CountUniqueUsersOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true}, nil})
-	if err != nil {
-		t.Fatal(err)
-	}
+	values, err = db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, &CountUniqueUsersOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true, ExcludeSourcegraphOperators: true}, nil})
+	require.NoError(t, err)
 
 	assertUsageValue(t, values.DAUs[0], startDate.Add(time.Hour*24*2), 4, 4, 0, 0)
 	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 2, 2, 0, 0)
@@ -422,18 +421,22 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	}
 
 	expectedSummary := types.SiteUsageSummary{
-		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-		Day:                     now.Truncate(time.Hour * 24),
-		UniquesMonth:            11,
-		UniquesWeek:             7,
-		UniquesDay:              5,
-		RegisteredUniquesMonth:  10,
-		RegisteredUniquesWeek:   6,
-		RegisteredUniquesDay:    5,
-		IntegrationUniquesMonth: 11,
-		IntegrationUniquesWeek:  7,
-		IntegrationUniquesDay:   5,
+		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30),
+		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                            now.Truncate(time.Hour * 24),
+		UniquesRollingMonth:            11,
+		UniquesMonth:                   11,
+		UniquesWeek:                    7,
+		UniquesDay:                     5,
+		RegisteredUniquesRollingMonth:  10,
+		RegisteredUniquesMonth:         10,
+		RegisteredUniquesWeek:          6,
+		RegisteredUniquesDay:           5,
+		IntegrationUniquesRollingMonth: 11,
+		IntegrationUniquesMonth:        11,
+		IntegrationUniquesWeek:         7,
+		IntegrationUniquesDay:          5,
 	}
 	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
 		t.Fatal(diff)
@@ -454,26 +457,30 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	// time that falls too near the edge of a week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	// Several of the events will belong to a Sourcegraph employee admin user
+	// Several of the events will belong to Sourcegraph employee admin user and Sourcegraph Operator user account
 	sgAdmin, err := db.Users().Create(ctx, NewUser{Username: "sourcegraph-admin"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+	err = db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil)
+	require.NoError(t, err)
+	soLogan, err := db.UserExternalAccounts().CreateUserAndSave(
+		ctx,
+		NewUser{
+			Username: "sourcegraph-operator-logan",
+		},
+		extsvc.AccountSpec{
+			ServiceType: "sourcegraph-operator",
+		},
+		extsvc.AccountData{},
+	)
+	require.NoError(t, err)
 
 	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	user2, err := db.Users().Create(ctx, NewUser{Username: "b"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	days := map[time.Time]struct {
-		users   []uint32
+		userIDs []uint32
 		names   []string
 		sources []string
 	}{
@@ -483,9 +490,19 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 			[]string{"ViewSiteAdminX"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
+		now.Add(-time.Hour): {
+			[]uint32{uint32(soLogan.ID)},
+			[]string{"ViewSiteAdminX"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
 		// This week
 		now.Add(-time.Hour * 24 * 3): {
 			[]uint32{uint32(sgAdmin.ID), uint32(user1.ID)},
+			[]string{"ViewRepository", "ViewTree"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+		now.Add(-time.Hour * 24 * 4): {
+			[]uint32{uint32(soLogan.ID), uint32(user1.ID)},
 			[]string{"ViewRepository", "ViewTree"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
@@ -498,12 +515,12 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	}
 
 	for day, data := range days {
-		for _, user := range data.users {
+		for _, userID := range data.userIDs {
 			for _, name := range data.names {
 				for _, source := range data.sources {
 					for i := 0; i < 5; i++ {
 						e := &Event{
-							UserID: user,
+							UserID: userID,
 							Name:   name,
 							URL:    "http://sourcegraph.com",
 							Source: source,
@@ -511,9 +528,12 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 						}
 
-						if err := db.EventLogs().Insert(ctx, e); err != nil {
-							t.Fatal(err)
+						if userID == uint32(soLogan.ID) {
+							e.PublicArgument = json.RawMessage(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegraphOperatorKey))
 						}
+
+						err := db.EventLogs().Insert(ctx, e)
+						require.NoError(t, err)
 					}
 				}
 			}
@@ -522,50 +542,50 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 
 	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
 	summary, err := el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: false}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	expectedSummary := types.SiteUsageSummary{
-		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-		Day:                     now.Truncate(time.Hour * 24),
-		UniquesMonth:            3,
-		UniquesWeek:             2,
-		UniquesDay:              1,
-		RegisteredUniquesMonth:  3,
-		RegisteredUniquesWeek:   2,
-		RegisteredUniquesDay:    1,
-		IntegrationUniquesMonth: 3,
-		IntegrationUniquesWeek:  2,
-		IntegrationUniquesDay:   1,
+		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30),
+		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                            now.Truncate(time.Hour * 24),
+		UniquesRollingMonth:            4,
+		UniquesMonth:                   4,
+		UniquesWeek:                    3,
+		UniquesDay:                     2,
+		RegisteredUniquesRollingMonth:  4,
+		RegisteredUniquesMonth:         4,
+		RegisteredUniquesWeek:          3,
+		RegisteredUniquesDay:           2,
+		IntegrationUniquesRollingMonth: 4,
+		IntegrationUniquesMonth:        4,
+		IntegrationUniquesWeek:         3,
+		IntegrationUniquesDay:          2,
 	}
-	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
-		t.Fatal(diff)
-	}
+	assert.Equal(t, expectedSummary, summary)
 
-	summary, err = el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	summary, err = el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true, ExcludeSourcegraphOperators: true}})
+	require.NoError(t, err)
 
 	expectedSummary = types.SiteUsageSummary{
-		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-		Day:                     now.Truncate(time.Hour * 24),
-		UniquesMonth:            2,
-		UniquesWeek:             1,
-		UniquesDay:              0,
-		RegisteredUniquesMonth:  2,
-		RegisteredUniquesWeek:   1,
-		RegisteredUniquesDay:    0,
-		IntegrationUniquesMonth: 2,
-		IntegrationUniquesWeek:  1,
-		IntegrationUniquesDay:   0,
+		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30),
+		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                            now.Truncate(time.Hour * 24),
+		UniquesRollingMonth:            2,
+		UniquesMonth:                   2,
+		UniquesWeek:                    1,
+		UniquesDay:                     0,
+		RegisteredUniquesRollingMonth:  2,
+		RegisteredUniquesMonth:         2,
+		RegisteredUniquesWeek:          1,
+		RegisteredUniquesDay:           0,
+		IntegrationUniquesRollingMonth: 2,
+		IntegrationUniquesMonth:        2,
+		IntegrationUniquesWeek:         1,
+		IntegrationUniquesDay:          0,
 	}
-	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
-		t.Fatal(diff)
-	}
+	assert.Equal(t, expectedSummary, summary)
 }
 
 func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
@@ -1435,20 +1455,22 @@ func makeTestEvent(e *Event) *Event {
 }
 
 func assertUsageValue(t *testing.T, v *types.SiteActivityPeriod, start time.Time, userCount, registeredUserCount, anonymousUserCount, integrationUserCount int) {
+	t.Helper()
+
 	if v.StartTime != start {
-		t.Errorf("got Start %q, want %q", v.StartTime, start)
+		t.Errorf("got StartTime %q, want %q", v.StartTime, start)
 	}
 	if int(v.UserCount) != userCount {
-		t.Errorf("got Count %d, want %d", v.UserCount, userCount)
+		t.Errorf("got UserCount %d, want %d", v.UserCount, userCount)
 	}
 	if int(v.RegisteredUserCount) != registeredUserCount {
-		t.Errorf("got Count %d, want %d", v.RegisteredUserCount, registeredUserCount)
+		t.Errorf("got RegisteredUserCount %d, want %d", v.RegisteredUserCount, registeredUserCount)
 	}
 	if int(v.AnonymousUserCount) != anonymousUserCount {
-		t.Errorf("got Count %d, want %d", v.AnonymousUserCount, anonymousUserCount)
+		t.Errorf("got AnonymousUserCount %d, want %d", v.AnonymousUserCount, anonymousUserCount)
 	}
 	if int(v.IntegrationUserCount) != integrationUserCount {
-		t.Errorf("got Count %d, want %d", v.IntegrationUserCount, integrationUserCount)
+		t.Errorf("got IntegrationUserCount %d, want %d", v.IntegrationUserCount, integrationUserCount)
 	}
 }
 
@@ -1488,5 +1510,261 @@ func TestEventLogs_RequestsByLanguage(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedRequests, requests); diff != "" {
 		t.Fatal(diff)
+	}
+}
+
+func TestEventLogs_IllegalPeriodType(t *testing.T) {
+	t.Run("calcStartDate", func(t *testing.T) {
+		_, err := calcStartDate(time.Now(), "hackerman", 3)
+		if err == nil {
+			t.Error("want err to not be nil")
+		}
+	})
+	t.Run("calcEndDate", func(t *testing.T) {
+		_, err := calcEndDate(time.Now(), "hackerman", 3)
+		if err == nil {
+			t.Error("want err to not be nil")
+		}
+	})
+}
+
+func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	ptr := func(i int32) *int32 { return &i }
+	for name, testCase := range map[string]struct {
+		now             time.Time
+		events          []*Event
+		queryEventNames []string
+		stats           map[string]*types.OwnershipUsageStatisticsActiveUsers
+	}{
+		"same day events count as MAU, WAU & DAU": {
+			now: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC), // Thursday
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(2),
+					WAU: ptr(2),
+					MAU: ptr(2),
+				},
+			},
+		},
+		"previous day, same week events count as MAU, WAU but not DAU": {
+			now: time.Date(2000, time.March, 18, 12, 0, 0, 0, time.UTC), // Saturday
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.March, 17, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.March, 17, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(0),
+					WAU: ptr(2),
+					MAU: ptr(2),
+				},
+			},
+		},
+		"previous day, different week events count as MAU, but not WAU or DAU": {
+			now: time.Date(2000, time.May, 21, 12, 0, 0, 0, time.UTC), // Sunday
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.May, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.May, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(0),
+					WAU: ptr(0),
+					MAU: ptr(2),
+				},
+			},
+		},
+		"previous day, different month events count as WAU but not MAU or DAU": {
+			now: time.Date(2000, time.August, 1, 12, 0, 0, 0, time.UTC), // Tuesday
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.July, 31, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.July, 31, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(0),
+					WAU: ptr(2),
+					MAU: ptr(0),
+				},
+			},
+		},
+		"return zeroes on missing events": {
+			now: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "mice",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "ram",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "crane",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "wolf",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    4,
+					Name:      "coyote",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"cat", "dog"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"cat": {
+					DAU: ptr(0),
+					WAU: ptr(0),
+					MAU: ptr(0),
+				},
+				"dog": {
+					DAU: ptr(0),
+					WAU: ptr(0),
+					MAU: ptr(0),
+				},
+			},
+		},
+		"only include events by name": {
+			now: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "ram",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "ram",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "coyote",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    4,
+					Name:      "coyote",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse", "ram"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(2),
+					WAU: ptr(2),
+					MAU: ptr(2),
+				},
+				"ram": {
+					DAU: ptr(2),
+					WAU: ptr(2),
+					MAU: ptr(2),
+				},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			logger := logtest.Scoped(t)
+			db := NewDB(logger, dbtest.NewDB(logger, t))
+			ctx := context.Background()
+			for _, e := range testCase.events {
+				if err := db.EventLogs().Insert(ctx, e); err != nil {
+					t.Fatalf("failed inserting test data: %s", err)
+				}
+			}
+			stats, err := db.EventLogs().OwnershipFeatureActivity(ctx, testCase.now, testCase.queryEventNames...)
+			if err != nil {
+				t.Fatalf("querying activity failed: %s", err)
+			}
+			if diff := cmp.Diff(testCase.stats, stats); diff != "" {
+				t.Errorf("unexpected statistics returned:\n%s", diff)
+			}
+		})
 	}
 }

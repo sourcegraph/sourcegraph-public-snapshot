@@ -1,40 +1,23 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import { AuthProvider } from 'src/jscontext'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 
-import { defaultExternalServices } from '../../../components/externalServices/externalServices'
+import { defaultExternalAccounts } from '../../../components/externalAccounts/externalAccounts'
 
 import { ExternalAccount } from './ExternalAccount'
 import { AccountByServiceID, UserExternalAccount } from './UserSettingsSecurityPage'
 
 import styles from './ExternalAccountsSignIn.module.scss'
 
-interface GitHubExternalData {
-    name: string
-    login: string
-    html_url: string
-}
-
-interface GitLabExternalData {
-    name: string
-    username: string
-    web_url: string
-}
-
-export interface NormalizedMinAccount {
+export interface NormalizedExternalAccount {
     name: string
     icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
     // some data may be missing if account is not setup
-    external?: {
+    external?: UserExternalAccount['publicAccountData'] & {
         id: string
-        userName: string
-        userLogin: string
-        userUrl: string
     }
 }
 
@@ -43,58 +26,33 @@ interface Props {
     authProviders: AuthProvider[]
     onDidRemove: (id: string, name: string) => void
     onDidError: (error: ErrorLike) => void
+    onDidAdd: () => void
 }
 
 const getNormalizedAccount = (
     accounts: Partial<Record<string, UserExternalAccount>>,
     authProvider: AuthProvider
-): NormalizedMinAccount => {
-    // kind and type match except for the casing
-    const kind = authProvider.serviceType.toLocaleUpperCase() as ExternalServiceKind
+): NormalizedExternalAccount | null => {
+    if (
+        authProvider.serviceType === 'builtin' ||
+        authProvider.serviceType === 'http-header' ||
+        authProvider.serviceType === 'sourcegraph-operator'
+    ) {
+        return null
+    }
+
     const account = accounts[authProvider.serviceID]
-    const accountExternalData = account?.accountData
+    const { icon, title: name } = defaultExternalAccounts[authProvider.serviceType]
 
-    // get external service icon and name as they will match external account
-    const { icon, title: name } = defaultExternalServices[kind] || { icon: AccountCircleIcon, title: kind }
-
-    let normalizedAccount: NormalizedMinAccount = {
+    const normalizedAccount: NormalizedExternalAccount = {
         icon,
         name,
     }
 
-    // if external account exists - add user specific data to normalizedAccount
-    if (account && accountExternalData) {
-        switch (kind) {
-            case 'GITHUB':
-                {
-                    const githubExternalData = accountExternalData as GitHubExternalData
-                    normalizedAccount = {
-                        ...normalizedAccount,
-                        external: {
-                            id: account.id,
-                            // map github fields
-                            userName: githubExternalData.name,
-                            userLogin: githubExternalData.login,
-                            userUrl: githubExternalData.html_url,
-                        },
-                    }
-                }
-                break
-            case 'GITLAB':
-                {
-                    const gitlabExternalData = accountExternalData as GitLabExternalData
-                    normalizedAccount = {
-                        ...normalizedAccount,
-                        external: {
-                            id: account.id,
-                            // map gitlab fields
-                            userName: gitlabExternalData.name,
-                            userLogin: gitlabExternalData.username,
-                            userUrl: gitlabExternalData.web_url,
-                        },
-                    }
-                }
-                break
+    if (account?.publicAccountData) {
+        normalizedAccount.external = {
+            id: account.id,
+            ...account.publicAccountData,
         }
     }
 
@@ -106,6 +64,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChil
     authProviders,
     onDidRemove,
     onDidError,
+    onDidAdd,
 }) => (
     <>
         {authProviders && (
@@ -113,9 +72,8 @@ export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChil
                 {authProviders.map(authProvider => {
                     // if auth provider for this account doesn't exist -
                     // don't display the account as an option
-                    if (authProvider && authProvider.serviceType !== 'builtin') {
-                        const normAccount = getNormalizedAccount(accounts, authProvider)
-
+                    const normAccount = getNormalizedAccount(accounts, authProvider)
+                    if (normAccount) {
                         return (
                             <li
                                 key={authProvider.serviceID}
@@ -126,6 +84,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChil
                                     authProvider={authProvider}
                                     onDidRemove={onDidRemove}
                                     onDidError={onDidError}
+                                    onDidAdd={onDidAdd}
                                 />
                             </li>
                         )

@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "dbworker",
+    srcs = [
+        "metrics.go",
+        "resetter.go",
+        "store_shim.go",
+        "worker.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/observation",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker/store",
+        "//lib/errors",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "dbworker_test",
+    srcs = ["resetter_test.go"],
+    embed = [":dbworker"],
+    deps = [
+        "//internal/workerutil/dbworker/store",
+        "//internal/workerutil/dbworker/store/mocks",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

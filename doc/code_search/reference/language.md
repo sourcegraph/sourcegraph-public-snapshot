@@ -616,6 +616,22 @@ Search only inside repositories that contain file content matching the regular e
 
 _Note:_ `repo:contains.content(...)` is an alias for `repo:has.content(...)` and behaves identically.
 
+### Repo has topic
+
+<script>
+ComplexDiagram(
+    Terminal("has.topic"),
+    Terminal("("),
+    Terminal("string", {href: "#string"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that have the given GitHub topic.
+
+**Example:** [`repo:has.topic(code-search)` ↗](https://sourcegraph.com/search?q=context%3Aglobal+repo%3Ahas.topic%28code-search%29&patternType=standard&sm=1&groupBy=repo)
+
+_Note:_ topic search is currently only supported for GitHub repos.
+
 ### Repo has commit after
 
 <script>
@@ -740,7 +756,7 @@ ComplexDiagram(
     Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
-Include results having a commit date before the specified time frame.
+Include results having a commit date before the specified time frame. Times are interpreted as UTC by default.
 Many forms are accepted for the argument, such as:
 - `november 1 2019`
 - `1 november 2019`
@@ -772,7 +788,7 @@ ComplexDiagram(
     Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
-Include results having a commit date after the specified time frame.
+Include results having a commit date after the specified time frame. Times are interpreted as UTC by default.
 Many forms are accepted for the argument, such as:
 - `november 1 2019`
 - `1 november 2019`

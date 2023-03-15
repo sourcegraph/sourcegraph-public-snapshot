@@ -40,6 +40,7 @@
 - [How to use client app PR previews](client_pr_previews.md)
 - [How to receive a Slack notification if a specific CI step failed](receive_slack_notification_on_a_failed_ci_step.md)
 - [How to allow a CI step to fail without breaking the build and still receive a notification](ci_soft_failure_and_still_notify.md)
+- [Run a local Sourcegraph instance behind ngrok](sourcegraph_ngrok.md)
 <!-- [Sync repositories from gitolite.sgdev.org](sync_repositories_from_gitolite_sgdev_org.md) -->
 
 ## Profiling

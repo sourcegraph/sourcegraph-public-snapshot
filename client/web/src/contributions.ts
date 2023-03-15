@@ -1,51 +1,65 @@
-import React from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import * as H from 'history'
+import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
-import { registerSearchStatsContributions } from './search/stats/contributions'
-
-interface Props extends ExtensionsControllerProps, PlatformContextProps {
-    history: H.History
-}
+interface Props extends ExtensionsControllerProps, PlatformContextProps {}
 
 /**
  * A component that registers global contributions. It is implemented as a React component so that its
  * registrations use the React lifecycle.
  */
-export class GlobalContributions extends React.Component<Props> {
-    private subscriptions = new Subscription()
+export function GlobalContributions(props: Props): null {
+    const { extensionsController, platformContext } = props
 
-    public componentDidMount(): void {
+    const location = useLocation()
+    const navigate = useNavigate()
+
+    // Location and navigate may be used by the hover contributions after they
+    // are initialized and closed over. To avoid stale data, we keep them in
+    // refs.
+    const locationRef = useRef(location)
+    const navigateRef = useRef(navigate)
+    useEffect(() => {
+        locationRef.current = location
+        navigateRef.current = navigate
+    }, [location, navigate])
+
+    const [error, setError] = useState<null | Error>(null)
+
+    useEffect(() => {
         // Lazy-load `highlight/contributions.ts` to make main application bundle ~25kb Gzip smaller.
         import('@sourcegraph/common/src/util/markdown/contributions')
             .then(({ registerHighlightContributions }) => registerHighlightContributions()) // no way to unregister these
-            .catch(error => {
-                throw error // Throw error to the <ErrorBoundary />
-            })
+            .catch(setError)
+    }, [])
 
-        const { extensionsController } = this.props
+    useEffect(() => {
+        const subscriptions = new Subscription()
         if (extensionsController !== null) {
-            this.subscriptions.add(
+            const historyOrNavigate: NavigateFunction = ((to: any, options: any): void =>
+                navigateRef.current?.(to, options)) as any
+            subscriptions.add(
                 registerHoverContributions({
-                    ...this.props,
+                    platformContext,
+                    historyOrNavigate,
+                    getLocation: () => locationRef.current,
                     extensionsController,
-                    locationAssign: location.assign.bind(location),
+                    locationAssign: globalThis.location.assign.bind(globalThis.location),
                 })
             )
         }
-        this.subscriptions.add(registerSearchStatsContributions(this.props))
+        return () => subscriptions.unsubscribe()
+    }, [extensionsController, platformContext])
+
+    // Throw error to the <ErrorBoundary />
+    if (error) {
+        throw error
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        return null
-    }
+    return null
 }

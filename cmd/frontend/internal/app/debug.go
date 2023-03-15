@@ -224,20 +224,20 @@ func addSentry(r *mux.Router) {
 			// We want to keep this short, the default client settings are not strict enough.
 			Timeout: 3 * time.Second,
 		}
-		url := fmt.Sprintf("%s/api/%s/envelope/", sentryHost, pID)
+		apiUrl := fmt.Sprintf("%s/api/%s/envelope/", sentryHost, pID)
 
 		// Asynchronously forward to Sentry, there's no need to keep holding this connection
 		// opened any longer.
 		go func() {
-			resp, err := client.Post(url, "text/plain;charset=UTF-8", bytes.NewReader(b))
+			resp, err := client.Post(apiUrl, "text/plain;charset=UTF-8", bytes.NewReader(b))
 			if err != nil || resp.StatusCode >= 400 {
 				logger.Warn("failed to forward", sglog.Error(err), sglog.Int("statusCode", resp.StatusCode))
 				return
 			}
+			resp.Body.Close()
 		}()
 
 		w.WriteHeader(http.StatusOK)
-		return
 	})
 }
 
@@ -250,7 +250,6 @@ func addNoJaegerHandler(r *mux.Router, db database.DB) {
 
 func addJaeger(r *mux.Router, db database.DB) {
 	if len(jaegerURLFromEnv) > 0 {
-		fmt.Println("Jaeger URL from env ", jaegerURLFromEnv)
 		jaegerURL, err := url.Parse(jaegerURLFromEnv)
 		if err != nil {
 			log.Printf("failed to parse JAEGER_SERVER_URL=%s: %v", jaegerURLFromEnv, err)

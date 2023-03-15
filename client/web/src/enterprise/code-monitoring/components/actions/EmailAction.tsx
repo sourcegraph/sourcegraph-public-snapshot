@@ -94,6 +94,8 @@ export const EmailAction: React.FunctionComponent<React.PropsWithChildren<Action
     const testState = loading ? 'loading' : called && !error ? 'called' : error || undefined
 
     const emailConfigured = window.context.emailEnabled
+    const userPrimaryEmail = authenticatedUser.emails.find(email => email.isPrimary)
+
     const emailNotConfiguredMessage = !emailConfigured ? (
         !action ? (
             <>
@@ -106,8 +108,14 @@ export const EmailAction: React.FunctionComponent<React.PropsWithChildren<Action
                 <Link to="/help/admin/config/email">configure email sending</Link>.
             </>
         )
+    ) : !userPrimaryEmail?.verified ? (
+        <>
+            Please <Link to={`${authenticatedUser.settingsURL!}/emails`}>verify your email</Link> to enable this
+            feature.
+        </>
     ) : undefined
-    const disabledBasedOnEmailConfig = (!emailConfigured && !action) || disabled
+
+    const disabledBasedOnEmailConfig = !userPrimaryEmail?.verified || (!emailConfigured && !action) || disabled
 
     return (
         <ActionEditor
@@ -116,7 +124,7 @@ export const EmailAction: React.FunctionComponent<React.PropsWithChildren<Action
             idName="email"
             disabled={disabledBasedOnEmailConfig}
             completed={!!action}
-            completedSubtitle={authenticatedUser.email}
+            completedSubtitle={userPrimaryEmail?.email || ''}
             actionEnabled={enabled}
             toggleActionEnabled={toggleEmailNotificationEnabled}
             includeResults={includeResults}
@@ -138,7 +146,7 @@ export const EmailAction: React.FunctionComponent<React.PropsWithChildren<Action
                     id="code-monitoring-form-actions-recipients"
                     className="mb-2"
                     label="Recipients"
-                    value={`${authenticatedUser.email || ''} (you)`}
+                    value={`${userPrimaryEmail?.email || ''} (you)`}
                     disabled={true}
                     autoFocus={true}
                     required={true}

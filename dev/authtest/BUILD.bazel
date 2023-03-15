@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    timeout = "short",
+    name = "authtest_test",
+    srcs = [
+        "code_intel_test.go",
+        "main_test.go",
+        "organization_test.go",
+        "repository_test.go",
+        "site_admin_test.go",
+    ],
+    deps = [
+        "//internal/auth",
+        "//internal/extsvc",
+        "//internal/gqltestutil",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_json_iterator_go//:go",
+    ],
+)

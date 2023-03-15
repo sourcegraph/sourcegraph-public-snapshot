@@ -8,7 +8,7 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -106,7 +107,7 @@ func TestRepositoryHydration(t *testing.T) {
 		db := database.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(db), minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), minimalRepo)
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
 		mockrequire.CalledOnce(t, rs.GetFunc)
 	})
@@ -121,7 +122,7 @@ func TestRepositoryHydration(t *testing.T) {
 		db := database.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(db), minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), minimalRepo)
 		_, err := repoResolver.Description(ctx)
 		require.ErrorIs(t, err, dbErr)
 
@@ -164,11 +165,15 @@ func TestRepositoryLabel(t *testing.T) {
 				ID:   api.RepoID(0),
 			},
 		}
-		result, _ := r.Label()
-		return result.HTML()
+		markdown, _ := r.Label()
+		html, err := markdown.HTML()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return html
 	}
 
-	autogold.Want("encodes spaces for URL in HTML", `<p><a href="/repo%20with%20spaces" rel="nofollow">repo with spaces</a></p>
+	autogold.Expect(`<p><a href="/repo%20with%20spaces" rel="nofollow">repo with spaces</a></p>
 `).Equal(t, test("repo with spaces"))
 }
 
@@ -226,21 +231,12 @@ func TestRepository_DefaultBranch(t *testing.T) {
 	}
 }
 
-type mockFeatureFlagStore struct{}
-
-func (m *mockFeatureFlagStore) GetUserFlags(context.Context, int32) (map[string]bool, error) {
-	return map[string]bool{"repository-metadata": true}, nil
-}
-func (m *mockFeatureFlagStore) GetAnonymousUserFlags(context.Context, string) (map[string]bool, error) {
-	return map[string]bool{"repository-metadata": true}, nil
-}
-func (m *mockFeatureFlagStore) GetGlobalFeatureFlags(context.Context) (map[string]bool, error) {
-	return map[string]bool{"repository-metadata": true}, nil
-}
-
 func TestRepository_KVPs(t *testing.T) {
 	ctx := context.Background()
-	ctx = featureflag.WithFlags(ctx, &mockFeatureFlagStore{})
+
+	flags := map[string]bool{"repository-metadata": true}
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
+
 	logger := logtest.Scoped(t)
 	db := database.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	users := database.NewMockUserStore()
@@ -254,7 +250,7 @@ func TestRepository_KVPs(t *testing.T) {
 	repo, err := db.Repos().GetByName(ctx, "testrepo")
 	require.NoError(t, err)
 
-	schema := newSchemaResolver(db, gitserver.NewClient(db))
+	schema := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
 	gqlID := MarshalRepositoryID(repo.ID)
 
 	strPtr := func(s string) *string { return &s }

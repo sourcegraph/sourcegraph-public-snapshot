@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "metrics",
+    srcs = [
+        "metrics.go",
+        "operation.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/metrics",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "metrics_test",
+    srcs = ["metrics_test.go"],
+    embed = [":metrics"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/testutil",
+    ],
+)

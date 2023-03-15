@@ -6,6 +6,7 @@ import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
 import { ForwardReferenceComponent } from '../../../../types'
 import { createTether, Flipping, Overlapping, Padding, Position, Strategy, Tether } from '../../tether'
+import { TetherInstanceAPI } from '../../tether/services/tether-registry'
 
 import styles from './FloatingPanel.module.scss'
 
@@ -24,6 +25,8 @@ export interface FloatingPanelProps extends Omit<Tether, 'target' | 'element'>, 
      * outside the dom tree.
      */
     rootRender?: HTMLElement | null
+
+    onTetherCreate?: (tether: TetherInstanceAPI) => void
 }
 
 /**
@@ -47,6 +50,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
         targetPadding,
         constraint,
         rootRender,
+        onTetherCreate,
         ...otherProps
     } = props
 
@@ -59,7 +63,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
             return
         }
 
-        const { unsubscribe } = createTether({
+        const tether = createTether({
             element: tooltipElement,
             marker,
             target,
@@ -76,7 +80,9 @@ export const FloatingPanel = forwardRef((props, reference) => {
             flipping,
         })
 
-        return unsubscribe
+        onTetherCreate?.(tether)
+
+        return tether.unsubscribe
     }, [
         target,
         tooltipElement,
@@ -92,6 +98,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
         constrainToScrollParents,
         overflowToScrollParents,
         flipping,
+        onTetherCreate,
     ])
 
     if (strategy === Strategy.Absolute) {

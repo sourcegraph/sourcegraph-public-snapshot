@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -51,11 +50,17 @@ type V4Client struct {
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
 
-	// rateLimitMonitor is the API rate limit monitor.
-	rateLimitMonitor *ratelimit.Monitor
+	// externalRateLimiter is the API rate limit monitor.
+	externalRateLimiter *ratelimit.Monitor
 
-	// rateLimit is our self imposed rate limiter.
-	rateLimit *ratelimit.InstrumentedLimiter
+	// internalRateLimiter is our self imposed rate limiter.
+	internalRateLimiter *ratelimit.InstrumentedLimiter
+
+	// waitForRateLimit determines whether or not the client will wait and retry a request if external rate limits are encountered
+	waitForRateLimit bool
+
+	// maxRateLimitRetries determines how many times we retry requests due to rate limits
+	maxRateLimitRetries int
 }
 
 // NewV4Client creates a new GitHub GraphQL API client with an optional default
@@ -92,14 +97,16 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
-		log:              log.Scoped("github.v4", "github v4 client"),
-		urn:              urn,
-		apiURL:           apiURL,
-		githubDotCom:     urlIsGitHubDotCom(apiURL),
-		auth:             a,
-		httpClient:       cli,
-		rateLimit:        rl,
-		rateLimitMonitor: rlm,
+		log:                 log.Scoped("github.v4", "github v4 client"),
+		urn:                 urn,
+		apiURL:              apiURL,
+		githubDotCom:        urlIsGitHubDotCom(apiURL),
+		auth:                a,
+		httpClient:          cli,
+		internalRateLimiter: rl,
+		externalRateLimiter: rlm,
+		waitForRateLimit:    true,
+		maxRateLimitRetries: 2,
 	}
 }
 
@@ -110,9 +117,9 @@ func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
 	return NewV4Client(c.urn, c.apiURL, a, c.httpClient)
 }
 
-// RateLimitMonitor exposes the rate limit monitor.
-func (c *V4Client) RateLimitMonitor() *ratelimit.Monitor {
-	return c.rateLimitMonitor
+// ExternalRateLimiter exposes the rate limit monitor.
+func (c *V4Client) ExternalRateLimiter() *ratelimit.Monitor {
+	return c.externalRateLimiter
 }
 
 func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[string]any, result any) (err error) {
@@ -151,15 +158,27 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 		return errors.Wrap(err, "estimating graphql cost")
 	}
 
-	if err := c.rateLimit.WaitN(ctx, cost); err != nil {
+	if err := c.internalRateLimiter.WaitN(ctx, cost); err != nil {
 		return errors.Wrap(err, "rate limit")
 	}
 
-	// Wait for the rate limit, or return if context has been canceled.
-	timeutil.SleepWithContext(ctx, c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
+	if c.waitForRateLimit {
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, cost)
+	}
 
-	if _, err := doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
-		return err
+	_, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, &respBody)
+
+	apiError := &APIError{}
+	numRetries := 0
+
+	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries &&
+		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
+		if c.externalRateLimiter.WaitForRateLimit(ctx, cost) {
+			_, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, &respBody)
+			numRetries++
+		} else {
+			break
+		}
 	}
 
 	// If the GraphQL response has errors, still attempt to unmarshal the data portion, as some
@@ -318,7 +337,7 @@ func unmarshal(data []byte, v any) error {
 // determineGitHubVersion returns a *semver.Version for the targetted GitHub instance by this client. When an
 // error occurs, we print a warning to the logs but don't fail and return the allMatchingSemver.
 func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
-	url := normalizeURL(c.apiURL.String())
+	urlStr := normalizeURL(c.apiURL.String())
 	globalVersionCache.mu.Lock()
 	defer globalVersionCache.mu.Unlock()
 
@@ -327,11 +346,11 @@ func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 		globalVersionCache.lastReset = time.Now()
 		globalVersionCache.versions = make(map[string]*semver.Version)
 	}
-	if version, ok := globalVersionCache.versions[url]; ok {
+	if version, ok := globalVersionCache.versions[urlStr]; ok {
 		return version
 	}
 	version := c.fetchGitHubVersion(ctx)
-	globalVersionCache.versions[url] = version
+	globalVersionCache.versions[urlStr] = version
 	return version
 }
 
@@ -558,6 +577,13 @@ fragment RepositoryFields on Repository {
 	viewerPermission
 	stargazerCount
 	forkCount
+	repositoryTopics(first:100) {
+		nodes {
+			topic {
+				name
+			}
+		}
+	}
 }
 	`
 	}
@@ -588,19 +614,32 @@ fragment RepositoryFields on Repository {
 	isLocked
 	isDisabled
 	forkCount
+	repositoryTopics(first:100) {
+		nodes {
+			topic {
+				name
+			}
+		}
+	}
 	%s
 }
 	`, strings.Join(conditionalGHEFields, "\n	"))
 }
 
+func (c *V4Client) GetRepo(ctx context.Context, owner, repo string) (*Repository, error) {
+	logger := c.log.Scoped("GetRepo", "temporary client for getting GitHub repository")
+	// We technically don't need to use the REST API for this but it's just a bit easier.
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).GetRepo(ctx, owner, repo)
+}
+
 // Fork forks the given repository. If org is given, then the repository will
 // be forked into that organisation, otherwise the repository is forked into
 // the authenticated user's account.
-func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
+func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string, forkName string) (*Repository, error) {
 	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
 	// December 2021, so we have to fall back to the REST API.
 	logger := c.log.Scoped("Fork", "temporary client for forking GitHub repository")
-	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org)
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org, forkName)
 }
 
 type RecentCommittersParams struct {

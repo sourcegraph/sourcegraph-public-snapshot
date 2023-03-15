@@ -178,7 +178,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		}
 	})
 
-	t.Run("Upsert", func(t *testing.T) {
+	t.Run("UpdateForApply", func(t *testing.T) {
 		changeset := &btypes.Changeset{
 			RepoID:               repo.ID,
 			CreatedAt:            clock.Now(),
@@ -201,27 +201,22 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			ProcessAfter:         clock.Now(),
 		}
 
-		if err := s.UpsertChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
-		}
+		err := s.CreateChangeset(ctx, changeset)
+		require.NoError(t, err)
 
-		if changeset.ID == 0 {
-			t.Fatal("id should not be zero")
-		}
+		assert.NotZero(t, changeset.ID)
 
 		prev := changeset.Clone()
 
-		if err := s.UpsertChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
-		}
+		err = s.UpdateChangesetsForApply(ctx, []*btypes.Changeset{changeset})
+		require.NoError(t, err)
 
 		if diff := cmp.Diff(changeset, prev); diff != "" {
 			t.Fatal(diff)
 		}
 
-		if err := s.DeleteChangeset(ctx, changeset.ID); err != nil {
-			t.Fatal(err)
-		}
+		err = s.DeleteChangeset(ctx, changeset.ID)
+		require.NoError(t, err)
 	})
 
 	t.Run("ReconcilerState database representation", func(t *testing.T) {
@@ -336,7 +331,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			if have, want := count, len(changesets); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
-
 		})
 
 		t.Run("BatchChangeID", func(t *testing.T) {
@@ -1098,6 +1092,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 
 			c.PublicationState = btypes.ChangesetPublicationStatePublished
 			c.ReconcilerState = btypes.ReconcilerStateErrored
+			c.PreviousFailureMessage = c.FailureMessage
 			c.FailureMessage = nil
 			c.StartedAt = clock.Now()
 			c.FinishedAt = clock.Now()
@@ -1530,14 +1525,15 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		}
 
 		bt.ReloadAndAssertChangeset(t, ctx, s, c1, bt.ChangesetAssertions{
-			ReconcilerState:  btypes.ReconcilerStateQueued,
-			PublicationState: btypes.ChangesetPublicationStatePublished,
-			ExternalState:    btypes.ChangesetExternalStateOpen,
-			Repo:             repo.ID,
-			FailureMessage:   nil,
-			NumResets:        0,
-			NumFailures:      0,
-			SyncErrorMessage: nil,
+			ReconcilerState:        btypes.ReconcilerStateQueued,
+			PublicationState:       btypes.ChangesetPublicationStatePublished,
+			ExternalState:          btypes.ChangesetExternalStateOpen,
+			Repo:                   repo.ID,
+			FailureMessage:         nil,
+			NumResets:              0,
+			NumFailures:            0,
+			SyncErrorMessage:       nil,
+			PreviousFailureMessage: strPtr("horse was here"),
 		})
 	})
 
@@ -2671,3 +2667,5 @@ func TestCleanDetachedChangesets(t *testing.T) {
 		})
 	}
 }
+
+func strPtr(s string) *string { return &s }

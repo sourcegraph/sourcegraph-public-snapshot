@@ -22,9 +22,10 @@ const TestRawBatchSpec = `{
     {
       "run": "echo 'foobar'",
       "container": "alpine",
-      "env": {
-        "PATH": "/work/foobar:$PATH"
-      }
+      "env": [
+		{ "PATH": "/work/foobar:$PATH" },
+		"FOO"
+	  ]
     }
   ],
   "changesetTemplate": {
@@ -48,7 +49,8 @@ steps:
 - run: echo 'foobar'
   container: alpine
   env:
-    PATH: "/work/foobar:$PATH"
+    - PATH: "/work/foobar:$PATH"
+    - FOO
 changesetTemplate:
   title: Hello World
   body: My first batch change!
@@ -78,7 +80,8 @@ func BuildRawBatchSpecWithImportChangesets(t *testing.T, imports []batcheslib.Im
 var ChangesetSpecDiffStat = &diff.Stat{Added: 3, Deleted: 3}
 
 const ChangesetSpecAuthorEmail = "mary@example.com"
-const ChangesetSpecDiff = `diff --git INSTALL.md INSTALL.md
+
+var ChangesetSpecDiff = []byte(`diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
 --- INSTALL.md
 +++ INSTALL.md
@@ -96,7 +99,7 @@ index e5af166..d44c3fc 100644
 +Foobar Line 8
  Line 9
  Line 10
-`
+`)
 
 var baseChangesetSpecGitBranch = batcheslib.ChangesetSpec{
 	BaseRef: "refs/heads/master",
@@ -109,6 +112,7 @@ var baseChangesetSpecGitBranch = batcheslib.ChangesetSpec{
 
 	Commits: []batcheslib.GitCommitDescription{
 		{
+			Version:     2,
 			Message:     "git commit message\n\nand some more content in a second paragraph.",
 			Diff:        ChangesetSpecDiff,
 			AuthorName:  "Mary McButtons",

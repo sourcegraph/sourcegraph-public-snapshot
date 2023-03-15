@@ -44,6 +44,7 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(currentThemeAsJson);
                 case "indicateSearchError":
                     arguments = request.getAsJsonObject("arguments");
+                    // This must run on EDT (Event Dispatch Thread) because it changes the UI.
                     ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateSearchError(
                         arguments.get("errorMessage").getAsString(),
                         Date.from(Instant.from(
@@ -84,6 +85,7 @@ public class JSToJavaBridgeRequestHandler {
                             Thread.sleep(300);
                         } catch (InterruptedException ignored) {
                         }
+                        // This must run on EDT (Event Dispatch Thread) because it changes the UI.
                         ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateLoadingIfInTime(Date.from(
                             Instant.from(DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())))));
                     }).start();
@@ -91,10 +93,12 @@ public class JSToJavaBridgeRequestHandler {
                 case "preview":
                     arguments = request.getAsJsonObject("arguments");
                     previewContent = PreviewContent.fromJson(project, arguments);
+                    // This must run on EDT (Event Dispatch Thread) because it changes the UI.
                     ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.setPreviewContentIfInTime(previewContent));
                     return createSuccessResponse(null);
                 case "clearPreview":
                     arguments = request.getAsJsonObject("arguments");
+                    // This must run on EDT (Event Dispatch Thread) because it changes the UI.
                     ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.clearPreviewContentIfInTime(Date.from(
                         Instant.from(DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())))));
                     return createSuccessResponse(null);
@@ -107,6 +111,7 @@ public class JSToJavaBridgeRequestHandler {
                             + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
                     }
 
+                    // This must run on EDT (Event Dispatch Thread) because it changes the UI.
                     ApplicationManager.getApplication().invokeLater(() -> {
                         try {
                             previewContent.openInEditorOrBrowser();
@@ -118,11 +123,13 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
                     arguments = request.getAsJsonObject("arguments");
+                    // This must run on EDT (Event Dispatch Thread) because it changes the UI.
                     ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateAuthenticationStatus(
                         arguments.get("wasServerAccessSuccessful").getAsBoolean(),
                         arguments.get("wasAuthenticationSuccessful").getAsBoolean()));
                     return createSuccessResponse(null);
                 case "windowClose":
+                    // This must run on EDT (Event Dispatch Thread) because it changes the UI.
                     ApplicationManager.getApplication().invokeLater(findService::hidePopup);
                     return createSuccessResponse(null);
                 default:

@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "redispool",
+    srcs = [
+        "db.go",
+        "keyvalue.go",
+        "mem.go",
+        "naive.go",
+        "redis.go",
+        "redis_conn.go",
+        "redispool.go",
+        "sysreq.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/redispool",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/deploy",
+        "//internal/env",
+        "//internal/lazyregexp",
+        "//internal/sysreq",
+        "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "redispool_test",
+    srcs = [
+        "keyvalue_test.go",
+        "naive_test.go",
+        "redispool_test.go",
+    ],
+    embed = [":redispool"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

@@ -1,15 +1,10 @@
-/* eslint-disable etc/no-deprecated */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Observable } from 'rxjs'
+import type { Observable, Unsubscribable } from 'rxjs'
 
-import { GraphQLResult } from '@sourcegraph/http-client'
-import { Settings, SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
+import type { GraphQLResult } from '@sourcegraph/http-client'
 
-import { PlatformContext } from '../../platform/context'
-
-export interface Unsubscribable {
-    unsubscribe(): void
-}
+import type { PlatformContext } from '../../platform/context'
+import type { Settings, SettingsCascade } from '../../settings/settings'
 
 /**
  * Represents a location inside a resource, such as a line
@@ -82,165 +77,6 @@ export interface DocumentFilter {
  * @example let sel: DocumentSelector = [{ language: 'typescript' }, { language: 'json', pattern: '**∕tsconfig.json' }];
  */
 export type DocumentSelector = (string | DocumentFilter)[]
-
-/**
- * Options for an input box displayed as a result of calling {@link Window#showInputBox}.
- */
-export interface InputBoxOptions {
-    /**
-     * The text that describes what input the user should provide.
-     */
-    prompt?: string
-
-    /**
-     * The pre-filled input value for the input box.
-     */
-    value?: string
-}
-
-export interface ProgressOptions {
-    title?: string
-}
-
-export interface Progress {
-    /** Optional message. If not set, the previous message is still shown. */
-    message?: string
-
-    /** Integer from 0 to 100. If not set, the previous percentage is still shown. */
-    percentage?: number
-}
-
-export interface ProgressReporter {
-    /**
-     * Updates the progress display with a new message and/or percentage.
-     */
-    next(status: Progress): void
-
-    /**
-     * Turns the progress display into an error display for the given error or message.
-     * Use if the operation failed.
-     * No further progress updates can be sent after this.
-     */
-    error(error: any): void
-
-    /**
-     * Completes the progress bar and hides the display.
-     * Sending a percentage of 100 has the same effect.
-     * No further progress updates can be sent after this.
-     */
-    complete(): void
-}
-
-/**
- * A style for a {@link TextDocumentDecoration}.
- */
-export interface ThemableDecorationStyle {
-    /** The CSS background-color property value for the line. */
-    backgroundColor?: string
-
-    /** The CSS border property value for the line. */
-    border?: string
-
-    /** The CSS border-color property value for the line. */
-    borderColor?: string
-
-    /** The CSS border-width property value for the line. */
-    borderWidth?: string
-}
-
-/**
- * A text document decoration changes the appearance of a range in the document and/or adds other content to
- * it.
- */
-export interface TextDocumentDecoration extends ThemableDecorationStyle {
-    /**
-     * The range that the decoration applies to. Currently, decorations are
-     * only applied only on the start line, and the entire line. Multiline
-     * and intra-line ranges are not supported.
-     */
-    range: Range
-
-    /**
-     * If true, the decoration applies to all lines in the range (inclusive), even if not all characters on the
-     * line are included.
-     */
-    isWholeLine?: boolean
-
-    /** Content to display after the range. */
-    after?: DecorationAttachmentRenderOptions
-
-    /** Overwrite style for light themes. */
-    light?: ThemableDecorationStyle
-
-    /** Overwrite style for dark themes. */
-    dark?: ThemableDecorationStyle
-}
-
-/**
- * A style for {@link DecorationAttachmentRenderOptions}.
- */
-export interface ThemableDecorationAttachmentStyle {
-    /** The CSS background-color property value for the attachment. */
-    backgroundColor?: string
-
-    /** The CSS color property value for the attachment. */
-    color?: string
-}
-
-/** A decoration attachment adds content after a {@link TextDocumentDecoration}. */
-export interface DecorationAttachmentRenderOptions extends ThemableDecorationAttachmentStyle {
-    /** Text to display in the attachment. */
-    contentText?: string
-
-    /** Tooltip text to display when hovering over the attachment. */
-    hoverMessage?: string
-
-    /** If set, the attachment becomes a link with this destination URL. */
-    linkURL?: string
-
-    /** Overwrite style for light themes. */
-    light?: ThemableDecorationAttachmentStyle
-
-    /** Overwrite style for dark themes. */
-    dark?: ThemableDecorationAttachmentStyle
-}
-
-/**
- * Represents a handle to a set of decorations.
- *
- * To get an instance of {@link TextDocumentDecorationType}, use
- * {@link sourcegraph.app.createDecorationType}
- */
-export interface TextDocumentDecorationType {
-    /** An opaque identifier. */
-    readonly key: string
-}
-
-/**
- * A text element displayed in an editor's status bar.
- * A status bar item can display tooltips on hover and execute commands on click
- */
-export interface StatusBarItem {
-    /** The text to display in the status bar */
-    text: string
-
-    /** Tooltip text to display when hovering over the status bar item. */
-    tooltip?: string
-
-    /** The id of and arguments to a command to execute when the status bar item is clicked */
-    command?: { id: string; args?: any[] }
-}
-
-/**
- * Represents a handle to a status bar item.
- *
- * To get an instance of {@link StatusBarItemType}, use
- * {@link sourcegraph.app.createStatusBarItemType}
- */
-export interface StatusBarItemType {
-    /** An opaque identifier. */
-    readonly key: string
-}
 
 export interface Directory {
     /**
@@ -505,105 +341,6 @@ export interface DirectoryViewProvider {
     provideView(context: DirectoryViewContext): ProviderResult<View>
 }
 
-export interface ThemableFileDecorationStyle {
-    /** The CSS color property value for the text contet */
-    color?: string
-
-    /** Overwrite style for when the file is active */
-    activeColor?: string
-}
-
-/** A decoration attachment adds content after a {@link FileDecoration}. */
-export interface FileDecorationAttachmentRenderOptions extends ThemableFileDecorationStyle {
-    /** Text value to be displayed. This value should be very short to prevent truncation */
-    contentText: string
-
-    /** Tooltip text to display when hovering over the text content. */
-    hoverMessage?: string
-
-    /** Overwrite style for light themes. */
-    light?: ThemableFileDecorationStyle
-
-    /** Overwrite color for dark themes. */
-    dark?: ThemableFileDecorationStyle
-}
-
-/**
- * A file decoration adds text content and/or a progress bar to files in a tree view
- */
-export interface FileDecoration {
-    /** The resource identifier of this file */
-    uri: string
-
-    /** Whether to display the decoration on the sidebar file tree or tree page. If omitted, it will be displayed in both locations  */
-    where?: 'sidebar' | 'page'
-
-    /** An optional object that describes the text content contributed by the decoration */
-    after?: FileDecorationAttachmentRenderOptions
-
-    /**
-     * Describes a meter bar like the [HTML5 `<meter>`
-     * element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter)
-     * to be rendered after the file/directory name.
-     */
-    meter?: {
-        /**
-         * The current numeric value. This must be between the minimum and maximum values
-         * (min attribute and max attribute) if they are specified.
-         */
-        value: number
-
-        /**
-         * The lower numeric bound of the measured range. This must be less than
-         * the maximum value (max attribute), if specified. If unspecified, the
-         * minimum value is 0.
-         */
-        min?: number
-
-        /**
-         * The upper numeric bound of the measured range. This must be greater
-         * than the minimum value (min attribute), if specified. If unspecified,
-         * the maximum value is 1.
-         */
-        max?: number
-
-        /**
-         * The upper numeric bound of the low end of the measured range. This
-         * must be greater than the minimum value (min attribute), and it also
-         * must be less than the high value and maximum value (high attribute
-         * and max attribute, respectively), if any are specified. If
-         * unspecified, or if less than the minimum value, the low value is
-         * equal to the minimum value.
-         */
-        low?: number
-
-        /**
-         * The lower numeric bound of the high end of the measured range. This
-         * must be less than the maximum value (max attribute), and it also must
-         * be greater than the low value and minimum value (low attribute and
-         * min attribute, respectively), if any are specified. If unspecified,
-         * or if greater than the maximum value, the high value is equal to the
-         * maximum value.
-         */
-        high?: number
-
-        /**
-         * This attribute indicates the optimal numeric value. It must be within
-         * the range (as defined by the min attribute and max attribute). When
-         * used with the low attribute and high attribute, it gives an
-         * indication where along the range is considered preferable. For
-         * example, if it is between the min attribute and the low attribute,
-         * then the lower range is considered preferred. The browser may color
-         * the meter's bar differently depending on whether the value is less
-         * than or equal to the optimum value.
-         */
-        optimum?: number
-
-        /** Tooltip text to display when hovering over the progress bar. */
-        hoverMessage?: string
-    }
-}
-
 /**
  * A workspace root is a directory that has been added to a workspace. A workspace can have zero or more roots.
  * Often, each root is the root directory of a repository.
@@ -684,32 +421,6 @@ export interface MarkupContent {
      * @default MarkupKind.Markdown
      */
     kind?: MarkupKind
-}
-
-/**
- * The type of a notification shown through {@link Window.showNotification}.
- */
-export enum NotificationType {
-    /**
-     * An error message.
-     */
-    Error = 1,
-    /**
-     * A warning message.
-     */
-    Warning = 2,
-    /**
-     * An info message.
-     */
-    Info = 3,
-    /**
-     * A log message.
-     */
-    Log = 4,
-    /**
-     * A success message.
-     */
-    Success = 5,
 }
 
 /** A badge holds the extra fields that can be attached to a providable type T via Badged<T>. */
@@ -830,68 +541,6 @@ export interface LocationProvider {
 }
 
 /**
- * A completion item is a suggestion to complete text that the user has typed.
- *
- * @see {@link CompletionItemProvider#provideCompletionItems}
- *
- * @deprecated
- */
-export interface CompletionItem {
-    /**
-     * The label of this completion item, which is rendered prominently. If no
-     * {@link CompletionItem#insertText} is specified, the label is the text inserted when the
-     * user selects this completion.
-     */
-    label: string
-
-    /**
-     * The description of this completion item, which is rendered less prominently but still
-     * alongside the {@link CompletionItem#label}.
-     */
-    description?: string
-
-    /**
-     * A string to insert in a document when the user selects this completion. When not set, the
-     * {@link CompletionItem#label} is used.
-     */
-    insertText?: string
-}
-
-/**
- * A collection of [completion items](#CompletionItem) to be presented in the editor.
- *
- * @deprecated
- */
-export interface CompletionList {
-    /**
-     * The list of completions.
-     */
-    items: CompletionItem[]
-}
-
-/**
- * A completion item provider provides suggestions to insert or apply at the cursor as the user
- * is typing.
- *
- * Providers are queried for completions as the user types in any document matching the document
- * selector specified at registration time.
- *
- * @deprecated
- */
-export interface CompletionItemProvider {
-    /**
-     * Provide completion items for the given position and document.
-     *
-     * @param document The document in which the command was invoked.
-     * @param position The position at which the command was invoked.
-     *
-     * @returns An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
-     * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
-     */
-    provideCompletionItems(document: TextDocument, position: Position): ProviderResult<CompletionList>
-}
-
-/**
  * A document highlight is a range inside a text document which deserves special attention.
  * Usually a document highlight is visualized by changing the background color of its range.
  */
@@ -945,7 +594,7 @@ export interface Position {
 export interface Range {
     readonly start: Position
     readonly end: Position
-    contains(position: Position): boolean
+    contains(position: Position | Range): boolean
 }
 
 // NOTE(2022-09-08) We store global state at the module level because that was
@@ -966,12 +615,10 @@ export function requestGraphQL<T>(query: string, vars?: { [name: string]: unknow
             )
         )
     }
-    return (
-        context
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            .requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true })
-            .toPromise()
-    )
+    return context
+
+        .requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true })
+        .toPromise()
 }
 
 export function getSetting<T>(key: string): T | undefined {

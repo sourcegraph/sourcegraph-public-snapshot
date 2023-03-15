@@ -9,22 +9,28 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const SchemeExecutorToken = "token-executor"
 
 // These env vars should be set for git commands. We want to make sure it never hangs on interactive input.
-var gitStdEnv = []string{"GIT_TERMINAL_PROMPT=0"}
+var gitStdEnv = []string{
+	"GIT_TERMINAL_PROMPT=0",
+	// We don't support LFS so don't even try to get these files. There is no endpoint
+	// for that on the executor git clone endpoint anyways and this will 404.
+	"GIT_LFS_SKIP_SMUDGE=1",
+}
 
 func cloneRepo(
 	ctx context.Context,
 	workspaceDir string,
-	job executor.Job,
+	job types.Job,
 	commandRunner command.Runner,
 	options CloneOptions,
 	operations *command.Operations,
@@ -42,7 +48,7 @@ func cloneRepo(
 		}
 	}
 
-	proxyURL, cleanup, err := newGitProxyServer(options.EndpointURL, options.GitServicePath, job.RepositoryName, options.ExecutorToken)
+	proxyURL, cleanup, err := newGitProxyServer(options, job)
 	defer func() {
 		err = errors.Append(err, cleanup())
 	}()
@@ -173,9 +179,9 @@ func cloneRepo(
 // This is used so that we never have to tell git about the credentials used here.
 //
 // In the future, this will be used to provide different access tokens per job,
-// so that we can tell _which_ job misused the token and also scope it's access
+// so that we can tell _which_ job misused the token and also scope its access
 // to the particular repo in question.
-func newGitProxyServer(endpointURL, gitServicePath, repositoryName, accessToken string) (string, func() error, error) {
+func newGitProxyServer(options CloneOptions, job types.Job) (string, func() error, error) {
 	// Get new random free port.
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -184,40 +190,26 @@ func newGitProxyServer(endpointURL, gitServicePath, repositoryName, accessToken 
 	cleanupListener := func() error { return listener.Close() }
 
 	upstream, err := makeRelativeURL(
-		endpointURL,
-		gitServicePath,
+		options.EndpointURL,
+		options.GitServicePath,
 	)
 	if err != nil {
 		return "", cleanupListener, err
 	}
 
-	d := httputil.NewSingleHostReverseProxy(upstream).Director
-
-	proxy := &httputil.ReverseProxy{
-		Director: func(req *http.Request) {
-			d(req)
-
-			req.Host = upstream.Host
-			// Add authentication. We don't add this in the git clone URL directly
-			// to never tell git about the clone secret.
-			req.Header.Set("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, accessToken))
-			req.Header.Set("X-Sourcegraph-Actor-UID", "internal")
-			req.URL.User = url.User("executor")
-		},
-	}
+	proxy := newReverseProxy(upstream, options.ExecutorToken, job.Token, options.ExecutorName, job.ID)
 
 	go http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Prevent queries for repos other than this jobs repo.
 		// This is _not_ a security measure, that should be handled by additional
 		// clone tokens. This is mostly a gate to finding when we accidentally
 		// would access another repo.
-		if !strings.HasPrefix(r.URL.Path, "/"+repositoryName+"/") {
+		if !strings.HasPrefix(r.URL.Path, "/"+job.RepositoryName+"/") {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
-		// TODO: We might want to limit throughput here to the same level we limit
-		// it _inside_ the firecracker VM.
+		// TODO: We might want to limit throughput here to the same level we limit it _inside_ the firecracker VM.
 		proxy.ServeHTTP(w, r)
 	}))
 
@@ -236,4 +228,30 @@ func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 	}
 
 	return urlx, nil
+}
+
+func newReverseProxy(upstream *url.URL, accessToken string, jobToken string, executorName string, jobId int) *httputil.ReverseProxy {
+	proxy := httputil.NewSingleHostReverseProxy(upstream)
+	superDirector := proxy.Director
+	proxy.Director = func(req *http.Request) {
+		superDirector(req)
+
+		req.Host = upstream.Host
+		// Add authentication. We don't add this in the git clone URL directly
+		// to never tell git about the clone secret.
+
+		// If there is no token set, we may be talking with a version of Sourcegraph that is behind.
+		if len(jobToken) > 0 {
+			req.Header.Set("Authorization", fmt.Sprintf("%s %s", "Bearer", jobToken))
+		} else {
+			req.Header.Set("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, accessToken))
+		}
+		req.Header.Set("X-Sourcegraph-Actor-UID", "internal")
+		req.Header.Set("X-Sourcegraph-Job-ID", strconv.Itoa(jobId))
+		// When using the reverse proxy, setting the username on req.User is not respected. If a username must be set,
+		// you have to use .SetBasicAuth(). However, this will set the Authorization using the username + password.
+		// So to avoid confusion, set the executor name in a specific HTTP header.
+		req.Header.Set("X-Sourcegraph-Executor-Name", executorName)
+	}
+	return proxy
 }

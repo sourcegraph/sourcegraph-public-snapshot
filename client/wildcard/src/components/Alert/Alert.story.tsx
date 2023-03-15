@@ -5,17 +5,14 @@ import { Story, Meta } from '@storybook/react'
 import classNames from 'classnames'
 import { flow } from 'lodash'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
 import 'storybook-addon-designs'
 
 import { H1, H4, Text } from '..'
-
-import { Alert } from './Alert'
-import { ALERT_VARIANTS } from './constants'
+import { BrandedStory } from '../../stories/BrandedStory'
 
 import { AlertLink } from '.'
+import { Alert } from './Alert'
+import { ALERT_VARIANTS } from './constants'
 
 const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
     event.preventDefault()
@@ -24,11 +21,7 @@ const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
 
 const config: Meta = {
     title: 'wildcard/Alert',
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
     parameters: {
         component: Alert,
         chromatic: {
@@ -39,14 +32,12 @@ const config: Meta = {
             {
                 type: 'figma',
                 name: 'Figma Light',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
             },
             {
                 type: 'figma',
                 name: 'Figma Dark',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
             },
         ],
     },

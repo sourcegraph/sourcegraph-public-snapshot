@@ -35,7 +35,6 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
         </span>
         <div
           class="d-inline-block mr-3"
-          data-state="closed"
         >
           <strong
             class="text-success"
@@ -50,27 +49,32 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           Created 
           <span
             class="timestamp"
-            data-state="closed"
           >
             in almost 14 years
           </span>
         </span>
       </div>
     </div>
+    <div
+      aria-live="assertive"
+      class="alert alertWarning mt-3 mb-3"
+      role="alert"
+    >
+      License tags contain unknown values (marked red), please check if the tags are correct.
+    </div>
     <div>
       Tags: 
       <div
-        class="badge secondary mr-1"
-        data-state="closed"
+        class="badge danger mr-1"
       >
         a
       </div>
     </div>
     <div
-      class="form-inline mt-2 d-block"
+      class="form-inline mt-2"
     >
       <div
-        class="input-group"
+        class="input-group flex-1"
       >
         <div
           class="container loader-input loaderInput"
@@ -86,6 +90,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           class="input-group-append"
         >
           <button
+            aria-disabled="false"
             aria-label="Copy"
             class="btn btnSecondary"
             type="button"
@@ -147,7 +152,6 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
         </span>
         <span
           class="text-warning font-weight-bold mr-3"
-          data-state="closed"
         >
           Inactive
         </span>
@@ -157,27 +161,32 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           Created 
           <span
             class="timestamp"
-            data-state="closed"
           >
             in almost 14 years
           </span>
         </span>
       </div>
     </div>
+    <div
+      aria-live="assertive"
+      class="alert alertWarning mt-3 mb-3"
+      role="alert"
+    >
+      License tags contain unknown values (marked red), please check if the tags are correct.
+    </div>
     <div>
       Tags: 
       <div
-        class="badge secondary mr-1"
-        data-state="closed"
+        class="badge danger mr-1"
       >
         a
       </div>
     </div>
     <div
-      class="form-inline mt-2 d-block"
+      class="form-inline mt-2"
     >
       <div
-        class="input-group"
+        class="input-group flex-1"
       >
         <div
           class="container loader-input loaderInput"
@@ -193,6 +202,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           class="input-group-append"
         >
           <button
+            aria-disabled="false"
             aria-label="Copy"
             class="btn btnSecondary"
             type="button"

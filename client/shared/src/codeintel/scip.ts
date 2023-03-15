@@ -1,5 +1,7 @@
 // TODO: Eventually we'll import the actual lsif-typed protobuf file in this project,
 // but it doesn't make sense to do so right now.
+import * as extensions from '@sourcegraph/extension-api-types'
+
 import * as sourcegraph from './legacy-extensions/api'
 
 export interface JsonDocument {
@@ -14,11 +16,36 @@ export interface DocumentInfo {
 export interface JsonOccurrence {
     range: [number, number, number] | [number, number, number, number]
     syntaxKind?: SyntaxKind
+    symbol?: string
+    symbolRoles?: number
 }
 
 export class Position implements sourcegraph.Position {
     constructor(public readonly line: number, public readonly character: number) {}
-    public static fromPosition(position: sourcegraph.Position): Position {
+
+    /** @returns this position with incremented line/character values */
+    public withIncrementedValues(): Position {
+        return new Position(this.line + 1, this.character + 1)
+    }
+
+    /** @returns this position with decremented line/character values */
+    public withDecrementedValues(): Position {
+        return new Position(this.line - 1, this.character - 1)
+    }
+
+    public withLine(newLine: number): Position {
+        return new Position(newLine, this.character)
+    }
+
+    public withCharacter(newCharacter: number): Position {
+        return new Position(this.line, newCharacter)
+    }
+
+    public static fromLegacyAPI(position: sourcegraph.Position): Position {
+        return new Position(position.line, position.character)
+    }
+
+    public static fromExtensionAPI(position: extensions.Position): Position {
         return new Position(position.line, position.character)
     }
 
@@ -44,10 +71,24 @@ export class Position implements sourcegraph.Position {
         return this.character - other.character
     }
 }
+
 export class Range {
     constructor(public readonly start: Position, public readonly end: Position) {}
     public static fromNumbers(startLine: number, startCharacter: number, endLine: number, endCharacter: number): Range {
         return new Range(new Position(startLine, startCharacter), new Position(endLine, endCharacter))
+    }
+    public static fromLegacyAPI(range: sourcegraph.Range): Range {
+        return new Range(Position.fromLegacyAPI(range.start), Position.fromLegacyAPI(range.end))
+    }
+    public static fromExtensions(range: extensions.Range): Range {
+        return new Range(Position.fromExtensionAPI(range.start), Position.fromExtensionAPI(range.end))
+    }
+    /** Returns the minimum character distance between this position and the start or end position of this range. */
+    public characterDistance(position: sourcegraph.Position): number {
+        return Math.min(
+            Math.abs(position.character - this.start.character),
+            Math.abs(position.character - this.end.character)
+        )
     }
     public contains(position: sourcegraph.Position): boolean {
         return this.start.isSmallerOrEqual(position) && this.end.isGreater(position)
@@ -67,6 +108,12 @@ export class Range {
     public isSingleLine(): boolean {
         return this.start.line === this.end.line
     }
+    public withDecrementedValues(): Range {
+        return new Range(this.start.withDecrementedValues(), this.end.withDecrementedValues())
+    }
+    public withIncrementedValues(): Range {
+        return new Range(this.start.withIncrementedValues(), this.end.withIncrementedValues())
+    }
     public compare(other: Range): number {
         const byStart = this.start.compare(other.start)
         if (byStart !== 0) {
@@ -81,7 +128,12 @@ export class Range {
 }
 
 export class Occurrence {
-    constructor(public readonly range: Range, public readonly kind?: SyntaxKind) {}
+    constructor(
+        public readonly range: Range,
+        public readonly kind?: SyntaxKind,
+        public readonly symbol?: string,
+        public readonly symbolRoles?: number
+    ) {}
 
     public withStartPosition(newStartPosition: Position): Occurrence {
         return this.withRange(this.range.withStart(newStartPosition))
@@ -90,7 +142,7 @@ export class Occurrence {
         return this.withRange(this.range.withEnd(newEndPosition))
     }
     public withRange(newRange: Range): Occurrence {
-        return new Occurrence(newRange, this.kind)
+        return new Occurrence(newRange, this.kind, this.symbol, this.symbolRoles)
     }
 
     public static fromJson(occ: JsonOccurrence): Occurrence {
@@ -104,7 +156,7 @@ export class Occurrence {
                   new Position(occ.range[2], occ.range[3])
         )
 
-        return new Occurrence(range, occ.syntaxKind)
+        return new Occurrence(range, occ.syntaxKind, occ.symbol, occ.symbolRoles)
     }
     public static fromInfo(info: DocumentInfo): Occurrence[] {
         const sortedSingleLineOccurrences = parseJsonOccurrencesIntoSingleLineOccurrences(info)

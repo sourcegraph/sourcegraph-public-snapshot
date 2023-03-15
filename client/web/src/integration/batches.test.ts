@@ -57,7 +57,10 @@ const batchChangeListNode: ListBatchChange & { __typename: 'BatchChange' } = {
     },
 
     currentSpec: {
+        __typename: 'BatchSpec',
         id: 'test-spec',
+        state: BatchSpecState.COMPLETED,
+        applyURL: '/fake-apply-url',
     },
     batchSpecs: {
         nodes: [
@@ -270,6 +273,7 @@ const BatchChangeBatchSpecs: (variables: BatchChangeBatchSpecsVariables) => Batc
                     finishedAt: '2022-07-06T23:21:45Z',
                     createdAt: '2022-07-06T23:21:45Z',
                     description: {
+                        __typename: 'BatchChangeDescription',
                         name: 'test-batch-change',
                     },
                     source: BatchSpecSource.REMOTE,
@@ -282,6 +286,7 @@ const BatchChangeBatchSpecs: (variables: BatchChangeBatchSpecsVariables) => Batc
                         username: 'alice',
                     },
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
+                    files: null,
                 },
             ],
         },
@@ -306,7 +311,6 @@ function mockCommonGraphQLResponses(
                 viewerCanAdminister: true,
                 viewerIsMember: false,
                 viewerPendingInvitation: null,
-                viewerNeedsCodeHostUpdate: false,
             },
         }),
         UserAreaUserProfile: () => ({
@@ -321,6 +325,11 @@ function mockCommonGraphQLResponses(
                 viewerCanAdminister: true,
                 builtinAuth: true,
                 tags: [],
+                createdAt: '2020-04-10T21:11:42Z',
+                roles: {
+                    __typename: 'RoleConnection',
+                    nodes: [],
+                },
             },
         }),
         UserSettingsAreaUserProfile: () => ({
@@ -337,10 +346,15 @@ function mockCommonGraphQLResponses(
                 siteAdmin: true,
                 builtinAuth: true,
                 createdAt: '2020-04-10T21:11:42Z',
-                emails: [{ email: 'alice@example.com', verified: true }],
+                emails: [{ email: 'alice@example.com', verified: true, isPrimary: true }],
                 organizations: { nodes: [] },
                 permissionsInfo: null,
                 tags: [],
+                scimControlled: false,
+                roles: {
+                    __typename: 'RoleConnection',
+                    nodes: [],
+                },
             },
         }),
         BatchChangeByNamespace: () => ({
@@ -353,10 +367,12 @@ function mockCommonGraphQLResponses(
                     deleted: 1,
                     merged: 3,
                     open: 8,
-                    total: 19,
+                    total: 37,
                     archived: 18,
                     unpublished: 3,
                     draft: 2,
+                    isCompleted: false,
+                    percentComplete: 27,
                 },
                 state: BatchChangeState.OPEN,
                 closedAt: null,
@@ -410,6 +426,11 @@ function mockCommonGraphQLResponses(
                         nodes: [],
                         totalCount: 0,
                     },
+                    files: null,
+                    description: {
+                        __typename: 'BatchChangeDescription',
+                        name: 'awesome batch spec',
+                    },
                 },
                 batchSpecs: {
                     nodes: [{ state: BatchSpecState.COMPLETED }],
@@ -459,11 +480,6 @@ function mockCommonGraphQLResponses(
                           },
                       },
                   },
-        GetStartedInfo: () => ({
-            membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
-            repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
-            extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
-        }),
     }
 }
 

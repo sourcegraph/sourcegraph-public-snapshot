@@ -1,0 +1,110 @@
+.modal {
+    display: flex;
+    flex-direction: column;
+    width: 80vw;
+    height: 80vh;
+    max-height: 850px;
+    max-width: 900px;
+    background-color: var(--body-bg);
+    padding: 1rem;
+}
+
+.header {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.close-button:hover {
+    svg {
+        color: var(--icon-color);
+    }
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    height: 100%;
+    min-height: 0;
+}
+
+.picker {
+    // Reserve all available area for the insight picker UI
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.description {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-muted);
+    padding-top: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+.suggestions-list {
+    flex-grow: 1;
+    margin-top: 1rem;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    width: unset;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.suggestion-card {
+    // Compensate list negative x margin
+    padding: 0.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+
+    &--icon {
+        margin-right: 0.5rem;
+    }
+
+    &--description {
+        color: var(--text-muted);
+    }
+
+    &[data-highlighted] &--description {
+        color: unset;
+    }
+
+    [data-user-value] {
+        background-color: var(--mark-bg);
+    }
+}
+
+.zero-state-message {
+    margin-left: 1.5rem;
+    display: block;
+    color: var(--text-muted);
+}
+
+.load-more {
+    margin-top: 0.75rem;
+    margin-left: 1.5rem;
+}
+
+.footer {
+    display: flex;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.cancel-action {
+    margin-left: auto;
+    margin-right: 0.5rem;
+}
+
+.keyboard-explanation {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}

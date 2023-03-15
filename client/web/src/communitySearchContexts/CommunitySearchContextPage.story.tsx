@@ -1,14 +1,12 @@
 import { action } from '@storybook/addon-actions'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
+import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -17,17 +15,10 @@ import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTes
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
-import { useExperimentalFeatures } from '../stores'
-import { ThemePreference } from '../theme'
 
 import { cncf } from './cncf'
 import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
 import { temporal } from './Temporal'
-
-const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ showSearchContext: true, showSearchContextManagement: false })
-    return <Story />
-}
 
 const config: Meta = {
     title: 'web/CommunitySearchContextPage',
@@ -38,7 +29,6 @@ const config: Meta = {
         },
         chromatic: { viewports: [769, 1200] },
     },
-    decorators: [decorator],
 }
 
 export default config
@@ -56,7 +46,6 @@ const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
 const authUser: AuthenticatedUser = {
     __typename: 'User',
     id: '0',
-    email: 'alice@sourcegraph.com',
     username: 'alice',
     avatarURL: null,
     session: { canSignOut: true },
@@ -68,23 +57,25 @@ const authUser: AuthenticatedUser = {
         nodes: [
             { id: '0', settingsURL: '#', displayName: 'Acme Corp' },
             { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
-        ] as GQL.IOrg[],
+        ] as AuthenticatedUser['organizations']['nodes'],
     },
     tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
     tosAccepted: true,
     searchable: true,
-    emails: [],
+    emails: [{ email: 'alice@sourcegraph.com', isPrimary: true, verified: true }],
+    latestSettings: null,
+    permissions: { nodes: [] },
 }
 
-const repositories: ISearchContextRepositoryRevisions[] = [
+const repositories: SearchContextFields['repositories'] = [
     {
         __typename: 'SearchContextRepositoryRevisions',
         repository: {
             __typename: 'Repository',
             name: 'github.com/example/example2',
-        } as IRepository,
+        },
         revisions: ['main'],
     },
     {
@@ -92,12 +83,12 @@ const repositories: ISearchContextRepositoryRevisions[] = [
         repository: {
             __typename: 'Repository',
             name: 'github.com/example/example1',
-        } as IRepository,
+        },
         revisions: ['main'],
     },
 ]
 
-const fetchCommunitySearchContext = (): Observable<ISearchContext> =>
+const fetchCommunitySearchContext = (): Observable<SearchContextFields> =>
     of({
         __typename: 'SearchContext',
         id: '1',
@@ -111,6 +102,8 @@ const fetchCommunitySearchContext = (): Observable<ISearchContext> =>
         repositories,
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,
+        viewerHasAsDefault: false,
+        viewerHasStarred: false,
     })
 
 const commonProps = () =>
@@ -129,39 +122,24 @@ const commonProps = () =>
         searchContextsEnabled: true,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
-        defaultSearchContextSpec: '',
         authRequired: false,
         batchChangesEnabled: false,
         authenticatedUser: authUser,
         communitySearchContextMetadata: temporal,
         globbing: false,
-        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         fetchSearchContextBySpec: fetchCommunitySearchContext,
     })
 
 export const Temporal: Story = () => (
-    <WebStory>
-        {webProps => (
-            <CommunitySearchContextPage
-                {...webProps}
-                {...commonProps()}
-                themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
-            />
-        )}
-    </WebStory>
+    <WebStory>{webProps => <CommunitySearchContextPage {...webProps} {...commonProps()} />}</WebStory>
 )
 
 export const CNCFStory: Story = () => (
     <WebStory>
         {webProps => (
-            <CommunitySearchContextPage
-                {...webProps}
-                {...commonProps()}
-                communitySearchContextMetadata={cncf}
-                themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
-            />
+            <CommunitySearchContextPage {...webProps} {...commonProps()} communitySearchContextMetadata={cncf} />
         )}
     </WebStory>
 )

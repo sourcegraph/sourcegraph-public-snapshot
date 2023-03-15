@@ -3,7 +3,7 @@ import { FunctionComponent, HTMLAttributes, PropsWithChildren, ReactElement } fr
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
@@ -21,17 +21,8 @@ interface FilterCollapseSectionProps extends HTMLAttributes<HTMLButtonElement> {
 }
 
 export function FilterCollapseSection(props: PropsWithChildren<FilterCollapseSectionProps>): ReactElement {
-    const {
-        open,
-        title,
-        preview,
-        hasActiveFilter,
-        className,
-        withSeparators,
-        children,
-        onOpenChange,
-        ...attributes
-    } = props
+    const { open, title, preview, hasActiveFilter, className, withSeparators, children, onOpenChange, ...attributes } =
+        props
 
     return (
         <div className={classNames(className, { [styles.rootNoCollapse]: !withSeparators })}>

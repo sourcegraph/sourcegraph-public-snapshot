@@ -2,9 +2,11 @@ package cliutil
 
 import (
 	"context"
-	"encoding/json"
-	"os"
+	"fmt"
+	"net/url"
+	"sort"
 
+	"cuelang.org/go/pkg/strings"
 	"github.com/urfave/cli/v2"
 
 	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -28,31 +30,80 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		Usage:    "The target schema description file.",
 		Required: false,
 	}
+	skipVersionCheckFlag := &cli.BoolFlag{
+		Name:     "skip-version-check",
+		Usage:    "Skip validation of the instance's current version.",
+		Required: false,
+	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
 		schemaName := schemaNameFlag.Get(cmd)
 		version := versionFlag.Get(cmd)
 		file := fileFlag.Get(cmd)
+		skipVersionCheck := skipVersionCheckFlag.Get(cmd)
 
-		if (version == "" && file == "") || (version != "" && file != "") {
-			return errors.New("must supply exactly one of -version or -file")
-		}
-
-		_, store, err := setupStore(ctx, factory, schemaName)
+		r, err := factory([]string{schemaName})
 		if err != nil {
 			return err
 		}
+		store, err := r.Store(ctx, schemaName)
+		if err != nil {
+			return err
+		}
+
+		if version != "" && file != "" {
+			return errors.New("the flags -version or -file are mutually exclusive")
+		}
+
+		// Note: Error is correctly checked here; we want to use the return value
+		// `patch` below but only if we can best-effort fetch it. We want to allow
+		// the user to skip erroring here if they are explicitly skipping this
+		// version check.
+		inferredVersion, ok, err := func() (string, bool, error) {
+			v, patch, ok, err := GetServiceVersion(ctx, r)
+			if err != nil || !ok {
+				return "", false, err
+			}
+
+			return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, patch), true, nil
+		}()
+		if !skipVersionCheck {
+			if err != nil {
+				return err
+			}
+			if !ok {
+				err := errors.Newf("version assertion failed: unknown version != %q", version)
+				return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
+			}
+
+			if version == "" {
+				version = inferredVersion
+				out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Checking drift against version %q", version))
+			} else if version != inferredVersion {
+				err := errors.Newf("version assertion failed: %q != %q", inferredVersion, version)
+				return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
+			}
+		} else if version == "" && file == "" {
+			return errors.New("-skip-version-check was supplied without -version or -file")
+		}
+
+		if file != "" {
+			expectedSchemaFactories = []ExpectedSchemaFactory{
+				NewExplicitFileSchemaFactory(file),
+			}
+		}
+		expectedSchema, err := fetchExpectedSchema(ctx, schemaName, version, out, expectedSchemaFactories)
+		if err != nil {
+			return err
+		}
+
 		schemas, err := store.Describe(ctx)
 		if err != nil {
 			return err
 		}
 		schema := schemas["public"]
 
-		if file != "" {
-			return compareByFile(schemaName, version, schema, out, file)
-		}
-
-		return compareByFactories(schemaName, version, schema, out, expectedSchemaFactories)
+		return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
 	})
 
 	return &cli.Command{
@@ -64,62 +115,107 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			schemaNameFlag,
 			versionFlag,
 			fileFlag,
+			skipVersionCheckFlag,
 		},
 	}
 }
 
-func compareByFile(
+func fetchExpectedSchema(
+	ctx context.Context,
 	schemaName string,
 	version string,
-	schema descriptions.SchemaDescription,
 	out *output.Output,
-	file string,
-) error {
-	expectedSchema, err := readDescriptionFromFile(file)
-	if err != nil {
-		return err
-	}
-
-	return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
-}
-
-func readDescriptionFromFile(file string) (descriptions.SchemaDescription, error) {
-	f, err := os.Open(file)
+	expectedSchemaFactories []ExpectedSchemaFactory,
+) (descriptions.SchemaDescription, error) {
+	filename, err := getSchemaJSONFilename(schemaName)
 	if err != nil {
 		return descriptions.SchemaDescription{}, err
 	}
-	defer f.Close()
 
-	var expectedSchema descriptions.SchemaDescription
-	err = json.NewDecoder(f).Decode(&expectedSchema)
-	return expectedSchema, err
-}
+	out.WriteLine(output.Line(output.EmojiInfo, output.StyleReset, "Locating schema description"))
 
-func compareByFactories(
-	schemaName string,
-	version string,
-	schema descriptions.SchemaDescription,
-	out *output.Output,
-	expectedSchemaFactories []ExpectedSchemaFactory,
-) error {
-	filename, err := getSchemaJSONFilename(schemaName)
-	if err != nil {
-		return err
-	}
-
-	for _, factory := range expectedSchemaFactories {
-		expectedSchema, ok, err := factory(filename, version)
-		if err != nil {
-			return err
+	for i, factory := range expectedSchemaFactories {
+		matches := false
+		patterns := factory.VersionPatterns()
+		for _, pattern := range patterns {
+			if pattern.MatchString(version) {
+				matches = true
+				break
+			}
 		}
-		if !ok {
+		if len(patterns) > 0 && !matches {
 			continue
 		}
 
-		return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
+		resourcePath := factory.ResourcePath(filename, version)
+		expectedSchema, err := factory.CreateFromPath(ctx, resourcePath)
+		if err != nil {
+			suffix := ""
+			if i < len(expectedSchemaFactories)-1 {
+				suffix = " Will attempt a fallback source."
+			}
+
+			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Reading schema definition in %s (%s)... Schema not found (%s).%s", factory.Name(), resourcePath, err, suffix))
+			continue
+		}
+
+		out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "Schema found in %s (%s).", factory.Name(), resourcePath))
+		return expectedSchema, nil
 	}
 
-	return errors.Newf("failed to determine squash schema for version %s (expected the file %s to exist)", version, filename)
+	exampleMap := map[string]struct{}{}
+	failedPaths := map[string]struct{}{}
+	for _, factory := range expectedSchemaFactories {
+		for _, pattern := range factory.VersionPatterns() {
+			if !pattern.MatchString(version) {
+				exampleMap[pattern.Example()] = struct{}{}
+			} else {
+				failedPaths[factory.ResourcePath(filename, version)] = struct{}{}
+			}
+		}
+	}
+
+	versionExamples := make([]string, 0, len(exampleMap))
+	for pattern := range exampleMap {
+		versionExamples = append(versionExamples, pattern)
+	}
+	sort.Strings(versionExamples)
+
+	paths := make([]string, 0, len(exampleMap))
+	for path := range failedPaths {
+		if u, err := url.Parse(path); err == nil && (u.Scheme == "http" || u.Scheme == "https") {
+			paths = append(paths, path)
+		}
+	}
+	sort.Strings(paths)
+
+	if len(paths) > 0 {
+		var additionalHints string
+		if len(versionExamples) > 0 {
+			additionalHints = fmt.Sprintf(
+				"Alternative, provide a different version that matches one of the following patterns: \n  - %s\n", strings.Join(versionExamples, "\n  - "),
+			)
+		}
+
+		out.WriteLine(output.Linef(
+			output.EmojiLightbulb,
+			output.StyleFailure,
+			"Schema not found. "+
+				"Check if the following resources exist. "+
+				"If they do, then the context in which this migrator is being run may not be permitted to reach the public internet."+
+				"\n  - %s\n%s",
+			strings.Join(paths, "\n  - "),
+			additionalHints,
+		))
+	} else if len(versionExamples) > 0 {
+		out.WriteLine(output.Linef(
+			output.EmojiLightbulb,
+			output.StyleFailure,
+			"Schema not found. Ensure your supplied version matches one of the following patterns: \n  - %s\n", strings.Join(versionExamples, "\n  - "),
+		))
+	}
+
+	return descriptions.SchemaDescription{}, errors.New("failed to locate target schema description")
 }
 
 func canonicalize(schemaDescription descriptions.SchemaDescription) descriptions.SchemaDescription {

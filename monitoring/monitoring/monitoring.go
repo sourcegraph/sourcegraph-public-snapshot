@@ -2,13 +2,13 @@ package monitoring
 
 import (
 	"fmt"
-	"math/rand"
-	"regexp"
+	"path"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/grafana-tools/sdk"
+	"github.com/grafana/regexp"
 	"github.com/prometheus/prometheus/model/labels"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -53,11 +53,12 @@ type Dashboard struct {
 }
 
 func (c *Dashboard) validate() error {
-	if !isValidGrafanaUID(c.Name) {
-		return errors.Errorf("Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
+	if err := grafana.ValidateUID(c.Name); err != nil {
+		return errors.Wrapf(err, "Name %q is invalid", c.Name)
 	}
-	if c.Title != strings.Title(c.Title) {
-		return errors.Errorf("Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, strings.Title(c.Title))
+
+	if c.Title != Title(c.Title) {
+		return errors.Errorf("Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, Title(c.Title))
 	}
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
 		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
@@ -102,19 +103,12 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 	uid := c.Name
 	if folder != "" {
 		uid = fmt.Sprintf("%s-%s", folder, uid)
+		if err := grafana.ValidateUID(uid); err != nil {
+			return nil, errors.Wrapf(err, "generated UID %q is invalid", uid)
+		}
 	}
+	board := grafana.NewBoard(uid, c.Title, []string{"builtin"})
 
-	board := sdk.NewBoard(c.Title)
-	board.Version = uint(rand.Uint32())
-	board.UID = uid
-	board.ID = 0
-	board.Timezone = "utc"
-	board.Timepicker.RefreshIntervals = []string{"5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"}
-	board.Time.From = "now-6h"
-	board.Time.To = "now"
-	board.SharedCrosshair = true
-	board.Editable = false
-	board.AddTags("builtin")
 	if !c.noAlertsDefined() {
 		alertLevelVariable := ContainerVariable{
 			Label: "Alert level",
@@ -138,7 +132,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 	}
 	if !c.noAlertsDefined() {
 		// Show alerts matching the selected alert_level (see template variable above)
-		expr, err := promql.Inject(
+		expr, err := promql.InjectMatchers(
 			fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
 			injectLabelMatchers, newVariableApplier(c.Variables))
 		if err != nil {
@@ -164,7 +158,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 		// inspired by https://github.com/grafana/grafana/issues/11948#issuecomment-403841249
 		// We use `job=~.*SERVICE` because of frontend being called sourcegraph-frontend
 		// in certain environments
-		expr, err := promql.Inject(
+		expr, err := promql.InjectMatchers(
 			fmt.Sprintf(`group by(version, instance) (src_service_metadata{job=~".*%[1]s"} unless (src_service_metadata{job=~".*%[1]s"} offset 1m))`, c.Name),
 			injectLabelMatchers,
 			newVariableApplier(c.Variables))
@@ -198,7 +192,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 	board.Panels = append(board.Panels, description)
 
 	if !c.noAlertsDefined() {
-		expr, err := promql.Inject(fmt.Sprintf(`label_replace(
+		expr, err := promql.InjectMatchers(fmt.Sprintf(`label_replace(
 			sum(
 				max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"})
 			) by (
@@ -247,7 +241,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 				Show:    true,
 			},
 		}
-		alertsFiringExpr, err := promql.Inject(
+		alertsFiringExpr, err := promql.InjectMatchers(
 			fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
 			injectLabelMatchers,
 			newVariableApplier(c.Variables),
@@ -273,14 +267,9 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 		// Non-general groups are shown as collapsible panels.
 		var rowPanel *sdk.Panel
 		if group.Title != "General" {
-			rowPanel = &sdk.Panel{RowPanel: &sdk.RowPanel{}}
-			rowPanel.OfType = sdk.RowType
-			rowPanel.Type = "row"
-			rowPanel.Title = group.Title
 			offsetY++
-			setPanelPos(rowPanel, 0, offsetY)
+			rowPanel = grafana.NewRowPanel(offsetY, group.Title)
 			rowPanel.Collapsed = group.Hidden
-			rowPanel.Panels = []sdk.Panel{} // cannot be null
 			board.Panels = append(board.Panels, rowPanel)
 		}
 
@@ -288,48 +277,19 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 		for rowIndex, row := range group.Rows {
 			panelWidth := 24 / len(row)
 			offsetY++
-			for i, o := range row {
-				panelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
-
-				var panel *sdk.Panel
-				switch o.Panel.panelType {
-				case PanelTypeGraph:
-					panel = sdk.NewGraph(panelTitle)
-				case PanelTypeHeatmap:
-					panel = sdk.NewHeatmap(panelTitle)
-				}
-
-				panel.ID = observablePanelID(groupIndex, rowIndex, i)
-
-				// Set positioning
-				setPanelSize(panel, panelWidth, 5)
-				setPanelPos(panel, i*panelWidth, offsetY)
-
-				// Add reference links
-				panel.Links = []sdk.Link{{
-					Title:       "Panel reference",
-					URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
-					TargetBlank: boolPtr(true),
-				}}
-				if !o.NoAlert {
-					panel.Links = append(panel.Links, sdk.Link{
-						Title:       "Alerts reference",
-						URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalAlertDocsURL, observableDocAnchor(c, o))),
-						TargetBlank: boolPtr(true),
-					})
-				}
-
-				// Build the graph panel
-				o.Panel.build(o, panel)
-
-				// Apply injected label matchers
-				for _, target := range *panel.GetTargets() {
-					var err error
-					target.Expr, err = promql.Inject(target.Expr, injectLabelMatchers, newVariableApplier(c.Variables))
-					if err != nil {
-						return nil, errors.Wrap(err, target.Query)
-					}
-					panel.SetTarget(&target)
+			for panelIndex, o := range row {
+				panel, err := o.renderPanel(c, panelManipulationOptions{
+					injectLabelMatchers: injectLabelMatchers,
+				}, &panelRenderOptions{
+					groupIndex:  groupIndex,
+					rowIndex:    rowIndex,
+					panelIndex:  panelIndex,
+					panelWidth:  panelWidth,
+					panelHeight: 5,
+					offsetY:     offsetY,
+				})
+				if err != nil {
+					return nil, errors.Wrapf(err, "render panel for %q", o.Name)
 				}
 
 				// Attach panel to board
@@ -374,13 +334,13 @@ func (c *Dashboard) alertDescription(o Observable, alert *ObservableAlertDefinit
 	return description, nil
 }
 
-// renderRules generates the Prometheus rules file which defines our
+// RenderPrometheusRules generates the Prometheus rules file which defines our
 // high-level alerting metrics for the container. For more information about
 // how these work, see:
 //
 // https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
-func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRulesFile, error) {
-	group := promGroup{Name: c.Name}
+func (c *Dashboard) RenderPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRules, error) {
+	group := newPrometheusRuleGroup(c.Name)
 	for groupIndex, g := range c.Groups {
 		for rowIndex, r := range g.Rows {
 			for observableIndex, o := range r {
@@ -392,7 +352,9 @@ func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRul
 						continue
 					}
 
-					alertQuery, err := a.generateAlertQuery(o, injectLabelMatchers, newVariableApplier(c.Variables))
+					alertQuery, err := a.generateAlertQuery(o, injectLabelMatchers,
+						// Alert queries cannot use variable intervals
+						newVariableApplierWith(c.Variables, false))
 					if err != nil {
 						return nil, errors.Errorf("%s.%s.%s: unable to generate query: %+v",
 							c.Name, o.Name, level, err)
@@ -405,7 +367,7 @@ func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRul
 							c.Name, o.Name, level, err)
 					}
 
-					labels := map[string]string{
+					labelMap := map[string]string{
 						"name":         o.Name,
 						"level":        level,
 						"service_name": c.Name,
@@ -418,9 +380,9 @@ func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRul
 					}
 					// Inject labels as fixed values for alert rules
 					for _, l := range injectLabelMatchers {
-						labels[l.Name] = l.Value
+						labelMap[l.Name] = l.Value
 					}
-					group.appendRow(alertQuery, labels, a.duration)
+					group.appendRow(alertQuery, labelMap, a.duration)
 				}
 			}
 		}
@@ -428,8 +390,8 @@ func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRul
 	if err := group.validate(); err != nil {
 		return nil, err
 	}
-	return &promRulesFile{
-		Groups: []promGroup{group},
+	return &PrometheusRules{
+		Groups: []PrometheusRuleGroup{group},
 	}, nil
 }
 
@@ -489,9 +451,13 @@ func (r Row) validate(variables []ContainerVariable) error {
 // the handbook: https://handbook.sourcegraph.com/departments/engineering/
 type ObservableOwner struct {
 	// identifier is the team's name on OpsGenie and is used for routing alerts.
-	identifier       string
-	handbookSlug     string
-	handbookTeamName string
+	identifier string
+	// human-friendly name for this team
+	teamName string
+	// path relative to handbookBaseURL for this team's page
+	handbookSlug string
+	// optional - defaults to /departments/engineering/teams
+	handbookBasePath string
 }
 
 // identifer must be all lowercase, and optionally  hyphenated.
@@ -510,62 +476,76 @@ var identifierPattern = regexp.MustCompile("^([a-z]+)(-[a-z]+)*?$")
 
 var (
 	ObservableOwnerSearch = ObservableOwner{
-		identifier:       "search",
-		handbookSlug:     "search/product",
-		handbookTeamName: "Search",
+		identifier:   "search",
+		handbookSlug: "search/product",
+		teamName:     "Search",
 	}
 	ObservableOwnerSearchCore = ObservableOwner{
-		identifier:       "search-core",
-		handbookSlug:     "search/core",
-		handbookTeamName: "Search Core",
+		identifier:   "search-core",
+		handbookSlug: "search/core",
+		teamName:     "Search Core",
 	}
 	ObservableOwnerBatches = ObservableOwner{
-		identifier:       "batch-changes",
-		handbookSlug:     "batch-changes",
-		handbookTeamName: "Batch Changes",
+		identifier:   "batch-changes",
+		handbookSlug: "batch-changes",
+		teamName:     "Batch Changes",
 	}
 	ObservableOwnerCodeIntel = ObservableOwner{
-		identifier:       "code-intel",
-		handbookSlug:     "code-intelligence",
-		handbookTeamName: "Code intelligence",
+		identifier:   "code-intel",
+		handbookSlug: "code-intelligence",
+		teamName:     "Code intelligence",
 	}
 	ObservableOwnerSecurity = ObservableOwner{
-		identifier:       "security",
-		handbookSlug:     "security",
-		handbookTeamName: "Security",
+		identifier:   "security",
+		handbookSlug: "security",
+		teamName:     "Security",
 	}
 	ObservableOwnerRepoManagement = ObservableOwner{
-		identifier:       "repo-management",
-		handbookSlug:     "repo-management",
-		handbookTeamName: "Repo Management",
+		identifier:   "repo-management",
+		handbookSlug: "repo-management",
+		teamName:     "Repo Management",
 	}
 	ObservableOwnerCodeInsights = ObservableOwner{
-		identifier:       "code-insights",
-		handbookSlug:     "code-insights",
-		handbookTeamName: "Code Insights",
+		identifier:   "code-insights",
+		handbookSlug: "code-insights",
+		teamName:     "Code Insights",
 	}
 	ObservableOwnerDevOps = ObservableOwner{
-		identifier:       "devops",
-		handbookSlug:     "devops",
-		handbookTeamName: "Cloud DevOps",
+		identifier:   "devops",
+		handbookSlug: "devops",
+		teamName:     "Cloud DevOps",
 	}
 	ObservableOwnerIAM = ObservableOwner{
-		identifier:       "iam",
-		handbookSlug:     "iam",
-		handbookTeamName: "Identity and Access Management",
+		identifier:   "iam",
+		handbookSlug: "iam",
+		teamName:     "Identity and Access Management",
 	}
 	ObservableOwnerDataAnalytics = ObservableOwner{
-		identifier:       "data-analytics",
-		handbookSlug:     "data-analytics",
-		handbookTeamName: "Data & Analytics",
+		identifier:   "data-analytics",
+		handbookSlug: "data-analytics",
+		teamName:     "Data & Analytics",
+	}
+	ObservableOwnerCloud = ObservableOwner{
+		identifier:       "cloud",
+		handbookSlug:     "cloud",
+		handbookBasePath: "/departments",
+		teamName:         "Cloud",
+	}
+	ObservableOwnerCody = ObservableOwner{
+		identifier:   "cody",
+		handbookSlug: "cody",
+		teamName:     "Cody",
 	}
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page in the handbook.
 func (o ObservableOwner) toMarkdown() string {
-	return fmt.Sprintf(
-		"[Sourcegraph %s team](https://handbook.sourcegraph.com/departments/engineering/teams/%s)",
-		o.handbookTeamName, o.handbookSlug,
+	basePath := "/departments/engineering/teams"
+	if o.handbookBasePath != "" {
+		basePath = o.handbookBasePath
+	}
+	return fmt.Sprintf("[Sourcegraph %s team](https://%s)",
+		o.teamName, path.Join("handbook.sourcegraph.com", basePath, o.handbookSlug),
 	)
 }
 
@@ -706,6 +686,10 @@ type Observable struct {
 	// the provided `ObservablePanel` is insufficient - see `ObservablePanelOption` for
 	// more details.
 	Panel ObservablePanel
+
+	// MultiInstance allows a panel to opt-in to a generated multi-instance overview
+	// dashboard, which is created for Sourcegraph Cloud's centralized observability.
+	MultiInstance bool
 }
 
 func (o Observable) validate(variables []ContainerVariable) error {
@@ -732,7 +716,8 @@ func (o Observable) validate(variables []ContainerVariable) error {
 	}
 
 	// Check if query is valid
-	if err := promql.Validate(o.Query, newVariableApplier(variables)); err != nil {
+	allowIntervalVariables := o.NoAlert // if no alert is configured, allow interval variables
+	if err := promql.Validate(o.Query, newVariableApplierWith(variables, allowIntervalVariables)); err != nil {
 		return errors.Wrapf(err, "Query is invalid")
 	}
 
@@ -799,6 +784,84 @@ func (o Observable) alertsCount() (count int) {
 		count++
 	}
 	return
+}
+
+type panelRenderOptions struct {
+	groupIndex  int
+	rowIndex    int
+	panelIndex  int
+	panelWidth  int
+	panelHeight int
+
+	offsetY int
+}
+
+type panelManipulationOptions struct {
+	injectLabelMatchers []*labels.Matcher
+	injectGroupings     []string
+}
+
+func (o Observable) renderPanel(c *Dashboard, manipulations panelManipulationOptions, opts *panelRenderOptions) (*sdk.Panel, error) {
+	panelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
+
+	var panel *sdk.Panel
+	switch o.Panel.panelType {
+	case PanelTypeGraph:
+		panel = sdk.NewGraph(panelTitle)
+	case PanelTypeHeatmap:
+		panel = sdk.NewHeatmap(panelTitle)
+	}
+
+	// Set attributes based on position, if available
+	if opts != nil {
+		// Generating a stable ID
+		panel.ID = observablePanelID(opts.groupIndex, opts.rowIndex, opts.panelIndex)
+
+		// Set positioning
+		setPanelSize(panel, opts.panelWidth, opts.panelHeight)
+		setPanelPos(panel, opts.panelIndex*opts.panelWidth, opts.offsetY)
+	}
+
+	// Add reference links
+	panel.Links = []sdk.Link{{
+		Title:       "Panel reference",
+		URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
+		TargetBlank: boolPtr(true),
+	}}
+	if !o.NoAlert {
+		panel.Links = append(panel.Links, sdk.Link{
+			Title:       "Alerts reference",
+			URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalAlertDocsURL, observableDocAnchor(c, o))),
+			TargetBlank: boolPtr(true),
+		})
+	}
+
+	// Build the graph panel
+	o.Panel.build(o, panel)
+
+	// Apply injected label matchers
+	for _, target := range *panel.GetTargets() {
+		var err error
+		target.Expr, err = promql.InjectMatchers(target.Expr, manipulations.injectLabelMatchers, newVariableApplier(c.Variables))
+		if err != nil {
+			return nil, errors.Wrap(err, target.Query)
+		}
+
+		if len(manipulations.injectGroupings) > 0 {
+			target.Expr, err = promql.InjectGroupings(target.Expr, manipulations.injectGroupings, newVariableApplier(c.Variables))
+			if err != nil {
+				return nil, errors.Wrap(err, target.Query)
+			}
+
+			for _, g := range manipulations.injectGroupings {
+				target.LegendFormat = fmt.Sprintf("%s - {{%s}}", target.LegendFormat, g)
+			}
+		}
+
+		panel.SetTarget(&target)
+	}
+
+	return panel, nil
 }
 
 // Alert provides a builder for defining alerting on an Observable.

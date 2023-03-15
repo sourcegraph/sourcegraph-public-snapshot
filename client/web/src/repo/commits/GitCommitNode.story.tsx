@@ -12,7 +12,9 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 
 const config: Meta = {
     title: 'web/GitCommitNode',
-    parameters: { disableSnapshot: false },
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
     decorators: [decorator],
 }
 
@@ -52,8 +54,7 @@ const gitCommitNode: GitCommitFields = {
             },
         },
     },
-    body:
-        'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.',
+    body: 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.',
     parents: [
         {
             abbreviatedOID: '987654',

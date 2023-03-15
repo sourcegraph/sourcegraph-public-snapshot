@@ -1,15 +1,16 @@
-jest.mock('../../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
-    DynamicallyImportedMonacoSettingsEditor: () => 'DynamicallyImportedMonacoSettingsEditor',
-}))
-
 import * as H from 'history'
 import { noop } from 'rxjs'
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+
+import { ExternalServiceKind } from '../../graphql-operations'
 
 import { ExternalServiceForm } from './ExternalServiceForm'
+
+jest.mock('../../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
+    DynamicallyImportedMonacoSettingsEditor: () => 'DynamicallyImportedMonacoSettingsEditor',
+}))
 
 describe('ExternalServiceForm', () => {
     const baseProps = {
@@ -21,6 +22,8 @@ describe('ExternalServiceForm', () => {
         editorActions: [],
         externalServicesFromFile: false,
         allowEditExternalServicesWithFile: false,
+        isSourcegraphApp: false,
+        isAppLocalFileService: false,
     }
 
     test('create GitHub', () => {

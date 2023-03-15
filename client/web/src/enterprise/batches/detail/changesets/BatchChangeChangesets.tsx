@@ -1,25 +1,11 @@
 import React, { useState, useCallback, useMemo, useEffect, useContext } from 'react'
 
-import * as H from 'history'
 import { Subject } from 'rxjs'
-import { withLatestFrom, map, filter } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { createHoverifier } from '@sourcegraph/codeintellify'
-import { isDefined, property } from '@sourcegraph/common'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Container, useObservable } from '@sourcegraph/wildcard'
+import { Container } from '@sourcegraph/wildcard'
 
-import { getHover, getDocumentHighlights } from '../../../../backend/features'
-import { useConnection } from '../../../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -29,7 +15,6 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../../components/FilteredConnection/ui'
-import { WebHoverOverlay } from '../../../../components/shared'
 import {
     ExternalChangesetFields,
     HiddenExternalChangesetFields,
@@ -39,7 +24,6 @@ import {
     BatchChangeState,
 } from '../../../../graphql-operations'
 import { MultiSelectContext, MultiSelectContextProvider } from '../../MultiSelectContext'
-import { getLSPTextDocumentPositionParameters } from '../../utils'
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs as _queryAllChangesetIDs,
@@ -57,18 +41,11 @@ import { EmptyDraftChangesetListElement } from './EmptyDraftChangesetListElement
 
 import styles from './BatchChangeChangesets.module.scss'
 
-interface Props
-    extends ThemeProps,
-        PlatformContextProps,
-        TelemetryProps,
-        ExtensionsControllerProps,
-        SettingsCascadeProps {
+interface Props {
     batchChangeID: Scalars['ID']
     batchChangeState: BatchChangeState
     isExecutionEnabled: boolean
     viewerCanAdminister: boolean
-    history: H.History
-    location: H.Location
 
     hideFilters?: boolean
     onlyArchived?: boolean
@@ -96,19 +73,12 @@ const BATCH_COUNT = 15
 const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchChangeID,
     viewerCanAdminister,
-    history,
-    location,
-    isLightTheme,
-    extensionsController,
-    platformContext,
-    telemetryService,
     hideFilters = false,
     queryAllChangesetIDs = _queryAllChangesetIDs,
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
     onlyArchived,
     refetchBatchChange,
-    settingsCascade,
     batchChangeState,
     isExecutionEnabled,
 }) => {
@@ -117,15 +87,8 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
     // single object makes it hard to have hooks that depend on individual
     // callbacks and objects within the context. Therefore, we'll have a nice,
     // ugly destructured set of variables here.
-    const {
-        selected,
-        deselectAll,
-        areAllVisibleSelected,
-        isSelected,
-        toggleSingle,
-        toggleVisible,
-        setVisible,
-    } = useContext(MultiSelectContext)
+    const { selected, deselectAll, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } =
+        useContext(MultiSelectContext)
 
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
@@ -162,7 +125,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
         [changesetFilters, batchChangeID, onlyArchived]
     )
 
-    const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
+    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
         BatchChangeChangesetsResult,
         BatchChangeChangesetsVariables,
         ExternalChangesetFields | HiddenExternalChangesetFields
@@ -205,43 +168,6 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
     const containerElements = useMemo(() => new Subject<HTMLElement | null>(), [])
     const nextContainerElement = useMemo(() => containerElements.next.bind(containerElements), [containerElements])
 
-    const hoverOverlayElements = useMemo(() => new Subject<HTMLElement | null>(), [])
-    const nextOverlayElement = useCallback((element: HTMLElement | null): void => hoverOverlayElements.next(element), [
-        hoverOverlayElements,
-    ])
-
-    const componentRerenders = useMemo(() => new Subject<void>(), [])
-
-    const hoverifier = useMemo(
-        () =>
-            createHoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>({
-                hoverOverlayElements,
-                hoverOverlayRerenders: componentRerenders.pipe(
-                    withLatestFrom(hoverOverlayElements, containerElements),
-                    map(([, hoverOverlayElement, relativeElement]) => ({
-                        hoverOverlayElement,
-                        // The root component element is guaranteed to be rendered after a componentDidUpdate
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        relativeElement: relativeElement!,
-                    })),
-                    // Can't reposition HoverOverlay if it wasn't rendered
-                    filter(property('hoverOverlayElement', isDefined))
-                ),
-                getHover: hoveredToken =>
-                    getHover(getLSPTextDocumentPositionParameters(hoveredToken), { extensionsController }),
-                getDocumentHighlights: hoveredToken =>
-                    getDocumentHighlights(getLSPTextDocumentPositionParameters(hoveredToken), { extensionsController }),
-                getActions: context => getHoverActions({ extensionsController, platformContext }, context),
-            }),
-        [containerElements, extensionsController, hoverOverlayElements, platformContext, componentRerenders]
-    )
-    useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
-
-    const hoverState = useObservable(useMemo(() => hoverifier.hoverStateUpdates, [hoverifier]))
-    useEffect(() => {
-        componentRerenders.next()
-    }, [componentRerenders, hoverState])
-
     const showSelectRow = viewerCanAdminister && (selected === 'all' || selected.size > 0)
 
     const emptyElement = useMemo(() => {
@@ -263,11 +189,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
     return (
         <Container>
             {!hideFilters && !showSelectRow && (
-                <ChangesetFilterRow
-                    history={history}
-                    location={location}
-                    onFiltersChange={setChangesetFiltersAndDeselectAll}
-                />
+                <ChangesetFilterRow onFiltersChange={setChangesetFiltersAndDeselectAll} />
             )}
             {showSelectRow && queryArguments && (
                 <ChangesetSelectRow
@@ -280,7 +202,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
-                    <ConnectionList as="div" className={styles.batchChangeChangesetsGrid}>
+                    <ConnectionList className={styles.batchChangeChangesetsGrid} aria-label="changesets">
                         {connection?.nodes?.length ? (
                             <BatchChangeChangesetsHeader
                                 allSelected={showSelectRow && areAllVisibleSelected()}
@@ -292,11 +214,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
                             <ChangesetNode
                                 key={node.id}
                                 node={node}
-                                isLightTheme={isLightTheme}
                                 viewerCanAdminister={viewerCanAdminister}
-                                history={history}
-                                location={location}
-                                extensionInfo={{ extensionsController, hoverifier }}
                                 expandByDefault={expandByDefault}
                                 queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                                 selectable={{ onSelect: toggleSingle, isSelected }}
@@ -324,20 +242,6 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
                         </SummaryContainer>
                     )}
                 </ConnectionContainer>
-                {hoverState?.hoverOverlayProps && extensionsController !== null && (
-                    <WebHoverOverlay
-                        {...hoverState.hoverOverlayProps}
-                        nav={url => history.push(url)}
-                        hoveredTokenElement={hoverState.hoveredTokenElement}
-                        telemetryService={telemetryService}
-                        extensionsController={extensionsController}
-                        isLightTheme={isLightTheme}
-                        location={location}
-                        platformContext={platformContext}
-                        hoverRef={nextOverlayElement}
-                        settingsCascade={settingsCascade}
-                    />
-                )}
             </div>
         </Container>
     )

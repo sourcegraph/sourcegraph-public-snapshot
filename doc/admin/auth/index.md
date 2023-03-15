@@ -1,11 +1,12 @@
-# User authentication (SSO)
+# User authentication
 
 Sourcegraph supports the following ways for users to sign in:
 
-- [Guidance](#guidance)
 - [Builtin password authentication](#builtin-password-authentication)
 - [GitHub](#github)
 - [GitLab](#gitlab)
+- [Bitbucket Cloud](#bitbucket-cloud)
+- [Gerrit](#gerrit) <span class="badge badge-beta">Beta</span>
 - [SAML](saml/index.md)
 - [OpenID Connect](#openid-connect)
   - [Google Workspace (Google accounts)](#google-workspace-google-accounts)
@@ -16,7 +17,7 @@ Sourcegraph supports the following ways for users to sign in:
 
 The authentication provider is configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
 
-## Guidance
+## Recommendations
 
 If you are unsure which auth provider is right for you, we recommend applying the following rules in
 order:
@@ -47,16 +48,26 @@ enable sign-in via multiple services. Identities from different providers will b
 Sourcegraph user by comparing the user's verified email address to the email address from the
 external identity provider.
 
-> _NOTE: If OAuth is the only sign-in method available on sign-out, a new OAuth sign-in will be attempted immediately upon a redirect to the sign-in page. If it is necessary to sign-out and have persistent access to the sign-in page, enable `builtin` sign-in in addition to your OAuth sign-in._
+> NOTE: If OAuth is the only sign-in method available on sign-out, a new OAuth sign-in will be attempted immediately upon a redirect to the sign-in page. If it is necessary to sign-out and have persistent access to the sign-in page, enable `builtin` sign-in in addition to your OAuth sign-in.
 
 ## Builtin password authentication
 
 The [`builtin` auth provider](../config/site_config.md#builtin-password-authentication) manages user accounts internally in its own database. It supports user signup, login, and password reset (via email if configured, or else via a site admin).
 
-Password reset links expire after 4 hours.
+Password reset links expire after 4 hours by default - this can be configured in site configuration with the [`auth.passwordResetLinkExpiry`](../config/site_config.md#auth-passwordResetLinkExpiry) field.
 
+### Creating builtin authentication users
 
-###  How to control user sign-up
+Users can be created with builtin password authentication in several ways:
+
+- through the site admin page `/site-admin/users/new`
+- through users [signing up](#how-to-control-user-sign-up)
+- through the `createUser` mutation in the GraphQL API
+- through [`src users create`](../../cli/references/users/create.md)
+
+When [SMTP is enabled](../config/email.md), special behaviours apply to whether a builtin authentication user's email is marked as verified by default - refer to [email verification](../config/email.md#user-email-verification) for more details.
+
+### How to control user sign-up
 
 You can use the filter `allowSignup`, available in the builtin configuration, to control who can create an account in your Sourcegraph instance.
 
@@ -64,9 +75,9 @@ You can use the filter `allowSignup`, available in the builtin configuration, to
 
   If set to `true`, users will see a sign-up link under the login form and will have access to the sign-up page, where they can create their accounts without restriction.
 
-  When not set, it will default to `false` -- in this case, new user accounts should be created by the site admin.
+  When not set, it will default to `false` -- in this case, users will see request access link. Unauthenticated users can submit request access forms and admins will get notification on the instance which they can approve or reject. Access request feature can be disabled by setting `experimentalFeatures.accessRequest.enabled: false`, and in this case new user accounts should be created by the site admin manually.
 
-  If you choose to block sign-ups by using the `allowSignup` filter avaiable in another auth provider (eg., [GitHub](#how-to-control-user-sign-up-and-sign-in-with-github-auth-provider) or [GiLab](#how-to-control-user-sign-up-and-sign-in-with-gitlab-auth-provider)), make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
+  If you choose to block sign-ups by using the `allowSignup` filter avaliable in another auth provider (eg., [GitHub](#how-to-control-user-sign-up-and-sign-in-with-github-auth-provider) or [GiLab](#how-to-control-user-sign-up-and-sign-in-with-gitlab-auth-provider)), make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
 
   During the initial setup, the builtin sign-up will be available for the first user so they can create an account and become admin.
 
@@ -76,6 +87,8 @@ You can use the filter `allowSignup`, available in the builtin configuration, to
     "auth.providers": [{ "type": "builtin", "allowSignup": true }]
   }
 ```
+> NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://about.sourcegraph.com/pricing).
+
 
 
 ### Account lockout
@@ -207,7 +220,7 @@ When combined with `"allowSignup": false` or unset, an admin should first create
 
   When combined with `"allowSignup": true`, only members of the allowed teams can create their accounts in Sourcegraph via GitHub authentication.
 
-  If set with `"allowSignup": false` or if `allowSignup` is unset, an admim should first create the new users accounts so that they can login with GitHub.
+  If set with `"allowSignup": false` or if `allowSignup` is unset, an admin should first create the new users accounts so that they can login with GitHub.
 
   In case both `allowOrgs` and `allowOrgsMap` filters are configured, org membership (`allowOrgs`) will be checked first. Only if the user doesn't belong to any of the listed organizations then team membership (`allowOrgsMap`) will be checked.
 
@@ -258,8 +271,9 @@ Then add the following lines to your site configuration:
 Replace the `clientID` and `clientSecret` values with the values from your GitLab OAuth app
 configuration.
 
-Once you've configured GitLab as a sign-on provider, you may also want to [add GitLab repositories
-to Sourcegraph](../external_service/gitlab.md#repository-syncing).
+Once you've configured GitLab as a sign-on provider, you may also want to [add GitLab repositories to Sourcegraph](../external_service/gitlab.md#repository-syncing).
+
+> NOTE: Administrators on the GitLab instance who then sign in to Sourcegraph will not have access to all of the repositories on Sourcegraph as well. Administrators will only have access to repositories on GitLab for which they are assigned the Reporter role and above.
 
 ### How to control user sign-up and sign-in with GitLab auth provider
 
@@ -292,9 +306,11 @@ You can use the following filters to control how users can create accounts and s
 
   When empty or unset, no restrictions will be applied.
 
-  If combined with `"allowSignup": false`, an admim should first create the user account so that the user can sign in with GitLab.
+  If combined with `"allowSignup": false`, an admin should first create the user account so that the user can sign in with GitLab.
 
   If combined with `"allowSignup": true` or with `allowSignup` unset, only members of  the allowed groups or subgroups can create their accounts in Sourcegraph via GitLab authentitcation.
+
+> WARNING: Users will require a minimum access level of `Guest` in at least one of the specified groups in order to gain access to Sourcegraph. GitLab offers a lower user permission level, [Minimal Access](https://docs.gitlab.com/ee/user/permissions.html#users-with-minimal-access), for Premium and Ultimate tier customers, which is often used to configure SAML SSO on GitLab. Sourcegraph does not currently support the `Minimal Access` access level, and users with this access level will not be allowed to sign in. In these cases it is recommended to create a subgroup and add all users that require access to Sourcegraph to that subgroup with a minimum access level of `Guest`, and then add that subgroup to the `allowGroups` list.
 
   ```json
     {
@@ -307,6 +323,53 @@ You can use the following filters to control how users can create accounts and s
     }
   ```
 
+## Bitbucket Cloud
+
+[Create a Bitbucket Cloud OAuth consumer](https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/). Set the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
+Sourcegraph instance:
+
+- Callback URL: `https://sourcegraph.example.com/.auth/bitbucketcloud/callback`
+- Permissions: 
+  - `Account`: `Read`
+  - `Repositories`: `Read` (more information in [repository permissions section](../permissions/index.md))
+
+After the consumer is created, you will need the `Key` and the `Secret`, which can be found by expanding OAuth consumer in the list.
+Then add the following lines to your [site configuration](config/site_config.md):
+
+```json
+{
+    // ...
+    "auth.providers": [
+      {
+        "type": "bitbucketcloud",
+        "displayName": "Bitbucket Cloud",
+        "clientKey": "replace-with-the-oauth-consumer-key",
+        "clientSecret": "replace-with-the-oauth-consumer-secret",
+        "allowSignup": false // If not set, it defaults to true allowing any Bitbucket Cloud user with access to your instance to sign up.
+      }
+    ]
+```
+Replace the `clientKey` and `clientSecret` values with the values from your Bitbucket Cloud OAuth consumer.
+
+## Gerrit
+<span class="badge badge-beta">Beta</span>
+
+To enable users to add Gerrit credentials and verify their access to repositories on Sourcegraph,
+add the following lines to your [site configuration](config/site_config.md):
+
+```json
+{
+    // ...
+    "auth.providers": [
+      {
+        "type": "gerrit",
+        "displayName": "Gerrit",
+        "url": "https://example.gerrit.com" // Must match the URL of the code host connection for which authorization is required
+      }
+    ]
+```
+
+Users can then add Gerrit credentials by visiting their **Settings** > **Account security**.
 
 ## OpenID Connect
 
@@ -339,7 +402,7 @@ Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-
       "type": "openidconnect",
       "issuer": "https://oidc.example.com",
       "clientID": "my-client-id",
-      "configID":"my-config-id" //An arbitrary value that will be used to reference to this auth provider within the site config 
+      "configID":"my-config-id", //An arbitrary value that will be used to reference to this auth provider within the site config 
       "clientSecret": "my-client-secret",
       "requireEmailDomain": "example.com"
     }
@@ -449,7 +512,7 @@ Let's say the email field in your Sourcegraph account was kept blank when a site
 Exceptions to this rule are [HTTP Proxies](#http-authentication-proxies), where there's an option to make the link via username only.
 For [Bitbucket](../config/authorization_and_authentication.md#bitbucket-server-bitbucket-data-center-authorization), we don't support OAuth. Still, the match between the chosen auth provider used with Bitbucket and a user's Bitbucket account happens via username.
 
-Using only a username to match a Sourcegraph account to an auth provider account is not recommended, as you can see [here](../repo/permissions.md#username), for example.
+Using only a username to match a Sourcegraph account to an auth provider account is not recommended, as you can see [here](../external_service/gitlab.md#username), for example.
 Usernames in Sourcegraph are mutable, so a malicious user could change a username, elevating their privileges.
 
 ## Linking accounts from multiple auth providers
@@ -461,12 +524,12 @@ At the time of signing in with the new account, any of the email addresses confi
 
 Usernames on Sourcegraph are normalized according to the following rules.
 
-- Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
+- Any characters not in `[a-zA-Z0-9-._]` are replaced with `-`
 - Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
 - Usernames with two or more `@` characters are not considered an email address, so the `@` will be treated as a non-standard character and be replaced with `-`
-- Usernames with consecutive `-` or `.` characters are not allowed
-- Usernames that start or end with `.` are not allowed
-- Usernames that start with `-` are not allowed
+- Usernames with consecutive `-` or `.` characters are not allowed, so they are replaced with a single `-` or `.`
+- Usernames that start with `.` or `-` are not allowed, starting periods and dashes are removed
+- Usernames that end with `.` are not allowed, ending periods are removed
 
 Usernames from authentication providers are normalized before being used in Sourcegraph. Usernames chosen by users are rejected if they do not meet these criteria.
 

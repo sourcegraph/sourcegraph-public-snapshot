@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sgconf",
+    srcs = [
+        "config.go",
+        "global.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/run",
+        "//dev/sg/root",
+        "//lib/errors",
+        "@in_gopkg_yaml_v2//:yaml_v2",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "sgconf_test",
+    srcs = ["config_test.go"],
+    embed = [":sgconf"],
+    deps = [
+        "//dev/sg/internal/run",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

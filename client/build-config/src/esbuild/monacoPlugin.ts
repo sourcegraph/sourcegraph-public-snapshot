@@ -6,9 +6,8 @@ import { EditorFeature, featuresArr } from 'monaco-editor-webpack-plugin/out/fea
 // eslint-disable-next-line no-restricted-imports
 import { EditorLanguage, languagesArr } from 'monaco-editor-webpack-plugin/out/languages'
 
-import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config'
-
 import { ROOT_PATH } from '../paths'
+import { MONACO_LANGUAGES_AND_FEATURES } from '../webpack/monaco-editor'
 
 const monacoModulePath = (modulePath: string): string =>
     require.resolve(path.join('monaco-editor/esm', modulePath), {
@@ -66,8 +65,8 @@ export const monacoPlugin = ({
 // using MonacoEnvironment#getWorker (from #getWorkerUrl), which would then let us use the worker
 // plugin (and in Webpack the worker-loader) to load these instead of needing to hardcode them as
 // build entrypoints.
-export const buildMonaco = async (outdir: string): Promise<void> => {
-    await esbuild.build({
+export const buildMonaco = async (outdir: string): Promise<esbuild.BuildContext> =>
+    esbuild.context({
         entryPoints: {
             'scripts/editor.worker.bundle': 'monaco-editor/esm/vs/editor/editor.worker.js',
             'scripts/json.worker.bundle': 'monaco-editor/esm/vs/language/json/json.worker.js',
@@ -77,4 +76,3 @@ export const buildMonaco = async (outdir: string): Promise<void> => {
         bundle: true,
         outdir,
     })
-}

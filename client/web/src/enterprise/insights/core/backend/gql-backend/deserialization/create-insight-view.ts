@@ -1,19 +1,8 @@
-import { Duration } from 'date-fns'
-import { uniq } from 'lodash'
-
-import { SeriesSortDirection } from '@sourcegraph/shared/src/schema'
-
-import {
-    InsightViewNode,
-    SeriesSortMode,
-    GroupByField,
-    TimeIntervalStepInput,
-    TimeIntervalStepUnit,
-} from '../../../../../../graphql-operations'
-import { parseSeriesDisplayOptions } from '../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
-import { MAX_NUMBER_OF_SERIES } from '../../../../constants'
-import { ComputeInsight, Insight, InsightExecutionType, InsightType } from '../../../types'
+import { InsightViewNode, GroupByField } from '../../../../../../graphql-operations'
+import { ComputeInsight, Insight, InsightType } from '../../../types'
 import { BaseInsight } from '../../../types/insight/common'
+
+import { getDurationFromStep, getInsightRepositories, getParsedFilters } from './field-parsers'
 
 /**
  * Transforms/casts gql api insight model to FE insight model. We still
@@ -22,15 +11,12 @@ import { BaseInsight } from '../../../types/insight/common'
  * api for insights.
  */
 export const createInsightView = (insight: InsightViewNode): Insight => {
-    const baseInsight: Omit<BaseInsight, 'type' | 'executionType'> = {
+    const baseInsight: Omit<BaseInsight, 'type'> = {
         id: insight.id,
         title: insight.presentation.title,
         isFrozen: insight.isFrozen,
-        dashboardReferenceCount: insight.dashboardReferenceCount,
-        seriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
         dashboards: insight.dashboards?.nodes ?? [],
-        appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
-        defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
+        dashboardReferenceCount: insight.dashboardReferenceCount,
     }
 
     switch (insight.presentation.__typename) {
@@ -40,46 +26,24 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 series => series.generatedFromCaptureGroups && !series.groupBy
             )
 
-            const { appliedFilters } = insight
+            const { defaultFilters, defaultSeriesDisplayOptions } = insight
             // We do not support different time scope for different series at the moment
             const step = getDurationFromStep(insight.dataSeriesDefinitions[0].timeScope)
-            const repositories = uniq(
-                insight.dataSeriesDefinitions.flatMap(series => series.repositoryScope.repositories)
-            )
-
-            // Transform display options into format compatible with our input forms
-            // TODO: Remove when we consume GQL types directly
-            const seriesDisplayOptions = {
-                limit: `${Math.min(
-                    baseInsight.seriesDisplayOptions?.limit ?? MAX_NUMBER_OF_SERIES,
-                    MAX_NUMBER_OF_SERIES
-                )}`,
-                sortOptions: {
-                    direction: baseInsight.seriesDisplayOptions?.sortOptions?.direction ?? SeriesSortDirection.DESC,
-                    mode: baseInsight.seriesDisplayOptions?.sortOptions?.mode ?? SeriesSortMode.RESULT_COUNT,
-                },
-            }
+            const { repositories, repoSearch } = getInsightRepositories(insight.repositoryDefinition)
+            const filters = getParsedFilters(defaultFilters, defaultSeriesDisplayOptions)
 
             if (isCaptureGroupInsight) {
                 // It's safe because capture group insight always has only 1 data series
                 const { query } = insight.dataSeriesDefinitions[0] ?? {}
-                const { appliedFilters } = insight
 
                 return {
                     ...baseInsight,
-                    executionType: InsightExecutionType.Backend,
                     type: InsightType.CaptureGroup,
                     repositories,
+                    repoQuery: repoSearch,
                     query,
                     step,
-                    filters: {
-                        includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
-                        excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
-                        context: appliedFilters.searchContexts?.[0] ?? '',
-                        seriesDisplayOptions,
-                    },
-                    appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
-                    defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
+                    filters,
                 }
             }
 
@@ -103,33 +67,22 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
 
                 return {
                     ...baseInsight,
-                    executionType: InsightExecutionType.Backend,
                     type: InsightType.Compute,
                     groupBy: groupBy ?? GroupByField.REPO,
                     repositories,
                     series,
-                    filters: {
-                        includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
-                        excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
-                        context: appliedFilters.searchContexts?.[0] ?? '',
-                        seriesDisplayOptions,
-                    },
+                    filters,
                 } as ComputeInsight
             }
 
             return {
                 ...baseInsight,
-                executionType: InsightExecutionType.Backend,
                 type: InsightType.SearchBased,
                 repositories,
+                repoQuery: repoSearch,
                 series,
                 step,
-                filters: {
-                    includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
-                    excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
-                    context: appliedFilters.searchContexts?.[0] ?? '',
-                    seriesDisplayOptions,
-                },
+                filters,
             }
         }
 
@@ -137,31 +90,15 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             // At the moment BE doesn't have a special fragment type for Lang Stats repositories.
             // We use search based definition (first repo of first definition). For lang-stats
             // it always should be exactly one series with repository scope info.
-            const repository = insight.dataSeriesDefinitions[0].repositoryScope.repositories[0] ?? ''
+            const { repositories } = getInsightRepositories(insight.repositoryDefinition)
 
             return {
                 ...baseInsight,
-                executionType: InsightExecutionType.Runtime,
                 type: InsightType.LangStats,
                 title: insight.presentation.title,
                 otherThreshold: insight.presentation.otherThreshold,
-                repository,
+                repository: repositories[0] ?? '',
             }
         }
-    }
-}
-
-function getDurationFromStep(step: TimeIntervalStepInput): Duration {
-    switch (step.unit) {
-        case TimeIntervalStepUnit.HOUR:
-            return { hours: step.value }
-        case TimeIntervalStepUnit.DAY:
-            return { days: step.value }
-        case TimeIntervalStepUnit.WEEK:
-            return { weeks: step.value }
-        case TimeIntervalStepUnit.MONTH:
-            return { months: step.value }
-        case TimeIntervalStepUnit.YEAR:
-            return { years: step.value }
     }
 }

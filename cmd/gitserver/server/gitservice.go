@@ -90,10 +90,10 @@ func (s *Server) gitServiceHandler() *gitservice.Handler {
 			metricServiceRunning.WithLabelValues(svc).Inc()
 
 			// Log which which actor is accessing the repo.
-			accesslog.Record(ctx, repo, map[string]string{
-				"svc":      svc,
-				"protocol": protocol,
-			})
+			accesslog.Record(ctx, repo,
+				log.String("svc", svc),
+				log.String("protocol", protocol),
+			)
 
 			return func(err error) {
 				errLabel := strconv.FormatBool(err != nil)

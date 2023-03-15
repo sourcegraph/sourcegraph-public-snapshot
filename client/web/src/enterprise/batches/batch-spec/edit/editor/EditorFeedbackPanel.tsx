@@ -4,8 +4,7 @@ import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { compact } from 'lodash'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { Icon, H4 } from '@sourcegraph/wildcard'
+import { Icon, H4, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { BatchSpecContextErrors } from '../../BatchSpecContext'
 
@@ -26,7 +25,11 @@ export const EditorFeedbackPanel: React.FunctionComponent<React.PropsWithChildre
     const errorHeading = errors.codeValidation ? 'Validation Errors' : 'Errors found'
 
     return (
-        <div className={classNames(styles.panel, 'rounded border bg-1 p-2 w-100 mt-2')}>
+        <div
+            className={classNames(styles.panel, 'rounded border bg-1 p-2 w-100 mt-2')}
+            role="region"
+            aria-label="editor feedback panel"
+        >
             <H4 className="text-danger text-uppercase">
                 <Icon aria-hidden={true} className="text-danger" svgPath={mdiAlertCircle} /> {errorHeading}
             </H4>

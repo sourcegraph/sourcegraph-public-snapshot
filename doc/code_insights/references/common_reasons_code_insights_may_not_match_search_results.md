@@ -28,7 +28,7 @@ Currently, a data series' most recent datapoint defaults to the end of the prior
 
 If your code insight is very large, it is possible that a few (\<1% in 100+ manual tests over 26,000 repositories) repositories failed to return match counts due to timing out while searching. To check this, you can run the following GraphQL query in the Sourcegraph GraphQL API: 
 ```graphql
-query{
+query debug {
   insightViews(id: "INSIGHT_ID") {
     nodes {
       dataSeries {
@@ -38,17 +38,16 @@ query{
           completedJobs
           failedJobs
         }
-        dirtyMetadata {
-          count
-          reason
-          time
-        }
       }
     }
+  }
+  insightViewDebug(id: "INSIGHT_ID") {
+    raw
   }
 }
 ```
 
-where `INSIGHT_ID` can be found in the URL of the "edit" page for the insight (selectable from the three-dot dropdown on the insight) after `...edit/`. For example, `https://sourcegraph.yourdomain.com/insights/edit/searchInsights.insight.TestInsightTitleHere?dashboardId=all` contains the `INSIGHT_ID` of `searchInsights.insight.TestInsightTitleHere`.  The `INSIGHT_ID` can also be found in the url of the single insight view found by clicking on the title of the insight. The ID will be in the url, for example, `https://sourcegraph.yourdomain.com/insights/insight/{INSIGHT_ID}`
+where `INSIGHT_ID` can be found in the "edit" page for the insight (selectable from the three-dot dropdown on the insight) after `...edit/`. It will look like `https://yourdomain.sourcegraph.com/insights/edit/INSIGHT_ID?dashboardId=all`. The `INSIGHT_ID` can also be found in the url of the single insight view found by clicking on the title of the insight. The ID will be in the url, for example, `https://sourcegraph.yourdomain.com/insights/insight/{INSIGHT_ID}`
 
 If there are `failedJobs`, there may be timeouts or similar issues affecting your insight. 
+`insightViewDebug` was added in 4.2 to give you more raw information on your insight. 

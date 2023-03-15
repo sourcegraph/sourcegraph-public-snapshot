@@ -30,6 +30,10 @@ type ServiceConnections struct {
 
 	// Searchers is the addresses of searcher instances that should be talked to.
 	Searchers []string `json:"searchers"`
+	// Symbols is the addresses of symbol instances that should be talked to.
+	Symbols []string `json:"symbols"`
+	// Embeddings is the addresses of embeddings instances that should be talked to.
+	Embeddings []string `json:"embeddings"`
 	// Zoekts is the addresses of Zoekt instances to talk to.
 	Zoekts []string `json:"zoekts"`
 	// ZoektListTTL is the TTL of the internal cache that Zoekt clients use to

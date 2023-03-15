@@ -10,7 +10,6 @@ export const mockUser: AuthenticatedUser = {
     __typename: 'User',
     id: 'userID',
     username: 'username',
-    email: 'user@me.com',
     siteAdmin: true,
     databaseID: 0,
     tags: [],
@@ -26,7 +25,9 @@ export const mockUser: AuthenticatedUser = {
     session: { __typename: 'Session', canSignOut: true },
     tosAccepted: true,
     searchable: true,
-    emails: [],
+    emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
+    latestSettings: null,
+    permissions: { nodes: [] },
 }
 
 export const mockCodeMonitorFields: CodeMonitorFields = {
@@ -303,7 +304,7 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
 export const mockAuthenticatedUser: AuthenticatedUser = {
     id: 'userID',
     username: 'username',
-    email: 'user@me.com',
+    emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
     siteAdmin: true,
 } as AuthenticatedUser
 

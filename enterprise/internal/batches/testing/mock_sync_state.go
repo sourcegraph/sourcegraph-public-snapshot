@@ -43,7 +43,7 @@ func MockChangesetSyncState(repo *protocol.RepoInfo) *MockedChangesetSyncState {
 	}
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.DiffFunc.SetDefaultHook(func(_ context.Context, opts gitserver.DiffOptions, _ authz.SubRepoPermissionChecker) (*gitserver.DiffFileIterator, error) {
+	gitserverClient.DiffFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, opts gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
 		// This provides a diff that will resolve to 1 added line, 1 changed
 		// line, and 3 deleted lines.
 		const testGitHubDiff = `

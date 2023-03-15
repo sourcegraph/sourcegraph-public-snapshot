@@ -2,18 +2,21 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"sync/atomic"
 
 	"github.com/google/go-github/v41/github"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
-	"github.com/sourcegraph/sourcegraph/lib/group"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/conc/pool"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 type config struct {
@@ -23,10 +26,11 @@ type config struct {
 	githubUser     string
 	githubPassword string
 
-	count  int
-	prefix string
-	resume string
-	retry  int
+	count    int
+	prefix   string
+	resume   string
+	retry    int
+	insecure bool
 }
 
 type repo struct {
@@ -46,6 +50,7 @@ func main() {
 	flag.IntVar(&cfg.retry, "retry", 5, "Retries count")
 	flag.StringVar(&cfg.prefix, "prefix", "repo", "Prefix to use when naming the repo, ex '[prefix]000042'")
 	flag.StringVar(&cfg.resume, "resume", "state.db", "Temporary state to use to resume progress if interrupted")
+	flag.BoolVar(&cfg.insecure, "insecure", false, "Accept invalid TLS certificates")
 
 	flag.Parse()
 
@@ -55,6 +60,11 @@ func main() {
 	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: cfg.githubToken},
 	))
+
+	if cfg.insecure {
+		tc.Transport.(*oauth2.Transport).Base = http.DefaultTransport
+		tc.Transport.(*oauth2.Transport).Base.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
 
 	gh, err := github.NewEnterpriseClient(cfg.githubURL, cfg.githubURL, tc)
 	if err != nil {
@@ -121,7 +131,7 @@ func main() {
 
 	// assign blank repo clones to avoid clogging the remotes
 	blanks := []*blankRepo{}
-	clonesCount := int(cfg.count / 100)
+	clonesCount := cfg.count / 100
 	if clonesCount < 1 {
 		clonesCount = 1
 	}
@@ -157,7 +167,7 @@ func main() {
 	}
 	progress := out.Progress(bars, nil)
 
-	g := group.New().WithMaxConcurrency(20)
+	p := pool.New().WithMaxGoroutines(20)
 	var done int64
 	for _, repo := range repos {
 		repo := repo
@@ -166,7 +176,7 @@ func main() {
 			progress.SetValue(0, float64(done))
 			continue
 		}
-		g.Go(func() {
+		p.Go(func() {
 			newRepo, _, err := gh.Repositories.Create(ctx, cfg.githubOrg, &github.Repository{Name: github.String(repo.Name)})
 			if err != nil {
 				writeFailure(out, "Failed to create repository %s", repo.Name)
@@ -187,15 +197,15 @@ func main() {
 			progress.SetValue(0, float64(done))
 		})
 	}
-	g.Wait()
+	p.Wait()
 
 	done = 0
 	// Adding a remote will lock git configuration, so we shard
 	// them by blank repo duplicates.
-	g = group.New().WithMaxConcurrency(20)
+	p = pool.New().WithMaxGoroutines(20)
 	for _, repo := range repos {
 		repo := repo
-		g.Go(func() {
+		p.Go(func() {
 			err = repo.blank.addRemote(ctx, repo.Name, repo.GitURL)
 			if err != nil {
 				writeFailure(out, "Failed to add remote to repository %s", repo.Name)
@@ -205,10 +215,10 @@ func main() {
 			progress.SetValue(1, float64(done))
 		})
 	}
-	g.Wait()
+	p.Wait()
 
 	done = 0
-	g = group.New().WithMaxConcurrency(30)
+	p = pool.New().WithMaxGoroutines(30)
 	for _, repo := range repos {
 		repo := repo
 		if !repo.Created {
@@ -221,7 +231,7 @@ func main() {
 			progress.SetValue(2, float64(done))
 			continue
 		}
-		g.Go(func() {
+		p.Go(func() {
 			err := repo.blank.pushRemote(ctx, repo.Name, cfg.retry)
 			if err != nil {
 				writeFailure(out, "Failed to push to repository %s", repo.Name)
@@ -240,7 +250,7 @@ func main() {
 			progress.SetValue(2, float64(done))
 		})
 	}
-	g.Wait()
+	p.Wait()
 
 	progress.Destroy()
 	all, err := state.CountAllRepos()

@@ -3,11 +3,7 @@ import { NEVER, of } from 'rxjs'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    extensionsController,
-    HIGHLIGHTED_FILE_LINES_LONG,
-    NOOP_PLATFORM_CONTEXT,
-} from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { HIGHLIGHTED_FILE_LINES_LONG, NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { BlockInit } from '..'
 import { WebStory } from '../../components/WebStory'
@@ -49,6 +45,7 @@ export const Default: Story = () => (
                 {...props}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
+                ownEnabled={true}
                 globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
@@ -56,9 +53,7 @@ export const Default: Story = () => (
                 onSerializeBlocks={() => {}}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
-                extensionsController={extensionsController}
                 authenticatedUser={null}
-                showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
                 onCopyNotebook={() => NEVER}
@@ -75,6 +70,7 @@ export const DefaultReadOnly: Story = () => (
                 isReadOnly={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
+                ownEnabled={true}
                 globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
@@ -82,9 +78,7 @@ export const DefaultReadOnly: Story = () => (
                 onSerializeBlocks={() => {}}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
-                extensionsController={extensionsController}
                 authenticatedUser={null}
-                showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
                 onCopyNotebook={() => NEVER}

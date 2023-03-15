@@ -5,9 +5,12 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,6 +22,42 @@ type SearchRequest struct {
 	IncludeDiff          bool
 	Limit                int
 	IncludeModifiedFiles bool
+}
+
+func (r *SearchRequest) ToProto() *proto.SearchRequest {
+	revs := make([]*proto.RevisionSpecifier, 0, len(r.Revisions))
+	for _, rev := range r.Revisions {
+		revs = append(revs, rev.ToProto())
+	}
+	return &proto.SearchRequest{
+		Repo:                 string(r.Repo),
+		Revisions:            revs,
+		Query:                r.Query.ToProto(),
+		IncludeDiff:          r.IncludeDiff,
+		Limit:                int64(r.Limit),
+		IncludeModifiedFiles: r.IncludeModifiedFiles,
+	}
+}
+
+func SearchRequestFromProto(p *proto.SearchRequest) (*SearchRequest, error) {
+	query, err := NodeFromProto(p.GetQuery())
+	if err != nil {
+		return nil, err
+	}
+
+	revisions := make([]RevisionSpecifier, 0, len(p.GetRevisions()))
+	for _, rev := range p.GetRevisions() {
+		revisions = append(revisions, RevisionSpecifierFromProto(rev))
+	}
+
+	return &SearchRequest{
+		Repo:                 api.RepoName(p.GetRepo()),
+		Revisions:            revisions,
+		Query:                query,
+		IncludeDiff:          p.GetIncludeDiff(),
+		Limit:                int(p.GetLimit()),
+		IncludeModifiedFiles: p.GetIncludeModifiedFiles(),
+	}, nil
 }
 
 type RevisionSpecifier struct {
@@ -33,6 +72,22 @@ type RevisionSpecifier struct {
 	// ExcludeRefGlob is a glob for references to exclude. See the
 	// documentation for "--exclude" in git-log.
 	ExcludeRefGlob string
+}
+
+func (r *RevisionSpecifier) ToProto() *proto.RevisionSpecifier {
+	return &proto.RevisionSpecifier{
+		RevSpec:        r.RevSpec,
+		RefGlob:        r.RefGlob,
+		ExcludeRefGlob: r.ExcludeRefGlob,
+	}
+}
+
+func RevisionSpecifierFromProto(p *proto.RevisionSpecifier) RevisionSpecifier {
+	return RevisionSpecifier{
+		RevSpec:        p.GetRevSpec(),
+		RefGlob:        p.GetRefGlob(),
+		ExcludeRefGlob: p.GetExcludeRefGlob(),
+	}
 }
 
 type SearchEventMatches []CommitMatch
@@ -80,10 +135,114 @@ type CommitMatch struct {
 	ModifiedFiles []string             `json:",omitempty"`
 }
 
+func (cm *CommitMatch) ToProto() *proto.CommitMatch {
+	parents := make([]string, 0, len(cm.Parents))
+	for _, parent := range cm.Parents {
+		parents = append(parents, string(parent))
+	}
+	return &proto.CommitMatch{
+		Oid:           string(cm.Oid),
+		Author:        cm.Author.ToProto(),
+		Committer:     cm.Committer.ToProto(),
+		Parents:       parents,
+		Refs:          cm.Refs,
+		SourceRefs:    cm.SourceRefs,
+		Message:       matchedStringToProto(cm.Message),
+		Diff:          matchedStringToProto(cm.Diff),
+		ModifiedFiles: cm.ModifiedFiles,
+	}
+}
+
+func CommitMatchFromProto(p *proto.CommitMatch) CommitMatch {
+	parents := make([]api.CommitID, 0, len(p.GetParents()))
+	for _, parent := range p.GetParents() {
+		parents = append(parents, api.CommitID(parent))
+	}
+	return CommitMatch{
+		Oid:           api.CommitID(p.GetOid()),
+		Author:        SignatureFromProto(p.GetAuthor()),
+		Committer:     SignatureFromProto(p.GetCommitter()),
+		Parents:       parents,
+		Refs:          p.GetRefs(),
+		SourceRefs:    p.GetSourceRefs(),
+		Message:       matchedStringFromProto(p.GetMessage()),
+		Diff:          matchedStringFromProto(p.GetDiff()),
+		ModifiedFiles: p.GetModifiedFiles(),
+	}
+}
+
+func matchedStringFromProto(p *proto.CommitMatch_MatchedString) result.MatchedString {
+	ranges := make([]result.Range, 0, len(p.GetRanges()))
+	for _, rr := range p.GetRanges() {
+		ranges = append(ranges, rangeFromProto(rr))
+	}
+	return result.MatchedString{
+		Content:       p.Content,
+		MatchedRanges: ranges,
+	}
+}
+
+func matchedStringToProto(ms result.MatchedString) *proto.CommitMatch_MatchedString {
+	rrs := make([]*proto.CommitMatch_Range, 0, len(ms.MatchedRanges))
+	for _, rr := range ms.MatchedRanges {
+		rrs = append(rrs, rangeToProto(rr))
+	}
+	return &proto.CommitMatch_MatchedString{
+		Content: ms.Content,
+		Ranges:  rrs,
+	}
+}
+
+func rangeToProto(r result.Range) *proto.CommitMatch_Range {
+	return &proto.CommitMatch_Range{
+		Start: locationToProto(r.Start),
+		End:   locationToProto(r.End),
+	}
+}
+
+func rangeFromProto(p *proto.CommitMatch_Range) result.Range {
+	return result.Range{
+		Start: locationFromProto(p.Start),
+		End:   locationFromProto(p.End),
+	}
+}
+
+func locationToProto(l result.Location) *proto.CommitMatch_Location {
+	return &proto.CommitMatch_Location{
+		Offset: uint32(l.Offset),
+		Line:   uint32(l.Line),
+		Column: uint32(l.Column),
+	}
+}
+
+func locationFromProto(p *proto.CommitMatch_Location) result.Location {
+	return result.Location{
+		Offset: int(p.Offset),
+		Line:   int(p.Line),
+		Column: int(p.Column),
+	}
+}
+
 type Signature struct {
 	Name  string `json:",omitempty"`
 	Email string `json:",omitempty"`
 	Date  time.Time
+}
+
+func (s *Signature) ToProto() *proto.CommitMatch_Signature {
+	return &proto.CommitMatch_Signature{
+		Name:  s.Name,
+		Email: s.Email,
+		Date:  timestamppb.New(s.Date),
+	}
+}
+
+func SignatureFromProto(p *proto.CommitMatch_Signature) Signature {
+	return Signature{
+		Name:  p.GetName(),
+		Email: p.GetEmail(),
+		Date:  p.GetDate().AsTime(),
+	}
 }
 
 // ExecRequest is a request to execute a command inside a git repository.
@@ -94,11 +253,10 @@ type Signature struct {
 type ExecRequest struct {
 	Repo api.RepoName `json:"repo"`
 
-	EnsureRevision string      `json:"ensureRevision"`
-	Args           []string    `json:"args"`
-	Stdin          []byte      `json:"stdin,omitempty"`
-	Opt            *RemoteOpts `json:"opt"`
-	NoTimeout      bool        `json:"noTimeout"`
+	EnsureRevision string   `json:"ensureRevision"`
+	Args           []string `json:"args"`
+	Stdin          []byte   `json:"stdin,omitempty"`
+	NoTimeout      bool     `json:"noTimeout"`
 }
 
 // BatchLogRequest is a request to execute a `git log` command inside a set of
@@ -115,6 +273,13 @@ func (req BatchLogRequest) LogFields() []log.Field {
 	return []log.Field{
 		log.Int("numRepoCommits", len(req.RepoCommits)),
 		log.String("format", req.Format),
+	}
+}
+
+func (req BatchLogRequest) SpanAttributes() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("numRepoCommits", len(req.RepoCommits)),
+		attribute.String("format", req.Format),
 	}
 }
 
@@ -140,25 +305,6 @@ type P4ExecRequest struct {
 	P4User   string   `json:"p4user"`
 	P4Passwd string   `json:"p4passwd"`
 	Args     []string `json:"args"`
-}
-
-// RemoteOpts configures interactions with a remote repository.
-type RemoteOpts struct {
-	SSH   *SSHConfig   `json:"ssh"`   // SSH configuration for communication with the remote
-	HTTPS *HTTPSConfig `json:"https"` // HTTPS configuration for communication with the remote
-}
-
-// SSHConfig configures and authenticates SSH for communication with remotes.
-type SSHConfig struct {
-	User       string `json:"user,omitempty"`      // SSH user (if empty, inferred from URL)
-	PublicKey  []byte `json:"publicKey,omitempty"` // SSH public key (if nil, inferred from PrivateKey)
-	PrivateKey []byte `json:"privateKey"`          // SSH private key, usually passed to ssh.ParsePrivateKey (passphrases currently unsupported)
-}
-
-// HTTPSConfig configures and authenticates HTTPS for communication with remotes.
-type HTTPSConfig struct {
-	User string `json:"user"` // the username provided to the remote
-	Pass string `json:"pass"` // the password provided to the remote
 }
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
@@ -207,6 +353,7 @@ type IsRepoCloneableRequest struct {
 // IsRepoCloneableResponse is the response type for the IsRepoCloneableRequest.
 type IsRepoCloneableResponse struct {
 	Cloneable bool   // whether the repo is cloneable
+	Cloned    bool   // true if the repo was ever cloned in the past
 	Reason    string // if not cloneable, the reason why not
 }
 
@@ -254,7 +401,7 @@ type CreateCommitFromPatchRequest struct {
 	// BaseCommit is the revision that the staging area object is based on
 	BaseCommit api.CommitID
 	// Patch is the diff contents to be used to create the staging area revision
-	Patch string
+	Patch []byte
 	// TargetRef is the ref that will be created for this patch
 	TargetRef string
 	// If set to true and the TargetRef already exists, an unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.

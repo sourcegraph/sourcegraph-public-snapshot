@@ -1,11 +1,9 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { FC, useCallback, useMemo } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, PageHeader, H5, Icon } from '@sourcegraph/wildcard'
+import { Container, PageHeader, H3, H5, Icon } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
@@ -19,9 +17,14 @@ import { BatchSpecNode, BatchSpecNodeProps } from './BatchSpecNode'
 
 import styles from './BatchSpecsPage.module.scss'
 
-export interface BatchSpecsPageProps extends Omit<BatchSpecListProps, 'currentSpecID'> {}
+export interface BatchSpecsPageProps {
+    queryBatchSpecs?: typeof _queryBatchSpecs
 
-export const BatchSpecsPage: React.FunctionComponent<React.PropsWithChildren<BatchSpecsPageProps>> = props => (
+    /** For testing purposes only. Sets the current date */
+    now?: () => Date
+}
+
+export const BatchSpecsPage: FC<BatchSpecsPageProps> = props => (
     <>
         <PageTitle title="Batch specs" />
         <PageHeader
@@ -31,7 +34,7 @@ export const BatchSpecsPage: React.FunctionComponent<React.PropsWithChildren<Bat
             className="mb-3"
         />
         <Container>
-            <BatchSpecList {...props} />
+            <BatchSpecList queryBatchSpecs={props.queryBatchSpecs} now={props.now} />
         </Container>
     </>
 )
@@ -44,30 +47,13 @@ export interface BatchChangeBatchSpecListProps extends Omit<BatchSpecListProps, 
 
 export const BatchChangeBatchSpecList: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeBatchSpecListProps>
-> = ({
-    history,
-    location,
-    batchChangeID,
-    currentSpecID,
-    isLightTheme,
-    queryBatchChangeBatchSpecs = _queryBatchChangeBatchSpecs,
-    now,
-}) => {
+> = ({ batchChangeID, currentSpecID, queryBatchChangeBatchSpecs = _queryBatchChangeBatchSpecs, now }) => {
     const query = useMemo(() => queryBatchChangeBatchSpecs(batchChangeID), [queryBatchChangeBatchSpecs, batchChangeID])
 
-    return (
-        <BatchSpecList
-            history={history}
-            location={location}
-            queryBatchSpecs={query}
-            isLightTheme={isLightTheme}
-            currentSpecID={currentSpecID}
-            now={now}
-        />
-    )
+    return <BatchSpecList queryBatchSpecs={query} currentSpecID={currentSpecID} now={now} />
 }
 
-export interface BatchSpecListProps extends ThemeProps, Pick<RouteComponentProps, 'history' | 'location'> {
+export interface BatchSpecListProps {
     currentSpecID?: Scalars['ID']
     queryBatchSpecs?: typeof _queryBatchSpecs
     /** For testing purposes only. Sets the current date */
@@ -75,10 +61,7 @@ export interface BatchSpecListProps extends ThemeProps, Pick<RouteComponentProps
 }
 
 export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<BatchSpecListProps>> = ({
-    history,
-    location,
     currentSpecID,
-    isLightTheme,
     queryBatchSpecs = _queryBatchSpecs,
     now,
 }) => {
@@ -96,17 +79,14 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
     )
     return (
         <FilteredConnection<BatchSpecListFields, Omit<BatchSpecNodeProps, 'node'>>
-            history={history}
-            location={location}
             nodeComponent={BatchSpecNode}
-            nodeComponentProps={{ currentSpecID, isLightTheme, now }}
+            nodeComponentProps={{ currentSpecID, now }}
             queryConnection={query}
             hideSearch={true}
             defaultFirst={20}
             noun="batch spec"
             pluralNoun="batch specs"
             listClassName={classNames(styles.specsGrid, 'test-batches-executions')}
-            listComponent="div"
             withCenteredSummary={true}
             headComponent={Header}
             cursorPaging={true}
@@ -119,9 +99,15 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
 const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
         <span className="d-none d-md-block" />
-        <H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">State</H5>
-        <H5 className="p-2 d-none d-md-block text-uppercase text-nowrap">Batch spec</H5>
-        <H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Execution time</H5>
+        <H5 as={H3} aria-hidden={true} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+            State
+        </H5>
+        <H5 as={H3} aria-hidden={true} className="p-2 d-none d-md-block text-uppercase text-nowrap">
+            Batch spec
+        </H5>
+        <H5 as={H3} aria-hidden={true} className="d-none d-md-block text-uppercase text-center text-nowrap">
+            Execution time
+        </H5>
     </>
 )
 

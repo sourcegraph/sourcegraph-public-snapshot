@@ -4,28 +4,28 @@
 # ignores.
 
 # Install p4 CLI (keep this up to date with cmd/server/Dockerfile)
-FROM sourcegraph/alpine-3.14:174825_2022-09-28_291dca5d9725@sha256:0bfed82a206a1f313b7276521375dc4d27caa45c324f99e7da0453cecbd31980 AS p4cli
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5 AS p4cli
 
-# hadolint ignore=DL3003
-RUN wget http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4 && \
-    mv p4 /usr/local/bin/p4 && \
-    chmod +x /usr/local/bin/p4
+# hash provided in http://filehost.perforce.com/perforce/r22.2/bin.linux26x86_64/SHA256SUMS
+# if the hash is not provided, calculate it by downloading the file and running `sha256sum` on it in Terminal
+RUN echo "8bc10fca1c5a26262b4072deec76150a668581a9749d0504cd443084773d4fd0  /usr/local/bin/p4" >expected_hash && \
+    wget http://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4 -O /usr/local/bin/p4 && \
+    chmod +x /usr/local/bin/p4 && \
+    sha256sum -c expected_hash
 
-FROM sourcegraph/alpine-3.14:174825_2022-09-28_291dca5d9725@sha256:0bfed82a206a1f313b7276521375dc4d27caa45c324f99e7da0453cecbd31980 AS p4-fusion
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5 AS p4-fusion
 
 COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
 RUN /p4-fusion-install-alpine.sh
 
-FROM sourcegraph/alpine-3.14:174825_2022-09-28_291dca5d9725@sha256:0bfed82a206a1f313b7276521375dc4d27caa45c324f99e7da0453cecbd31980 AS coursier
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5 AS coursier
 
-# TODO(code-intel): replace with official streams when musl builds are upstreamed
-RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
-    unzip coursier.zip && \
-    mv cs-musl /usr/local/bin/coursier && \
+RUN wget -O coursier.gz https://github.com/coursier/coursier/releases/download/v2.1.0-RC4/cs-x86_64-pc-linux-static.gz && \
+    gzip -d coursier.gz && \
+    mv coursier /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-
-FROM sourcegraph/alpine-3.14:174825_2022-09-28_291dca5d9725@sha256:0bfed82a206a1f313b7276521375dc4d27caa45c324f99e7da0453cecbd31980
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -37,8 +37,9 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 RUN apk add --no-cache \
-    # We require git 2.34.1 because we use git-repack with flag --write-midx.
-    'git>=2.34.1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
+    # Minimal version requirement to address vulnerabilities
+    # https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/
+    'git>=2.39.2-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
     git-lfs \
     git-p4 \
     && apk add --no-cache  \

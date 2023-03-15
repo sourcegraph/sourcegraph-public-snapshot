@@ -1,22 +1,23 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { FC, useCallback, useMemo, useState } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { useHistory } from 'react-router'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Icon, LoadingSpinner, H3, H4, Alert } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../../auth'
 import { HeroPage } from '../../../../components/HeroPage'
 import {
     CheckExecutorsAccessTokenResult,
     CheckExecutorsAccessTokenVariables,
     GetBatchChangeToEditResult,
     GetBatchChangeToEditVariables,
-    Scalars,
 } from '../../../../graphql-operations'
+import { NamespaceProps } from '../../../../namespaces'
 import { BatchSpecDownloadLink } from '../../BatchSpec'
 import { EXECUTORS, GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
@@ -41,14 +42,16 @@ import { WorkspacesPreviewPanel } from './workspaces-preview/WorkspacesPreviewPa
 import layoutStyles from '../Layout.module.scss'
 import styles from './EditBatchSpecPage.module.scss'
 
-export interface EditBatchSpecPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
-    batchChange: { name: string; namespace: Scalars['ID'] }
+export interface EditBatchSpecPageProps extends NamespaceProps, SettingsCascadeProps<Settings> {
+    authenticatedUser: AuthenticatedUser | null
 }
 
-export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<EditBatchSpecPageProps>> = ({
-    batchChange,
-    ...props
-}) => {
+export const EditBatchSpecPage: FC<EditBatchSpecPageProps> = props => {
+    const { batchChangeName } = useParams()
+    const { id } = props.namespace
+
+    const batchChange = useMemo(() => ({ name: batchChangeName!, namespace: id }), [batchChangeName, id])
+
     const { data, error, loading, refetch } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(
         GET_BATCH_CHANGE_TO_EDIT,
         {
@@ -94,7 +97,9 @@ export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<
     )
 }
 
-interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings>, ThemeProps {}
+interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings> {
+    authenticatedUser: AuthenticatedUser | null
+}
 
 const EditBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<EditBatchSpecPageContentProps>
@@ -119,14 +124,14 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<MemoizedEditBatchSpecPageContentProps>
 > = React.memo(function MemoizedEditBatchSpecPageContent({
     settingsCascade,
-    isLightTheme,
     batchChange,
     batchSpec,
     editor,
     errors,
+    authenticatedUser,
 }) {
-    const history = useHistory()
-
+    const navigate = useNavigate()
+    const isLightTheme = useIsLightTheme()
     const { insightTitle } = useInsightTemplates(settingsCascade)
     const { searchQuery } = useSearchTemplate()
 
@@ -172,12 +177,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 onChangeOptions={editor.setExecutionOptions}
             />
             {downloadSpecModalDismissed ? (
-                <BatchSpecDownloadLink
-                    name={batchChange.name}
-                    originalInput={editor.code}
-                    isLightTheme={isLightTheme}
-                    asButton={false}
-                >
+                <BatchSpecDownloadLink name={batchChange.name} originalInput={editor.code} asButton={false}>
                     or download for src-cli
                 </BatchSpecDownloadLink>
             ) : (
@@ -194,7 +194,6 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 <BatchSpecDownloadLink
                     name={batchChange.name}
                     originalInput={editor.code}
-                    isLightTheme={isLightTheme}
                     asButton={true}
                     className="mb-2"
                 >
@@ -227,7 +226,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 You're about to edit a batch spec that is currently being executed. You might want to view or cancel
                 that execution first.
             </div>
-            <Button variant="primary" onClick={() => history.replace(`${batchChange.url}/executions/${batchSpec.id}`)}>
+            <Button variant="primary" onClick={() => navigate(`${batchChange.url}/executions/${batchSpec.id}`)}>
                 Go to execution
             </Button>
         </Alert>
@@ -257,17 +256,18 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
             <TabBar activeTabKey={activeTabKey} tabsConfig={tabsConfig} />
 
             {activeTabKey === 'configuration' ? (
-                <ConfigurationForm isReadOnly={true} batchChange={batchChange} settingsCascade={settingsCascade} />
+                <ConfigurationForm isReadOnly={true} batchChange={batchChange} authenticatedUser={authenticatedUser} />
             ) : (
                 <div className={styles.form}>
                     <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
-                    <div className={styles.editorContainer}>
+                    <div className={styles.editorContainer} role="region" aria-label="batch spec editor">
                         <H4 as={H3} className={styles.header}>
                             Batch spec
                         </H4>
                         {executionAlert}
                         <MonacoBatchSpecEditor
                             autoFocus={true}
+                            batchChangeNamespace={batchChange.namespace}
                             batchChangeName={batchChange.name}
                             className={styles.editor}
                             isLightTheme={isLightTheme}
@@ -284,7 +284,6 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 <DownloadSpecModal
                     name={batchChange.name}
                     originalInput={editor.code}
-                    isLightTheme={isLightTheme}
                     setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
                     setIsDownloadSpecModalOpen={setIsDownloadSpecModalOpen}
                 />

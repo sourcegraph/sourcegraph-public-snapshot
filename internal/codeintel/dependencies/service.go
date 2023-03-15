@@ -2,73 +2,307 @@ package dependencies
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background"
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/packagefilters"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
 type Service struct {
-	store         store.Store
-	backgroundJob background.BackgroundJob
-	operations    *operations
+	store      store.Store
+	operations *operations
 }
 
-func newService(store store.Store, backgroundJob background.BackgroundJob, observationContext *observation.Context) *Service {
+func newService(observationCtx *observation.Context, store store.Store) *Service {
 	return &Service{
-		store:         store,
-		backgroundJob: backgroundJob,
-		operations:    newOperations(observationContext),
+		store:      store,
+		operations: newOperations(observationCtx),
 	}
 }
 
-func GetBackgroundJobs(s *Service) background.BackgroundJob {
-	return s.backgroundJob
-}
-
-type Repo = shared.Repo
+type (
+	PackageRepoReference         = shared.PackageRepoReference
+	PackageRepoRefVersion        = shared.PackageRepoRefVersion
+	MinimalPackageRepoRef        = shared.MinimalPackageRepoRef
+	MinimialVersionedPackageRepo = shared.MinimialVersionedPackageRepo
+	PackageRepoFilter            = shared.PackageRepoFilter
+)
 
 type ListDependencyReposOpts struct {
 	// Scheme is the moniker scheme to filter for e.g. 'gomod', 'npm' etc.
 	Scheme string
 	// Name is the package name to filter for e.g. '@types/node' etc.
 	Name reposource.PackageName
+
+	// ExactNameOnly enables exact name matching instead of substring.
+	ExactNameOnly bool
 	// After is the value predominantly used for pagination. When sorting by
 	// newest first, this should be the ID of the last element in the previous
 	// page, when excluding versions it should be the last package name in the
 	// previous page.
-	After any
+	After int
 	// Limit limits the size of the results set to be returned.
 	Limit int
-	// NewestFirst sorts by when a (package, version) was added to the list.
-	// Incompatible with ExcludeVersions below.
-	NewestFirst bool
-	// ExcludeVersions returns one row for every package, instead of one for
-	// every (package, version) tuple. Results will be sorted by name to make
-	// pagination possible. Takes precedence over NewestFirst.
-	ExcludeVersions bool
+	// IncludeBlocked also includes those that would not be synced due to filter rules
+	IncludeBlocked bool
 }
 
-func (s *Service) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (_ []Repo, err error) {
-	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{})
+func (s *Service) ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (_ []PackageRepoReference, total int, hasMore bool, err error) {
+	ctx, _, endObservation := s.operations.listPackageRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("scheme", opts.Scheme),
+		log.String("name", string(opts.Name)),
+		log.Bool("exactOnly", opts.ExactNameOnly),
+		log.Int("after", opts.After),
+		log.Int("limit", opts.Limit),
+	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.store.ListDependencyRepos(ctx, store.ListDependencyReposOpts(opts))
+	return s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts(opts))
 }
 
-func (s *Service) UpsertDependencyRepos(ctx context.Context, deps []Repo) (_ []Repo, err error) {
-	ctx, _, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{})
+func (s *Service) InsertPackageRepoRefs(ctx context.Context, deps []MinimalPackageRepoRef) (_ []shared.PackageRepoReference, _ []shared.PackageRepoRefVersion, err error) {
+	ctx, _, endObservation := s.operations.insertPackageRepoRefs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("packageRepoRefs", len(deps)),
+	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.store.UpsertDependencyRepos(ctx, deps)
+	return s.store.InsertPackageRepoRefs(ctx, deps)
 }
 
-func (s *Service) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error) {
-	ctx, _, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{})
+func (s *Service) DeletePackageRepoRefsByID(ctx context.Context, ids ...int) (err error) {
+	ctx, _, endObservation := s.operations.deletePackageRepoRefsByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("packageRepoRefs", len(ids)),
+	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.store.DeleteDependencyReposByID(ctx, ids...)
+	return s.store.DeletePackageRepoRefsByID(ctx, ids...)
+}
+
+func (s *Service) DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error) {
+	ctx, _, endObservation := s.operations.deletePackageRepoRefVersionsByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("packageRepoRefVersions", len(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeletePackageRepoRefVersionsByID(ctx, ids...)
+}
+
+type ListPackageRepoRefFiltersOpts struct {
+	IDs            []int
+	PackageScheme  string
+	Behaviour      string
+	IncludeDeleted bool
+	After          int
+	Limit          int
+}
+
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func (s *Service) ListPackageRepoFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageRepoFilter, hasMore bool, err error) {
+	ctx, _, endObservation := s.operations.listPackageRepoFilters.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numPackageRepoFilterIDs", len(opts.IDs)),
+		log.String("packageScheme", opts.PackageScheme),
+		log.Int("after", opts.After),
+		log.Int("limit", opts.Limit),
+		log.String("behaviour", opts.Behaviour),
+	}})
+	defer endObservation(1, observation.Args{})
+	return s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts(opts))
+}
+
+func (s *Service) CreatePackageRepoFilter(ctx context.Context, input shared.MinimalPackageFilter) (filter *shared.PackageRepoFilter, err error) {
+	ctx, _, endObservation := s.operations.createPackageRepoFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("packageScheme", input.PackageScheme),
+		log.String("behaviour", deref(input.Behaviour)),
+		log.String("versionFilter", fmt.Sprintf("%+v", input.VersionFilter)),
+		log.String("nameFilter", fmt.Sprintf("%+v", input.NameFilter)),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("filterID", filter.ID),
+		}})
+	}()
+	return s.store.CreatePackageRepoFilter(ctx, input)
+}
+
+func (s *Service) UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageRepoFilter) (err error) {
+	ctx, _, endObservation := s.operations.updatePackageRepoFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", filter.ID),
+		log.String("packageScheme", filter.PackageScheme),
+		log.String("behaviour", filter.Behaviour),
+		log.String("versionFilter", fmt.Sprintf("%+v", filter.VersionFilter)),
+		log.String("nameFilter", fmt.Sprintf("%+v", filter.NameFilter)),
+	}})
+	defer endObservation(1, observation.Args{})
+	return s.store.UpdatePackageRepoFilter(ctx, filter)
+}
+
+func (s *Service) DeletePackageRepoFilter(ctx context.Context, id int) (err error) {
+	ctx, _, endObservation := s.operations.deletePackageRepoFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+	return s.store.DeletePacakgeRepoFilter(ctx, id)
+}
+
+func (s *Service) IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error) {
+	ctx, _, endObservation := s.operations.isPackageRepoVersionAllowed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("packageScheme", scheme),
+		log.String("name", string(pkg)),
+		log.String("version", version),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	filters, _, err := s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{
+		PackageScheme:  scheme,
+		IncludeDeleted: false,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	packageFilters, err := packagefilters.NewFilterLists(filters)
+	if err != nil {
+		return false, err
+	}
+
+	return packagefilters.IsVersionedPackageAllowed(scheme, pkg, version, packageFilters), nil
+}
+
+func (s *Service) IsPackageRepoAllowed(ctx context.Context, scheme string, pkg reposource.PackageName) (allowed bool, err error) {
+	ctx, _, endObservation := s.operations.isPackageRepoAllowed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("packageScheme", scheme),
+		log.String("name", string(pkg)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	filters, _, err := s.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{
+		PackageScheme:  scheme,
+		IncludeDeleted: false,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	packageFilters, err := packagefilters.NewFilterLists(filters)
+	if err != nil {
+		return false, err
+	}
+
+	return packagefilters.IsPackageAllowed(scheme, pkg, packageFilters), nil
+}
+
+func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter shared.MinimalPackageFilter, limit, after int) (_ []shared.PackageRepoReference, _ int, hasMore bool, err error) {
+	ctx, _, endObservation := s.operations.pkgsOrVersionsMatchingFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("packageScheme", filter.PackageScheme),
+		log.String("versionFilter", fmt.Sprintf("%+v", filter.VersionFilter)),
+		log.String("nameFilter", fmt.Sprintf("%+v", filter.NameFilter)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	var (
+		matcher     packagefilters.PackageMatcher
+		nameToMatch string
+	)
+	if filter.NameFilter != nil {
+		matcher, err = packagefilters.NewPackageNameGlob(filter.NameFilter.PackageGlob)
+	} else {
+		matcher, err = packagefilters.NewVersionGlob(filter.VersionFilter.PackageName, filter.VersionFilter.VersionGlob)
+		nameToMatch = filter.VersionFilter.PackageName
+	}
+	if err != nil {
+		return nil, 0, false, errors.Wrap(err, "failed to compile glob")
+	}
+
+	var (
+		totalCount   int
+		matchingPkgs = make([]shared.PackageRepoReference, 0, limit)
+	)
+
+	if filter.NameFilter != nil {
+		var lastID int
+		for {
+			pkgs, _, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
+				Scheme: filter.PackageScheme,
+				// doing this so we don't have to load everything in at once
+				Limit:          500,
+				After:          lastID,
+				IncludeBlocked: true,
+			})
+			if err != nil {
+				return nil, 0, false, errors.Wrap(err, "failed to list package repo references")
+			}
+
+			if len(pkgs) == 0 {
+				break
+			}
+
+			lastID = pkgs[len(pkgs)-1].ID
+
+			for _, pkg := range pkgs {
+				if matcher.Matches(pkg.Name, "") {
+					totalCount++
+					if pkg.ID <= after {
+						continue
+					}
+					if len(matchingPkgs) == limit {
+						// once we've reached the limit but are hitting more, we know theres more
+						hasMore = true
+						continue
+					}
+					pkg.Versions = nil
+					matchingPkgs = append(matchingPkgs, pkg)
+				}
+			}
+		}
+	} else {
+		pkgs, _, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
+			Scheme:        filter.PackageScheme,
+			Name:          reposource.PackageName(nameToMatch),
+			ExactNameOnly: true,
+			// should only have 1 matching package ref
+			Limit:          1,
+			IncludeBlocked: true,
+		})
+		if err != nil {
+			return nil, 0, false, errors.Wrap(err, "failed to list package repo references")
+		}
+
+		if len(pkgs) == 0 {
+			return nil, 0, false, errors.Newf("package repo reference not found for name %q", nameToMatch)
+		}
+
+		pkg := pkgs[0]
+		versions := pkg.Versions[:0]
+		for _, version := range pkg.Versions {
+			if matcher.Matches(pkg.Name, version.Version) {
+				totalCount++
+				if version.ID <= after {
+					continue
+				}
+				if len(versions) == limit {
+					// once we've reached the limit but are hitting more, we know theres more
+					hasMore = true
+					continue
+				}
+				versions = append(versions, version)
+			}
+		}
+		pkg.Versions = versions
+		matchingPkgs = append(matchingPkgs, pkg)
+	}
+
+	return matchingPkgs, totalCount, hasMore, nil
 }

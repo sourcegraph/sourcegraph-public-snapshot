@@ -3,8 +3,8 @@ import expect from 'expect'
 import { test } from 'mocha'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { mixedSearchStreamEvents, SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -21,7 +21,7 @@ import {
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI } from './utils'
 
-const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     FileNames: () => createFileNamesResult(),
     ResolveRepoRev: () => createResolveRepoRevisionResult('/github.com/sourcegraph/sourcegraph'),

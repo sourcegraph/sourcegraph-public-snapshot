@@ -1,6 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
-
-import { useHistory, useLocation } from 'react-router'
+import { FC, useCallback, useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H2 } from '@sourcegraph/wildcard'
@@ -23,7 +21,7 @@ export interface NotebooksListProps extends TelemetryProps {
     fetchNotebooks: typeof _fetchNotebooks
 }
 
-export const NotebooksList: React.FunctionComponent<React.PropsWithChildren<NotebooksListProps>> = ({
+export const NotebooksList: FC<NotebooksListProps> = ({
     title,
     logEventName,
     orderOptions,
@@ -33,10 +31,10 @@ export const NotebooksList: React.FunctionComponent<React.PropsWithChildren<Note
     fetchNotebooks,
     telemetryService,
 }) => {
-    useEffect(() => telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`), [
-        logEventName,
-        telemetryService,
-    ])
+    useEffect(
+        () => telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`),
+        [logEventName, telemetryService]
+    )
 
     const queryConnection = useCallback(
         (args: Partial<ListNotebooksVariables>) => {
@@ -59,25 +57,16 @@ export const NotebooksList: React.FunctionComponent<React.PropsWithChildren<Note
         [creatorUserID, starredByUserID, namespace, fetchNotebooks]
     )
 
-    const history = useHistory()
-    const location = useLocation()
-
     return (
         <div>
             <H2 className="mb-3">{title}</H2>
             <FilteredConnection<NotebookFields, Omit<NotebookNodeProps, 'node'>, ListNotebooksResult['notebooks']>
-                history={history}
-                location={location}
                 defaultFirst={10}
                 compact={false}
                 queryConnection={queryConnection}
                 filters={orderOptions}
                 hideSearch={false}
                 nodeComponent={NotebookNode}
-                nodeComponentProps={{
-                    location,
-                    history,
-                }}
                 noun="notebook"
                 pluralNoun="notebooks"
                 noSummaryIfAllNodesVisible={true}

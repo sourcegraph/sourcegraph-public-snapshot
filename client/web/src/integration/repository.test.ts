@@ -2,12 +2,9 @@ import assert from 'assert'
 import * as path from 'path'
 
 import { subDays } from 'date-fns'
-import type * as sourcegraph from 'sourcegraph'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -28,8 +25,9 @@ import {
     createRepoChangesetsStatsResult,
     createFileNamesResult,
     createResolveCloningRepoRevisionResult,
+    createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults } from './graphQlResults'
+import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants } from './utils'
 
 export const getCommonRepositoryGraphQlResults = (
@@ -38,15 +36,30 @@ export const getCommonRepositoryGraphQlResults = (
     fileEntries: string[] = []
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
+    ...createViewerSettingsGraphQLOverride({
+        user: {
+            experimentalFeatures: {
+                enableCodeMirrorFileView: false,
+            },
+        },
+    }),
     RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
     ResolveRepoRev: () => createResolveRepoRevisionResult(repositoryName),
     FileNames: () => createFileNamesResult(),
     FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
     TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),
+    FileTreeEntries: () => createFileTreeEntriesResult(repositoryUrl, fileEntries),
     TreeCommits: () => ({
         node: {
             __typename: 'Repository',
-            commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+            externalURLs: [
+                {
+                    __typename: 'ExternalLink',
+                    serviceKind: ExternalServiceKind.GITHUB,
+                    url: 'https://' + repositoryName,
+                },
+            ],
+            commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } } },
         },
     }),
     Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
@@ -96,10 +109,18 @@ describe('Repository', () => {
                 TreeCommits: () => ({
                     node: {
                         __typename: 'Repository',
+                        externalURLs: [
+                            {
+                                __typename: 'ExternalLink',
+                                serviceKind: ExternalServiceKind.GITHUB,
+                                url: 'https://' + repositoryName,
+                            },
+                        ],
                         commit: {
                             ancestors: {
                                 nodes: [
                                     {
+                                        __typename: 'GitCommit',
                                         id: 'CommitID1',
                                         oid: '15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                                         abbreviatedOID: '15c2290',
@@ -107,6 +128,7 @@ describe('Repository', () => {
                                         subject: 'update LSIF indexing CI workflow',
                                         body: null,
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
                                                 avatarURL: '',
                                                 name: 'garo (they/them)',
@@ -117,6 +139,7 @@ describe('Repository', () => {
                                             date: '2020-04-29T18:40:54Z',
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
                                                 avatarURL: '',
                                                 name: 'GitHub',
@@ -130,22 +153,19 @@ describe('Repository', () => {
                                             {
                                                 oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                                 abbreviatedOID: '96c4efa',
-                                                url:
-                                                    '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
+                                                url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                             },
                                             {
                                                 oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                                 abbreviatedOID: '9e615b1',
-                                                url:
-                                                    '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
+                                                url: '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                             },
                                         ],
                                         url: commitUrl,
                                         canonicalURL: commitUrl,
                                         externalURLs: [
                                             {
-                                                url:
-                                                    'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
+                                                url: 'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                                                 serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
@@ -155,6 +175,7 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
+                                        __typename: 'GitCommit',
                                         id: 'CommitID2',
                                         oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                         abbreviatedOID: '9e615b1',
@@ -162,6 +183,7 @@ describe('Repository', () => {
                                         subject: 'LSIF Indexing Campaign',
                                         body: null,
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
                                                 avatarURL: '',
                                                 name: 'Sourcegraph Bot',
@@ -172,6 +194,7 @@ describe('Repository', () => {
                                             date: '2020-04-29T16:57:20Z',
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
                                                 avatarURL: '',
                                                 name: 'Sourcegraph Bot',
@@ -185,18 +208,15 @@ describe('Repository', () => {
                                             {
                                                 oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                                 abbreviatedOID: '96c4efa',
-                                                url:
-                                                    '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
+                                                url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
+                                        url: '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                         canonicalURL:
                                             '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                         externalURLs: [
                                             {
-                                                url:
-                                                    'https://github.com/sourcegraph/jsonrpc2/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
+                                                url: 'https://github.com/sourcegraph/jsonrpc2/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                                 serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
@@ -206,15 +226,16 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
+                                        __typename: 'GitCommit',
                                         id: 'CommitID3',
                                         oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                         abbreviatedOID: '96c4efa',
                                         message:
                                             'Produce LSIF data for each commit for fast/precise code nav (#35)\n\n* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml\r',
                                         subject: 'Produce LSIF data for each commit for fast/precise code nav (#35)',
-                                        body:
-                                            '* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml',
+                                        body: '* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml',
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
                                                 avatarURL: '',
                                                 name: 'Quinn Slack',
@@ -230,6 +251,7 @@ describe('Repository', () => {
                                             date: '2019-12-22T04:34:38Z',
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
                                                 avatarURL: '',
                                                 name: 'GitHub',
@@ -243,18 +265,15 @@ describe('Repository', () => {
                                             {
                                                 oid: 'cee7209801bf50cee868f8e0696ba0b76ae21792',
                                                 abbreviatedOID: 'cee7209',
-                                                url:
-                                                    '/github.com/sourcegraph/jsonrpc2/-/commit/cee7209801bf50cee868f8e0696ba0b76ae21792',
+                                                url: '/github.com/sourcegraph/jsonrpc2/-/commit/cee7209801bf50cee868f8e0696ba0b76ae21792',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
+                                        url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                         canonicalURL:
                                             '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                         externalURLs: [
                                             {
-                                                url:
-                                                    'https://github.com/sourcegraph/jsonrpc2/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
+                                                url: 'https://github.com/sourcegraph/jsonrpc2/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                                 serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
@@ -264,7 +283,7 @@ describe('Repository', () => {
                                         },
                                     },
                                 ],
-                                pageInfo: { hasNextPage: false },
+                                pageInfo: { __typename: 'PageInfo', hasNextPage: false, endCursor: 'abc' },
                             },
                         },
                     },
@@ -281,7 +300,9 @@ describe('Repository', () => {
                             subject: 'update LSIF indexing CI workflow',
                             body: null,
                             author: {
+                                __typename: 'Signature',
                                 person: {
+                                    __typename: 'Person',
                                     avatarURL: '',
                                     name: 'garo (they/them)',
                                     email: 'gbrik@users.noreply.github.com',
@@ -291,7 +312,9 @@ describe('Repository', () => {
                                 date: '2020-04-29T18:40:54Z',
                             },
                             committer: {
+                                __typename: 'Signature',
                                 person: {
+                                    __typename: 'Person',
                                     avatarURL: '',
                                     name: 'GitHub',
                                     email: 'noreply@github.com',
@@ -302,28 +325,29 @@ describe('Repository', () => {
                             },
                             parents: [
                                 {
+                                    __typename: 'GitCommit',
                                     oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                     abbreviatedOID: '96c4efa',
-                                    url:
-                                        '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
+                                    url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                 },
                                 {
+                                    __typename: 'GitCommit',
                                     oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                     abbreviatedOID: '9e615b1',
-                                    url:
-                                        '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
+                                    url: '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                 },
                             ],
                             url: commitUrl,
                             canonicalURL: commitUrl,
                             externalURLs: [
                                 {
-                                    url:
-                                        'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
+                                    __typename: 'ExternalLink',
+                                    url: 'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                                     serviceKind: ExternalServiceKind.GITHUB,
                                 },
                             ],
                             tree: {
+                                __typename: 'GitTree',
                                 canonicalURL:
                                     '/github.com/sourcegraph/jsonrpc2@15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                             },
@@ -332,6 +356,7 @@ describe('Repository', () => {
                 }),
                 RepositoryComparisonDiff: () => ({
                     node: {
+                        __typename: 'Repository',
                         comparison: {
                             fileDiffs: {
                                 nodes: [
@@ -343,8 +368,7 @@ describe('Repository', () => {
                                         newPath: '.github/workflows/lsif.yml',
                                         mostRelevantFile: {
                                             __typename: 'GitBlob',
-                                            url:
-                                                '/github.com/sourcegraph/jsonrpc2@15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81/-/blob/.github/workflows/lsif.yml',
+                                            url: '/github.com/sourcegraph/jsonrpc2@15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81/-/blob/.github/workflows/lsif.yml',
                                         },
                                         hunks: [
                                             {
@@ -357,13 +381,11 @@ describe('Repository', () => {
                                                     lines: [
                                                         {
                                                             kind: DiffHunkLineType.DELETED,
-                                                            html:
-                                                                '<div><span style="color:#657b83;">  </span><span style="color:#268bd2;">build</span><span style="color:#657b83;">:\n</span></div>',
+                                                            html: '<div><span style="color:#657b83;">  </span><span style="color:#268bd2;">build</span><span style="color:#657b83;">:\n</span></div>',
                                                         },
                                                         {
                                                             kind: DiffHunkLineType.ADDED,
-                                                            html:
-                                                                '<div><span style="color:#657b83;">  </span><span style="color:#268bd2;">lsif-go</span><span style="color:#657b83;">:\n</span></div>',
+                                                            html: '<div><span style="color:#657b83;">  </span><span style="color:#268bd2;">lsif-go</span><span style="color:#657b83;">:\n</span></div>',
                                                         },
                                                     ],
                                                 },
@@ -395,9 +417,6 @@ describe('Repository', () => {
 
             // Assert that the directory listing displays properly
             await driver.page.waitForSelector('.test-tree-entries')
-
-            // Wait for extensions bar to be loaded before screenshotting
-            await driver.page.waitForSelector('[data-testid="action-items-toggle-open"]')
 
             await percySnapshotWithVariants(driver.page, 'Repository index page')
             await accessibilityAudit(driver.page)
@@ -455,6 +474,27 @@ describe('Repository', () => {
             const directoryName = "Geoffrey's random queries.32r242442bf"
             const filePath = path.posix.join(directoryName, fileName)
 
+            const TreeEntries = {
+                repository: {
+                    commit: {
+                        tree: {
+                            isRoot: false,
+                            url: '/github.com/ggilmore/q-test/-/tree/Geoffrey%27s%20random%20queries.32r242442bf',
+                            entries: [
+                                {
+                                    name: fileName,
+                                    path: filePath,
+                                    isDirectory: false,
+                                    url: '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
+                                    submodule: null,
+                                    isSingleChild: false,
+                                },
+                            ],
+                        },
+                    },
+                },
+            }
+
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl),
@@ -464,27 +504,8 @@ describe('Repository', () => {
                             revision
                         )}/${encodeURIPathComponent(filePath)}`
                     ),
-                TreeEntries: () => ({
-                    repository: {
-                        commit: {
-                            tree: {
-                                isRoot: false,
-                                url: '/github.com/ggilmore/q-test/-/tree/Geoffrey%27s%20random%20queries.32r242442bf',
-                                entries: [
-                                    {
-                                        name: fileName,
-                                        path: filePath,
-                                        isDirectory: false,
-                                        url:
-                                            '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                }),
+                TreeEntries: () => TreeEntries,
+                FileTreeEntries: () => TreeEntries,
             })
 
             await driver.page.goto(
@@ -515,7 +536,7 @@ describe('Repository', () => {
             assert.deepStrictEqual(breadcrumbTexts, [
                 shortRepositoryName,
                 '@master',
-                "/Geoffrey's random queries.32r242442bf /% token.4288249258.sql",
+                "/Geoffrey's random queries.32r242442bf/% token.4288249258.sql",
             ])
 
             {
@@ -632,22 +653,31 @@ describe('Repository', () => {
                 RepositoryGitCommits: () => ({
                     __typename: 'Query',
                     node: {
-                        __typename: 'GitCommit',
+                        __typename: 'Repository',
+                        externalURLs: [
+                            {
+                                __typename: 'ExternalLink',
+                                serviceKind: ExternalServiceKind.GITHUB,
+                                url: 'https://' + repositoryName,
+                            },
+                        ],
                         commit: {
                             __typename: 'GitCommit',
                             ancestors: {
                                 __typename: 'GitCommitConnection',
                                 nodes: [
                                     {
-                                        id:
-                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjI4NGFiYTAyNGIxYjU1ODU5MGU4ZTJmOTdkYmMzNTUzYTVlMGM3NmIifQ==',
+                                        __typename: 'GitCommit',
+                                        id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjI4NGFiYTAyNGIxYjU1ODU5MGU4ZTJmOTdkYmMzNTUzYTVlMGM3NmIifQ==',
                                         oid: '284aba024b1b558590e8e2f97dbc3553a5e0c76b',
                                         abbreviatedOID: '284aba0',
                                         message: 'sg: create a test command to run e2e tests locally (#34627)\n',
                                         subject: 'sg: create a test command to run e2e tests locally (#34627)',
                                         body: null,
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'Jean-Hadrien Chabran',
                                                 email: 'jr9@gmail.com',
@@ -657,7 +687,9 @@ describe('Repository', () => {
                                             date: subDays(now, 5).toISOString(),
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'GitHub',
                                                 email: 'noreply@yahoo.com',
@@ -670,19 +702,16 @@ describe('Repository', () => {
                                             {
                                                 oid: 'a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                                 abbreviatedOID: 'a2d1fd4',
-                                                url:
-                                                    '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                                url: '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/sourcegraph/-/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
+                                        url: '/github.com/sourcegraph/sourcegraph/-/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
                                         canonicalURL:
                                             '/github.com/sourcegraph/sourcegraph/-/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
                                         externalURLs: [
                                             {
-                                                url:
-                                                    'https://github.com/sourcegraph/sourcegraph/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
-                                                serviceKind: 'GITHUB',
+                                                url: 'https://github.com/sourcegraph/sourcegraph/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
+                                                serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
                                         tree: {
@@ -691,17 +720,18 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
-                                        id:
-                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6ImEyZDFmZDQ3NGQ3OWRjMjlhZjZjN2I0YzMzZjAyZmUyMjI4N2JkMTEifQ==',
+                                        __typename: 'GitCommit',
+                                        id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6ImEyZDFmZDQ3NGQ3OWRjMjlhZjZjN2I0YzMzZjAyZmUyMjI4N2JkMTEifQ==',
                                         oid: 'a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                         abbreviatedOID: 'a2d1fd4',
                                         message:
                                             'Wildcard V2: <Checkbox /> migration (#34324)\n\nCo-authored-by: gitstart-sourcegraph <gitstart@users.noreply.github.com>',
                                         subject: 'Wildcard V2: <Checkbox /> migration (#34324)',
-                                        body:
-                                            'Co-authored-by: gitstart-sourcegraph <gitstart@users.noreply.github.com>',
+                                        body: 'Co-authored-by: gitstart-sourcegraph <gitstart@users.noreply.github.com>',
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'GitStart-SourceGraph',
                                                 email: '89894075h@facebook.net',
@@ -711,7 +741,9 @@ describe('Repository', () => {
                                             date: subDays(now, 5).toISOString(),
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'GitHub',
                                                 email: 'google@yahoo.com',
@@ -724,19 +756,16 @@ describe('Repository', () => {
                                             {
                                                 oid: '3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                                 abbreviatedOID: '3a163b9',
-                                                url:
-                                                    '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                                url: '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                        url: '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                         canonicalURL:
                                             '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                         externalURLs: [
                                             {
-                                                url:
-                                                    'https://github.com/sourcegraph/sourcegraph/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
-                                                serviceKind: 'GITHUB',
+                                                url: 'https://github.com/sourcegraph/sourcegraph/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                                serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
                                         tree: {
@@ -745,15 +774,17 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
-                                        id:
-                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjNhMTYzYjkyYjVjNDU5MjFmYmM3MzBmZjIwNDdmZjdlNjBkODY4OWIifQ==',
+                                        __typename: 'GitCommit',
+                                        id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjNhMTYzYjkyYjVjNDU5MjFmYmM3MzBmZjIwNDdmZjdlNjBkODY4OWIifQ==',
                                         oid: '3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                         abbreviatedOID: '3a163b9',
                                         message: 'web: ban `reactstrap` imports (#34881)\n',
                                         subject: 'web: ban `reactstrap` imports (#34881)',
                                         body: null,
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'Valery Bugakov',
                                                 email: 'user23@gmail.com',
@@ -763,7 +794,9 @@ describe('Repository', () => {
                                             date: subDays(now, 5).toISOString(),
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'GitHub',
                                                 email: 'user43@gmail.com',
@@ -776,19 +809,16 @@ describe('Repository', () => {
                                             {
                                                 oid: 'e2e91f0dcdc90811c4f2f4df638bc459b2358e7d',
                                                 abbreviatedOID: 'e2e91f0',
-                                                url:
-                                                    '/github.com/sourcegraph/sourcegraph/-/commit/e2e91f0dcdc90811c4f2f4df638bc459b2358e7d',
+                                                url: '/github.com/sourcegraph/sourcegraph/-/commit/e2e91f0dcdc90811c4f2f4df638bc459b2358e7d',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                        url: '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                         canonicalURL:
                                             '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                         externalURLs: [
                                             {
-                                                url:
-                                                    'https://github.com/sourcegraph/sourcegraph/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
-                                                serviceKind: 'GITHUB',
+                                                url: 'https://github.com/sourcegraph/sourcegraph/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                                serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
                                         tree: {
@@ -800,6 +830,7 @@ describe('Repository', () => {
                                 pageInfo: {
                                     __typename: 'PageInfo',
                                     hasNextPage: true,
+                                    endCursor: 'abc',
                                 },
                             },
                         },
@@ -819,431 +850,9 @@ describe('Repository', () => {
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/commits')
             await driver.page.waitForSelector('[data-testid="commits-page"]', { visible: true })
+            await driver.page.waitForSelector('.list-group-item', { visible: true })
             await percySnapshotWithVariants(driver.page, 'Repository commits page')
             await accessibilityAudit(driver.page)
-        })
-    })
-
-    // Describes the ways the directory viewer and tree sidebar can be extended through Sourcegraph extensions.
-    describe('extensibility', () => {
-        const shortRepoName = 'sourcegraph/file-decs'
-        const repoName = `github.com/${shortRepoName}`
-        const repositorySourcegraphUrl = `/${shortRepoName}`
-
-        beforeEach(() => {
-            const userSettings: Settings = {
-                extensions: {
-                    'test/test': true,
-                },
-            }
-            const extensionManifest: ExtensionManifest = {
-                url: new URL('/-/static/extension/0001-test-test.js?hash--test-test', driver.sourcegraphBaseUrl).href,
-                activationEvents: ['*'],
-            }
-
-            testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
-                ...getCommonRepositoryGraphQlResults(repoName, repositorySourcegraphUrl),
-                FileExternalLinks: ({ filePath, repoName, revision }) =>
-                    createFileExternalLinksResult(
-                        `https://${encodeURIPathComponent(repoName)}/blob/${encodeURIPathComponent(
-                            revision
-                        )}/${encodeURIPathComponent(filePath)}`
-                    ),
-                ViewerSettings: () => ({
-                    viewerSettings: {
-                        __typename: 'SettingsCascade',
-                        final: JSON.stringify(userSettings),
-                        subjects: [
-                            {
-                                __typename: 'User',
-                                displayName: 'Test User',
-                                id: 'TestUserSettingsID',
-                                latestSettings: {
-                                    id: 123,
-                                    contents: JSON.stringify(userSettings),
-                                },
-                                username: 'test',
-                                viewerCanAdminister: true,
-                                settingsURL: '/users/test/settings',
-                            },
-                        ],
-                    },
-                }),
-                TreeEntries: ({ filePath, repoName }) => {
-                    if (filePath === '') {
-                        return {
-                            repository: {
-                                commit: {
-                                    tree: {
-                                        isRoot: true,
-                                        url: `/${repoName}`,
-                                        entries: [
-                                            {
-                                                isDirectory: true,
-                                                isSingleChild: true,
-                                                name: 'nested',
-                                                path: 'nested',
-                                                url: `/${repoName}/-/tree/nested`,
-                                                submodule: null,
-                                            },
-                                            // recursiveSingleChild is always true in the web app
-                                            {
-                                                name: 'test.ts',
-                                                path: 'nested/test.ts',
-                                                isDirectory: false,
-                                                url: `/${repoName}/-/blob/nested/test.ts`,
-                                                submodule: null,
-                                                isSingleChild: false,
-                                            },
-                                            {
-                                                name: 'ReactComponent.tsx',
-                                                path: 'nested/ReactComponent.tsx',
-                                                isDirectory: false,
-                                                url: `/${repoName}/-/blob/nested/ReactComponent.tsx`,
-                                                submodule: null,
-                                                isSingleChild: false,
-                                            },
-                                            {
-                                                name: 'doubly-nested',
-                                                path: 'nested/doubly-nested',
-                                                isDirectory: true,
-                                                url: `/${repoName}/-/tree/nested/doubly-nested`,
-                                                submodule: null,
-                                                isSingleChild: false,
-                                            },
-                                        ],
-                                    },
-                                },
-                            },
-                        }
-                    }
-
-                    if (filePath === 'nested') {
-                        return {
-                            repository: {
-                                commit: {
-                                    tree: {
-                                        isRoot: false,
-                                        url: `/${repoName}/-/tree/nested`,
-                                        entries: [
-                                            {
-                                                name: 'test.ts',
-                                                path: 'nested/test.ts',
-                                                isDirectory: false,
-                                                url: `/${repoName}/-/blob/nested/test.ts`,
-                                                submodule: null,
-                                                isSingleChild: false,
-                                            },
-                                            {
-                                                name: 'ReactComponent.tsx',
-                                                path: 'nested/ReactComponent.tsx',
-                                                isDirectory: false,
-                                                url: `/${repoName}/-/blob/nested/ReactComponent.tsx`,
-                                                submodule: null,
-                                                isSingleChild: false,
-                                            },
-                                            {
-                                                name: 'doubly-nested',
-                                                path: 'nested/doubly-nested',
-                                                isDirectory: true,
-                                                url: `/${repoName}/-/tree/nested/doubly-nested`,
-                                                submodule: null,
-                                                isSingleChild: false,
-                                            },
-                                        ],
-                                    },
-                                },
-                            },
-                        }
-                    }
-
-                    if (filePath === 'nested/doubly-nested') {
-                        return {
-                            repository: {
-                                commit: {
-                                    tree: {
-                                        isRoot: false,
-                                        url: `/${repoName}/-/tree/nested/doubly-nested`,
-                                        entries: [
-                                            {
-                                                name: 'triply-nested.ts',
-                                                path: 'nested/doubly-nested/triply-nested.ts',
-                                                isDirectory: false,
-                                                url: `/${repoName}/-/blob/nested/doubly-nested/triply-nested.ts`,
-                                                submodule: null,
-                                                isSingleChild: false,
-                                            },
-                                        ],
-                                    },
-                                },
-                            },
-                        }
-                    }
-
-                    // unknown
-                    return {
-                        repository: {
-                            commit: {
-                                tree: {
-                                    isRoot: false,
-                                    url: `/${repoName}/${filePath}`,
-                                    entries: [],
-                                },
-                            },
-                        },
-                    }
-                },
-                Extensions: () => ({
-                    extensionRegistry: {
-                        __typename: 'ExtensionRegistry',
-                        extensions: {
-                            nodes: [
-                                {
-                                    id: 'test',
-                                    extensionID: 'test/test',
-                                    manifest: {
-                                        jsonFields: extensionManifest,
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                }),
-            })
-
-            // Serve a mock extension bundle with a simple file decoration provider
-            testContext.server
-                .get(new URL(extensionManifest.url, driver.sourcegraphBaseUrl).href)
-                .intercept((request, response) => {
-                    function extensionBundle(): void {
-                        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-                        const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
-
-                        const vowels = 'aeiouAEIOU'
-
-                        function activate(context: sourcegraph.ExtensionContext): void {
-                            context.subscriptions.add(
-                                sourcegraph.app.registerFileDecorationProvider({
-                                    provideFileDecorations: ({ files }) =>
-                                        files.map(file => {
-                                            const fragments = file.path.split('/')
-                                            const name = fragments[fragments.length - 1]
-                                            return {
-                                                uri: file.uri,
-                                                after: {
-                                                    contentText: `${
-                                                        name.split('').filter(char => vowels.includes(char)).length
-                                                    } vowels`,
-                                                    color: file.isDirectory ? 'red' : 'blue',
-                                                },
-                                                meter: {
-                                                    value: file.isDirectory ? 50 : 100,
-                                                },
-                                            }
-                                        }),
-                                })
-                            )
-                        }
-
-                        exports.activate = activate
-                    }
-                    // Create an immediately-invoked function expression for the extensionBundle function
-                    const extensionBundleString = `(${extensionBundle.toString()})()`
-                    response.type('application/javascript; charset=utf-8').send(extensionBundleString)
-                })
-        })
-        async function getDecorationsByFilename(
-            pageOrSidebar: 'page' | 'sidebar',
-            filename: string
-        ): Promise<{ textContent?: string | null; percentage?: string | null } | null> {
-            return driver.page.evaluate(
-                ({ pageOrSidebar, filename }) => {
-                    const decorable = [
-                        ...document.querySelectorAll('.test-' + String(pageOrSidebar) + '-file-decorable'),
-                    ].find(decorable =>
-                        decorable?.querySelector('.test-file-decorable-name')?.textContent?.includes(filename)
-                    )
-
-                    if (!decorable) {
-                        return null
-                    }
-
-                    return {
-                        textContent: decorable.querySelector('.test-file-decoration-text')?.textContent,
-                        percentage: decorable.querySelector('.test-file-decoration-meter')?.getAttribute('value'),
-                    }
-                },
-                { pageOrSidebar, filename }
-            )
-        }
-
-        it('file decorations work on tree page and sidebar', async () => {
-            testContext.overrideJsContext({ enableLegacyExtensions: true })
-            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}`)
-
-            try {
-                await driver.page.waitForSelector('.test-file-decoration-container', { timeout: 10000 })
-            } catch {
-                throw new Error('Expected to see file decorations')
-            }
-
-            // TREE SIDEBAR ASSERTIONS
-
-            const nestedDecorations = await getDecorationsByFilename('sidebar', 'nested')
-
-            assert.deepStrictEqual(
-                nestedDecorations,
-                {
-                    textContent: '2 vowels',
-                    percentage: '50', // dirs are 50% in mock extension
-                },
-                'Incorrect decorations for nested on tree sidebar'
-            )
-
-            // Since nested is a single child, its children should be visible and decorated as well
-
-            const testDecorations = await getDecorationsByFilename('sidebar', 'test.ts')
-
-            assert.deepStrictEqual(
-                testDecorations,
-                {
-                    textContent: '1 vowels',
-                    percentage: '100', // files are 100% in mock extension
-                },
-                'Incorrect decorations for test.ts on tree sidebar'
-            )
-
-            const doublyNestedDecorations = await getDecorationsByFilename('sidebar', 'doubly-nested')
-
-            assert.deepStrictEqual(
-                doublyNestedDecorations,
-                {
-                    textContent: '4 vowels',
-                    percentage: '50',
-                },
-                'Incorrect decorations for doubly-nested on tree sidebar'
-            )
-
-            // Expand directory. we want to trigger "noopRowClick" handler in order to not navigate to new tree page
-            await driver.page.evaluate(() =>
-                ([...document.querySelectorAll('.test-sidebar-file-decorable')]
-                    .find(directory => directory.textContent?.includes('doubly-nested'))
-                    ?.querySelector('.test-tree-noop-link') as HTMLAnchorElement | undefined)?.click()
-            )
-
-            // Wait for file decorations to be sent from extension host
-            try {
-                await driver.page.waitForFunction(
-                    () =>
-                        !![...document.querySelectorAll('.test-sidebar-file-decorable')]
-                            .find(file =>
-                                file.querySelector('.test-file-decorable-name')?.textContent?.includes('triply-nested')
-                            )
-                            ?.querySelector('.test-file-decoration-container'),
-                    { timeout: 5000 }
-                )
-            } catch {
-                throw new Error('Timed out waiting for "triply-nested" decorations in tree sidebar')
-            }
-            const triplyNestedDecorations = await getDecorationsByFilename('sidebar', 'triply-nested')
-
-            assert.deepStrictEqual(
-                triplyNestedDecorations,
-                {
-                    textContent: '3 vowels',
-                    percentage: '100',
-                },
-                'Incorrect decorations for triply-nested.ts on tree sidebar'
-            )
-
-            // TREE PAGE ASSERTIONS
-
-            try {
-                await driver.findElementWithText('nested', {
-                    selector: '.test-page-file-decorable .test-file-decorable-name',
-                    fuzziness: 'contains',
-                    wait: {
-                        timeout: 3000,
-                    },
-                })
-            } catch {
-                throw new Error('timed out waiting for "nested" in tree page')
-            }
-
-            // Wait for decorations
-            try {
-                await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
-            } catch {
-                throw new Error('Timed out waiting for "nested" decorations in tree page')
-            }
-
-            await driver.page.evaluate(() =>
-                ([...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')].find(name =>
-                    name?.textContent?.includes('nested')
-                ) as HTMLAnchorElement | undefined)?.click()
-            )
-
-            // Wait for decorations
-            try {
-                await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
-            } catch {
-                throw new Error('Timed out waiting for "ReactComponent.tsx" decorations in tree page')
-            }
-
-            const reactDecorations = await getDecorationsByFilename('page', 'ReactComponent.tsx')
-            assert.deepStrictEqual(
-                reactDecorations,
-                {
-                    textContent: '5 vowels',
-                    percentage: '100',
-                },
-                'Incorrect decorations for ReactComponent.tsx on tree page'
-            )
-
-            const doublyNestedPageDecorations = await getDecorationsByFilename('page', 'doubly-nested')
-            // This should be equal to its sidebar decorations
-            assert.deepStrictEqual(
-                doublyNestedPageDecorations,
-                {
-                    textContent: '4 vowels',
-                    percentage: '50',
-                },
-                'Incorrect decorations for doubly-nested on tree page'
-            )
-
-            await driver.page.evaluate(() =>
-                ([...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')].find(name =>
-                    name?.textContent?.includes('doubly-nested')
-                ) as HTMLAnchorElement | undefined)?.click()
-            )
-
-            // Wait for new tree page
-            await driver.findElementWithText('triply-nested', {
-                selector: '.test-page-file-decorable .test-file-decorable-name',
-                fuzziness: 'contains',
-                wait: {
-                    timeout: 3000,
-                },
-            })
-
-            // Wait for decorations
-            try {
-                await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
-            } catch {
-                throw new Error('Timed out waiting for "triply-nested" decorations in tree page')
-            }
-
-            const triplyNestedPageDecorations = await getDecorationsByFilename('page', 'triply-nested.ts')
-            // This should be equal to its sidebar decorations
-            assert.deepStrictEqual(
-                triplyNestedPageDecorations,
-                {
-                    textContent: '3 vowels',
-                    percentage: '100',
-                },
-                'Incorrect decorations for triply-nested.ts on tree page'
-            )
         })
     })
 
@@ -1339,7 +948,13 @@ describe('Repository', () => {
                                     },
                                 ],
                                 totalCount: 3,
-                                pageInfo: { hasNextPage: false },
+                                pageInfo: {
+                                    hasNextPage: false,
+                                    hasPreviousPage: false,
+                                    startCursor: 'abc',
+                                    endCursor: 'def',
+                                    __typename: 'BidirectionalPageInfo',
+                                },
                                 __typename: 'RepositoryContributorConnection',
                             },
                             __typename: 'Repository',
@@ -1670,6 +1285,7 @@ describe('Repository', () => {
                     }),
                     RepositoryComparisonDiff: () => ({
                         node: {
+                            __typename: 'Repository',
                             comparison: {
                                 fileDiffs: {
                                     nodes: [
@@ -1693,18 +1309,15 @@ describe('Repository', () => {
                                                         lines: [
                                                             {
                                                                 kind: DiffHunkLineType.UNCHANGED,
-                                                                html:
-                                                                    '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
+                                                                html: '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
                                                             },
                                                             {
                                                                 kind: DiffHunkLineType.DELETED,
-                                                                html:
-                                                                    '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
+                                                                html: '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
                                                             },
                                                             {
                                                                 kind: DiffHunkLineType.ADDED,
-                                                                html:
-                                                                    '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
+                                                                html: '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
                                                             },
                                                         ],
                                                     },

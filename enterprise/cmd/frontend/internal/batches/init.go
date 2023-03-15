@@ -3,13 +3,15 @@ package batches
 import (
 	"context"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/window"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,11 +25,11 @@ import (
 // events.
 func Init(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
-	observationContext *observation.Context,
 ) error {
 	// Validate site configuration.
 	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
@@ -39,17 +41,19 @@ func Init(
 	})
 
 	// Initialize store.
-	bstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
+	bstore := store.New(db, observationCtx, keyring.Default().BatchChangesCredentialKey)
 
 	// Register enterprise services.
-	gitserverClient := gitserver.NewClient(db)
+	gitserverClient := gitserver.NewClient()
+	logger := sglog.Scoped("Batches", "batch changes webhooks")
 	enterpriseServices.BatchChangesResolver = resolvers.New(bstore, gitserverClient)
-	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient)
-	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient)
-	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient)
-	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient)
+	enterpriseServices.BatchesGitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient, logger)
+	enterpriseServices.BatchesBitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient, logger)
+	enterpriseServices.BatchesBitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient, logger)
+	enterpriseServices.BatchesGitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient, logger)
+	enterpriseServices.BatchesAzureDevOpsWebhook = webhooks.NewAzureDevOpsWebhook(bstore, gitserverClient, logger)
 
-	operations := httpapi.NewOperations(observationContext)
+	operations := httpapi.NewOperations(observationCtx)
 	fileHandler := httpapi.NewFileHandler(db, bstore, operations)
 	enterpriseServices.BatchesChangesFileGetHandler = fileHandler.Get()
 	enterpriseServices.BatchesChangesFileExistsHandler = fileHandler.Exists()

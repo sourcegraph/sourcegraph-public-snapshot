@@ -1,13 +1,12 @@
-import { ChangeEvent, FocusEvent, forwardRef, memo, useState } from 'react'
+import { ChangeEvent, FocusEvent, forwardRef, InputHTMLAttributes, memo, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { Combobox, ComboboxInput, ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isDefined } from '@sourcegraph/common'
-import { InputProps, Link, LoadingSpinner, useDebounce } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, useDebounce, ErrorAlert, InputProps } from '@sourcegraph/wildcard'
 
 import { GetSearchContextsResult } from '../../../../../../../../../graphql-operations'
 import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
@@ -31,7 +30,7 @@ export const SEARCH_CONTEXT_GQL = gql`
     }
 `
 
-interface DrillDownSearchContextFilter extends InputProps {}
+interface DrillDownSearchContextFilter extends InputProps, InputHTMLAttributes<HTMLInputElement> {}
 
 export const DrillDownSearchContextFilter = forwardRef<HTMLInputElement, DrillDownSearchContextFilter>(
     (props, reference) => {

@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -89,20 +89,24 @@ func serveExternalURL(w http.ResponseWriter, _ *http.Request) error {
 	return nil
 }
 
+func decodeSendEmail(r *http.Request) (txtypes.InternalAPIMessage, error) {
+	var msg txtypes.InternalAPIMessage
+	return msg, json.NewDecoder(r.Body).Decode(&msg)
+}
+
 func serveSendEmail(_ http.ResponseWriter, r *http.Request) error {
-	var msg txemail.Message
-	err := json.NewDecoder(r.Body).Decode(&msg)
+	msg, err := decodeSendEmail(r)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "decode request")
 	}
-	return txemail.Send(r.Context(), msg)
+	return txemail.Send(r.Context(), msg.Source, msg.Message)
 }
 
 // gitServiceHandler are handlers which redirect git clone requests to the
 // gitserver for the repo.
 type gitServiceHandler struct {
 	Gitserver interface {
-		AddrForRepo(context.Context, api.RepoName) (string, error)
+		AddrForRepo(api.RepoName) string
 	}
 }
 
@@ -121,10 +125,7 @@ func (s *gitServiceHandler) serveGitUploadPack() func(http.ResponseWriter, *http
 func (s *gitServiceHandler) redirectToGitServer(w http.ResponseWriter, r *http.Request, gitPath string) error {
 	repo := mux.Vars(r)["RepoName"]
 
-	addrForRepo, err := s.Gitserver.AddrForRepo(r.Context(), api.RepoName(repo))
-	if err != nil {
-		return err
-	}
+	addrForRepo := s.Gitserver.AddrForRepo(api.RepoName(repo))
 	u := &url.URL{
 		Scheme:   "http",
 		Host:     addrForRepo,

@@ -26,7 +26,7 @@ func (e *OrgNotFoundError) NotFound() bool {
 	return true
 }
 
-var errOrgNameAlreadyExists = errors.New("organization name is already taken (by a user or another organization)")
+var errOrgNameAlreadyExists = errors.New("organization name is already taken (by a user, team, or another organization)")
 
 type OrgStore interface {
 	AddOrgsOpenBetaStats(ctx context.Context, userID int32, data string) (string, error)
@@ -37,7 +37,6 @@ type OrgStore interface {
 	GetByID(ctx context.Context, orgID int32) (*types.Org, error)
 	GetByName(context.Context, string) (*types.Org, error)
 	GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
-	GetOrgsWithRepositoriesByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
 	HardDelete(ctx context.Context, id int32) (err error)
 	List(context.Context, *OrgsListOptions) ([]*types.Org, error)
 	Transact(context.Context) (OrgStore, error)
@@ -69,12 +68,6 @@ func (o *orgStore) Transact(ctx context.Context) (OrgStore, error) {
 // returned if the user is not authenticated or is not a member of any org.
 func (o *orgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
 	return o.getByUserID(ctx, userID, false)
-}
-
-// GetOrgsWithRepositoriesByUserID returns a list of all organizations for the user that have a repository attached.
-// An empty slice is returned if the user is not authenticated or is not a member of any org.
-func (o *orgStore) GetOrgsWithRepositoriesByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
-	return o.getByUserID(ctx, userID, true)
 }
 
 // getByUserID returns a list of all organizations for the user. An empty slice is
@@ -236,7 +229,7 @@ func (o *orgStore) Create(ctx context.Context, name string, displayName *string)
 		return nil, err
 	}
 
-	// Reserve organization name in shared users+orgs namespace.
+	// Reserve organization name in shared users+orgs+teams namespace.
 	if _, err := tx.Handle().ExecContext(ctx, "INSERT INTO names(name, org_id) VALUES($1, $2)", newOrg.Name, newOrg.ID); err != nil {
 		return nil, errOrgNameAlreadyExists
 	}

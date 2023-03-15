@@ -12,9 +12,64 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 <!-- Add changes changes to this section before release. -->
 
-_Upgrade notes for the next version will appear here._
+## v4.5.0 ➔ v4.5.1
 
-## v4.0 ➔ v4.1.1
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v4.5.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.5.0...v4.5.1)
+
+For non-standard replica builds: 
+- [`Customer Replica 1: ➔ v4.5.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v4.5.0...v4.5.1)
+
+#### Notes:
+
+## v4.4.2 ➔ v4.5.0
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v4.5.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.4.2...v4.5.0)
+
+For non-standard replica builds: 
+- [`Customer Replica 1: ➔ v4.5.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v4.4.2...v4.5.0)
+
+#### Notes:
+
+- This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](../how-to/lsif_scip_migration.md) for more details.
+
+## v4.4.1 ➔ v4.4.2
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v4.4.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.4.1...v4.4.2)
+
+For non-standard replica builds: 
+- [`Customer Replica 1: ➔ v4.4.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v4.4.1...v4.4.2)
+
+#### Notes:
+
+## v4.4.0 ➔ v4.4.1
+
+As a template, perform the same actions as the following diffs in your own deployment:
+- [`➔ v4.4.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/9f597b9fb42ea1a170e4456e57e4340d3f722e65)
+- 
+## v4.3.1 ➔ v4.4.1
+
+As a template, perform the same actions as the following diffs in your own deployment:
+- [`➔ v4.4.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/8cdeb7616b73e100aec41806b1118264fea0615d)
+- Users attempting a multi-version upgrade to v4.4.0 may be affected by a [known bug](https://github.com/sourcegraph/sourcegraph/pull/46969) in which an outdated schema migration is included in the upgrade process. _This issue is fixed in patch v4.4.2_
+
+  - The error will be encountered while running `upgrade`, and contains the following text: `"frontend": failed to apply migration 1648115472`. 
+    - To resolve this issue run migrator with the args `'add-log', '-db=frontend', '-version=1648115472'`. 
+    - If migrator was stopped while running `upgrade` the next run of upgrade will encounter drift, this drift should be disregarded by providing migrator with the `--skip-drift-check` flag.
+
+## v4.2 ➔ v4.3.1
+
+As a template, perform the same actions as the following diffs in your own deployment:
+- [`➔ v4.3.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1a8f9a3d71664bf31a1fae9d2ad99c9074eaebe9)
+
+## v4.1 ➔ v4.2.1
+
+- `minio` has been replaced with `blobstore`. Please see the update notes here: https://docs.sourcegraph.com/admin/how-to/blobstore_update_notes
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v4.2.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a2bd81af53c8b8ad5b0d69e7857945a1f96e331f)
+
+## v4.0 ➔ v4.1.3
 
 As a template, perform the same actions as the following diffs in your own deployment:
 

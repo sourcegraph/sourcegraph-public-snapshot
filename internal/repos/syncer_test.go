@@ -2,7 +2,6 @@ package repos_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -13,19 +12,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
-
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -36,12 +26,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSyncerSync(t *testing.T) {
@@ -213,15 +204,9 @@ func TestSyncerSync(t *testing.T) {
 		)
 
 		var diff repos.Diff
-		if tc.svc.NamespaceUserID > 0 {
-			diff.Deleted = append(diff.Deleted, tc.repo.With(
-				typestest.Opt.RepoSources(tc.svc.URN()),
-			))
-		} else {
-			diff.Unmodified = append(diff.Unmodified, tc.repo.With(
-				typestest.Opt.RepoSources(tc.svc.URN()),
-			))
-		}
+		diff.Unmodified = append(diff.Unmodified, tc.repo.With(
+			typestest.Opt.RepoSources(tc.svc.URN()),
+		))
 
 		testCases = append(testCases,
 			testCase{
@@ -651,7 +636,7 @@ func TestSyncerSync(t *testing.T) {
 			}
 
 			syncer := &repos.Syncer{
-				Logger:  logtest.Scoped(t),
+				ObsvCtx: observation.TestContextTB(t),
 				Sourcer: tc.sourcer,
 				Store:   st,
 				Now:     now,
@@ -871,10 +856,10 @@ func TestSyncRepo(t *testing.T) {
 			}
 
 			syncer := &repos.Syncer{
-				Logger: logtest.Scoped(t),
-				Now:    time.Now,
-				Store:  store,
-				Synced: make(chan repos.Diff, 1),
+				ObsvCtx: observation.TestContextTB(t),
+				Now:     time.Now,
+				Store:   store,
+				Synced:  make(chan repos.Diff, 1),
 				Sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, tc.sourced),
 				),
@@ -952,7 +937,7 @@ func TestSyncRun(t *testing.T) {
 	lockChan := fakeSource.InitLockChan()
 
 	syncer := &repos.Syncer{
-		Logger:  logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: repos.NewFakeSourcer(nil, fakeSource),
 		Store:   store,
 		Synced:  make(chan repos.Diff),
@@ -986,11 +971,6 @@ func TestSyncRun(t *testing.T) {
 
 	// Once we receive on lockChan we know our syncer is running
 	<-lockChan
-
-	// Our sync is in progress, we should not be allowed to delete the service
-	if err := store.ExternalServiceStore().Delete(ctx, svc.ID); err == nil {
-		t.Fatal("Expected an error")
-	}
 
 	// We can now send on lockChan again to unblock the sync job
 	lockChan <- struct{}{}
@@ -1113,7 +1093,7 @@ func TestSyncerMultipleServices(t *testing.T) {
 	}
 
 	syncer := &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s, ok := sourcers[service.ID]
 			if !ok {
@@ -1250,7 +1230,7 @@ func TestOrphanedRepo(t *testing.T) {
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo)
 			return s, nil
@@ -1351,7 +1331,7 @@ func TestCloudDefaultExternalServicesDontSync(t *testing.T) {
 	}
 
 	syncer := &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo)
 			return s, nil
@@ -1366,6 +1346,55 @@ func TestCloudDefaultExternalServicesDontSync(t *testing.T) {
 	if !errors.Is(have, want) {
 		t.Fatalf("have err: %v, want %v", have, want)
 	}
+}
+
+func TestDotComPrivateReposDontSync(t *testing.T) {
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	t.Cleanup(func() {
+		envvar.MockSourcegraphDotComMode(orig)
+		cancel()
+	})
+
+	store := getTestRepoStore(t)
+
+	now := time.Now()
+
+	svc1 := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test1",
+		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	// setup services
+	if err := store.ExternalServiceStore().Upsert(ctx, svc1); err != nil {
+		t.Fatal(err)
+	}
+
+	privateRepo := &types.Repo{
+		Name:    "github.com/org/foo",
+		Private: true,
+	}
+
+	syncer := &repos.Syncer{
+		ObsvCtx: observation.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
+			s := repos.NewFakeSource(svc1, nil, privateRepo)
+			return s, nil
+		},
+		Store: store,
+		Now:   time.Now,
+	}
+
+	have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder)
+	errorMsg := fmt.Sprintf("%s is private, but dotcom does not support private repositories.", string(privateRepo.Name))
+
+	require.EqualError(t, have, errorMsg)
 }
 
 var basicGitHubConfig = `{"url": "https://github.com", "token": "beef", "repos": ["owner/name"]}`
@@ -1413,7 +1442,7 @@ func TestConflictingSyncers(t *testing.T) {
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo)
 			return s, nil
@@ -1427,7 +1456,7 @@ func TestConflictingSyncers(t *testing.T) {
 
 	// Sync second service
 	syncer = &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc2, nil, githubRepo)
 			return s, nil
@@ -1472,7 +1501,7 @@ func TestConflictingSyncers(t *testing.T) {
 
 	// Start syncing using tx1
 	syncer = &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, updatedRepo)
 			return s, nil
@@ -1485,7 +1514,7 @@ func TestConflictingSyncers(t *testing.T) {
 	}
 
 	syncer2 := &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc2, nil, githubRepo.With(func(r *types.Repo) {
 				r.Description = newDescription
@@ -1572,7 +1601,7 @@ func TestSyncRepoMaintainsOtherSources(t *testing.T) {
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo)
 			return s, nil
@@ -1586,7 +1615,7 @@ func TestSyncRepoMaintainsOtherSources(t *testing.T) {
 
 	// Sync second service
 	syncer = &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc2, nil, githubRepo)
 			return s, nil
@@ -1673,7 +1702,7 @@ func TestNameOnConflictOnRename(t *testing.T) {
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo1)
 			return s, nil
@@ -1687,7 +1716,7 @@ func TestNameOnConflictOnRename(t *testing.T) {
 
 	// Sync second service
 	syncer = &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(context.Context, *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc2, nil, githubRepo2)
 			return s, nil
@@ -1706,7 +1735,7 @@ func TestNameOnConflictOnRename(t *testing.T) {
 
 	// Sync first service
 	syncer = &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(context.Context, *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, renamedRepo1)
 			return s, nil
@@ -1781,7 +1810,7 @@ func TestDeleteExternalService(t *testing.T) {
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo)
 			return s, nil
@@ -1795,7 +1824,7 @@ func TestDeleteExternalService(t *testing.T) {
 
 	// Sync second service
 	syncer = &repos.Syncer{
-		Logger: logtest.Scoped(t),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc2, nil, githubRepo)
 			return s, nil
@@ -2003,10 +2032,10 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 	}
 
 	syncer := &repos.Syncer{
-		Logger: logtest.Scoped(t),
-		Now:    time.Now,
-		Store:  s,
-		Synced: make(chan repos.Diff, 1),
+		ObsvCtx: observation.TestContextTB(t),
+		Now:     time.Now,
+		Store:   s,
+		Synced:  make(chan repos.Diff, 1),
 		Sourcer: repos.NewFakeSourcer(
 			nil,
 			repos.NewFakeSource(&service,
@@ -2016,120 +2045,6 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 	}
 	return syncer, dbRepos
 }
-
-func TestEnqueueWebhookBuildJob(t *testing.T) {
-	store := getTestRepoStore(t)
-
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			EnableWebhookRepoSync: true,
-		},
-	}})
-
-	esStore := store.ExternalServiceStore()
-	repoStore := store.RepoStore()
-	workerStore := webhookworker.CreateWorkerStore(logger, store.Handle())
-
-	repo := &types.Repo{
-		ID:   1,
-		Name: api.RepoName("milton/test"),
-	}
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
-	}
-
-	ghConn := &schema.GitHubConnection{
-		Url:      "https://github.com",
-		Token:    "fake",
-		Repos:    []string{string(repo.Name)},
-		Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
-	}
-	bs, err := json.Marshal(ghConn)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	config := string(bs)
-	svc := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "TestService",
-		Config:      extsvc.NewUnencryptedConfig(config),
-	}
-	if err := esStore.Upsert(ctx, svc); err != nil {
-		t.Fatal(err)
-	}
-
-	sourcer := repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, repo))
-	syncer := &repos.Syncer{
-		Logger:  logger,
-		Sourcer: sourcer,
-		Store:   store,
-		Now:     time.Now,
-	}
-
-	if err := syncer.SyncExternalService(ctx, svc.ID, time.Millisecond, noopProgressRecorder); err != nil {
-		t.Fatal(err)
-	}
-
-	jobChan := make(chan *webhookworker.Job)
-	metrics := workerutil.NewMetrics(&observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}, fmt.Sprintf("%s_processor", "webhook_build_worker"))
-
-	worker := webhookworker.NewWorker(ctx, &fakeWebhookBuildHandler{jobChan: jobChan}, workerStore, metrics)
-
-	go worker.Start()
-	defer worker.Stop()
-
-	want := &webhookworker.Job{
-		RepoID:     int32(repo.ID),
-		RepoName:   string(repo.Name),
-		Org:        strings.Split(string(repo.Name), "/")[1],
-		ExtSvcID:   svc.ID,
-		ExtSvcKind: svc.Kind,
-	}
-
-	var have *webhookworker.Job
-
-	select {
-	case have = <-jobChan:
-		if diff := cmp.Diff(have, want, jobComparer); diff != "" {
-			t.Fatalf("mismatched jobs, (-want +got):\n%s", diff)
-		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("Timeout")
-	}
-}
-
-type fakeWebhookBuildHandler struct {
-	jobChan chan *webhookworker.Job
-}
-
-func (h *fakeWebhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	job, ok := record.(*webhookworker.Job)
-	if !ok {
-		return errors.Newf("expected webhookworker.Job, got %T", record)
-	}
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case h.jobChan <- job:
-		return nil
-	}
-}
-
-var jobComparer = cmp.Comparer(func(x, y *webhookworker.Job) bool {
-	return x.RepoID == y.RepoID &&
-		x.RepoName == y.RepoName &&
-		x.Org == y.Org &&
-		x.ExtSvcID == y.ExtSvcID &&
-		x.ExtSvcKind == y.ExtSvcKind
-})
 
 var noopProgressRecorder = func(ctx context.Context, progress repos.SyncProgress, final bool) error {
 	return nil

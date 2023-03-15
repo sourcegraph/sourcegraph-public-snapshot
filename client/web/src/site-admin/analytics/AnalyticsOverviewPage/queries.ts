@@ -12,6 +12,9 @@ export const OVERVIEW_STATISTICS = gql`
                     expiresAt
                 }
             }
+            updateCheck {
+                updateVersionAvailable
+            }
             adminUsers: users(siteAdmin: true, deletedAt: { empty: true }) {
                 totalCount
             }
@@ -20,7 +23,7 @@ export const OVERVIEW_STATISTICS = gql`
             totalCount
         }
         repositories {
-            totalCount(precise: true)
+            totalCount
         }
         repositoryStats {
             gitDirBytes
@@ -30,6 +33,9 @@ export const OVERVIEW_STATISTICS = gql`
             totalCount
             averageScore
             netPromoterScore
+        }
+        pendingAccessRequests: accessRequests(status: PENDING) {
+            totalCount
         }
     }
 `

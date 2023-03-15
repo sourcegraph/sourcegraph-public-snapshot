@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -119,12 +120,14 @@ func TestMiddleware(t *testing.T) {
 	defer cleanup()
 	defer licensing.TestingSkipFeatureChecks()()
 
-	mockGetProviderValue = &provider{
+	mockGetProviderValue = &Provider{
 		config: schema.OpenIDConnectAuthProvider{
 			ClientID:           testClientID,
 			ClientSecret:       "aaaaaaaaaaaaaaaaaaaaaaaaa",
 			RequireEmailDomain: "example.com",
+			Type:               providerType,
 		},
+		callbackUrl: ".auth/callback",
 	}
 	defer func() { mockGetProviderValue = nil }()
 	providers.MockProviders = []providers.Provider{mockGetProviderValue}
@@ -143,12 +146,26 @@ func TestMiddleware(t *testing.T) {
 	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
+	securityLogs := database.NewStrictMockSecurityEventLogsStore()
+	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
+	securityLogs.LogEventFunc.SetDefaultHook(func(_ context.Context, event *database.SecurityEvent) {
+		assert.Equal(t, "/.auth/openidconnect/callback", event.URL)
+		assert.Equal(t, "BACKEND", event.Source)
+		assert.NotNil(t, event.Timestamp)
+		if event.Name == database.SecurityEventOIDCLoginFailed {
+			assert.NotEmpty(t, event.AnonymousUserID)
+			assert.IsType(t, json.RawMessage{}, event.Argument)
+		} else {
+			assert.Equal(t, uint32(123), event.UserID)
+		}
+	})
+
 	if err := mockGetProviderValue.Refresh(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 
-	validState := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
-	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
+	validState := (&AuthnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
+	MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
 		if rawIDToken != "test_id_token_f4bdefbd77f" {
 			t.Fatalf("unexpected raw ID token: %s", rawIDToken)
 		}
@@ -179,15 +196,23 @@ func TestMiddleware(t *testing.T) {
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
-
-	state := func(t *testing.T, urlStr string) (state authnState) {
+	state := func(t *testing.T, urlStr string) (state AuthnState) {
 		u, _ := url.Parse(urlStr)
 		if err := state.Decode(u.Query().Get("nonce")); err != nil {
 			t.Fatal(err)
 		}
 		return state
 	}
-	t.Run("unauthenticated homepage visit -> oidc auth flow", func(t *testing.T) {
+
+	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
+		cookie := &http.Cookie{Name: auth.SignOutCookie, Value: "true"}
+
+		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false)
+		if want := http.StatusOK; resp.StatusCode != want {
+			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+		}
+	})
+	t.Run("unauthenticated homepage visit, no sign-out cookie -> oidc auth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
@@ -256,7 +281,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("OIDC callback without CSRF token -> error", func(t *testing.T) {
-		invalidState := (&authnState{CSRFToken: "bad", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
+		invalidState := (&AuthnState{CSRFToken: "bad", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
 		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(invalidState), "", nil, false)
 		if want := http.StatusBadRequest; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
@@ -298,11 +323,13 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 
 	defer licensing.TestingSkipFeatureChecks()()
 
-	mockGetProviderValue = &provider{
+	mockGetProviderValue = &Provider{
 		config: schema.OpenIDConnectAuthProvider{
 			ClientID:     testClientID,
 			ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",
+			Type:         providerType,
 		},
+		callbackUrl: ".auth/callback",
 	}
 	defer func() { mockGetProviderValue = nil }()
 	providers.MockProviders = []providers.Provider{mockGetProviderValue}
@@ -317,8 +344,8 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	state := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
-	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
+	state := (&AuthnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
+	MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
 		if rawIDToken != "test_id_token_f4bdefbd77f" {
 			t.Fatalf("unexpected raw ID token: %s", rawIDToken)
 		}
@@ -337,6 +364,16 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 
 	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
+
+	securityLogs := database.NewStrictMockSecurityEventLogsStore()
+	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
+	securityLogs.LogEventFunc.SetDefaultHook(func(_ context.Context, event *database.SecurityEvent) {
+		assert.Equal(t, "/.auth/openidconnect/callback", event.URL)
+		assert.Equal(t, "BACKEND", event.Source)
+		assert.NotNil(t, event.Timestamp)
+		assert.Equal(t, database.SecurityEventOIDCLoginSucceeded, event.Name)
+		assert.Equal(t, uint32(123), event.UserID)
+	})
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := Middleware(db).App(h)

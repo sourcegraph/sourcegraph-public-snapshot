@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"runtime"
 	"strconv"
 	"time"
@@ -8,6 +9,9 @@ import (
 	"github.com/c2h5oh/datasize"
 	"github.com/google/uuid"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -16,37 +20,44 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	FrontendURL                   string
-	FrontendAuthorizationToken    string
-	QueueName                     string
-	QueuePollInterval             time.Duration
-	MaximumNumJobs                int
-	FirecrackerImage              string
-	FirecrackerKernelImage        string
-	FirecrackerSandboxImage       string
-	VMStartupScriptPath           string
-	VMPrefix                      string
-	KeepWorkspaces                bool
-	DockerHostMountPath           string
-	UseFirecracker                bool
-	JobNumCPUs                    int
-	JobMemory                     string
-	FirecrackerDiskSpace          string
-	FirecrackerBandwidthIngress   int
-	FirecrackerBandwidthEgress    int
-	MaximumRuntimePerJob          time.Duration
-	CleanupTaskInterval           time.Duration
-	NumTotalJobs                  int
-	MaxActiveTime                 time.Duration
-	NodeExporterURL               string
-	DockerRegistryNodeExporterURL string
-	WorkerHostname                string
-	DockerRegistryMirrorURL       string
+	FrontendURL                    string
+	FrontendAuthorizationToken     string
+	QueueName                      string
+	QueuePollInterval              time.Duration
+	MaximumNumJobs                 int
+	FirecrackerImage               string
+	FirecrackerKernelImage         string
+	FirecrackerSandboxImage        string
+	VMStartupScriptPath            string
+	VMPrefix                       string
+	KeepWorkspaces                 bool
+	DockerHostMountPath            string
+	UseFirecracker                 bool
+	JobNumCPUs                     int
+	JobMemory                      string
+	FirecrackerDiskSpace           string
+	FirecrackerBandwidthIngress    int
+	FirecrackerBandwidthEgress     int
+	MaximumRuntimePerJob           time.Duration
+	CleanupTaskInterval            time.Duration
+	NumTotalJobs                   int
+	MaxActiveTime                  time.Duration
+	NodeExporterURL                string
+	DockerRegistryNodeExporterURL  string
+	WorkerHostname                 string
+	DockerRegistryMirrorURL        string
+	DockerAuthConfig               types.DockerAuthConfig
+	dockerAuthConfigStr            string
+	dockerAuthConfigUnmarshalError error
 }
 
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
 	c.FrontendAuthorizationToken = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The authorization token supplied to the frontend.")
+	if deploy.IsApp() {
+		// In App deployments, we respect the in-memory executor password only.
+		c.FrontendAuthorizationToken = confdefaults.AppInMemoryExecutorPassword
+	}
 	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
@@ -70,6 +81,11 @@ func (c *Config) Load() {
 	c.DockerRegistryNodeExporterURL = c.GetOptional("DOCKER_REGISTRY_NODE_EXPORTER_URL", "The URL of the Docker Registry instance's node_exporter, without the /metrics path.")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
 	c.DockerRegistryMirrorURL = c.GetOptional("EXECUTOR_DOCKER_REGISTRY_MIRROR_URL", "The address of a docker registry mirror to use in firecracker VMs. Supports multiple values, separated with a comma.")
+	c.dockerAuthConfigStr = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
+
+	if c.dockerAuthConfigStr != "" {
+		c.dockerAuthConfigUnmarshalError = json.Unmarshal([]byte(c.dockerAuthConfigStr), &c.DockerAuthConfig)
+	}
 
 	hn := hostname.Get()
 	// Be unique but also descriptive.
@@ -79,6 +95,10 @@ func (c *Config) Load() {
 func (c *Config) Validate() error {
 	if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
 		c.AddError(errors.New("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
+	}
+
+	if c.dockerAuthConfigUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.dockerAuthConfigUnmarshalError, "invalid EXECUTOR_DOCKER_AUTH_CONFIG, failed to parse"))
 	}
 
 	if c.UseFirecracker {

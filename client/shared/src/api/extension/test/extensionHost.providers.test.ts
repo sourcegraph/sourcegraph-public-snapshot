@@ -1,11 +1,11 @@
 import { Observable } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { DocumentHighlight, Hover } from 'sourcegraph'
 
 import { fromHoverMerged, HoverMerged, TextDocumentIdentifier } from '@sourcegraph/client-api'
 import { LOADING } from '@sourcegraph/codeintellify'
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
 
+import type { Hover, DocumentHighlight } from '../../../codeintel/legacy-extensions/api'
 import { callProviders, mergeProviderResults, providersForDocument, RegisteredProvider } from '../extensionHostApi'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
@@ -31,10 +31,7 @@ describe('callProviders()', () => {
         it('returns empty non loading result with no providers', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [] }), { uri: 'file:///f.ts' })
                 ).toBe('-a', {
                     a: { isLoading: false, result: [] },
                 })
@@ -44,10 +41,7 @@ describe('callProviders()', () => {
         it('returns a result from a provider synchronously with raw values', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [provide(1)] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [provide(1)] }), { uri: 'file:///f.ts' })
                 ).toBe('-(lr)', {
                     l: { isLoading: true, result: [LOADING] },
                     r: { isLoading: false, result: [1] },
@@ -58,10 +52,9 @@ describe('callProviders()', () => {
         it('returns a result from a provider with observables', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [provide(cold('--a', { a: 1 }))] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [provide(cold('--a', { a: 1 }))] }), {
+                        uri: 'file:///f.ts',
+                    })
                 ).toBe('-l-r', {
                     l: { isLoading: true, result: [LOADING] },
                     r: { isLoading: false, result: [1] },
@@ -74,10 +67,9 @@ describe('callProviders()', () => {
         it("returns a synchronous result from both providers, but doesn't wait for the second to yield", () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [provide(1), provide(2)] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [provide(1), provide(2)] }), {
+                        uri: 'file:///f.ts',
+                    })
                 ).toBe('-(lr)', {
                     l: { isLoading: true, result: [1, LOADING] },
                     r: { isLoading: false, result: [1, 2] },
@@ -122,10 +114,9 @@ describe('callProviders()', () => {
         it('it can filter out providers', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [provide(1, '*.ts'), provide(2, '*.js')] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [provide(1, '*.ts'), provide(2, '*.js')] }), {
+                        uri: 'file:///f.ts',
+                    })
                 ).toBe('-(lr)', {
                     l: { isLoading: true, result: [LOADING] },
                     r: { isLoading: false, result: [1] },
@@ -204,13 +195,13 @@ describe('mergeProviderResults()', () => {
 
         it('merges a Hover into result', () => {
             const hover: Hover = { contents: { value: 'a', kind: MarkupKind.PlainText } }
-            const merged: HoverMerged = { contents: [hover.contents], alerts: [], aggregatedBadges: [] }
+            const merged: HoverMerged = { contents: [hover.contents], aggregatedBadges: [] }
             expect(mergeHoverResults([hover])).toEqual(merged)
         })
 
         it('omits non Hover values from hovers result', () => {
             const hover: Hover = { contents: { value: 'a', kind: MarkupKind.PlainText } }
-            const merged: HoverMerged = { contents: [hover.contents], alerts: [], aggregatedBadges: [] }
+            const merged: HoverMerged = { contents: [hover.contents], aggregatedBadges: [] }
             expect(mergeHoverResults([hover, null, LOADING, undefined])).toEqual(merged)
         })
 
@@ -218,12 +209,12 @@ describe('mergeProviderResults()', () => {
             const hover1: Hover = {
                 contents: { value: 'c1' },
                 // TODO this is weird to cast to ranges
-                range: ({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown) as Range,
+                range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown as Range,
             }
             const hover2: Hover = {
                 contents: { value: 'c2' },
                 // TODO this is weird to cast to ranges
-                range: ({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown) as Range,
+                range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown as Range,
             }
             const merged: HoverMerged = {
                 contents: [
@@ -231,7 +222,6 @@ describe('mergeProviderResults()', () => {
                     { value: 'c2', kind: MarkupKind.PlainText },
                 ],
                 range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                alerts: [],
                 aggregatedBadges: [],
             }
 

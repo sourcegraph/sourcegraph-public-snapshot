@@ -1,4 +1,5 @@
 import 'focus-visible'
+
 import { ReactElement } from 'react'
 
 import { configureActions } from '@storybook/addon-actions'
@@ -7,10 +8,10 @@ import { DecoratorFn, Parameters } from '@storybook/react'
 import { withDesign } from 'storybook-addon-designs'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
+import { isChromatic } from '@sourcegraph/wildcard/src/stories'
 
 import { withChromaticThemes } from './decorators/withChromaticThemes'
 import { themeDark, themeLight, THEME_DARK_CLASS, THEME_LIGHT_CLASS } from './themes'
-import { isChromatic } from './utils/isChromatic'
 
 const withConsoleDecorator: DecoratorFn = (storyFunc, context): ReactElement => withConsole()(storyFunc)(context)
 

@@ -5,22 +5,23 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 )
 
 // Scheduler provides a scheduling service that moves changesets from the
 // scheduled state to the queued state based on the current rate limit, if
 // anything. Changesets are processed in a FIFO manner.
 type Scheduler struct {
-	ctx   context.Context
-	done  chan struct{}
-	store *store.Store
+	ctx      context.Context
+	done     chan struct{}
+	store    *store.Store
+	jobName  string
+	recorder *recorder.Recorder
 }
 
-var _ goroutine.BackgroundRoutine = &Scheduler{}
+var _ recorder.Recordable = &Scheduler{}
 
 func NewScheduler(ctx context.Context, bstore *store.Store) *Scheduler {
 	return &Scheduler{
@@ -31,6 +32,10 @@ func NewScheduler(ctx context.Context, bstore *store.Store) *Scheduler {
 }
 
 func (s *Scheduler) Start() {
+	if s.recorder != nil {
+		go s.recorder.LogStart(s)
+	}
+
 	// Set up a global backoff strategy where we start at 5 seconds, up to a
 	// minute, when we don't have any changesets to enqueue. Without this, an
 	// unlimited schedule will essentially busy-wait calling Take().
@@ -51,6 +56,8 @@ func (s *Scheduler) Start() {
 		for {
 			select {
 			case delay := <-ticker.C:
+				start := time.Now()
+
 				// We can enqueue a changeset. Let's try to do so, ensuring that
 				// we always return a duration back down the delay channel.
 				if err := s.enqueueChangeset(); err != nil {
@@ -63,6 +70,11 @@ func (s *Scheduler) Start() {
 					// loop immediately.
 					backoff.reset()
 					delay <- time.Duration(0)
+				}
+
+				duration := time.Since(start)
+				if s.recorder != nil {
+					go s.recorder.LogRun(s, duration, nil)
 				}
 
 			case <-validity.C:
@@ -88,6 +100,9 @@ func (s *Scheduler) Start() {
 }
 
 func (s *Scheduler) Stop() {
+	if s.recorder != nil {
+		go s.recorder.LogStop(s)
+	}
 	s.done <- struct{}{}
 	close(s.done)
 }
@@ -136,4 +151,32 @@ func (b *backoff) next() time.Duration {
 
 func (b *backoff) reset() {
 	b.current = b.init
+}
+
+func (s *Scheduler) Name() string {
+	return "batches-scheduler"
+}
+
+func (s *Scheduler) Type() recorder.RoutineType {
+	return recorder.CustomRoutine
+}
+
+func (s *Scheduler) JobName() string {
+	return s.jobName
+}
+
+func (s *Scheduler) SetJobName(jobName string) {
+	s.jobName = jobName
+}
+
+func (s *Scheduler) Description() string {
+	return "Scheduler for batch changes"
+}
+
+func (s *Scheduler) Interval() time.Duration {
+	return 1 * time.Minute // Actually between 5 sec and 1 min, changes dynamically
+}
+
+func (s *Scheduler) RegisterRecorder(recorder *recorder.Recorder) {
+	s.recorder = recorder
 }

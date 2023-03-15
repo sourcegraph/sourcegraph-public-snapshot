@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "embed.go",
+        "types.go",
+    ],
+    embedsrcs = [
+        "data/stitched-migration-graph.json",
+        "data/frozen/4.5.0.json",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration/shared",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/migration/definition",
+        "//lib/errors",
+    ],
+)

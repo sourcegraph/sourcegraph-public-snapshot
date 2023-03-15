@@ -39,6 +39,7 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
                             aria-label="This workspace is currently executing."
                             className={className}
                             as={LoadingSpinner}
+                            aria-live="off"
                         />
                     </span>
                 </Tooltip>

@@ -8,7 +8,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -210,14 +209,6 @@ func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *sources.Ch
 
 	s.UpdatedChangesets = append(s.UpdatedChangesets, c)
 	return c.SetMetadata(s.FakeMetadata)
-}
-
-var fakeNotImplemented = errors.New("not implemented in FakeChangesetSource")
-
-func (s *FakeChangesetSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
-	s.ListReposCalled = true
-
-	results <- repos.SourceResult{Source: s, Err: fakeNotImplemented}
 }
 
 func (s *FakeChangesetSource) ExternalServices() types.ExternalServices {

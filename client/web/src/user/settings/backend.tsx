@@ -33,15 +33,32 @@ export const CREATE_PASSWORD = gql`
     }
 `
 
+export const userExternalAccountFragment = gql`
+    fragment UserExternalAccountFields on ExternalAccount {
+        id
+        serviceID
+        serviceType
+        publicAccountData {
+            displayName
+            login
+            url
+        }
+    }
+`
+
 export const USER_EXTERNAL_ACCOUNTS = gql`
-    query MinExternalAccounts($username: String!) {
+    query UserExternalAccountsWithAccountData($username: String!) {
         user(username: $username) {
             externalAccounts {
                 nodes {
                     id
                     serviceID
                     serviceType
-                    accountData
+                    publicAccountData {
+                        displayName
+                        login
+                        url
+                    }
                 }
             }
         }
@@ -60,7 +77,7 @@ export function updatePassword(args: UpdatePasswordVariables): Observable<void> 
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.updatePassword) {
+            if (!data?.updatePassword) {
                 eventLogger.log('UpdatePasswordFailed')
                 throw createAggregateError(errors)
             }
@@ -168,6 +185,10 @@ function createEvent(event: string, eventProperties?: unknown, publicArgument?: 
         firstSourceURL: eventLogger.getFirstSourceURL(),
         lastSourceURL: eventLogger.getLastSourceURL(),
         referrer: eventLogger.getReferrer(),
+        originalReferrer: eventLogger.getOriginalReferrer(),
+        sessionReferrer: eventLogger.getSessionReferrer(),
+        sessionFirstURL: eventLogger.getSessionFirstURL(),
+        deviceSessionID: eventLogger.getDeviceSessionID(),
         url: window.location.href,
         source: EventSource.WEB,
         argument: eventProperties ? JSON.stringify(eventProperties) : null,

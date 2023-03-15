@@ -1,7 +1,10 @@
 package server
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,21 +13,53 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type PerforceDepotType string
+
+const (
+	Local   PerforceDepotType = "local"
+	Remote  PerforceDepotType = "remote"
+	Stream  PerforceDepotType = "stream"
+	Spec    PerforceDepotType = "spec"
+	Unload  PerforceDepotType = "unload"
+	Archive PerforceDepotType = "archive"
+	Tangent PerforceDepotType = "tangent"
+	Graph   PerforceDepotType = "graph"
+)
+
+// PerforceDepot is a definiton of a depot that matches the format
+// returned from `p4 -Mj -ztag depots`
+type PerforceDepot struct {
+	Desc string `json:"desc,omitempty"`
+	Map  string `json:"map,omitempty"`
+	Name string `json:"name,omitempty"`
+	// Time is seconds since the Epoch, but p4 quotes it in the output, so it's a string
+	Time string `json:"time,omitempty"`
+	// Type is local, remote, stream, spec, unload, archive, tangent, graph
+	Type PerforceDepotType `json:"type,omitempty"`
+}
 
 // PerforceDepotSyncer is a syncer for Perforce depots.
 type PerforceDepotSyncer struct {
 	// MaxChanges indicates to only import at most n changes when possible.
 	MaxChanges int
 
-	// Client configures the client to use with p4 and enables use of a client spec to
-	// find the list of interesting files in p4.
+	// Client configures the client to use with p4 and enables use of a client spec
+	// to find the list of interesting files in p4.
 	Client string
 
-	// FusionConfig contains information about the experimental p4-fusion client
+	// FusionConfig contains information about the experimental p4-fusion client.
 	FusionConfig FusionConfig
+
+	// P4Home is a directory we will pass to `git p4` commands as the
+	// $HOME directory as it requires this to write cache data.
+	P4Home string
 }
 
 func (s *PerforceDepotSyncer) Type() string {
@@ -33,55 +68,85 @@ func (s *PerforceDepotSyncer) Type() string {
 
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
 func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
-	username, password, host, _, err := decomposePerforceRemoteURL(remoteURL)
+	username, password, host, path, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return errors.Wrap(err, "decompose")
 	}
 
-	// FIXME: Need to find a way to determine if depot exists instead of a general ping to the Perforce server.
-	return p4pingWithTrust(ctx, host, username, password)
+	// start with a test and set up trust if necessary
+	if err := p4testWithTrust(ctx, host, username, password); err != nil {
+		return err
+	}
+
+	// the path could be a path into a depot, or it could be just a depot
+	// expect it to start with at least one slash
+	// (the config defines it as starting with two, but converting it to a URL may change that)
+	// the first path part will be the depot - subsequent parts define a directory path into a depot
+	// ignore the directory parts for now, and only test for access to the depot
+	// TODO: revisit if we want to also test for access to the directories, if any are included
+	depot := strings.Split(strings.TrimLeft(path, "/"), "/")[0]
+
+	// get a list of depots that match the supplied depot (if it's defined)
+	if depots, err := p4depots(ctx, host, username, password, depot); err != nil {
+		return err
+	} else if len(depots) == 0 {
+		// this user doesn't have access to any depots,
+		// or to the given depot
+		if depot != "" {
+			return errors.Newf("the user %s does not have access to the depot %s on the server %s", username, depot, host)
+		} else {
+			return errors.Newf("the user %s does not have access to any depots on the server %s", username, host)
+		}
+	}
+
+	// no overt errors, so this depot is cloneable
+	return nil
 }
 
 // CloneCommand returns the command to be executed for cloning a Perforce depot as a Git repository.
 func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (*exec.Cmd, error) {
-	username, password, host, depot, err := decomposePerforceRemoteURL(remoteURL)
+	username, password, p4port, depot, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "decompose")
 	}
 
-	err = p4pingWithTrust(ctx, host, username, password)
+	err = p4testWithTrust(ctx, p4port, username, password)
 	if err != nil {
-		return nil, errors.Wrap(err, "ping with trust")
+		return nil, errors.Wrap(err, "test with trust")
 	}
 
 	var cmd *exec.Cmd
 	if s.FusionConfig.Enabled {
-		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
-		cmd = exec.CommandContext(ctx, "p4-fusion",
-			"--path", depot+"...",
-			"--client", s.FusionConfig.Client,
-			"--user", username,
-			"--src", tmpPath,
-			"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreads),
-			"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
-			"--port", host,
-			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
-			"--retries", strconv.Itoa(s.FusionConfig.Retries),
-			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
-			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
-			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
-			"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
-			"--noColor", "true",
-		)
+		cmd = s.buildP4FusionCmd(ctx, depot, username, tmpPath, p4port)
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
 		args := append([]string{"p4", "clone", "--bare"}, s.p4CommandOptions()...)
 		args = append(args, depot+"@all", tmpPath)
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
-	cmd.Env = s.p4CommandEnv(host, username, password)
+	cmd.Env = s.p4CommandEnv(p4port, username, password)
 
 	return cmd, nil
+}
+
+func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, username, src, port string) *exec.Cmd {
+	// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
+	return exec.CommandContext(ctx, "p4-fusion",
+		"--path", depot+"...",
+		"--client", s.FusionConfig.Client,
+		"--user", username,
+		"--src", src,
+		"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreads),
+		"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
+		"--port", port,
+		"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
+		"--retries", strconv.Itoa(s.FusionConfig.Retries),
+		"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
+		"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
+		"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
+		"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
+		"--noColor", "true",
+	)
 }
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
@@ -91,39 +156,23 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 		return errors.Wrap(err, "decompose")
 	}
 
-	err = p4pingWithTrust(ctx, host, username, password)
+	err = p4testWithTrust(ctx, host, username, password)
 	if err != nil {
-		return errors.Wrap(err, "ping with trust")
+		return errors.Wrap(err, "test with trust")
 	}
 
-	// Example: git p4 sync --max-changes 1000
-	args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
-
-	var cmd *exec.Cmd
+	var cmd *wrexec.Cmd
 	if s.FusionConfig.Enabled {
 		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
 		root, _ := filepath.Split(string(dir))
-		cmd = exec.CommandContext(ctx, "p4-fusion",
-			"--path", depot+"...",
-			"--client", s.FusionConfig.Client,
-			"--user", username,
-			"--src", root+".git",
-			"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreadsFetch),
-			"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
-			"--port", host,
-			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
-			"--retries", strconv.Itoa(s.FusionConfig.Retries),
-			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
-			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
-			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
-			"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
-			"--noColor", "true",
-		)
+		cmd = wrexec.Wrap(ctx, nil, s.buildP4FusionCmd(ctx, depot, username, root+".git", host))
 	} else {
-		cmd = exec.CommandContext(ctx, "git", args...)
+		// Example: git p4 sync --max-changes 1000
+		args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
+		cmd = wrexec.CommandContext(ctx, nil, "git", args...)
 	}
 	cmd.Env = s.p4CommandEnv(host, username, password)
-	dir.Set(cmd)
+	dir.Set(cmd.Cmd)
 
 	if output, err := runWith(ctx, cmd, false, nil); err != nil {
 		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
@@ -131,13 +180,13 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 
 	if !s.FusionConfig.Enabled {
 		// Force update "master" to "refs/remotes/p4/master" where changes are synced into
-		cmd = exec.CommandContext(ctx, "git", "branch", "-f", "master", "refs/remotes/p4/master")
-		cmd.Env = append(os.Environ(),
+		cmd = wrexec.CommandContext(ctx, nil, "git", "branch", "-f", "master", "refs/remotes/p4/master")
+		cmd.Cmd.Env = append(os.Environ(),
 			"P4PORT="+host,
 			"P4USER="+username,
 			"P4PASSWD="+password,
 		)
-		dir.Set(cmd)
+		dir.Set(cmd.Cmd)
 		if output, err := runWith(ctx, cmd, false, nil); err != nil {
 			return errors.Wrapf(err, "failed to force update branch with output %q", string(output))
 		}
@@ -163,15 +212,23 @@ func (s *PerforceDepotSyncer) p4CommandOptions() []string {
 	return flags
 }
 
-func (s *PerforceDepotSyncer) p4CommandEnv(host, username, password string) []string {
+func (s *PerforceDepotSyncer) p4CommandEnv(port, username, password string) []string {
 	env := append(os.Environ(),
-		"P4PORT="+host,
+		"P4PORT="+port,
 		"P4USER="+username,
 		"P4PASSWD="+password,
 	)
+
 	if s.Client != "" {
 		env = append(env, "P4CLIENT="+s.Client)
 	}
+
+	if s.P4Home != "" {
+		// git p4 commands write to $HOME/.gitp4-usercache.txt, we should pass in a
+		// directory under our control and ensure that it is writeable.
+		env = append(env, "HOME="+s.P4Home)
+	}
+
 	return env
 }
 
@@ -195,7 +252,7 @@ func p4trust(ctx context.Context, host string) error {
 		"P4PORT="+host,
 	)
 
-	out, err := runWith(ctx, cmd, false, nil)
+	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -208,19 +265,23 @@ func p4trust(ctx context.Context, host string) error {
 	return nil
 }
 
-// p4ping sends one message to the Perforce server to check connectivity.
-func p4ping(ctx context.Context, host, username, password string) error {
+// p4test uses `p4 login -s` to test the Perforce connection: host, port, user, password.
+func p4test(ctx context.Context, host, username, password string) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "p4", "ping", "-c", "1")
+	// `p4 ping` requires extra-special access, so we want to avoid using it
+	//
+	// p4 login -s checks the connection and the credentials,
+	// so it seems like the perfect alternative to `p4 ping`.
+	cmd := exec.CommandContext(ctx, "p4", "login", "-s")
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+host,
 		"P4USER="+username,
 		"P4PASSWD="+password,
 	)
 
-	out, err := runWith(ctx, cmd, false, nil)
+	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -233,6 +294,57 @@ func p4ping(ctx context.Context, host, username, password string) error {
 	return nil
 }
 
+// p4depots returns all of the depots to which the user has access on the host
+// and whose names match the given nameFilter, which can contain asterisks (*) for wildcards
+// if nameFilter is blank, return all depots
+func p4depots(ctx context.Context, host, username, password, nameFilter string) ([]PerforceDepot, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	var cmd *exec.Cmd
+	if nameFilter == "" {
+		cmd = exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "depots")
+	} else {
+		cmd = exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "depots", "-e", nameFilter)
+	}
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+host,
+		"P4USER="+username,
+		"P4PASSWD="+password,
+	)
+
+	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
+	if err != nil {
+		if ctxerr := ctx.Err(); ctxerr != nil {
+			err = ctxerr
+		}
+		if len(out) > 0 {
+			err = errors.Wrapf(err, `failed to run command "p4 depots" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))
+		}
+		return nil, err
+	}
+	depots := make([]PerforceDepot, 0)
+	if len(out) > 0 {
+		// the output of `p4 -Mj -ztag depots` is a series of JSON-formatted depot definitions, one per line
+		buf := bufio.NewScanner(bytes.NewBuffer(out))
+		for buf.Scan() {
+			depot := PerforceDepot{}
+			err := json.Unmarshal(buf.Bytes(), &depot)
+			if err != nil {
+				return nil, errors.Wrap(err, "malformed output from p4 depots")
+			}
+			depots = append(depots, depot)
+		}
+		if err := buf.Err(); err != nil {
+			return nil, errors.Wrap(err, "malformed output from p4 depots")
+		}
+		return depots, nil
+	}
+
+	// no error, but also no depots. Maybe the user doesn't have access to any depots?
+	return depots, nil
+}
+
 func specifyCommandInErrorMessage(errorMsg string, command *exec.Cmd) string {
 	if !strings.Contains(errorMsg, "this operation") {
 		return errorMsg
@@ -243,12 +355,12 @@ func specifyCommandInErrorMessage(errorMsg string, command *exec.Cmd) string {
 	return strings.Replace(errorMsg, "this operation", fmt.Sprintf("`%s`", strings.Join(command.Args, " ")), 1)
 }
 
-// p4pingWithTrust attempts to ping the Perforce server and performs a trust operation when needed.
-func p4pingWithTrust(ctx context.Context, host, username, password string) error {
+// p4testWithTrust attempts to test the Perforce server and performs a trust operation when needed.
+func p4testWithTrust(ctx context.Context, host, username, password string) error {
 	// Attempt to check connectivity, may be prompted to trust.
-	err := p4ping(ctx, host, username, password)
+	err := p4test(ctx, host, username, password)
 	if err == nil {
-		return nil // The ping worked, session still validate for the user
+		return nil // The test worked, session still valid for the user
 	}
 
 	if strings.Contains(err.Error(), "To allow connection use the 'p4 trust' command.") {

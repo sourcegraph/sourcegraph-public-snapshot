@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -29,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
@@ -39,12 +41,12 @@ import (
 )
 
 // StreamHandler is an http handler which streams back search results.
-func StreamHandler(db database.DB) http.Handler {
+func StreamHandler(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) http.Handler {
 	logger := log.Scoped("searchStreamHandler", "")
 	return &streamHandler{
 		logger:              logger,
 		db:                  db,
-		searchClient:        client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs()),
+		searchClient:        client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}
@@ -70,7 +72,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Log events to trace
-	streamWriter.StatHook = eventStreamOTHook(tr.LogFields)
+	streamWriter.StatHook = eventStreamOTHook(tr.LogFields) //nolint:staticcheck // TODO when updating observation package
 
 	eventWriter := newEventWriter(streamWriter)
 	defer eventWriter.Done()
@@ -79,7 +81,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		eventWriter.Error(err)
 		tr.SetError(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
@@ -92,11 +93,11 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	if err != nil {
 		return err
 	}
-	tr.TagFields(
-		otlog.String("query", args.Query),
-		otlog.String("version", args.Version),
-		otlog.String("pattern_type", args.PatternType),
-		otlog.Int("search_mode", args.SearchMode),
+	tr.SetAttributes(
+		attribute.String("query", args.Query),
+		attribute.String("version", args.Version),
+		attribute.String("pattern_type", args.PatternType),
+		attribute.Int("search_mode", args.SearchMode),
 	)
 
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
@@ -141,17 +142,9 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
-	var wgLogLatency sync.WaitGroup
-	defer wgLogLatency.Wait()
 	logLatency := func() {
-		wgLogLatency.Add(1)
-		go func() {
-			defer wgLogLatency.Done()
-			metricLatency.WithLabelValues(string(GuessSource(r))).
-				Observe(time.Since(start).Seconds())
-
-			graphqlbackend.LogSearchLatency(ctx, h.db, inputs, int32(time.Since(start).Milliseconds()))
-		}()
+		metricLatency.WithLabelValues(string(GuessSource(r))).
+			Observe(time.Since(start).Seconds())
 	}
 
 	// HACK: We awkwardly call an inline function here so that we can defer the
@@ -301,6 +294,8 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo,
 		return fromRepository(v, repoCache)
 	case *result.CommitMatch:
 		return fromCommit(v, repoCache)
+	case *result.OwnerMatch:
+		return fromOwner(v)
 	default:
 		panic(fmt.Sprintf("unknown match type %T", v))
 	}
@@ -332,6 +327,10 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 
 	if fm.InputRev != nil {
 		pathEvent.Branches = []string{*fm.InputRev}
+	}
+
+	if fm.Debug != nil {
+		pathEvent.Debug = *fm.Debug
 	}
 
 	return pathEvent
@@ -413,6 +412,10 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 		contentEvent.RepoLastFetched = r.LastFetched
 	}
 
+	if fm.Debug != nil {
+		contentEvent.Debug = *fm.Debug
+	}
+
 	return contentEvent
 }
 
@@ -491,18 +494,20 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 	}
 
 	commitEvent := &streamhttp.EventCommitMatch{
-		Type:         streamhttp.CommitMatchType,
-		Label:        commit.Label(),
-		URL:          commit.URL().String(),
-		Detail:       commit.Detail(),
-		Repository:   string(commit.Repo.Name),
-		RepositoryID: int32(commit.Repo.ID),
-		OID:          string(commit.Commit.ID),
-		Message:      string(commit.Commit.Message),
-		AuthorName:   commit.Commit.Author.Name,
-		AuthorDate:   commit.Commit.Author.Date,
-		Content:      hls.Value,
-		Ranges:       ranges,
+		Type:          streamhttp.CommitMatchType,
+		Label:         commit.Label(),
+		URL:           commit.URL().String(),
+		Detail:        commit.Detail(),
+		Repository:    string(commit.Repo.Name),
+		RepositoryID:  int32(commit.Repo.ID),
+		OID:           string(commit.Commit.ID),
+		Message:       string(commit.Commit.Message),
+		AuthorName:    commit.Commit.Author.Name,
+		AuthorDate:    commit.Commit.Author.Date,
+		CommitterName: commit.Commit.Committer.Name,
+		CommitterDate: commit.Commit.Committer.Date,
+		Content:       hls.Value,
+		Ranges:        ranges,
 	}
 
 	if r, ok := repoCache[commit.Repo.ID]; ok {
@@ -511,6 +516,35 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 	}
 
 	return commitEvent
+}
+
+func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
+	switch v := owner.ResolvedOwner.(type) {
+	case *result.OwnerPerson:
+		person := &streamhttp.EventPersonMatch{
+			Type:   streamhttp.PersonMatchType,
+			Handle: v.Handle,
+			Email:  v.Email,
+		}
+		if v.User != nil {
+			person.User = &streamhttp.UserMetadata{
+				Username:    v.User.Username,
+				DisplayName: v.User.DisplayName,
+				AvatarURL:   v.User.AvatarURL,
+			}
+		}
+		return person
+	case *result.OwnerTeam:
+		return &streamhttp.EventTeamMatch{
+			Type:        streamhttp.TeamMatchType,
+			Handle:      v.Handle,
+			Email:       v.Email,
+			Name:        v.Team.Name,
+			DisplayName: v.Team.DisplayName,
+		}
+	default:
+		panic(fmt.Sprintf("unknown owner match type %T", v))
+	}
 }
 
 // eventStreamOTHook returns a StatHook which logs to log.
@@ -563,8 +597,8 @@ func GuessSource(r *http.Request) trace.SourceType {
 
 func repoIDs(results []result.Match) []api.RepoID {
 	ids := make(map[api.RepoID]struct{}, 5)
-	for _, result := range results {
-		ids[result.RepoName().ID] = struct{}{}
+	for _, r := range results {
+		ids[r.RepoName().ID] = struct{}{}
 	}
 
 	res := make([]api.RepoID, 0, len(ids))

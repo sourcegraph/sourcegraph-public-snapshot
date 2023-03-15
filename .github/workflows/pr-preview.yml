@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 1
 
@@ -28,12 +28,12 @@ jobs:
           BUILDKITE_BRANCH: ${{ github.head_ref }}
 
   clean-up-inactive-pr-preview-apps:
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' && github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 1
 

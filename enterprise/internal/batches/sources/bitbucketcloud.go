@@ -210,48 +210,68 @@ func (s BitbucketCloudSource) MergeChangeset(ctx context.Context, cs *Changeset,
 	return s.setChangesetMetadata(ctx, repo, updated, cs)
 }
 
-// GetNamespaceFork returns a repo pointing to a fork of the given repo in
-// the given namespace, ensuring that the fork exists and is a fork of the
-// target repo.
-func (s BitbucketCloudSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
-	targetMeta := targetRepo.Metadata.(*bitbucketcloud.Repo)
+// GetFork returns a repo pointing to a fork of the target repo, ensuring that the fork
+// exists and creating it if it doesn't. If namespace is not provided, the fork will be in
+// the currently authenticated user's namespace. If name is not provided, the fork will be
+// named with the default Sourcegraph convention: "${original-namespace}-${original-name}"
+func (s BitbucketCloudSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
+	var namespace string
+	if ns != nil {
+		namespace = *ns
+	} else {
+		user, err := s.client.CurrentUser(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting the current user")
+		}
+		namespace = user.Username
+	}
 
-	// Figure out if we already have the repo.
-	if fork, err := s.client.Repo(ctx, namespace, targetMeta.Slug); err == nil {
-		return s.copyRepoAsFork(targetRepo, fork)
+	tr := targetRepo.Metadata.(*bitbucketcloud.Repo)
+
+	targetNamespace, err := tr.Namespace()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting target repo namespace")
+	}
+
+	var name string
+	if n != nil {
+		name = *n
+	} else {
+		name = DefaultForkName(targetNamespace, tr.Slug)
+	}
+
+	// Figure out if we already have a fork of the repo in the given namespace.
+	if fork, err := s.client.Repo(ctx, namespace, name); err == nil {
+		return s.checkAndCopy(targetRepo, fork)
 	} else if !errcode.IsNotFound(err) {
 		return nil, errors.Wrap(err, "checking for fork existence")
 	}
 
-	fork, err := s.client.ForkRepository(ctx, targetMeta, bitbucketcloud.ForkInput{
+	fork, err := s.client.ForkRepository(ctx, tr, bitbucketcloud.ForkInput{
+		Name:      &name,
 		Workspace: bitbucketcloud.ForkInputWorkspace(namespace),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "forking repository")
 	}
 
-	return s.copyRepoAsFork(targetRepo, fork)
+	return s.checkAndCopy(targetRepo, fork)
 }
 
-// GetUserFork returns a repo pointing to a fork of the given repo in the
-// currently authenticated user's namespace.
-func (s BitbucketCloudSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
-	user, err := s.client.CurrentUser(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting the current user")
+func (s BitbucketCloudSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketcloud.Repo) (*types.Repo, error) {
+	tr := targetRepo.Metadata.(*bitbucketcloud.Repo)
+
+	if fork.Parent == nil {
+		return nil, errors.New("repo is not a fork")
+	} else if fork.Parent.UUID != tr.UUID {
+		return nil, errors.New("repo was not forked from the given parent")
 	}
 
-	return s.GetNamespaceFork(ctx, targetRepo, user.Username)
-}
-
-func (s BitbucketCloudSource) copyRepoAsFork(targetRepo *types.Repo, fork *bitbucketcloud.Repo) (*types.Repo, error) {
-	targetMeta := targetRepo.Metadata.(*bitbucketcloud.Repo)
-
-	// Now we make a copy of the target repo, but with its sources and metadata updated to
+	// Now we make a copy of targetRepo, but with its sources and metadata updated to
 	// point to the fork
-	forkRepo, err := CopyRepoAsFork(targetRepo, fork, targetMeta.FullName, fork.FullName)
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, tr.FullName, fork.FullName)
 	if err != nil {
-		return nil, errors.Wrap(err, "updating target repo sources")
+		return nil, errors.Wrap(err, "updating target repo sources and metadata")
 	}
 
 	return forkRepo, nil

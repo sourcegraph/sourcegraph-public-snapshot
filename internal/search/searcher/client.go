@@ -64,7 +64,6 @@ func Search(
 			IncludePatterns:              p.IncludePatterns,
 			Languages:                    p.Languages,
 			CombyRule:                    p.CombyRule,
-			PathPatternsAreRegExps:       true,
 			Select:                       p.Select.Root(),
 			Limit:                        int(p.FileMatchLimit),
 			IsRegExp:                     p.IsRegExp,
@@ -77,7 +76,7 @@ func Search(
 			PatternMatchesPath:           p.PatternMatchesPath,
 		},
 		Indexed:      indexed,
-		FetchTimeout: fetchTimeout.String(),
+		FetchTimeout: fetchTimeout,
 		FeatHybrid:   features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
 	}
 
@@ -134,7 +133,7 @@ func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*p
 	}
 	req = req.WithContext(ctx)
 
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req, //nolint:staticcheck // Drop once we get rid of OpenTracing
 		nethttp.OperationName("Searcher Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()

@@ -1,4 +1,4 @@
-import { integrationTestContext } from './testHelpers'
+import { integrationTestContext } from '../../testing/testHelpers'
 
 describe('Commands (integration)', () => {
     describe('commands.registerCommand', () => {

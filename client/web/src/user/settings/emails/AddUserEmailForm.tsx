@@ -2,19 +2,18 @@ import React, { FunctionComponent, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
-import { screenReaderAnnounce, Input, Label } from '@sourcegraph/wildcard'
+import { screenReaderAnnounce, Input, Label, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
-import { AddUserEmailResult, AddUserEmailVariables } from '../../../graphql-operations'
+import { AddUserEmailResult, AddUserEmailVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props {
-    user: string
+    user: Pick<UserSettingsAreaUserFields, 'id' | 'scimControlled'>
     onDidAdd: () => void
 
     className?: string
@@ -58,7 +57,7 @@ export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>>
                                 }
                             }
                         `,
-                        { user, email: emailState.value }
+                        { user: user.id, email: emailState.value }
                     ).toPromise()
                 )
 
@@ -105,13 +104,14 @@ export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>>
                     spellCheck={false}
                     readOnly={false}
                     status={InputState[emailState.kind]}
+                    disabled={user.scimControlled}
                     className={classNames(deriveInputClassName(emailState), 'mr-sm-2')}
                 />
                 <LoaderButton
                     loading={statusOrError === 'loading'}
                     label="Add"
                     type="submit"
-                    disabled={statusOrError === 'loading' || emailState.kind !== 'VALID'}
+                    disabled={statusOrError === 'loading' || emailState.kind !== 'VALID' || user.scimControlled}
                     variant="primary"
                 />
                 {emailState.kind === 'INVALID' && (

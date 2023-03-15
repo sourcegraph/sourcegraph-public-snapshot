@@ -1,12 +1,13 @@
 .bin/
 *.bundle.*
+bazel-*
 client/phabricator/scripts/loader.js
 client/browser/build
 **/package.json
 **/coverage
 internal/database/schema*.md
 internal/database/schema*.json
-internal/database/migration/shared/upgradedata/stitched-migration-graph.json
+internal/database/migration/shared/data/**/*.json
 cmd/xlang-python/python-langserver/
 package-lock.json
 package.json
@@ -15,8 +16,8 @@ vendor/
 .nyc_output/
 out/
 dist/
-client/shared/src/graphqlschema.ts
-client/shared/src/schema/
+dist-types/
+client/shared/src/schema/*.d.ts
 ts-node-*
 testdata
 .github/*
@@ -37,5 +38,14 @@ cmd/symbols/squirrel/language-file-extensions.json
 client/jetbrains/build
 client/jetbrains/.idea
 client/jetbrains/.gradle
+client/backstage-common/node_modules
 .browserslistrc
 code-intel-extensions.json
+.direnv
+pnpm-lock.yaml
+node_modules/
+client/web-sveltekit/.svelte-kit
+*.module.scss.d.ts
+
+# Errors when used with @ianvs/prettier-plugin-sort-imports due to TS language API hitting global `eval`
+client/browser/src/types/webextension-polyfill/index.d.ts

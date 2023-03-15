@@ -3,7 +3,8 @@ import React, { MouseEvent, useContext, useState } from 'react'
 import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -24,9 +25,7 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../../../../../../stores'
 import { InsightType } from '../../../../../core'
-import { useUiFeatures } from '../../../../../hooks'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
 import {
@@ -54,8 +53,8 @@ interface CodeInsightsTemplates extends TelemetryProps, React.HTMLAttributes<HTM
 export const CodeInsightsTemplates: React.FunctionComponent<React.PropsWithChildren<CodeInsightsTemplates>> = props => {
     const { telemetryService, ...otherProps } = props
     const tabChangePingName = useLogEventName('InsightsGetStartedTabClick')
-    const features = useExperimentalFeatures()
-    const templateSections = getTemplateSections(features)
+    const goCodeCheckerTemplates = useExperimentalFeatures(features => features.goCodeCheckerTemplates)
+    const templateSections = getTemplateSections(goCodeCheckerTemplates)
 
     const handleTabChange = (index: number): void => {
         const template = templateSections[index]
@@ -147,8 +146,6 @@ const TemplateCard: React.FunctionComponent<React.PropsWithChildren<TemplateCard
     const { template, telemetryService } = props
     const { mode } = useContext(CodeInsightsLandingPageContext)
 
-    const { licensed } = useUiFeatures()
-
     const series =
         template.type === InsightType.SearchBased
             ? template.templateValues.series ?? []
@@ -181,7 +178,7 @@ const TemplateCard: React.FunctionComponent<React.PropsWithChildren<TemplateCard
                     className="mr-auto"
                     onClick={handleUseTemplateLinkClick}
                 >
-                    {licensed ? 'Use this template' : 'Explore template'}
+                    Use this template
                 </Button>
             )}
         </Card>

@@ -12,12 +12,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -67,10 +68,6 @@ func NewChangesetResolver(store *store.Store, gitserverClient gitserver.Client, 
 }
 
 const changesetIDKind = "Changeset"
-
-func marshalChangesetID(id int64) graphql.ID {
-	return relay.MarshalID(changesetIDKind, id)
-}
 
 func unmarshalChangesetID(id graphql.ID) (cid int64, err error) {
 	err = relay.UnmarshalSpec(id, &cid)
@@ -132,7 +129,7 @@ func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, e
 }
 
 func (r *changesetResolver) ID() graphql.ID {
-	return marshalChangesetID(r.changeset.ID)
+	return bgql.MarshalChangesetID(r.changeset.ID)
 }
 
 func (r *changesetResolver) ExternalID() *string {
@@ -151,15 +148,15 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 		ChangesetID: r.changeset.ID,
 	}
 
-	state, err := parseBatchChangeState(args.State)
+	bcState, err := parseBatchChangeState(args.State)
 	if err != nil {
 		return nil, err
 	}
-	if state != "" {
-		opts.States = []btypes.BatchChangeState{state}
+	if bcState != "" {
+		opts.States = []btypes.BatchChangeState{bcState}
 	}
 
-	// If multiple `states` are provided, prefer them over `state`.
+	// If multiple `states` are provided, prefer them over `bcState`.
 	if args.States != nil {
 		states, err := parseBatchChangeStates(args.States)
 		if err != nil {
@@ -187,12 +184,22 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 	isSiteAdmin := authErr != auth.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
-			actor := actor.FromContext(ctx)
+			actor := sgactor.FromContext(ctx)
 			opts.OnlyAdministeredByUserID = actor.UID
 		}
 	}
 
 	return &batchChangesConnectionResolver{store: r.store, gitserverClient: r.gitserverClient, opts: opts}, nil
+}
+
+// This points to the Batch Change that can close or open this changeset on its codehost. If this is nil,
+// then the changeset is imported.
+func (r *changesetResolver) OwnedByBatchChange() *graphql.ID {
+	if batchChangeID := r.changeset.OwnedByBatchChangeID; batchChangeID != 0 {
+		bcID := bgql.MarshalBatchChangeID(batchChangeID)
+		return &bcID
+	}
+	return nil
 }
 
 func (r *changesetResolver) CreatedAt() gqlutil.DateTime {
@@ -330,12 +337,19 @@ func (r *changesetResolver) ForkNamespace() *string {
 	return nil
 }
 
+func (r *changesetResolver) ForkName() *string {
+	if name := r.changeset.ExternalForkName; name != "" {
+		return &name
+	}
+	return nil
+}
+
 func (r *changesetResolver) ReviewState(ctx context.Context) *string {
 	if !r.changeset.Published() {
 		return nil
 	}
-	state := string(r.changeset.ExternalReviewState)
-	return &state
+	reviewState := string(r.changeset.ExternalReviewState)
+	return &reviewState
 }
 
 func (r *changesetResolver) CheckState() *string {
@@ -343,15 +357,31 @@ func (r *changesetResolver) CheckState() *string {
 		return nil
 	}
 
-	state := string(r.changeset.ExternalCheckState)
-	if state == string(btypes.ChangesetCheckStateUnknown) {
+	checkState := string(r.changeset.ExternalCheckState)
+	if checkState == string(btypes.ChangesetCheckStateUnknown) {
 		return nil
 	}
 
-	return &state
+	return &checkState
 }
 
-func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage }
+// Error: `FailureMessage` is set by the reconciler worker if it fails when processing
+// a changeset job. However, for most reconciler operations, we automatically retry the
+// operation a number of times. When the reconciler worker picks up a failed changeset job
+// to restart processing, it clears out the `FailureMessage`, resulting in the error
+// disappearing in the UI where we use this resolver field. To retain this context even as
+// we retry to process the changeset, we copy over the error to `PreviousFailureMessage`
+// when re-enqueueing a changeset and clearing its original `FailureMessage`. Only when a
+// changeset is successfully processed will the `PreviousFailureMessage` be cleared.
+//
+// When resolving this field, we still prefer the latest `FailureMessage` we have, but if
+// there's not a `FailureMessage` and there is a `Previous` one, we return that.
+func (r *changesetResolver) Error() *string {
+	if r.changeset.FailureMessage != nil {
+		return r.changeset.FailureMessage
+	}
+	return r.changeset.PreviousFailureMessage
+}
 
 func (r *changesetResolver) SyncerError() *string { return r.changeset.SyncErrorMessage }
 
@@ -455,7 +485,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 			r.gitserverClient,
 			r.repoResolver,
 			desc.BaseRev,
-			string(desc.Diff),
+			desc.Diff,
 		)
 	}
 

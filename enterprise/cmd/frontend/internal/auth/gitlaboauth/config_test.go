@@ -315,7 +315,7 @@ func TestParseConfig(t *testing.T) {
 func provider(serviceID string, oauth2Config oauth2.Config) *oauth.Provider {
 	op := oauth.ProviderOp{
 		AuthPrefix:   authPrefix,
-		OAuth2Config: func(extraScopes ...string) oauth2.Config { return oauth2Config },
+		OAuth2Config: func() oauth2.Config { return oauth2Config },
 		StateConfig:  getStateConfig(),
 		ServiceID:    serviceID,
 		ServiceType:  extsvc.TypeGitLab,

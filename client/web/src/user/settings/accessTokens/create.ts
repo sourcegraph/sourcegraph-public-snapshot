@@ -25,7 +25,7 @@ export function createAccessToken(
         { user, scopes, note }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.createAccessToken || (errors && errors.length > 0)) {
+            if (!data?.createAccessToken || (errors && errors.length > 0)) {
                 eventLogger.log('CreateAccessTokenFailed')
                 throw createAggregateError(errors)
             }

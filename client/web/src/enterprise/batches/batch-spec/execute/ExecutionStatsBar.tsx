@@ -1,7 +1,8 @@
 import { mdiAlertCircle, mdiCheckBold, mdiTimerSand, mdiTimelineClockOutline, mdiCircleOffOutline } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 
 import { pluralize } from '@sourcegraph/common'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, H3 } from '@sourcegraph/wildcard'
 
 import { BatchSpecWorkspaceStats } from '../../../../graphql-operations'
 
@@ -11,23 +12,33 @@ export const ExecutionStatsBar: React.FunctionComponent<React.PropsWithChildren<
     <>
         <ExecutionStat>
             <Icon aria-hidden={true} className="text-danger" svgPath={mdiAlertCircle} />
-            {stats.errored} {pluralize('error', stats.errored)}
+            <H3 className={styles.label}>
+                {stats.errored} <VisuallyHidden>workspace</VisuallyHidden> {pluralize('error', stats.errored)}
+            </H3>
         </ExecutionStat>
         <ExecutionStat>
             <Icon aria-hidden={true} className="text-success" svgPath={mdiCheckBold} />
-            {stats.completed} complete
+            <H3 className={styles.label}>
+                {stats.completed} <VisuallyHidden>{pluralize('workspace', stats.completed)}</VisuallyHidden> complete
+            </H3>
         </ExecutionStat>
         <ExecutionStat>
             <Icon aria-hidden={true} svgPath={mdiTimerSand} />
-            {stats.processing} working
+            <H3 className={styles.label}>
+                {stats.processing} <VisuallyHidden>{pluralize('workspace', stats.processing)}</VisuallyHidden> working
+            </H3>
         </ExecutionStat>
         <ExecutionStat>
             <Icon aria-hidden={true} svgPath={mdiTimelineClockOutline} />
-            {stats.queued} queued
+            <H3 className={styles.label}>
+                {stats.queued} <VisuallyHidden>{pluralize('workspace', stats.queued)}</VisuallyHidden> queued
+            </H3>
         </ExecutionStat>
         <ExecutionStat>
             <Icon aria-hidden={true} svgPath={mdiCircleOffOutline} />
-            {stats.ignored} ignored
+            <H3 className={styles.label}>
+                {stats.ignored} <VisuallyHidden>{pluralize('workspace', stats.ignored)}</VisuallyHidden> ignored
+            </H3>
         </ExecutionStat>
     </>
 )

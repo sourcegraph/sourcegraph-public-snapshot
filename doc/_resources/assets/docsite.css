@@ -13,14 +13,21 @@ The document content can set class names and IDs on elements (for example, Markd
 */
 
 :root {
+    /* You cannot use vars in media queries, so these are used just for reference. */
+    --breakpoint-sm: 640px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 1024px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 1536px;
     --sidebar-breakpoint-width: 800px; /* hide sidebar if narrower */
     --index-breakpoint-width: 1200px; /* show index before (not to the right) if narrower */
+
     --width: 1200px;
     --sidebar-width: 230px;
     --spacing: 1rem;
     --gutter: calc(2*var(--spacing));
 
-    --base-font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+    --base-font-family: "Source Sans Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
     --monospace-font-family: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
 
     --note-color: #bce8f1;
@@ -164,6 +171,7 @@ body > div#page {
     flex-direction: column;
     min-height: 100vh;
     justify-content: space-between;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 /* Responsive */
 @media (max-width: 800px /* == var(--sidebar-breakpoint-width) */) {
@@ -313,6 +321,7 @@ body > #sidebar #theme button {
     background-color: transparent;
     font-family: var(--base-font-family);
     font-size: 1rem;
+    cursor: pointer;
 }
 body > #sidebar #theme button:not(.active) {
     color: var(--text-muted);
@@ -671,8 +680,6 @@ body > #page > main > #content {
 
 
 /* SEARCH RESULT */
-.search-result {
-}
 .search-result h1, .search-result h2, .search-result h3 {
   font-weight: normal;
 }
@@ -691,8 +698,6 @@ body > #page > main > #content {
 .search-result .document-result-path {
   color: var(--search-result-path-color);
   font-size: 0.8rem;
-}
-.search-result .section-results {
 }
 .search-result .section-result {
   margin: 0.25rem 0;
@@ -1014,4 +1019,78 @@ body.theme-dark .markdown-body .chroma.sgquery .ss { color: #ff6b6b; background-
 
 .markdown-body .btn-secondary {
     background-color: var(--sidebar-bg);
+}
+
+/* Cloud CTA */
+a.cloud-cta {
+    text-decoration: none;
+}
+.cloud-cta {
+    background: #270741;
+    min-height: 100px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 4px;
+}
+.cloud-cta-copy {
+    padding-right: 20px;
+}
+.cloud-cta h2 {
+    color: #E8D1FF !important;
+    margin: 0 0 4px 0 !important;
+    font-size: 19px;
+    line-height: 21px;
+}
+.cloud-cta h3,
+.cloud-cta p {
+    color: #ffffff;
+    margin: 0;
+}
+.cloud-cta h3 {
+    font-size: 15px;
+    line-height: 17px;
+}
+.cloud-cta p {
+    font-size: 14px;
+    margin-top: 15px;
+}
+.cloud-cta-btn-container {
+    margin-top: 20px;
+    max-width: 179px;
+    width: 100%;
+}
+.cloud-cta .visual-btn {
+    background: #ffffff;
+    color: #5033E1;
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 3px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+.cloud-cta:hover .visual-btn {
+    background: #5033E1;
+    color: #ffffff;
+}
+@media only screen and (min-width: 640px /* --breakpoint-sm */) {
+    .cloud-cta {
+        flex-direction: row;
+        align-items: center;
+    }
+    .cloud-cta-btn-container {
+        margin: 0 0 0 auto;
+    }
+}
+@media only screen and (min-width: 1024px /* --breakpoint-lg */) {
+    .cloud-cta {
+        background: #270741 url('/assets/cloud-cta-illustration.svg') no-repeat left top;
+    }
+    .cloud-cta-copy {
+        margin-left: 115px;
+    }
+    .cloud-cta-btn-container {
+        margin: 0 40px 0 auto;
+    }
 }

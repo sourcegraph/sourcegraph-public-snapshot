@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "references_lib",
+    srcs = ["doc.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/doc/cli/references",
+    visibility = ["//visibility:private"],
+    deps = ["//lib/errors"],
+)
+
+go_binary(
+    name = "references",
+    embed = [":references_lib"],
+    visibility = ["//visibility:public"],
+)

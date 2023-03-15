@@ -3,8 +3,6 @@ import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 
-import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
-
 import { WebStory } from '../../../components/WebStory'
 import {
     ChangesetCheckState,
@@ -50,9 +48,11 @@ const batchChangeDefaults: BatchChangeFields = {
         merged: 2,
         draft: 1,
         open: 2,
-        total: 10,
+        total: 29,
         archived: 18,
         unpublished: 4,
+        isCompleted: false,
+        percentComplete: 30,
     },
     createdAt: subDays(now, 5).toISOString(),
     creator: {
@@ -94,6 +94,11 @@ const batchChangeDefaults: BatchChangeFields = {
             __typename: 'BatchChangesCodeHostConnection',
             totalCount: 0,
             nodes: [],
+        },
+        files: null,
+        description: {
+            __typename: 'BatchChangeDescription',
+            name: 'Spec Description',
         },
     },
     batchSpecs: {
@@ -267,18 +272,14 @@ export const Overview: Story = args => {
     )
     const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
     return (
-        <WebStory>
+        <WebStory path="/:batchChangeName" initialEntries={['/c123']}>
             {props => (
                 <BatchChangeClosePage
                     {...props}
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                     namespaceID="n123"
-                    batchChangeName="c123"
                     fetchBatchChangeByNamespace={fetchBatchChange}
-                    extensionsController={{} as any}
-                    platformContext={{} as any}
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             )}
         </WebStory>
@@ -308,18 +309,14 @@ export const NoOpenChangesets: Story = () => {
         []
     )
     return (
-        <WebStory>
+        <WebStory path="/:batchChangeName" initialEntries={['/c123']}>
             {props => (
                 <BatchChangeClosePage
                     {...props}
                     queryChangesets={queryEmptyChangesets}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                     namespaceID="n123"
-                    batchChangeName="c123"
                     fetchBatchChangeByNamespace={fetchBatchChange}
-                    extensionsController={{} as any}
-                    platformContext={{} as any}
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             )}
         </WebStory>

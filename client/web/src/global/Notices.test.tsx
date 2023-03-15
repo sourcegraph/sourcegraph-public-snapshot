@@ -1,4 +1,5 @@
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { Notices } from './Notices'
 
@@ -6,8 +7,7 @@ describe('Notices', () => {
     test('shows notices for location', () =>
         expect(
             renderWithBrandedContext(
-                <Notices
-                    location="home"
+                <SettingsProvider
                     settingsCascade={{
                         subjects: [],
                         final: {
@@ -18,14 +18,18 @@ describe('Notices', () => {
                             ],
                         },
                     }}
-                />
+                >
+                    <Notices location="home" />
+                </SettingsProvider>
             ).asFragment()
         ).toMatchSnapshot())
 
     test('no notices', () =>
         expect(
             renderWithBrandedContext(
-                <Notices location="home" settingsCascade={{ subjects: [], final: { notices: undefined } }} />
+                <SettingsProvider settingsCascade={{ subjects: [], final: { notices: undefined } }}>
+                    <Notices location="home" />
+                </SettingsProvider>
             ).asFragment()
         ).toMatchSnapshot())
 })

@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { lowerCase, upperFirst } from 'lodash'
-import { useHistory } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Input, Select } from '@sourcegraph/wildcard'
+import { Input, Select, Form } from '@sourcegraph/wildcard'
 
 import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
 import { isValidBatchSpecWorkspaceState } from '../util'
@@ -26,19 +25,21 @@ interface WorkspaceFilterRowProps {
 export const WorkspaceFilterRow: React.FunctionComponent<React.PropsWithChildren<WorkspaceFilterRowProps>> = ({
     onFiltersChange,
 }) => {
-    const history = useHistory()
+    const navigate = useNavigate()
+    const location = useLocation()
+
     const searchElement = useRef<HTMLInputElement | null>(null)
     const [state, setState] = useState<BatchSpecWorkspaceState | undefined>(() => {
-        const searchParameters = new URLSearchParams(history.location.search)
+        const searchParameters = new URLSearchParams(location.search)
         const value = searchParameters.get('state')
         return value && isValidBatchSpecWorkspaceState(value) ? value : undefined
     })
     const [search, setSearch] = useState<string | undefined>(() => {
-        const searchParameters = new URLSearchParams(history.location.search)
+        const searchParameters = new URLSearchParams(location.search)
         return searchParameters.get('search') ?? undefined
     })
     useEffect(() => {
-        const searchParameters = new URLSearchParams(history.location.search)
+        const searchParameters = new URLSearchParams(location.search)
         if (state) {
             searchParameters.set('state', state)
         } else {
@@ -49,8 +50,8 @@ export const WorkspaceFilterRow: React.FunctionComponent<React.PropsWithChildren
         } else {
             searchParameters.delete('search')
         }
-        if (history.location.search !== searchParameters.toString()) {
-            history.replace({ ...history.location, search: searchParameters.toString() })
+        if (location.search !== searchParameters.toString()) {
+            navigate({ search: searchParameters.toString() }, { replace: true })
         }
 
         // Update the filters in the parent component.

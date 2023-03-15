@@ -1,10 +1,10 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useContext, useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { useParams } from 'react-router-dom'
 
-import { Badge, LoadingSpinner, useObservable, Link, PageHeader, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
@@ -25,23 +25,17 @@ import { EditSearchBasedInsight } from './components/EditSearchInsight'
 import { useEditPageHandlers } from './hooks/use-edit-page-handlers'
 
 export interface EditInsightPageProps {
-    /** Normalized insight id <type insight>.insight.<name of insight> */
-    insightID: string
-
-    /**
-     * Authenticated user info, Used to decide where code insight will appear
-     * in personal dashboard (private) or in organisation dashboard (public)
-     */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
+    isSourcegraphApp: boolean
 }
 
-export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<EditInsightPageProps>> = props => {
-    const { insightID, authenticatedUser } = props
+export const EditInsightPage: FC<EditInsightPageProps> = props => {
+    /** Normalized insight id <type insight>.insight.<name of insight> */
+    const { insightId } = useParams()
 
     const { getInsightById } = useContext(CodeInsightsBackendContext)
     const { licensed, insight: insightFeatures } = useUiFeatures()
 
-    const insight = useObservable(useMemo(() => getInsightById(insightID), [getInsightById, insightID]))
+    const insight = useObservable(useMemo(() => getInsightById(insightId!), [getInsightById, insightId]))
     const { handleSubmit, handleCancel } = useEditPageHandlers({ id: insight?.id })
 
     const editPermission = useObservable(
@@ -53,30 +47,16 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
     }
 
     if (!insight) {
-        return (
-            <HeroPage
-                icon={MapSearchIcon}
-                title="Oops, we couldn't find that insight"
-                subtitle={
-                    <span>
-                        We couldn't find that insight. Try to find the insight with ID:{' '}
-                        <Badge variant="secondary" as="code">
-                            {insightID}
-                        </Badge>{' '}
-                        in your <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
-                    </span>
-                }
-            />
-        )
+        return <HeroPage icon={MapSearchIcon} title="Oops, we couldn't find that insight" />
     }
 
     return (
-        <CodeInsightsPage>
+        <CodeInsightsPage isSourcegraphApp={props.isSourcegraphApp}>
             <PageTitle title="Edit insight - Code Insights" />
 
             <PageHeader
                 className="mb-3"
-                path={[{ icon: CodeInsightsIcon }, { text: 'Edit insight' }]}
+                path={[{ icon: CodeInsightsIcon, to: '/insights' }, { text: 'Edit insight' }]}
                 description={
                     <Text className="text-muted">
                         Insights analyze your code based on any search query.{' '}

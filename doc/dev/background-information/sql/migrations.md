@@ -12,6 +12,8 @@ Some migrations are difficult to do in a single step or idempotently. For instan
 
 The remainder of this document is formatted as a recipe book of common types of migrations. We encourage any developer to add a recipe here when a specific type of migration is under-documented.
 
+To learn the process of file changes necessary to implement a migration please refer to [the README file](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/migrations/README.md).
+
 ### Adding a non-nullable column (without a default)
 
 _On the `3.X` branch:_
@@ -54,7 +56,7 @@ _On the `3.X` branch:_
 
 _On the `3.{X+1}` branch:_
 
-1. Remove all writes to column `c1` as there are no more _exclusive_ readers of this column - all readers are able to read from column `c2` as well.
+1. Remove all writes to column `c1` as there are no more _exclusive_ readers of this column—all readers are able to read from column `c2` as well.
 1. Create a regular migration or an [out-of-band migration](../oobmigrations.md) that backfills values for column `c2` from column `c1`. Out-of-band migrations should be preferred for large or non-trivial migrations, and must be used if non-Postgres compute is required to convert values of the old format into the new format.
 
 If using a regular migration, continue immediately. If using an out-of-band migration, mark it deprecated at some future version `3.{X+Y}` and wait for this version's branch cut; out-of-band migrations are not guaranteed to have completed until the underlying instance has been upgraded past the migration's deprecation version. This means there may exist yet-to-be-migrated rows with a value for `c1` but no value for column `c2` until this version.

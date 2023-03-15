@@ -4,16 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -21,15 +24,16 @@ import (
 
 // Inputs contains fields we set before kicking off search.
 type Inputs struct {
-	Plan                query.Plan // the comprehensive query plan
-	Query               query.Q    // the current basic query being evaluated, one part of query.Plan
-	OriginalQuery       string     // the raw string of the original search query
-	SearchMode          Mode
-	PatternType         query.SearchType
-	UserSettings        *schema.Settings
-	OnSourcegraphDotCom bool
-	Features            *Features
-	Protocol            Protocol
+	Plan                   query.Plan // the comprehensive query plan
+	Query                  query.Q    // the current basic query being evaluated, one part of query.Plan
+	OriginalQuery          string     // the raw string of the original search query
+	SearchMode             Mode
+	PatternType            query.SearchType
+	UserSettings           *schema.Settings
+	OnSourcegraphDotCom    bool
+	Features               *Features
+	Protocol               Protocol
+	SanitizeSearchPatterns []*regexp.Regexp
 }
 
 // MaxResults computes the limit for the query.
@@ -49,7 +53,7 @@ type Mode int
 
 const (
 	Precise     Mode = 0
-	SmartSearch      = 1 << iota
+	SmartSearch      = 1 << (iota - 1)
 )
 
 type Protocol int
@@ -103,8 +107,10 @@ type SymbolsParameters struct {
 	// First indicates that only the first n symbols should be returned.
 	First int
 
-	// Timeout in seconds.
-	Timeout int
+	// Timeout is the maximum amount of time the symbols search should take.
+	//
+	// If Timeout isn't specified, a default timeout of 60 seconds is used.
+	Timeout time.Duration
 }
 
 type SymbolsResponse struct {
@@ -334,13 +340,17 @@ type Features struct {
 	// what has changed since the indexed commit.
 	HybridSearch bool `json:"search-hybrid"`
 
-	// When true lucky search runs by default. Adding for A/B testing in
-	// 08/2022. To be removed at latest by 12/2022.
-	AbLuckySearch bool `json:"ab-lucky-search"`
-
 	// Ranking when true will use a our new #ranking signals and code paths
 	// for ranking results from Zoekt.
 	Ranking bool `json:"ranking"`
+
+	// Debug when true will set the Debug field on FileMatches. This may grow
+	// from here. For now we treat this like a feature flag for convenience.
+	Debug bool `json:"debug"`
+
+	// CodeOwnershipSearch when true will enable searching through code ownership
+	// using `file:has.owner({owner})` and `select:file.owners` filters.
+	CodeOwnershipSearch bool `json:"codeownership"`
 }
 
 func (f *Features) String() string {
@@ -359,7 +369,7 @@ func (f *Features) String() string {
 // in their search query that affect which repos should be searched.
 // When adding fields to this struct, be sure to update IsGlobal().
 type RepoOptions struct {
-	RepoFilters         []string
+	RepoFilters         []query.ParsedRepoFilter
 	MinusRepoFilters    []string
 	DescriptionPatterns []string
 
@@ -375,6 +385,7 @@ type RepoOptions struct {
 	UseIndex       query.YesNoOnly
 	HasFileContent []query.RepoHasFileContentArgs
 	HasKVPs        []query.RepoKVPFilter
+	HasTopics      []query.RepoHasTopicPredicate
 
 	// ForkSet indicates whether `fork:` was set explicitly in the query,
 	// or whether the values were set from defaults.
@@ -398,7 +409,7 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	}
 
 	if len(op.RepoFilters) > 0 {
-		add(trace.Strings("repoFilters", op.RepoFilters))
+		add(trace.Printf("repoFilters", "%v", op.RepoFilters))
 	}
 	if len(op.MinusRepoFilters) > 0 {
 		add(trace.Strings("minusRepoFilters", op.MinusRepoFilters))
@@ -456,6 +467,18 @@ func (op *RepoOptions) Tags() []otlog.Field {
 				nondefault = append(nondefault, otlog.Bool("negated", arg.Negated))
 			}
 			add(trace.Scoped(fmt.Sprintf("hasKVPs[%d]", i), nondefault...))
+		}
+	}
+	if len(op.HasTopics) > 0 {
+		for i, arg := range op.HasTopics {
+			nondefault := []otlog.Field{}
+			if arg.Topic != "" {
+				nondefault = append(nondefault, otlog.String("topic", arg.Topic))
+			}
+			if arg.Negated {
+				nondefault = append(nondefault, otlog.Bool("negated", arg.Negated))
+			}
+			add(trace.Scoped(fmt.Sprintf("hasTopics[%d]", i), nondefault...))
 		}
 	}
 	if op.ForkSet {
@@ -531,6 +554,16 @@ func (op *RepoOptions) String() string {
 			}
 			if arg.Negated {
 				fmt.Fprintf(&b, "HasKVPs[%d].negated: %t\n", i, arg.Negated)
+			}
+		}
+	}
+	if len(op.HasTopics) > 0 {
+		for i, arg := range op.HasTopics {
+			if arg.Topic != "" {
+				fmt.Fprintf(&b, "HasTopics[%d].topic: %s\n", i, arg.Topic)
+			}
+			if arg.Negated {
+				fmt.Fprintf(&b, "HasTopics[%d].negated: %t\n", i, arg.Negated)
 			}
 		}
 	}

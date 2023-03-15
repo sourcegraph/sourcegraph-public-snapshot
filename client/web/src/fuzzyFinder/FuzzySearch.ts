@@ -1,8 +1,11 @@
 import { HighlightedLinkProps } from '../components/fuzzyFinder/HighlightedLink'
 
+import { SearchValueRankingCache } from './SearchValueRankingCache'
+
 export interface FuzzySearchParameters {
     query: string
     maxResults: number
+    cache?: SearchValueRankingCache
 }
 
 export interface FuzzySearchResult {
@@ -15,14 +18,6 @@ export interface FuzzySearchResult {
 export enum SearchIconKind {
     codeHost,
     symbol,
-}
-
-export interface SearchValue {
-    text: string
-    ranking?: number
-    url?: string
-    icon?: JSX.Element
-    onClick?: () => void
 }
 
 export type IndexingFSM = SearchIndexing | SearchReady

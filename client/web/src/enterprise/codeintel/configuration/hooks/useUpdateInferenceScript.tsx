@@ -24,9 +24,8 @@ interface UpdateInferenceScriptResult {
 }
 
 export const useUpdateInferenceScript = (): UpdateInferenceScriptResult => {
-    const [updateInferenceScript, { loading, error }] = useMutation<UpdateCodeGraphInferenceScriptResult>(
-        UPDATE_INFERENCE_SCRIPT
-    )
+    const [updateInferenceScript, { loading, error }] =
+        useMutation<UpdateCodeGraphInferenceScriptResult>(UPDATE_INFERENCE_SCRIPT)
 
     return {
         updateInferenceScript,

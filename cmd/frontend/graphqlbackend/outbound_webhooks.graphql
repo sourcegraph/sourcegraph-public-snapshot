@@ -1,0 +1,294 @@
+extend type Query {
+    """
+    Returns the outbound webhooks registered within Sourcegraph, optionally filtered by
+    event type and scope. To filter by scope, event type is also required. If the event
+    type and scope are both omitted, all webhooks are returned.
+
+    Only site admins have access to this query.
+    """
+    outboundWebhooks(first: Int = 50, after: String, eventType: String, scope: String): OutboundWebhookConnection!
+
+    """
+    Returns all possible outbound webhook event types.
+
+    Only site admins have access to this query.
+    """
+    outboundWebhookEventTypes: [OutboundWebhookEventType!]!
+}
+
+extend type Mutation {
+    """
+    Creates a new outbound webhook.
+
+    Only site admins have access to this mutation.
+    """
+    createOutboundWebhook(input: OutboundWebhookCreateInput!): OutboundWebhook!
+
+    """
+    Deletes an outbound webhook.
+
+    Only site admins have access to this mutation.
+    """
+    deleteOutboundWebhook(id: ID!): EmptyResponse!
+
+    """
+    Updates an outbound webhook.
+
+    Only site admins have access to this mutation.
+    """
+    updateOutboundWebhook(id: ID!, input: OutboundWebhookUpdateInput!): OutboundWebhook!
+}
+
+"""
+An outbound webhook registered within Sourcegraph.
+"""
+type OutboundWebhook implements Node {
+    """
+    The outbound webhook ID.
+    """
+    id: ID!
+
+    """
+    The outbound webhook URL.
+    """
+    url: String!
+
+    """
+    The event types that the outbound webhook will receive.
+    """
+    eventTypes: [OutboundWebhookScopedEventType]!
+
+    """
+    Stats on the payloads dispatched to this outbound webhook within the webhook
+    log retention period.
+    """
+    stats: OutboundWebhookLogStats!
+
+    """
+    Logged payloads sent to this outbound webhook, optionally filtered by error
+    state. Logs are considered "errored" when either a network error occurred
+    while dispatching the payload, or when a HTTP response outside the range
+    [100, 399].
+
+    Logs will be returned in time order, from newest to oldest.
+    """
+    logs(first: Int = 50, after: String, onlyErrors: Boolean): OutboundWebhookLogConnection!
+}
+
+"""
+A list of outbound webhooks.
+"""
+type OutboundWebhookConnection {
+    """
+    The outbound webhooks in the current page.
+    """
+    nodes: [OutboundWebhook!]!
+
+    """
+    The total number of matching outbound webhooks.
+    """
+    totalCount: Int!
+
+    """
+    Connection page metadata.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An event type that a webhook can be registered to be notified of.
+"""
+type OutboundWebhookEventType {
+    """
+    The event type key, as used when constructing
+    OutboundWebhookScopedEventTypeInput instances and as returned in
+    OutboundWebhook.eventTypes.
+    """
+    key: String!
+
+    """
+    A human readable description of the event type.
+    """
+    description: String!
+}
+
+"""
+Input for the createOutboundWebhook mutation.
+"""
+input OutboundWebhookCreateInput {
+    """
+    The outbound webhook URL.
+    """
+    url: String!
+
+    """
+    The secret shared with the outbound webhook.
+    """
+    secret: String!
+
+    """
+    The event types the outbound webhook will receive.
+
+    At least one event type must be provided.
+    """
+    eventTypes: [OutboundWebhookScopedEventTypeInput!]!
+}
+
+"""
+Input for the updateOutboundWebhook mutation.
+"""
+input OutboundWebhookUpdateInput {
+    """
+    The outbound webhook URL.
+    """
+    url: String!
+
+    """
+    The event types the outbound webhook will receive. This list replaces the
+    event types previously registered on the webhook.
+
+    At least one event type must be provided.
+    """
+    eventTypes: [OutboundWebhookScopedEventTypeInput!]!
+}
+
+"""
+Event type input for the outbound webhook mutations.
+"""
+input OutboundWebhookScopedEventTypeInput {
+    """
+    The event type, which must match a key returned from
+    outboundWebhookEventTypes.
+    """
+    eventType: String!
+
+    """
+    An optional scope for the event type.
+
+    Currently unused.
+    """
+    scope: String
+}
+
+"""
+An event type an outbound webhook has opted to receive.
+"""
+type OutboundWebhookScopedEventType {
+    """
+    The event type, which must match a key returned from
+    outboundWebhookEventTypes.
+    """
+    eventType: String!
+
+    """
+    An optional scope for the event type.
+
+    Currently unused.
+    """
+    scope: String
+}
+
+"""
+A list of outbound webhook logs.
+"""
+type OutboundWebhookLogConnection {
+    """
+    The logs in the current page.
+    """
+    nodes: [OutboundWebhookLog!]!
+
+    """
+    The total number of matching outbound webhook logs.
+    """
+    totalCount: Int!
+
+    """
+    Connection page metadata.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An outbound webhook job, which singularly represents an individual event that
+may generate one or more webhook payloads.
+"""
+type OutboundWebhookJob {
+    """
+    The outbound webhook job ID.
+    """
+    id: ID!
+
+    """
+    The event type.
+    """
+    eventType: String!
+
+    """
+    The scope. Currently unused.
+    """
+    scope: String
+
+    """
+    The payload sent to each outbound webhook registered for this event type.
+    """
+    payload: String!
+}
+
+"""
+Stats on outbound webhook logs.
+"""
+type OutboundWebhookLogStats {
+    """
+    The total number of webhook payloads logged over the webhook log retention
+    period.
+    """
+    total: Int!
+
+    """
+    The total number of webhook payloads logged over the webhook log retention
+    period that resulted in errors from the webhook.
+    """
+    errored: Int!
+}
+
+"""
+A single logged request sent to an outbound webhook.
+"""
+type OutboundWebhookLog {
+    """
+    The log ID.
+    """
+    id: ID!
+
+    """
+    The outbound webhook job that triggered the request.
+    """
+    job: OutboundWebhookJob!
+
+    """
+    When the request was sent.
+    """
+    sentAt: DateTime!
+
+    """
+    The status code returned from the outbound webhook, or 0 if a network error
+    occurred.
+    """
+    statusCode: Int!
+
+    """
+    The request sent to the outbound webhook.
+    """
+    request: WebhookLogRequest!
+
+    """
+    The response received from the outbound webhook, or null if no response was
+    received due to a network error.
+    """
+    response: WebhookLogResponse
+
+    """
+    The error message if a network error occurred.
+    """
+    error: String
+}

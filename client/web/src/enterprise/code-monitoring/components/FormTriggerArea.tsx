@@ -4,20 +4,19 @@ import { mdiCheck, mdiRadioboxBlank, mdiHelpCircle, mdiOpenInNew } from '@mdi/js
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { QueryState } from '@sourcegraph/search'
-import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
+import { LazyQueryInput } from '@sourcegraph/branded'
+import { QueryState } from '@sourcegraph/shared/src/search'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Card, Icon, Checkbox, Code, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../stores'
 
 import styles from './FormTriggerArea.module.scss'
 
-interface TriggerAreaProps extends ThemeProps {
+interface TriggerAreaProps {
     query: string
     onQueryChange: (query: string) => void
     triggerCompleted: boolean
@@ -94,7 +93,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     cardClassName,
     cardBtnClassName,
     cardLinkClassName,
-    isLightTheme,
     isSourcegraphDotCom,
 }) => {
     const [expanded, setExpanded] = useState(startExpanded)
@@ -127,7 +125,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
 
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -236,10 +233,8 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 )}
                                 data-testid="trigger-query-edit"
                             >
-                                <LazyMonacoQueryInput
+                                <LazyQueryInput
                                     className="test-trigger-input"
-                                    editorComponent={editorComponent}
-                                    isLightTheme={isLightTheme}
                                     patternType={SearchPatternType.standard}
                                     isSourcegraphDotCom={isSourcegraphDotCom}
                                     caseSensitive={false}

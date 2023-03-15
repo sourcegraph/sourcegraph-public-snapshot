@@ -7,7 +7,7 @@ on our release process and how this tool is used.
 To see all available steps:
 
 ```sh
-yarn run release help # add 'all' to see test commands as well
+pnpm run release help # add 'all' to see test commands as well
 ```
 
 Before using this tool, please verify that the [release configuration](./release-config.jsonc)

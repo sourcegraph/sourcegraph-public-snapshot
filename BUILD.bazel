@@ -1,0 +1,215 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "nogo")
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
+load("@io_bazel_rules_go//proto:compiler.bzl", "go_proto_compiler")
+load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_APIV2")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+
+# Gazelle config
+#
+# gazelle:prefix github.com/sourcegraph/sourcegraph
+# gazelle:build_file_name BUILD.bazel
+# Disable some by default, only include configured BUILDs
+#
+# gazelle:js disabled
+# gazelle:js_npm_package_target_name {dirname}_pkg
+
+# Enable: Aspect javascript, standard go
+# gazelle:lang js,go,protobuf
+
+package(default_visibility = ["//visibility:public"])
+
+npm_link_all_packages(name = "node_modules")
+
+js_library(
+    name = "prettier_config_js",
+    srcs = ["prettier.config.js"],
+    data = [
+        "//:node_modules/@sourcegraph/prettierrc",
+    ],
+)
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.base.json",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:node_modules/@sourcegraph/tsconfig",
+    ],
+)
+
+gazelle_binary(
+    name = "gazelle-buf",
+    languages = [
+        # Loads the native proto extension
+        "@bazel_gazelle//language/proto:go_default_library",
+        # Gazelle-buf does not include the Go plugin by default, so we have to add it
+        # ourselves.
+        "@bazel_gazelle//language/go:go_default_library",
+        # Loads the Buf extension
+        "@rules_buf//gazelle/buf:buf",
+        # NOTE: This needs to be loaded after the proto language
+    ],
+)
+
+# Tell gazelle what is our main module
+# gazelle:prefix github.com/sourcegraph/sourcegraph
+
+# Specify which protoc compilers we want when we detect GRPC service definitions.
+# gazelle:go_grpc_compilers //:gen-go-grpc,@io_bazel_rules_go//proto:go_proto
+
+gazelle(
+    name = "gazelle",
+    gazelle = ":gazelle-buf",
+)
+
+go_library(
+    name = "sourcegraph",
+    srcs = [
+        "doc.go",
+        "gen.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph",
+)
+
+gazelle(
+    name = "gazelle-update-repos",
+    args = [
+        "-from_file=go.mod",
+        "-to_macro=deps.bzl%go_dependencies",
+        "-prune",
+        "-build_file_proto_mode=disable_global",
+    ],
+    command = "update-repos",
+)
+
+# Because the current implementation of rules_go uses the old protoc grpc compiler, we have to declare our own, and declare it manually in the build files.
+# See https://github.com/bazelbuild/rules_go/issues/3022
+go_proto_compiler(
+    name = "gen-go-grpc",
+    plugin = "@org_golang_google_grpc_cmd_protoc_gen_go_grpc//:protoc-gen-go-grpc",
+    suffix = "_grpc.pb.go",
+    valid_archive = False,
+    visibility = ["//visibility:public"],
+    deps = WELL_KNOWN_TYPES_APIV2 + [
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes:go_default_library",
+        "@org_golang_google_grpc//status:go_default_library",
+    ],
+)
+
+js_library(
+    name = "postcss_config_js",
+    srcs = ["postcss.config.js"],
+    deps = [
+        "//:node_modules/autoprefixer",
+        "//:node_modules/postcss-custom-media",
+        "//:node_modules/postcss-focus-visible",
+        "//:node_modules/postcss-inset",
+    ],
+)
+
+copy_to_bin(
+    name = "browserslist",
+    srcs = [".browserslistrc"],
+    visibility = ["//visibility:public"],
+)
+
+copy_to_bin(
+    name = "package_json",
+    srcs = ["package.json"],
+    visibility = ["//visibility:public"],
+)
+
+js_library(
+    name = "jest_config",
+    testonly = True,
+    srcs = [
+        "jest.config.base.js",
+    ],
+    data = [
+        "jest.snapshot-resolver.js",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":babel_config_jest",
+        "//:node_modules/@testing-library/jest-dom",
+        "//:node_modules/abort-controller",
+        "//:node_modules/babel-jest",
+        "//:node_modules/core-js",
+        "//:node_modules/identity-obj-proxy",
+        "//:node_modules/regenerator-runtime",
+        "//client/shared/dev:mock",
+    ],
+)
+
+js_library(
+    name = "babel_config_jest",
+    testonly = True,
+    srcs = [
+        "babel.config.jest.js",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:node_modules/@babel/preset-env",
+        "//:node_modules/signale",
+    ],
+)
+
+js_library(
+    name = "babel_config",
+    srcs = [
+        "babel.config.js",
+    ],
+    data = [
+        ":package_json",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:node_modules/@babel/plugin-transform-typescript",
+        "//:node_modules/@babel/preset-env",
+        "//:node_modules/@babel/preset-react",
+        "//:node_modules/@babel/preset-typescript",
+        "//:node_modules/babel-plugin-lodash",
+        "//:node_modules/babel-plugin-webpack-chunkname",
+        "//:node_modules/semver",
+        "//:node_modules/signale",
+    ],
+)
+
+js_library(
+    name = "mocha_config",
+    testonly = True,
+    srcs = [
+        ".mocharc.js",
+    ],
+    deps = [
+        "//:node_modules/abort-controller",
+        "//client/shared/dev:fetch-mock",
+        "//client/shared/dev:mocha-reporter",
+        "//client/shared/dev:suppress-polly-errors",
+    ],
+)
+
+# Go
+
+# nogo config
+#
+# For nogo to be able to run a linter, it needs to have `var Analyzer analysis.Analyzer` defined in the main package.
+# some of the linters do not have that, so we need to define that ourselves. The linters where we have defined can
+# be found at dev/linters. Finally, the nogo configuration can be found at the root of the repository in `nogo_config.json`
+nogo(
+    name = "sg_nogo",
+    config = ":nogo_config.json",
+    vet = True,
+    visibility = ["//visibility:public"],  # must have public visibility
+    deps = [
+        "//dev/linters/bodyclose",
+        "//dev/linters/forbidigo",
+        "//dev/linters/ineffassign",
+    ],
+)
+
+exports_files(["go.mod"])

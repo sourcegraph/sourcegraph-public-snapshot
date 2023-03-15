@@ -33,8 +33,8 @@ var checks = map[string]check.CheckFunc{
 	"caddy-trusted":         checkCaddyTrusted,
 	"asdf":                  check.CommandOutputContains("asdf", "version"),
 	"git":                   check.Combine(check.InPath("git"), checkGitVersion(">= 2.34.1")),
-	"yarn":                  check.Combine(check.InPath("yarn"), checkYarnVersion("~> 1.22.4")),
-	"go":                    check.Combine(check.InPath("go"), checkGoVersion("~> 1.18.7")),
+	"pnpm":                  check.Combine(check.InPath("pnpm"), checkPnpmVersion(">= 7.28.0")),
+	"go":                    check.Combine(check.InPath("go"), checkGoVersion("~> 1.19.6")),
 	"node":                  check.Combine(check.InPath("node"), check.CommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar")),
 	"rust":                  check.Combine(check.InPath("cargo"), check.CommandOutputContains(`cargo version`, "1.58.0")),
 	"docker-installed":      check.WrapErrMessage(check.InPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
@@ -42,13 +42,15 @@ var checks = map[string]check.CheckFunc{
 		check.Combine(check.InPath("docker"), check.CommandExitCode("docker info", 0)),
 		"Docker needs to be running",
 	),
+	"ibazel":   check.WrapErrMessage(check.InPath("ibazel"), "brew install ibazel"),
+	"bazelisk": check.WrapErrMessage(check.InPath("bazelisk"), "brew install bazelisk"),
 }
 
 func runChecksWithName(ctx context.Context, names []string) error {
 	funcs := make(map[string]check.CheckFunc, len(names))
 	for _, name := range names {
-		if check, ok := checks[name]; ok {
-			funcs[name] = check
+		if c, ok := checks[name]; ok {
+			funcs[name] = c
 		} else {
 			return errors.Newf("check %q not found", name)
 		}
@@ -81,10 +83,10 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 
 	var failed []string
 
-	for name, check := range checks {
+	for name, c := range checks {
 		p := std.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", name))
 
-		if err := check(ctx); err != nil {
+		if err := c(ctx); err != nil {
 			p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed with the following errors:", name))
 
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "%s", err))
@@ -244,8 +246,8 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 		}
 
 		elems := strings.Split(string(out), " ")
-		if len(elems) != 3 {
-			return errors.Newf("unexpected output from git server: %s", out)
+		if len(elems) != 3 && len(elems) != 5 {
+			return errors.Newf("unexpected output from git: %s", out)
 		}
 
 		trimmed := strings.TrimSpace(elems[2])
@@ -272,9 +274,9 @@ func checkGoVersion(versionConstraint string) func(context.Context) error {
 	}
 }
 
-func checkYarnVersion(versionConstraint string) func(context.Context) error {
+func checkPnpmVersion(versionConstraint string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		cmd := "yarn --version"
+		cmd := "pnpm --version"
 		out, err := usershell.CombinedExec(ctx, cmd)
 		if err != nil {
 			return errors.Wrapf(err, "failed to run %q", cmd)
@@ -286,7 +288,7 @@ func checkYarnVersion(versionConstraint string) func(context.Context) error {
 		}
 
 		trimmed := strings.TrimSpace(elems[0])
-		return check.Version("yarn", trimmed, versionConstraint)
+		return check.Version("pnpm", trimmed, versionConstraint)
 	}
 }
 

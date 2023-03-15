@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from 'react'
 
 import { mdiArchive } from '@mdi/js'
-import * as H from 'history'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
 import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
-export interface ChangesetsArchivedNoticeProps {
-    history: H.History
-    location: H.Location
-}
+export interface ChangesetsArchivedNoticeProps {}
 
 export const ChangesetsArchivedNotice: React.FunctionComponent<
     React.PropsWithChildren<ChangesetsArchivedNoticeProps>
-> = ({ history, location }) => {
+> = () => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
     const [archivedCount, setArchivedCount] = useState<number | undefined>()
     const [archivedBy, setArchivedBy] = useState<string | undefined>()
     useEffect(() => {
@@ -31,9 +31,9 @@ export const ChangesetsArchivedNotice: React.FunctionComponent<
         }
 
         if (new URLSearchParams(location.search).toString() !== parameters.toString()) {
-            history.replace({ ...location, search: parameters.toString() })
+            navigate({ ...location, search: parameters.toString() }, { replace: true })
         }
-    }, [history, location])
+    }, [location, navigate])
 
     if (!archivedCount || !archivedBy) {
         return <></>

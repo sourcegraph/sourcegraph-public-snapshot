@@ -8,11 +8,16 @@ import (
 )
 
 const (
-	LSIFUpload = "lsif.upload"
-	GraphQL    = "graphql"
+	GraphQL = "graphql"
 
-	SearchStream  = "search.stream"
-	ComputeStream = "compute.stream"
+	LSIFUpload       = "lsif.upload"
+	SCIPUpload       = "scip.upload"
+	SCIPUploadExists = "scip.upload.exists"
+
+	SearchStream      = "search.stream"
+	ComputeStream     = "compute.stream"
+	GitBlameStream    = "git.blame.stream"
+	CompletionsStream = "completions.stream"
 
 	SrcCli             = "src-cli"
 	SrcCliVersionCache = "src-cli.version-cache"
@@ -29,9 +34,13 @@ const (
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
 	BitbucketCloudWebhooks  = "bitbucketCloud.webhooks"
 
+	SCIM = "scim"
+
 	BatchesFileGet    = "batches.file.get"
 	BatchesFileExists = "batches.file.exists"
 	BatchesFileUpload = "batches.file.upload"
+
+	CodeInsightsDataExport = "insights.data.export"
 
 	ExternalURL            = "internal.app-url"
 	SendEmail              = "internal.send-email"
@@ -57,6 +66,7 @@ func New(base *mux.Router) *mux.Router {
 	base.StrictSlash(true)
 
 	addRegistryRoute(base)
+	addSCIMRoute(base)
 	addGraphQLRoute(base)
 	base.Path("/webhooks/{webhook_uuid}").Methods("POST").Name(Webhooks)
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
@@ -67,10 +77,15 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Name(BatchesFileExists)
 	base.Path("/files/batch-changes/{spec}").Methods("POST").Name(BatchesFileUpload)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
+	base.Path("/scip/upload").Methods("POST").Name(SCIPUpload)
+	base.Path("/scip/upload").Methods("HEAD").Name(SCIPUploadExists)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
+	base.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/stream/{Path:.*}").Methods("GET").Name(GitBlameStream)
 	base.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Name(SrcCliVersionCache)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCli)
+	base.Path("/insights/export/{id}").Methods("GET").Name(CodeInsightsDataExport)
+	base.Path("/completions/stream").Methods("POST").Name(CompletionsStream)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
@@ -105,6 +120,8 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/search/index-status").Methods("POST").Name(UpdateIndexStatus)
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
+	base.Path("/scip/upload").Methods("POST").Name(SCIPUpload)
+	base.Path("/scip/upload").Methods("HEAD").Name(SCIPUploadExists)
 	base.Path("/search/stream").Methods("GET").Name(StreamingSearch)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	addRegistryRoute(base)
@@ -115,6 +132,10 @@ func NewInternal(base *mux.Router) *mux.Router {
 
 func addRegistryRoute(m *mux.Router) {
 	m.PathPrefix("/registry").Methods("GET").Name(Registry)
+}
+
+func addSCIMRoute(m *mux.Router) {
+	m.PathPrefix("/scim/v2").Methods("GET", "POST", "PUT", "PATCH", "DELETE").Name(SCIM)
 }
 
 func addGraphQLRoute(m *mux.Router) {

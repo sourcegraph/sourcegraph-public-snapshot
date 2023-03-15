@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-diff/diff"
@@ -16,6 +17,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// ErrInvalidBatchChangeName is returned when a batch change is stored with an unacceptable
+// name.
+var ErrInvalidBatchChangeName = errors.New("batch change name violates name policy")
 
 // batchChangeColumns are used by the batch change related Store methods to insert,
 // update and query batches.
@@ -57,9 +62,16 @@ func (s *Store) UpsertBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 
 	q := s.upsertBatchChangeQuery(c)
 
-	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchChange(c, sc)
 	})
+	if err != nil {
+		if isInvalidNameErr(err) {
+			return ErrInvalidBatchChangeName
+		}
+		return err
+	}
+	return nil
 }
 
 var upsertBatchChangeQueryFmtstr = `
@@ -132,9 +144,16 @@ func (s *Store) CreateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 
 	q := s.createBatchChangeQuery(c)
 
-	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchChange(c, sc)
 	})
+	if err != nil {
+		if isInvalidNameErr(err) {
+			return ErrInvalidBatchChangeName
+		}
+		return err
+	}
+	return nil
 }
 
 var createBatchChangeQueryFmtstr = `
@@ -179,7 +198,14 @@ func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 
 	q := s.updateBatchChangeQuery(c)
 
-	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) { return scanBatchChange(c, sc) })
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) { return scanBatchChange(c, sc) })
+	if err != nil {
+		if isInvalidNameErr(err) {
+			return ErrInvalidBatchChangeName
+		}
+		return err
+	}
+	return nil
 }
 
 var updateBatchChangeQueryFmtstr = `
@@ -685,4 +711,13 @@ func scanBatchChange(c *btypes.BatchChange, s dbutil.Scanner) error {
 		&dbutil.NullTime{Time: &c.ClosedAt},
 		&c.BatchSpecID,
 	)
+}
+
+func isInvalidNameErr(err error) bool {
+	if pgErr, ok := errors.UnwrapAll(err).(*pgconn.PgError); ok {
+		if pgErr.ConstraintName == "batch_change_name_is_valid" {
+			return true
+		}
+	}
+	return false
 }

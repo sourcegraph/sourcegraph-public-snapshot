@@ -1,7 +1,7 @@
 // Theme
 const currentThemePreference = () => localStorage.getItem('theme-preference') || 'auto'
 const themePreferenceButtons = () => document.querySelectorAll('body > #sidebar #theme button[data-theme-preference]')
-const currentTheme = (pref=currentThemePreference()) => pref === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' : pref
+const currentTheme = (pref = currentThemePreference()) => pref === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' : pref
 const applyThemePreference = (pref) => {
   localStorage.setItem('theme-preference', pref)
   applyTheme()
@@ -103,4 +103,53 @@ document.addEventListener('DOMContentLoaded', () => {
   if (startSourcegraphCommand) {
     startSourcegraphCommand.addEventListener('click', gaConversionOnStartSourcegraphCommands)
   }
+})
+
+// Cloud CTA clicks
+document.addEventListener('DOMContentLoaded', () => {
+  const cloudCTAs = document.querySelectorAll('.cloud-cta')
+
+  cloudCTAs.forEach(cloudCTA => {
+    cloudCTA.addEventListener('click', () => {
+      if (window && window.plausible) {
+        window.plausible('ClickedOnFreeTrialCTA')
+      }
+    })
+  })
+})
+
+// Promise to wait on for DOMContentLoaded
+const domContentLoadedPromise = new Promise(resolve => {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', resolve)
+  } else {
+    resolve()
+  }
+})
+
+// Import Sourcegraph's EventLogger
+const importEventLoggerPromise = import('https://cdn.skypack.dev/@sourcegraph/event-logger')
+
+Promise.all([domContentLoadedPromise, importEventLoggerPromise]).then(([_, { EventLogger }]) => {
+  const eventLogger = new EventLogger('https://sourcegraph.com')
+
+  // Log a Docs page view event
+  const eventArguments = { path: window.location.pathname }
+  eventLogger.log('ViewStaticPage', eventArguments, eventArguments)
+
+  // Log download links which have a "data-download-name" attribute
+  // This is used to track Sourcegraph App download links
+  document.addEventListener('click', event => {
+    if (event.target.matches('a[data-download-name]')) {
+      const downloadName = event.target.getAttribute('data-download-name')
+      const eventArguments = {
+        path: window.location.pathname,
+        downloadSource: 'docs',
+        downloadName,
+        downloadLinkUrl: event.target.href,
+      }
+
+      eventLogger.log('DownloadClick', eventArguments, eventArguments)
+    }
+  })
 })

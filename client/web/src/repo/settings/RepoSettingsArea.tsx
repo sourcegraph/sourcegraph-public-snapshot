@@ -2,47 +2,36 @@ import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import MinusCircleIcon from 'mdi-react/MinusCircleIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Routes, Route } from 'react-router-dom'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/wildcard'
+import { useObservable, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { HeroPage } from '../../components/HeroPage'
-import { RepositoryFields, SettingsAreaRepositoryFields } from '../../graphql-operations'
-import { RouteDescriptor } from '../../util/contributions'
+import { HeroPage, NotFoundPage } from '../../components/HeroPage'
+import { SettingsAreaRepositoryFields } from '../../graphql-operations'
+import { RouteV6Descriptor } from '../../util/contributions'
 
 import { fetchSettingsAreaRepository } from './backend'
 import { RepoSettingsSidebar, RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
 
 import styles from './RepoSettingsArea.module.scss'
 
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage
-        icon={MapSearchIcon}
-        title="404: Not Found"
-        subtitle="Sorry, the requested repository page was not found."
-    />
-)
-
-export interface RepoSettingsAreaRouteContext extends ThemeProps, TelemetryProps {
+export interface RepoSettingsAreaRouteContext extends TelemetryProps {
     repo: SettingsAreaRepositoryFields
 }
 
-export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaRouteContext> {}
+export interface RepoSettingsAreaRoute extends RouteV6Descriptor<RepoSettingsAreaRouteContext> {}
 
-interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, ThemeProps, TelemetryProps {
+interface Props extends BreadcrumbSetters, TelemetryProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
-    repo: RepositoryFields
+    repoName: string
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -52,14 +41,14 @@ interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, ThemeProps, 
  */
 export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     useBreadcrumb,
-
     ...props
 }) => {
-    const repoName = props.repo.name
+    const repoName = props.repoName
     const repoOrError = useObservable(
-        useMemo(() => fetchSettingsAreaRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))), [
-            repoName,
-        ])
+        useMemo(
+            () => fetchSettingsAreaRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))),
+            [repoName]
+        )
     )
 
     useBreadcrumb(useMemo(() => ({ key: 'settings', element: 'Settings' }), []))
@@ -67,12 +56,15 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
     if (repoOrError === undefined) {
         return null
     }
+
     if (isErrorLike(repoOrError)) {
         return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={repoOrError.message} />} />
     }
+
     if (repoOrError === null) {
-        return <NotFoundPage />
+        return <NotFoundPage pageType="repository" />
     }
+
     if (!repoOrError.viewerCanAdminister) {
         return (
             <HeroPage
@@ -86,31 +78,23 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
     if (!props.authenticatedUser) {
         return null
     }
+
     const context: RepoSettingsAreaRouteContext = {
         repo: repoOrError,
-        isLightTheme: props.isLightTheme,
         telemetryService: props.telemetryService,
     }
 
     return (
-        <div className={classNames('container d-flex mt-3', styles.repoSettingsArea)}>
+        <div className={classNames('container d-flex mt-3 px-3 flex-column flex-sm-row', styles.repoSettingsArea)}>
             <RepoSettingsSidebar className="flex-0 mr-3" {...props} {...context} />
             <div className="flex-bounded">
-                <Switch>
+                <Routes>
                     {props.repoSettingsAreaRoutes.map(
-                        ({ render, path, exact, condition = () => true }) =>
-                            condition(context) && (
-                                <Route
-                                    // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    key="hardcoded-key"
-                                    path={props.match.url + path}
-                                    exact={exact}
-                                    render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                                />
-                            )
+                        ({ render, path, condition = () => true }) =>
+                            condition(context) && <Route key="hardcoded-key" path={path} element={render(context)} />
                     )}
-                    <Route key="hardcoded-key" component={NotFoundPage} />
-                </Switch>
+                    <Route path="*" element={<NotFoundPage pageType="repository" />} />
+                </Routes>
             </div>
         </div>
     )

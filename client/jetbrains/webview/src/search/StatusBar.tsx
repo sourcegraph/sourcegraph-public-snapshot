@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { StreamingProgressCount } from '@sourcegraph/search-ui'
+import { StreamingProgressCount } from '@sourcegraph/branded'
 import { Progress, StreamingResultsState } from '@sourcegraph/shared/src/search/stream'
 
 import styles from './StatusBar.module.scss'

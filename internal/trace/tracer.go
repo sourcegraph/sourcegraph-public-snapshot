@@ -16,7 +16,7 @@ type Tracer struct {
 	TracerProvider oteltrace.TracerProvider
 }
 
-// New returns a new Trace with the specified family and title.
+// New returns a new Trace with the specified family and title. Must be closed with Finish().
 func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Trace, context.Context) {
 	if t.TracerProvider == nil {
 		t.TracerProvider = otel.GetTracerProvider()
@@ -24,7 +24,7 @@ func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Tr
 
 	var otelSpan oteltrace.Span
 	ctx, otelSpan = t.TracerProvider.
-		Tracer("internal/trace").
+		Tracer("sourcegraph/internal/trace").
 		Start(ctx, family,
 			oteltrace.WithAttributes(attribute.String("title", title)),
 			oteltrace.WithAttributes(tagSet(tags).toAttributes()...))

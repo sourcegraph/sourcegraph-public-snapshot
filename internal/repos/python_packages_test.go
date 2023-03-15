@@ -14,31 +14,26 @@ import (
 
 func TestPythonPackagesSource_ListRepos(t *testing.T) {
 	ctx := context.Background()
-	depsSvc := testDependenciesService(ctx, t, []dependencies.Repo{
+	depsSvc := testDependenciesService(ctx, t, []dependencies.MinimalPackageRepoRef{
 		{
-			ID:      1,
-			Scheme:  dependencies.PythonPackagesScheme,
-			Name:    "requests",
-			Version: "2.27.1", // test deduplication with version from config
+			Scheme: dependencies.PythonPackagesScheme,
+			Name:   "requests",
+			Versions: []string{
+				"2.27.1", // test deduplication with version from config
+				"2.27.2", // test multiple versions of the same module
+			},
 		},
 		{
-			ID:      2,
-			Scheme:  dependencies.PythonPackagesScheme,
-			Name:    "requests",
-			Version: "2.27.2", // test multiple versions of the same module
+			Scheme:   dependencies.PythonPackagesScheme,
+			Name:     "numpy",
+			Versions: []string{"1.22.3"},
 		},
 		{
-			ID:      3,
-			Scheme:  dependencies.PythonPackagesScheme,
-			Name:    "numpy",
-			Version: "1.22.3",
+			Scheme:   dependencies.PythonPackagesScheme,
+			Name:     "lofi",
+			Versions: []string{"foobar"}, // test that we create a repo for this package even if it's missing.
 		},
-		{
-			ID:      4,
-			Scheme:  dependencies.PythonPackagesScheme,
-			Name:    "lofi",
-			Version: "foobar", // test that we create a repo for this package even if it's missing.
-		}})
+	})
 
 	svc := types.ExternalService{
 		Kind: extsvc.KindPythonPackages,

@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "postgresdsn",
+    srcs = [
+        "postgresdsn.go",
+        "schema.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/postgresdsn",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    timeout = "short",
+    name = "postgresdsn_test",
+    srcs = ["postgresdsn_test.go"],
+    embed = [":postgresdsn"],
+)

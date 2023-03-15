@@ -31,7 +31,7 @@ If you want to learn more about how repositories are synchronized, read [Life of
 
 Repository permissions are by default being mirrored from code hosts to Sourcegraph, it builds the foundation of Sourcegraph authorization for repositories to ensure users see consistent content as on code hosts. Currently, the background permissions syncer resides in the [repo-updater](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater/README.md).
 
-If you want to learn more about how repository permissions are synchronized in the background, read [Background permissions syncing](../../../admin/repo/permissions.md#background-permissions-syncing).
+If you want to learn more about how repository permissions are synchronized in the background, read about [permission syncing](../../../admin/permissions/syncing.md).
 
 ## Settings cascade
 
@@ -179,7 +179,7 @@ If you want to learn more about code monitoring:
 
 The Sourcegraph browser extensions bring the features of Sourcegraph directly into the UI of code hosts such as GitHub, GitLab and Bitbucket.
 
-With the Sourcegraph browser extension installed, users get Sourcegraph features (including code navigation and Sourcegraph extensions) on their code host while browsing code, viewing diffs, or reviewing pull requests.
+With the Sourcegraph browser extension installed, users get Sourcegraph features (including code navigation) on their code host while browsing code, viewing diffs, or reviewing pull requests.
 
 This lets users get value from Sourcegraph without leaving their existing workflows on their code host, while also giving them a convenient way to jump into Sourcegraph at any time (by using the `Open in Sourcegraph` button on any repository or file). The browser extension also adds an address bar search shortcut, allowing you to search on Sourcegraph directly from the browser address bar.
 
@@ -204,25 +204,6 @@ If you want to learn more about native integrations:
 
 - [Repository Syncing](#repository-syncing)
   - Uses the GraphQL API to resolve repositories and revisions on code hosts
-
-## Sourcegraph extension API
-
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../../extensions/deprecation.md).
-
-The Sourcegraph extension API allows developers to write extensions that extend the functionality of Sourcegraph.
-
-Extensions that use the API can add elements and interactions to the Sourcegraph UI, such as:
-
-- adding action buttons in the toolbar
-- decorating specific lines of code in a file
-- contributing hover tooltip information on specific tokens in a file
-- decorating files in directory listings
-
-Some core features of Sourcegraph, like displaying code navigation hover tooltips, are implemented using the extension API.
-
-If you want to learn more about our extension API:
-
-- [Sourcegraph extension architecture](sourcegraph-extensions.md)
 
 ### Dependencies
 
@@ -257,7 +238,7 @@ If you want to learn more about src-cli:
 
 ## Editor extensions
 
-Sourcegraph editor extensions will bring Sourcegraph features like search, code navigation, and Sourcegraph extensions into your IDE. (Switching between Sourcegraph and an IDE when viewing a file is separately powered by Sourcegraph extensions.)
+Sourcegraph editor extensions will bring Sourcegraph features like search, and code navigation into your IDE. (Switching between Sourcegraph and an IDE when viewing a file is separately powered by Sourcegraph extensions.)
 
 The editor extension is still in the exploratory phase of determining priority and scope. For more information:
 

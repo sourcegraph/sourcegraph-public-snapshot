@@ -4,9 +4,8 @@ import { map } from 'rxjs/operators'
 import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
-import { TreeEntriesResult, TreeFields } from '../graphql-operations'
+import { ResolveRawRepoNameResult, TreeEntriesResult, TreeFields } from '../graphql-operations'
 import { PlatformContext } from '../platform/context'
-import * as GQL from '../schema'
 import { AbsoluteRepoFile, makeRepoURI, RepoSpec } from '../util/url'
 
 import { CloneInProgressError, RepoNotFoundError } from './errors'
@@ -20,7 +19,7 @@ export const resolveRawRepoName = memoizeObservable(
         repoName,
     }: Pick<RepoSpec, 'repoName'> & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
         from(
-            requestGraphQL<GQL.IQuery>({
+            requestGraphQL<ResolveRawRepoNameResult>({
                 request: gql`
                     query ResolveRawRepoName($repoName: String!) {
                         repository(name: $repoName) {

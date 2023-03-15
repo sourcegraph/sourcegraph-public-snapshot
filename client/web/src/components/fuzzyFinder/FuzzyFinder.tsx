@@ -10,7 +10,7 @@ import { FuzzyModal } from './FuzzyModal'
 import { useFuzzyShortcuts } from './FuzzyShortcuts'
 import { fuzzyIsActive, FuzzyTabsProps, FuzzyState, useFuzzyState, FuzzyTabKey } from './FuzzyTabs'
 
-const DEFAULT_MAX_RESULTS = 100
+const DEFAULT_MAX_RESULTS = 50
 
 export interface FuzzyFinderContainerProps
     extends TelemetryProps,
@@ -29,8 +29,8 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
     const { isVisible, setIsVisible } = props
     const isVisibleRef = useRef(isVisible)
     isVisibleRef.current = isVisible
-    const state = useFuzzyState(props, () => setIsVisible(false))
-    const { tabs, activeTab, setActiveTab, repoRevision, isScopeToggleDisabled, toggleScope } = state
+    const state = useFuzzyState(props)
+    const { tabs, setQuery, activeTab, setActiveTab, repoRevision, scope, isScopeToggleDisabled, toggleScope } = state
     const isScopeToggleDisabledRef = useRef(isScopeToggleDisabled)
     isScopeToggleDisabledRef.current = isScopeToggleDisabled
 
@@ -52,6 +52,13 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
             const activeTab = activeTabRef.current
             const isVisible = isVisibleRef.current
             if (!isVisible) {
+                if (activeTabRef.current !== tab) {
+                    // Reset the query when the user activates a different tab.
+                    // For example, if the user had "Repos" open, opens a repo,
+                    // and then triggers Cmd+P to activate the "Files" tab then
+                    // we discard the previous query from the "Repos" tab.
+                    setQuery('')
+                }
                 setIsVisible(true)
             }
             if (!isScopeToggleDisabledRef.current && isVisible && tab === activeTab) {
@@ -68,16 +75,24 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
                 }
             }
         },
-        [setActiveTab, setIsVisible, toggleScope]
+        [setActiveTab, setIsVisible, toggleScope, setQuery]
     )
 
-    const shortcuts = useFuzzyShortcuts(props.settingsCascade.final)
+    const shortcuts = useFuzzyShortcuts()
 
     useEffect(() => {
         if (isVisible) {
             props.telemetryService.log('FuzzyFinderViewed', { action: 'shortcut open' })
         }
     }, [props.telemetryService, isVisible])
+
+    const handleItemClick = useCallback(
+        (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => {
+            props.telemetryService.log(eventName, { activeTab, scope }, { activeTab, scope })
+            setIsVisible(false)
+        },
+        [props.telemetryService, setIsVisible, activeTab, scope]
+    )
 
     if (tabs.isAllDisabled()) {
         return null
@@ -104,7 +119,12 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
                     ))
                 )}
             {isVisible && (
-                <FuzzyFinder {...state} setIsVisible={bool => setIsVisible(bool)} location={props.location} />
+                <FuzzyFinder
+                    {...state}
+                    setIsVisible={setIsVisible}
+                    location={props.location}
+                    onClickItem={handleItemClick}
+                />
             )}
         </>
     )
@@ -112,6 +132,11 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
 
 interface FuzzyFinderProps extends FuzzyState {
     setIsVisible: Dispatch<SetStateAction<boolean>>
+
+    /**
+     * Search result click handler.
+     */
+    onClickItem: (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => void
 
     location: H.Location
 

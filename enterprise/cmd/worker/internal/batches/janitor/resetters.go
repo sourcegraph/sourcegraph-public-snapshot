@@ -5,11 +5,12 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func NewReconcilerWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store, metrics *metrics) *dbworker.Resetter {
+func NewReconcilerWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store[*types.Changeset], metrics *metrics) *dbworker.Resetter[*types.Changeset] {
 	options := dbworker.ResetterOptions{
 		Name:     "batches_reconciler_worker_resetter",
 		Interval: 1 * time.Minute,
@@ -22,7 +23,7 @@ func NewReconcilerWorkerResetter(logger log.Logger, workerStore dbworkerstore.St
 
 // NewBulkOperationWorkerResetter creates a dbworker.Resetter that reenqueues lost jobs
 // for processing.
-func NewBulkOperationWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store, metrics *metrics) *dbworker.Resetter {
+func NewBulkOperationWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store[*types.ChangesetJob], metrics *metrics) *dbworker.Resetter[*types.ChangesetJob] {
 	options := dbworker.ResetterOptions{
 		Name:     "batches_bulk_worker_resetter",
 		Interval: 1 * time.Minute,
@@ -35,7 +36,7 @@ func NewBulkOperationWorkerResetter(logger log.Logger, workerStore dbworkerstore
 
 // NewBatchSpecWorkspaceExecutionWorkerResetter creates a dbworker.Resetter that re-enqueues
 // lost batch_spec_workspace_execution_jobs for processing.
-func NewBatchSpecWorkspaceExecutionWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store, metrics *metrics) *dbworker.Resetter {
+func NewBatchSpecWorkspaceExecutionWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store[*types.BatchSpecWorkspaceExecutionJob], metrics *metrics) *dbworker.Resetter[*types.BatchSpecWorkspaceExecutionJob] {
 	options := dbworker.ResetterOptions{
 		Name:     "batch_spec_workspace_execution_worker_resetter",
 		Interval: 1 * time.Minute,
@@ -46,7 +47,7 @@ func NewBatchSpecWorkspaceExecutionWorkerResetter(logger log.Logger, workerStore
 	return resetter
 }
 
-func NewBatchSpecWorkspaceResolutionWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store, metrics *metrics) *dbworker.Resetter {
+func NewBatchSpecWorkspaceResolutionWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store[*types.BatchSpecResolutionJob], metrics *metrics) *dbworker.Resetter[*types.BatchSpecResolutionJob] {
 	options := dbworker.ResetterOptions{
 		Name:     "batch_changes_batch_spec_resolution_worker_resetter",
 		Interval: 1 * time.Minute,

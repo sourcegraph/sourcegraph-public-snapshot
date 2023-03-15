@@ -8,7 +8,6 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -49,7 +48,7 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 			Input:           comby.FileContent(fragment),
 			MatchTemplate:   match.Value,
 			RewriteTemplate: replacePattern,
-			Matcher:         ".generic", // TODO(rvantoner): use language or file filter
+			Matcher:         ".generic", // TODO(search): use language or file filter
 			ResultKind:      comby.NewlineSeparatedOutput,
 			NumWorkers:      0,
 		})
@@ -100,6 +99,8 @@ func resultChunks(r result.Match, kind string, onlyPath bool) []string {
 			content = string(m.Commit.Message)
 		}
 		return []string{content}
+	case *result.OwnerMatch:
+		return []string{m.ResolvedOwner.Identifier()}
 	default:
 		panic("unsupported result kind in compute output command")
 	}
@@ -111,7 +112,6 @@ func toTextResult(ctx context.Context, content string, matchPattern MatchPattern
 		// when there's an explicit `select:` value.
 		return outputPattern, nil
 	}
-
 	return output(ctx, content, matchPattern, outputPattern, separator)
 }
 
@@ -123,7 +123,7 @@ func toTextExtraResult(content string, r result.Match) *TextExtra {
 	}
 }
 
-func (c *Output) Run(ctx context.Context, _ database.DB, r result.Match) (Result, error) {
+func (c *Output) Run(ctx context.Context, r result.Match) (Result, error) {
 	onlyPath := c.TypeValue == "path" // don't read file contents for file matches when we only want type:path
 	chunks := resultChunks(r, c.Kind, onlyPath)
 
@@ -135,11 +135,11 @@ func (c *Output) Run(ctx context.Context, _ database.DB, r result.Match) (Result
 			return nil, err
 		}
 
-		result, err := toTextResult(ctx, content, c.SearchPattern, outputPattern, c.Separator, c.Selector)
+		textResult, err := toTextResult(ctx, content, c.SearchPattern, outputPattern, c.Separator, c.Selector)
 		if err != nil {
 			return nil, err
 		}
-		sb.WriteString(result)
+		sb.WriteString(textResult)
 	}
 
 	switch c.Kind {

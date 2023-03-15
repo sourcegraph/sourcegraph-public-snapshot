@@ -11,7 +11,7 @@ export const BatchChangeTabs: React.FunctionComponent<TabsProps> = props => (
 
 /** sourcegraph/wildcard `TabsList` with BC visual styling applied. */
 export const BatchChangeTabList: React.FunctionComponent<TabListProps> = props => (
-    <div className="overflow-auto mb-2">
+    <nav className="overflow-auto mb-2" aria-label="Batch Change">
         <TabList className="w-100 nav d-inline-flex d-sm-flex flex-nowrap text-nowrap" {...props} />
-    </div>
+    </nav>
 )

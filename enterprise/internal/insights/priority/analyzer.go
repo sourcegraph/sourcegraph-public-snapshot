@@ -17,10 +17,14 @@ type QueryObject struct {
 	NumberOfRepositories int64
 	RepositoryByteSizes  []int64 // size of repositories in bytes, if known
 
-	Cost float64
+	cost float64
 }
 
 type CostHeuristic func(*QueryObject)
+
+func DefaultQueryAnalyzer() *QueryAnalyzer {
+	return NewQueryAnalyzer(QueryCost, RepositoriesCost)
+}
 
 func NewQueryAnalyzer(handlers ...CostHeuristic) *QueryAnalyzer {
 	return &QueryAnalyzer{
@@ -32,20 +36,20 @@ func (a *QueryAnalyzer) Cost(o *QueryObject) float64 {
 	for _, handler := range a.costHandlers {
 		handler(o)
 	}
-	if o.Cost < 0.0 {
+	if o.cost < 0.0 {
 		return 0.0
 	}
-	return o.Cost
+	return o.cost
 }
 
 func QueryCost(o *QueryObject) {
 	for _, basic := range o.Query {
 		if basic.IsStructural() {
-			o.Cost += StructuralCost
+			o.cost += StructuralCost
 		} else if basic.IsRegexp() {
-			o.Cost += RegexpCost
+			o.cost += RegexpCost
 		} else {
-			o.Cost += LiteralCost
+			o.cost += LiteralCost
 		}
 	}
 
@@ -60,70 +64,70 @@ func QueryCost(o *QueryObject) {
 		}
 	})
 	if diff {
-		o.Cost *= DiffMultiplier
+		o.cost *= DiffMultiplier
 	}
 	if commit {
-		o.Cost *= CommitMultiplier
+		o.cost *= CommitMultiplier
 	}
 
 	parameters := querybuilder.ParametersFromQueryPlan(o.Query)
 	if parameters.Index() == query.No {
-		o.Cost *= UnindexedMultiplier
+		o.cost *= UnindexedMultiplier
 	}
 	if parameters.Exists(query.FieldAuthor) {
-		o.Cost *= AuthorMultiplier
+		o.cost *= AuthorMultiplier
 	}
 	if parameters.Exists(query.FieldFile) {
-		o.Cost *= FileMultiplier
+		o.cost *= FileMultiplier
 	}
 	if parameters.Exists(query.FieldLang) {
-		o.Cost *= LangMultiplier
+		o.cost *= LangMultiplier
 	}
 
 	archived := parameters.Archived()
 	if archived != nil {
 		if *archived == query.Yes {
-			o.Cost *= YesMultiplier
+			o.cost *= YesMultiplier
 		} else if *archived == query.Only {
-			o.Cost *= OnlyMultiplier
+			o.cost *= OnlyMultiplier
 		}
 	}
 	fork := parameters.Fork()
 	if fork != nil && (*fork == query.Yes || *fork == query.Only) {
 		if *fork == query.Yes {
-			o.Cost *= YesMultiplier
+			o.cost *= YesMultiplier
 		} else if *fork == query.Only {
-			o.Cost *= OnlyMultiplier
+			o.cost *= OnlyMultiplier
 		}
 	}
 }
 
 var (
-	megarepoSizeThresold  int64 = 5368709120                // 5GB
-	gigarepoSizethreshold int64 = megarepoSizeThresold * 10 // 50GB
+	megarepoSizeThreshold int64 = 5368709120                 // 5GB
+	gigarepoSizeThreshold       = megarepoSizeThreshold * 10 // 50GB
 )
 
 func RepositoriesCost(o *QueryObject) {
-	if o.Cost <= 0.0 {
-		o.Cost = 1 // if this handler is called on its own we still want it to impact the cost.
+	if o.cost <= 0.0 {
+		o.cost = 1 // if this handler is called on its own we still want it to impact the cost.
 	}
 
-	if o.NumberOfRepositories > 10000 {
-		o.Cost *= ManyRepositoriesMultiplier
+	if o.NumberOfRepositories > 100 {
+		o.cost *= float64(o.NumberOfRepositories) / 100.0
 	}
 
 	var megarepo, gigarepo bool
 	for _, byteSize := range o.RepositoryByteSizes {
-		if byteSize >= gigarepoSizethreshold {
+		if byteSize >= gigarepoSizeThreshold {
 			gigarepo = true
 		}
-		if byteSize >= megarepoSizeThresold {
+		if byteSize >= megarepoSizeThreshold {
 			megarepo = true
 		}
 	}
 	if gigarepo {
-		o.Cost *= GigarepoMultiplier
+		o.cost *= GigarepoMultiplier
 	} else if megarepo {
-		o.Cost *= MegarepoMultiplier
+		o.cost *= MegarepoMultiplier
 	}
 }

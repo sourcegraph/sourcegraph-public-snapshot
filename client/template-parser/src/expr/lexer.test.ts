@@ -157,22 +157,32 @@ describe('Lexer', () => {
                     expect(
                         (OPERATOR_CHARS[operator.charAt(0)] as { [ch: string]: OperatorTree })[operator.charAt(1)] ===
                             true ||
-                            ((OPERATOR_CHARS[operator.charAt(0)] as { [ch: string]: OperatorTree })[
-                                operator.charAt(1)
-                            ] as {
-                                [ch: string]: OperatorTree
-                            })['\u0000'] === true
+                            (
+                                (OPERATOR_CHARS[operator.charAt(0)] as { [ch: string]: OperatorTree })[
+                                    operator.charAt(1)
+                                ] as {
+                                    [ch: string]: OperatorTree
+                                }
+                            )['\u0000'] === true
                     ).toBeTruthy()
                 } else if (operator.length === 3) {
                     expect(
-                        ((OPERATOR_CHARS[operator.charAt(0)] as { [ch: string]: OperatorTree })[operator.charAt(1)] as {
-                            [ch: string]: OperatorTree
-                        })[operator.charAt(2)] === true ||
-                            (((OPERATOR_CHARS[operator.charAt(0)] as { [ch: string]: OperatorTree })[
+                        (
+                            (OPERATOR_CHARS[operator.charAt(0)] as { [ch: string]: OperatorTree })[
                                 operator.charAt(1)
                             ] as {
                                 [ch: string]: OperatorTree
-                            })[operator.charAt(2)] as { [ch: string]: OperatorTree })['\u0000'] === true
+                            }
+                        )[operator.charAt(2)] === true ||
+                            (
+                                (
+                                    (OPERATOR_CHARS[operator.charAt(0)] as { [ch: string]: OperatorTree })[
+                                        operator.charAt(1)
+                                    ] as {
+                                        [ch: string]: OperatorTree
+                                    }
+                                )[operator.charAt(2)] as { [ch: string]: OperatorTree }
+                            )['\u0000'] === true
                     ).toBeTruthy()
                 } else if (operator.length > maxOpLength) {
                     throw new Error(`operators of length ${operator.length} are not yet supported`)

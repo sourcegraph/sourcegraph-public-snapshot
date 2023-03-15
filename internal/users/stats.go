@@ -50,7 +50,7 @@ type UsersStatsNumberRange struct {
 	Lte *float64
 }
 
-func (d *UsersStatsNumberRange) toSQLConds(column string) ([]*sqlf.Query, error) {
+func (d *UsersStatsNumberRange) toSQLConds(column string) []*sqlf.Query {
 	var conds []*sqlf.Query
 
 	if d.Lte != nil {
@@ -60,7 +60,7 @@ func (d *UsersStatsNumberRange) toSQLConds(column string) ([]*sqlf.Query, error)
 		conds = append(conds, sqlf.Sprintf(column+" >= %s", d.Gte))
 	}
 
-	return conds, nil
+	return conds
 }
 
 type UsersStatsFilters struct {
@@ -118,10 +118,7 @@ func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
 	}
 
 	if s.Filters.EventsCount != nil {
-		eventsCountConds, err := s.Filters.EventsCount.toSQLConds("events_count")
-		if err != nil {
-			return nil, err
-		}
+		eventsCountConds := s.Filters.EventsCount.toSQLConds("events_count")
 		conds = append(conds, eventsCountConds...)
 		if s.Filters.EventsCount.Lte != nil {
 			conds = append(conds, sqlf.Sprintf("events_count <= %s", *s.Filters.EventsCount.Lte))
@@ -130,6 +127,16 @@ func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
 			conds = append(conds, sqlf.Sprintf("events_count >= %s", *s.Filters.EventsCount.Gte))
 		}
 	}
+
+	// Exclude Sourcegraph Operator user accounts
+	conds = append(conds, sqlf.Sprintf(`
+NOT EXISTS (
+	SELECT FROM user_external_accounts
+	WHERE
+		service_type = 'sourcegraph-operator'
+	AND user_id = aggregated_stats.id
+)
+`))
 	return conds, nil
 }
 
@@ -145,6 +152,7 @@ var (
 			stats.user_last_active_at AS last_active_at,
 			users.deleted_at,
 			users.site_admin,
+            (SELECT COUNT(user_id) FROM user_external_accounts WHERE user_id=users.id AND service_type = 'scim') >= 1 AS scim_controlled,
 			COALESCE(stats.user_events_count, 0) AS events_count
 		FROM users
 			LEFT JOIN aggregated_user_statistics stats ON stats.user_id = users.id
@@ -213,7 +221,7 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 	}
 
 	query := sqlf.Sprintf(statsCTEQuery, sqlf.Sprintf(`
-	SELECT id, username, display_name, primary_email, created_at, last_active_at, deleted_at, site_admin, events_count FROM aggregated_stats WHERE %s ORDER BY %s LIMIT %s OFFSET %s`, sqlf.Join(conds, "AND"), orderBy, limit, offset))
+	SELECT id, username, display_name, primary_email, created_at, last_active_at, deleted_at, site_admin, scim_controlled, events_count FROM aggregated_stats WHERE %s ORDER BY %s NULLS LAST LIMIT %s OFFSET %s`, sqlf.Join(conds, "AND"), orderBy, limit, offset))
 
 	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
@@ -227,7 +235,7 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 	for rows.Next() {
 		var node UserStatItem
 
-		if err := rows.Scan(&node.Id, &node.Username, &node.DisplayName, &node.PrimaryEmail, &node.CreatedAt, &node.LastActiveAt, &node.DeletedAt, &node.SiteAdmin, &node.EventsCount); err != nil {
+		if err := rows.Scan(&node.Id, &node.Username, &node.DisplayName, &node.PrimaryEmail, &node.CreatedAt, &node.LastActiveAt, &node.DeletedAt, &node.SiteAdmin, &node.SCIMControlled, &node.EventsCount); err != nil {
 			return nil, err
 		}
 
@@ -259,13 +267,14 @@ func toUsersField(orderBy string) (string, error) {
 }
 
 type UserStatItem struct {
-	Id           int32
-	Username     string
-	DisplayName  *string
-	PrimaryEmail *string
-	CreatedAt    time.Time
-	LastActiveAt *time.Time
-	DeletedAt    *time.Time
-	SiteAdmin    bool
-	EventsCount  float64
+	Id             int32
+	Username       string
+	DisplayName    *string
+	PrimaryEmail   *string
+	CreatedAt      time.Time
+	LastActiveAt   *time.Time
+	DeletedAt      *time.Time
+	SiteAdmin      bool
+	SCIMControlled bool
+	EventsCount    float64
 }

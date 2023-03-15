@@ -57,15 +57,14 @@ interface PRResponse {
 /**
  * Get the base commit ID for a merge request.
  */
-export const getCommitsForPR: (
-    info: BitbucketRepoInfo & { prID: number }
-) => Observable<DiffResolvedRevisionSpec> = memoizeObservable(
-    ({ project, repoSlug, prID }) =>
-        get<PRResponse>(buildURL(project, repoSlug, `/pull-requests/${prID}`)).pipe(
-            map(({ fromRef, toRef }) => ({ baseCommitID: toRef.latestCommit, headCommitID: fromRef.latestCommit }))
-        ),
-    ({ prID }) => prID.toString()
-)
+export const getCommitsForPR: (info: BitbucketRepoInfo & { prID: number }) => Observable<DiffResolvedRevisionSpec> =
+    memoizeObservable(
+        ({ project, repoSlug, prID }) =>
+            get<PRResponse>(buildURL(project, repoSlug, `/pull-requests/${prID}`)).pipe(
+                map(({ fromRef, toRef }) => ({ baseCommitID: toRef.latestCommit, headCommitID: fromRef.latestCommit }))
+            ),
+        ({ prID }) => prID.toString()
+    )
 
 interface GetBaseCommitInput extends BitbucketRepoInfo {
     commitID: string

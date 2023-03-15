@@ -125,7 +125,7 @@ func (r *repositoryMirrorInfoResolver) CloneInProgress(ctx context.Context) (boo
 }
 
 func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*string, error) {
-	progress, err := gitserver.NewClient(r.db).RepoCloneProgress(ctx, r.repository.RepoName())
+	progress, err := gitserver.NewClient().RepoCloneProgress(ctx, r.repository.RepoName())
 	if err != nil {
 		return nil, err
 	}
@@ -160,13 +160,51 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*gqlutil.
 	return &gqlutil.DateTime{Time: info.LastFetched}, nil
 }
 
+func (r *repositoryMirrorInfoResolver) IsCorrupted(ctx context.Context) (bool, error) {
+	info, err := r.computeGitserverRepo(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	if info.CorruptedAt.IsZero() {
+		return false, err
+	}
+	return true, nil
+}
+
+func (r *repositoryMirrorInfoResolver) CorruptionLogs(ctx context.Context) ([]*corruptionLogResolver, error) {
+	info, err := r.computeGitserverRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	logs := make([]*corruptionLogResolver, 0, len(info.CorruptionLogs))
+	for _, l := range info.CorruptionLogs {
+		logs = append(logs, &corruptionLogResolver{log: l})
+	}
+
+	return logs, nil
+}
+
+type corruptionLogResolver struct {
+	log types.RepoCorruptionLog
+}
+
+func (r *corruptionLogResolver) Timestamp() (gqlutil.DateTime, error) {
+	return gqlutil.DateTime{Time: r.log.Timestamp}, nil
+}
+
+func (r *corruptionLogResolver) Reason() (string, error) {
+	return r.log.Reason, nil
+}
+
 func (r *repositoryMirrorInfoResolver) ByteSize(ctx context.Context) (BigInt, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
-		return BigInt{Int: 0}, err
+		return 0, err
 	}
 
-	return BigInt{Int: info.RepoSizeBytes}, err
+	return BigInt(info.RepoSizeBytes), err
 }
 
 func (r *repositoryMirrorInfoResolver) Shard(ctx context.Context) (*string, error) {
@@ -181,7 +219,11 @@ func (r *repositoryMirrorInfoResolver) Shard(ctx context.Context) (*string, erro
 		return nil, err
 	}
 
-	return &info.ShardID, err
+	if info.ShardID == "" {
+		return nil, nil
+	}
+
+	return &info.ShardID, nil
 }
 
 func (r *repositoryMirrorInfoResolver) UpdateSchedule(ctx context.Context) (*updateScheduleResolver, error) {
@@ -256,7 +298,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		return nil, errors.New("exactly one of the repository and name arguments must be set")
 	}
 
-	gsClient := gitserver.NewClient(r.db)
+	gsClient := gitserver.NewClient()
 	var repo *types.Repo
 	switch {
 	case args.Repository != nil:

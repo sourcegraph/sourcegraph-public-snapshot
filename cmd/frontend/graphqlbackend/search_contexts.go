@@ -20,14 +20,18 @@ const (
 
 type SearchContextsResolver interface {
 	SearchContexts(ctx context.Context, args *ListSearchContextsArgs) (SearchContextConnectionResolver, error)
-	AutoDefinedSearchContexts(ctx context.Context) ([]SearchContextResolver, error)
 
 	SearchContextByID(ctx context.Context, id graphql.ID) (SearchContextResolver, error)
 	SearchContextBySpec(ctx context.Context, args SearchContextBySpecArgs) (SearchContextResolver, error)
 	IsSearchContextAvailable(ctx context.Context, args IsSearchContextAvailableArgs) (bool, error)
+	DefaultSearchContext(ctx context.Context) (SearchContextResolver, error)
 	CreateSearchContext(ctx context.Context, args CreateSearchContextArgs) (SearchContextResolver, error)
 	UpdateSearchContext(ctx context.Context, args UpdateSearchContextArgs) (SearchContextResolver, error)
 	DeleteSearchContext(ctx context.Context, args DeleteSearchContextArgs) (*EmptyResponse, error)
+
+	CreateSearchContextStar(ctx context.Context, args CreateSearchContextStarArgs) (*EmptyResponse, error)
+	DeleteSearchContextStar(ctx context.Context, args DeleteSearchContextStarArgs) (*EmptyResponse, error)
+	SetDefaultSearchContext(ctx context.Context, args SetDefaultSearchContextArgs) (*EmptyResponse, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 	SearchContextsToResolvers(searchContexts []*types.SearchContext) []SearchContextResolver
@@ -43,6 +47,8 @@ type SearchContextResolver interface {
 	UpdatedAt() gqlutil.DateTime
 	Namespace(ctx context.Context) (*NamespaceResolver, error)
 	ViewerCanManage(ctx context.Context) bool
+	ViewerHasAsDefault(ctx context.Context) bool
+	ViewerHasStarred(ctx context.Context) bool
 	Repositories(ctx context.Context) ([]SearchContextRepositoryRevisionsResolver, error)
 	Query() string
 }
@@ -91,6 +97,21 @@ type UpdateSearchContextArgs struct {
 
 type DeleteSearchContextArgs struct {
 	ID graphql.ID
+}
+
+type CreateSearchContextStarArgs struct {
+	SearchContextID graphql.ID
+	UserID          graphql.ID
+}
+
+type DeleteSearchContextStarArgs struct {
+	SearchContextID graphql.ID
+	UserID          graphql.ID
+}
+
+type SetDefaultSearchContextArgs struct {
+	SearchContextID graphql.ID
+	UserID          graphql.ID
 }
 
 type SearchContextBySpecArgs struct {

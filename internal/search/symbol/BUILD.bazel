@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "symbol",
+    srcs = ["symbol.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/symbol",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/frontend/backend",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/search",
+        "//internal/search/result",
+        "//internal/search/zoekt",
+        "//internal/trace/policy",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_roaringbitmap_roaring//:roaring",
+        "@com_github_sourcegraph_zoekt//:zoekt",
+        "@com_github_sourcegraph_zoekt//query",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "symbol_test",
+    srcs = [
+        "mocks_test.go",
+        "symbol_test.go",
+    ],
+    embed = [":symbol"],
+    deps = [
+        "//internal/search",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_zoekt//:zoekt",
+        "@com_github_sourcegraph_zoekt//query",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

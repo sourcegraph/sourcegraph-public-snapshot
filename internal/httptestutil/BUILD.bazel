@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "httptestutil",
+    srcs = [
+        "client.go",
+        "recorder.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/httptestutil",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/httpcli",
+        "//lib/errors",
+        "@com_github_dnaeon_go_vcr//cassette",
+        "@com_github_dnaeon_go_vcr//recorder",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "httptestutil_test",
+    srcs = ["recorder_test.go"],
+    embed = [":httptestutil"],
+    deps = [
+        "@com_github_dnaeon_go_vcr//cassette",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

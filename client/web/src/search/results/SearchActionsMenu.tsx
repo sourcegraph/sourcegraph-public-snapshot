@@ -1,37 +1,42 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
-import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiDotsHorizontal, mdiDownload } from '@mdi/js'
+import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiChevronDown, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SearchPatternTypeProps } from '@sourcegraph/search'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    Position,
-    Menu,
-    MenuButton,
-    MenuList,
-    MenuLink,
     Icon,
     Link,
+    Menu,
+    MenuButton,
     MenuHeader,
     MenuItem,
+    MenuLink,
+    MenuList,
+    Position,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
 import { CreateAction } from './createActions'
-import { useExportSearchResultsQuery } from './useExportSearchResultsQuery'
+import { downloadSearchResults } from './searchResultsExport'
 
 import navStyles from './SearchResultsInfoBar.module.scss'
 
-interface SearchActionsMenuProps extends SearchPatternTypeProps, Pick<PlatformContext, 'sourcegraphURL'> {
+interface SearchActionsMenuProps
+    extends SearchPatternTypeProps,
+        Pick<PlatformContext, 'sourcegraphURL'>,
+        TelemetryProps {
     query?: string
+    results?: AggregateStreamingSearchResults
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
     createActions: CreateAction[]
     createCodeMonitorAction: CreateAction | null
     canCreateMonitor: boolean
-    resultsFound: boolean
     allExpanded: boolean
     onExpandAllResultsToggle: () => void
     onSaveQueryClick: () => void
@@ -39,18 +44,24 @@ interface SearchActionsMenuProps extends SearchPatternTypeProps, Pick<PlatformCo
 
 export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> = ({
     query = '',
-    patternType,
+    results,
     sourcegraphURL,
     authenticatedUser,
     createActions,
     createCodeMonitorAction,
     canCreateMonitor,
-    resultsFound,
     allExpanded,
     onExpandAllResultsToggle,
     onSaveQueryClick,
+    telemetryService,
 }) => {
-    const [requestSearchResultsExport] = useExportSearchResultsQuery({ query, patternType, sourcegraphURL })
+    const resultsFound = results ? results.results.length > 0 : false
+    const downloadResults = useCallback(() => {
+        if (query.includes('select:file.owners')) {
+            telemetryService.log('searchResults:ownershipCsv:exported')
+        }
+        return results ? downloadSearchResults(results, sourcegraphURL, query) : undefined
+    }, [results, sourcegraphURL, query, telemetryService])
 
     return (
         <Menu>
@@ -63,7 +74,8 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                         outline={true}
                         size="sm"
                     >
-                        <Icon aria-hidden={true} svgPath={mdiDotsHorizontal} />
+                        Actions
+                        <Icon aria-hidden={true} data-caret={true} className="ml-1" svgPath={mdiChevronDown} />
                     </MenuButton>
                     <MenuList tabIndex={0} position={Position.bottomEnd} aria-label="Search Actions. Open menu">
                         {resultsFound && (
@@ -77,7 +89,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                     />
                                     {allExpanded ? 'Collapse all' : 'Expand all'}
                                 </MenuItem>
-                                <MenuItem onSelect={requestSearchResultsExport}>
+                                <MenuItem onSelect={downloadResults}>
                                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
                                     Export results
                                 </MenuItem>

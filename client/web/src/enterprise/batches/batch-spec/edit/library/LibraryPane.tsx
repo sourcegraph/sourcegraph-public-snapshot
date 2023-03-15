@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
 import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/js'
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 import { animated, useSpring } from 'react-spring'
 
 import { Button, useLocalStorage, H3, H4, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'
@@ -137,7 +137,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
     }, [selectedItem, props, updateTemplateWithQueryAndName])
 
     return (
-        <>
+        <div role="region" aria-label="batch spec template library">
             {selectedItem ? (
                 <ReplaceSpecModal
                     libraryItemName={selectedItem.name}
@@ -156,7 +156,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                         <Button
                             className="p-0"
                             onClick={() => toggleCollapse(!collapsed)}
-                            aria-label={collapsed ? 'Expand' : 'Collapse'}
+                            aria-label={collapsed ? 'Expand library' : 'Collapse library'}
                         >
                             <Icon
                                 aria-hidden={true}
@@ -167,7 +167,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                 </div>
 
                 <animated.div style={contentStyle}>
-                    <ul className={styles.listContainer}>
+                    <ul className={styles.listContainer} aria-label="batch spec templates">
                         {LIBRARY.map(item => (
                             <li className={styles.libraryItem} key={item.name}>
                                 <Button
@@ -192,6 +192,6 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                     </Text>
                 </animated.div>
             </animated.div>
-        </>
+        </div>
     )
 }

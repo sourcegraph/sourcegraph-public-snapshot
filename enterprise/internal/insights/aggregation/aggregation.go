@@ -2,11 +2,10 @@ package aggregation
 
 import (
 	"context"
-	"regexp"
 	"sync"
 	"time"
 
-	"github.com/go-enry/go-enry/v2"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -52,23 +51,6 @@ func countRepo(r result.Match) (map[MatchKey]int, error) {
 	return nil, nil
 }
 
-func countLang(r result.Match) (map[MatchKey]int, error) {
-	var lang string
-	switch match := r.(type) {
-	case *result.FileMatch:
-		lang, _ = enry.GetLanguageByExtension(match.Path)
-	default:
-	}
-	if lang != "" {
-		return map[MatchKey]int{{
-			RepoID: int32(r.RepoName().ID),
-			Repo:   string(r.RepoName().Name),
-			Group:  lang,
-		}: r.ResultCount()}, nil
-	}
-	return nil, nil
-}
-
 func countPath(r result.Match) (map[MatchKey]int, error) {
 	var path string
 	switch match := r.(type) {
@@ -108,7 +90,7 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "getCasedPattern")
 	}
-	regexp, err := regexp.Compile(pattern.String())
+	regex, err := regexp.Compile(pattern.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not compile regexp")
 	}
@@ -118,8 +100,8 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 		if len(content) != 0 {
 			matches := map[MatchKey]int{}
 			for _, contentPiece := range content {
-				for _, submatches := range regexp.FindAllStringSubmatchIndex(contentPiece, -1) {
-					contentMatches := fromRegexpMatches(submatches, regexp.SubexpNames(), contentPiece)
+				for _, submatches := range regex.FindAllStringSubmatchIndex(contentPiece, -1) {
+					contentMatches := fromRegexpMatches(submatches, contentPiece)
 					for value, count := range contentMatches {
 						key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: value}
 						if len(key.Group) > 100 {
@@ -248,7 +230,7 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 					r.tabulator(nil, err)
 					continue
 				}
-				current, _ := combined[groupKey]
+				current := combined[groupKey]
 				combined[groupKey] = current + count
 			}
 		}

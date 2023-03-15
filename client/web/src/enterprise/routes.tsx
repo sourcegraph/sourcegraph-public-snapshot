@@ -1,110 +1,95 @@
-import { Redirect } from 'react-router'
+import { Navigate, RouteObject } from 'react-router-dom'
 
-import { isErrorLike } from '@sourcegraph/common'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
-import { LayoutRouteProps, routes } from '../routes'
-import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
-import { useExperimentalFeatures } from '../stores'
+import { LegacyRoute } from '../LegacyRouteContext'
+import { routes } from '../routes'
+import { EnterprisePageRoutes } from '../routes.constants'
 
-const NotebookPage = lazyComponent(() => import('../notebooks/notebookPage/NotebookPage'), 'NotebookPage')
-const CreateNotebookPage = lazyComponent(
-    () => import('../notebooks/createPage/CreateNotebookPage'),
-    'CreateNotebookPage'
+const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
+const GlobalBatchChangesArea = lazyComponent(
+    () => import('./batches/global/GlobalBatchChangesArea'),
+    'GlobalBatchChangesArea'
 )
-const NotebooksListPage = lazyComponent(() => import('../notebooks/listPage/NotebooksListPage'), 'NotebooksListPage')
+const GlobalCodeMonitoringArea = lazyComponent(
+    () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
+    'GlobalCodeMonitoringArea'
+)
+const CodeInsightsRouter = lazyComponent(() => import('./insights/CodeInsightsRouter'), 'CodeInsightsRouter')
+const SearchContextsListPage = lazyComponent(
+    () => import('./searchContexts/SearchContextsListPage'),
+    'SearchContextsListPage'
+)
+const CreateSearchContextPage = lazyComponent(
+    () => import('./searchContexts/CreateSearchContextPage'),
+    'CreateSearchContextPage'
+)
+const EditSearchContextPage = lazyComponent(
+    () => import('./searchContexts/EditSearchContextPage'),
+    'EditSearchContextPage'
+)
+const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
+const GlobalCodyArea = lazyComponent(() => import('./cody/GlobalCodyArea'), 'GlobalCodyArea')
+const OwnPage = lazyComponent(() => import('./own/OwnPage'), 'OwnPage')
 
-const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
-    !isErrorLike(settingsCascade.final) &&
-    settingsCascade.final?.experimentalFeatures?.showSearchContext !== false &&
-    settingsCascade.final?.experimentalFeatures?.showSearchContextManagement !== false
-
-export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
+export const enterpriseRoutes: RouteObject[] = [
     {
         path: EnterprisePageRoutes.BatchChanges,
-        render: lazyComponent(() => import('./batches/global/GlobalBatchChangesArea'), 'GlobalBatchChangesArea'),
-        // We also render this route on sourcegraph.com as a precaution in case anyone
-        // follows an in-app link to /batch-changes from sourcegraph.com; the component
-        // will just redirect the visitor to the marketing page
-        condition: ({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom,
-    },
-    {
-        path: EnterprisePageRoutes.Stats,
-        render: lazyComponent(() => import('./search/stats/SearchStatsPage'), 'SearchStatsPage'),
-    },
-    {
-        path: EnterprisePageRoutes.CodeMonitoring,
-        render: lazyComponent(
-            () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
-            'GlobalCodeMonitoringArea'
+        element: (
+            <LegacyRoute
+                render={props => <GlobalBatchChangesArea {...props} />}
+                // We also render this route on sourcegraph.com as a precaution in case anyone
+                // follows an in-app link to /batch-changes from sourcegraph.com; the component
+                // will just redirect the visitor to the marketing page
+                condition={({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom}
+            />
         ),
     },
     {
+        path: EnterprisePageRoutes.CodeMonitoring,
+        element: <LegacyRoute render={props => <GlobalCodeMonitoringArea {...props} />} />,
+    },
+    {
         path: EnterprisePageRoutes.Insights,
-        render: lazyComponent(() => import('./insights/CodeInsightsRouter'), 'CodeInsightsRouter'),
-        condition: props => isCodeInsightsEnabled(props.settingsCascade),
+        element: (
+            <LegacyRoute
+                render={props => <CodeInsightsRouter {...props} />}
+                condition={props => isCodeInsightsEnabled(props.settingsCascade)}
+            />
+        ),
     },
     {
         path: EnterprisePageRoutes.Contexts,
-        render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
-        exact: true,
-        condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
+        element: <LegacyRoute render={props => <SearchContextsListPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.CreateContext,
-        render: lazyComponent(() => import('./searchContexts/CreateSearchContextPage'), 'CreateSearchContextPage'),
-        exact: true,
-        condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
+        element: <LegacyRoute render={props => <CreateSearchContextPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.EditContext,
-        render: lazyComponent(() => import('./searchContexts/EditSearchContextPage'), 'EditSearchContextPage'),
-        condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
+        element: <LegacyRoute render={props => <EditSearchContextPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.Context,
-        render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
-        condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
+        element: <LegacyRoute render={props => <SearchContextPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.SearchNotebook,
-        render: () => <Redirect to={EnterprisePageRoutes.Notebooks} />,
-        exact: true,
+        element: <Navigate to={EnterprisePageRoutes.Notebooks} replace={true} />,
     },
     {
-        path: EnterprisePageRoutes.NotebookCreate,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
-                <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
-            ) : (
-                <Redirect to={EnterprisePageRoutes.Notebooks} />
-            ),
-        exact: true,
+        path: EnterprisePageRoutes.Notebooks + '/*',
+        element: <LegacyRoute render={props => <GlobalNotebooksArea {...props} />} />,
     },
     {
-        path: EnterprisePageRoutes.Notebook,
-        render: props => {
-            const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
-
-            return showSearchNotebook ? (
-                <NotebookPage {...props} showSearchContext={showSearchContext ?? false} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            )
-        },
-        exact: true,
+        path: EnterprisePageRoutes.Cody,
+        element: <LegacyRoute render={props => <GlobalCodyArea />} />,
     },
     {
-        path: EnterprisePageRoutes.Notebooks,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <NotebooksListPage {...props} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            ),
-        exact: true,
+        path: EnterprisePageRoutes.Own,
+        element: <LegacyRoute render={props => <OwnPage />} />,
     },
     ...routes,
 ]

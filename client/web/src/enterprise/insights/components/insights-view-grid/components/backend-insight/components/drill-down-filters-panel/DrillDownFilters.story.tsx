@@ -21,7 +21,8 @@ export const DrillDownPopover: Story = () => {
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: '20',
+            limit: 20,
+            numSamples: null,
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,
@@ -35,6 +36,7 @@ export const DrillDownPopover: Story = () => {
             anchor={exampleReference}
             initialFiltersValue={initialFiltersValue}
             originalFiltersValue={initialFiltersValue}
+            isNumSamplesFilterAvailable={true}
             onFilterChange={log('onFilterChange')}
             onFilterSave={log('onFilterSave')}
             onInsightCreate={log('onInsightCreate')}

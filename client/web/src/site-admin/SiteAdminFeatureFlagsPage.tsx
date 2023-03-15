@@ -2,7 +2,6 @@ import React, { useCallback, useMemo } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 import { of, Observable, forkJoin } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
 
@@ -19,7 +18,7 @@ import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 
 import styles from './SiteAdminFeatureFlagsPage.module.scss'
 
-interface SiteAdminFeatureFlagsPageProps extends RouteComponentProps<{}>, TelemetryProps {
+interface SiteAdminFeatureFlagsPageProps extends TelemetryProps {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags
     productVersion?: string
 }
@@ -59,7 +58,7 @@ export function parseProductReference(productVersion: string): string {
         return parts.pop() || 'main'
     }
     // Special case for dev tag
-    if (productVersion === '0.0.0') {
+    if (productVersion.startsWith('0.0.0')) {
         return 'main'
     }
     // Otherwise assume product version is probably a tag
@@ -122,7 +121,7 @@ const filters: FilteredConnectionFilter[] = [
 
 export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminFeatureFlagsPageProps>
-> = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version, ...props }) => {
+> = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version }) => {
     // Try to parse out a git rev based on the product version, otherwise just fall back
     // to main.
     const productGitVersion = parseProductReference(productVersion)
@@ -202,7 +201,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
                 }
                 className="mb-3"
                 actions={
-                    <ButtonLink variant="primary" to="./feature-flags/configuration/new">
+                    <ButtonLink variant="primary" to="./configuration/new">
                         Create feature flag
                     </ButtonLink>
                 }
@@ -216,8 +215,6 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
                     pluralNoun="feature flags"
                     queryConnection={queryFeatureFlags}
                     nodeComponent={FeatureFlagNode}
-                    history={props.history}
-                    location={props.location}
                     filters={filters}
                 />
             </Container>
@@ -276,7 +273,7 @@ const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFl
             </span>
 
             <span className={classNames(styles.button, 'd-none d-md-inline')}>
-                <Link to={`./feature-flags/configuration/${node.name}`} className="p-0">
+                <Link to={`./configuration/${node.name}`} className="p-0">
                     <Icon svgPath={mdiChevronRight} inline={false} aria-label="Configure" />
                 </Link>
             </span>

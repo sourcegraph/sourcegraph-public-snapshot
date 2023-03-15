@@ -64,7 +64,7 @@ describe('Code insights [Dashboard card]', () => {
         // by special "Other" category (5 original rendered groups + one special Other group = 6)
         assert.strictEqual(numberHeadings, 6)
 
-        await checkOptionsMenu(driver)
+        await checkOptionsMenu(driver, { yAxis: false, exportData: false })
         await checkFilterMenu(driver, false)
     })
 
@@ -86,7 +86,7 @@ describe('Code insights [Dashboard card]', () => {
         assert.strictEqual(numberOfLines, 20)
         assert.strictEqual(numberOfPointLinks, 189)
 
-        await checkOptionsMenu(driver)
+        await checkOptionsMenu(driver, { yAxis: false, exportData: true })
         await checkFilterMenu(driver, true)
     })
 
@@ -100,6 +100,7 @@ describe('Code insights [Dashboard card]', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_SEARCH')
         await driver.page.waitForSelector('[aria-label="Line chart"]')
+        await driver.page.waitForSelector('[aria-label="Line chart"] path')
 
         const numberOfLines = await driver.page.$$eval('[aria-label="Line chart"] path', elements => elements.length)
         const numberOfPointLinks = await driver.page.$$eval('[aria-label="Line chart"] a', elements => elements.length)
@@ -108,7 +109,7 @@ describe('Code insights [Dashboard card]', () => {
         assert.strictEqual(numberOfLines, 2)
         assert.strictEqual(numberOfPointLinks, 27)
 
-        await checkOptionsMenu(driver, true)
+        await checkOptionsMenu(driver, { yAxis: true, exportData: true })
         await checkFilterMenu(driver, true)
     })
 
@@ -144,6 +145,7 @@ describe('Code insights [Dashboard card]', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_COMPUTE')
         await driver.page.waitForSelector('[aria-label="Bar chart"]')
+        await driver.page.waitForSelector('[aria-label="Bar chart content"]')
 
         const numberOfBars = await driver.page.$$eval('[aria-label="Bar chart"] rect', elements => elements.length)
 
@@ -151,25 +153,41 @@ describe('Code insights [Dashboard card]', () => {
         // Visx also renders a rectangle for the chart background. 1 series + 1 background = 2 rectangles
         assert.strictEqual(numberOfBars, 2)
 
-        await checkOptionsMenu(driver)
+        await checkOptionsMenu(driver, { yAxis: false, exportData: true })
         await checkFilterMenu(driver, true)
     })
 })
 
+interface MenuOptions {
+    yAxis: boolean
+    exportData: boolean
+}
+
 /**
  * Asserts the options menu renders the correct options
  */
-async function checkOptionsMenu(driver: Driver, shouldHaveYAxis = false): Promise<void> {
+async function checkOptionsMenu(driver: Driver, options: MenuOptions): Promise<void> {
+    const { yAxis, exportData } = options
     await driver.page.click('[aria-label="Insight options"]')
 
     const menuOptions = await driver.page.$$eval('[role="dialog"][aria-modal="true"] [role="menuitem"]', elements =>
         elements.map(element => element.textContent)
     )
 
-    // Check that Line chart menu options
-    assert.deepStrictEqual(menuOptions, ['Edit', 'Get shareable link', 'Remove from this dashboard', 'Delete'])
+    if (exportData) {
+        // Check that Line chart menu options
+        assert.deepStrictEqual(menuOptions, [
+            'Edit',
+            'Get shareable link',
+            'Export data',
+            'Remove from this dashboard',
+            'Delete',
+        ])
+    } else {
+        assert.deepStrictEqual(menuOptions, ['Edit', 'Get shareable link', 'Remove from this dashboard', 'Delete'])
+    }
 
-    if (shouldHaveYAxis) {
+    if (yAxis) {
         const startYAxisAt0 = await driver.page.$eval(
             '[role="dialog"][aria-modal="true"] [role="menuitemcheckbox"]',
             element => element.textContent

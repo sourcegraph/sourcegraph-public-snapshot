@@ -6,8 +6,12 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
+
+	"github.com/graph-gophers/graphql-go"
+	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -19,12 +23,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -47,6 +53,67 @@ type authPasswordPolicy struct {
 	RequireAtLeastOneNumber   bool `json:"requireAtLeastOneNumber"`
 	RequireUpperAndLowerCase  bool `json:"requireUpperAndLowerCase"`
 }
+type UserLatestSettings struct {
+	ID       int32                      `json:"id"`       // the unique ID of this settings value
+	Contents graphqlbackend.JSONCString `json:"contents"` // the raw JSON (with comments and trailing commas allowed)
+}
+type UserOrganization struct {
+	Typename    string     `json:"__typename"`
+	ID          graphql.ID `json:"id"`
+	Name        string     `json:"name"`
+	DisplayName *string    `json:"displayName"`
+	URL         string     `json:"url"`
+	SettingsURL *string    `json:"settingsURL"`
+}
+type UserOrganizationsConnection struct {
+	Typename string             `json:"__typename"`
+	Nodes    []UserOrganization `json:"nodes"`
+}
+type UserEmail struct {
+	Email     string `json:"email"`
+	IsPrimary bool   `json:"isPrimary"`
+	Verified  bool   `json:"verified"`
+}
+type UserSession struct {
+	CanSignOut bool `json:"canSignOut"`
+}
+
+type TemporarySettings struct {
+	GraphQLTypename string `json:"__typename"`
+	Contents        string `json:"contents"`
+}
+
+type Permission struct {
+	GraphQLTypename string     `json:"__typename"`
+	ID              graphql.ID `json:"id"`
+	DisplayName     string     `json:"displayName"`
+}
+
+type PermissionsConnection struct {
+	GraphQLTypename string       `json:"__typename"`
+	Nodes           []Permission `json:"nodes"`
+}
+type CurrentUser struct {
+	GraphQLTypename     string     `json:"__typename"`
+	ID                  graphql.ID `json:"id"`
+	DatabaseID          int32      `json:"databaseID"`
+	Username            string     `json:"username"`
+	AvatarURL           *string    `json:"avatarURL"`
+	DisplayName         string     `json:"displayName"`
+	SiteAdmin           bool       `json:"siteAdmin"`
+	URL                 string     `json:"url"`
+	SettingsURL         string     `json:"settingsURL"`
+	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
+	Tags                []string   `json:"tags"`
+	TosAccepted         bool       `json:"tosAccepted"`
+	Searchable          bool       `json:"searchable"`
+
+	Organizations  *UserOrganizationsConnection `json:"organizations"`
+	Session        *UserSession                 `json:"session"`
+	Emails         []UserEmail                  `json:"emails"`
+	LatestSettings *UserLatestSettings          `json:"latestSettings"`
+	Permissions    PermissionsConnection        `json:"permissions"`
+}
 
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
@@ -64,7 +131,9 @@ type JSContext struct {
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
 
-	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
+	IsAuthenticatedUser bool               `json:"isAuthenticatedUser"`
+	CurrentUser         *CurrentUser       `json:"currentUser"`
+	TemporarySettings   *TemporarySettings `json:"temporarySettings"`
 
 	SentryDSN     *string               `json:"sentryDSN"`
 	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
@@ -81,6 +150,7 @@ type JSContext struct {
 	DeployType        string                   `json:"deployType"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
+	SourcegraphAppMode    bool `json:"sourcegraphAppMode"`
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
@@ -107,21 +177,40 @@ type JSContext struct {
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 
+	CodeInsightsEnabled bool `json:"codeInsightsEnabled"`
+
+	EmbeddingsEnabled bool `json:"embeddingsEnabled"`
+
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 
-	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
-
 	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
+
+	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
+
+	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey"`
+
+	NeedsRepositoryConfiguration bool `json:"needsRepositoryConfiguration"`
+
+	ExtsvcConfigFileExists bool `json:"extsvcConfigFileExists"`
+
+	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
+
+	RunningOnMacOS bool `json:"runningOnMacOS"`
+
+	LocalFilePickerAvailable bool `json:"localFilePickerAvailable"`
+
+	SrcServeGitUrl string `json:"srcServeGitUrl"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
 func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
-	actor := actor.FromContext(req.Context())
+	ctx := req.Context()
+	a := sgactor.FromContext(ctx)
 
 	headers := make(map[string]string)
 	headers["x-sourcegraph-client"] = globals.ExternalURL().String()
@@ -137,8 +226,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	siteID := siteid.Get()
 
 	// Show the site init screen?
-	globalState, err := db.GlobalState().Get(req.Context())
-	needsSiteInit := err == nil && !globalState.Initialized
+	siteInitialized, err := db.GlobalState().SiteInitialized(ctx)
+	needsSiteInit := err == nil && !siteInitialized
 
 	// Auth providers
 	var authProviders []authProviderInfo
@@ -179,13 +268,30 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	}
 
 	var licenseInfo *hooks.LicenseInfo
-	if !actor.IsAuthenticated() {
+	var user *types.User
+	temporarySettings := "{}"
+	if !a.IsAuthenticated() {
 		licenseInfo = hooks.GetLicenseInfo(false)
 	} else {
 		// Ignore err as we don't care if user does not exist
-		user, _ := actor.User(req.Context(), db.Users())
+		user, _ = a.User(ctx, db.Users())
 		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
+		if user != nil {
+			if settings, err := db.TemporarySettings().GetTemporarySettings(ctx, user.ID); err == nil {
+				temporarySettings = settings.Contents
+			}
+		}
 	}
+
+	siteResolver := graphqlbackend.NewSiteResolver(logger.Scoped("jscontext", "constructing jscontext"), db)
+	needsRepositoryConfiguration, err := siteResolver.NeedsRepositoryConfiguration(ctx)
+	if err != nil {
+		needsRepositoryConfiguration = false
+	}
+
+	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
+	runningOnMacOS := runtime.GOOS == "darwin"
+	srcServeGitUrl := envvar.SrcServeGitUrl()
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
@@ -193,12 +299,15 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
 	return JSContext{
-		ExternalURL:                globals.ExternalURL().String(),
-		XHRHeaders:                 headers,
-		UserAgentIsBot:             isBot(req.UserAgent()),
-		AssetsRoot:                 assetsutil.URL("").String(),
-		Version:                    version.Version(),
-		IsAuthenticatedUser:        actor.IsAuthenticated(),
+		ExternalURL:         globals.ExternalURL().String(),
+		XHRHeaders:          headers,
+		UserAgentIsBot:      isBot(req.UserAgent()),
+		AssetsRoot:          assetsutil.URL("").String(),
+		Version:             version.Version(),
+		IsAuthenticatedUser: a.IsAuthenticated(),
+		CurrentUser:         createCurrentUser(ctx, user, db),
+		TemporarySettings:   &TemporarySettings{GraphQLTypename: "TemporarySettings", Contents: temporarySettings},
+
 		SentryDSN:                  sentryDSN,
 		OpenTelemetry:              openTelemetry,
 		RedirectUnsupportedBrowser: siteConfig.RedirectUnsupportedBrowser,
@@ -215,10 +324,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		SourcegraphAppMode:    deploy.IsApp(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
-		// Experiments. We pass these through explicitly so we can
+		// Experiments. We pass these through explicitly, so we can
 		// do the default behavior only in Go land.
 		AccessTokensAllow: conf.AccessTokensAllow(),
 
@@ -235,7 +345,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		Branding: globals.Branding(),
 
-		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(req.Context(), db) == nil,
+		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
@@ -243,13 +353,173 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
+		CodeInsightsEnabled: graphqlbackend.IsCodeInsightsEnabled(),
+
+		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
+
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
-		EnableLegacyExtensions: *conf.ExperimentalFeatures().EnableLegacyExtensions,
-
 		LicenseInfo: licenseInfo,
+
+		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
+
+		DisableFeedbackSurvey: conf.Get().DisableFeedbackSurvey,
+
+		NeedsRepositoryConfiguration: needsRepositoryConfiguration,
+
+		ExtsvcConfigFileExists: extsvcConfigFileExists,
+
+		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
+
+		RunningOnMacOS: runningOnMacOS,
+
+		LocalFilePickerAvailable: deploy.IsApp() && filepicker.Available(),
+
+		SrcServeGitUrl: srcServeGitUrl,
+	}
+}
+
+// createCurrentUser creates CurrentUser object which contains of types.User
+// properties along with some extra data such as user emails, organisations,
+// session information, etc.
+//
+// We return a nil CurrentUser object on any error.
+func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *CurrentUser {
+	if user == nil {
+		return nil
+	}
+
+	userResolver := graphqlbackend.NewUserResolver(db, user)
+
+	siteAdmin, err := userResolver.SiteAdmin(ctx)
+	if err != nil {
+		return nil
+	}
+	canAdminister, err := userResolver.ViewerCanAdminister(ctx)
+	if err != nil {
+		return nil
+	}
+	tags, err := userResolver.Tags(ctx)
+	if err != nil {
+		return nil
+	}
+
+	session, err := userResolver.Session(ctx)
+	if err != nil && session == nil {
+		return nil
+	}
+
+	return &CurrentUser{
+		GraphQLTypename:     "User",
+		AvatarURL:           userResolver.AvatarURL(),
+		Session:             &UserSession{session.CanSignOut()},
+		DatabaseID:          userResolver.DatabaseID(),
+		DisplayName:         derefString(userResolver.DisplayName()),
+		Emails:              resolveUserEmails(ctx, userResolver),
+		ID:                  userResolver.ID(),
+		LatestSettings:      resolveLatestSettings(ctx, userResolver),
+		Organizations:       resolveUserOrganizations(ctx, userResolver),
+		Searchable:          userResolver.Searchable(ctx),
+		SettingsURL:         derefString(userResolver.SettingsURL()),
+		SiteAdmin:           siteAdmin,
+		Tags:                tags,
+		TosAccepted:         userResolver.TosAccepted(ctx),
+		URL:                 userResolver.URL(),
+		Username:            userResolver.Username(),
+		ViewerCanAdminister: canAdminister,
+		Permissions:         resolveUserPermissions(ctx, userResolver),
+	}
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.UserResolver) PermissionsConnection {
+	connection := PermissionsConnection{
+		GraphQLTypename: "PermissionConnection",
+		Nodes:           []Permission{},
+	}
+
+	permissionResolver, err := userResolver.Permissions(ctx)
+	if err != nil {
+		return connection
+	}
+
+	nodes, err := permissionResolver.Nodes(ctx)
+	if err != nil {
+		return connection
+	}
+
+	for _, node := range nodes {
+		connection.Nodes = append(connection.Nodes, Permission{
+			GraphQLTypename: "Permission",
+			ID:              node.ID(),
+			DisplayName:     node.DisplayName(),
+		})
+	}
+
+	return connection
+}
+
+func resolveUserOrganizations(ctx context.Context, user *graphqlbackend.UserResolver) *UserOrganizationsConnection {
+	orgs, err := user.Organizations(ctx)
+	if err != nil {
+		return nil
+	}
+	userOrganizations := make([]UserOrganization, 0, len(orgs.Nodes()))
+	for _, org := range orgs.Nodes() {
+		userOrganizations = append(userOrganizations, UserOrganization{
+			Typename:    "Org",
+			ID:          org.ID(),
+			Name:        org.Name(),
+			DisplayName: org.DisplayName(),
+			URL:         org.URL(),
+			SettingsURL: org.SettingsURL(),
+		})
+	}
+	return &UserOrganizationsConnection{
+		Typename: "OrgConnection",
+		Nodes:    userOrganizations,
+	}
+}
+
+func resolveUserEmails(ctx context.Context, user *graphqlbackend.UserResolver) []UserEmail {
+	emails, err := user.Emails(ctx)
+	if err != nil {
+		return nil
+	}
+
+	userEmails := make([]UserEmail, 0, len(emails))
+
+	for _, emailResolver := range emails {
+		userEmail := UserEmail{
+			Email:     emailResolver.Email(),
+			IsPrimary: emailResolver.IsPrimary(),
+			Verified:  emailResolver.Verified(),
+		}
+		userEmails = append(userEmails, userEmail)
+	}
+
+	return userEmails
+}
+
+func resolveLatestSettings(ctx context.Context, user *graphqlbackend.UserResolver) *UserLatestSettings {
+	settings, err := user.LatestSettings(ctx)
+	if err != nil {
+		return nil
+	}
+	if settings == nil {
+		return nil
+	}
+	return &UserLatestSettings{
+		ID:       settings.ID(),
+		Contents: settings.Contents(),
 	}
 }
 

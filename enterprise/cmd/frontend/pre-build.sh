@@ -7,11 +7,8 @@ parallel_run() {
   ./dev/ci/parallel_run.sh "$@"
 }
 
-echo "--- yarn root"
-# mutex is necessary since frontend and the management-console can
-# run concurrent "yarn" installs
-# TODO: This is no longer needed since the management console was removed.
-./dev/ci/yarn-install-with-retry.sh
+echo "--- pnpm root"
+./dev/ci/pnpm-install-with-retry.sh
 
 MAYBE_TIME_PREFIX=""
 if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
@@ -19,13 +16,13 @@ if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
 fi
 
 build_browser() {
-  echo "--- yarn browser"
-  (cd client/browser && TARGETS=phabricator eval "${MAYBE_TIME_PREFIX} yarn build")
+  echo "--- pnpm browser"
+  (cd client/browser && TARGETS=phabricator eval "${MAYBE_TIME_PREFIX} pnpm build")
 }
 
 build_web() {
-  echo "--- yarn web"
-  NODE_ENV=production eval "${MAYBE_TIME_PREFIX} yarn run build-web --color"
+  echo "--- pnpm web"
+  NODE_ENV=production eval "${MAYBE_TIME_PREFIX} pnpm build-web --color"
 }
 
 export -f build_browser

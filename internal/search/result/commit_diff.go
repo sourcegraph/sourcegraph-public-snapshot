@@ -1,15 +1,17 @@
 package result
 
 import (
-	"errors"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CommitDiffMatch struct {
@@ -116,9 +118,9 @@ func (cm *CommitDiffMatch) searchResultMarker() {}
 func FormatDiffFiles(res []DiffFile) string {
 	var buf strings.Builder
 	for _, diffFile := range res {
-		buf.WriteString(diffFile.OrigName)
+		buf.WriteString(escaper.Replace(diffFile.OrigName))
 		buf.WriteByte(' ')
-		buf.WriteString(diffFile.NewName)
+		buf.WriteString(escaper.Replace(diffFile.NewName))
 		buf.WriteByte('\n')
 		for _, hunk := range diffFile.Hunks {
 			fmt.Fprintf(&buf, "@@ -%d,%d +%d,%d @@", hunk.OldStart, hunk.OldCount, hunk.NewStart, hunk.NewCount)
@@ -135,6 +137,9 @@ func FormatDiffFiles(res []DiffFile) string {
 	}
 	return buf.String()
 }
+
+var escaper = strings.NewReplacer(" ", `\ `)
+var unescaper = strings.NewReplacer(`\ `, " ")
 
 func ParseDiffString(diff string) (res []DiffFile, err error) {
 	const (
@@ -193,13 +198,14 @@ func ParseDiffString(diff string) (res []DiffFile, err error) {
 }
 
 var errInvalidDiff = errors.New("invalid diff format")
+var splitRegex = lazyregexp.New(`(.*[^\\]) (.*)`)
 
 func splitDiffFiles(fileLine string) (oldFile, newFile string, err error) {
-	split := strings.Fields(fileLine)
-	if len(split) != 2 {
+	match := splitRegex.FindStringSubmatch(fileLine)
+	if len(match) == 0 {
 		return "", "", errInvalidDiff
 	}
-	return split[0], split[1], nil
+	return unescaper.Replace(match[1]), unescaper.Replace(match[2]), nil
 }
 
 var headerRegex = regexp.MustCompile(`@@ -(\d+),(\d+) \+(\d+),(\d+) @@\ ?(.*)`)

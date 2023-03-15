@@ -5,13 +5,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 )
 
 func TestLegacyExtensionsRedirects(t *testing.T) {
-	InitRouter(database.NewMockDB())
+	InitRouter(database.NewMockDB(), jobutil.NewUnimplementedEnterpriseJobs())
 	router := Router()
 
 	tests := map[string]bool{
@@ -37,41 +36,4 @@ func TestLegacyExtensionsRedirects(t *testing.T) {
 			t.Errorf("%s: expected router to redirect to root page but got %s", oldURL, got)
 		}
 	}
-}
-
-func TestLegacyExtensionsRedirectsWithExtensionsEnabled(t *testing.T) {
-	enableLegacyExtensions()
-	defer conf.Mock(nil)
-
-	InitRouter(database.NewMockDB())
-	router := Router()
-
-	tests := []string{
-		"/extensions",
-		"/extensions/sourcegraph/codecov",
-		"/extensions/sourcegraph/codecov/-/manifest",
-		"/-/static/extension/13594-sourcegraph-codecov.js",
-	}
-	for i := range tests {
-		rw := httptest.NewRecorder()
-		req, err := http.NewRequest("GET", tests[i], nil)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
-		router.ServeHTTP(rw, req)
-
-		if got := rw.Header().Get("location"); got != "" {
-			t.Errorf("%s: expected router to not redirect to root page but got %s", tests[i], got)
-		}
-	}
-}
-
-func enableLegacyExtensions() {
-	enableLegacyExtensionsVar := true
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			EnableLegacyExtensions: &enableLegacyExtensionsVar,
-		},
-	}})
 }

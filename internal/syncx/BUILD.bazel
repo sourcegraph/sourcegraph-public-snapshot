@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "syncx",
+    srcs = ["oncefunc.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/syncx",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    timeout = "short",
+    name = "syncx_test",
+    srcs = ["oncefunc_test.go"],
+    deps = [":syncx"],
+)

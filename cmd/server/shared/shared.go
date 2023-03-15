@@ -52,7 +52,7 @@ var DefaultEnv = map[string]string{
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
-	// CACHE_DIR.
+	// SYMBOLS_CACHE_DIR and SEARCHER_CACHE_DIR.
 	"SEARCHER_CACHE_SIZE_MB": "50000",
 	"SYMBOLS_CACHE_SIZE_MB":  "50000",
 
@@ -84,6 +84,8 @@ func Main() {
 	})
 	defer liblog.Sync()
 
+	logger := sglog.Scoped("server", "Sourcegraph server")
+
 	// Ensure CONFIG_DIR and DATA_DIR
 
 	// Load $CONFIG_DIR/env before we set any defaults
@@ -103,7 +105,9 @@ func Main() {
 	// Next persistence
 	{
 		SetDefaultEnv("SRC_REPOS_DIR", filepath.Join(DataDir, "repos"))
-		SetDefaultEnv("CACHE_DIR", filepath.Join(DataDir, "cache"))
+		cacheDir := filepath.Join(DataDir, "cache")
+		SetDefaultEnv("SYMBOLS_CACHE_DIR", cacheDir)
+		SetDefaultEnv("SEARCHER_CACHE_DIR", cacheDir)
 	}
 
 	// Special case some convenience environment variables
@@ -160,7 +164,7 @@ func Main() {
 		`github-proxy: github-proxy`,
 		`worker: worker`,
 		`repo-updater: repo-updater`,
-		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
+		`syntax_highlighter: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntax_highlighter | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
 		postgresExporterLine,
 	}
 	procfile = append(procfile, ProcfileAdditions...)
@@ -169,8 +173,8 @@ func Main() {
 		procfile = append(procfile, monitoringLines...)
 	}
 
-	if minioLines := maybeMinio(); len(minioLines) != 0 {
-		procfile = append(procfile, minioLines...)
+	if blobstoreLines := maybeBlobstore(logger); len(blobstoreLines) != 0 {
+		procfile = append(procfile, blobstoreLines...)
 	}
 
 	redisStoreLine, err := maybeRedisStoreProcFile()

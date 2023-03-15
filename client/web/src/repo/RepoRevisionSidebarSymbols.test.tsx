@@ -1,11 +1,12 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { cleanup, fireEvent } from '@testing-library/react'
+import delay from 'delay'
 import { escapeRegExp } from 'lodash'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SymbolsResult } from '../graphql-operations'
 
@@ -110,12 +111,17 @@ describe('RepoRevisionSidebarSymbols', () => {
         expect(renderResult.getByText('1 symbol total')).toBeVisible()
     })
 
-    it('clicking symbol updates route', () => {
-        expect(renderResult.history.location.search).toEqual('')
+    it('clicking symbol updates route', async () => {
+        expect(renderResult.locationRef.current?.search).toEqual('')
 
         const symbol = renderResult.getByText('firstSymbol')
         fireEvent.click(symbol)
 
-        expect(renderResult.history.location.search).toEqual('?L13:14')
+        // We need to synchronously flush inside the event handler and since this is warning in
+        // React 18, we've moved it to a setTimeout. This test needs to wait for this timeout to be
+        // flushed
+        await delay(0)
+
+        expect(renderResult.locationRef.current?.search).toEqual('?L13:14')
     })
 })

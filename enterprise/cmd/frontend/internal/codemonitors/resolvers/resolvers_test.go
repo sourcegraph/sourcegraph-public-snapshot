@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -207,7 +208,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 		}
 
 		_, err = r.UpdateCodeMonitor(ctx, args)
-		require.EqualError(t, err, "update namespace: must be authenticated as the authorized user or as an admin (must be site admin)")
+		require.EqualError(t, err, fmt.Sprintf("update namespace: %s", auth.ErrMustBeSiteAdminOrSameUser.Error()))
 	})
 }
 
@@ -273,7 +274,6 @@ func TestIsAllowedToCreate(t *testing.T) {
 	}
 }
 
-// nolint:unused
 func graphqlUserID(id int32) graphql.ID {
 	return relay.MarshalID("User", id)
 }
@@ -375,29 +375,29 @@ func TestQueryMonitor(t *testing.T) {
 	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
 	require.NoError(t, err)
 
-	schema, err := graphqlbackend.NewSchemaWithCodeMonitorsResolver(db, r)
+	gqlSchema, err := graphqlbackend.NewSchemaWithCodeMonitorsResolver(db, r)
 	require.NoError(t, err)
 
 	t.Run("query by user", func(t *testing.T) {
-		queryByUser(ctx, t, schema, r, user1, user2)
+		queryByUser(ctx, t, gqlSchema, r, user1, user2)
 	})
 	t.Run("query by ID", func(t *testing.T) {
-		queryByID(ctx, t, schema, r, m.(*monitor), user1, user2)
+		queryByID(ctx, t, gqlSchema, r, m.(*monitor), user1, user2)
 	})
 	t.Run("monitor paging", func(t *testing.T) {
-		monitorPaging(ctx, t, schema, user1)
+		monitorPaging(ctx, t, gqlSchema, user1)
 	})
 	t.Run("recipients paging", func(t *testing.T) {
-		recipientPaging(ctx, t, schema, user1, user2)
+		recipientPaging(ctx, t, gqlSchema, user1, user2)
 	})
 	t.Run("actions paging", func(t *testing.T) {
-		actionPaging(ctx, t, schema, user1)
+		actionPaging(ctx, t, gqlSchema, user1)
 	})
 	t.Run("trigger events paging", func(t *testing.T) {
-		triggerEventPaging(ctx, t, schema, user1)
+		triggerEventPaging(ctx, t, gqlSchema, user1)
 	})
 	t.Run("action events paging", func(t *testing.T) {
-		actionEventPaging(ctx, t, schema, user1)
+		actionEventPaging(ctx, t, gqlSchema, user1)
 	})
 }
 
@@ -702,7 +702,7 @@ func TestEditCodeMonitor(t *testing.T) {
 
 	// Update the code monitor.
 	// We update all fields, delete one action, and add a new action.
-	schema, err := graphqlbackend.NewSchemaWithCodeMonitorsResolver(db, r)
+	gqlSchema, err := graphqlbackend.NewSchemaWithCodeMonitorsResolver(db, r)
 	require.NoError(t, err)
 	updateInput := map[string]any{
 		"monitorID": string(relay.MarshalID(MonitorKind, 1)),
@@ -713,7 +713,7 @@ func TestEditCodeMonitor(t *testing.T) {
 		"user2ID":   ns2,
 	}
 	got := apitest.UpdateCodeMonitorResponse{}
-	batchesApitest.MustExec(ctx, t, schema, updateInput, &got, editMonitor)
+	batchesApitest.MustExec(ctx, t, gqlSchema, updateInput, &got, editMonitor)
 
 	want := apitest.UpdateCodeMonitorResponse{
 		UpdateCodeMonitor: apitest.Monitor{

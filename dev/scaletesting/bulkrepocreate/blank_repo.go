@@ -89,7 +89,7 @@ func (r *blankRepo) addRemote(ctx context.Context, name string, gitURL string) e
 func (r *blankRepo) pushRemote(ctx context.Context, name string, retry int) error {
 	var err error
 	for i := 0; i < retry; i++ {
-		err := r.doPushRemote(ctx, name)
+		err = r.doPushRemote(ctx, name)
 		if err == nil {
 			break
 		}

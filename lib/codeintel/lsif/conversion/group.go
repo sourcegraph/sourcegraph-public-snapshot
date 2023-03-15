@@ -20,7 +20,7 @@ import (
 const resultsPerResultChunk = 512
 
 // groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
-func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleDataChans, error) {
+func groupBundleData(ctx context.Context, state *State) *precise.GroupedBundleDataChans {
 	numResults := len(state.DefinitionData) + len(state.ReferenceData) + len(state.ImplementationData)
 	numResultChunks := int(math.Max(1, math.Floor(float64(numResults)/resultsPerResultChunk)))
 
@@ -31,12 +31,10 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, []string{"import", "export"}, func(r Range) int { return r.ReferenceResultID })
 	implementationRows := gatherMonikersLocations(ctx, state, state.DefinitionData, []string{"implementation"}, func(r Range) int { return r.DefinitionResultID })
 	packages := gatherPackages(state)
-	packageReferences, err := gatherPackageReferences(state, packages)
-	if err != nil {
-		return nil, err
-	}
+	packageReferences := gatherPackageReferences(state, packages)
 
 	return &precise.GroupedBundleDataChans{
+		ProjectRoot:       state.ProjectRoot,
 		Meta:              meta,
 		Documents:         documents,
 		ResultChunks:      resultChunks,
@@ -45,7 +43,7 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 		Implementations:   implementationRows,
 		Packages:          packages,
 		PackageReferences: packageReferences,
-	}, nil
+	}
 }
 
 func serializeBundleDocuments(ctx context.Context, state *State) chan precise.KeyedDocumentData {
@@ -102,6 +100,7 @@ func serializeDocument(state *State, documentID int) precise.DocumentData {
 			if moniker.PackageInformationID != 0 {
 				packageInformation := state.PackageInformationData[moniker.PackageInformationID]
 				document.PackageInformation[toID(moniker.PackageInformationID)] = precise.PackageInformationData{
+					Manager: "",
 					Name:    packageInformation.Name,
 					Version: packageInformation.Version,
 				}
@@ -380,6 +379,7 @@ func gatherPackages(state *State) []precise.Package {
 
 		uniques[makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)] = precise.Package{
 			Scheme:  source.Scheme,
+			Manager: "",
 			Name:    packageInfo.Name,
 			Version: packageInfo.Version,
 		}
@@ -393,7 +393,7 @@ func gatherPackages(state *State) []precise.Package {
 	return packages
 }
 
-func gatherPackageReferences(state *State, packageDefinitions []precise.Package) ([]precise.PackageReference, error) {
+func gatherPackageReferences(state *State, packageDefinitions []precise.Package) []precise.PackageReference {
 	type ExpandedPackageReference struct {
 		Scheme      string
 		Name        string
@@ -439,11 +439,12 @@ func gatherPackageReferences(state *State, packageDefinitions []precise.Package)
 		packageReferences = append(packageReferences, precise.PackageReference{
 			Package: precise.Package{
 				Scheme:  v.Scheme,
+				Manager: "",
 				Name:    v.Name,
 				Version: v.Version,
 			},
 		})
 	}
 
-	return packageReferences, nil
+	return packageReferences
 }

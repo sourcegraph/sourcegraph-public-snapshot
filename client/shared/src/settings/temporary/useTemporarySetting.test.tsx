@@ -12,7 +12,7 @@ describe('useTemporarySetting', () => {
     const mockClient = createMockClient(
         null,
         gql`
-            query {
+            query TemporarySettings {
                 temporarySettings {
                     contents
                 }

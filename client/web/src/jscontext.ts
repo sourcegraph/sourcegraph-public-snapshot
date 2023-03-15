@@ -1,4 +1,7 @@
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+
+import { TemporarySettingsResult } from './graphql-operations'
 
 export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev' | 'helm'
 
@@ -7,12 +10,65 @@ export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 
  */
 
 export interface AuthProvider {
-    serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'saml' | 'builtin'
+    serviceType:
+        | 'github'
+        | 'gitlab'
+        | 'bitbucketCloud'
+        | 'http-header'
+        | 'openidconnect'
+        | 'sourcegraph-operator'
+        | 'saml'
+        | 'builtin'
+        | 'gerrit'
+        | 'azuredevops'
     displayName: string
     isBuiltin: boolean
     authenticationURL: string
     serviceID: string
 }
+
+/**
+ * This Typescript type should be in sync with client-side
+ * GraphQL `CurrentAuthState` query.
+ *
+ * This type is derived from the generated `AuthenticatedUser` type.
+ * It ensures that we don't forget to add new fields the server logic
+ * if client side query changes.
+ */
+export type SourcegraphContextCurrentUser = Pick<
+    AuthenticatedUser,
+    | '__typename'
+    | 'id'
+    | 'databaseID'
+    | 'username'
+    | 'avatarURL'
+    | 'displayName'
+    | 'siteAdmin'
+    | 'tags'
+    | 'url'
+    | 'settingsURL'
+    | 'viewerCanAdminister'
+    | 'tosAccepted'
+    | 'searchable'
+    | 'organizations'
+    | 'session'
+    | 'emails'
+    | 'latestSettings'
+    | 'permissions'
+>
+
+/**
+ * This Typescript type should be in sync with client-side
+ * GraphQL `GetTemporarySettings` query.
+ *
+ * This type is derived from the generated `TemporarySettingsResult` type.
+ * It ensures that we don't forget to add new fields the server logic
+ * if client side query changes.
+ */
+export type SourcegraphContextTemporarySettings = Pick<
+    TemporarySettingsResult['temporarySettings'],
+    '__typename' | 'contents'
+>
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
@@ -23,6 +79,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      */
     readonly isAuthenticatedUser: boolean
 
+    /**
+     * Data preloaded on the server.
+     */
+    readonly currentUser: SourcegraphContextCurrentUser | null
+    readonly temporarySettings: SourcegraphContextTemporarySettings | null
+
     readonly sentryDSN: string | null
 
     readonly openTelemetry?: {
@@ -31,6 +93,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Externally accessible URL for Sourcegraph (e.g., https://sourcegraph.com or http://localhost:3080). */
     externalURL: string
+
+    /** Whether instance allows to change its settings manually in UI */
+    extsvcConfigAllowEdits: boolean
+
+    /** Whether instance allows is configured by external service configuration file */
+    extsvcConfigFileExists: boolean
 
     /** URL path to image/font/etc. assets on server */
     assetsRoot: string
@@ -43,6 +111,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     debug: boolean
 
     sourcegraphDotComMode: boolean
+    sourcegraphAppMode: boolean
 
     /**
      * siteID is the identifier of the Sourcegraph site.
@@ -56,6 +125,11 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      * Whether the site needs to be initialized.
      */
     needsSiteInit: boolean
+
+    /**
+     * Whether at least one code host connections needs to be connected.
+     */
+    needsRepositoryConfiguration: boolean
 
     /**
      * Emails support enabled
@@ -76,10 +150,19 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the reset-password flow is enabled. */
     resetPasswordEnabled: boolean
 
+    /** Whether the instance is running on macOS. */
+    runningOnMacOS: boolean
+
     /**
      * Likely running within a Docker container under a Mac host OS.
      */
     likelyDockerOnMac: boolean
+
+    /**
+     * Whether the setup wizard supports file picker query, it's used
+     * only for the Sourcegraph App (in all others deploy types it's always false)
+     */
+    localFilePickerAvailable: boolean
 
     /**
      * Whether or not the server needs to restart in order to apply a pending
@@ -112,6 +195,18 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether global policies are enabled for auto-indexing. */
     codeIntelAutoIndexingAllowGlobalPolicies: boolean
+
+    /** Whether code insights API is enabled on the site. */
+    codeInsightsEnabled: boolean
+
+    /** Whether embeddings are enabled on this site. */
+    embeddingsEnabled: boolean
+
+    /**
+     * Local git URL, it's used only to create a local external service
+     * in Sourcegraph App.
+     */
+    srcServeGitUrl: string
 
     /** Whether users are allowed to add their own code and at what permission level. */
     externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
@@ -155,9 +250,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the product research sign-up page is enabled on the site. */
     productResearchPageEnabled: boolean
 
-    /** Whether the extension registry and the use of extensions are enabled. (Doesn't affect code intel and git extras.) */
-    enableLegacyExtensions?: boolean
-
     /** Contains information about the product license. */
     licenseInfo?: {
         currentPlan: 'old-starter-0' | 'old-enterprise-0' | 'team-0' | 'enterprise-0' | 'business-0' | 'enterprise-1'
@@ -165,10 +257,16 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         codeScaleLimit?: string
         codeScaleCloseToLimit?: boolean
         codeScaleExceededLimit?: boolean
+        knownLicenseTags?: string[]
     }
 
     /** Prompt users with browsers that would crash to download a modern browser. */
     RedirectUnsupportedBrowser?: boolean
+
+    outboundRequestLogLimit?: number
+
+    /** Whether the feedback survey is enabled. */
+    disableFeedbackSurvey?: boolean
 }
 
 export interface BrandAssets {

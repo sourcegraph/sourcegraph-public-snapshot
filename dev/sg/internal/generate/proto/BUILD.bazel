@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "proto",
+    srcs = ["proto.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/proto",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/buf",
+        "//dev/sg/internal/generate",
+        "//dev/sg/internal/std",
+        "//lib/errors",
+    ],
+)

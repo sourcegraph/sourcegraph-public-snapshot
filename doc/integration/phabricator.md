@@ -8,7 +8,7 @@ Feature | Supported?
 ------- | ----------
 [Repository syncing and mirroring](../admin/external_service/phabricator.md#repository-linking-and-syncing) | ❌
 [Repository association](../admin/external_service/phabricator.md#repository-linking-and-syncing) | ✅
-[Repository permissions](../admin/repo/permissions.md) | ❌
+[Repository permission syncing](../admin/permissions/syncing.md) | ❌
 [User authentication](../admin/auth/index.md) | ❌
 [Browser extension](#browser-extension) | ✅
 [Native extension](../admin/external_service/phabricator.md#native-extension) | ✅

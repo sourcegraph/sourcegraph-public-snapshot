@@ -26,6 +26,18 @@ func TestValidation(t *testing.T) {
 			want:  "error parsing regexp: missing closing ]: `[`",
 		},
 		{
+			input: "repo:[@rev]",
+			want:  "error parsing regexp: missing closing ]: `[`",
+		},
+		{
+			input: "repo:\\@Query\\(\"SELECT",
+			want:  "error parsing regexp: trailing backslash at end of expression: ``",
+		},
+		{
+			input: "file:filename[2.txt",
+			want:  "error parsing regexp: missing closing ]: `[2.txt`",
+		},
+		{
 			input: "-index:yes",
 			want:  `field "index" does not support negation`,
 		},
@@ -269,9 +281,8 @@ func TestForAll(t *testing.T) {
 
 func TestContainsRefGlobs(t *testing.T) {
 	cases := []struct {
-		input    string
-		want     bool
-		globbing bool
+		input string
+		want  bool
 	}{
 		{
 			input: "repo:foo",
@@ -302,11 +313,6 @@ func TestContainsRefGlobs(t *testing.T) {
 			want:  true,
 		},
 		{
-			input:    "repo:*foo*@v3.14.3",
-			globbing: true,
-			want:     false,
-		},
-		{
 			input: "repo:foo@v3.14.3 repo:foo@*refs/tags/v3.14.* bar",
 			want:  true,
 		},
@@ -316,7 +322,6 @@ func TestContainsRefGlobs(t *testing.T) {
 		t.Run(c.input, func(t *testing.T) {
 			query, err := Run(Sequence(
 				Init(c.input, SearchTypeLiteral),
-				Globbing,
 			))
 			if err != nil {
 				t.Error(err)

@@ -5,20 +5,8 @@
 }
 
 .input-wrapper {
-    // Spread standard input paddings in order to fix visually problem
-    // with codemirror editor on the code insight creation UI pages.
-    // See https://github.com/sourcegraph/sourcegraph/issues/37785
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
-
-    // Fix loading spinner layout position (since line height has non default value
-    // loading layout requires layout change)
-    // stylelint-disable-next-line selector-class-pattern
-    :global(.cm-sg-loading-spinner-container) {
-        align-self: center;
-    }
 }
 
 .regex-button {

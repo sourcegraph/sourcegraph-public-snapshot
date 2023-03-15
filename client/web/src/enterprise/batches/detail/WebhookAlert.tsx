@@ -48,7 +48,7 @@ export const WebhookAlert: React.FunctionComponent<React.PropsWithChildren<Props
         return null
     }
 
-    const SITE_ADMIN_CONFIG_DOC_URL = 'https://docs.sourcegraph.com/batch_changes/how-tos/site_admin_configuration'
+    const SITE_ADMIN_CONFIG_DOC_URL = '/help/batch_changes/how-tos/site_admin_configuration'
 
     return (
         <DismissibleAlert variant="warning" partialStorageKey={id}>

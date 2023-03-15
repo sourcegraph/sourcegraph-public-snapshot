@@ -1,7 +1,6 @@
 import assert from 'assert'
 
-import type * as sourcegraph from 'sourcegraph'
-
+import type { ExtensionContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
@@ -103,11 +102,6 @@ describe('GitHub', () => {
                     siteAdmin: false,
                 },
             }),
-            EnableLegacyExtensions: () => ({
-                site: {
-                    enableLegacyExtensions: true,
-                },
-            }),
         })
 
         // Ensure that the same assets are requested in all environments.
@@ -156,10 +150,7 @@ describe('GitHub', () => {
     // it('shows hover tooltips when hovering a token and respects "Enable single click to go to definition" setting', async () => {
     //     mockUrls(['https://github.com/*path/find-definition'])
 
-    //     const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
-    //         pollyServer: testContext.server,
-    //         sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
-    //     })
+    //     const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking()
 
     //     const userSettings: Settings = {
     //         extensions: extensionSettings,
@@ -317,16 +308,14 @@ describe('GitHub', () => {
     // })
 
     describe('Pull request pages', () => {
-        describe('Files Changed view', () => {
+        // TODO(sqs): skipped because these have not been reimplemented after the extension API deprecation
+        describe.skip('Files Changed view', () => {
             // For each pull request test, set up a mock extension that verifies that the correct
             // file and revision info reach extensions.
             beforeEach(() => {
                 mockUrls(['https://github.com/*path/find-definition'])
 
-                const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
-                    pollyServer: testContext.server,
-                    sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
-                })
+                const { mockExtension, extensionSettings } = setupExtensionMocking()
 
                 const userSettings: Settings = {
                     extensions: extensionSettings,
@@ -351,7 +340,6 @@ describe('GitHub', () => {
                             merged: { contents: JSON.stringify(userSettings), messages: [] },
                         },
                     }),
-                    Extensions,
                     ResolveRev: ({ revision }) => ({
                         repository: {
                             mirrorInfo: { cloned: true },
@@ -402,7 +390,7 @@ describe('GitHub', () => {
                         // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
                         const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
 
-                        function activate(context: sourcegraph.ExtensionContext): void {
+                        function activate(context: ExtensionContext): void {
                             context.subscriptions.add(
                                 sourcegraph.languages.registerHoverProvider(['*'], {
                                     provideHover: (document, position) => {
@@ -640,7 +628,8 @@ describe('GitHub', () => {
             })
         })
 
-        describe('Commit view', () => {
+        // TODO(sqs): skipped because these have not been reimplemented after the extension API deprecation
+        describe.skip('Commit view', () => {
             beforeEach(() => {
                 mockUrls([
                     'https://github.com/*path/find-definition',
@@ -648,10 +637,7 @@ describe('GitHub', () => {
                     'https://github.com/commits/badges',
                 ])
 
-                const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
-                    pollyServer: testContext.server,
-                    sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
-                })
+                const { mockExtension, extensionSettings } = setupExtensionMocking()
 
                 const userSettings: Settings = {
                     extensions: extensionSettings,
@@ -692,7 +678,6 @@ describe('GitHub', () => {
                             },
                         },
                     }),
-                    Extensions,
                 })
 
                 // Serve a mock extension with a simple hover provider
@@ -762,7 +747,9 @@ describe('GitHub', () => {
         })
     })
 
-    describe('Search pages', () => {
+    // TODO(#44327): Search on Sourcegraph buttons were removed from GitHub search pages.
+    // We need to reenable these tests if we decide to keep those buttons or delete them if we don't.
+    describe.skip('Search pages', () => {
         const sourcegraphSearchPage = 'https://sourcegraph.com/search'
 
         const pages = [

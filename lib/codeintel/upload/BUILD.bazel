@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "upload",
+    srcs = [
+        "compress.go",
+        "indexer_name.go",
+        "progress_reader.go",
+        "request.go",
+        "request_logger.go",
+        "retry.go",
+        "upload.go",
+        "upload_options.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/upload",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_klauspost_pgzip//:pgzip",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@org_golang_google_protobuf//proto",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "upload_test",
+    srcs = [
+        "indexer_name_test.go",
+        "upload_test.go",
+    ],
+    embed = [":upload"],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

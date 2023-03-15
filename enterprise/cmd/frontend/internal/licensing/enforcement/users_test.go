@@ -2,87 +2,106 @@ package enforcement
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestEnforcement_PreCreateUser(t *testing.T) {
 	expiresAt := time.Now().Add(time.Hour)
 	tests := []struct {
+		name            string
 		license         *license.Info
 		activeUserCount int
+		mockSetup       func(*testing.T)
+		spec            *extsvc.AccountSpec
 		wantErr         bool
 	}{
 		// See the impl for why we treat UserCount == 0 as unlimited.
 		{
+			name:            "unlimited",
 			license:         &license.Info{UserCount: 0, ExpiresAt: expiresAt},
 			activeUserCount: 5,
 			wantErr:         false,
 		},
 
-		// Non-true-up licenses.
 		{
+			name:            "no true-up",
 			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
 			activeUserCount: 0,
 			wantErr:         false,
 		},
 		{
+			name:            "no true-up and not exceeded user count",
 			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
 			activeUserCount: 5,
 			wantErr:         false,
 		},
 		{
-			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
-			activeUserCount: 9,
-			wantErr:         false,
-		},
-		{
+			name:            "no true-up and exceeding user count",
 			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
 			activeUserCount: 10,
 			wantErr:         true,
 		},
 		{
+			name:            "no true-up and exceeded user count",
 			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
 			activeUserCount: 11,
 			wantErr:         true,
 		},
-		{
-			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
-			activeUserCount: 12,
-			wantErr:         true,
-		},
 
-		// True-up licenses.
 		{
+			name:            "true-up and not exceeded user count",
 			license:         &license.Info{Tags: []string{licensing.TrueUpUserCountTag}, UserCount: 10, ExpiresAt: expiresAt},
 			activeUserCount: 5,
 			wantErr:         false,
 		},
 		{
+			name:            "true-up and exceeded user count",
 			license:         &license.Info{Tags: []string{licensing.TrueUpUserCountTag}, UserCount: 10, ExpiresAt: expiresAt},
 			activeUserCount: 15,
 			wantErr:         false,
 		},
 
-		// License expired
 		{
+			name:    "license expired",
 			license: &license.Info{ExpiresAt: time.Now().Add(-1 * time.Minute)},
 			wantErr: true,
 		},
+
+		{
+			name:            "exempt SOAP users",
+			license:         &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(-1 * time.Minute)}, // An expired license
+			activeUserCount: 15,                                                                        // Exceeded free plan user count
+			mockSetup: func(t *testing.T) {
+				cloud.MockSiteConfig(
+					t,
+					&cloud.SchemaSiteConfig{
+						AuthProviders: &cloud.SchemaAuthProviders{
+							SourcegraphOperator: &cloud.SchemaAuthProviderSourcegraphOperator{},
+						},
+					},
+				)
+			},
+			spec: &extsvc.AccountSpec{
+				ServiceType: auth.SourcegraphOperatorProviderType,
+			},
+		},
 	}
 	for _, test := range tests {
-		t.Run(fmt.Sprintf("license %s with %d active users", test.license, test.activeUserCount), func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
 				return test.license, "test-signature", nil
 			}
@@ -94,29 +113,31 @@ func TestEnforcement_PreCreateUser(t *testing.T) {
 			db := database.NewStrictMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			err := NewBeforeCreateUserHook()(context.Background(), db)
-			if gotErr := err != nil; gotErr != test.wantErr {
-				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
+			if test.mockSetup != nil {
+				test.mockSetup(t)
+			}
+
+			err := NewBeforeCreateUserHook()(context.Background(), db, test.spec)
+			if test.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestEnforcement_AfterCreateUser(t *testing.T) {
-	logger := logtest.Scoped(t)
-
 	tests := []struct {
-		name                  string
-		setup                 func(t *testing.T)
-		license               *license.Info
-		wantCalledExecContext bool
-		wantSiteAdmin         bool
+		name         string
+		setup        func(t *testing.T)
+		license      *license.Info
+		setSiteAdmin bool
 	}{
 		{
-			name:                  "with a valid license",
-			license:               &license.Info{UserCount: 10},
-			wantCalledExecContext: false,
-			wantSiteAdmin:         false,
+			name:         "with a valid license",
+			license:      &license.Info{UserCount: 10},
+			setSiteAdmin: false,
 		},
 		{
 			name: "dotcom mode should always do nothing",
@@ -127,14 +148,12 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 					envvar.MockSourcegraphDotComMode(orig)
 				})
 			},
-			wantCalledExecContext: false,
-			wantSiteAdmin:         false,
+			setSiteAdmin: false,
 		},
 		{
-			name:                  "free license sets new user to be site admin",
-			license:               &licensing.GetFreeLicenseInfo().Info,
-			wantCalledExecContext: true,
-			wantSiteAdmin:         true,
+			name:         "free license sets new user to be site admin",
+			license:      &licensing.GetFreeLicenseInfo().Info,
+			setSiteAdmin: true,
 		},
 	}
 	for _, test := range tests {
@@ -148,64 +167,76 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
-			calledExecContext := false
-			db := &fakeDB{
-				execContext: func(ctx context.Context, query string, args ...any) (sql.Result, error) {
-					calledExecContext = true
-					return nil, nil
-				},
-			}
+			db, usersStore := mockDBAndStores(t)
 			user := new(types.User)
 
 			hook := NewAfterCreateUserHook()
 			if hook != nil {
-				err := NewAfterCreateUserHook()(context.Background(), database.NewDBWith(logger, basestore.NewWithHandle(db)), user)
+				err := NewAfterCreateUserHook()(context.Background(), db, user)
 				if err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			if test.wantCalledExecContext != calledExecContext {
-				t.Errorf("calledExecContext: want %v but got %v", test.wantCalledExecContext, calledExecContext)
-			}
-			if test.wantSiteAdmin != user.SiteAdmin {
-				t.Errorf("siteAdmin: want %v but got %v", test.wantSiteAdmin, user.SiteAdmin)
+			if test.setSiteAdmin {
+				mockrequire.CalledOnce(t, usersStore.SetIsSiteAdminFunc)
 			}
 		})
 	}
 }
 
-type fakeDB struct {
-	basestore.TransactableHandle
-	execContext func(ctx context.Context, query string, args ...any) (sql.Result, error)
-}
-
-func (db *fakeDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	return db.execContext(ctx, query, args...)
-}
-
 func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
+	// Enable SOAP
+	cloud.MockSiteConfig(t, &cloud.SchemaSiteConfig{
+		AuthProviders: &cloud.SchemaAuthProviders{
+			SourcegraphOperator: &cloud.SchemaAuthProviderSourcegraphOperator{
+				ClientID: "foobar",
+			},
+		},
+	})
+	defer cloud.MockSiteConfig(t, nil)
+
 	tests := []struct {
 		name        string
 		license     *license.Info
+		ctx         context.Context
 		isSiteAdmin bool
 		wantErr     bool
 	}{
 		{
-			name:        "promote to site admin is OK",
+			name:        "promote to site admin with a valid license is OK",
+			license:     &license.Info{ExpiresAt: time.Now().Add(1 * time.Hour)},
+			ctx:         context.Background(),
 			isSiteAdmin: true,
 			wantErr:     false,
 		},
 		{
 			name:        "revoke site admin with a valid license is OK",
-			license:     &license.Info{UserCount: 10},
+			license:     &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(1 * time.Hour)},
+			ctx:         context.Background(),
 			isSiteAdmin: false,
 			wantErr:     false,
 		},
 		{
 			name:        "revoke site admin without a license is not OK",
+			ctx:         context.Background(),
 			isSiteAdmin: false,
 			wantErr:     true,
+		},
+		{
+			name:        "promote to site admin with expired license is not OK",
+			license:     &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(-1 * time.Hour)},
+			ctx:         context.Background(),
+			isSiteAdmin: true,
+			wantErr:     true,
+		},
+
+		{
+			name:        "promote to site admin with expired license is OK with Sourcegraph operators",
+			license:     &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(-1 * time.Hour)},
+			ctx:         actor.WithActor(context.Background(), &actor.Actor{SourcegraphOperator: true}),
+			isSiteAdmin: true,
+			wantErr:     false,
 		},
 	}
 	for _, test := range tests {
@@ -214,10 +245,22 @@ func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
 				return test.license, "test-signature", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
-			err := NewBeforeSetUserIsSiteAdmin()(test.isSiteAdmin)
+			err := NewBeforeSetUserIsSiteAdmin()(test.ctx, test.isSiteAdmin)
 			if gotErr := err != nil; gotErr != test.wantErr {
 				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
 			}
 		})
 	}
+}
+
+func mockDBAndStores(t *testing.T) (*database.MockDB, *database.MockUserStore) {
+	t.Helper()
+
+	usersStore := database.NewMockUserStore()
+	usersStore.SetIsSiteAdminFunc.SetDefaultReturn(nil)
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(usersStore)
+
+	return db, usersStore
 }

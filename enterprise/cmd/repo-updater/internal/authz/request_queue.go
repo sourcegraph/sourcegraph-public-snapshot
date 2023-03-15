@@ -19,6 +19,16 @@ const (
 	priorityHigh
 )
 
+func (p priority) String() string {
+	switch p {
+	case priorityLow:
+		return "low"
+	case priorityHigh:
+		return "high"
+	}
+	return "unknown"
+}
+
 // requestType is the type of the permissions syncing request. It defines the
 // permissions syncing is either repository-centric or user-centric.
 type requestType int
@@ -55,6 +65,16 @@ type requestMeta struct {
 	Options    authz.FetchPermsOptions
 	NextSyncAt time.Time
 	NoPerms    bool
+}
+
+func (r requestMeta) IDFieldName() string {
+	switch r.Type {
+	case requestTypeRepo:
+		return "repo_id"
+	case requestTypeUser:
+		return "user_id"
+	}
+	return "id"
 }
 
 // syncRequest is a permissions syncing request with its current status in the queue.

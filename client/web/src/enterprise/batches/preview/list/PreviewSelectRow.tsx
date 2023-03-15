@@ -77,10 +77,10 @@ export const PreviewSelectRow: React.FunctionComponent<React.PropsWithChildren<P
     const { areAllVisibleSelected, deselectAll, selected, selectAll } = useContext(MultiSelectContext)
 
     const allChangesetSpecIDs: string[] | undefined = useObservable(
-        useMemo(() => queryPublishableChangesetSpecIDs(queryArguments), [
-            queryArguments,
-            queryPublishableChangesetSpecIDs,
-        ])
+        useMemo(
+            () => queryPublishableChangesetSpecIDs(queryArguments),
+            [queryArguments, queryPublishableChangesetSpecIDs]
+        )
     )
 
     const actions = useMemo(

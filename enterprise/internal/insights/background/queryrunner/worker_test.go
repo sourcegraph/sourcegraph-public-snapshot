@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
+
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -32,8 +33,8 @@ func TestJobQueue(t *testing.T) {
 	// Check we get no dequeued job first.
 	recordID := 0
 	job, err := dequeueJob(ctx, workerBaseStore, recordID)
-	autogold.Want("0", (*Job)(nil)).Equal(t, job)
-	autogold.Want("1", "expected 1 job to dequeue, found 0").Equal(t, fmt.Sprint(err))
+	autogold.Expect((*Job)(nil)).Equal(t, job)
+	autogold.Expect("expected 1 job to dequeue, found 0").Equal(t, fmt.Sprint(err))
 
 	// Now enqueue two jobs.
 	firstJobID, err := EnqueueJob(ctx, workerBaseStore, &Job{
@@ -58,7 +59,7 @@ func TestJobQueue(t *testing.T) {
 
 	// Check the information we care about got transferred properly.
 	firstJob, err := dequeueJob(ctx, workerBaseStore, firstJobID)
-	autogold.Want("2", &Job{
+	autogold.Expect(&Job{
 		SearchJob: SearchJob{
 			SeriesID: "job 1", SearchQuery: "our search 1",
 			PersistMode:     "record",
@@ -66,9 +67,9 @@ func TestJobQueue(t *testing.T) {
 		},
 		ID: 1,
 	}).Equal(t, firstJob)
-	autogold.Want("3", "<nil>").Equal(t, fmt.Sprint(err))
+	autogold.Expect("<nil>").Equal(t, fmt.Sprint(err))
 	secondJob, err := dequeueJob(ctx, workerBaseStore, secondJobID)
-	autogold.Want("4", &Job{
+	autogold.Expect(&Job{
 		SearchJob: SearchJob{
 			SeriesID: "job 2", SearchQuery: "our search 2",
 			DependentFrames: []time.Time{},
@@ -76,7 +77,7 @@ func TestJobQueue(t *testing.T) {
 		},
 		ID: 2,
 	}).Equal(t, secondJob)
-	autogold.Want("5", "<nil>").Equal(t, fmt.Sprint(err))
+	autogold.Expect("<nil>").Equal(t, fmt.Sprint(err))
 }
 
 func TestJobQueueDependencies(t *testing.T) {
@@ -103,7 +104,7 @@ func TestJobQueueDependencies(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("1", &Job{
+		autogold.Expect(&Job{
 			SearchJob: SearchJob{
 				SeriesID: "job 1", SearchQuery: "our search 1",
 				PersistMode:     "record",
@@ -131,7 +132,7 @@ func TestJobQueueDependencies(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 }
 
@@ -144,15 +145,49 @@ func TestQueryExecution_ToQueueJob(t *testing.T) {
 		exec.Revision = "asdf1234"
 		exec.SharedRecordings = append(exec.SharedRecordings, bTime.Add(time.Hour*24))
 
-		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		got := ToQueueJob(exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test to job without dependents", func(t *testing.T) {
 		var exec compression.QueryExecution
 		exec.RecordingTime = bTime
 		exec.Revision = "asdf1234"
 
-		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		got := ToQueueJob(exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
+}
+
+func TestQueryJobsStatus(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	workerBaseStore := basestore.NewWithHandle(db.Handle())
+
+	_, err := db.ExecContext(ctx, `
+		INSERT INTO insights_query_runner_jobs(series_id, state, search_query) 
+		VALUES('s1', 'queued', '1'), 
+		      ('s1', 'processing', '2'), 
+		      ('s1', 'processing', '4'), 
+		      ('s1', 'fake-state', '3')
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := QueryJobsStatus(ctx, workerBaseStore, "s1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := &JobsStatus{Queued: 1, Processing: 2}
+
+	stringify := func(status *JobsStatus) string {
+		return fmt.Sprintf("queued: %d, processing: %d, completed: %d, failed: %d, errored: %d",
+			status.Queued, status.Processing, status.Completed, status.Failed, status.Errored,
+		)
+	}
+	if stringify(want) != stringify(got) {
+		t.Errorf("got %v want %v", got, want)
+	}
 }

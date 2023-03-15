@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/urfave/cli/v2"
-
 	"github.com/sourcegraph/log"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/run"
@@ -15,9 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-
-	// This import is required to force a binary hash change when the src-cli version is bumped.
-	_ "github.com/sourcegraph/sourcegraph/internal/src-cli"
 )
 
 func main() {
@@ -26,7 +22,7 @@ func main() {
 
 	env.Lock()
 
-	logging.Init()
+	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),

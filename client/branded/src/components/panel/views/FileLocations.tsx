@@ -6,17 +6,19 @@ import * as H from 'history'
 import { upperFirst } from 'lodash'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import { Badged } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike, isDefined, property, logger } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import { Badged } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Alert, Icon } from '@sourcegraph/wildcard'
+
+import { FileContentSearchResult } from '../../../search-ui'
 
 import styles from './FileLocations.module.scss'
 
@@ -184,13 +186,12 @@ export class FileLocations extends React.PureComponent<Props, State> {
         { locationsByURI }: { locationsByURI: Map<string, Location[]> },
         index: number
     ): JSX.Element => (
-        <FileSearchResult
+        <FileContentSearchResult
             index={index}
             location={this.props.location}
             telemetryService={this.props.telemetryService}
-            expanded={true}
+            defaultExpanded={true}
             result={referencesToContentMatch(uri, locationsByURI.get(uri)!)}
-            icon={this.props.icon}
             onSelect={this.onSelect}
             showAllMatches={true}
             fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}

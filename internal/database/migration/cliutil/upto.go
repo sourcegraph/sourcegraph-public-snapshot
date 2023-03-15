@@ -77,7 +77,7 @@ func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 			return flagHelp(out, "supply a target via -target")
 		}
 
-		r, err := setupRunner(ctx, factory, schemaNameFlag.Get(cmd))
+		r, err := setupRunner(factory, schemaNameFlag.Get(cmd))
 		if err != nil {
 			return err
 		}

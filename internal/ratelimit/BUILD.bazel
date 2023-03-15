@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ratelimit",
+    srcs = [
+        "common.go",
+        "monitor.go",
+        "rate_limit.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/ratelimit",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/timeutil",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@org_golang_x_time//rate",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "ratelimit_test",
+    srcs = [
+        "monitor_test.go",
+        "rate_limit_test.go",
+    ],
+    embed = [":ratelimit"],
+    deps = [
+        "//internal/conf",
+        "//schema",
+        "@com_github_stretchr_testify//assert",
+        "@org_golang_x_time//rate",
+    ],
+)

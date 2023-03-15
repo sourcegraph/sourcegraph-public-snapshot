@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -22,15 +21,15 @@ import (
 // newInsightEnqueuer returns a background goroutine which will periodically find all of the search
 // and webhook insights across all user settings, and enqueue work for the query runner and webhook
 // runner workers to perform.
-func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, featureFlagStore database.FeatureFlagStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
-	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore) goroutine.BackgroundRoutine {
+	redMetrics := metrics.NewREDMetrics(
+		observationCtx.Registerer,
 		"insights_enqueuer",
 		metrics.WithCountHelp("Total number of insights enqueuer executions"),
 	)
-	operation := observationContext.Operation(observation.Op{
+	operation := observationCtx.Operation(observation.Op{
 		Name:    "Enqueuer.Run",
-		Metrics: metrics,
+		Metrics: redMetrics,
 	})
 
 	// Note: We run this goroutine once every hour, and StalledMaxAge in queryrunner/ is
@@ -39,14 +38,15 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, i
 	//
 	// See also https://github.com/sourcegraph/sourcegraph/pull/17227#issuecomment-779515187 for some very rough
 	// data retention / scale concerns.
-	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 1*time.Hour, goroutine.NewHandlerWithErrorMessage(
-		"insights_enqueuer",
-		func(ctx context.Context) error {
-			ie := NewInsightEnqueuer(time.Now, workerBaseStore)
+	return goroutine.NewPeriodicGoroutineWithMetrics(
+		ctx, "insights.enqueuer", "enqueues snapshot and current recording query jobs",
+		1*time.Hour, goroutine.HandlerFunc(
+			func(ctx context.Context) error {
+				ie := NewInsightEnqueuer(time.Now, workerBaseStore)
 
-			return ie.discoverAndEnqueueInsights(ctx, insightStore, featureFlagStore)
-		},
-	), operation)
+				return ie.discoverAndEnqueueInsights(ctx, insightStore)
+			},
+		), operation)
 }
 
 type InsightEnqueuer struct {
@@ -67,7 +67,6 @@ func NewInsightEnqueuer(now func() time.Time, workerBaseStore *basestore.Store) 
 func (ie *InsightEnqueuer) discoverAndEnqueueInsights(
 	ctx context.Context,
 	insightStore store.DataSeriesStore,
-	ffs database.FeatureFlagStore,
 ) error {
 	var multi error
 
@@ -103,7 +102,6 @@ func (ie *InsightEnqueuer) Enqueue(
 	mode store.PersistMode,
 	stampFunc func(ctx context.Context, insightSeries types.InsightSeries) (types.InsightSeries, error),
 ) error {
-
 	// Deduplicate series that may be unique (e.g. different name/description) but do not have
 	// unique data (i.e. use the same exact search query or webhook URL.)
 	var (
@@ -141,7 +139,9 @@ func (ie *InsightEnqueuer) EnqueueSingle(
 	var modifiedQuery querybuilder.BasicQuery
 	var finalQuery string
 
-	if len(series.Repositories) > 0 {
+	if series.RepositoryCriteria != nil {
+		modifiedQuery, err = querybuilder.MakeQueryWithRepoFilters(*series.RepositoryCriteria, basicQuery, true, querybuilder.CodeInsightsQueryDefaults(true)...)
+	} else if len(series.Repositories) > 0 {
 		modifiedQuery, err = querybuilder.MultiRepoQuery(basicQuery, series.Repositories, defaultQueryParams)
 	} else {
 		modifiedQuery, err = querybuilder.GlobalQuery(basicQuery, defaultQueryParams)

@@ -45,8 +45,8 @@ func (token *OAuthBearerToken) Refresh(ctx context.Context, cli httpcli.Doer) er
 }
 
 func (token *OAuthBearerToken) NeedsRefresh() bool {
-	// Refresh if the current time falls within the buffer period to expiry.
-	return time.Until(token.Expiry) <= time.Duration(token.NeedsRefreshBuffer)*time.Minute
+	// Refresh if the current time falls within the buffer period to expiry, and is not zero
+	return !token.Expiry.IsZero() && (time.Until(token.Expiry) <= time.Duration(token.NeedsRefreshBuffer)*time.Minute)
 }
 
 var _ Authenticator = &OAuthBearerToken{}
@@ -78,8 +78,10 @@ type OAuthBearerTokenWithSSH struct {
 	Passphrase string
 }
 
-var _ Authenticator = &OAuthBearerTokenWithSSH{}
-var _ AuthenticatorWithSSH = &OAuthBearerTokenWithSSH{}
+var (
+	_ Authenticator        = &OAuthBearerTokenWithSSH{}
+	_ AuthenticatorWithSSH = &OAuthBearerTokenWithSSH{}
+)
 
 func (token *OAuthBearerTokenWithSSH) SSHPrivateKey() (privateKey, passphrase string) {
 	return token.PrivateKey, token.Passphrase

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -184,11 +185,11 @@ func PartitionRepos(
 ) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
-		return nil, repos, nil
+		return &IndexedRepoRevs{}, repos, nil
 	}
 	// Fallback to Unindexed if index:no
 	if useIndex == query.No {
-		return nil, repos, nil
+		return &IndexedRepoRevs{}, repos, nil
 	}
 
 	tr, ctx := trace.New(ctx, "PartitionRepos", string(typ))
@@ -198,9 +199,9 @@ func PartitionRepos(
 	}()
 
 	// Only include indexes with symbol information if a symbol request.
-	var filter func(repo *zoekt.MinimalRepoListEntry) bool
+	var filterFunc func(repo *zoekt.MinimalRepoListEntry) bool
 	if typ == search.SymbolRequest {
-		filter = func(repo *zoekt.MinimalRepoListEntry) bool {
+		filterFunc = func(repo *zoekt.MinimalRepoListEntry) bool {
 			return repo.HasSymbols
 		}
 	}
@@ -219,18 +220,20 @@ func PartitionRepos(
 			logger.Warn("zoektIndexedRepos failed", log.Error(err))
 		}
 
-		return nil, repos, ctx.Err()
+		return &IndexedRepoRevs{}, repos, ctx.Err()
 	}
 
-	tr.LogFields(otlog.Int("all_indexed_set.size", len(list.Minimal)))
+	// Note: We do not need to handle list.Crashes since we will fallback to
+	// unindexed search for any repository unavailable due to rollout.
+
+	tr.SetAttributes(attribute.Int("all_indexed_set.size", len(list.Minimal))) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 
 	// Split based on indexed vs unindexed
-	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter)
+	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filterFunc) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 
-	tr.LogFields(
-		otlog.Int("indexed.size", len(indexed.RepoRevs)),
-		otlog.Int("unindexed.size", len(unindexed)),
-	)
+	tr.SetAttributes(
+		attribute.Int("indexed.size", len(indexed.RepoRevs)),
+		attribute.Int("unindexed.size", len(unindexed)))
 
 	// Disable unindexed search
 	if useIndex == query.Only {
@@ -318,7 +321,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 
 	foundResults := atomic.Bool{}
 	err := client.StreamSearch(ctx, finalQuery, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
+		foundResults.CompareAndSwap(false, event.FileCount != 0 || event.MatchCount != 0)
 		sendMatches(event, pathRegexps, repos.getRepoInputRev, typ, selector, c)
 	}))
 	if err != nil {
@@ -341,7 +344,12 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 
 func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRepoInputRev repoRevFunc, typ search.IndexedRequestType, selector filter.SelectPath, c streaming.Sender) {
 	files := event.Files
-	limitHit := event.FilesSkipped+event.ShardsSkipped > 0
+	stats := streaming.Stats{
+		// In the case of Zoekt the only time we get non-zero Crashes in
+		// practice is when a backend is missing.
+		BackendsMissing: event.Crashes,
+		IsLimitHit:      event.FilesSkipped+event.ShardsSkipped > 0,
+	}
 
 	if selector.Root() == filter.Repository {
 		// By default we stream up to "all" repository results per
@@ -353,12 +361,12 @@ func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRep
 		// `count` results. I.e., from the webapp, this is
 		// `max(defaultMaxSearchResultsStreaming,count)` which comes to
 		// `max(500,count)`.
-		limitHit = false
+		stats.IsLimitHit = false
 	}
 
 	if len(files) == 0 {
 		c.Send(streaming.SearchEvent{
-			Stats: streaming.Stats{IsLimitHit: limitHit},
+			Stats: stats,
 		})
 		return
 	}
@@ -400,15 +408,16 @@ func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRep
 					Path:     file.FileName,
 				},
 			}
+			if debug := file.Debug; debug != "" {
+				fm.Debug = &debug
+			}
 			matches = append(matches, &fm)
 		}
 	}
 
 	c.Send(streaming.SearchEvent{
 		Results: matches,
-		Stats: streaming.Stats{
-			IsLimitHit: limitHit,
-		},
+		Stats:   stats,
 	})
 }
 
@@ -750,7 +759,7 @@ func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB
 			return nil
 		}
 	}
-	tr.LogFields(otlog.Int32("userID", userID))
+	tr.SetAttributes(attribute.Int64("userID", int64(userID)))
 
 	// TODO: We should use repos.Resolve here. However, the logic for
 	// UserID is different to repos.Resolve, so we need to work out how

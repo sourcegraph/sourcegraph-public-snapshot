@@ -102,8 +102,10 @@ func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r i
 
 // uploadIndexFile uploads the contents available via the given reader to a
 // Sourcegraph instance with the given request options.i
-func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions UploadOptions, reader io.ReadSeeker, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, retry func(message string) output.Progress, barIndex int, numParts int) error {
-	return makeRetry(uploadOptions.MaxRetries, uploadOptions.RetryInterval)(func(attempt int) (_ bool, err error) {
+func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions UploadOptions, reader io.ReadSeeker, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, retry onRetryLogFn, barIndex int, numParts int) error {
+	retrier := makeRetry(uploadOptions.MaxRetries, uploadOptions.RetryInterval)
+
+	return retrier(func(attempt int) (_ bool, err error) {
 		defer func() {
 			if err != nil && !errors.Is(err, ctx.Err()) && progress != nil {
 				progress.SetValue(barIndex, 0)
@@ -337,13 +339,15 @@ func logPending(out *output.Output, pendingMessage, successMessage, failureMessa
 	return retry, complete
 }
 
+type onRetryLogFn func(message string) output.Progress
+
 // logProgress creates and returns a progress from the given output value and bars configuration.
 // This function also returns a retry function that can be called to print a message then reset the
 // progress bar display, and a complete function that should be called once the work attached to
 // this log call has completed. This complete function takes an error value that determines whether
 // the success or failure message is displayed. If the given output value is nil then a no-op complete
 // function is returned.
-func logProgress(out *output.Output, bars []output.ProgressBar, successMessage, failureMessage string) (output.Progress, func(message string) output.Progress, func(error)) {
+func logProgress(out *output.Output, bars []output.ProgressBar, successMessage, failureMessage string) (output.Progress, onRetryLogFn, func(error)) {
 	if out == nil {
 		return nil, func(message string) output.Progress { return nil }, func(err error) {}
 	}

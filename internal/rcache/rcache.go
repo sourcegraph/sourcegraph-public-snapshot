@@ -23,7 +23,7 @@ const dataVersionToDelete = "v1"
 // DeleteOldCacheData deletes the rcache data in the given Redis instance
 // that's prefixed with dataVersionToDelete
 func DeleteOldCacheData(c redis.Conn) error {
-	return deleteKeysWithPrefix(c, dataVersionToDelete)
+	return deleteAllKeysWithPrefix(c, dataVersionToDelete)
 }
 
 // Cache implements httpcache.Cache
@@ -48,75 +48,11 @@ func NewWithTTL(keyPrefix string, ttlSeconds int) *Cache {
 	}
 }
 
-func (r *Cache) GetMulti(keys ...string) [][]byte {
-	c := pool.Get()
-	defer c.Close()
-
-	if len(keys) == 0 {
-		return nil
-	}
-	rkeys := make([]any, len(keys))
-	for i, key := range keys {
-		rkeys[i] = r.rkeyPrefix() + key
-	}
-
-	vals, err := redis.Values(c.Do("MGET", rkeys...))
-	if err != nil && err != redis.ErrNil {
-		log15.Warn("failed to execute redis command", "cmd", "MGET", "error", err)
-	}
-
-	strVals := make([][]byte, len(vals))
-	for i, val := range vals {
-		// MGET returns nil as not found.
-		if val == nil {
-			continue
-		}
-
-		b, err := redis.Bytes(val, nil)
-		if err != nil {
-			log15.Warn("failed to parse bytes from Redis value", "value", val)
-			continue
-		}
-		strVals[i] = b
-	}
-	return strVals
-}
-
-func (r *Cache) SetMulti(keyvals ...[2]string) {
-	c := pool.Get()
-	defer c.Close()
-
-	if len(keyvals) == 0 {
-		return
-	}
-
-	for _, kv := range keyvals {
-		k, v := kv[0], kv[1]
-		if !utf8.Valid([]byte(k)) {
-			log15.Error("rcache: keys must be valid utf8", "key", []byte(k))
-			continue
-		}
-		if r.ttlSeconds == 0 {
-			if err := c.Send("SET", r.rkeyPrefix()+k, []byte(v)); err != nil {
-				log15.Warn("failed to write redis command to client output buffer", "cmd", "SET", "error", err)
-			}
-		} else {
-			if err := c.Send("SETEX", r.rkeyPrefix()+k, r.ttlSeconds, []byte(v)); err != nil {
-				log15.Warn("failed to write redis command to client output buffer", "cmd", "SETEX", "error", err)
-			}
-		}
-	}
-	if err := c.Flush(); err != nil {
-		log15.Warn("failed to flush Redis client", "error", err)
-	}
-}
+func (r *Cache) TTL() time.Duration { return time.Duration(r.ttlSeconds) * time.Second }
 
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
-	c := pool.Get()
-	defer c.Close()
-
-	b, err := redis.Bytes(c.Do("GET", r.rkeyPrefix()+key))
+	b, err := kv().Get(r.rkeyPrefix() + key).Bytes()
 	if err != nil && err != redis.ErrNil {
 		log15.Warn("failed to execute redis command", "cmd", "GET", "error", err)
 	}
@@ -126,31 +62,33 @@ func (r *Cache) Get(key string) ([]byte, bool) {
 
 // Set implements httpcache.Cache.Set
 func (r *Cache) Set(key string, b []byte) {
-	c := pool.Get()
-	defer c.Close()
-
 	if !utf8.Valid([]byte(key)) {
 		log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
 	}
 
 	if r.ttlSeconds == 0 {
-		_, err := c.Do("SET", r.rkeyPrefix()+key, b)
+		err := kv().Set(r.rkeyPrefix()+key, b)
 		if err != nil {
 			log15.Warn("failed to execute redis command", "cmd", "SET", "error", err)
 		}
 	} else {
-		_, err := c.Do("SETEX", r.rkeyPrefix()+key, r.ttlSeconds, b)
-		if err != nil {
-			log15.Warn("failed to execute redis command", "cmd", "SETEX", "error", err)
-		}
+		r.SetWithTTL(key, b, r.ttlSeconds)
+	}
+}
+
+func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
+	if !utf8.Valid([]byte(key)) {
+		log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
+	}
+
+	err := kv().SetEx(r.rkeyPrefix()+key, ttl, b)
+	if err != nil {
+		log15.Warn("failed to execute redis command", "cmd", "SETEX", "error", err)
 	}
 }
 
 func (r *Cache) Increase(key string) {
-	c := pool.Get()
-	defer func() { _ = c.Close() }()
-
-	_, err := c.Do("INCR", r.rkeyPrefix()+key)
+	err := kv().Incr(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "INCR", "error", err)
 		return
@@ -160,19 +98,48 @@ func (r *Cache) Increase(key string) {
 		return
 	}
 
-	_, err = c.Do("EXPIRE", r.rkeyPrefix()+key, r.ttlSeconds)
+	err = kv().Expire(r.rkeyPrefix()+key, r.ttlSeconds)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "EXPIRE", "error", err)
 		return
 	}
 }
 
+func (r *Cache) KeyTTL(key string) (int, bool) {
+	ttl, err := kv().TTL(r.rkeyPrefix() + key)
+	if err != nil {
+		log15.Warn("failed to execute redis command", "cmd", "TTL", "error", err)
+		return -1, false
+	}
+	return ttl, ttl >= 0
+}
+
+// FIFOList returns a FIFOList namespaced in r.
+func (r *Cache) FIFOList(key string, maxSize int) *FIFOList {
+	return NewFIFOList(r.rkeyPrefix()+key, maxSize)
+}
+
+// SetHashItem sets a key in a HASH.
+// If the HASH does not exist, it is created.
+// If the key already exists and is a different type, an error is returned.
+// If the hash key does not exist, it is created. If it exists, the value is overwritten.
+func (r *Cache) SetHashItem(key string, hashKey string, hashValue string) error {
+	return kv().HSet(r.rkeyPrefix()+key, hashKey, hashValue)
+}
+
+// GetHashItem gets a key in a HASH.
+func (r *Cache) GetHashItem(key string, hashKey string) (string, error) {
+	return kv().HGet(r.rkeyPrefix()+key, hashKey).String()
+}
+
+// GetHashAll returns the members of the HASH stored at `key`, in no particular order.
+func (r *Cache) GetHashAll(key string) (map[string]string, error) {
+	return kv().HGetAll(r.rkeyPrefix() + key).StringMap()
+}
+
 // Delete implements httpcache.Cache.Delete
 func (r *Cache) Delete(key string) {
-	c := pool.Get()
-	defer c.Close()
-
-	_, err := c.Do("DEL", r.rkeyPrefix()+key)
+	err := kv().Del(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "DEL", "error", err)
 	}
@@ -195,7 +162,7 @@ type TB interface {
 func SetupForTest(t TB) {
 	t.Helper()
 
-	pool = &redis.Pool{
+	pool := &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
@@ -206,6 +173,7 @@ func SetupForTest(t TB) {
 			return err
 		},
 	}
+	kvMock = redispool.RedisKeyValue(pool)
 
 	globalPrefix = "__test__" + t.Name()
 	c := pool.Get()
@@ -219,7 +187,7 @@ func SetupForTest(t TB) {
 		}
 	}
 
-	err := deleteKeysWithPrefix(c, globalPrefix)
+	err := deleteAllKeysWithPrefix(c, globalPrefix)
 	if err != nil {
 		log15.Error("Could not clear test prefix", "name", t.Name(), "globalPrefix", globalPrefix, "error", err)
 	}
@@ -232,7 +200,7 @@ func SetupForTest(t TB) {
 // See https://www.lua.org/source/5.1/luaconf.h.html
 var deleteBatchSize = 5000
 
-func deleteKeysWithPrefix(c redis.Conn, prefix string) error {
+func deleteAllKeysWithPrefix(c redis.Conn, prefix string) error {
 	const script = `
 redis.replicate_commands()
 local cursor = '0'
@@ -255,7 +223,15 @@ return result
 	return err
 }
 
+var kvMock redispool.KeyValue
+
+func kv() redispool.KeyValue {
+	if kvMock != nil {
+		return kvMock
+	}
+	return redispool.Cache
+}
+
 var (
-	pool         = redispool.Cache
 	globalPrefix = dataVersion
 )

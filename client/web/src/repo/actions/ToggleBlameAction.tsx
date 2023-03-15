@@ -1,20 +1,31 @@
 import { useCallback } from 'react'
 
-import { mdiGit } from '@mdi/js'
-import classNames from 'classnames'
+import { mdiAccountDetails, mdiAccountDetailsOutline } from '@mdi/js'
 
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
-import { Icon } from '@sourcegraph/wildcard'
+import { RenderMode } from '@sourcegraph/shared/src/util/url'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
+import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 
-import styles from './ToggleBlameAction.module.scss'
+interface Props {
+    source?: 'repoHeader' | 'actionItemsBar'
+    actionType?: 'nav' | 'dropdown'
+    renderMode?: RenderMode
+    isPackage: boolean
+}
+export const ToggleBlameAction: React.FC<Props> = props => {
+    const [isBlameVisible, setIsBlameVisible] = useBlameVisibility(props.isPackage)
 
-export const ToggleBlameAction: React.FC = () => {
-    const [isBlameVisible, setIsBlameVisible] = useBlameVisibility()
+    const disabled = props.isPackage || props.renderMode === 'rendered'
 
-    const descriptiveText = `${isBlameVisible ? 'Hide' : 'Show'} Git blame line annotations`
+    const descriptiveText = props.isPackage
+        ? 'Git blame line annotations are not available when browsing packages'
+        : disabled
+        ? 'Git blame line annotations are not available when viewing a rendered document'
+        : `${isBlameVisible ? 'Hide' : 'Show'} Git blame line annotations`
 
     const toggleBlameState = useCallback(() => {
         if (isBlameVisible) {
@@ -26,13 +37,37 @@ export const ToggleBlameAction: React.FC = () => {
         }
     }, [isBlameVisible, setIsBlameVisible])
 
+    const icon = (
+        <Icon aria-hidden={true} svgPath={isBlameVisible && !disabled ? mdiAccountDetails : mdiAccountDetailsOutline} />
+    )
+
+    if (props.source === 'actionItemsBar') {
+        return (
+            <SimpleActionItem
+                tooltip={descriptiveText}
+                isActive={isBlameVisible}
+                onSelect={toggleBlameState}
+                disabled={disabled}
+            >
+                {icon}
+            </SimpleActionItem>
+        )
+    }
+
+    if (props.actionType === 'dropdown') {
+        return (
+            <RepoHeaderActionMenuLink file={true} as={Button} onClick={toggleBlameState} disabled={disabled}>
+                {icon}
+                <span>{descriptiveText}</span>
+            </RepoHeaderActionMenuLink>
+        )
+    }
+
     return (
-        <SimpleActionItem isActive={isBlameVisible} tooltip={descriptiveText} onSelect={toggleBlameState}>
-            <Icon
-                aria-hidden={true}
-                svgPath={mdiGit}
-                className={classNames(styles.icon, isBlameVisible && styles.iconActive)}
-            />
-        </SimpleActionItem>
+        <Tooltip content={descriptiveText}>
+            <RepoHeaderActionAnchor onSelect={toggleBlameState} disabled={disabled}>
+                {icon}
+            </RepoHeaderActionAnchor>
+        </Tooltip>
     )
 }

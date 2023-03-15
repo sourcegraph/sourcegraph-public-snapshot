@@ -8,8 +8,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
@@ -21,30 +19,29 @@ import (
 
 // productLicense implements the GraphQL type ProductLicense.
 type productLicense struct {
-	logger log.Logger
-	db     database.DB
-	v      *dbLicense
+	db database.DB
+	v  *dbLicense
 }
 
 // ProductLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such
 // ProductLicense exists, it returns a non-nil error.
 func (p ProductSubscriptionLicensingResolver) ProductLicenseByID(ctx context.Context, id graphql.ID) (graphqlbackend.ProductLicense, error) {
-	return productLicenseByID(ctx, p.logger, p.DB, id)
+	return productLicenseByID(ctx, p.DB, id)
 }
 
 // productLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such
 // ProductLicense exists, it returns a non-nil error.
-func productLicenseByID(ctx context.Context, logger log.Logger, db database.DB, id graphql.ID) (*productLicense, error) {
+func productLicenseByID(ctx context.Context, db database.DB, id graphql.ID) (*productLicense, error) {
 	idInt32, err := unmarshalProductLicenseID(id)
 	if err != nil {
 		return nil, err
 	}
-	return productLicenseByDBID(ctx, logger, db, idInt32)
+	return productLicenseByDBID(ctx, db, idInt32)
 }
 
 // productLicenseByDBID looks up and returns the ProductLicense with the given database ID. If no
 // such ProductLicense exists, it returns a non-nil error.
-func productLicenseByDBID(ctx context.Context, logger log.Logger, db database.DB, id string) (*productLicense, error) {
+func productLicenseByDBID(ctx context.Context, db database.DB, id string) (*productLicense, error) {
 	v, err := dbLicenses{db: db}.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -52,7 +49,7 @@ func productLicenseByDBID(ctx context.Context, logger log.Logger, db database.DB
 
 	// 🚨 SECURITY: Only site admins and the license's subscription's account's user may view a
 	// product license.
-	sub, err := productSubscriptionByDBID(ctx, logger, db, v.ProductSubscriptionID)
+	sub, err := productSubscriptionByDBID(ctx, db, v.ProductSubscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +76,7 @@ func unmarshalProductLicenseID(id graphql.ID) (productLicenseID string, err erro
 }
 
 func (r *productLicense) Subscription(ctx context.Context) (graphqlbackend.ProductSubscription, error) {
-	return productSubscriptionByDBID(ctx, r.logger, r.db, r.v.ProductSubscriptionID)
+	return productSubscriptionByDBID(ctx, r.db, r.v.ProductSubscriptionID)
 }
 
 func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
@@ -120,7 +117,7 @@ func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscript
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
 		return nil, err
 	}
-	sub, err := productSubscriptionByID(ctx, r.logger, r.DB, args.ProductSubscriptionID)
+	sub, err := productSubscriptionByID(ctx, r.DB, args.ProductSubscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +125,7 @@ func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscript
 	if err != nil {
 		return nil, err
 	}
-	return productLicenseByDBID(ctx, r.logger, r.DB, id)
+	return productLicenseByDBID(ctx, r.DB, id)
 }
 
 func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Context, args *graphqlbackend.ProductLicensesArgs) (graphqlbackend.ProductLicenseConnection, error) {
@@ -140,7 +137,7 @@ func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Contex
 	var sub *productSubscription
 	if args.ProductSubscriptionID != nil {
 		var err error
-		sub, err = productSubscriptionByID(ctx, r.logger, r.DB, *args.ProductSubscriptionID)
+		sub, err = productSubscriptionByID(ctx, r.DB, *args.ProductSubscriptionID)
 		if err != nil {
 			return nil, err
 		}

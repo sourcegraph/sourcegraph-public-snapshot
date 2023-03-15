@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -22,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -72,7 +70,6 @@ func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbacken
 
 		defer func() {
 			instrumentGraphQL(traceData)
-			traceGraphQL(traceData)
 			recordAuditLog(r.Context(), logger, traceData)
 		}()
 
@@ -89,7 +86,6 @@ func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbacken
 		if len(validationErrs) == 0 {
 			cost, costErr = graphqlbackend.EstimateQueryCost(params.Query, params.Variables)
 			if costErr != nil {
-				// We send errors to Honeycomb, no need to spam logs
 				log15.Debug("estimating GraphQL cost", "error", costErr)
 			}
 			traceData.costError = costErr
@@ -155,57 +151,6 @@ type traceData struct {
 	limitError  error
 	limitResult throttled.RateLimitResult
 }
-
-func traceGraphQL(data traceData) {
-	if !honey.Enabled() || traceGraphQLQueriesSample <= 0 {
-		return
-	}
-
-	duration := time.Since(data.execStart)
-
-	ev := honey.NewEvent("graphql-cost")
-	ev.SetSampleRate(uint(traceGraphQLQueriesSample))
-
-	ev.AddField("query", data.queryParams.Query)
-	ev.AddField("variables", data.queryParams.Variables)
-	ev.AddField("operationName", data.queryParams.OperationName)
-
-	ev.AddField("anonymous", data.anonymous)
-	ev.AddField("uid", data.uid)
-	ev.AddField("isInternal", data.isInternal)
-	// Honeycomb has built in support for latency if you use milliseconds. We
-	// multiply seconds by 1000 here instead of using d.Milliseconds() so that we
-	// don't truncate durations of less than 1 millisecond.
-	ev.AddField("durationMilliseconds", duration.Seconds()*1000)
-	ev.AddField("hasQueryErrors", len(data.queryErrors) > 0)
-	ev.AddField("requestName", data.requestName)
-	ev.AddField("requestSource", data.requestSource)
-
-	if data.costError != nil {
-		ev.AddField("hasCostError", true)
-		ev.AddField("costError", data.costError.Error())
-	} else if data.cost != nil {
-		ev.AddField("hasCostError", false)
-		ev.AddField("cost", data.cost.FieldCount)
-		ev.AddField("depth", data.cost.MaxDepth)
-		ev.AddField("costVersion", data.cost.Version)
-	}
-
-	ev.AddField("rateLimited", data.limited)
-	if data.limitError != nil {
-		ev.AddField("rateLimitError", data.limitError.Error())
-	} else {
-		ev.AddField("rateLimit", data.limitResult.Limit)
-		ev.AddField("rateLimitRemaining", data.limitResult.Remaining)
-	}
-
-	_ = ev.Send()
-}
-
-var traceGraphQLQueriesSample = func() int {
-	rate, _ := strconv.Atoi(os.Getenv("TRACE_GRAPHQL_QUERIES_SAMPLE"))
-	return rate
-}()
 
 func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
 	a := actor.FromContext(r.Context())

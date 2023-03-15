@@ -1,6 +1,7 @@
 import React, { useLayoutEffect } from 'react'
 
 import ReactDOM from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import { ReplaySubject } from 'rxjs'
 
 import { BlameHunk } from '../blame/useBlameHunks'
@@ -11,7 +12,7 @@ import styles from './BlameColumn.module.scss'
 
 interface BlameColumnProps {
     isBlameVisible?: boolean
-    blameHunks?: BlameHunk[]
+    blameHunks?: { current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }
     codeViewElements: ReplaySubject<HTMLElement | null>
 }
 
@@ -24,6 +25,7 @@ const selectRow = (line: number): void => getRowByLine(line)?.classList.add('hig
 const deselectRow = (line: number): void => getRowByLine(line)?.classList.remove('highlighted')
 
 export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeViewElements, blameHunks }) => {
+    const navigate = useNavigate()
     /**
      * Array to store the DOM element and the blame hunk to render in it.
      * As blame decorations are displayed in the column view, we need to add a corresponding
@@ -60,8 +62,8 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
         }
 
         const subscription = codeViewElements.subscribe(codeView => {
-            if (codeView) {
-                const table = codeView.firstElementChild as HTMLTableElement
+            if (codeView?.firstElementChild instanceof HTMLTableElement) {
+                const table = codeView.firstElementChild
 
                 for (let index = 0; index < table.rows.length; index++) {
                     const row = table.rows[index]
@@ -96,7 +98,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                         }
                     }
 
-                    const currentLineDecorations = blameHunks?.find(hunk => hunk.startLine - 1 === index)
+                    const currentLineDecorations = blameHunks?.current?.find(hunk => hunk.startLine - 1 === index)
 
                     // store created cell and corresponding blame hunk (or undefined if no blame hunk)
                     addedCells.push([cell, currentLineDecorations])
@@ -122,10 +124,16 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                     <BlameDecoration
                         line={index + 1}
                         blameHunk={blameHunk}
+                        navigate={navigate}
                         onSelect={selectRow}
                         onDeselect={deselectRow}
+                        firstCommitDate={blameHunks?.firstCommitDate}
+                        hideRecency={true}
                     />,
-                    portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement
+                    // The classname can contain a +, so we would either need to escape it (boo!),
+                    // or just use getElementsByClassName.
+                    // eslint-disable-next-line unicorn/prefer-query-selector
+                    portalRoot.getElementsByClassName(styles.wrapper)[0] as HTMLDivElement
                 )
             )}
         </>

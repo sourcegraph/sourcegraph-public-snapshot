@@ -99,6 +99,38 @@ func WithInserterWithReturn(
 	return with(ctx, inserter, f)
 }
 
+// WithInserterForIdentifiers creates a new batch inserter using the given database handle, table name,
+// column names, and calls the given function with the new inserter as a parameter. The single returning
+// column name will be scanned as an integer and collected. The sequence of collected identifiers are
+// returned from this function. The inserter will be flushed regardless of the error condition of the given
+// function. Any error returned from the given function will be decorated with the inserter's flush error,
+// if one occurs.
+func WithInserterForIdentifiers(
+	ctx context.Context,
+	db dbutil.DB,
+	tableName string,
+	maxNumParameters int,
+	columnNames []string,
+	onConflictClause string,
+	returningColumnName string,
+	f func(inserter *Inserter) error,
+) (ids []int, err error) {
+	inserter := NewInserterWithReturn(ctx, db, tableName, maxNumParameters, columnNames, onConflictClause, []string{returningColumnName}, func(s dbutil.Scanner) error {
+		id, err := basestore.ScanInt(s)
+		if err != nil {
+			return err
+		}
+
+		ids = append(ids, id)
+		return nil
+	})
+	if err := with(ctx, inserter, f); err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
 func with(ctx context.Context, inserter *Inserter, f func(inserter *Inserter) error) (err error) {
 	defer func() {
 		if flushErr := inserter.Flush(ctx); flushErr != nil {
@@ -138,7 +170,7 @@ func NewInserterWithReturn(
 	returningScanner ReturningScanner,
 ) *Inserter {
 	numColumns := len(columnNames)
-	maxBatchSize := getMaxBatchSize(numColumns, maxNumParameters)
+	maxBatchSize := GetMaxBatchSize(numColumns, maxNumParameters)
 	queryPrefix := makeQueryPrefix(tableName, columnNames)
 	querySuffix := makeQuerySuffix(numColumns, maxNumParameters)
 	onConflictSuffix := makeOnConflictSuffix(onConflictClause)
@@ -316,9 +348,9 @@ const MaxNumPostgresParameters = 32767
 // in a single insert statement.
 const MaxNumSQLiteParameters = 999
 
-// getMaxBatchSize returns the number of rows that can be inserted into a single table with the
+// GetMaxBatchSize returns the number of rows that can be inserted into a single table with the
 // given number of columns via a single insert statement.
-func getMaxBatchSize(numColumns, maxNumParameters int) int {
+func GetMaxBatchSize(numColumns, maxNumParameters int) int {
 	return (maxNumParameters / numColumns) * numColumns
 }
 
@@ -333,8 +365,10 @@ func makeQueryPrefix(tableName string, columnNames []string) string {
 	return fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES `, tableName, strings.Join(quotedColumnNames, ","))
 }
 
-var querySuffixCache = map[int]string{}
-var querySuffixCacheMutex sync.Mutex
+var (
+	querySuffixCache      = map[int]string{}
+	querySuffixCacheMutex sync.Mutex
+)
 
 // makeQuerySuffix creates the suffix of the batch insert statement containing the placeholder
 // variables, e.g. `($1,$2,$3),($4,$5,$6),...`. The number of rows will be the maximum number of

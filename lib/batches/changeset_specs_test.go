@@ -26,8 +26,9 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		Body:  "The body",
 		Commits: []GitCommitDescription{
 			{
+				Version:     2,
 				Message:     "git commit message",
-				Diff:        "cool diff",
+				Diff:        []byte("cool diff"),
 				AuthorName:  "Sourcegraph",
 				AuthorEmail: "batch-changes@sourcegraph.com",
 			},
@@ -71,7 +72,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		},
 
 		Result: execution.AfterStepResult{
-			Diff: "cool diff",
+			Diff: []byte("cool diff"),
 			ChangedFiles: git.Changes{
 				Modified: []string{"README.md"},
 			},
@@ -93,7 +94,8 @@ func TestCreateChangesetSpecs(t *testing.T) {
 	tests := []struct {
 		name string
 
-		input *ChangesetSpecInput
+		input  *ChangesetSpecInput
+		author *ChangesetSpecAuthor
 
 		want    []*ChangesetSpec
 		wantErr string
@@ -144,11 +146,23 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			},
 			wantErr: "",
 		},
+		{
+			name:   "publish with fallback author",
+			input:  defaultInput,
+			author: &ChangesetSpecAuthor{Name: "Sourcegrapher", Email: "sourcegrapher@sourcegraph.com"},
+			want: []*ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
+					s.Commits[0].AuthorEmail = "sourcegrapher@sourcegraph.com"
+					s.Commits[0].AuthorName = "Sourcegrapher"
+				}),
+			},
+			wantErr: "",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			have, err := BuildChangesetSpecs(tt.input)
+			have, err := BuildChangesetSpecs(tt.input, true, tt.author)
 			if err != nil {
 				if tt.wantErr != "" {
 					if err.Error() != tt.wantErr {
@@ -200,16 +214,16 @@ index 0000000..1bd79fb
 		diff          string
 		defaultBranch string
 		groups        []Group
-		want          map[string]string
+		want          map[string][]byte
 	}{
 		{
 			diff: allDiffs,
 			groups: []Group{
 				{Directory: "1/2/3", Branch: "everything-in-3"},
 			},
-			want: map[string]string{
-				"my-default-branch": diff1 + diff2,
-				"everything-in-3":   diff3,
+			want: map[string][]byte{
+				"my-default-branch": []byte(diff1 + diff2),
+				"everything-in-3":   []byte(diff3),
 			},
 		},
 		{
@@ -217,9 +231,9 @@ index 0000000..1bd79fb
 			groups: []Group{
 				{Directory: "1/2", Branch: "everything-in-2-and-3"},
 			},
-			want: map[string]string{
-				"my-default-branch":     diff1,
-				"everything-in-2-and-3": diff2 + diff3,
+			want: map[string][]byte{
+				"my-default-branch":     []byte(diff1),
+				"everything-in-2-and-3": []byte(diff2 + diff3),
 			},
 		},
 		{
@@ -227,9 +241,9 @@ index 0000000..1bd79fb
 			groups: []Group{
 				{Directory: "1", Branch: "everything-in-1-and-2-and-3"},
 			},
-			want: map[string]string{
-				"my-default-branch":           "",
-				"everything-in-1-and-2-and-3": diff1 + diff2 + diff3,
+			want: map[string][]byte{
+				"my-default-branch":           nil,
+				"everything-in-1-and-2-and-3": []byte(diff1 + diff2 + diff3),
 			},
 		},
 		{
@@ -240,11 +254,11 @@ index 0000000..1bd79fb
 				{Directory: "1/2", Branch: "only-in-2"},
 				{Directory: "1/2/3", Branch: "only-in-3"},
 			},
-			want: map[string]string{
-				"my-default-branch": "",
-				"only-in-3":         diff3,
-				"only-in-2":         diff2,
-				"only-in-1":         diff1,
+			want: map[string][]byte{
+				"my-default-branch": nil,
+				"only-in-3":         []byte(diff3),
+				"only-in-2":         []byte(diff2),
+				"only-in-1":         []byte(diff1),
 			},
 		},
 		{
@@ -255,9 +269,9 @@ index 0000000..1bd79fb
 				{Directory: "1/2", Branch: "only-in-2"},
 				{Directory: "1", Branch: "only-in-1"},
 			},
-			want: map[string]string{
-				"my-default-branch": "",
-				"only-in-1":         diff1 + diff2 + diff3,
+			want: map[string][]byte{
+				"my-default-branch": nil,
+				"only-in-1":         []byte(diff1 + diff2 + diff3),
 			},
 		},
 		{
@@ -265,14 +279,14 @@ index 0000000..1bd79fb
 			groups: []Group{
 				{Directory: "", Branch: "everything"},
 			},
-			want: map[string]string{
-				"my-default-branch": diff1 + diff2 + diff3,
+			want: map[string][]byte{
+				"my-default-branch": []byte(diff1 + diff2 + diff3),
 			},
 		},
 	}
 
 	for _, tc := range tests {
-		have, err := groupFileDiffs(tc.diff, defaultBranch, tc.groups)
+		have, err := groupFileDiffs([]byte(tc.diff), defaultBranch, tc.groups)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}

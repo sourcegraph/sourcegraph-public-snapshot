@@ -1,21 +1,18 @@
 import { fireEvent, getByRole, screen } from '@testing-library/react'
-import { createMemoryHistory, createLocation } from 'history'
 import { NEVER } from 'rxjs'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { assertAriaDisabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { mockAuthenticatedUser, mockCodeMonitorFields } from '../testing/util'
 
 import { CodeMonitorForm, CodeMonitorFormProps } from './CodeMonitorForm'
 
 const PROPS: CodeMonitorFormProps = {
-    history: createMemoryHistory(),
-    location: createLocation('/code-monitoring/new'),
     onSubmit: () => NEVER,
     submitButtonLabel: '',
     authenticatedUser: mockAuthenticatedUser,
-    isLightTheme: true,
     isSourcegraphDotCom: false,
 }
 
@@ -51,7 +48,7 @@ describe('CodeMonitorForm', () => {
         fireEvent.click(getByTestId('form-action-toggle-email'))
         fireEvent.click(getByTestId('delete-action-email'))
 
-        expect(getByTestId('submit-monitor')).toBeDisabled()
+        assertAriaDisabled(getByTestId('submit-monitor'))
     })
 
     test('Submit button enabled if one action is present', () => {

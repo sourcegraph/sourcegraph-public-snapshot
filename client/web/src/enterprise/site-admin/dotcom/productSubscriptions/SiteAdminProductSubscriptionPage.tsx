@@ -1,15 +1,13 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
 import { mdiArrowLeft, mdiPlus } from '@mdi/js'
-import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     Button,
     LoadingSpinner,
@@ -21,13 +19,19 @@ import {
     Card,
     Icon,
     H2,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import { Timestamp } from '../../../../components/time/Timestamp'
-import { ArchiveProductSubscriptionResult, ArchiveProductSubscriptionVariables } from '../../../../graphql-operations'
+import {
+    ArchiveProductSubscriptionResult,
+    ArchiveProductSubscriptionVariables,
+    DotComProductSubscriptionResult,
+    ProductLicensesResult,
+    ProductLicenseFields,
+} from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
@@ -41,19 +45,13 @@ import {
     SiteAdminProductLicenseNodeProps,
 } from './SiteAdminProductLicenseNode'
 
-interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
+interface Props {
     /** For mocking in tests only. */
     _queryProductSubscription?: typeof queryProductSubscription
 
     /** For mocking in tests only. */
     _queryProductLicenses?: typeof queryProductLicenses
-    history: H.History
 }
-
-class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
-    GQL.IProductLicense,
-    Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
-> {}
 
 const LOADING = 'loading' as const
 
@@ -61,14 +59,11 @@ const LOADING = 'loading' as const
  * Displays a product subscription in the site admin area.
  */
 export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
-    match: {
-        params: { subscriptionUUID },
-    },
     _queryProductSubscription = queryProductSubscription,
     _queryProductLicenses = queryProductLicenses,
 }) => {
+    const navigate = useNavigate()
+    const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
 
     const [showGenerate, setShowGenerate] = useState<boolean>(false)
@@ -104,14 +99,14 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                     switchMap(() =>
                         archiveProductSubscription({ id: productSubscription.id }).pipe(
                             mapTo(undefined),
-                            tap(() => history.push('/site-admin/dotcom/product/subscriptions')),
+                            tap(() => navigate('/site-admin/dotcom/product/subscriptions')),
                             catchError(error => [asError(error)]),
                             startWith(LOADING)
                         )
                     )
                 )
             },
-            [history, productSubscription]
+            [navigate, productSubscription]
         )
     )
 
@@ -210,11 +205,15 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             <CardBody>
                                 <SiteAdminGenerateProductLicenseForSubscriptionForm
                                     subscriptionID={productSubscription.id}
+                                    subscriptionAccount={productSubscription.account?.username || ''}
                                     onGenerate={onLicenseUpdate}
                                 />
                             </CardBody>
                         )}
-                        <FilteredSiteAdminProductLicenseConnection
+                        <FilteredConnection<
+                            ProductLicenseFields,
+                            Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
+                        >
                             className="list-group list-group-flush"
                             noun="product license"
                             pluralNoun="product licenses"
@@ -225,8 +224,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             hideSearch={true}
                             noSummaryIfAllNodesVisible={true}
                             updates={licenseUpdates}
-                            history={history}
-                            location={location}
                         />
                     </Card>
                 </>
@@ -235,8 +232,10 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
     )
 }
 
-function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscription> {
-    return queryGraphQL(
+function queryProductSubscription(
+    uuid: string
+): Observable<DotComProductSubscriptionResult['dotcom']['productSubscription']> {
+    return queryGraphQL<DotComProductSubscriptionResult>(
         gql`
             query DotComProductSubscription($uuid: String!) {
                 dotcom {
@@ -262,6 +261,17 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                                 hasNextPage
                             }
                         }
+                        activeLicense {
+                            id
+                            info {
+                                productNameWithBrand
+                                tags
+                                userCount
+                                expiresAt
+                            }
+                            licenseKey
+                            createdAt
+                        }
                         createdAt
                         isArchived
                         url
@@ -282,7 +292,7 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
         { uuid }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.dotcom || !data.dotcom.productSubscription || (errors && errors.length > 0)) {
+            if (!data?.dotcom?.productSubscription || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.dotcom.productSubscription
@@ -293,8 +303,8 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
 function queryProductLicenses(
     subscriptionUUID: string,
     args: { first?: number }
-): Observable<GQL.IProductLicenseConnection> {
-    return queryGraphQL(
+): Observable<ProductLicensesResult['dotcom']['productSubscription']['productLicenses']> {
+    return queryGraphQL<ProductLicensesResult>(
         gql`
             query ProductLicenses($first: Int, $subscriptionUUID: String!) {
                 dotcom {
@@ -319,13 +329,7 @@ function queryProductLicenses(
         }
     ).pipe(
         map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.dotcom ||
-                !data.dotcom.productSubscription ||
-                !data.dotcom.productSubscription.productLicenses ||
-                (errors && errors.length > 0)
-            ) {
+            if (!data?.dotcom?.productSubscription?.productLicenses || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.dotcom.productSubscription.productLicenses
@@ -347,7 +351,7 @@ function archiveProductSubscription(args: ArchiveProductSubscriptionVariables): 
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.dotcom || !data.dotcom.archiveProductSubscription || (errors && errors.length > 0)) {
+            if (!data?.dotcom?.archiveProductSubscription || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
         })

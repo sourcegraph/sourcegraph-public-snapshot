@@ -3,10 +3,10 @@ import { FC, ReactNode } from 'react'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { Button, Card, Input, Code } from '@sourcegraph/wildcard'
+import { Button, Card, Input, Code, useForm, useField, getDefaultInputProps } from '@sourcegraph/wildcard'
 
 import { DEFAULT_DATA_SERIES_COLOR } from '../../../../../constants'
-import { getDefaultInputProps, useField, InsightQueryInput, useForm } from '../../../../form'
+import { InsightQueryInput } from '../../../../form'
 import { EditableDataSeries } from '../../types'
 import { FormColorInput } from '../form-color-input/FormColorInput'
 
@@ -26,7 +26,13 @@ interface FormSeriesInputProps {
      * Code Insight repositories field string value - repo1, repo2, ...
      * This prop is used in order to generate a proper link for the query preview button.
      */
-    repositories: string
+    repositories: string[]
+
+    /**
+     * Code Insight repoQuery field string value - repo:github.com/sourcegraph/*
+     * This prop is used in order to generate a proper link for the query preview button.
+     */
+    repoQuery: string | null
 
     /**
      * This field is only needed for specifying a special compute-specific
@@ -63,6 +69,7 @@ export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
         className,
         cancel = false,
         autofocus = true,
+        repoQuery,
         repositories,
         queryFieldDescription,
         onCancel = noop,
@@ -133,14 +140,15 @@ export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
                 label="Search query"
                 required={true}
                 as={InsightQueryInput}
+                repoQuery={repoQuery}
                 repositories={repositories}
                 patternType={getQueryPatternTypeFilter(queryField.input.value)}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 message={
                     queryFieldDescription ?? (
                         <span>
-                            Do not include the <Code>context:</Code> or <Code>repo:</Code> filter; if needed,{' '}
-                            <Code>repo:</Code> will be added automatically.
+                            Do not include <Code>context:</Code> <Code>repo:</Code> or <Code>rev:</Code> filters; if
+                            needed, <Code>repo:</Code> will be added automatically.
                         </span>
                     )
                 }

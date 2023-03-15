@@ -3,7 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph/alpine-3.14:174825_2022-09-28_291dca5d9725@sha256:0bfed82a206a1f313b7276521375dc4d27caa45c324f99e7da0453cecbd31980
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -19,7 +19,9 @@ ENV EXECUTOR_USE_FIRECRACKER=false
 
 # Install git and docker. We use the same version here as we use in gitserver.
 RUN apk add --no-cache \
-    'git>=2.34.1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main \
+    # Minimal version requirement to address vulnerabilities
+    # https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/
+    'git>=2.39.2-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
     docker \
     ca-certificates
 

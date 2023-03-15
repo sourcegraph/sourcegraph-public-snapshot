@@ -1,12 +1,13 @@
 import React, { useCallback } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextFields, SearchContextProps } from '@sourcegraph/search'
+import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { Button, LoadingSpinner, useEventObservable, Modal, Alert, H3, Text } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION } from '../../components/AwayPrompt'
@@ -24,7 +25,7 @@ export const DeleteSearchContextModal: React.FunctionComponent<
 > = ({ isOpen, deleteSearchContext, toggleDeleteModal, searchContext, platformContext }) => {
     const LOADING = 'loading' as const
     const deleteLabelId = 'deleteSearchContextId'
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const [onDelete, deleteCompletedOrError] = useEventObservable(
         useCallback(
@@ -33,14 +34,14 @@ export const DeleteSearchContextModal: React.FunctionComponent<
                     mergeMap(() =>
                         deleteSearchContext(searchContext.id, platformContext).pipe(
                             tap(() => {
-                                history.push('/contexts', ALLOW_NAVIGATION)
+                                navigate('/contexts', { state: ALLOW_NAVIGATION })
                             }),
                             startWith(LOADING),
                             catchError(error => [asError(error)])
                         )
                     )
                 ),
-            [deleteSearchContext, history, searchContext, platformContext]
+            [deleteSearchContext, navigate, searchContext, platformContext]
         )
     )
 

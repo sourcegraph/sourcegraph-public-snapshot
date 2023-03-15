@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
+import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 
 const onClickCTA = (): void => {
@@ -23,7 +24,7 @@ export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<
         variant="success"
         className={classNames('d-flex align-items-center', className)}
     >
-        <Link className="site-alert__link" to="/site-admin/external-services" onClick={onClickCTA}>
+        <Link className="site-alert__link" to={PageRoutes.SetupWizard} onClick={onClickCTA}>
             <span className="underline">Connect a code host</span>
         </Link>
         &nbsp;to connect repositories to Sourcegraph.

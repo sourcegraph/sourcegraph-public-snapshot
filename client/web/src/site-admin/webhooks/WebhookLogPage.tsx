@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 
-import { Container, PageHeader, H5 } from '@sourcegraph/wildcard'
+import { Alert, Container, PageHeader, H5, Link } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
@@ -14,14 +13,14 @@ import { WebhookLogPageHeader } from './WebhookLogPageHeader'
 
 import styles from './WebhookLogPage.module.scss'
 
-export interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
+export interface Props {
     queryWebhookLogs?: typeof _queryWebhookLogs
+    webhookID?: string
 }
 
 export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
     queryWebhookLogs = _queryWebhookLogs,
+    webhookID,
 }) => {
     const [onlyErrors, setOnlyErrors] = useState(false)
     const [externalService, setExternalService] = useState<SelectedExternalService>('all')
@@ -34,9 +33,10 @@ export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Pro
                     after: after ?? null,
                 },
                 externalService,
-                onlyErrors
+                onlyErrors,
+                webhookID
             ),
-        [externalService, onlyErrors, queryWebhookLogs]
+        [externalService, onlyErrors, queryWebhookLogs, webhookID]
     )
 
     return (
@@ -48,6 +48,10 @@ export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Pro
                 description="Use these logs of received webhooks to debug integrations"
                 className="mb-3"
             />
+            <Alert variant="warning">
+                This webhooks page has been deprecated, please see our{' '}
+                <Link to="/site-admin/webhooks/">new webhooks page</Link>.
+            </Alert>
             <Container>
                 <WebhookLogPageHeader
                     onlyErrors={onlyErrors}
@@ -56,8 +60,6 @@ export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Pro
                     onSelectExternalService={setExternalService}
                 />
                 <FilteredConnection
-                    history={history}
-                    location={location}
                     queryConnection={query}
                     nodeComponent={WebhookLogNode}
                     noun="webhook log"

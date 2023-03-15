@@ -41,7 +41,9 @@ func ConnectInternal(logger log.Logger, dsn, appName, dbName string) (_ *sql.DB,
 
 	if dbName != "" {
 		if err := prometheus.Register(newMetricsCollector(db, dbName, appName)); err != nil {
-			return nil, err
+			if _, ok := err.(prometheus.AlreadyRegisteredError); !ok {
+				return nil, err
+			}
 		}
 	}
 

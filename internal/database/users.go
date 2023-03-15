@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -38,26 +39,26 @@ import (
 var (
 	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
-	BeforeCreateUser func(ctx context.Context, db DB) error
+	BeforeCreateUser func(ctx context.Context, db DB, spec *extsvc.AccountSpec) error
 	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
 	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
 	AfterCreateUser func(ctx context.Context, db DB, user *types.User) error
 	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
 	// site admin.
-	BeforeSetUserIsSiteAdmin func(isSiteAdmin bool) error
+	BeforeSetUserIsSiteAdmin func(ctx context.Context, isSiteAdmin bool) error
 )
 
 // UserStore provides access to the `users` table.
 //
 // For a detailed overview of the schema, see schema.md.
 type UserStore interface {
+	basestore.ShareableStore
 	CheckAndDecrementInviteQuota(context.Context, int32) (ok bool, err error)
 	Count(context.Context, *UsersListOptions) (int, error)
 	Create(context.Context, NewUser) (*types.User, error)
-	CreateInTransaction(context.Context, NewUser) (*types.User, error)
+	CreateInTransaction(context.Context, NewUser, *extsvc.AccountSpec) (*types.User, error)
 	CreatePassword(ctx context.Context, id int32, password string) error
-	CurrentUserAllowedExternalServices(context.Context) (conf.ExternalServiceMode, error)
 	Delete(context.Context, int32) error
 	DeleteList(context.Context, []int32) error
 	DeletePasswordResetCode(context.Context, int32) error
@@ -76,8 +77,11 @@ type UserStore interface {
 	InvalidateSessionsByIDs(context.Context, []int32) (err error)
 	IsPassword(ctx context.Context, id int32, password string) (bool, error)
 	List(context.Context, *UsersListOptions) (_ []*types.User, err error)
+	ListForSCIM(context.Context, *UsersListOptions) (_ []*types.UserForSCIM, err error)
 	ListDates(context.Context) ([]types.UserDates, error)
+	ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error)
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
+	RecoverUsersList(context.Context, []int32) (_ []int32, err error)
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
 	SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error)
@@ -86,7 +90,6 @@ type UserStore interface {
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
-	UserAllowedExternalServices(context.Context, int32) (conf.ExternalServiceMode, error)
 	With(basestore.ShareableStore) UserStore
 }
 
@@ -98,7 +101,7 @@ type userStore struct {
 var _ UserStore = (*userStore)(nil)
 
 // Users instantiates and returns a new RepoStore with prepared statements.
-func Users(logger log.Logger, db dbutil.DB) UserStore {
+func Users(logger log.Logger) UserStore {
 	return &userStore{
 		logger: logger,
 		Store:  &basestore.Store{},
@@ -118,6 +121,10 @@ func (u *userStore) With(other basestore.ShareableStore) UserStore {
 }
 
 func (u *userStore) Transact(ctx context.Context) (UserStore, error) {
+	return u.transact(ctx)
+}
+
+func (u *userStore) transact(ctx context.Context) (*userStore, error) {
 	txBase, err := u.Store.Transact(ctx)
 	return &userStore{logger: u.logger, Store: txBase}, err
 }
@@ -125,6 +132,15 @@ func (u *userStore) Transact(ctx context.Context) (UserStore, error) {
 // userNotFoundErr is the error that is returned when a user is not found.
 type userNotFoundErr struct {
 	args []any
+}
+
+func IsUserNotFoundErr(err error) bool {
+	_, ok := err.(userNotFoundErr)
+	return ok
+}
+
+func NewUserNotFoundErr(args ...any) userNotFoundErr {
+	return userNotFoundErr{args: args}
 }
 
 func (err userNotFoundErr) Error() string {
@@ -141,35 +157,35 @@ func NewUserNotFoundError(userID int32) error {
 	return userNotFoundErr{args: []any{"userID", userID}}
 }
 
-// errCannotCreateUser is the error that is returned when
+// ErrCannotCreateUser is the error that is returned when
 // a user cannot be added to the DB due to a constraint.
-type errCannotCreateUser struct {
+type ErrCannotCreateUser struct {
 	code string
 }
 
 const (
-	errorCodeUsernameExists = "err_username_exists"
-	errorCodeEmailExists    = "err_email_exists"
+	ErrorCodeUsernameExists = "err_username_exists"
+	ErrorCodeEmailExists    = "err_email_exists"
 )
 
-func (err errCannotCreateUser) Error() string {
+func (err ErrCannotCreateUser) Error() string {
 	return fmt.Sprintf("cannot create user: %v", err.code)
 }
 
-func (err errCannotCreateUser) Code() string {
+func (err ErrCannotCreateUser) Code() string {
 	return err.code
 }
 
 // IsUsernameExists reports whether err is an error indicating that the intended username exists.
 func IsUsernameExists(err error) bool {
-	var e errCannotCreateUser
-	return errors.As(err, &e) && e.code == errorCodeUsernameExists
+	var e ErrCannotCreateUser
+	return errors.As(err, &e) && e.code == ErrorCodeUsernameExists
 }
 
 // IsEmailExists reports whether err is an error indicating that the intended email exists.
 func IsEmailExists(err error) bool {
-	var e errCannotCreateUser
-	return errors.As(err, &e) && e.code == errorCodeEmailExists
+	var e ErrCannotCreateUser
+	return errors.As(err, &e) && e.code == ErrorCodeEmailExists
 }
 
 // NewUser describes a new to-be-created user.
@@ -201,7 +217,12 @@ type NewUser struct {
 
 	// TosAccepted is whether the user is created with the terms of service accepted already.
 	TosAccepted bool `json:"-"` // forbid this field being set by JSON, just in case
+}
 
+type NewUserForSCIM struct {
+	NewUser
+	AdditionalVerifiedEmails []string
+	SCIMExternalID           string
 }
 
 // Create creates a new user in the database.
@@ -227,7 +248,7 @@ func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
-	newUser, err = tx.CreateInTransaction(ctx, info)
+	newUser, err = tx.CreateInTransaction(ctx, info, nil)
 	if err == nil {
 		logAccountCreatedEvent(ctx, NewDBWith(u.logger, u), newUser, "")
 	}
@@ -242,7 +263,7 @@ func CheckPassword(pw string) error {
 // CreateInTransaction is like Create, except it is expected to be run from within a
 // transaction. It must execute in a transaction because the post-user-creation
 // hooks must run atomically with the user creation.
-func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newUser *types.User, err error) {
+func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec *extsvc.AccountSpec) (newUser *types.User, err error) {
 	if !u.InTransaction() {
 		return nil, errors.New("must run within a transaction")
 	}
@@ -289,12 +310,12 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 		return nil, err
 	}
 	if alreadyInitialized && info.FailIfNotInitialUser {
-		return nil, errCannotCreateUser{"site_already_initialized"}
+		return nil, ErrCannotCreateUser{"site_already_initialized"}
 	}
 
 	// Run BeforeCreateUser hook.
 	if BeforeCreateUser != nil {
-		if err := BeforeCreateUser(ctx, NewDBWith(u.logger, u.Store)); err != nil {
+		if err := BeforeCreateUser(ctx, NewDBWith(u.logger, u.Store), spec); err != nil {
 			return nil, errors.Wrap(err, "pre create user hook")
 		}
 	}
@@ -309,21 +330,21 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 		if errors.As(err, &e) {
 			switch e.ConstraintName {
 			case "users_username":
-				return nil, errCannotCreateUser{errorCodeUsernameExists}
+				return nil, ErrCannotCreateUser{ErrorCodeUsernameExists}
 			case "users_username_max_length", "users_username_valid_chars", "users_display_name_max_length":
-				return nil, errCannotCreateUser{e.ConstraintName}
+				return nil, ErrCannotCreateUser{e.ConstraintName}
 			}
 		}
 		return nil, err
 	}
 	if info.FailIfNotInitialUser && !siteAdmin {
 		// Refuse to make the user the initial site admin if there are other existing users.
-		return nil, errCannotCreateUser{"initial_site_admin_must_be_first_user"}
+		return nil, ErrCannotCreateUser{"initial_site_admin_must_be_first_user"}
 	}
 
 	// Reserve username in shared users+orgs namespace.
 	if err := u.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) VALUES(%s, %s)", info.Username, id)); err != nil {
-		return nil, errCannotCreateUser{errorCodeUsernameExists}
+		return nil, ErrCannotCreateUser{ErrorCodeUsernameExists}
 	}
 
 	if info.Email != "" {
@@ -334,7 +355,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 			return nil, err
 		}
 		if exists {
-			return nil, errCannotCreateUser{errorCodeEmailExists}
+			return nil, ErrCannotCreateUser{ErrorCodeEmailExists}
 		}
 
 		// The first email address added should be their primary
@@ -346,7 +367,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 		if err != nil {
 			var e *pgconn.PgError
 			if errors.As(err, &e) && e.ConstraintName == "user_emails_unique_verified_email" {
-				return nil, errCannotCreateUser{errorCodeEmailExists}
+				return nil, ErrCannotCreateUser{ErrorCodeEmailExists}
 			}
 			return nil, err
 		}
@@ -364,6 +385,26 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 		InvalidatedSessionsAt: invalidatedSessionsAt,
 		Searchable:            searchable,
 	}
+
+	{
+		// Assign roles to the created user. We do this in here to ensure role assign occurs in the same transaction as user creation occurs.
+		// This ensures we don't have "zombie" users (users with no role assigned to them).
+		// All users on a Sourcegraph instance must have the `USER` role, however depending on the value of user.SiteAdmin,
+		// we assign them the `SITE_ADMINISTRATOR` role.
+		roles := []types.SystemRole{types.UserSystemRole}
+		if user.SiteAdmin {
+			roles = append(roles, types.SiteAdministratorSystemRole)
+		}
+
+		db := NewDBWith(u.logger, u)
+		if err := db.UserRoles().BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
+			UserID: user.ID,
+			Roles:  roles,
+		}); err != nil {
+			return nil, err
+		}
+	}
+
 	{
 		// Run hooks.
 		//
@@ -406,6 +447,50 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		Name:            SecurityEventNameAccountCreated,
 		URL:             "",
 		UserID:          uint32(u.ID),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	db.SecurityEventLogs().LogEvent(ctx, event)
+
+	eArg, _ := json.Marshal(struct {
+		Creator     int32  `json:"creator"`
+		Created     int32  `json:"created"`
+		SiteAdmin   bool   `json:"site_admin"`
+		ServiceType string `json:"service_type"`
+	}{
+		Creator:     a.UID,
+		Created:     u.ID,
+		SiteAdmin:   u.SiteAdmin,
+		ServiceType: serviceType,
+	})
+	logEvent := &Event{
+		Name:            "AccountCreated",
+		URL:             "",
+		AnonymousUserID: "backend",
+		Argument:        eArg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+	db.EventLogs().Insert(ctx, logEvent)
+}
+
+func logAccountModifiedEvent(ctx context.Context, db DB, userID int32, serviceType string) {
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Modifier    int32  `json:"modifier"`
+		ServiceType string `json:"service_type"`
+	}{
+		Modifier:    a.UID,
+		ServiceType: serviceType,
+	})
+
+	event := &SecurityEvent{
+		Name:            SecurityEventNameAccountModified,
+		URL:             "",
+		UserID:          uint32(userID),
 		AnonymousUserID: "",
 		Argument:        arg,
 		Source:          "BACKEND",
@@ -490,7 +575,7 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	if err != nil {
 		var e *pgconn.PgError
 		if errors.As(err, &e) && e.ConstraintName == "users_username" {
-			return errCannotCreateUser{errorCodeUsernameExists}
+			return ErrCannotCreateUser{ErrorCodeUsernameExists}
 		}
 		return err
 	}
@@ -540,13 +625,13 @@ func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM names WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE subject_user_id IN (%s) OR creator_user_id IN (%s)", idsCond, idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE deleted_at IS NULL AND (subject_user_id IN (%s) OR creator_user_id IN (%s))", idsCond, idsCond)); err != nil {
 		return err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE user_id IN (%s) AND deleted_at IS NULL", idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE deleted_at IS NULL AND user_id IN (%s) AND deleted_at IS NULL", idsCond)); err != nil {
 		return err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
@@ -568,6 +653,10 @@ func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
 
 // HardDeleteList performs a bulk "HardDelete" action.
 func (u *userStore) HardDeleteList(ctx context.Context, ids []int32) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := u.Transact(ctx)
 	if err != nil {
@@ -669,18 +758,157 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 		}
 	}
 	db.SecurityEventLogs().LogEventList(ctx, events)
+
+	logEvents := make([]*Event, len(ids))
+	for index, id := range ids {
+		eArg, _ := json.Marshal(struct {
+			Deleter int32 `json:"deleter"`
+			Deleted int32 `json:"deleted"`
+		}{
+			Deleter: a.UID,
+			Deleted: id,
+		})
+		logEvents[index] = &Event{
+			Name:            string(name),
+			URL:             "",
+			AnonymousUserID: "backend",
+			Argument:        eArg,
+			Source:          "BACKEND",
+			Timestamp:       now,
+		}
+	}
+	db.EventLogs().BulkInsert(ctx, logEvents)
 }
 
-// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
+// RecoverList recovers a list of users by their IDs.
+func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int32, err error) {
+	tx, err := u.transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	userIDs := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		userIDs[i] = sqlf.Sprintf("%d", ids[i])
+	}
+	idsCond := sqlf.Join(userIDs, ",")
+
+	if err := tx.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) SELECT username, id FROM users WHERE id IN(%s)", idsCond)); err != nil {
+		return nil, err
+	}
+
+	const updateAccessTokensQuery = `
+	UPDATE access_tokens as a
+	SET deleted_at = null
+	FROM users as u
+	WHERE a.creator_user_id = u.id
+	AND a.deleted_at >= u.deleted_at
+	AND a.deleted_at <= u.deleted_at + interval '10 second'
+	AND (a.creator_user_id IN (%s) OR a.subject_user_id IN (%s))
+	`
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateAccessTokensQuery, idsCond, idsCond)); err != nil {
+		return nil, err
+	}
+
+	const updateUserExtAccQuery = `
+	UPDATE user_external_accounts AS a
+	SET deleted_at = NULL, updated_at = now()
+	FROM users AS u
+	WHERE a.user_id = u.id
+	AND a.deleted_at >= u.deleted_at
+	AND a.deleted_at <= u.deleted_at + interval '10 second'
+	AND a.user_id IN (%s)
+	`
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateUserExtAccQuery, idsCond)); err != nil {
+		return nil, err
+	}
+	const updateOrgInvQuery = `
+	UPDATE org_invitations AS o
+	SET deleted_at = NULL
+	FROM users  AS u
+	WHERE o.recipient_user_id = u.id
+	AND o.deleted_at >= u.deleted_at
+	AND o.deleted_at <= u.deleted_at + interval '10 second'
+	AND (o.sender_user_id IN (%s) OR o.recipient_user_id IN (%s))
+	`
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateOrgInvQuery, idsCond, idsCond)); err != nil {
+		return nil, err
+	}
+	const updateRegistryExtQuery = `
+	UPDATE registry_extensions AS r
+	SET deleted_at = NULL, updated_at = now()
+	FROM users AS u
+	WHERE r.publisher_user_id = u.id
+	AND r.deleted_at >= u.deleted_at
+	AND r.deleted_at <= u.deleted_at + interval '10 second'
+	AND r.publisher_user_id IN (%s)
+	`
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateRegistryExtQuery, idsCond)); err != nil {
+		return nil, err
+	}
+
+	updateIds, err := basestore.ScanInt32s(tx.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
+	if err != nil {
+		return nil, err
+	}
+
+	return updateIds, nil
+}
+
+// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin. It also assigns the role `SITE_ADMINISTRATOR`
+// to the user when `isSiteAdmin` is true and revokes the role when false.
 func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	if BeforeSetUserIsSiteAdmin != nil {
-		if err := BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
+		if err := BeforeSetUserIsSiteAdmin(ctx, isSiteAdmin); err != nil {
 			return err
 		}
 	}
 
-	err := u.Store.Exec(ctx, sqlf.Sprintf("UPDATE users SET site_admin=%s WHERE id=%s", isSiteAdmin, id))
-	return err
+	db := NewDBWith(u.logger, u)
+	return db.WithTransact(ctx, func(tx DB) error {
+		userStore := tx.Users()
+		err := userStore.Exec(ctx, sqlf.Sprintf("UPDATE users SET site_admin=%s WHERE id=%s", isSiteAdmin, id))
+		if err != nil {
+			return err
+		}
+
+		userRoleStore := tx.UserRoles()
+		if isSiteAdmin {
+			err := userRoleStore.AssignSystemRole(ctx, AssignSystemRoleOpts{
+				UserID: id,
+				Role:   types.SiteAdministratorSystemRole,
+			})
+			a := actor.FromContext(ctx)
+			arg, _ := json.Marshal(struct {
+				Assigner int32  `json:"assigner"`
+				Assignee int32  `json:"assignee"`
+				Role     string `json:"role"`
+			}{
+				Assigner: a.UID,
+				Assignee: id,
+				Role:     string(types.SiteAdministratorSystemRole),
+			})
+			logEvent := &Event{
+				Name:            "RoleChangeGranted",
+				URL:             "",
+				AnonymousUserID: "backend",
+				Argument:        arg,
+				Source:          "BACKEND",
+				Timestamp:       time.Now(),
+			}
+			db.EventLogs().Insert(ctx, logEvent)
+			return err
+		}
+
+		err = userRoleStore.RevokeSystemRole(ctx, RevokeSystemRoleOpts{
+			UserID: id,
+			Role:   types.SiteAdministratorSystemRole,
+		})
+		return err
+	})
 }
 
 // CheckAndDecrementInviteQuota should be called before the user (identified
@@ -802,6 +1030,10 @@ type UsersListOptions struct {
 	Query string
 	// UserIDs specifies a list of user IDs to include.
 	UserIDs []int32
+	// Usernames specifies a list of usernames to include.
+	Usernames []string
+	// Only show users inside this org
+	OrgID int32
 
 	Tag string // only include users with this tag
 
@@ -809,7 +1041,14 @@ type UsersListOptions struct {
 	// `timestamp` greater-than-or-equal to the given timestamp.
 	InactiveSince time.Time
 
-	ExcludeSourcegraphAdmins bool // filter out users with a known Sourcegraph admin username
+	// Filter out users with a known Sourcegraph admin username
+	//
+	// Deprecated: Use ExcludeSourcegraphOperators instead. If you have to use this,
+	// then set both fields with the same value at the same time.
+	ExcludeSourcegraphAdmins bool
+	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
+	// user accounts.
+	ExcludeSourcegraphOperators bool
 
 	*LimitOffset
 }
@@ -828,6 +1067,23 @@ func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types
 
 	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL())
 	return u.getBySQL(ctx, q)
+}
+
+// ListForSCIM lists users along with their email addresses and SCIM ExternalID.
+func (u *userStore) ListForSCIM(ctx context.Context, opt *UsersListOptions) (_ []*types.UserForSCIM, err error) {
+	tr, ctx := trace.New(ctx, "database.Users.ListForSCIM", fmt.Sprintf("%+v", opt))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if opt == nil {
+		opt = &UsersListOptions{}
+	}
+	conditions := u.listSQL(*opt)
+
+	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conditions, "AND"), opt.LimitOffset.SQL())
+	return u.getBySQLForSCIM(ctx, q)
 }
 
 // ListDates lists all user's created and deleted dates, used by usage stats.
@@ -856,11 +1112,35 @@ func (u *userStore) ListDates(ctx context.Context) (dates []types.UserDates, _ e
 	return dates, nil
 }
 
+func (u *userStore) ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error) {
+	where := []*sqlf.Query{
+		sqlf.Sprintf(orgMembershipCond, orgID),
+		sqlf.Sprintf("u.deleted_at IS NULL"),
+	}
+
+	if cond := newQueryCond(query); cond != nil {
+		where = append(where, cond)
+	}
+
+	p := paginationArgs.SQL()
+
+	if p.Where != nil {
+		where = append(where, p.Where)
+	}
+
+	q := sqlf.Sprintf("WHERE %s", sqlf.Join(where, "AND"))
+	q = p.AppendOrderToQuery(q)
+	q = p.AppendLimitToQuery(q)
+
+	return u.getBySQL(ctx, q)
+}
+
 const listDatesQuery = `
 SELECT id, created_at, deleted_at
 FROM users
 ORDER BY id ASC
 `
+
 const listUsersInactiveCond = `
 (NOT EXISTS (
 	SELECT 1 FROM event_logs
@@ -871,13 +1151,42 @@ const listUsersInactiveCond = `
 ))
 `
 
-func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
-	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
-	if opt.Query != "" {
-		query := "%" + opt.Query + "%"
-		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
+const orgMembershipCond = `
+EXISTS (
+	SELECT 1
+	FROM org_members
+	WHERE
+		org_members.user_id = u.id
+		AND org_members.org_id = %d)
+`
+
+func newQueryCond(query *string) *sqlf.Query {
+	if query != nil && *query != "" {
+		q := "%" + *query + "%"
+
+		items := []*sqlf.Query{
+			sqlf.Sprintf("username ILIKE %s", q),
+			sqlf.Sprintf("display_name ILIKE %s", q),
+		}
+
+		// Query looks like an ID
+		if id, ok := maybeQueryIsID(*query); ok {
+			items = append(items, sqlf.Sprintf("id = %d", id))
+		}
+
+		return sqlf.Sprintf("(%s)", sqlf.Join(items, " OR "))
 	}
+
+	return nil
+}
+
+func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
+	conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+
+	if cond := newQueryCond(&opt.Query); cond != nil {
+		conds = append(conds, cond)
+	}
+
 	if opt.UserIDs != nil {
 		if len(opt.UserIDs) == 0 {
 			// Must return empty result set.
@@ -889,6 +1198,13 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 			}
 			conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
 		}
+	}
+
+	if len(opt.Usernames) > 0 {
+		conds = append(conds, sqlf.Sprintf("u.username = ANY(%s)", pq.Array(opt.Usernames)))
+	}
+	if opt.OrgID != 0 {
+		conds = append(conds, sqlf.Sprintf(orgMembershipCond, opt.OrgID))
 	}
 	if opt.Tag != "" {
 		conds = append(conds, sqlf.Sprintf("%s::text = ANY(u.tags)", opt.Tag))
@@ -911,6 +1227,8 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	// This method of filtering is imperfect and may still incur false positives, but
 	// the two together should help prevent that in the majority of cases, and we
 	// acknowledge this risk as we would prefer to undercount rather than overcount.
+	//
+	// TODO(jchen): This hack will be removed as part of https://github.com/sourcegraph/customer/issues/1531
 	if opt.ExcludeSourcegraphAdmins {
 		conds = append(conds, sqlf.Sprintf(`
 -- The user does not...
@@ -928,7 +1246,17 @@ NOT(
 			AND user_emails.email ILIKE '%%@sourcegraph.com')
 )
 `))
+	}
 
+	if opt.ExcludeSourcegraphOperators {
+		conds = append(conds, sqlf.Sprintf(`
+NOT EXISTS (
+	SELECT FROM user_external_accounts
+	WHERE
+		service_type = 'sourcegraph-operator'
+	AND user_id = u.id
+)
+`))
 	}
 	return conds
 }
@@ -946,7 +1274,21 @@ func (u *userStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.User, error) {
-	q := sqlf.Sprintf("SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at, u.tos_accepted, u.searchable FROM users u %s", query)
+	q := sqlf.Sprintf(`
+SELECT u.id,
+       u.username,
+       u.display_name,
+       u.avatar_url,
+       u.created_at,
+       u.updated_at,
+       u.site_admin,
+       u.passwd IS NOT NULL,
+       u.tags,
+       u.invalidated_sessions_at,
+       u.tos_accepted,
+       u.searchable,
+       EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled
+FROM users u %s`, query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -957,7 +1299,7 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, &u.SCIMControlled)
 		if err != nil {
 			return nil, err
 		}
@@ -970,6 +1312,58 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	}
 
 	return users, nil
+}
+
+const userForSCIMQueryFmtStr = `
+WITH scim_accounts AS (
+    SELECT
+        user_id,
+        account_id,
+        account_data
+    FROM user_external_accounts
+    WHERE service_type = 'scim'
+    AND deleted_at IS NULL
+)
+SELECT u.id,
+       u.username,
+       u.display_name,
+       u.avatar_url,
+       u.created_at,
+       u.updated_at,
+       u.site_admin,
+       u.passwd IS NOT NULL,
+       u.tags,
+       u.invalidated_sessions_at,
+       u.tos_accepted,
+       u.searchable,
+       ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
+       sa.account_id AS scim_external_id,
+       sa.account_data AS scim_account_data
+FROM users u
+LEFT JOIN scim_accounts sa ON u.id = sa.user_id
+%s`
+
+// getBySQLForSCIM returns users matching the SQL query, along with their email addresses and SCIM ExternalID.
+func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*types.UserForSCIM, error) {
+	// NOTE: We use a separate query here because we want to fetch the emails and SCIM ExternalID in a single query.
+	q := sqlf.Sprintf(userForSCIMQueryFmtStr, query)
+	scanUsersForSCIM := basestore.NewSliceScanner(scanUserForSCIM)
+	return scanUsersForSCIM(u.Query(ctx, q))
+}
+
+// scanUserForSCIM scans a UserForSCIM from the return of a *sql.Rows.
+func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
+	var u types.UserForSCIM
+	var displayName, avatarURL, scimExternalID, scimAccountData sql.NullString
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
+	if err != nil {
+		return nil, err
+	}
+	u.DisplayName = displayName.String
+	u.AvatarURL = avatarURL.String
+	u.SCIMExternalID = scimExternalID.String
+	u.SCIMAccountData = scimAccountData.String
+	return &u, nil
 }
 
 func (u *userStore) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
@@ -1080,8 +1474,7 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	return nil
 }
 
-// CreatePassword creates a user's password iff don't have a password and they
-// don't have any valid login connections.
+// CreatePassword creates a user's password if they don't have a password.
 func (u *userStore) CreatePassword(ctx context.Context, id int32, password string) error {
 	// 🚨 SECURITY: Check min and max password length
 	if err := CheckPassword(password); err != nil {
@@ -1102,16 +1495,7 @@ WHERE id=%s
   AND passwd IS NULL
   AND passwd_reset_code IS NULL
   AND passwd_reset_time IS NULL
-  AND NOT EXISTS (
-    SELECT 1
-    FROM user_external_accounts
-    WHERE
-          user_id = %s
-      AND deleted_at IS NULL
-      AND expired_at IS NULL
-    )
-`, passwd, id, id))
-
+`, passwd, id))
 	if err != nil {
 		return errors.Wrap(err, "creating password")
 	}
@@ -1172,6 +1556,24 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+
+	eArgs, _ := json.Marshal(struct {
+		Requester int32 `json:"requester"`
+		Requestee int32 `json:"requestee"`
+	}{
+		Requester: a.UID,
+		Requestee: userID,
+	})
+	logEvent := &Event{
+		Name:            string(name),
+		URL:             r.URL.Host,
+		AnonymousUserID: "backend",
+		Argument:        eArgs,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	db.EventLogs().Insert(ctx, logEvent)
 }
 
 func hashPassword(password string) (sql.NullString, error) {
@@ -1191,15 +1593,6 @@ func validPassword(hash, password string) bool {
 	}
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
-
-const (
-	// TagAllowUserExternalServicePrivate if set on a user, allows them to add
-	// private code through external services they own.
-	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
-	// TagAllowUserExternalServicePublic if set on a user, allows them to add
-	// public code through external services they own.
-	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
-)
 
 // SetTag adds (present=true) or removes (present=false) a tag from the given user's set of tags. An
 // error occurs if the user does not exist. Adding a duplicate tag or removing a nonexistent tag is
@@ -1264,45 +1657,6 @@ func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, er
 		tagMap[t] = true
 	}
 	return tagMap, nil
-}
-
-// UserAllowedExternalServices returns whether the supplied user is allowed
-// to add public or private code. This may override the site level value read by
-// conf.ExternalServiceUserMode.
-//
-// It is added in the database package as putting it in the conf package led to
-// many cyclic imports.
-func (u *userStore) UserAllowedExternalServices(ctx context.Context, userID int32) (conf.ExternalServiceMode, error) {
-	siteMode := conf.ExternalServiceUserMode()
-	// If site level already allows all code then no need to check user
-	if userID == 0 || siteMode == conf.ExternalServiceModeAll {
-		return siteMode, nil
-	}
-
-	tags, err := u.Tags(ctx, userID)
-	if err != nil {
-		return siteMode, err
-	}
-
-	// The user may have a tag that opts them in
-	if tags[TagAllowUserExternalServicePrivate] {
-		return conf.ExternalServiceModeAll, nil
-	}
-	if tags[TagAllowUserExternalServicePublic] {
-		return conf.ExternalServiceModePublic, nil
-	}
-
-	return siteMode, nil
-}
-
-// CurrentUserAllowedExternalServices returns whether the current user is allowed
-// to add public or private code. This may override the site level value read by
-// conf.ExternalServiceUserMode.
-//
-// It is added in the database package as putting it in the conf package led to
-// many cyclic imports.
-func (u *userStore) CurrentUserAllowedExternalServices(ctx context.Context) (conf.ExternalServiceMode, error) {
-	return u.UserAllowedExternalServices(ctx, actor.FromContext(ctx).UID)
 }
 
 // MockHashPassword if non-nil is used instead of database.hashPassword. This is useful

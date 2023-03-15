@@ -37,12 +37,12 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:4.1.1
+  sourcegraph/server:4.5.1
 ```
 
 ### Sourcegraph Cluster (Kubernetes)
 
-We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](deploy/kubernetes/configure.md) documentation for more information.
+We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](deploy/kubernetes/configure.md#network-access) documentation for more information.
 
 ### NGINX SSL/HTTPS configuration
 
@@ -109,7 +109,7 @@ There are a few options:
 
 **[2. Generate a self-signed certificate](ssl_https_self_signed_cert_nginx.md)**<br />
 
-_For instances that don't yet have a certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers)._
+_This step can be skipped if you already have a certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers)._
 
 **3. Use your CDN's HTTPS proxy feature**<br />
 

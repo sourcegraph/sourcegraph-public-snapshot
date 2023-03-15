@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "progress-bot_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/cmd/progress-bot",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_drexedam_gravatar//:go_default_library",
+        "@com_github_ozankasikci_go_image_merge//:go_default_library",
+        "@com_github_slack_go_slack//:slack",
+        "@com_github_yuin_goldmark//:goldmark",
+        "@com_github_yuin_goldmark//ast",
+        "@com_github_yuin_goldmark//text",
+        "@com_google_cloud_go_storage//:storage",
+    ],
+)
+
+go_binary(
+    name = "progress-bot",
+    embed = [":progress-bot_lib"],
+    visibility = ["//:__subpackages__"],
+)

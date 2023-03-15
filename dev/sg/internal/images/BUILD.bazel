@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "images",
+    srcs = [
+        "compose.go",
+        "images.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/images",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/std",
+        "//enterprise/dev/ci/images",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_distribution_distribution_v3//reference",
+        "@com_github_docker_docker_credential_helpers//credentials",
+        "@com_github_masterminds_semver//:semver",
+        "@com_github_opencontainers_go_digest//:go-digest",
+        "@com_github_sourcegraph_conc//pool",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+        "@io_k8s_sigs_kustomize_kyaml//kio",
+        "@io_k8s_sigs_kustomize_kyaml//yaml",
+        "@io_k8s_sigs_yaml//:yaml",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "images_test",
+    srcs = ["images_test.go"],
+    embed = [":images"],
+    deps = ["//enterprise/dev/ci/images"],
+)

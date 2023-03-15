@@ -13,7 +13,7 @@ import (
 func TestS3ClientOptions(t *testing.T) {
 	config := Config{
 		S3: S3Config{
-			Endpoint:     "http://minio:9000",
+			Endpoint:     "http://blobstore:9000",
 			UsePathStyle: true,
 		},
 	}
@@ -28,8 +28,8 @@ func TestS3ClientOptions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if endpoint.URL != "http://minio:9000" {
-		t.Errorf("unexpected endpoint. want=%s have=%s", "http://minio:9000", endpoint.URL)
+	if endpoint.URL != "http://blobstore:9000" {
+		t.Errorf("unexpected endpoint. want=%s have=%s", "http://blobstore:9000", endpoint.URL)
 	}
 
 	if !options.UsePathStyle {

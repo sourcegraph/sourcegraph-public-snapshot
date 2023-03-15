@@ -8,6 +8,7 @@ import (
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/log"
 
@@ -24,13 +25,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -39,6 +40,7 @@ import (
 // external clients.
 func newExternalHTTPHandler(
 	db database.DB,
+	enterpriseJobs jobutil.EnterpriseJobs,
 	schema *graphql.Schema,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
 	handlers *internalhttpapi.Handlers,
@@ -53,7 +55,7 @@ func newExternalHTTPHandler(
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler := internalhttpapi.NewHandler(db, r, schema, rateLimitWatcher, handlers)
+	apiHandler := internalhttpapi.NewHandler(db, enterpriseJobs, r, schema, rateLimitWatcher, handlers)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		apiHandler = hooks.PostAuthMiddleware(apiHandler)
@@ -64,7 +66,7 @@ func newExternalHTTPHandler(
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication, except from trusted
 	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(logger, db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
-	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                                        // API accepts access tokens
+	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, logger, apiHandler)                                // API accepts access tokens
 	apiHandler = requestclient.HTTPMiddleware(apiHandler)
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 	if envvar.SourcegraphDotComMode() {
@@ -86,8 +88,8 @@ func newExternalHTTPHandler(
 	appHandler = actor.AnonymousUIDMiddleware(appHandler)
 	appHandler = authMiddlewares.App(appHandler) // 🚨 SECURITY: auth middleware
 	appHandler = middleware.OpenGraphMetadataMiddleware(db.FeatureFlags(), appHandler)
-	appHandler = session.CookieMiddleware(logger, db, appHandler)          // app accepts cookies
-	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
+	appHandler = session.CookieMiddleware(logger, db, appHandler)                  // app accepts cookies
+	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, logger, appHandler) // app accepts access tokens
 	appHandler = requestclient.HTTPMiddleware(appHandler)
 	if envvar.SourcegraphDotComMode() {
 		appHandler = deviceid.Middleware(appHandler)
@@ -136,29 +138,39 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 func newInternalHTTPHandler(
 	schema *graphql.Schema,
 	db database.DB,
+	grpcServer *grpc.Server,
+	enterpriseJobs jobutil.EnterpriseJobs,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	rankingService enterprise.RankingService,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
-	codeIntelServices codeintel.Services,
 ) http.Handler {
 	internalMux := http.NewServeMux()
 	logger := log.Scoped("internal", "internal http handlers")
+
+	internalRouter := router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter())
+	internalhttpapi.RegisterInternalServices(
+		internalRouter,
+		grpcServer,
+		db,
+		enterpriseJobs,
+		schema,
+		newCodeIntelUploadHandler,
+		rankingService,
+		newComputeStreamHandler,
+		rateLimitWatcher,
+	)
+
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
 		actor.HTTPMiddleware(
 			logger,
-			featureflag.Middleware(db.FeatureFlags(),
-				internalhttpapi.NewInternalHandler(
-					router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
-					db,
-					schema,
-					newCodeIntelUploadHandler,
-					newComputeStreamHandler,
-					rateLimitWatcher,
-					codeIntelServices,
-				),
+			featureflag.Middleware(
+				db.FeatureFlags(),
+				internalRouter,
 			),
 		),
 	))
+
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())

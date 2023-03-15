@@ -25,18 +25,14 @@ func RunnerFromDSNsWithSchemas(logger log.Logger, dsns map[string]string, appNam
 	if !ok {
 		return nil, errors.Newf("no available schema matches %q", "codeintel")
 	}
-	codeinsightsSchema, ok := schemaByName(availableSchemas, "codeinsights")
-	if !ok {
-		return nil, errors.Newf("no available schema matches %q", "codeinsights")
-	}
 
 	makeFactory := func(
 		name string,
 		schema *schemas.Schema,
-		factory func(dsn, appName string, observationContext *observation.Context) (*sql.DB, error),
+		factory func(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error),
 	) runner.StoreFactory {
 		return func(ctx context.Context) (runner.Store, error) {
-			db, err := factory(dsns[name], appName, &observation.TestContext)
+			db, err := factory(observation.NewContext(logger), dsns[name], appName)
 			if err != nil {
 				return nil, err
 			}
@@ -45,11 +41,14 @@ func RunnerFromDSNsWithSchemas(logger log.Logger, dsns map[string]string, appNam
 		}
 	}
 	storeFactoryMap := map[string]runner.StoreFactory{
-		"frontend":     makeFactory("frontend", frontendSchema, RawNewFrontendDB),
-		"codeintel":    makeFactory("codeintel", codeintelSchema, RawNewCodeIntelDB),
-		"codeinsights": makeFactory("codeinsights", codeinsightsSchema, RawNewCodeInsightsDB),
+		"frontend":  makeFactory("frontend", frontendSchema, RawNewFrontendDB),
+		"codeintel": makeFactory("codeintel", codeintelSchema, RawNewCodeIntelDB),
 	}
 
+	codeinsightsSchema, ok := schemaByName(availableSchemas, "codeinsights")
+	if ok {
+		storeFactoryMap["codeinsights"] = makeFactory("codeinsights", codeinsightsSchema, RawNewCodeInsightsDB)
+	}
 	return runner.NewRunnerWithSchemas(logger, storeFactoryMap, availableSchemas), nil
 }
 

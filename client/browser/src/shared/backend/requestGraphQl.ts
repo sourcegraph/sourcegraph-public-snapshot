@@ -4,6 +4,7 @@ import { from, Observable } from 'rxjs'
 import { switchMap, take } from 'rxjs/operators'
 
 import { GraphQLResult, getGraphQLClient, GraphQLClient, requestGraphQLCommon } from '@sourcegraph/http-client'
+import { cache } from '@sourcegraph/shared/src/backend/apolloCache'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { background } from '../../browser-extension/web-extension-api/runtime'
@@ -81,6 +82,9 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
         return createMainThreadExtensionGraphQLHelpers()
     }
 
+    /**
+     * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
+     */
     const requestGraphQL = <T, V = object>({
         request,
         variables,
@@ -103,9 +107,9 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
      */
     const getBrowserGraphQLClient = once(() =>
         getGraphQLClient({
+            cache,
             headers: getHeaders(),
             baseUrl: sourcegraphURL,
-            isAuthenticated: false,
             credentials: 'include',
         })
     )

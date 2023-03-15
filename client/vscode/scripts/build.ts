@@ -15,7 +15,6 @@ import {
     buildTimerPlugin,
 } from '@sourcegraph/build-config'
 
-const watch = !!process.env.WATCH
 const minify = process.env.NODE_ENV === 'production'
 const outdir = path.join(__dirname, '../dist')
 const isTest = !!process.env.IS_TEST
@@ -24,7 +23,6 @@ const TARGET_TYPE = process.env.TARGET_TYPE
 
 const SHARED_CONFIG = {
     outdir,
-    watch,
     minify,
     sourcemap: true,
 }
@@ -34,11 +32,11 @@ export async function build(): Promise<void> {
         rm('-rf', outdir)
     }
 
-    const buildPromises = []
+    const buildPromises: Promise<esbuild.BuildContext>[] = []
 
     if (TARGET_TYPE === 'node' || !TARGET_TYPE) {
         buildPromises.push(
-            esbuild.build({
+            esbuild.context({
                 entryPoints: { extension: path.join(__dirname, '/../src/extension.ts') },
                 bundle: true,
                 format: 'cjs',
@@ -55,7 +53,7 @@ export async function build(): Promise<void> {
     }
     if (TARGET_TYPE === 'webworker' || !TARGET_TYPE) {
         buildPromises.push(
-            esbuild.build({
+            esbuild.context({
                 entryPoints: { extension: path.join(__dirname, '/../src/extension.ts') },
                 bundle: true,
                 format: 'cjs',
@@ -86,7 +84,7 @@ export async function build(): Promise<void> {
     }
 
     buildPromises.push(
-        esbuild.build({
+        esbuild.context({
             entryPoints: {
                 helpSidebar: path.join(__dirname, '../src/webview/sidebars/help'),
                 searchSidebar: path.join(__dirname, '../src/webview/sidebars/search'),
@@ -134,8 +132,6 @@ export async function build(): Promise<void> {
                 '.ttf': 'file',
             },
             assetNames: '[name]',
-            ignoreAnnotations: true,
-            treeShaking: false,
             ...SHARED_CONFIG,
             outdir: path.join(SHARED_CONFIG.outdir, 'webview'),
         })
@@ -143,5 +139,13 @@ export async function build(): Promise<void> {
 
     buildPromises.push(buildMonaco(outdir))
 
-    await Promise.all(buildPromises)
+    const ctxs = await Promise.all(buildPromises)
+
+    await Promise.all(ctxs.map(ctx => ctx.rebuild()))
+
+    if (process.env.WATCH) {
+        await Promise.all(ctxs.map(ctx => ctx.watch()))
+    }
+
+    await Promise.all(ctxs.map(ctx => ctx.dispose()))
 }

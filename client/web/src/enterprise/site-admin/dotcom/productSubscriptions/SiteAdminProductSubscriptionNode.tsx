@@ -1,10 +1,10 @@
 import * as React from 'react'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { gql } from '@sourcegraph/http-client'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { LinkOrSpan } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../../../components/time/Timestamp'
+import { SiteAdminProductSubscriptionFields } from '../../../../graphql-operations'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { ProductLicenseTags } from '../../../productSubscription/ProductLicenseTags'
@@ -52,7 +52,7 @@ export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent<Rea
 )
 
 export interface SiteAdminProductSubscriptionNodeProps {
-    node: GQL.IProductSubscription
+    node: SiteAdminProductSubscriptionFields
 }
 
 /**

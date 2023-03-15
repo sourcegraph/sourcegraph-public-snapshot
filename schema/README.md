@@ -7,7 +7,6 @@ Sourcegraph uses the following JSON Schemas:
 - [`settings.schema.json`](./settings.schema.json)
 - [`critical.schema.json`](./critical.schema.json)
 - [`site.schema.json`](./site.schema.json)
-- [`extension.schema.json`](../client/shared/src/schema/extension.schema.json) (not codegenned into Go structs)
 
 # Modifying a schema
 

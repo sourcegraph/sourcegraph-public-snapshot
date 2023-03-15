@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "fetcher",
+    srcs = [
+        "observability.go",
+        "repository_fetcher.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/symbols/gitserver",
+        "//internal/api",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "fetcher_test",
+    srcs = [
+        "mocks_test.go",
+        "repository_fetcher_test.go",
+    ],
+    embed = [":fetcher"],
+    deps = [
+        "//cmd/symbols/gitserver",
+        "//internal/api",
+        "//internal/gitserver/gitdomain",
+        "//internal/observation",
+        "//internal/search",
+        "//internal/types",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

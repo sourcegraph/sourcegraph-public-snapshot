@@ -1,0 +1,3 @@
+# TODO(bazel): remove when no longer generated into src
+
+src/graphql-operations.ts

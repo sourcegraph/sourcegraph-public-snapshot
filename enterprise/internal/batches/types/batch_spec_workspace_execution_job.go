@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
 // BatchSpecWorkspaceExecutionJobState defines the possible states of a changeset job.
@@ -60,7 +60,7 @@ type BatchSpecWorkspaceExecutionJob struct {
 	NumResets       int64
 	NumFailures     int64
 	LastHeartbeatAt time.Time
-	ExecutionLogs   []workerutil.ExecutionLogEntry
+	ExecutionLogs   []executor.ExecutionLogEntry
 	WorkerHostname  string
 	Cancel          bool
 
@@ -69,6 +69,8 @@ type BatchSpecWorkspaceExecutionJob struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	Version int
 }
 
 func (j *BatchSpecWorkspaceExecutionJob) RecordID() int { return int(j.ID) }

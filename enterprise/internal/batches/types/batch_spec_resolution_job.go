@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
 // BatchSpecResolutionJobState defines the possible states of a batch spec resolution job.
@@ -55,7 +55,7 @@ type BatchSpecResolutionJob struct {
 	NumFailures     int64
 	LastHeartbeatAt time.Time
 
-	ExecutionLogs  []workerutil.ExecutionLogEntry
+	ExecutionLogs  []executor.ExecutionLogEntry
 	WorkerHostname string
 
 	CreatedAt time.Time

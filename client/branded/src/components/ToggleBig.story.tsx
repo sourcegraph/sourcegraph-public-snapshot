@@ -1,23 +1,17 @@
 import { useState } from 'react'
 
 import { action } from '@storybook/addon-actions'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { ToggleBig } from './ToggleBig'
 
 const onToggle = action('onToggle')
 
-const decorator: DecoratorFn = story => (
-    <>
-        <div>{story()}</div>
-        <style>{webStyles}</style>
-    </>
-)
 const config: Meta = {
     title: 'branded/ToggleBig',
-    decorators: [decorator],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3 pb-3">{story()}</div>}</BrandedStory>],
 }
 
 export default config

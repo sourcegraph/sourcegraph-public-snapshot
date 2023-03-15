@@ -11,12 +11,12 @@ import (
 	"sync"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
 	"github.com/sourcegraph/zoekt/stream"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -70,7 +70,7 @@ type HorizontalSearcher struct {
 func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
 	// We check for nil opts for convenience in tests. Must fix once we rely
 	// on this.
-	if opts != nil && opts.FlushWallTime > 0 {
+	if opts != nil && opts.UseDocumentRanks {
 		return s.streamSearchExperimentalRanking(ctx, q, opts, streamer)
 	}
 
@@ -158,13 +158,14 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				rq.Enqueue(endpoint, sr)
 				rq.FlushReady(streamer)
 			}))
-			mu.Lock()
-			rq.Done(endpoint)
-			mu.Unlock()
 
-			if canIgnoreError(ctx, err) {
+			mu.Lock()
+			if isZoektRolloutError(ctx, err) {
+				rq.Enqueue(endpoint, crashEvent())
 				err = nil
 			}
+			rq.Done(endpoint)
+			mu.Unlock()
 
 			ch <- err
 		}(endpoint, c)
@@ -205,25 +206,13 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 
 	endpoints := make([]string, 0, len(clients))
 	for endpoint := range clients {
-		endpoints = append(endpoints, endpoint)
+		endpoints = append(endpoints, endpoint) //nolint:staticcheck
 	}
 
 	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
 
-	streamer, flushAll := newFlushCollectSender(
-		&collectOpts{
-			maxDocDisplayCount: opts.MaxDocDisplayCount,
-			flushWallTime:      opts.FlushWallTime,
-			maxSizeBytes:       siteConfig.maxSizeBytes,
-		},
-		streamer,
-	)
-	defer flushAll()
-
-	// We give each zoekt a little less time to flush so the frontend has a
-	// chance to collect them before flushing.
-	childOpts := *opts
-	childOpts.FlushWallTime -= childOpts.FlushWallTime / 5
+	flushSender := newFlushCollectSender(opts, endpoints, siteConfig.maxSizeBytes, streamer)
+	defer flushSender.Flush()
 
 	// During re-balancing a repository can appear on more than one replica.
 	var mu sync.Mutex
@@ -237,7 +226,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 	ch := make(chan error, len(clients))
 	for endpoint, c := range clients {
 		go func(endpoint string, c zoekt.Streamer) {
-			err := c.StreamSearch(ctx, q, &childOpts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
+			err := c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
 				// This shouldn't happen, but skip event if sr is nil.
 				if sr == nil {
 					return
@@ -247,13 +236,15 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 				sr.Files = dedupper.Dedup(endpoint, sr.Files)
 				mu.Unlock()
 
-				streamer.Send(sr)
+				flushSender.Send(endpoint, sr)
 			}))
 
-			if canIgnoreError(ctx, err) {
+			if isZoektRolloutError(ctx, err) {
+				flushSender.Send(endpoint, crashEvent())
 				err = nil
 			}
 
+			flushSender.SendDone(endpoint)
 			ch <- err
 		}(endpoint, c)
 	}
@@ -574,7 +565,8 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 	for range clients {
 		r := <-results
 		if r.err != nil {
-			if canIgnoreError(ctx, r.err) {
+			if isZoektRolloutError(ctx, r.err) {
+				aggregate.Crashes++
 				continue
 			}
 
@@ -585,8 +577,8 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 		aggregate.Crashes += r.rl.Crashes
 		aggregate.Stats.Add(&r.rl.Stats)
 
-		for k, v := range r.rl.Minimal {
-			aggregate.Minimal[k] = v
+		for k, v := range r.rl.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+			aggregate.Minimal[k] = v //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 		}
 	}
 
@@ -740,7 +732,7 @@ func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoe
 	return dedup
 }
 
-// canIgnoreError returns true if the error we received from zoekt can be
+// isZoektRolloutError returns true if the error we received from zoekt can be
 // ignored.
 //
 // Note: ctx is passed in so we can log to the trace when we ignore an
@@ -750,27 +742,25 @@ func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoe
 // during rollouts of Zoekt, we may still have endpoints of zoekt which are
 // not available in our endpoint map. In particular, this happens when using
 // Kubernetes and the (default) stateful set watcher.
-func canIgnoreError(ctx context.Context, err error) bool {
-	reason := canIgnoreErrorReason(err)
+func isZoektRolloutError(ctx context.Context, err error) bool {
+	reason := zoektRolloutReason(err)
 	if reason == "" {
 		return false
 	}
 
 	metricIgnoredError.WithLabelValues(reason).Inc()
 	if span := trace.TraceFromContext(ctx); span != nil {
-		span.LogFields(
-			otlog.String("ignored.reason", reason),
-			otlog.String("ignored.error", err.Error()))
+		span.AddEvent("rollout",
+			attribute.String("rollout.reason", reason),
+			attribute.String("rollout.error", err.Error()))
 	}
 
 	return true
 }
 
-func canIgnoreErrorReason(err error) string {
+func zoektRolloutReason(err error) string {
 	// Please only add very specific error checks here. An error can be added
 	// here if we see it correlated with rollouts on sourcegraph.com.
-	// Additionally you should be able to justify why it is related to races
-	// between service discovery and us trying to dial.
 
 	var dnsErr *net.DNSError
 	if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
@@ -778,7 +768,11 @@ func canIgnoreErrorReason(err error) string {
 	}
 
 	var opErr *net.OpError
-	if errors.As(err, &opErr) && opErr.Op == "dial" {
+	if !errors.As(err, &opErr) {
+		return ""
+	}
+
+	if opErr.Op == "dial" {
 		if opErr.Timeout() {
 			return "dial-timeout"
 		}
@@ -791,5 +785,22 @@ func canIgnoreErrorReason(err error) string {
 		}
 	}
 
+	// Zoekt does not have a proper graceful shutdown for net/rpc since those
+	// connections are multi-plexed over a single HTTP connection. This means
+	// we often run into this during rollout for List calls (Search calls use
+	// streaming RPC).
+	if opErr.Op == "read" {
+		return "read-failed"
+	}
+
 	return ""
+}
+
+// crashEvent indicates a shard or backend failed to be searched due to a
+// panic or being unreachable. The most common reason for this is during zoekt
+// rollout.
+func crashEvent() *zoekt.SearchResult {
+	return &zoekt.SearchResult{Stats: zoekt.Stats{
+		Crashes: 1,
+	}}
 }

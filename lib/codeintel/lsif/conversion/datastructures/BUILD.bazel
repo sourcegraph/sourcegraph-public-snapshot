@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "datastructures",
+    srcs = [
+        "compare.go",
+        "default_idset_map.go",
+        "disjoint_idset.go",
+        "idset.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)
+
+go_test(
+    timeout = "short",
+    name = "datastructures_test",
+    srcs = [
+        "default_idset_map_test.go",
+        "disjoint_idset_test.go",
+        "idset_test.go",
+    ],
+    embed = [":datastructures"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -14,30 +14,26 @@ import (
 
 func TestGoPackagesSource_ListRepos(t *testing.T) {
 	ctx := context.Background()
-	depsSvc := testDependenciesService(ctx, t, []dependencies.Repo{
+	depsSvc := testDependenciesService(ctx, t, []dependencies.MinimalPackageRepoRef{
 		{
-			ID:      1,
-			Scheme:  dependencies.GoPackagesScheme,
-			Name:    "github.com/foo/barbaz",
-			Version: "v0.0.1", // test that we create a repo for this module even if it's missing.
+			Scheme: dependencies.GoPackagesScheme,
+			Name:   "github.com/foo/barbaz",
+			Versions: []string{
+				"v0.0.1",
+			}, // test that we create a repo for this module even if it's missing.
 		},
 		{
-			ID:      2,
-			Scheme:  dependencies.GoPackagesScheme,
-			Name:    "github.com/gorilla/mux",
-			Version: "v1.8.0", // test deduplication with version from config
+			Scheme: dependencies.GoPackagesScheme,
+			Name:   "github.com/gorilla/mux",
+			Versions: []string{
+				"v1.8.0", // test deduplication with version from config
+				"v1.7.4", // test multiple versions of the same module
+			},
 		},
 		{
-			ID:      3,
-			Scheme:  dependencies.GoPackagesScheme,
-			Name:    "github.com/gorilla/mux",
-			Version: "v1.7.4", // test multiple versions of the same module
-		},
-		{
-			ID:      4,
-			Scheme:  dependencies.GoPackagesScheme,
-			Name:    "github.com/goware/urlx",
-			Version: "v0.3.1",
+			Scheme:   dependencies.GoPackagesScheme,
+			Name:     "github.com/goware/urlx",
+			Versions: []string{"v0.3.1"},
 		},
 	})
 

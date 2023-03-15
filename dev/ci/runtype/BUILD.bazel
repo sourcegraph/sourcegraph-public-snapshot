@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "runtype",
+    srcs = ["runtype.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/ci/runtype",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/lazyregexp",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "runtype_test",
+    srcs = ["runtype_test.go"],
+    embed = [":runtype"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

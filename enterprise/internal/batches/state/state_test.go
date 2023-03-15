@@ -6,6 +6,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -270,6 +272,118 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			have := computeBitbucketServerBuildStatus(lastSynced, pr, tc.events)
+			if diff := cmp.Diff(tc.want, have); diff != "" {
+				t.Fatalf(diff)
+			}
+		})
+	}
+}
+
+func TestComputeAzureDevOpsBuildStatus(t *testing.T) {
+	t.Parallel()
+
+	pr := &azuredevops2.AnnotatedPullRequest{
+		PullRequest: &azuredevops.PullRequest{},
+	}
+
+	tests := []struct {
+		name     string
+		statuses []*azuredevops.PullRequestBuildStatus
+		want     btypes.ChangesetCheckState
+	}{
+		{
+			name:     "empty slice",
+			statuses: []*azuredevops.PullRequestBuildStatus{},
+			want:     btypes.ChangesetCheckStateUnknown,
+		},
+		{
+			name: "single success",
+			statuses: []*azuredevops.PullRequestBuildStatus{
+				{
+					ID:    1,
+					State: azuredevops.PullRequestBuildStatusStateSucceeded,
+				},
+			},
+			want: btypes.ChangesetCheckStatePassed,
+		},
+		{
+			name: "single pending",
+			statuses: []*azuredevops.PullRequestBuildStatus{
+				{
+					ID:    1,
+					State: azuredevops.PullRequestBuildStatusStatePending,
+				},
+			},
+			want: btypes.ChangesetCheckStatePending,
+		},
+		{
+			name: "single error",
+			statuses: []*azuredevops.PullRequestBuildStatus{
+				{
+					ID:    1,
+					State: azuredevops.PullRequestBuildStatusStateError,
+				},
+			},
+			want: btypes.ChangesetCheckStateFailed,
+		},
+		{
+			name: "single failed",
+			statuses: []*azuredevops.PullRequestBuildStatus{
+				{
+					ID:    1,
+					State: azuredevops.PullRequestBuildStatusStateFailed,
+				},
+			},
+			want: btypes.ChangesetCheckStateFailed,
+		},
+		{
+			name: "failed + pending",
+			statuses: []*azuredevops.PullRequestBuildStatus{
+				{
+					ID:    1,
+					State: azuredevops.PullRequestBuildStatusStateFailed,
+				},
+				{
+					ID:    2,
+					State: azuredevops.PullRequestBuildStatusStatePending,
+				},
+			},
+			want: btypes.ChangesetCheckStatePending,
+		},
+		{
+			name: "pending + success",
+			statuses: []*azuredevops.PullRequestBuildStatus{
+				{
+					ID:    1,
+					State: azuredevops.PullRequestBuildStatusStateSucceeded,
+				},
+				{
+					ID:    2,
+					State: azuredevops.PullRequestBuildStatusStatePending,
+				},
+			},
+			want: btypes.ChangesetCheckStatePending,
+		},
+		{
+			name: "failed + success",
+			statuses: []*azuredevops.PullRequestBuildStatus{
+				{
+					ID:    1,
+					State: azuredevops.PullRequestBuildStatusStateFailed,
+				},
+				{
+					ID:    2,
+					State: azuredevops.PullRequestBuildStatusStateSucceeded,
+				},
+			},
+			want: btypes.ChangesetCheckStateFailed,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			pr.Statuses = tc.statuses
+			have := computeAzureDevOpsBuildState(pr)
 			if diff := cmp.Diff(tc.want, have); diff != "" {
 				t.Fatalf(diff)
 			}
@@ -867,7 +981,6 @@ func TestComputeLabels(t *testing.T) {
 	}
 }
 
-//nolint:unparam // unparam complains that `state` always has same value across call-sites, but that's OK
 func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *btypes.Changeset {
 	return &btypes.Changeset{
 		ExternalServiceType: extsvc.TypeBitbucketServer,

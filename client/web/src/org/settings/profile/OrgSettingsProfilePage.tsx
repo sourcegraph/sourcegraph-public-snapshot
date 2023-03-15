@@ -1,13 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Container, PageHeader, Button, LoadingSpinner, Input, Text } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button, LoadingSpinner, Input, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { PageTitle } from '../../../components/PageTitle'
-import { Timestamp } from '../../../components/time/Timestamp'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { OrgAreaRouteContext } from '../../area/OrgArea'
 import { updateOrganization } from '../../backend'

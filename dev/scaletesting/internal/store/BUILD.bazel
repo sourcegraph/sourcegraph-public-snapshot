@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "store",
+    srcs = [
+        "repo.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store",
+    visibility = ["//dev/scaletesting:__subpackages__"],
+    deps = ["@com_github_mattn_go_sqlite3//:go-sqlite3"],
+)
+
+go_test(
+    timeout = "short",
+    name = "store_test",
+    srcs = ["store_test.go"],
+    embed = [":store"],
+    deps = ["@com_github_frankban_quicktest//:quicktest"],
+)

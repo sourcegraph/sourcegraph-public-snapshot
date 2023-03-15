@@ -1,16 +1,15 @@
 import * as React from 'react'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { gql } from '@sourcegraph/http-client'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Tooltip } from '@sourcegraph/wildcard'
+import { Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
-import { Timestamp } from '../../../../components/time/Timestamp'
+import { ProductLicenseFields } from '../../../../graphql-operations'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductLicenseValidity } from '../../../dotcom/productSubscriptions/ProductLicenseValidity'
 import { ProductLicenseInfoDescription } from '../../../productSubscription/ProductLicenseInfoDescription'
-import { ProductLicenseTags } from '../../../productSubscription/ProductLicenseTags'
+import { hasUnknownTags, ProductLicenseTags, UnknownTagWarning } from '../../../productSubscription/ProductLicenseTags'
 
 export const siteAdminProductLicenseFragment = gql`
     fragment ProductLicenseFields on ProductLicense {
@@ -48,7 +47,7 @@ export const siteAdminProductLicenseFragment = gql`
 `
 
 export interface SiteAdminProductLicenseNodeProps {
-    node: GQL.IProductLicense
+    node: ProductLicenseFields
     showSubscription: boolean
 }
 
@@ -88,10 +87,13 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
             </div>
         </div>
         {node.info && node.info.tags.length > 0 && (
-            <div>
-                Tags: <ProductLicenseTags tags={node.info.tags} />
-            </div>
+            <>
+                {hasUnknownTags(node.info.tags) && <UnknownTagWarning />}
+                <div>
+                    Tags: <ProductLicenseTags tags={node.info.tags} />
+                </div>
+            </>
         )}
-        <CopyableText text={node.licenseKey} className="mt-2 d-block" />
+        <CopyableText flex={true} text={node.licenseKey} className="mt-2" />
     </li>
 )

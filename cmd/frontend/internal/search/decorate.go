@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	stream "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -89,8 +88,8 @@ func groupLineMatches(lineMatches []*result.LineMatch) []group {
 // DecorateFileHTML returns decorated HTML rendering of file content. If
 // successful and within bounds of timeout and line size, it returns HTML marked
 // up with highlight classes. In other cases, it returns plaintext HTML.
-func DecorateFileHTML(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, path string) (*highlight.HighlightedCode, error) {
-	content, err := fetchContent(ctx, db, repo, commit, path)
+func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (*highlight.HighlightedCode, error) {
+	content, err := fetchContent(ctx, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}
@@ -119,10 +118,11 @@ func DecorateFileHTML(ctx context.Context, db database.DB, repo api.RepoName, co
 }
 
 // DecorateFileHunksHTML returns decorated file hunks given a file match.
-func DecorateFileHunksHTML(ctx context.Context, db database.DB, fm *result.FileMatch) []stream.DecoratedHunk {
+// TODO: I can't find any references to this function...?
+func DecorateFileHunksHTML(ctx context.Context, fm *result.FileMatch) []stream.DecoratedHunk {
 	fmt.Println("==> DecorateFileHunksHTML")
 
-	response, err := DecorateFileHTML(ctx, db, fm.Repo.Name, fm.CommitID, fm.Path)
+	response, err := DecorateFileHTML(ctx, fm.Repo.Name, fm.CommitID, fm.Path)
 	if err != nil {
 		log15.Warn("stream result decoration could not highlight file", "error", err)
 		return nil
@@ -167,8 +167,8 @@ func DecorateFileHunksHTML(ctx context.Context, db database.DB, fm *result.FileM
 	return hunks
 }
 
-func fetchContent(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, path string) (content []byte, err error) {
-	content, err = gitserver.NewClient(db).ReadFile(ctx, repo, commit, path, authz.DefaultSubRepoPermsChecker)
+func fetchContent(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (content []byte, err error) {
+	content, err = gitserver.NewClient().ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}

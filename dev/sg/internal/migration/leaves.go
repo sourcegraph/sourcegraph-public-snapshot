@@ -44,12 +44,12 @@ func LeavesForCommit(databases []db.Database, commit string) error {
 func selectLeavesForCommit(database db.Database, ds *definition.Definitions, commit string) ([]definition.Definition, error) {
 	migrationsDir := filepath.Join("migrations", database.Name)
 
-	output, err := run.GitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
+	gitCmdOutput, err := run.GitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
 	if err != nil {
 		return nil, err
 	}
 
-	ds, err = ds.Filter(parseVersions(strings.Split(output, "\n"), migrationsDir))
+	ds, err = ds.Filter(parseVersions(strings.Split(gitCmdOutput, "\n"), migrationsDir))
 	if err != nil {
 		return nil, err
 	}

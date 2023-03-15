@@ -1,31 +1,33 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { parseISO } from 'date-fns'
-import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
+import { useParams } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
+import { validate as validateUUID } from 'uuid'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, useObservable, Link, H2 } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, H2, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
+import {
+    ProductSubscriptionFieldsOnSubscriptionPage,
+    ProductSubscriptionResult,
+    UserAreaUserFields,
+} from '../../../graphql-operations'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 
-interface Props extends Pick<RouteComponentProps<{ subscriptionUUID: string }>, 'match'> {
-    user: Pick<GQL.IUser, 'settingsURL'>
+interface Props {
+    user: Pick<UserAreaUserFields, 'settingsURL'>
 
     /** For mocking in tests only. */
     _queryProductSubscription?: typeof queryProductSubscription
-    history: H.History
 }
 
 const LOADING = 'loading' as const
@@ -35,12 +37,14 @@ const LOADING = 'loading' as const
  */
 export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
-    match: {
-        params: { subscriptionUUID },
-    },
     _queryProductSubscription = queryProductSubscription,
 }) => {
+    const { subscriptionUUID } = useParams()
+
     useEffect(() => eventLogger.logViewEvent('UserSubscriptionsProductSubscription'), [])
+
+    const isValidUUID = validateUUID(subscriptionUUID!)
+    const validationError = !isValidUUID && new Error('Subscription ID is not a valid UUID')
 
     /**
      * The product subscription, or loading, or an error.
@@ -49,7 +53,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
         useObservable(
             useMemo(
                 () =>
-                    _queryProductSubscription(subscriptionUUID).pipe(
+                    _queryProductSubscription(subscriptionUUID!).pipe(
                         catchError(error => [asError(error)]),
                         startWith(LOADING)
                     ),
@@ -74,8 +78,8 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
             </div>
             {productSubscription === LOADING ? (
                 <LoadingSpinner />
-            ) : isErrorLike(productSubscription) ? (
-                <ErrorAlert className="my-2" error={productSubscription} />
+            ) : !isValidUUID || isErrorLike(productSubscription) ? (
+                <ErrorAlert className="my-2" error={validationError || productSubscription} />
             ) : (
                 <>
                     <H2>Subscription {productSubscription.name}</H2>
@@ -94,8 +98,8 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
     )
 }
 
-function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscription> {
-    return queryGraphQL(
+function queryProductSubscription(uuid: string): Observable<ProductSubscriptionFieldsOnSubscriptionPage> {
+    return queryGraphQL<ProductSubscriptionResult>(
         gql`
             query ProductSubscription($uuid: String!) {
                 dotcom {
@@ -135,7 +139,7 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
         { uuid }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.dotcom || !data.dotcom.productSubscription || (errors && errors.length > 0)) {
+            if (!data?.dotcom?.productSubscription || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.dotcom.productSubscription

@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    timeout = "short",
+    name = "gqltest_test",
+    srcs = [
+        "access_token_test.go",
+        "bitbucket_projects_perms_sync_test.go",
+        "code_insights_test.go",
+        "compute_test.go",
+        "external_service_test.go",
+        "feature_flag_test.go",
+        "main_test.go",
+        "organization_test.go",
+        "repository_test.go",
+        "search_aggregations_test.go",
+        "search_test.go",
+        "site_config_test.go",
+        "sub_repo_permissions_test.go",
+    ],
+    deps = [
+        "//internal/extsvc",
+        "//internal/gqltestutil",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_json_iterator_go//:go",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_utils//strings/slices",
+    ],
+)

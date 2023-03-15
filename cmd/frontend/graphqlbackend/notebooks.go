@@ -67,7 +67,6 @@ type NotebookBlockResolver interface {
 	ToQueryBlock() (QueryBlockResolver, bool)
 	ToFileBlock() (FileBlockResolver, bool)
 	ToSymbolBlock() (SymbolBlockResolver, bool)
-	ToComputeBlock() (ComputeBlockResolver, bool)
 }
 
 type MarkdownBlockResolver interface {
@@ -107,11 +106,6 @@ type SymbolBlockInputResolver interface {
 	SymbolKind() string
 }
 
-type ComputeBlockResolver interface {
-	ID() string
-	ComputeInput() string
-}
-
 type FileBlockLineRangeResolver interface {
 	StartLine() int32
 	EndLine() int32
@@ -124,7 +118,6 @@ const (
 	NotebookQueryBlockType    NotebookBlockType = "QUERY"
 	NotebookFileBlockType     NotebookBlockType = "FILE"
 	NotebookSymbolBlockType   NotebookBlockType = "SYMBOL"
-	NotebookComputeBlockType  NotebookBlockType = "COMPUTE"
 )
 
 type CreateNotebookInputArgs struct {
@@ -154,7 +147,6 @@ type CreateNotebookBlockInputArgs struct {
 	QueryInput    *string                 `json:"queryInput"`
 	FileInput     *CreateFileBlockInput   `json:"fileInput"`
 	SymbolInput   *CreateSymbolBlockInput `json:"symbolInput"`
-	ComputeInput  *string                 `json:"computeInput"`
 }
 
 type CreateFileBlockInput struct {

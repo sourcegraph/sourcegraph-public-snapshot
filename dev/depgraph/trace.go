@@ -8,7 +8,7 @@ import (
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
+	depgraph "github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/visualization"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,7 +36,7 @@ func trace(ctx context.Context, args []string) error {
 		return err
 	}
 
-	graph, err := graph.Load(root)
+	graph, err := depgraph.Load(root)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func trace(ctx context.Context, args []string) error {
 // traceWalkGraph traverses the given dependency graph in both directions and returns a
 // set of packages and edges (separated by traversal direction) forming the dependency
 // graph around the given blessed package.
-func traceWalkGraph(graph *graph.DependencyGraph, pkg string, dependencyMaxDepth, dependentMaxDepth int) (packages []string, dependencyEdges, dependentEdges map[string][]string) {
+func traceWalkGraph(graph *depgraph.DependencyGraph, pkg string, dependencyMaxDepth, dependentMaxDepth int) (packages []string, dependencyEdges, dependentEdges map[string][]string) {
 	dependencyPackages, dependencyEdges := traceTraverse(pkg, graph.Dependencies, dependencyMaxDepth)
 	dependentPackages, dependentEdges := traceTraverse(pkg, graph.Dependents, dependentMaxDepth)
 	return append(dependencyPackages, dependentPackages...), dependencyEdges, dependentEdges

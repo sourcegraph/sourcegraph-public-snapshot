@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
@@ -39,10 +40,17 @@ func TestRedirects(t *testing.T) {
 		gss := database.NewMockGlobalStateStore()
 		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		extSvcs := database.NewMockExternalServiceStore()
+		extSvcs.CountFunc.SetDefaultReturn(0, nil)
+
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
+		db.UsersFunc.SetDefaultReturn(users)
+		db.ExternalServicesFunc.SetDefaultReturn(extSvcs)
 
-		InitRouter(db)
+		InitRouter(db, jobutil.NewUnimplementedEnterpriseJobs())
 		rw := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {
@@ -158,7 +166,7 @@ func TestNewCommon_repo_error(t *testing.T) {
 				if tt.err != nil {
 					return "", tt.err
 				}
-				return api.CommitID("deadbeef"), nil
+				return "deadbeef", nil
 			}
 
 			req, err := http.NewRequest("GET", "/", nil)

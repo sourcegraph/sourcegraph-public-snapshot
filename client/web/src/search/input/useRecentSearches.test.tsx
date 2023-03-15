@@ -16,6 +16,8 @@ import { SEARCH_HISTORY_EVENT_LOGS_QUERY, useRecentSearches } from './useRecentS
 export function buildMockTempSettings(items: number): RecentSearch[] {
     return Array.from({ length: items }, (_item, index) => ({
         query: `test${index}`,
+        resultCount: 555,
+        limitHit: false,
         timestamp: '2021-01-01T00:00:00Z',
     }))
 }
@@ -76,7 +78,7 @@ const InnerWrapper: React.FunctionComponent<{}> = () => {
                 value={searchToAdd}
                 onInput={event => setSearchToAdd(event.currentTarget.value)}
             />
-            <button type="button" data-testid="button" onClick={() => addRecentSearch(searchToAdd)} />
+            <button type="button" data-testid="button" onClick={() => addRecentSearch(searchToAdd, 555, false)} />
         </>
     )
 }
@@ -163,7 +165,7 @@ describe('recentSearches', () => {
             `)
         })
 
-        test('adding an exisitng item to recent searches deduplicates it and puts it at the top', async () => {
+        test('adding an existing item to recent searches deduplicates it and puts it at the top', async () => {
             const { queryAllByRole, getByTestId } = render(
                 <Wrapper tempSettings={buildMockTempSettings(4)} eventLogs={buildMockEventLogs(0)} />
             )

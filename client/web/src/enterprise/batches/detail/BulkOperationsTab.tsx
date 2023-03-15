@@ -7,7 +7,10 @@ import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 import { Container, Icon } from '@sourcegraph/wildcard'
 
 import { dismissAlert } from '../../../components/DismissibleAlert'
-import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
+import {
+    useShowMorePagination,
+    UseShowMorePaginationResult,
+} from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -40,7 +43,7 @@ export const BulkOperationsTab: React.FunctionComponent<React.PropsWithChildren<
         <Container>
             <ConnectionContainer>
                 {error && <ConnectionError errors={[error.message]} />}
-                <ConnectionList className="list-group list-group-flush">
+                <ConnectionList className="list-group list-group-flush" aria-label="bulk operations">
                     {connection?.nodes?.map(node => (
                         <BulkOperationNode key={node.id} node={node} />
                     ))}
@@ -75,8 +78,10 @@ const EmptyBulkOperationsListElement: React.FunctionComponent<React.PropsWithChi
 
 const BATCH_COUNT = 15
 
-const useBulkOperationsListConnection = (batchChangeID: Scalars['ID']): UseConnectionResult<BulkOperationFields> => {
-    const { connection, startPolling, stopPolling, ...rest } = useConnection<
+const useBulkOperationsListConnection = (
+    batchChangeID: Scalars['ID']
+): UseShowMorePaginationResult<BatchChangeBulkOperationsResult, BulkOperationFields> => {
+    const { connection, startPolling, stopPolling, ...rest } = useShowMorePagination<
         BatchChangeBulkOperationsResult,
         BatchChangeBulkOperationsVariables,
         BulkOperationFields

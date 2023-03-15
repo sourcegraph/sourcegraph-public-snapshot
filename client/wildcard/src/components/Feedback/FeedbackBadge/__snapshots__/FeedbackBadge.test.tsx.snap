@@ -5,8 +5,13 @@ exports[`FeedbackBadge Renders status 'beta' correctly 1`] = `
   class="feedbackBadge"
 >
   <span
+    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+  >
+    This feature is currently in beta
+  </span>
+  <span
+    aria-hidden="true"
     class="productStatusBadge productStatusBadge"
-    data-state="closed"
     status="beta"
   >
     beta
@@ -27,8 +32,13 @@ exports[`FeedbackBadge Renders status 'experimental' correctly 1`] = `
   class="feedbackBadge"
 >
   <span
+    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+  >
+    This feature is currently in experimental
+  </span>
+  <span
+    aria-hidden="true"
     class="productStatusBadge productStatusBadge"
-    data-state="closed"
     status="experimental"
   >
     experimental
@@ -49,33 +59,16 @@ exports[`FeedbackBadge Renders status 'new' correctly 1`] = `
   class="feedbackBadge"
 >
   <span
+    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+  >
+    This feature is currently in new
+  </span>
+  <span
+    aria-hidden="true"
     class="productStatusBadge productStatusBadge"
-    data-state="closed"
     status="new"
   >
     new
-  </span>
-  <a
-    class="anchor"
-    href="mailto:support@sourcegraph.com"
-    rel="noopener noreferrer"
-    target="_blank"
-  >
-    Share feedback
-  </a>
-</div>
-`;
-
-exports[`FeedbackBadge Renders status 'prototype' correctly 1`] = `
-<div
-  class="feedbackBadge"
->
-  <span
-    class="productStatusBadge productStatusBadge"
-    data-state="closed"
-    status="prototype"
-  >
-    prototype
   </span>
   <a
     class="anchor"
@@ -93,8 +86,13 @@ exports[`FeedbackBadge Renders status 'wip' correctly 1`] = `
   class="feedbackBadge"
 >
   <span
+    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+  >
+    This feature is currently in wip
+  </span>
+  <span
+    aria-hidden="true"
     class="productStatusBadge productStatusBadge"
-    data-state="closed"
     status="wip"
   >
     wip
@@ -115,8 +113,13 @@ exports[`FeedbackBadge renders a FeedbackBadge 1`] = `
   class="feedbackBadge"
 >
   <span
+    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+  >
+    This feature is currently in new
+  </span>
+  <span
+    aria-hidden="true"
     class="productStatusBadge productStatusBadge"
-    data-state="closed"
     status="new"
   >
     new

@@ -8,10 +8,10 @@ import (
 
 	"github.com/derision-test/glock"
 	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -24,13 +24,12 @@ import (
 var ErrJobAlreadyExists = errors.New("job already exists")
 
 // Worker is a generic consumer of records from the workerutil store.
-type Worker struct {
-	store            Store
-	handler          Handler
+type Worker[T Record] struct {
+	store            Store[T]
+	handler          Handler[T]
 	options          WorkerOptions
 	dequeueClock     glock.Clock
 	heartbeatClock   glock.Clock
-	cancelClock      glock.Clock
 	shutdownClock    glock.Clock
 	numDequeues      int             // tracks number of dequeue attempts
 	handlerSemaphore chan struct{}   // tracks available handler slots
@@ -40,13 +39,25 @@ type Worker struct {
 	wg               sync.WaitGroup  // tracks active handler routines
 	finished         chan struct{}   // signals that Start has finished
 	runningIDSet     *IDSet          // tracks the running job IDs to heartbeat
+	jobName          string
+	recorder         *recorder.Recorder
 }
+
+// dummyType is only for this compile-time test.
+type dummyType struct{}
+
+func (d dummyType) RecordID() int { return 0 }
+
+var _ recorder.Recordable = &Worker[dummyType]{}
 
 type WorkerOptions struct {
 	// Name denotes the name of the worker used to distinguish log messages and
 	// emitted metrics. The worker constructor will fail if this field is not
 	// supplied.
 	Name string
+
+	// Description describes the worker for logging purposes.
+	Description string
 
 	// WorkerHostname denotes the hostname of the instance/container the worker
 	// is running on. If not supplied, it will be derived from either the `HOSTNAME`
@@ -78,10 +89,6 @@ type WorkerOptions struct {
 	// record is neither pending nor abandoned.
 	HeartbeatInterval time.Duration
 
-	// CancelInterval is the interval between checking for jobs that are to be canceled. If not set,
-	// the worker will not check for canceled jobs.
-	CancelInterval time.Duration
-
 	// MaximumRuntimePerJob is the maximum wall time that can be spent on a single job.
 	MaximumRuntimePerJob time.Duration
 
@@ -89,12 +96,12 @@ type WorkerOptions struct {
 	Metrics WorkerObservability
 }
 
-func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
+func NewWorker[T Record](ctx context.Context, store Store[T], handler Handler[T], options WorkerOptions) *Worker[T] {
 	clock := glock.NewRealClock()
-	return newWorker(ctx, store, handler, options, clock, clock, clock, clock)
+	return newWorker(ctx, store, handler, options, clock, clock, clock)
 }
 
-func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, mainClock, heartbeatClock, cancelClock, shutdownClock glock.Clock) *Worker {
+func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T], options WorkerOptions, mainClock, heartbeatClock, shutdownClock glock.Clock) *Worker[T] {
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
 	}
@@ -115,13 +122,12 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		handlerSemaphore <- struct{}{}
 	}
 
-	return &Worker{
+	return &Worker[T]{
 		store:            store,
 		handler:          handler,
 		options:          options,
 		dequeueClock:     mainClock,
 		heartbeatClock:   heartbeatClock,
-		cancelClock:      cancelClock,
 		shutdownClock:    shutdownClock,
 		handlerSemaphore: handlerSemaphore,
 		rootCtx:          ctx,
@@ -133,7 +139,10 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 }
 
 // Start begins polling for work from the underlying store and processing records.
-func (w *Worker) Start() {
+func (w *Worker[T]) Start() {
+	if w.recorder != nil {
+		go w.recorder.LogStart(w)
+	}
 	defer close(w.finished)
 
 	// Create a background routine that periodically writes the current time to the running records.
@@ -149,11 +158,13 @@ func (w *Worker) Start() {
 			}
 
 			ids := w.runningIDSet.Slice()
-			knownIDs, err := w.store.Heartbeat(w.rootCtx, ids)
+			knownIDs, canceledIDs, err := w.store.Heartbeat(w.rootCtx, ids)
 			if err != nil {
 				w.options.Metrics.logger.Error("Failed to refresh heartbeats",
 					log.Ints("ids", ids),
 					log.Error(err))
+				// Bail out and restart the for loop.
+				continue
 			}
 			knownIDsMap := map[int]struct{}{}
 			for _, id := range knownIDs {
@@ -162,42 +173,22 @@ func (w *Worker) Start() {
 
 			for _, id := range ids {
 				if _, ok := knownIDsMap[id]; !ok {
-					w.options.Metrics.logger.Error("Removed unknown job from running set",
-						log.Int("id", id))
-					w.runningIDSet.Remove(id)
+					if w.runningIDSet.Remove(id) {
+						w.options.Metrics.logger.Error("Removed unknown job from running set",
+							log.Int("id", id))
+					}
 				}
+			}
+
+			if len(canceledIDs) > 0 {
+				w.options.Metrics.logger.Info("Found jobs to cancel", log.Ints("IDs", canceledIDs))
+			}
+
+			for _, id := range canceledIDs {
+				w.runningIDSet.Cancel(id)
 			}
 		}
 	}()
-
-	if w.options.CancelInterval > 0 {
-		// Create a background routine that periodically checks for jobs that are to be canceled.
-		go func() {
-			for {
-				select {
-				case <-w.finished:
-					// All jobs finished.
-					return
-				case <-w.cancelClock.After(w.options.CancelInterval):
-				}
-
-				knownIDs := w.runningIDSet.Slice()
-				canceled, err := w.store.CanceledJobs(w.rootCtx, knownIDs)
-				if err != nil {
-					w.options.Metrics.logger.Error("Failed to fetch canceled jobs", log.Error(err))
-					continue
-				}
-
-				if len(canceled) > 0 {
-					w.options.Metrics.logger.Info("Found jobs to cancel", log.Ints("IDs", canceled))
-				}
-
-				for _, id := range canceled {
-					w.runningIDSet.Cancel(id)
-				}
-			}
-		}()
-	}
 
 	var shutdownChan <-chan time.Time
 	if w.options.MaxActiveTime > 0 {
@@ -259,22 +250,25 @@ loop:
 }
 
 // Stop will cause the worker loop to exit after the current iteration. This is done by canceling the
-// context passed to the dequeue operations (but not the handler perations). This method blocks until
+// context passed to the dequeue operations (but not the handler operations). This method blocks until
 // all handler goroutines have exited.
-func (w *Worker) Stop() {
+func (w *Worker[T]) Stop() {
+	if w.recorder != nil {
+		go w.recorder.LogStop(w)
+	}
 	w.dequeueCancel()
 	w.Wait()
 }
 
 // Wait blocks until all handler goroutines have exited.
-func (w *Worker) Wait() {
+func (w *Worker[T]) Wait() {
 	<-w.finished
 }
 
 // dequeueAndHandle selects a queued record to process. This method returns false if no such record
 // can be dequeued and returns an error only on failure to dequeue a new record - no handler errors
 // will bubble up.
-func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
+func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 	select {
 	// If we block here we are waiting for a handler to exit so that we do not
 	// exceed our configured concurrency limit.
@@ -312,7 +306,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Create context and span based on the root context
-	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(
+	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext( //nolint:staticcheck // OT is deprecated
 		// TODO tail-based sampling once its a thing, until then, we can configure on a per-job basis
 		policy.WithShouldTrace(w.rootCtx, w.options.Metrics.traceSampler(record)),
 		w.options.Name,
@@ -334,7 +328,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		LogFields: []otlog.Field{otlog.Int("record.id", record.RecordID())},
 	}
 
-	if hook, ok := w.handler.(WithHooks); ok {
+	if hook, ok := w.handler.(WithHooks[T]); ok {
 		preCtx, prehandleLogger, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, processArgs)
 		// Open namespace for logger to avoid key collisions on fields
 		hook.PreHandle(preCtx, prehandleLogger.With(log.Namespace("prehandle")), record)
@@ -345,7 +339,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 	go func() {
 		defer func() {
-			if hook, ok := w.handler.(WithHooks); ok {
+			if hook, ok := w.handler.(WithHooks[T]); ok {
 				// Don't use handleCtx here, the record is already not owned by
 				// this worker anymore at this point. Tracing hierarchy is still correct,
 				// as handleCtx used in preHandle/handle is at the same level as
@@ -375,7 +369,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 // handle processes the given record. This method returns an error only if there is an issue updating
 // the record to a terminal state - no handler errors will bubble up.
-func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err error) {
+func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err error) {
 	var handleErr error
 	ctx, handleLog, endOperation := w.options.Metrics.operations.handle.With(ctx, &handleErr, observation.Args{})
 	defer func() {
@@ -394,26 +388,31 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 	}
 
 	// Open namespace for logger to avoid key collisions on fields
+	start := time.Now()
 	handleErr = w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))
 	}
+	duration := time.Since(start)
+	if w.recorder != nil {
+		go w.recorder.LogRun(w, duration, handleErr)
+	}
 
 	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordID(), handleErr, ctx.Err()) {
-		if marked, markErr := w.store.MarkFailed(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
+		if marked, markErr := w.store.MarkFailed(workerContext, record, handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkFailed")
 		} else if marked {
 			handleLog.Warn("Marked record as failed", log.Error(handleErr))
 		}
 	} else if handleErr != nil {
-		if marked, markErr := w.store.MarkErrored(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
+		if marked, markErr := w.store.MarkErrored(workerContext, record, handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkErrored")
 		} else if marked {
 			handleLog.Warn("Marked record as errored", log.Error(handleErr))
 		}
 	} else {
-		if marked, markErr := w.store.MarkComplete(workerContext, record.RecordID()); markErr != nil {
+		if marked, markErr := w.store.MarkComplete(workerContext, record); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkComplete")
 		} else if marked {
 			handleLog.Debug("Marked record as complete")
@@ -427,15 +426,43 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 // isJobCanceled returns true if the job has been canceled through the Cancel interface.
 // If the context is canceled, and the job is still part of the running ID set,
 // we know that it has been canceled for that reason.
-func (w *Worker) isJobCanceled(id int, handleErr, ctxErr error) bool {
+func (w *Worker[T]) isJobCanceled(id int, handleErr, ctxErr error) bool {
 	return errors.Is(handleErr, ctxErr) && w.runningIDSet.Has(id) && !errors.Is(handleErr, context.DeadlineExceeded)
 }
 
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.
-func (w *Worker) preDequeueHook(ctx context.Context) (dequeueable bool, extraDequeueArguments any, err error) {
+func (w *Worker[T]) preDequeueHook(ctx context.Context) (dequeueable bool, extraDequeueArguments any, err error) {
 	if o, ok := w.handler.(WithPreDequeue); ok {
 		return o.PreDequeue(ctx, w.options.Metrics.logger)
 	}
 
 	return true, nil, nil
+}
+
+func (w *Worker[T]) Name() string {
+	return w.options.Name
+}
+
+func (w *Worker[T]) Type() recorder.RoutineType {
+	return recorder.DBBackedRoutine
+}
+
+func (w *Worker[T]) JobName() string {
+	return w.jobName
+}
+
+func (w *Worker[T]) SetJobName(jobName string) {
+	w.jobName = jobName
+}
+
+func (w *Worker[T]) Description() string {
+	return w.options.Description
+}
+
+func (w *Worker[T]) Interval() time.Duration {
+	return w.options.Interval
+}
+
+func (w *Worker[T]) RegisterRecorder(r *recorder.Recorder) {
+	w.recorder = r
 }

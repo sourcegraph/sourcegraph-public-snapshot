@@ -30,6 +30,8 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
         archived: 5,
         total: 18,
         unpublished: 4,
+        isCompleted: false,
+        percentComplete: 25,
     },
     createdAt: subDays(now, 5).toISOString(),
     creator: {
@@ -70,6 +72,33 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
             __typename: 'BatchChangesCodeHostConnection',
             nodes: [],
             totalCount: 0,
+        },
+        description: {
+            __typename: 'BatchChangeDescription',
+            name: 'Spec Description',
+        },
+        files: {
+            totalCount: 2,
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            nodes: [
+                {
+                    id: 'random-id',
+                    name: 'test.txt',
+                    binary: false,
+                    byteSize: 74,
+                    url: 'test/url',
+                },
+                {
+                    id: 'random-id-2',
+                    name: 'src-cli',
+                    binary: true,
+                    byteSize: 75,
+                    url: 'test/url',
+                },
+            ],
         },
     },
     batchSpecs: {
@@ -163,6 +192,7 @@ export const MOCK_BULK_OPERATIONS: BatchChangeBulkOperationsResult = {
                                     url: 'https://test.test/my/pr',
                                 },
                                 repository: {
+                                    id: 'a',
                                     name: 'sourcegraph/sourcegraph',
                                     url: '/github.com/sourcegraph/sourcegraph',
                                 },

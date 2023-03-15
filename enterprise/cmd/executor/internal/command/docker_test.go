@@ -7,8 +7,82 @@ import (
 )
 
 func TestFormatRawOrDockerCommandRaw(t *testing.T) {
+	t.Run("docker", func(t *testing.T) {
+		actual := formatRawOrDockerCommand(
+			CommandSpec{
+				Image:   "sourcegraph/sourcegraph",
+				Command: []string{"ls", "-a"},
+				Dir:     "subdir",
+				Env: []string{
+					`TEST=true`,
+					`CONTAINS_WHITESPACE=yes it does`,
+				},
+				Operation: makeTestOperation(),
+			},
+			"/proj/src",
+			Options{},
+			"/tmp/docker-config",
+		)
+
+		expected := command{
+			Command: []string{
+				"docker",
+				"--config", "/tmp/docker-config",
+				"run",
+				"--rm",
+				"-v", "/proj/src:/data",
+				"-w", "/data/subdir",
+				"-e", "TEST=true",
+				"-e", "CONTAINS_WHITESPACE=yes it does",
+				"--entrypoint", "/bin/sh",
+				"sourcegraph/sourcegraph",
+				"/data/.sourcegraph-executor",
+			},
+		}
+		if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
+			t.Errorf("unexpected command (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("docker with host gateway", func(t *testing.T) {
+		actual := formatRawOrDockerCommand(
+			CommandSpec{
+				Image:     "sourcegraph/sourcegraph",
+				Env:       []string{},
+				Operation: makeTestOperation(),
+			},
+			"/proj/src",
+			Options{
+				DockerOptions: DockerOptions{
+					AddHostGateway: true,
+				},
+			},
+			"",
+		)
+
+		expected := command{
+			Command: []string{
+				"docker",
+				"run",
+				"--rm",
+				"--add-host=host.docker.internal:host-gateway",
+				"-v", "/proj/src:/data",
+				"-w", "/data",
+				"--entrypoint", "/bin/sh",
+				"sourcegraph/sourcegraph",
+				"/data/.sourcegraph-executor",
+			},
+		}
+		if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
+			t.Errorf("unexpected command (-want +got):\n%s", diff)
+		}
+	})
+}
+
+func TestFormatRawOrDockerCommandRaw_SrcCli(t *testing.T) {
 	actual := formatRawOrDockerCommand(
 		CommandSpec{
+			Image:   "",
 			Command: []string{"ls", "-a"},
 			Dir:     "subdir",
 			Env: []string{
@@ -19,12 +93,13 @@ func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 		},
 		"/proj/src",
 		Options{},
+		"/tmp/docker-config",
 	)
 
 	expected := command{
 		Command: []string{"ls", "-a"},
 		Dir:     "/proj/src/subdir",
-		Env:     []string{"TEST=true", "CONTAINS_WHITESPACE=yes it does"},
+		Env:     []string{"TEST=true", "CONTAINS_WHITESPACE=yes it does", "DOCKER_CONFIG=/tmp/docker-config"},
 	}
 	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
@@ -50,11 +125,14 @@ func TestFormatRawOrDockerCommandDockerScript(t *testing.T) {
 				Memory:  "20G",
 			},
 		},
+		"/tmp/docker-config",
 	)
 
 	expected := command{
 		Command: []string{
-			"docker", "run", "--rm",
+			"docker",
+			"--config", "/tmp/docker-config",
+			"run", "--rm",
 			"--cpus", "4",
 			"--memory", "20G",
 			"-v", "/proj/src:/data",
@@ -89,11 +167,14 @@ func TestFormatRawOrDockerCommandDockerScriptWithoutResourceAllocation(t *testin
 				Memory:  "0",
 			},
 		},
+		"/tmp/docker-config",
 	)
 
 	expected := command{
 		Command: []string{
-			"docker", "run", "--rm",
+			"docker",
+			"--config", "/tmp/docker-config",
+			"run", "--rm",
 			"-v", "/proj/src:/data",
 			"-w", "/data/subdir",
 			"--entrypoint",
@@ -123,11 +204,14 @@ func TestFormatRawOrDockerCommandDockerScriptWithDockerHostMountPath(t *testing.
 				DockerHostMountPath: "/containers/rootfs/mount_fs",
 			},
 		},
+		"/tmp/docker-config",
 	)
 
 	expected := command{
 		Command: []string{
-			"docker", "run", "--rm",
+			"docker",
+			"--config", "/tmp/docker-config",
+			"run", "--rm",
 			"--cpus", "4",
 			"--memory", "20G",
 			"-v", "/containers/rootfs/mount_fs/workspace:/data",

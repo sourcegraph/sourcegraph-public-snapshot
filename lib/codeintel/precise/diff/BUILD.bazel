@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+# gazelle:exclude testdata
+
+go_library(
+    name = "diff",
+    srcs = ["diff.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/codeintel/precise",
+        "@com_github_fatih_color//:color",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "diff_test",
+    srcs = ["diff_test.go"],
+    data = ["//lib/codeintel/precise/diff/testdata:data"],
+    embed = [":diff"],
+    deps = [
+        "//lib/codeintel/lsif/conversion",
+        "//lib/codeintel/precise",
+        "@com_github_hexops_autogold_v2//:autogold",
+    ],
+)

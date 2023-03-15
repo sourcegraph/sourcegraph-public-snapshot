@@ -2,9 +2,9 @@ import { MouseEvent, useCallback } from 'react'
 
 import { mdiArrowRight, mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
+import { SyntaxHighlightedSearchQuery, smartSearchIconSvgPath } from '@sourcegraph/branded'
 import { formatSearchParameters, pluralize } from '@sourcegraph/common'
-import { SyntaxHighlightedSearchQuery, smartSearchIconSvgPath } from '@sourcegraph/search-ui'
-import { AggregateStreamingSearchResults, AlertKind } from '@sourcegraph/shared/src/search/stream'
+import { AggregateStreamingSearchResults, AlertKind, SmartSearchAlertKind } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import {
     Link,
@@ -34,7 +34,9 @@ const processDescription = (description: string): string => {
     return split.join(', ')
 }
 
-const alertContent: { [key in AlertKind]: (queryCount: number) => { title: JSX.Element; subtitle: JSX.Element } } = {
+const alertContent: {
+    [key in SmartSearchAlertKind]: (queryCount: number) => { title: JSX.Element; subtitle: JSX.Element }
+} = {
     'smart-search-additional-results': (queryCount: number) => ({
         title: (
             <>

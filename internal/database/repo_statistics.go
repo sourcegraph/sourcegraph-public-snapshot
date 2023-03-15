@@ -18,6 +18,7 @@ type RepoStatistics struct {
 	Cloning     int
 	Cloned      int
 	FailedFetch int
+	Corrupted   int
 }
 
 // gitserverRepoStatistics represents the contents of the
@@ -30,10 +31,12 @@ type GitserverReposStatistic struct {
 	Cloning     int
 	Cloned      int
 	FailedFetch int
+	Corrupted   int
 }
 
 type RepoStatisticsStore interface {
-	Transact(context.Context) (RepoStatisticsStore, error)
+	basestore.ShareableStore
+	WithTransact(context.Context, func(RepoStatisticsStore) error) error
 	With(basestore.ShareableStore) RepoStatisticsStore
 
 	GetRepoStatistics(ctx context.Context) (RepoStatistics, error)
@@ -57,15 +60,16 @@ func (s *repoStatisticsStore) With(other basestore.ShareableStore) RepoStatistic
 	return &repoStatisticsStore{Store: s.Store.With(other)}
 }
 
-func (s *repoStatisticsStore) Transact(ctx context.Context) (RepoStatisticsStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &repoStatisticsStore{Store: txBase}, err
+func (s *repoStatisticsStore) WithTransact(ctx context.Context, f func(RepoStatisticsStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&repoStatisticsStore{Store: tx})
+	})
 }
 
 func (s *repoStatisticsStore) GetRepoStatistics(ctx context.Context) (RepoStatistics, error) {
 	var rs RepoStatistics
 	row := s.QueryRow(ctx, sqlf.Sprintf(getRepoStatisticsQueryFmtstr))
-	err := row.Scan(&rs.Total, &rs.SoftDeleted, &rs.NotCloned, &rs.Cloning, &rs.Cloned, &rs.FailedFetch)
+	err := row.Scan(&rs.Total, &rs.SoftDeleted, &rs.NotCloned, &rs.Cloning, &rs.Cloned, &rs.FailedFetch, &rs.Corrupted)
 	if err != nil {
 		return rs, err
 	}
@@ -79,7 +83,8 @@ SELECT
 	SUM(not_cloned),
 	SUM(cloning),
 	SUM(cloned),
-	SUM(failed_fetch)
+	SUM(failed_fetch),
+	SUM(corrupted)
 FROM repo_statistics
 `
 
@@ -96,16 +101,18 @@ WITH deleted AS (
 		not_cloned,
 		cloning,
 		cloned,
-		failed_fetch
+		failed_fetch,
+		corrupted
 )
-INSERT INTO repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)
+INSERT INTO repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch, corrupted)
 SELECT
 	SUM(total),
 	SUM(soft_deleted),
 	SUM(not_cloned),
 	SUM(cloning),
 	SUM(cloned),
-	SUM(failed_fetch)
+	SUM(failed_fetch),
+	SUM(corrupted)
 FROM deleted;
 `
 
@@ -121,7 +128,8 @@ SELECT
 	not_cloned,
 	cloning,
 	cloned,
-	failed_fetch
+	failed_fetch,
+	corrupted
 FROM gitserver_repos_statistics
 `
 
@@ -129,7 +137,7 @@ var scanGitserverReposStatistics = basestore.NewSliceScanner(scanGitserverReposS
 
 func scanGitserverReposStatistic(s dbutil.Scanner) (GitserverReposStatistic, error) {
 	var gs = GitserverReposStatistic{}
-	err := s.Scan(&gs.ShardID, &gs.Total, &gs.NotCloned, &gs.Cloning, &gs.Cloned, &gs.FailedFetch)
+	err := s.Scan(&gs.ShardID, &gs.Total, &gs.NotCloned, &gs.Cloning, &gs.Cloned, &gs.FailedFetch, &gs.Corrupted)
 	if err != nil {
 		return gs, err
 	}

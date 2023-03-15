@@ -5,11 +5,14 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestStatusMessages(t *testing.T) {
@@ -17,6 +20,10 @@ func TestStatusMessages(t *testing.T) {
 		query StatusMessages {
 			statusMessages {
 				__typename
+
+				... on GitUpdatesDisabled {
+					message
+				}
 
 				... on CloningProgress {
 					message
@@ -43,7 +50,7 @@ func TestStatusMessages(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewClient(db)).StatusMessages(context.Background())
+		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).StatusMessages(context.Background())
 		if want := auth.ErrNotAuthenticated; err != want {
 			t.Errorf("got err %v, want %v", err, want)
 		}
@@ -60,7 +67,9 @@ func TestStatusMessages(t *testing.T) {
 		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
 			return []repos.StatusMessage{}, nil
 		}
-		defer func() { repos.MockStatusMessages = nil }()
+		t.Cleanup(func() {
+			repos.MockStatusMessages = nil
+		})
 
 		RunTests(t, []*Test{
 			{
@@ -92,6 +101,11 @@ func TestStatusMessages(t *testing.T) {
 		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
 			res := []repos.StatusMessage{
 				{
+					GitUpdatesDisabled: &repos.GitUpdatesDisabled{
+						Message: "Repositories will not be cloned or updated.",
+					},
+				},
+				{
 					Cloning: &repos.CloningProgress{
 						Message: "Currently cloning 5 repositories in parallel...",
 					},
@@ -110,15 +124,28 @@ func TestStatusMessages(t *testing.T) {
 			}
 			return res, nil
 		}
-		defer func() { repos.MockStatusMessages = nil }()
 
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query:  graphqlQuery,
-				ExpectedResult: `
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				DisableAutoGitUpdates: true,
+			},
+		})
+
+		t.Cleanup(func() {
+			repos.MockStatusMessages = nil
+			conf.Mock(nil)
+		})
+
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  graphqlQuery,
+			ExpectedResult: `
 					{
 						"statusMessages": [
+							{
+								"__typename": "GitUpdatesDisabled",
+        						"message": "Repositories will not be cloned or updated."
+							},
 							{
 								"__typename": "CloningProgress",
 								"message": "Currently cloning 5 repositories in parallel..."
@@ -138,7 +165,6 @@ func TestStatusMessages(t *testing.T) {
 						]
 					}
 				`,
-			},
 		})
 	})
 }

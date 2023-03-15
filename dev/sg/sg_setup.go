@@ -7,9 +7,9 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/dependencies"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -36,7 +36,7 @@ var setupCommand = &cli.Command{
 	Action: func(cmd *cli.Context) error {
 		if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
-			return cliutil.NewEmptyExitErr(1)
+			return exit.NewEmptyExitErr(1)
 		}
 
 		currentOS := runtime.GOOS

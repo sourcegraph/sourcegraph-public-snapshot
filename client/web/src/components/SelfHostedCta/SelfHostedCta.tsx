@@ -46,11 +46,7 @@ export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<Self
 
                 <ul>
                     <li>
-                        <Link
-                            onClick={gettingStartedCTAOnClick}
-                            to="https://docs.sourcegraph.com/admin/install"
-                            {...linkProps}
-                        >
+                        <Link onClick={gettingStartedCTAOnClick} to="/help/admin/deploy" {...linkProps}>
                             Learn how to install
                         </Link>
                     </li>

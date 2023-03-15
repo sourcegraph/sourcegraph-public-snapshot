@@ -35,7 +35,7 @@ describe('[Code Insight] Dashboard', () => {
                         id: 'user_001',
                         organizations: { nodes: [] },
                     },
-                    site: { __typename: 'Site', id: 'site_id' },
+                    site: { __typename: 'Site', id: 'TestSiteID' },
                 }),
                 CreateDashboard: () => ({
                     createInsightsDashboard: {
@@ -57,7 +57,7 @@ describe('[Code Insight] Dashboard', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/all')
 
         await driver.page.waitForSelector('[aria-label="Add dashboard"]')
         await driver.page.click('[aria-label="Add dashboard"]')
@@ -65,7 +65,7 @@ describe('[Code Insight] Dashboard', () => {
         await driver.page.waitForSelector('form')
 
         await driver.page.type('[name="name"]', 'New test dashboard')
-        await driver.page.click('[name="visibility"][value="site_id"]')
+        await driver.page.click('[name="visibility"][value="TestSiteID"]')
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             const [button] = await driver.page.$x("//button[contains(., 'Add dashboard')]")

@@ -92,7 +92,5 @@ You can check the container logs to see if you have made any typos or mistakes i
 			"allowSignup": false
 		}
 	],
-
-	"search.index.enabled": true
 }
 ```

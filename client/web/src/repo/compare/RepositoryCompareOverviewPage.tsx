@@ -1,25 +1,16 @@
 import * as React from 'react'
 
-import { RouteComponentProps } from 'react-router'
+import { Location, NavigateFunction } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { Scalars } from '../../graphql-operations'
+import { RepositoryComparisonFields, RepositoryComparisonResult, Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
@@ -30,25 +21,27 @@ function queryRepositoryComparison(args: {
     repo: Scalars['ID']
     base: string | null
     head: string | null
-}): Observable<GQL.IGitRevisionRange> {
-    return queryGraphQL(
+}): Observable<RepositoryComparisonFields['comparison']['range']> {
+    return queryGraphQL<RepositoryComparisonResult>(
         gql`
             query RepositoryComparison($repo: ID!, $base: String, $head: String) {
                 node(id: $repo) {
-                    ... on Repository {
-                        comparison(base: $base, head: $head) {
-                            range {
-                                expr
-                                baseRevSpec {
-                                    object {
-                                        oid
-                                    }
-                                }
-                                headRevSpec {
-                                    object {
-                                        oid
-                                    }
-                                }
+                    ...RepositoryComparisonFields
+                }
+            }
+
+            fragment RepositoryComparisonFields on Repository {
+                comparison(base: $base, head: $head) {
+                    range {
+                        expr
+                        baseRevSpec {
+                            object {
+                                oid
+                            }
+                        }
+                        headRevSpec {
+                            object {
+                                oid
                             }
                         }
                     }
@@ -58,17 +51,13 @@ function queryRepositoryComparison(args: {
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.node) {
+            if (!data?.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
+            const repo = data.node as RepositoryComparisonFields
             if (
-                !repo.comparison ||
-                !repo.comparison.range ||
-                !repo.comparison.range.baseRevSpec ||
-                !repo.comparison.range.baseRevSpec.object ||
-                !repo.comparison.range.headRevSpec ||
-                !repo.comparison.range.headRevSpec.object ||
+                !repo.comparison?.range?.baseRevSpec?.object ||
+                !repo.comparison?.range?.headRevSpec?.object ||
                 errors
             ) {
                 throw createAggregateError(errors)
@@ -79,12 +68,7 @@ function queryRepositoryComparison(args: {
     )
 }
 
-interface Props
-    extends RepositoryCompareAreaPageProps,
-        RouteComponentProps<{}>,
-        PlatformContextProps,
-        ExtensionsControllerProps,
-        ThemeProps {
+interface Props extends RepositoryCompareAreaPageProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: Scalars['ID']; revision?: string | null }
 
@@ -94,12 +78,14 @@ interface Props
     /** An optional path of a specific file to compare */
     path: string | null
 
-    hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
+    /** Required for `RepositoryCompareCommitsPage` */
+    location: Location
+    navigate: NavigateFunction
 }
 
 interface State {
     /** The comparison's range, null when no comparison is requested, undefined while loading, or an error. */
-    rangeOrError?: null | GQL.IGitRevisionRange | ErrorLike
+    rangeOrError?: null | RepositoryComparisonFields['comparison']['range'] | ErrorLike
 }
 
 /** A page with an overview of the comparison. */
@@ -182,7 +168,6 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                                 revision: this.props.head.revision || null,
                                 commitID: this.state.rangeOrError.headRevSpec.object!.oid,
                             }}
-                            extensionsController={this.props.extensionsController}
                         />
                     </>
                 )}

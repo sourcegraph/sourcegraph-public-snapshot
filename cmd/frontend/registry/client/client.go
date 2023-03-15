@@ -34,7 +34,7 @@ const (
 
 // List lists extensions on the remote registry matching the query (or all if the query is empty).
 func List(ctx context.Context, registry *url.URL, query string) (xs []*Extension, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "registry/client.List")
+	span, ctx := ot.StartSpanFromContext(ctx, "registry/client.List") //nolint:staticcheck // OT is deprecated
 	span.SetTag("registry", registry.String())
 	span.SetTag("query", query)
 	defer func() {
@@ -83,14 +83,6 @@ func getBy(ctx context.Context, registry *url.URL, op, field, value string) (*Ex
 		if errors.As(err, &e) && e.Err == httpError(http.StatusNotFound) {
 			err = &notFoundError{field: field, value: value}
 		}
-		return nil, err
-	}
-	return x, nil
-}
-
-func GetFeaturedExtensions(ctx context.Context, registry *url.URL) ([]*Extension, error) {
-	var x []*Extension
-	if err := httpGet(ctx, "registry.GetFeaturedExtensions", toURL(registry, "extensions/featured", nil), &x); err != nil {
 		return nil, err
 	}
 	return x, nil

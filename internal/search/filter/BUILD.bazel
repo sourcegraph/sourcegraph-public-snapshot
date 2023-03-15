@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "filter",
+    srcs = ["select.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/filter",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)

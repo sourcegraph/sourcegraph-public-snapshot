@@ -1,10 +1,9 @@
 import React, { useState } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, gql } from '@sourcegraph/http-client'
-import { Button, LoadingSpinner, Label, Text } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Label, Text, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
@@ -39,7 +38,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
     authenticatedUser,
     score,
 }) => {
-    const history = useHistory<SurveyFormLocationState>()
+    const navigate = useNavigate()
     const [email, setEmail] = useState('')
     const [validationError, setValidationError] = useState<Error | null>(null)
     const [otherUseCase, setOtherUseCase] = useState<string>('')
@@ -47,14 +46,18 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
 
     const [submitSurvey, response] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(SUBMIT_SURVEY, {
         onCompleted: () => {
-            history.push({
-                pathname: '/survey/thanks',
-                state: {
-                    // Mutation is only submitted when score is defined
-                    score: score!,
-                    feedback: better,
+            navigate(
+                {
+                    pathname: '/survey/thanks',
                 },
-            })
+                {
+                    state: {
+                        // Mutation is only submitted when score is defined
+                        score: score!,
+                        feedback: better,
+                    },
+                }
+            )
         },
     })
 
@@ -63,7 +66,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
             setValidationError(null)
         }
 
-        history.push(`/survey/${newScore}`)
+        navigate(`/survey/${newScore}`)
     }
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
@@ -94,7 +97,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
         <Form className={styles.surveyForm} onSubmit={handleSubmit}>
             {error && <Text className={styles.error}>{error.message}</Text>}
             {/* Label is associated with control through aria-labelledby */}
-            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+            {}
             <Label id="survey-form-scores" className={styles.label}>
                 How likely is it that you would recommend Sourcegraph to a friend?
             </Label>

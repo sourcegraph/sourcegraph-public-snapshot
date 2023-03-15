@@ -82,6 +82,9 @@ func (f *fakeVersionSource) ListRepos(ctx context.Context, res chan repos.Source
 func (f *fakeVersionSource) ExternalServices() types.ExternalServices {
 	return f.es
 }
+func (f *fakeVersionSource) CheckConnection(context.Context) error {
+	return nil
+}
 func (f *fakeVersionSource) Version(context.Context) (string, error) {
 	return f.version, f.err
 }

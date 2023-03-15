@@ -1,7 +1,6 @@
-import { useContext, useMemo, FC, HTMLAttributes } from 'react'
+import { FC, HTMLAttributes } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useDeepMemo, Text, Series } from '@sourcegraph/wildcard'
+import { useDeepMemo, Series, useDebounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import {
@@ -14,12 +13,10 @@ import {
     LivePreviewBlurBackdrop,
     LivePreviewBanner,
     LivePreviewLegend,
-    getSanitizedRepositories,
-    useLivePreview,
-    StateStatus,
+    getSanitizedRepositoryScope,
     SERIES_MOCK_CHART,
 } from '../../../components'
-import { CodeInsightsBackendContext, SeriesChartContent } from '../../../core'
+import { useLivePreviewSeriesInsight, LivePreviewStatus } from '../../../core'
 
 import { getSanitizedCaptureQuery } from './capture-group/utils/capture-group-insight-sanitizer'
 import { InsightStep } from './search-insight'
@@ -33,65 +30,67 @@ export interface LivePreviewSeries {
 
 interface LineChartLivePreviewProps extends HTMLAttributes<HTMLElement> {
     disabled: boolean
-    repositories: string
+    repositories: string[]
+    repoQuery: string | undefined
+    repoMode: string
     stepValue: string
     step: InsightStep
-    isAllReposMode: boolean
     series: LivePreviewSeries[]
 }
 
 export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
-    const { disabled, repositories, stepValue, step, series, isAllReposMode, ...attributes } = props
-    const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
+    const { disabled, repositories, repoQuery, repoMode, stepValue, step, series, ...attributes } = props
     const seriesToggleState = useSeriesToggle()
 
-    const sanitizedSeries = series.map(srs => {
-        const sanitizer = srs.generatedFromCaptureGroup ? getSanitizedCaptureQuery : (query: string) => query
-        return {
-            query: sanitizer(srs.query),
-            generatedFromCaptureGroup: srs.generatedFromCaptureGroup,
-            label: srs.label,
-            stroke: srs.stroke,
-        }
-    })
+    const settings = useDebounce(
+        useDeepMemo({
+            disabled,
+            repoScope: getSanitizedRepositoryScope(repositories, repoQuery, repoMode),
+            step: { [step]: stepValue },
+            series: series.map(srs => {
+                const sanitizer = srs.generatedFromCaptureGroup
+                    ? getSanitizedCaptureQuery
+                    : (query: string) => query.trim()
 
-    const settings = useDeepMemo({
-        disabled,
-        repositories: getSanitizedRepositories(repositories),
-        step: { [step]: stepValue },
-        series: sanitizedSeries,
-    })
-
-    const getLivePreview = useMemo(
-        () => ({
-            disabled: settings.disabled,
-            fetcher: () => getLivePreviewContent(settings),
+                return {
+                    query: sanitizer(srs.query),
+                    generatedFromCaptureGroups: srs.generatedFromCaptureGroup,
+                    label: srs.label,
+                    stroke: srs.stroke,
+                }
+            }),
         }),
-        [settings, getLivePreviewContent]
+        500
     )
 
-    const { state, update } = useLivePreview(getLivePreview)
+    const { state, refetch } = useLivePreviewSeriesInsight({
+        // If disabled goes from true to false then cancel live preview series fetching
+        // immediately, when it goes from false to true wait a little *use debounced
+        // value only when run preview search
+        skip: disabled || settings.disabled,
+        ...settings,
+    })
 
     return (
         <aside {...attributes}>
-            <LivePreviewUpdateButton disabled={disabled} onClick={update} />
+            <LivePreviewUpdateButton disabled={disabled} onClick={refetch} />
 
-            <LivePreviewCard>
-                {state.status === StateStatus.Loading ? (
+            <LivePreviewCard className="flex-1">
+                {state.status === LivePreviewStatus.Loading ? (
                     <LivePreviewLoading>Loading code insight</LivePreviewLoading>
-                ) : state.status === StateStatus.Error ? (
-                    <ErrorAlert error={state.error} />
+                ) : state.status === LivePreviewStatus.Error ? (
+                    <ErrorAlert error={state.error} className="m-0" />
                 ) : (
                     <LivePreviewChart>
                         {parent =>
-                            state.status === StateStatus.Data ? (
+                            state.status === LivePreviewStatus.Data ? (
                                 <SeriesChart
                                     type={SeriesBasedChartTypes.Line}
                                     width={parent.width}
                                     height={parent.height}
                                     data-testid="code-search-insight-live-preview"
                                     seriesToggleState={seriesToggleState}
-                                    {...state.data}
+                                    series={state.data}
                                 />
                             ) : (
                                 <>
@@ -100,15 +99,13 @@ export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
                                         type={SeriesBasedChartTypes.Line}
                                         width={parent.width}
                                         height={parent.height}
-                                        seriesToggleState={seriesToggleState}
                                         // We cast to unknown here because ForwardReferenceComponent
                                         // doesn't support inferring as component with generic.
-                                        {...(SERIES_MOCK_CHART as SeriesChartContent<unknown>)}
+                                        series={SERIES_MOCK_CHART as Series<unknown>[]}
                                     />
                                     <LivePreviewBanner>
-                                        {isAllReposMode
-                                            ? 'Live previews are currently not available for insights running over all repositories.'
-                                            : 'The chart preview will be shown here once you have filled out the repositories and series fields.'}
+                                        The chart preview will be shown here once you have filled out the repositories
+                                        and series fields.
                                     </LivePreviewBanner>
                                 </>
                             )
@@ -116,16 +113,10 @@ export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
                     </LivePreviewChart>
                 )}
 
-                {state.status === StateStatus.Data && (
-                    <LivePreviewLegend series={state.data.series as Series<unknown>[]} />
+                {state.status === LivePreviewStatus.Data && (
+                    <LivePreviewLegend series={state.data as Series<unknown>[]} />
                 )}
             </LivePreviewCard>
-
-            {isAllReposMode && (
-                <Text className="mt-2">
-                    Previews are only displayed if you individually list up to 50 repositories.
-                </Text>
-            )}
         </aside>
     )
 }

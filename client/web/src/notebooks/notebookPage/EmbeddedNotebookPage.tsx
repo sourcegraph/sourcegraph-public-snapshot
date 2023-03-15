@@ -1,13 +1,15 @@
-import React, { useCallback, useEffect, useMemo } from 'react'
+import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import { noop } from 'lodash'
+import { useParams } from 'react-router-dom'
 import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
-import { fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared } from '@sourcegraph/shared/src/backend/file'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import {
+    FetchFileParameters,
+    fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared,
+} from '@sourcegraph/shared/src/backend/file'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
@@ -21,32 +23,21 @@ import { NotebookContent, NotebookContentProps } from './NotebookContent'
 interface EmbeddedNotebookPageProps
     extends Pick<
             NotebookContentProps,
-            | 'isLightTheme'
-            | 'searchContextsEnabled'
-            | 'showSearchContext'
-            | 'isSourcegraphDotCom'
-            | 'authenticatedUser'
-            | 'settingsCascade'
+            'searchContextsEnabled' | 'isSourcegraphDotCom' | 'authenticatedUser' | 'settingsCascade' | 'ownEnabled'
         >,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
-    notebookId: string
-}
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {}
 
 const LOADING = 'loading' as const
 
-export const EmbeddedNotebookPage: React.FunctionComponent<React.PropsWithChildren<EmbeddedNotebookPageProps>> = ({
-    notebookId,
-    platformContext,
-    extensionsController,
-    ...props
-}) => {
+export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformContext, ...props }) => {
+    const { notebookId } = useParams()
+
     useEffect(() => eventLogger.logPageView('EmbeddedNotebookPage'), [])
 
     const notebookOrError = useObservable(
         useMemo(
             () =>
-                fetchNotebook(notebookId).pipe(
+                fetchNotebook(notebookId!).pipe(
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
@@ -89,7 +80,6 @@ export const EmbeddedNotebookPage: React.FunctionComponent<React.PropsWithChildr
                     streamSearch={aggregateStreamingSearch}
                     telemetryService={eventLogger}
                     platformContext={platformContext}
-                    extensionsController={extensionsController}
                     exportedFileName={convertNotebookTitleToFileName(notebookOrError.title)}
                     // Copying is not supported in embedded notebooks
                     onCopyNotebook={() => NEVER}

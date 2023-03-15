@@ -17,15 +17,20 @@ allowed_prefix=(
   github.com/sourcegraph/sourcegraph/cmd/repo-updater
   github.com/sourcegraph/sourcegraph/cmd/migrator
   github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+  github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver
   github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
   github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
   github.com/sourcegraph/sourcegraph/enterprise/cmd/migrator
   github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-
   github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
+  github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings
   # Doesn't connect but uses db internals for use with sqlite
   github.com/sourcegraph/sourcegraph/cmd/symbols
   # Transitively depends on zoekt package which imports but does not use DB
   github.com/sourcegraph/sourcegraph/cmd/searcher
+  # Main entrypoints for running all services, so they must be allowed to import it.
+  github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
+  github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph
 )
 
 # Create regex ^(a|b|c)

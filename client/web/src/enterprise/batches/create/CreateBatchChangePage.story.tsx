@@ -1,11 +1,9 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import {
-    EMPTY_SETTINGS_CASCADE,
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
+import { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
+import { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
 
 import { CreateBatchChangePage } from './CreateBatchChangePage'
@@ -28,12 +26,30 @@ const config: Meta = {
 
 export default config
 
+const MOCK_ORGANIZATION = {
+    __typename: 'Org',
+    name: 'acme-corp',
+    displayName: 'ACME Corporation',
+    id: 'acme-corp-id',
+}
+
+const mockAuthenticatedUser = {
+    __typename: 'User',
+    username: 'alice',
+    displayName: 'alice',
+    id: 'b',
+    organizations: {
+        nodes: [MOCK_ORGANIZATION],
+    },
+} as AuthenticatedUser
+
 export const ExperimentalExecutionDisabled: Story = () => (
     <WebStory>
         {props => (
             <CreateBatchChangePage
                 {...props}
                 headingElement="h1"
+                authenticatedUser={mockAuthenticatedUser}
                 settingsCascade={{
                     ...EMPTY_SETTINGS_CASCADE,
                     final: { experimentalFeatures: { batchChangesExecution: false } },
@@ -45,20 +61,24 @@ export const ExperimentalExecutionDisabled: Story = () => (
 
 ExperimentalExecutionDisabled.storyName = 'Experimental execution disabled'
 
-const FIXTURE_ORG: SettingsOrgSubject = {
+const FIXTURE_ORG: OrgSettingFields = {
     __typename: 'Org',
     name: 'sourcegraph',
     displayName: 'Sourcegraph',
     id: 'a',
     viewerCanAdminister: true,
+    settingsURL: null,
+    latestSettings: null,
 }
 
-const FIXTURE_USER: SettingsUserSubject = {
+const FIXTURE_USER: UserSettingFields = {
     __typename: 'User',
     username: 'alice',
     displayName: 'alice',
     id: 'b',
     viewerCanAdminister: true,
+    settingsURL: null,
+    latestSettings: null,
 }
 
 export const ExperimentalExecutionEnabled: Story = () => (
@@ -67,6 +87,7 @@ export const ExperimentalExecutionEnabled: Story = () => (
             <CreateBatchChangePage
                 {...props}
                 headingElement="h1"
+                authenticatedUser={mockAuthenticatedUser}
                 settingsCascade={{
                     ...EMPTY_SETTINGS_CASCADE,
                     subjects: [
@@ -87,7 +108,8 @@ export const ExperimentalExecutionEnabledFromOrgNamespace: Story = () => (
             <CreateBatchChangePage
                 {...props}
                 headingElement="h1"
-                initialNamespaceID="a"
+                initialNamespaceID={MOCK_ORGANIZATION.id}
+                authenticatedUser={mockAuthenticatedUser}
                 settingsCascade={{
                     ...EMPTY_SETTINGS_CASCADE,
                     final: {
@@ -111,7 +133,8 @@ export const ExperimentalExecutionEnabledFromUserNamespace: Story = () => (
             <CreateBatchChangePage
                 {...props}
                 headingElement="h1"
-                initialNamespaceID="b"
+                initialNamespaceID={mockAuthenticatedUser.id}
+                authenticatedUser={mockAuthenticatedUser}
                 settingsCascade={{
                     ...EMPTY_SETTINGS_CASCADE,
                     final: {

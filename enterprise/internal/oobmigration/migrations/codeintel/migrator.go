@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/lib/group"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // migrator is a code-intelligence-specific out-of-band migration runner. This migrator can
@@ -99,21 +100,17 @@ type migrationDriver interface {
 	// migrator's fields option. Implementations must return the same number of values as the set
 	// of primary keys plus any additional non-selectOnly fields supplied via the migrator's fields
 	// option.
-	MigrateRowUp(scanner scanner) ([]any, error)
+	MigrateRowUp(scanner dbutil.Scanner) ([]any, error)
 
 	// MigrateRowDown undoes the migration for the given row.  The scanner will receive the values
 	// of the primary keys plus any additional non-updateOnly fields supplied via the migrator's
 	// fields option. Implementations must return the same number of values as the set  of primary
 	// keys plus any additional non-selectOnly fields supplied via the migrator's fields option.
-	MigrateRowDown(scanner scanner) ([]any, error)
+	MigrateRowDown(scanner dbutil.Scanner) ([]any, error)
 }
 
 // driverFunc is the type of MigrateRowUp and MigrateRowDown.
-type driverFunc func(scanner scanner) ([]any, error)
-
-type scanner interface {
-	Scan(dest ...any) error
-}
+type driverFunc func(scanner dbutil.Scanner) ([]any, error)
 
 func newMigrator(store *basestore.Store, driver migrationDriver, options migratorOptions) *migrator {
 	selectionExpressions := make([]*sqlf.Query, 0, len(options.fields))
@@ -160,7 +157,7 @@ func (m *migrator) Interval() time.Duration { return m.driver.Interval() }
 
 // Progress returns the ratio between the number of upload records that have been completely
 // migrated over the total number of upload records. A record is migrated if its schema version
-// is no less than (on upgradees) or no greater than (on downgrades) than the target migration
+// is no less than (on upgrades) or no greater than (on downgrades) than the target migration
 // version.
 func (m *migrator) Progress(ctx context.Context, applyReverse bool) (float64, error) {
 	table := "min_schema_version"
@@ -198,12 +195,12 @@ SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count 
 // the selection of the upload holds a row lock associated with that upload for the duration of the method's
 // enclosing transaction.
 func (m *migrator) Up(ctx context.Context) (err error) {
-	g := group.New().WithErrors()
+	p := pool.New().WithErrors()
 	for i := 0; i < m.options.numRoutines; i++ {
-		g.Go(func() error { return m.up(ctx) })
+		p.Go(func() error { return m.up(ctx) })
 	}
 
-	return g.Wait()
+	return p.Wait()
 }
 
 func (m *migrator) up(ctx context.Context) (err error) {
@@ -214,12 +211,12 @@ func (m *migrator) up(ctx context.Context) (err error) {
 //
 // For notes on parallelism, see the symmetric `Up` method on this migrator.
 func (m *migrator) Down(ctx context.Context) error {
-	g := group.New().WithErrors()
+	p := pool.New().WithErrors()
 	for i := 0; i < m.options.numRoutines; i++ {
-		g.Go(func() error { return m.down(ctx) })
+		p.Go(func() error { return m.down(ctx) })
 	}
 
-	return g.Wait()
+	return p.Wait()
 }
 
 func (m *migrator) down(ctx context.Context) error {
@@ -396,8 +393,10 @@ const processRowsQuery = `
 SELECT %s FROM %s WHERE dump_id = %s AND schema_version = %s LIMIT %s
 `
 
-var temporaryTableName = "t_migration_payload"
-var temporaryTableExpression = sqlf.Sprintf(temporaryTableName)
+var (
+	temporaryTableName       = "t_migration_payload"
+	temporaryTableExpression = sqlf.Sprintf(temporaryTableName)
+)
 
 // updateBatch creates a temporary table symmetric to the target table but without any of the read-only
 // fields. Then, the given row values are bulk inserted into the temporary table. Finally, the rows in

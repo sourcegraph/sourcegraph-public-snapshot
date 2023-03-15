@@ -1,6 +1,6 @@
 import { ReactElement, SVGProps } from 'react'
 
-import { Annotation, HtmlLabel, Connector } from '@visx/annotation'
+import { Annotation, Connector, HtmlLabel } from '@visx/annotation'
 import { Group } from '@visx/group'
 import { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import classNames from 'classnames'
@@ -36,7 +36,7 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     const radius = path.outerRadius()(arc)
 
     // Pie chart operate polar system of coords but svg operates with a Cartesian coordinate system
-    // normalX and normalY they are just projections on the axes. You can thing about this code like
+    // normalX and normalY they are just projections on the axes. You can think about this code like
     // transformation polar coords to cartesian coords.
     // https://en.wikipedia.org/wiki/Polar_coordinate_system#/media/File:Polar_to_cartesian.svg
     const normalX = Math.cos(middleAngle)

@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"regexp"
 	"sort"
 	"strings"
 	"text/template"
 
 	"github.com/gobwas/glob"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
@@ -165,7 +165,7 @@ type Repository struct {
 
 func (r Repository) SearchResultPaths() (list fileMatchPathList) {
 	sort.Strings(r.FileMatches)
-	return fileMatchPathList(r.FileMatches)
+	return r.FileMatches
 }
 
 type fileMatchPathList []string

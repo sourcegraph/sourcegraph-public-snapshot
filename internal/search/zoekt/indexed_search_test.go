@@ -18,17 +18,21 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/RoaringBitmap/roaring"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestIndexedSearch(t *testing.T) {
@@ -273,9 +277,9 @@ func TestIndexedSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			zoekt := &searchbackend.FakeSearcher{
-				Result: &zoekt.SearchResult{Files: tt.args.results},
-				Repos:  zoektRepos,
+			fakeZoekt := &searchbackend.FakeStreamer{
+				Results: []*zoekt.SearchResult{{Files: tt.args.results}},
+				Repos:   zoektRepos,
 			}
 
 			var resultTypes result.Types
@@ -293,7 +297,7 @@ func TestIndexedSearch(t *testing.T) {
 				context.Background(),
 				logtest.Scoped(t),
 				tt.args.repos,
-				zoekt,
+				fakeZoekt,
 				search.TextRequest,
 				query.Yes,
 				query.ContainsRefGlobs(q),
@@ -315,7 +319,7 @@ func TestIndexedSearch(t *testing.T) {
 				Since:          tt.args.since,
 			}
 
-			_, err = zoektJob.Run(tt.args.ctx, job.RuntimeClients{Zoekt: zoekt}, agg)
+			_, err = zoektJob.Run(tt.args.ctx, job.RuntimeClients{Zoekt: fakeZoekt}, agg)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
@@ -433,62 +437,149 @@ func TestZoektIndexedRepos(t *testing.T) {
 	}
 }
 
-func TestZoektResultCountFactor(t *testing.T) {
+func TestZoektSearchOptions(t *testing.T) {
+	documentRanksWeight := 42.0
+
 	cases := []struct {
-		name         string
-		numRepos     int
-		globalSearch bool
-		pattern      *search.TextPatternInfo
-		want         int
+		name            string
+		context         context.Context
+		options         *Options
+		rankingFeatures *schema.Ranking
+		want            *zoekt.SearchOptions
 	}{
 		{
-			name:     "One repo implies max scaling factor",
-			numRepos: 1,
-			pattern:  &search.TextPatternInfo{},
-			want:     100,
+			name:    "test defaults",
+			context: context.Background(),
+			options: &Options{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				NumRepos:       3,
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount: 10000,
+				TotalMaxMatchCount: 100000,
+				MaxWallTime:        20000000000,
+				MaxDocDisplayCount: 500,
+				ChunkMatches:       true,
+			},
 		},
 		{
-			name:     "Eleven repos implies a scaling factor between min and max",
-			numRepos: 11,
-			pattern:  &search.TextPatternInfo{},
-			want:     8,
+			name:    "test defaults with ranking feature enabled",
+			context: context.Background(),
+			options: &Options{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				NumRepos:       3,
+				Features: search.Features{
+					Ranking: true,
+				},
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:  10000,
+				TotalMaxMatchCount:  100000,
+				MaxWallTime:         20000000000,
+				FlushWallTime:       500000000,
+				MaxDocDisplayCount:  500,
+				ChunkMatches:        true,
+				UseDocumentRanks:    true,
+				DocumentRanksWeight: 4500,
+			},
 		},
 		{
-			name:     "More than 500 repos implies a min scaling factor",
-			numRepos: 501,
-			pattern:  &search.TextPatternInfo{},
-			want:     1,
+			name:    "test repo search defaults",
+			context: context.Background(),
+			options: &Options{
+				Selector:       []string{filter.Repository},
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				NumRepos:       3,
+				Features: search.Features{
+					Ranking: true,
+				},
+			},
+			want: &zoekt.SearchOptions{
+				ShardRepoMaxMatchCount: 1,
+				MaxWallTime:            20000000000,
+				ChunkMatches:           true,
+			},
 		},
 		{
-			name:     "Setting a count greater than defautl max results (30) adapts scaling factor",
-			numRepos: 501,
-			pattern:  &search.TextPatternInfo{FileMatchLimit: 100},
-			want:     10,
+			name:    "test large file match limit",
+			context: context.Background(),
+			options: &Options{
+				FileMatchLimit: 100_000,
+				NumRepos:       3,
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount: 100_000,
+				TotalMaxMatchCount: 100_000,
+				MaxWallTime:        20000000000,
+				MaxDocDisplayCount: 100_000,
+				ChunkMatches:       true,
+			},
 		},
 		{
-			name:         "for global searches, k should be 1",
-			numRepos:     0,
-			globalSearch: true,
-			pattern:      &search.TextPatternInfo{},
-			want:         1,
+			name:    "test document ranks weight",
+			context: context.Background(),
+			rankingFeatures: &schema.Ranking{
+				DocumentRanksWeight: &documentRanksWeight,
+			},
+			options: &Options{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				NumRepos:       3,
+				Features: search.Features{
+					Ranking: true,
+				},
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:  10000,
+				TotalMaxMatchCount:  100000,
+				MaxWallTime:         20000000000,
+				FlushWallTime:       500000000,
+				MaxDocDisplayCount:  500,
+				ChunkMatches:        true,
+				UseDocumentRanks:    true,
+				DocumentRanksWeight: 42,
+			},
 		},
 		{
-			name:         "for global searches, k should be 1, adjusted by the FileMatchLimit",
-			numRepos:     0,
-			globalSearch: true,
-			pattern:      &search.TextPatternInfo{FileMatchLimit: 100},
-			want:         10,
+			name:    "test flush wall time",
+			context: context.Background(),
+			rankingFeatures: &schema.Ranking{
+				FlushWallTimeMS: 3141,
+			},
+			options: &Options{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				NumRepos:       3,
+				Features: search.Features{
+					Ranking: true,
+				},
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:  10000,
+				TotalMaxMatchCount:  100000,
+				MaxWallTime:         20000000000,
+				FlushWallTime:       3141000000,
+				MaxDocDisplayCount:  500,
+				ChunkMatches:        true,
+				UseDocumentRanks:    true,
+				DocumentRanksWeight: 4500,
+			},
 		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			got := (&Options{
-				NumRepos:       tt.numRepos,
-				FileMatchLimit: tt.pattern.FileMatchLimit,
-				GlobalSearch:   tt.globalSearch,
-			}).resultCountFactor()
-			if tt.want != got {
-				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
+			if tt.rankingFeatures != nil {
+				cfg := conf.Get()
+				cfg.ExperimentalFeatures.Ranking = tt.rankingFeatures
+				conf.Mock(cfg)
+
+				defer func() {
+					cfg.ExperimentalFeatures.Ranking = nil
+					conf.Mock(cfg)
+				}()
+			}
+
+			got := tt.options.ToSearch(tt.context)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("search options mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -817,16 +908,20 @@ func TestContextWithoutDeadline_cancel(t *testing.T) {
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
-		repoName, revSpecs := search.ParseRepositoryRevisions(repospec)
-		revs := make([]string, 0, len(revSpecs))
-		for _, revSpec := range revSpecs {
+		repoRevs, err := query.ParseRepositoryRevisions(repospec)
+		if err != nil {
+			panic(errors.Errorf("unexpected error parsing repo spec %s", repospec))
+		}
+
+		revs := make([]string, 0, len(repoRevs.Revs))
+		for _, revSpec := range repoRevs.Revs {
 			revs = append(revs, revSpec.RevSpec)
 		}
 		if len(revs) == 0 {
 			// treat empty list as HEAD
 			revs = []string{"HEAD"}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoRevs.Repo)[0], Revs: revs}
 	}
 	return r
 }
@@ -882,7 +977,7 @@ func TestZoektFileMatchToMultilineMatches(t *testing.T) {
 		},
 		// One chunk per line, not one per fragment
 		output: result.ChunkMatches{{
-			Content:      string("testing 1 2 3"),
+			Content:      "testing 1 2 3",
 			ContentStart: result.Location{0, 0, 0},
 			Ranges: result.Ranges{{
 				Start: result.Location{8, 0, 8},

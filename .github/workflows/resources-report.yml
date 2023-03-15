@@ -8,9 +8,10 @@ on:
 
 jobs:
   resources-report:
+    if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: set up gcp key
       run: |
         echo ${{ secrets.RR_GCP_ACCOUNT_KEY }} | base64 -d > resources-report-credentials.json

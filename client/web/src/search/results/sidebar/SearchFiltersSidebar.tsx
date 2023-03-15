@@ -2,7 +2,6 @@ import { FC, ReactNode, ReactElement, useCallback, useMemo, HTMLAttributes, memo
 
 import { mdiInformationOutline } from '@mdi/js'
 
-import { QueryStateUpdate, QueryUpdate, SearchPatternType } from '@sourcegraph/search'
 import {
     SearchSidebar,
     SearchSidebarSection,
@@ -13,15 +12,17 @@ import {
     getSearchTypeLinks,
     getFiltersOfKind,
     useLastRepoName,
-} from '@sourcegraph/search-ui'
+} from '@sourcegraph/branded'
+import { QueryStateUpdate, QueryUpdate } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
-import { buildSearchURLQueryFromQueryState, useExperimentalFeatures } from '../../../stores'
+import { SearchPatternType } from '../../../graphql-operations'
+import { buildSearchURLQueryFromQueryState } from '../../../stores'
 import { AggregationUIMode, GroupResultsPing } from '../components/aggregation'
 
 import { getRevisions } from './Revisions'
@@ -37,7 +38,7 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
     selectedSearchContextSpec?: string
     aggregationUIMode?: AggregationUIMode
     onNavbarQueryChange: (queryState: QueryStateUpdate) => void
-    onSearchSubmit: (updates: QueryUpdate[]) => void
+    onSearchSubmit: (updates: QueryUpdate[], updatedSearchQuery?: string) => void
     setSidebarCollapsed: (collapsed: boolean) => void
 }
 
@@ -61,10 +62,10 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     } = props
 
     // Settings
-    const enableSearchAggregations = useExperimentalFeatures(features => features.searchResultsAggregations ?? true)
-    const proactiveSearchAggregations = useExperimentalFeatures(
-        features => features.proactiveSearchResultsAggregations ?? true
-    )
+    const { enableSearchAggregations, proactiveSearchAggregations } = useExperimentalFeatures(features => ({
+        enableSearchAggregations: features.searchResultsAggregations ?? true,
+        proactiveSearchAggregations: features.proactiveSearchResultsAggregations ?? true,
+    }))
 
     // Derived state
     const repoFilters = useMemo(() => getFiltersOfKind(filters, FilterType.repo), [filters])
@@ -87,8 +88,8 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     )
 
     const handleAggregationBarLinkClick = useCallback(
-        (query: string): void => {
-            onSearchSubmit([{ type: 'replaceQuery', value: query }])
+        (query: string, updatedSearchQuery: string): void => {
+            onSearchSubmit([{ type: 'replaceQuery', value: query }], updatedSearchQuery)
         },
         [onSearchSubmit]
     )
@@ -107,7 +108,8 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
             {showAggregationPanel && enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
                 <SearchSidebarSection
                     sectionId={SectionID.GROUPED_BY}
-                    header={<CustomAggregationHeading telemetryService={props.telemetryService} />}
+                    header="Group results by"
+                    postHeader={<CustomAggregationHeading telemetryService={props.telemetryService} />}
                     // SearchAggregations content contains component that makes a few API network requests
                     // in order to prevent these calls if this section is collapsed we turn off force render
                     // for collapse section component
@@ -198,15 +200,12 @@ const getRepoFilterNoResultText = (repoFilterLinks: ReactElement[]): ReactNode =
 )
 
 const CustomAggregationHeading: FC<TelemetryProps> = ({ telemetryService }) => (
-    <>
-        Group results by
-        <Tooltip content="Aggregation is based on results with no count limitation (count:all).">
-            <Icon
-                aria-label="Info icon about aggregation run"
-                size="md"
-                svgPath={mdiInformationOutline}
-                onMouseEnter={() => telemetryService.log(GroupResultsPing.InfoIconHover)}
-            />
-        </Tooltip>
-    </>
+    <Tooltip content="Aggregation is based on results with no count limitation (count:all).">
+        <Icon
+            aria-label="(Aggregation is based on results with no count limitation (count:all).)"
+            size="md"
+            svgPath={mdiInformationOutline}
+            onMouseEnter={() => telemetryService.log(GroupResultsPing.InfoIconHover)}
+        />
+    </Tooltip>
 )

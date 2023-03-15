@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -129,7 +130,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 			Operations: []btypes.ReconcilerOperation{btypes.ReconcilerOperationDetach},
 			Targets: apitest.ChangesetApplyPreviewTargets{
 				Typename:  "VisibleApplyPreviewTargetsDetach",
-				Changeset: apitest.Changeset{ID: string(marshalChangesetID(closingChangeset.ID))},
+				Changeset: apitest.Changeset{ID: string(bgql.MarshalChangesetID(closingChangeset.ID))},
 			},
 		},
 		{
@@ -146,7 +147,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 			Targets: apitest.ChangesetApplyPreviewTargets{
 				Typename:      "VisibleApplyPreviewTargetsUpdate",
 				ChangesetSpec: apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(changesetSpecs[1].RandID))},
-				Changeset:     apitest.Changeset{ID: string(marshalChangesetID(updatedChangeset.ID))},
+				Changeset:     apitest.Changeset{ID: string(bgql.MarshalChangesetID(updatedChangeset.ID))},
 			},
 		},
 	}
@@ -349,7 +350,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		// The set up on this is pretty similar to the previous test case, but
 		// with the extra step of then modifying the relevant changeset to make
 		// it look like it's been published.
-		createdFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already published")
+		createdFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already-published")
 
 		// Apply the batch spec so we have an existing batch change.
 		svc := service.New(bstore)
@@ -370,13 +371,13 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 				changeset.PublicationState = btypes.ChangesetPublicationStatePublished
 				changeset.ExternalID = "12345"
 				changeset.ExternalState = btypes.ChangesetExternalStateOpen
-				require.Nil(t, bstore.UpsertChangeset(ctx, changeset))
+				require.Nil(t, bstore.UpdateChangeset(ctx, changeset))
 				break
 			}
 		}
 
 		// Now we need a fresh batch spec.
-		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already published")
+		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already-published")
 
 		// We need to modify the changeset spec to not have a published field.
 		newFx.specPublished.Published = batches.PublishedValue{Val: nil}

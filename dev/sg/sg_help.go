@@ -7,19 +7,20 @@ import (
 
 	"github.com/sourcegraph/run"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docgen"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/docgen"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const generatedSgReferenceHeader = "<!-- DO NOT EDIT: generated via: go generate ./dev/sg -->"
 
 var helpCommand = &cli.Command{
-	Name:      "help",
-	ArgsUsage: " ", // no args accepted for now
-	Usage:     "Get help and docs about sg",
-	Category:  CategoryUtil,
+	Name:            "help",
+	ArgsUsage:       " ", // no args accepted for now
+	Usage:           "Get help and docs about sg",
+	Category:        CategoryUtil,
+	HideHelpCommand: true, // we don't want a "sg help help" :)
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:    "full",

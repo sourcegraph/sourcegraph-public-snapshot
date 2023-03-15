@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -15,26 +15,38 @@ import (
 
 func TestSelect(t *testing.T) {
 	t.Run("FileMatch", func(t *testing.T) {
-		data := &FileMatch{
-			Symbols: []*SymbolMatch{
-				{Symbol: Symbol{Name: "a()", Kind: "func"}},
-				{Symbol: Symbol{Name: "b()", Kind: "function"}},
-				{Symbol: Symbol{Name: "var c", Kind: "variable"}},
-			},
-		}
-
-		test := func(input string) string {
-			selectPath, _ := filter.SelectPathFromString(input)
-			symbols := data.Select(selectPath).(*FileMatch).Symbols
-			var values []string
-			for _, s := range symbols {
-				values = append(values, s.Symbol.Name+":"+s.Symbol.Kind)
+		t.Run("symbols", func(t *testing.T) {
+			data := &FileMatch{
+				Symbols: []*SymbolMatch{
+					{Symbol: Symbol{Name: "a()", Kind: "func"}},
+					{Symbol: Symbol{Name: "b()", Kind: "function"}},
+					{Symbol: Symbol{Name: "var c", Kind: "variable"}},
+				},
 			}
-			return strings.Join(values, ", ")
-		}
 
-		autogold.Want("filter any symbol", "a():func, b():function, var c:variable").Equal(t, test("symbol"))
-		autogold.Want("filter symbol kind variable", "var c:variable").Equal(t, test("symbol.variable"))
+			test := func(input string) string {
+				selectPath, _ := filter.SelectPathFromString(input)
+				symbols := data.Select(selectPath).(*FileMatch).Symbols
+				var values []string
+				for _, s := range symbols {
+					values = append(values, s.Symbol.Name+":"+s.Symbol.Kind)
+				}
+				return strings.Join(values, ", ")
+			}
+
+			autogold.Expect("a():func, b():function, var c:variable").Equal(t, test("symbol"))
+			autogold.Expect("var c:variable").Equal(t, test("symbol.variable"))
+		})
+
+		t.Run("path match", func(t *testing.T) {
+			fm := &FileMatch{
+				PathMatches:  []Range{{}},
+				ChunkMatches: []ChunkMatch{{}},
+			}
+
+			selected := fm.Select([]string{filter.Content})
+			require.Empty(t, selected.(*FileMatch).PathMatches)
+		})
 	})
 
 	t.Run("CommitMatch", func(t *testing.T) {

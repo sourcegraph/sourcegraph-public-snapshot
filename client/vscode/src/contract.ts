@@ -6,9 +6,8 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMatch, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-// eslint-disable-next-line no-restricted-imports
-import { Event } from '@sourcegraph/web/src/graphql-operations'
 
+import { Event } from './graphql-operations'
 import { VSCEQueryState, VSCEState, VSCEStateMachine } from './state'
 
 export interface ExtensionCoreAPI {

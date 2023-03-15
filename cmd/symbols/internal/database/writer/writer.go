@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -25,9 +26,11 @@ type databaseWriter struct {
 	gitserverClient gitserver.GitserverClient
 	parser          parser.Parser
 	sem             *semaphore.Weighted
+	observationCtx  *observation.Context
 }
 
 func NewDatabaseWriter(
+	observationCtx *observation.Context,
 	path string,
 	gitserverClient gitserver.GitserverClient,
 	parser parser.Parser,
@@ -38,6 +41,7 @@ func NewDatabaseWriter(
 		gitserverClient: gitserverClient,
 		parser:          parser,
 		sem:             sem,
+		observationCtx:  observationCtx,
 	}
 }
 
@@ -69,7 +73,7 @@ func (w *databaseWriter) getNewestCommit(ctx context.Context, args search.Symbol
 		return "", "", false, err
 	}
 
-	err = store.WithSQLiteStore(newest, func(db store.Store) (err error) {
+	err = store.WithSQLiteStore(w.observationCtx, newest, func(db store.Store) (err error) {
 		if commit, ok, err = db.GetCommit(ctx); err != nil {
 			return errors.Wrap(err, "store.GetCommit")
 		}
@@ -152,7 +156,7 @@ func (w *databaseWriter) parseAndWriteInTransaction(ctx context.Context, args se
 		}
 	}()
 
-	return store.WithSQLiteStoreTransaction(ctx, dbFile, func(tx store.Store) error {
+	return store.WithSQLiteStoreTransaction(ctx, w.observationCtx, dbFile, func(tx store.Store) error {
 		return callback(tx, symbolOrErrors)
 	})
 }

@@ -14,7 +14,7 @@ func contains(s []string, str string) bool {
 // Changes in the root directory files should trigger client tests.
 var clientRootFiles = []string{
 	"package.json",
-	"yarn.lock",
+	"pnpm-lock.yaml",
 	"jest.config.base.js",
 	"jest.config.js",
 	"postcss.config.js",

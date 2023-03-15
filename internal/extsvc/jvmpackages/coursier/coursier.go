@@ -9,9 +9,11 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -23,33 +25,43 @@ import (
 var CoursierBinary = "coursier"
 
 var (
-	coursierCacheDir string
-	invocTimeout, _  = time.ParseDuration(env.Get("SRC_COURSIER_TIMEOUT", "2m", "Time limit per Coursier invocation, which is used to resolve JVM/Java dependencies."))
+	invocTimeout, _ = time.ParseDuration(env.Get("SRC_COURSIER_TIMEOUT", "2m", "Time limit per Coursier invocation, which is used to resolve JVM/Java dependencies."))
+	// if COURSIER_CACHE_DIR is set, try create that dir and use it. If not set, use the SRC_REPOS_DIR value (or default).
+	// This is expected to only be used in gitserver, if this assumption changes, please revisit this due to the failability
+	// of this on read-only filesystems.
+	coursierCacheDir = env.Get("COURSIER_CACHE_DIR", "", "Directory in which coursier data is cached for JVM package repos.")
+	srcReposDir      = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+	mkdirOnce        sync.Once
 )
 
-func init() {
-	// Should only be set for gitserver for persistence, repo-updater will use ephemeral storage.
-	// repo-updater only performs existence checks which doesnt involve downloading any JARs (except for JDK),
-	// only POM files which are much lighter.
-	if reposDir := os.Getenv("SRC_REPOS_DIR"); reposDir != "" {
-		coursierCacheDir = filepath.Join(reposDir, "coursier")
-		if err := os.MkdirAll(coursierCacheDir, os.ModePerm); err != nil {
-			println(fmt.Sprintf("failed to create coursier cache dir in %s: %s", coursierCacheDir, err))
-			os.Exit(1)
+type CoursierHandle struct {
+	operations *operations
+}
+
+func NewCoursierHandle(obsctx *observation.Context) *CoursierHandle {
+	mkdirOnce.Do(func() {
+		if coursierCacheDir == "" && srcReposDir != "" {
+			coursierCacheDir = filepath.Join(srcReposDir, "coursier")
 		}
+		if coursierCacheDir != "" {
+			if err := os.MkdirAll(coursierCacheDir, os.ModePerm); err != nil {
+				panic(fmt.Sprintf("failed to create coursier cache dir in %q: %s\n", coursierCacheDir, err))
+			}
+		}
+	})
+	return &CoursierHandle{
+		operations: newOperations(obsctx),
 	}
 }
 
-func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error) {
-	operations := getOperations()
-
-	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+func (c *CoursierHandle) FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error) {
+	ctx, _, endObservation := c.operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.VersionedPackageSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	if dependency.IsJDK() {
-		output, err := runCoursierCommand(
+		output, err := c.runCoursierCommand(
 			ctx,
 			config,
 			"java-home", "--jvm",
@@ -71,7 +83,7 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 		}
 		return "", errors.Errorf("failed to find src.zip for JVM dependency %s", dependency)
 	}
-	paths, err := runCoursierCommand(
+	paths, err := c.runCoursierCommand(
 		ctx,
 		config,
 		// NOTE: make sure to update the method `coursierScript` in
@@ -95,13 +107,11 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 	return paths[0], nil
 }
 
-func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (byteCodeJarPath string, err error) {
-	operations := getOperations()
-
-	ctx, _, endObservation := operations.fetchByteCode.With(ctx, &err, observation.Args{})
+func (c *CoursierHandle) FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (byteCodeJarPath string, err error) {
+	ctx, _, endObservation := c.operations.fetchByteCode.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	paths, err := runCoursierCommand(
+	paths, err := c.runCoursierCommand(
 		ctx,
 		config,
 		// NOTE: make sure to update the method `coursierScript` in
@@ -124,18 +134,16 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 	return paths[0], nil
 }
 
-func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (err error) {
-	operations := getOperations()
-
-	ctx, _, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+func (c *CoursierHandle) Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (err error) {
+	ctx, _, endObservation := c.operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.VersionedPackageSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	if dependency.IsJDK() {
-		_, err = FetchSources(ctx, config, dependency)
+		_, err = c.FetchSources(ctx, config, dependency)
 	} else {
-		_, err = runCoursierCommand(
+		_, err = c.runCoursierCommand(
 			ctx,
 			config,
 			"resolve",
@@ -155,13 +163,11 @@ func (e coursierError) NotFound() bool {
 	return true
 }
 
-func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) (stdoutLines []string, err error) {
-	operations := getOperations()
-
+func (c *CoursierHandle) runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) (stdoutLines []string, err error) {
 	ctx, cancel := context.WithTimeout(ctx, invocTimeout)
 	defer cancel()
 
-	ctx, trace, endObservation := operations.runCommand.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, trace, endObservation := c.operations.runCommand.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("repositories", strings.Join(config.Maven.Repositories, "|")),
 		otlog.String("args", strings.Join(args, ", ")),
 	}})
@@ -187,7 +193,7 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 	if err := cmd.Run(); err != nil {
 		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
 	}
-	trace.Log(otlog.String("stdout", stdout.String()), otlog.String("stderr", stderr.String()))
+	trace.AddEvent("TODO Domain Owner", attribute.String("stdout", stdout.String()), attribute.String("stderr", stderr.String()))
 
 	if stdout.String() == "" {
 		return []string{}, nil

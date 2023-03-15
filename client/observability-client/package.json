@@ -7,7 +7,10 @@
   "sideEffects": false,
   "license": "Apache-2.0",
   "scripts": {
-    "lint:js": "yarn run -T eslint --cache 'src/**/*.[jt]s?(x)'",
-    "test": "yarn run -T jest"
+    "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@sourcegraph/common": "workspace:*"
   }
 }

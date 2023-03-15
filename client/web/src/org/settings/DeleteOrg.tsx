@@ -1,24 +1,22 @@
 import React, { useCallback, useState } from 'react'
 
-import { RouteComponentProps } from 'react-router-dom'
-
 import { Button, Container, H3, Text } from '@sourcegraph/wildcard'
 
 import { OrgAreaRouteContext } from '../area/OrgArea'
 
 import { DeleteOrgModal } from './DeleteOrgModal'
 
-interface DeleteOrgProps extends OrgAreaRouteContext, RouteComponentProps<{}> {}
+interface DeleteOrgProps extends OrgAreaRouteContext {}
 
 /**
  * Deletes an organization.
  */
 export const DeleteOrg: React.FunctionComponent<React.PropsWithChildren<DeleteOrgProps>> = props => {
     const [showDeleteModal, setShowDeleteModal] = useState(false)
-    const toggleDeleteModal = useCallback(() => setShowDeleteModal(!showDeleteModal), [
-        setShowDeleteModal,
-        showDeleteModal,
-    ])
+    const toggleDeleteModal = useCallback(
+        () => setShowDeleteModal(!showDeleteModal),
+        [setShowDeleteModal, showDeleteModal]
+    )
 
     return (
         <Container className="mt-3 mb-5">

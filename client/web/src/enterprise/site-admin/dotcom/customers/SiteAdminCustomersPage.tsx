@@ -1,17 +1,16 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { H2 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
+import { CustomerFields, CustomersResult, CustomersVariables } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { userURL } from '../../../../user'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
@@ -25,7 +24,7 @@ const siteAdminCustomerFragment = gql`
 `
 
 interface SiteAdminCustomerNodeProps {
-    node: Pick<GQL.IUser, 'id' | 'username' | 'displayName'>
+    node: CustomerFields
 }
 
 /**
@@ -43,12 +42,7 @@ const SiteAdminCustomerNode: React.FunctionComponent<React.PropsWithChildren<Sit
     </li>
 )
 
-interface Props extends RouteComponentProps<{}> {}
-
-class FilteredSiteAdminCustomerConnection extends FilteredConnection<
-    Pick<GQL.IUser, 'id' | 'username' | 'displayName'>,
-    Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>>
-> {}
+interface Props {}
 
 /**
  * Displays a list of customers associated with user accounts on Sourcegraph.com.
@@ -65,7 +59,10 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsW
             <div className="d-flex justify-content-between align-items-center mb-1">
                 <H2 className="mb-0">Customers</H2>
             </div>
-            <FilteredSiteAdminCustomerConnection
+            <FilteredConnection<
+                CustomerFields,
+                Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>>
+            >
                 className="list-group list-group-flush mt-3"
                 noun="customer"
                 pluralNoun="customers"
@@ -74,15 +71,13 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsW
                 nodeComponentProps={nodeProps}
                 noSummaryIfAllNodesVisible={true}
                 updates={updates}
-                history={props.history}
-                location={props.location}
             />
         </div>
     )
 }
 
-function queryCustomers(args: { first?: number; query?: string }): Observable<GQL.IUserConnection> {
-    return queryGraphQL(
+function queryCustomers(args: Partial<CustomersVariables>): Observable<CustomersResult['users']> {
+    return queryGraphQL<CustomersResult>(
         gql`
             query Customers($first: Int, $query: String) {
                 users(first: $first, query: $query) {
@@ -100,10 +95,10 @@ function queryCustomers(args: { first?: number; query?: string }): Observable<GQ
         {
             first: args.first,
             query: args.query,
-        } as GQL.IUsersOnQueryArguments
+        }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.users || (errors && errors.length > 0)) {
+            if (!data?.users || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.users

@@ -1,12 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import { useLocation } from 'react-router'
-
-import { isDefined, property } from '@sourcegraph/common'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { DecorationMapByLine, decorationStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useLocation } from 'react-router-dom'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
@@ -49,30 +44,17 @@ const splitDiff = (hunks: Hunk[]): HunkZipped =>
         [[], undefined, -1] as HunkZipped
     )
 
-export interface DiffHunkProps extends ThemeProps {
+export interface DiffHunkProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
     hunk: FileDiffHunkFields
     lineNumbers: boolean
-    decorations: Record<'head' | 'base', DecorationMapByLine>
     /**
      * Reflect selected line in url
      *
      * @default true
      */
     persistLines?: boolean
-}
-
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-const addDecorations = (isLightTheme: boolean, decorationsForLine: TextDocumentDecoration[]) => {
-    const lineStyle = decorationsForLine
-        .filter(decoration => decoration.isWholeLine)
-        .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
-        .reduce((style, decoration) => ({ ...style, ...decoration }), {})
-
-    const decorationsWithAfterProperty = decorationsForLine.filter(property('after', isDefined))
-
-    return { lineStyle, decorationsWithAfterProperty }
 }
 
 export interface Hunk {
@@ -85,11 +67,9 @@ export interface Hunk {
 
 export const DiffSplitHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkProps>> = ({
     fileDiffAnchor,
-    decorations,
     hunk,
     lineNumbers,
     persistLines = true,
-    isLightTheme,
 }) => {
     const location = useLocation()
 
@@ -111,31 +91,28 @@ export const DiffSplitHunk: React.FunctionComponent<React.PropsWithChildren<Diff
                 const lineNumber = (elements[index + 1] ? current.oldLine : current.newLine) as number
                 const active = location.hash === `#${current.anchor}`
 
-                const decorationsForLine = [
-                    // If the line was deleted, look for decorations in the base revision
-                    ...((current.kind === DiffHunkLineType.DELETED && decorations.base.get(lineNumber)) || []),
-                    // If the line wasn't deleted, look for decorations in the head revision
-                    ...((current.kind !== DiffHunkLineType.DELETED && decorations.head.get(lineNumber)) || []),
-                ]
-
-                const { lineStyle, decorationsWithAfterProperty } = addDecorations(isLightTheme, decorationsForLine)
-
                 const rowProps = {
                     key: current.anchor,
                     'data-split-mode': 'split',
                     'data-testid': current.anchor,
+                    /*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast) for all changes in this file
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */
+                    className: 'a11y-ignore',
                 }
 
-                const lineProps = {
+                const lineProps: Pick<
+                    React.ComponentProps<typeof Line>,
+                    'persistLines' | 'className' | 'lineNumbers' | 'html' | 'anchor' | 'kind'
+                > = {
                     persistLines,
-                    lineStyle,
-                    decorations: decorationsWithAfterProperty,
                     className: active ? linesStyles.lineActive : '',
                     lineNumbers,
                     html: current.html,
                     anchor: current.anchor,
                     kind: current.kind,
-                    isLightTheme,
                 }
 
                 if (current.kind === DiffHunkLineType.UNCHANGED) {
@@ -214,7 +191,7 @@ export const DiffSplitHunk: React.FunctionComponent<React.PropsWithChildren<Diff
 
             return elements
         },
-        [decorations.base, decorations.head, isLightTheme, location.hash, lineNumbers, persistLines]
+        [location.hash, lineNumbers, persistLines]
     )
 
     const diffView = React.useMemo(() => groupHunks(diff), [diff, groupHunks])

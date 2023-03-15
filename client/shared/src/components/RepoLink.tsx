@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { LinkOrSpan } from './LinkOrSpan'
+import { LinkOrSpan } from '@sourcegraph/wildcard'
 
 /**
  * Returns the friendly display form of the repository name (e.g., removing "github.com/").

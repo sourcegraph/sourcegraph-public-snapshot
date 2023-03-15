@@ -1,26 +1,22 @@
 import * as React from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Badge, Link, H2, Text, AnchorLink, Button } from '@sourcegraph/wildcard'
+import { Badge, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
+import { AuthProviderFields, AuthProvidersResult } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 interface AuthProviderNodeProps {
     /** The auth provider to display in this item. */
-    node: GQL.IAuthProvider
+    node: AuthProviderFields
 }
-
-/** Whether to show experimental auth features. */
-export const authExp = localStorage.getItem('authExp') !== null
 
 class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
     public render(): JSX.Element | null {
@@ -38,15 +34,6 @@ class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
                             </small>
                         )}
                     </div>
-                    {authExp && (
-                        <div className="text-nowrap">
-                            {this.props.node.authenticationURL && (
-                                <Button to={this.props.node.authenticationURL} variant="secondary" as={AnchorLink}>
-                                    Authenticate
-                                </Button>
-                            )}
-                        </div>
-                    )}
                 </div>
             </li>
         )
@@ -64,9 +51,7 @@ const authProviderFragment = gql`
     }
 `
 
-interface Props extends RouteComponentProps<{}> {}
-
-class FilteredAuthProviderConnection extends FilteredConnection<GQL.IAuthProvider> {}
+interface Props {}
 
 /**
  * A page displaying the auth providers in site configuration.
@@ -87,22 +72,20 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
                     (SSO) via SAML and OpenID Connect. Configure authentication providers in the{' '}
                     <Link to="/help/admin/config/site_config">site configuration</Link>.
                 </Text>
-                <FilteredAuthProviderConnection
+                <FilteredConnection<AuthProviderFields>
                     className="list-group list-group-flush mt-3"
                     noun="authentication provider"
                     pluralNoun="authentication providers"
                     queryConnection={this.queryAuthProviders}
                     nodeComponent={AuthProviderNode}
                     hideSearch={true}
-                    history={this.props.history}
-                    location={this.props.location}
                 />
             </div>
         )
     }
 
-    private queryAuthProviders = (args: {}): Observable<GQL.IAuthProviderConnection> =>
-        queryGraphQL(
+    private queryAuthProviders = (args: {}): Observable<AuthProvidersResult['site']['authProviders']> =>
+        queryGraphQL<AuthProvidersResult>(
             gql`
                 query AuthProviders {
                     site {
@@ -122,7 +105,7 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
             args
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.site || !data.site.authProviders || errors) {
+                if (!data?.site?.authProviders || errors) {
                     throw createAggregateError(errors)
                 }
                 return data.site.authProviders

@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mounted",
+    srcs = ["key.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/mounted",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/encryption",
+        "//lib/errors",
+        "//schema",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "mounted_test",
+    srcs = ["key_test.go"],
+    embed = [":mounted"],
+    deps = [
+        "//schema",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/util/rand",
+    ],
+)

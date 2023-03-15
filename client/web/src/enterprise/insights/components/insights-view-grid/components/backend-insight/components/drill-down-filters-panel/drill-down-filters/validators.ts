@@ -1,9 +1,8 @@
 import { ApolloClient, gql } from '@apollo/client'
 
-import { InputStatus } from '@sourcegraph/wildcard'
+import { InputStatus, useFieldAPI, ValidationResult } from '@sourcegraph/wildcard'
 
 import { GetSearchContextByNameResult } from '../../../../../../../../../graphql-operations'
-import { useFieldAPI, ValidationResult } from '../../../../../../form'
 
 export const REPO_FILTER_VALIDATORS = isValidRegexp
 
@@ -26,42 +25,41 @@ const GET_CONTEXT_BY_NAME = gql`
         searchContexts(query: $query) {
             nodes {
                 spec
+                query
             }
         }
     }
 `
 
-export const createSearchContextValidator = (client: ApolloClient<unknown>) => async (
-    value: string | undefined
-): Promise<string | void> => {
-    if (!value) {
-        return
-    }
+export const createSearchContextValidator =
+    (client: ApolloClient<unknown>) =>
+    async (value: string | undefined): Promise<string | void> => {
+        if (!value) {
+            return
+        }
 
-    try {
-        const sanitizedValue = value.trim()
-        const { data, error } = await client.query<GetSearchContextByNameResult>({
-            query: GET_CONTEXT_BY_NAME,
-            variables: { query: sanitizedValue },
-        })
+        try {
+            const sanitizedValue = value.trim()
+            const { data, error } = await client.query<GetSearchContextByNameResult>({
+                query: GET_CONTEXT_BY_NAME,
+                variables: { query: sanitizedValue },
+            })
 
-        if (error) {
+            if (error) {
+                return error.message
+            }
+
+            const nodes = data.searchContexts.nodes.filter(node => node.query !== '')
+
+            if (!nodes.some(context => context.spec === sanitizedValue)) {
+                return `We couldn't find the context ${sanitizedValue}. Please ensure the context exists.`
+            }
+
+            return
+        } catch (error) {
             return error.message
         }
-
-        const {
-            searchContexts: { nodes },
-        } = data
-
-        if (!nodes.some(context => context.spec === sanitizedValue)) {
-            return `We couldn't find the context ${sanitizedValue}. Please ensure the context exists.`
-        }
-
-        return
-    } catch (error) {
-        return error.message
     }
-}
 
 export function getFilterInputStatus<T>({ meta }: useFieldAPI<T>): InputStatus {
     const isValidated = meta.initialValue || meta.touched

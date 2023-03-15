@@ -96,7 +96,7 @@ func TestRepos_Add(t *testing.T) {
 		logger:          logtest.Scoped(t),
 		gitserverClient: gsClient,
 	}
-	addedName, err := s.Add(ctx, repoName)
+	addedName, err := s.add(ctx, repoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
 	defer func() { gitserver.MockIsRepoCloneable = nil }()
 
 	// The repoName could change if it has been renamed on the code host
-	_, err := s.Add(ctx, repoName)
+	_, err := s.add(ctx, repoName)
 	if !errcode.IsNotFound(err) {
 		t.Fatalf("expected a not found error, got: %v", err)
 	}
@@ -137,7 +137,7 @@ type gitObjectInfo string
 
 func (oid gitObjectInfo) OID() gitdomain.OID {
 	var v gitdomain.OID
-	copy(v[:], []byte(oid))
+	copy(v[:], oid)
 	return v
 }
 
@@ -179,7 +179,7 @@ func TestReposGetInventory(t *testing.T) {
 			panic("unhandled mock ReadDir " + name)
 		}
 	})
-	gitserverClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string, _ authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
+	gitserverClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}

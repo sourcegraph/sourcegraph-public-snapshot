@@ -1553,6 +1553,45 @@ describe('getMonacoTokens()', () => {
         `)
     })
 
+    test('highlight repo:has.topic predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.topic(topic1)')))).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaPredicateDot"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 21,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
     test('highlight repo:has.description predicate', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.description(.*)')))).toMatchInlineSnapshot(`
             [
@@ -1637,6 +1676,45 @@ describe('getMonacoTokens()', () => {
 
     test('highlight repo:has.tag predicate', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.tag(tag)')))).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaPredicateDot"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 16,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
+    test('highlight repo:has.key predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.key(key)')))).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,

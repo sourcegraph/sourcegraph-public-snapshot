@@ -365,8 +365,6 @@ export const gerritCodeHost: CodeHost = {
     type: 'gerrit',
     name: 'Gerrit',
     codeViewResolvers,
-    contentViewResolvers: [],
-    nativeTooltipResolvers: [],
     codeViewsRequireTokenization: true,
     // This overrides the default observeMutations because we need to handle shadow DOMS.
     observeMutations,
@@ -379,7 +377,6 @@ export const gerritCodeHost: CodeHost = {
         })
     },
     check: checkIsGerrit,
-    notificationClassNames: { 1: '', 2: '', 3: '', 4: '', 5: '' },
     hoverOverlayClassProps: {
         className: styles.hoverOverlay,
     },

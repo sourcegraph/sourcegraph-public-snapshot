@@ -9,12 +9,14 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/mountinfo"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.Context) {
+func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.DB) {
 	// test the latency of exec, which may increase under certain memory
 	// conditions
 	echoDuration := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -36,9 +38,13 @@ func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.C
 
 	// report the size of the repos dir
 	if s.ReposDir == "" {
-		s.Logger.Error("ReposDir is not set, cannot export disk_space_available metric.")
+		s.Logger.Error("ReposDir is not set, cannot export disk_space_available and gitserver_mount_info metric.")
 		return
 	}
+
+	opts := mountinfo.CollectorOpts{Namespace: "gitserver"}
+	m := mountinfo.NewCollector(s.Logger, opts, map[string]string{"reposDir": s.ReposDir})
+	observationCtx.Registerer.MustRegister(m)
 
 	metrics.MustRegisterDiskMonitor(s.ReposDir)
 
@@ -66,5 +72,5 @@ func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.C
 	prometheus.MustRegister(c)
 
 	// Register uniform observability via internal/observation
-	s.operations = newOperations(observationContext)
+	s.operations = newOperations(observationCtx)
 }

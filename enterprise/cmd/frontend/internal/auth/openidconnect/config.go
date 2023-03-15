@@ -6,49 +6,60 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"path"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var mockGetProviderValue *provider
+var mockGetProviderValue *Provider
 
-// getProvider looks up the registered openidconnect auth provider with the given ID.
-func getProvider(id string) *provider {
+// GetProvider looks up the registered OpenID Connect authentication provider
+// with the given ID. It returns nil if no such provider exists.
+func GetProvider(id string) *Provider {
 	if mockGetProviderValue != nil {
 		return mockGetProviderValue
 	}
-	p, _ := providers.GetProviderByConfigID(providers.ConfigID{Type: providerType, ID: id}).(*provider)
-	return p
+	p, ok := providers.GetProviderByConfigID(
+		providers.ConfigID{
+			Type: providerType,
+			ID:   id,
+		},
+	).(*Provider)
+	if ok {
+		p.callbackUrl = path.Join(auth.AuthURLPrefix, "callback")
+		return p
+	}
+	return nil
 }
 
-func handleGetProvider(ctx context.Context, w http.ResponseWriter, id string) (p *provider, handled bool) {
-	handled = true // safer default
-
+// GetProviderAndRefresh retrieves the authentication provider with the given
+// type and ID, and refreshes the token used by the provider.
+func GetProviderAndRefresh(ctx context.Context, id string, getProvider func(id string) *Provider) (p *Provider, safeErrMsg string, err error) {
 	p = getProvider(id)
 	if p == nil {
-		log15.Error("No OpenID Connect auth provider found with ID.", "id", id)
-		http.Error(w, "Misconfigured OpenID Connect auth provider.", http.StatusInternalServerError)
-		return nil, true
+		return nil,
+			"Misconfigured authentication provider.",
+			errors.Errorf("no authentication provider found with ID %q", id)
 	}
 	if p.config.Issuer == "" {
-		log15.Error("No issuer set for OpenID Connect auth provider (set the openidconnect auth provider's issuer property).", "id", p.ConfigID())
-		http.Error(w, "Misconfigured OpenID Connect auth provider.", http.StatusInternalServerError)
-		return nil, true
+		return nil,
+			"Misconfigured authentication provider.",
+			errors.Errorf("No issuer set for authentication provider with ID %q (set the authentication provider's issuer property).", p.ConfigID())
 	}
-	if err := p.Refresh(ctx); err != nil {
-		log15.Error("Error refreshing OpenID Connect auth provider.", "id", p.ConfigID(), "error", err)
-		http.Error(w, "Unexpected error refreshing OpenID Connect authentication provider. This may be due to an incorrect issuer URL. Check the logs for more details", http.StatusInternalServerError)
-		return nil, true
+	if err = p.Refresh(ctx); err != nil {
+		return nil,
+			"Unexpected error refreshing authentication provider. This may be due to an incorrect issuer URL. Check the logs for more details.",
+			errors.Wrapf(err, "refreshing authentication provider with ID %q", p.ConfigID())
 	}
-	return p, false
+	return p, "", nil
 }
 
 func Init() {
@@ -58,7 +69,6 @@ func Init() {
 	logger := log.Scoped(pkgName, "OpenID Connect config watch")
 	go func() {
 		conf.Watch(func() {
-
 			ps := getProviders()
 			if len(ps) == 0 {
 				providers.Update(pkgName, nil)
@@ -93,8 +103,7 @@ func getProviders() []providers.Provider {
 	}
 	ps := make([]providers.Provider, 0, len(cfgs))
 	for _, cfg := range cfgs {
-		p := &provider{config: *cfg}
-		ps = append(ps, p)
+		ps = append(ps, NewProvider(*cfg, authPrefix, path.Join(auth.AuthURLPrefix, "callback")))
 	}
 	return ps
 }

@@ -13,14 +13,14 @@ import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../core'
-import { DashboardPermissions } from '../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
+import { DashboardPermissions } from '../pages/dashboards/dashboard-view/utils/get-dashboard-permissions'
 
 import { GaConfirmationModal } from './GaConfirmationModal'
 
 const settingsClient = createMockClient(
     { contents: JSON.stringify({}) },
     gql`
-        query {
+        query TemporarySettings {
             temporarySettings {
                 contents
             }
@@ -53,7 +53,7 @@ export const GaConfirmationModalExample: React.FunctionComponent<React.PropsWith
             <TemporarySettingsContext.Provider value={settingsStorage}>
                 <div>
                     <H2>Some content</H2>
-                    <GaConfirmationModal />
+                    <GaConfirmationModal isSourcegraphApp={false} />
                 </div>
             </TemporarySettingsContext.Provider>
         </CodeInsightsBackendContext.Provider>

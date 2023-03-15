@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gosrc",
+    srcs = [
+        "import_path.go",
+        "stdlib.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/gosrc",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//internal/httpcli",
+        "//internal/lazyregexp",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "gosrc_test",
+    srcs = ["import_path_test.go"],
+    embed = [":gosrc"],
+)

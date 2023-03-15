@@ -6,7 +6,7 @@ set -e
 export GOBIN="$PWD/../.bin"
 export GO111MODULE=on
 
-go install github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler@v0.0.0-20211011105148-2e30f7bacbe1
+go install github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler
 
 # shellcheck disable=SC2010
 schemas="$(ls -- *.schema.json | grep -v json-schema-draft)"

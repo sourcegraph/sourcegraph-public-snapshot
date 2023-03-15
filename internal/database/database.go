@@ -20,6 +20,7 @@ type DB interface {
 	dbutil.DB
 	basestore.ShareableStore
 
+	AccessRequests() AccessRequestStore
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
 	BitbucketProjectPermissions() BitbucketProjectPermissionsStore
@@ -31,23 +32,30 @@ type DB interface {
 	GitserverRepos() GitserverRepoStore
 	GitserverLocalClone() GitserverLocalCloneStore
 	GlobalState() GlobalStateStore
+	NamespacePermissions() NamespacePermissionStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
-	OrgStats() OrgStatsStore
+	OutboundWebhooks(encryption.Key) OutboundWebhookStore
+	OutboundWebhookJobs(encryption.Key) OutboundWebhookJobStore
+	OutboundWebhookLogs(encryption.Key) OutboundWebhookLogStore
+	Permissions() PermissionStore
+	PermissionSyncJobs() PermissionSyncJobStore
 	Phabricator() PhabricatorStore
+	RedisKeyValue() RedisKeyValueStore
 	Repos() RepoStore
 	RepoKVPs() RepoKVPStore
+	RolePermissions() RolePermissionStore
+	Roles() RoleStore
 	SavedSearches() SavedSearchStore
 	SearchContexts() SearchContextsStore
 	Settings() SettingsStore
-	SubRepoPerms() SubRepoPermsStore
 	TemporarySettings() TemporarySettingsStore
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
 	UserExternalAccounts() UserExternalAccountsStore
-	UserPublicRepos() UserPublicRepoStore
+	UserRoles() UserRoleStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
 	Webhooks(encryption.Key) WebhookStore
@@ -56,9 +64,9 @@ type DB interface {
 	ExecutorSecrets(encryption.Key) ExecutorSecretStore
 	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 	ZoektRepos() ZoektReposStore
+	Teams() TeamStore
 
-	Transact(context.Context) (DB, error)
-	Done(error) error
+	WithTransact(context.Context, func(tx DB) error) error
 }
 
 var _ DB = (*db)(nil)
@@ -66,7 +74,7 @@ var _ DB = (*db)(nil)
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
 // that has constructor methods for the more specialized stores.
 func NewDB(logger log.Logger, inner *sql.DB) DB {
-	return &db{logger: logger, Store: basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
+	return &db{logger: logger, Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, inner, sql.TxOptions{}))}
 }
 
 func NewDBWith(logger log.Logger, other basestore.ShareableStore) DB {
@@ -98,12 +106,22 @@ func (d *db) Transact(ctx context.Context) (DB, error) {
 	return &db{logger: d.logger, Store: tx}, nil
 }
 
+func (d *db) WithTransact(ctx context.Context, f func(tx DB) error) error {
+	return d.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&db{logger: d.logger, Store: tx})
+	})
+}
+
 func (d *db) Done(err error) error {
 	return d.Store.Done(err)
 }
 
 func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokensWith(d.Store, d.logger.Scoped("AccessTokenStore", ""))
+}
+
+func (d *db) AccessRequests() AccessRequestStore {
+	return AccessRequestsWith(d.Store, d.logger.Scoped("AccessRequestStore", ""))
 }
 
 func (d *db) BitbucketProjectPermissions() BitbucketProjectPermissionsStore {
@@ -115,7 +133,10 @@ func (d *db) Authz() AuthzStore {
 }
 
 func (d *db) Conf() ConfStore {
-	return &confStore{Store: basestore.NewWithHandle(d.Handle())}
+	return &confStore{
+		Store:  basestore.NewWithHandle(d.Handle()),
+		logger: log.Scoped("confStore", "database confStore"),
+	}
 }
 
 func (d *db) EventLogs() EventLogStore {
@@ -146,6 +167,10 @@ func (d *db) GlobalState() GlobalStateStore {
 	return GlobalStateWith(d.Store)
 }
 
+func (d *db) NamespacePermissions() NamespacePermissionStore {
+	return NamespacePermissionsWith(d.Store)
+}
+
 func (d *db) Namespaces() NamespaceStore {
 	return NamespacesWith(d.Store)
 }
@@ -162,12 +187,32 @@ func (d *db) Orgs() OrgStore {
 	return OrgsWith(d.Store)
 }
 
-func (d *db) OrgStats() OrgStatsStore {
-	return OrgStatsWith(d.Store)
+func (d *db) OutboundWebhooks(key encryption.Key) OutboundWebhookStore {
+	return OutboundWebhooksWith(d.Store, key)
+}
+
+func (d *db) OutboundWebhookJobs(key encryption.Key) OutboundWebhookJobStore {
+	return OutboundWebhookJobsWith(d.Store, key)
+}
+
+func (d *db) OutboundWebhookLogs(key encryption.Key) OutboundWebhookLogStore {
+	return OutboundWebhookLogsWith(d.Store, key)
+}
+
+func (d *db) Permissions() PermissionStore {
+	return PermissionsWith(d.Store)
+}
+
+func (d *db) PermissionSyncJobs() PermissionSyncJobStore {
+	return PermissionSyncJobsWith(d.logger, d.Store)
 }
 
 func (d *db) Phabricator() PhabricatorStore {
 	return PhabricatorWith(d.Store)
+}
+
+func (d *db) RedisKeyValue() RedisKeyValueStore {
+	return &redisKeyValueStore{d.Store}
 }
 
 func (d *db) Repos() RepoStore {
@@ -176,6 +221,14 @@ func (d *db) Repos() RepoStore {
 
 func (d *db) RepoKVPs() RepoKVPStore {
 	return &repoKVPStore{d.Store}
+}
+
+func (d *db) RolePermissions() RolePermissionStore {
+	return RolePermissionsWith(d.Store)
+}
+
+func (d *db) Roles() RoleStore {
+	return RolesWith(d.Store)
 }
 
 func (d *db) SavedSearches() SavedSearchStore {
@@ -188,10 +241,6 @@ func (d *db) SearchContexts() SearchContextsStore {
 
 func (d *db) Settings() SettingsStore {
 	return SettingsWith(d.Store)
-}
-
-func (d *db) SubRepoPerms() SubRepoPermsStore {
-	return SubRepoPermsWith(d.Store)
 }
 
 func (d *db) TemporarySettings() TemporarySettingsStore {
@@ -210,8 +259,8 @@ func (d *db) UserExternalAccounts() UserExternalAccountsStore {
 	return ExternalAccountsWith(d.logger, d.Store)
 }
 
-func (d *db) UserPublicRepos() UserPublicRepoStore {
-	return UserPublicReposWith(d.Store)
+func (d *db) UserRoles() UserRoleStore {
+	return UserRolesWith(d.Store)
 }
 
 func (d *db) Users() UserStore {
@@ -244,4 +293,8 @@ func (d *db) ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore {
 
 func (d *db) ZoektRepos() ZoektReposStore {
 	return ZoektReposWith(d.Store)
+}
+
+func (d *db) Teams() TeamStore {
+	return TeamsWith(d.Store)
 }

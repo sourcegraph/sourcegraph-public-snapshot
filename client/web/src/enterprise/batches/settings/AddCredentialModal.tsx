@@ -2,10 +2,8 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { logger } from '@sourcegraph/common'
-import { Button, Modal, Link, Code, Label, Text, Input } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Code, Label, Text, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -29,7 +27,7 @@ export interface AddCredentialModalProps {
     initialStep?: Step
 }
 
-const HELP_TEXT_LINK_URL = 'https://docs.sourcegraph.com/batch_changes/quickstart#configure-code-host-credentials'
+const HELP_TEXT_LINK_URL = '/help/batch_changes/quickstart#configure-code-host-credentials'
 
 const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GITHUB]: (
@@ -54,7 +52,13 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
             <Code>pipeline:read</Code> permissions.
         </span>
     ),
-
+    [ExternalServiceKind.AZUREDEVOPS]: (
+        <span>
+            with <Code>Organization:All accessible organizations</Code>, <Code>Code:Full</Code>,{' '}
+            <Code>Code:Status</Code>, <Code>Pull Request Threads:Read & Write</Code>, and <Code>User Profile:Read</Code>{' '}
+            permissions.
+        </span>
+    ),
     // These are just for type completeness and serve as placeholders for a bright future.
     [ExternalServiceKind.GERRIT]: <span>Unsupported</span>,
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,

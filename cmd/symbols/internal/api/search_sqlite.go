@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -24,7 +25,9 @@ import (
 
 const searchTimeout = 60 * time.Second
 
-func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedDatabaseWriter writer.CachedDatabaseWriter, db database.DB) types.SearchFunc {
+func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWriter writer.CachedDatabaseWriter, db database.DB) types.SearchFunc {
+	operations := sharedobservability.NewOperations(observationCtx)
+
 	return func(ctx context.Context, args search.SymbolsParameters) (results []result.Symbol, err error) {
 		ctx, trace, endObservation := operations.Search.With(ctx, &err, observation.Args{LogFields: []log.Field{
 			log.String("repo", string(args.Repo)),
@@ -36,7 +39,7 @@ func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedData
 			log.String("includePatterns", strings.Join(args.IncludePatterns, ":")),
 			log.String("excludePattern", args.ExcludePattern),
 			log.Int("first", args.First),
-			log.Int("timeout", args.Timeout),
+			log.Float64("timeoutSeconds", args.Timeout.Seconds()),
 		}})
 		defer func() {
 			endObservation(1, observation.Args{
@@ -47,8 +50,8 @@ func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedData
 		ctx = observability.SeedParseAmount(ctx)
 
 		timeout := searchTimeout
-		if args.Timeout > 0 && time.Duration(args.Timeout)*time.Second < timeout {
-			timeout = time.Duration(args.Timeout) * time.Second
+		if args.Timeout > 0 && args.Timeout < timeout {
+			timeout = args.Timeout
 		}
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
@@ -76,17 +79,16 @@ func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedData
 			}
 
 			err = errors.Newf("Processing symbols using the SQLite backend is taking a while on this %s repository. %s", humanize.Bytes(uint64(size)), help)
-			return
 		}()
 
 		dbFile, err := cachedDatabaseWriter.GetOrCreateDatabaseFile(ctx, args)
 		if err != nil {
 			return nil, errors.Wrap(err, "databaseWriter.GetOrCreateDatabaseFile")
 		}
-		trace.Log(log.String("dbFile", dbFile))
+		trace.AddEvent("databaseWriter", attribute.String("dbFile", dbFile))
 
 		var res result.Symbols
-		err = store.WithSQLiteStore(dbFile, func(db store.Store) (err error) {
+		err = store.WithSQLiteStore(observationCtx, dbFile, func(db store.Store) (err error) {
 			if res, err = db.Search(ctx, args); err != nil {
 				return errors.Wrap(err, "store.Search")
 			}

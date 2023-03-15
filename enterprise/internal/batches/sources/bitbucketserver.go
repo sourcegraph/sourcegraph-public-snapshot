@@ -3,6 +3,7 @@ package sources
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/inconshreveable/log15"
 
@@ -310,99 +311,70 @@ func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, c *Ch
 	return newestPR, nil
 }
 
-// GetUserFork returns a repo pointing to a fork of the given repo in the
-// currently authenticated user's namespace.
-func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
-	parent := targetRepo.Metadata.(*bitbucketserver.Repo)
-
-	// Ascertain the user name for the token we're using.
-	user, err := s.AuthenticatedUsername(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting username")
-	}
-
-	// We have to prepend a tilde to the user name to make this a "user-centric URL" in
-	// Bitbucket Server parlance.
-	forkNamespace := "~" + user
-
-	// See if we already have a fork.
-	fork, err := s.getFork(ctx, parent, forkNamespace)
-	if err != nil && !bitbucketserver.IsNotFound(err) {
-		return nil, errors.Wrapf(err, "getting user fork for %q", user)
-	}
-
-	// If not, then we need to create a fork.
-	if fork == nil {
-		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{})
+// GetFork returns a repo pointing to a fork of the target repo, ensuring that the fork
+// exists and creating it if it doesn't. If namespace is not provided, the fork will be in
+// the currently authenticated user's namespace. If name is not provided, the fork will be
+// named with the default Sourcegraph convention: "${original-namespace}-${original-name}"
+func (s BitbucketServerSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
+	var namespace string
+	if ns != nil {
+		namespace = *ns
+	} else {
+		// Ascertain the user name for the token we're using.
+		user, err := s.AuthenticatedUsername(ctx)
 		if err != nil {
-			return nil, errors.Wrapf(err, "creating user fork for %q", user)
+			return nil, errors.Wrap(err, "getting username")
 		}
+		// We have to prepend a tilde to the user name to make this compatible with
+		// Bitbucket Server API parlance.
+		namespace = "~" + user
 	}
 
-	return s.copyRepoAsFork(targetRepo, fork, forkNamespace)
+	tr := targetRepo.Metadata.(*bitbucketserver.Repo)
+
+	var name string
+	if n != nil {
+		name = *n
+	} else {
+		// Strip the leading tilde from the project key, if present.
+		name = DefaultForkName(strings.TrimPrefix(tr.Project.Key, "~"), tr.Slug)
+	}
+
+	// Figure out if we already have a fork of the repo in the given namespace.
+	if fork, err := s.client.Repo(ctx, namespace, name); err == nil {
+		return s.checkAndCopy(targetRepo, fork, namespace)
+	} else if !bitbucketserver.IsNotFound(err) {
+		return nil, errors.Wrap(err, "checking for fork existence")
+	}
+
+	fork, err := s.client.Fork(ctx, tr.Project.Key, tr.Slug, bitbucketserver.CreateForkInput{
+		Name: &name,
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "forking repository")
+	}
+
+	return s.checkAndCopy(targetRepo, fork, namespace)
 }
 
-// GetNamespaceFork returns a repo pointing to a fork of the given repo in
-// the given namespace, ensuring that the fork exists and is a fork of the
-// target repo.
-func (s BitbucketServerSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
-	parent := targetRepo.Metadata.(*bitbucketserver.Repo)
+func (s BitbucketServerSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketserver.Repo, forkNamespace string) (*types.Repo, error) {
+	tr := targetRepo.Metadata.(*bitbucketserver.Repo)
 
-	// See if we already have a fork.
-	fork, err := s.getFork(ctx, parent, namespace)
-	if err != nil {
-		return nil, errors.Wrapf(err, "getting fork in %q", namespace)
+	if fork.Origin == nil {
+		return nil, errors.New("repo is not a fork")
+	} else if fork.Origin.ID != tr.ID {
+		return nil, errors.New("repo was not forked from the given parent")
 	}
 
-	// If not, then we need to create a fork.
-	if fork == nil {
-		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{
-			Project: &bitbucketserver.CreateForkInputProject{Key: namespace},
-		})
-		if err != nil {
-			return nil, errors.Wrapf(err, "creating fork in %q", namespace)
-		}
-	}
+	targetNameAndNamespace := tr.Project.Key + "/" + tr.Slug
+	forkNameAndNamespace := forkNamespace + "/" + fork.Slug
 
-	return s.copyRepoAsFork(targetRepo, fork, namespace)
-}
-
-func (s BitbucketServerSource) copyRepoAsFork(targetRepo *types.Repo, fork *bitbucketserver.Repo, forkNamespace string) (*types.Repo, error) {
-	targetMeta := targetRepo.Metadata.(*bitbucketserver.Repo)
-
-	targetNameAndNamespace := targetMeta.Project.Key + "/" + targetMeta.Slug
-	forkNameAndNamespace := forkNamespace + "/" + targetMeta.Slug
-
-	// Now we make a copy of the target repo, but with its sources and metadata updated to
+	// Now we make a copy of targetRepo, but with its sources and metadata updated to
 	// point to the fork
 	forkRepo, err := CopyRepoAsFork(targetRepo, fork, targetNameAndNamespace, forkNameAndNamespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "updating target repo sources")
+		return nil, errors.Wrap(err, "updating target repo sources and metadata")
 	}
 
 	return forkRepo, nil
-}
-
-var (
-	errNotAFork            = errors.New("repo is not a fork")
-	errNotForkedFromParent = errors.New("repo was not forked from the given parent")
-)
-
-func (s BitbucketServerSource) getFork(ctx context.Context, parent *bitbucketserver.Repo, namespace string) (*bitbucketserver.Repo, error) {
-	repo, err := s.client.Repo(ctx, namespace, parent.Slug)
-	if err != nil {
-		if bitbucketserver.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	// Sanity check: is the returned repo _actually_ a fork of the original?
-	if repo.Origin == nil {
-		return nil, errNotAFork
-	} else if repo.Origin.ID != parent.ID {
-		return nil, errNotForkedFromParent
-	}
-
-	return repo, nil
 }

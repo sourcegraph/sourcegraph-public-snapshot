@@ -28,9 +28,14 @@ const USER: UserSettingsAreaUserFields = {
     siteAdmin: true,
     builtinAuth: true,
     createdAt: subDays(now, 732).toISOString(),
-    emails: [{ email: 'test@example.com', verified: true }],
+    emails: [{ email: 'test@example.com', verified: true, isPrimary: true }],
     organizations: { nodes: [] },
     tags: [],
+    scimControlled: false,
+    roles: {
+        __typename: 'RoleConnection',
+        nodes: [],
+    },
 }
 describe('User profile page', () => {
     let driver: Driver
@@ -125,9 +130,18 @@ describe('User Different Settings Page', () => {
         await accessibilityAudit(driver.page)
     })
 
-    it('display user password setting page', async () => {
+    it('display user account security page', async () => {
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
+            UserExternalAccountsWithAccountData: () => ({
+                user: {
+                    __typename: 'User',
+                    externalAccounts: {
+                        __typename: 'ExternalAccountConnection',
+                        nodes: [],
+                    },
+                },
+            }),
             UserAreaUserProfile: () => ({
                 user: {
                     __typename: 'User',
@@ -140,6 +154,11 @@ describe('User Different Settings Page', () => {
                     viewerCanAdminister: true,
                     builtinAuth: true,
                     tags: [],
+                    createdAt: '2020-03-02T11:52:15Z',
+                    roles: {
+                        __typename: 'RoleConnection',
+                        nodes: [],
+                    },
                 },
             }),
             UserSettingsAreaUserProfile: () => ({
@@ -156,16 +175,21 @@ describe('User Different Settings Page', () => {
                     siteAdmin: true,
                     builtinAuth: true,
                     createdAt: '2020-03-02T11:52:15Z',
-                    emails: [{ email: 'test@sourcegraph.test', verified: true }],
+                    emails: [{ email: 'test@sourcegraph.test', verified: true, isPrimary: true }],
                     organizations: { nodes: [] },
                     permissionsInfo: null,
                     tags: [],
+                    scimControlled: false,
+                    roles: {
+                        __typename: 'RoleConnection',
+                        nodes: [],
+                    },
                 },
             }),
         })
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/user/settings/password')
-        await driver.page.waitForSelector('.user-settings-password-page')
-        await percySnapshotWithVariants(driver.page, 'User Password Settings Page')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/user/settings/security')
+        await driver.page.waitForSelector('.user-settings-account-security-page')
+        await percySnapshotWithVariants(driver.page, 'User Account Security Settings Page')
         await accessibilityAudit(driver.page)
     })
 })

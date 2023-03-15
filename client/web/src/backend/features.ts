@@ -1,14 +1,10 @@
-import { Remote } from 'comlink'
-import { Observable, from, concat, of } from 'rxjs'
+import { Observable, from, concat } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { DocumentHighlight } from 'sourcegraph'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { memoizeObservable } from '@sourcegraph/common'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import type { DocumentHighlight } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import {
     FileSpec,
@@ -16,7 +12,6 @@ import {
     RepoSpec,
     ResolvedRevisionSpec,
     toURIWithPath,
-    toRootURI,
 } from '@sourcegraph/shared/src/util/url'
 
 /**
@@ -82,47 +77,3 @@ export function getDocumentHighlights(
             : [[]]
     )
 }
-
-/**
- * Fetches file decorations
- */
-export const getFileDecorations = ({
-    extensionsController,
-    ...parameters
-}: {
-    files: { url: string; isDirectory: boolean; name: string; path: string }[]
-    /** uri of node from which this request is made. Used to construct cache key  */
-    parentNodeUri: string
-} & ExtensionsControllerProps<'extHostAPI'> &
-    RepoSpec &
-    ResolvedRevisionSpec): Observable<FileDecorationsByPath> =>
-    extensionsController !== null
-        ? from(extensionsController.extHostAPI).pipe(
-              switchMap(extensionHost => getFileDecorationsFromHost({ ...parameters, extensionHost }))
-          )
-        : of({})
-
-const getFileDecorationsFromHost = memoizeObservable(
-    ({
-        files,
-        extensionHost,
-        commitID,
-        repoName,
-    }: {
-        files: { url: string; isDirectory: boolean; name: string; path: string }[]
-        /** uri of node from which this request is made. Used to construct cache key  */
-        parentNodeUri: string
-        extensionHost: Remote<FlatExtensionHostAPI>
-    } & RepoSpec &
-        ResolvedRevisionSpec) =>
-        wrapRemoteObservable(
-            extensionHost.getFileDecorations({
-                uri: toRootURI({ repoName, commitID }),
-                files: files.map(file => ({
-                    ...file,
-                    uri: toURIWithPath({ repoName, filePath: file.path, commitID }),
-                })),
-            })
-        ),
-    ({ parentNodeUri, files }) => `parentNodeUri:${parentNodeUri} files:${files.length}`
-)

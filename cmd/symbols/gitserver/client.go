@@ -8,7 +8,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -48,10 +47,10 @@ type gitserverClient struct {
 	operations  *operations
 }
 
-func NewClient(db database.DB, observationContext *observation.Context) GitserverClient {
+func NewClient(observationCtx *observation.Context) GitserverClient {
 	return &gitserverClient{
-		innerClient: gitserver.NewClient(db),
-		operations:  newOperations(observationContext),
+		innerClient: gitserver.NewClient(),
+		operations:  newOperations(observationCtx),
 	}
 }
 
@@ -97,7 +96,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 }
 
 func (c *gitserverClient) ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
-	data, err := c.innerClient.ReadFile(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path, nil)
+	data, err := c.innerClient.ReadFile(ctx, nil, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get file contents")
 	}

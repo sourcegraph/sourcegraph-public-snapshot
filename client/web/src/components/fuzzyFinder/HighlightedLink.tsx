@@ -1,8 +1,8 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { Link, Code } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import styles from './HighlightedLink.module.scss'
 
@@ -21,6 +21,9 @@ export interface HighlightedLinkProps {
     icon?: JSX.Element
     textSuffix?: JSX.Element
     onClick?: () => void
+    // Fuzzy finding score, used to sort aggregated results across different
+    // fuzzy finder tabs.
+    score?: number
 }
 
 export function offsetSum(props: HighlightedLinkProps): number {
@@ -49,7 +52,7 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
         const key = `${startOffset}-${endOffset}`
         if (kind === 'mark') {
             spans.push(
-                <mark key={key} className={classNames(styles.mark, 'px-0')}>
+                <mark key={key} className="px-0">
                     {text}
                 </mark>
             )
@@ -76,27 +79,26 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
     }
     pushElement('span', start, props.text.length)
 
-    return props.url ? (
-        <Code>
-            <Link key="link" tabIndex={-1} className={styles.link} to={props.url} onClick={props.onClick}>
-                {props.icon && <span key="icon">{props.icon}</span>}
-                {spans}
-                {props.textSuffix}
-            </Link>
-        </Code>
-    ) : (
-        <Link
-            key="link"
-            tabIndex={-1}
-            className={styles.link}
-            to={`/commands/${props.text}`}
-            onClick={event => {
+    const { url, onClick } = props
+    const handleClick = useCallback(
+        (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+            if (!url) {
                 event.preventDefault()
-                props.onClick?.()
-            }}
+            }
+            onClick?.()
+        },
+        [url, onClick]
+    )
+
+    return (
+        <Link
+            className={classNames('d-inline-block w-100 h-100 text-decoration-none', styles.link)}
+            to={url || `/commands/${props.text}`}
+            onClick={handleClick}
         >
-            {props.icon && <span key="icon">{props.icon}</span>}
+            {props.icon && <span>{props.icon}</span>}
             {spans}
+            {url ? props.textSuffix : null}
         </Link>
     )
 }

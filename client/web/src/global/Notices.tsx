@@ -3,10 +3,9 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { Notice, Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Alert, AlertProps } from '@sourcegraph/wildcard'
+import { Notice } from '@sourcegraph/shared/src/schema/settings.schema'
+import { useSettings } from '@sourcegraph/shared/src/settings/settings'
+import { Alert, AlertProps, Markdown } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
@@ -44,7 +43,7 @@ const NoticeAlert: React.FunctionComponent<React.PropsWithChildren<NoticeAlertPr
     )
 }
 
-interface Props extends SettingsCascadeProps {
+interface Props {
     className?: string
 
     /** Apply this class name to each notice (alongside .alert). */
@@ -60,18 +59,15 @@ interface Props extends SettingsCascadeProps {
 export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className = '',
     alertClassName,
-    settingsCascade,
     location,
 }) => {
-    if (
-        !isSettingsValid<Settings>(settingsCascade) ||
-        !settingsCascade.final.notices ||
-        !Array.isArray(settingsCascade.final.notices)
-    ) {
+    const settings = useSettings()
+
+    if (!settings?.notices || !Array.isArray(settings?.notices)) {
         return null
     }
 
-    const notices = settingsCascade.final.notices.filter(notice => notice.location === location)
+    const notices = settings.notices.filter(notice => notice.location === location)
     if (notices.length === 0) {
         return null
     }

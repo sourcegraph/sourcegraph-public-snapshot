@@ -1,18 +1,20 @@
 # sourcegraph/grafana - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/grafana
 
 # Build monitoring definitions
-FROM sourcegraph/alpine-3.14:174825_2022-09-28_291dca5d9725@sha256:0bfed82a206a1f313b7276521375dc4d27caa45c324f99e7da0453cecbd31980 AS monitoring_builder
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5 AS monitoring_builder
 RUN mkdir -p '/generated/grafana'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN GRAFANA_DIR='/generated/grafana' PROMETHEUS_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
 RUN ls '/generated/grafana'
 
 # Prepare final image
-# when upgrading the Grafana version, please refer to https://docs.sourcegraph.com/dev/background-information/observability/grafana#upgrading-grafana
+# When upgrading the Grafana version, please refer to https://docs.sourcegraph.com/dev/background-information/observability/grafana#upgrading-grafana
 # DO NOT UPGRADE to AGPL Grafana without consulting Stephen+legal, Grafana >= 8.0 is AGPLv3 Licensed
 # See https://docs.google.com/document/d/1nSmz1ChL_rBvX8FAKTB-CNzgcff083sUlIpoXEz6FHE/edit#heading=h.69clsrno4211
-FROM grafana/grafana:7.5.15@sha256:8e6fe7907f8e5c5547bee5e3e8be8165144d86ad98581d6d092044aa5f805c39 as production
-LABEL com.sourcegraph.grafana.version=7.5.15
+# We use a Grafana base image built by Chainguard
+# TODO(@willdollman): This image was manually uploaded to our registry 2023-03-08
+FROM us.gcr.io/sourcegraph-dev/wolfi-grafana@sha256:47c8c8eaf8d2829f0c34d2e3616e96c04a3fbf6d3ea7e8a420ff910e5916a528 as production
+LABEL com.sourcegraph.grafana.version=7.5.17
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -25,33 +27,22 @@ LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
+# This removes the Chainguard-supplied config and replaces it with our own
+# TODO: Ask Chainguard to remove this from the base image
+USER root
+RUN rm -rf /sg_config_grafana/provisioning/dashboards/sourcegraph/
 # hadolint ignore=DL3020
 ADD config /sg_config_grafana
 COPY --from=monitoring_builder /generated/grafana/home.json /usr/share/grafana/public/dashboards/home.json
 COPY --from=monitoring_builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
 
-# hadolint ignore=DL3020
-ADD entry.sh /
-
-
-USER root
+# Overwrite default entrypoint with the local one
+COPY entry.sh /opt/grafana/
 
 # Create optional folders to avoid error logs about missing dirs
-RUN mkdir /sg_grafana_additional_dashboards
-RUN mkdir /sg_config_grafana/provisioning/plugins && chown grafana:root /sg_config_grafana/provisioning/plugins
+RUN chown grafana:root /sg_config_grafana/provisioning/plugins
 
-# @FIXME: Update redis image
-# Pin busybox=1.32.1-r7 https://github.com/sourcegraph/sourcegraph/issues/27965
-RUN apk add --upgrade --no-cache \
-    'apk-tools>=2.12' \
-    'krb5-libs>=1.18.4' \
-    'libssl1.1>=1.1.1l' \
-    'openssl>=1.1.1l' \
-    'busybox>=1.32.1' \
-    'ncurses-libs>=6.2_p20210109-r1' \
-    'ncurses-terminfo-base>=6.2_p20210109-r1' \
-    'libtirpc>=1.3.1-r1'
 
 EXPOSE 3370
 USER grafana
-ENTRYPOINT ["/entry.sh"]
+ENTRYPOINT ["/opt/grafana/entry.sh"]

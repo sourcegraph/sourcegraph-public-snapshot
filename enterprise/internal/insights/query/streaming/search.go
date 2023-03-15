@@ -36,8 +36,14 @@ func Search(ctx context.Context, query string, patternType *string, decoder stre
 		return err
 	}
 	if patternType != nil {
-		req.URL.Query().Add("t", *patternType)
+		query := req.URL.Query()
+		query.Add("t", *patternType)
+		req.URL.RawQuery = query.Encode()
 	}
+	// to receive chunk matches we must set this url parameter
+	rq := req.URL.Query()
+	rq.Add("cm", "t")
+	req.URL.RawQuery = rq.Encode()
 
 	req = req.WithContext(ctx)
 	req.Header.Set("User-Agent", "code-insights-backend")

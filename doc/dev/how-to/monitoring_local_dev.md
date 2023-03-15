@@ -80,7 +80,7 @@ Some configuration options are available:
 * `DISABLE_ALERTMANAGER`: when `true`, disables the bundled Alertmanager entirely.
   This includes the behaviour of `DISABLE_SOURCEGRAPH_CONFIG=true`.
 
-Note that without services to scrape, running a standalone Prometheus will not provide any metrics - if you need to test metrics as well, you should [start all services](#with-all-services) instead.
+Note that without services to scrape, running a standalone Prometheus will not provide any metrics—if you need to test metrics as well, you should [start all services](#with-all-services) instead.
 The dev targets for Prometheus are defined in the following files:
 
 * Non-Linux: [`dev/prometheus/all/prometheus_targets.yml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/prometheus/all/prometheus_targets.yml)

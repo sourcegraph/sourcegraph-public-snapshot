@@ -1,0 +1,13 @@
+.button {
+    padding: 0.25rem;
+    font-size: 1rem;
+    color: var(--icon-color);
+
+    &-starred {
+        color: var(--yellow);
+    }
+
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
+}

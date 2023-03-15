@@ -194,6 +194,7 @@ type Repo struct {
 	IsPrivate   bool       `json:"is_private"`
 	Links       RepoLinks  `json:"links"`
 	ForkPolicy  ForkPolicy `json:"fork_policy"`
+	Owner       *Account   `json:"owner"`
 }
 
 func (r *Repo) Namespace() (string, error) {
@@ -201,13 +202,12 @@ func (r *Repo) Namespace() (string, error) {
 	// cases (for example, embedded in pull requests), but we always have the
 	// full name, so let's parse the namespace out of that.
 
-	// TODO: replace with strings.Cut() once we upgrade to Go 1.18.
-	parts := strings.SplitN(r.FullName, "/", 2)
-	if len(parts) < 2 {
+	namespace, _, found := strings.Cut(r.FullName, "/")
+	if !found {
 		return "", errors.New("cannot split namespace from repo name")
 	}
 
-	return parts[0], nil
+	return namespace, nil
 }
 
 type ForkPolicy string

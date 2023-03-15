@@ -3,7 +3,7 @@ package query
 import (
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 )
 
 func TestSubstitute(t *testing.T) {
@@ -18,8 +18,7 @@ func TestSubstitute(t *testing.T) {
 		return result
 	}
 
-	autogold.Want("VisitPredicate visits predicates",
-		"contains.file value is path:foo").
+	autogold.Expect("contains.file value is path:foo").
 		Equal(t, test("repo:contains.file(path:foo)"))
 }
 
@@ -29,17 +28,20 @@ func TestVisitTypedPredicate(t *testing.T) {
 		output autogold.Value
 	}{{
 		"repo:test",
-		autogold.Want("no predicates", []*RepoContainsFilePredicate{}),
+		autogold.Expect([]*RepoContainsFilePredicate{}),
 	}, {
 		"repo:test repo:contains.file(path:test)",
-		autogold.Want("one predicate", []*RepoContainsFilePredicate{{Path: "test"}}),
+		autogold.Expect([]*RepoContainsFilePredicate{{Path: "test"}}),
 	}, {
 		"repo:test repo:has.file(path:test)",
-		autogold.Want("one predicate", []*RepoContainsFilePredicate{{Path: "test"}}),
+		autogold.Expect([]*RepoContainsFilePredicate{{Path: "test"}}),
+	}, {
+		"repo:test repo:contains.file(test)",
+		autogold.Expect([]*RepoContainsFilePredicate{{Path: "test"}}),
 	}}
 
 	for _, tc := range cases {
-		t.Run(tc.output.Name(), func(t *testing.T) {
+		t.Run(tc.query, func(t *testing.T) {
 			q, _ := ParseLiteral(tc.query)
 			var result []*RepoContainsFilePredicate
 			VisitTypedPredicate(q, func(pred *RepoContainsFilePredicate) {

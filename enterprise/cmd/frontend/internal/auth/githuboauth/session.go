@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/dghubble/gologin/github"
 	"github.com/inconshreveable/log15"
@@ -24,8 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -36,6 +33,14 @@ type sessionIssuerHelper struct {
 	allowSignup  bool
 	allowOrgs    []string
 	allowOrgsMap map[string][]string
+}
+
+func (s *sessionIssuerHelper) AuthSucceededEventName() database.SecurityEventName {
+	return database.SecurityEventGitHubAuthSucceeded
+}
+
+func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
+	return database.SecurityEventGitHubAuthFailed
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
@@ -75,8 +80,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "", err
 	}
 	var (
-		firstSafeErrMsg string
-		firstErr        error
+		lastSafeErrMsg string
+		lastErr        error
 	)
 
 	// We will first attempt to connect one of the verified emails with an existing
@@ -92,6 +97,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			createIfNotExist: false,
 		})
 	}
+	signupErrorMessage := ""
 	// If allowSignup is true, we will create an account using the first verified
 	// email address from GitHub which we expect to be their primary address. Note
 	// that the order of attempts is important. If we manage to connect with an
@@ -101,16 +107,20 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			email:            verifiedEmails[0],
 			createIfNotExist: true,
 		})
+		signupErrorMessage = "\n\nOr failed on creating a user account"
 	}
 
-	for i, attempt := range attempts {
+	for _, attempt := range attempts {
 		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
-				Username:        login,
+				Username: login,
+
+				// We always only take verified emails from an external source.
 				Email:           attempt.email,
 				EmailIsVerified: true,
-				DisplayName:     deref(ghUser.Name),
-				AvatarURL:       deref(ghUser.AvatarURL),
+
+				DisplayName: deref(ghUser.Name),
+				AvatarURL:   deref(ghUser.AvatarURL),
 			},
 			ExternalAccount: extsvc.AccountSpec{
 				ServiceType: s.ServiceType,
@@ -122,39 +132,6 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    attempt.createIfNotExist,
 		})
 		if err == nil {
-			// Check if GitHub App access token
-			if githubsvc.IsGitHubAppAccessToken(token.AccessToken) {
-				installations, err := ghClient.GetUserInstallations(ctx)
-				if err != nil {
-					// Only log a warning, since we still want to create the user account
-					// even if we fail to get installations.
-					log15.Warn("Could not get GitHub App installations", "error", err)
-				}
-				for _, installation := range installations {
-					accountID := strconv.FormatInt(*installation.ID, 10) + "/" + strconv.FormatInt(derefInt64(ghUser.ID), 10)
-					_, _, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
-						UserProps: database.NewUser{
-							Username:        login,
-							Email:           attempt.email,
-							EmailIsVerified: true,
-							DisplayName:     deref(ghUser.Name),
-							AvatarURL:       deref(ghUser.AvatarURL),
-						},
-						ExternalAccount: extsvc.AccountSpec{
-							ServiceType: extsvc.TypeGitHubApp,
-							ServiceID:   s.ServiceID,
-							ClientID:    s.clientID,
-							AccountID:   accountID,
-						},
-						CreateIfNotExist: attempt.createIfNotExist,
-					})
-
-					if err != nil {
-						log15.Warn("Error while saving associated user installation", "error", err)
-					}
-				}
-			}
-
 			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
 				AnonymousUserID: anonymousUserID,
 				FirstSourceURL:  firstSourceURL,
@@ -162,99 +139,11 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			})
 			return actor.FromUser(userID), "", nil // success
 		}
-		if i == 0 {
-			firstSafeErrMsg, firstErr = safeErrMsg, err
-		}
+		lastSafeErrMsg, lastErr = safeErrMsg, err
 	}
 
-	// On failure, return the first error
-	return nil, fmt.Sprintf("No user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
-}
-
-func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (svc *types.ExternalService, safeErrMsg string, err error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, "Must be authenticated to create code host connection from OAuth flow.", errors.New("unauthenticated request")
-	}
-
-	p := oauth.GetProvider(extsvc.TypeGitHub, providerID)
-	if p == nil {
-		return nil, "Could not find OAuth provider for the state.", errors.Errorf("provider not found for %q", providerID)
-	}
-
-	ghUser, err := github.UserFromContext(ctx)
-	if ghUser == nil {
-		if err != nil {
-			err = errors.Wrap(err, "could not read user from context")
-		} else {
-			err = errors.New("could not read user from context")
-		}
-		return nil, "Could not read GitHub user from callback request.", err
-	}
-
-	// We have a special flow enabled when a user added code host has been created
-	// without `repo` scope and we then enable private code on the instance. In this
-	// case we allow the user to request the additional scope. This means that at
-	// this point we may already have a code host and we just need to update the
-	// token with the new one.
-
-	tx, err := s.db.ExternalServices().Transact(ctx)
-	if err != nil {
-		return
-	}
-	defer func() {
-		err = tx.Done(err)
-		safeErrMsg = "Error committing transaction"
-	}()
-
-	services, err := tx.List(ctx, database.ExternalServicesListOptions{
-		NamespaceUserID: actor.UID,
-		Kinds:           []string{extsvc.KindGitHub},
-	})
-	if err != nil {
-		return nil, "Error checking for existing external service", err
-	}
-	now := time.Now()
-	if len(services) == 0 {
-		// Nothing found, create new one
-		svc = &types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
-			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
-{
-  "url": "%s",
-  "token": "%s",
-  "orgs": []
-}
-`, p.ServiceID, token.AccessToken)),
-			NamespaceUserID: actor.UID,
-			CreatedAt:       now,
-			UpdatedAt:       now,
-		}
-	} else if len(services) > 1 {
-		return nil, "Multiple services of same kind found for user", errors.New("multiple services of same kind found for user")
-	} else {
-		// We have an existing service, update it
-		svc = services[0]
-
-		rawConfig, err := svc.Config.Decrypt(ctx)
-		if err != nil {
-			return nil, "", err
-		}
-
-		rawConfig, err = jsonc.Edit(rawConfig, token.AccessToken, "token")
-		if err != nil {
-			return nil, "Error updating OAuth token", err
-		}
-		svc.Config.Set(rawConfig)
-		svc.UpdatedAt = now
-	}
-
-	err = tx.Upsert(ctx, svc)
-	if err != nil {
-		return nil, "Could not create code host connection.", err
-	}
-	return svc, "", nil // success
+	// On failure, return the last error
+	return nil, fmt.Sprintf("Could not find existing user matching any of the verified emails: %s %s \n\nLast error was: %s", strings.Join(verifiedEmails, ", "), signupErrorMessage, lastSafeErrMsg), lastErr
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {

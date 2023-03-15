@@ -17,8 +17,7 @@ Step 1: Add to global configuration (must be site-admin):
 ```json
 {
     "experimentalFeatures": {
-      "showSearchContext": true,
-      "showSearchContextManagement": true
+      "showSearchContext": true
   }
 }
 ```
@@ -33,7 +32,7 @@ Step 3: Follow the steps to [Generate an access token for GraphQL](https://docs.
 
 Step 4: Navigate to the API console on your instance, replacing sourcegraph.example with the correct string for your instance URL.
 
-* Example: https://sourcegraph.example.com/api/console
+* Example: `https://sourcegraph.example.com/api/console`
 
 
 

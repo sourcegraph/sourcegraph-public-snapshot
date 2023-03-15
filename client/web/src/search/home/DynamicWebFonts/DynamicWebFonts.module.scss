@@ -1,5 +1,0 @@
-// `:global` is required to use animation names from the global scope.
-/* stylelint-disable-next-line selector-max-compound-selectors */
-.spinner :global {
-    animation: loading-spinner-spin 1s linear infinite, fade-in 0.5s;
-}

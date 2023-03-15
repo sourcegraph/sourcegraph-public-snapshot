@@ -1,6 +1,6 @@
 # GoLand
 
-[GoLand](https://www.jetbrains.com/go/) is a popular IDE for developing Go projects from JetBrains. If you’re a GoLand user, you can find useful tips and tricks for setting up your GoLand to develop Sorucegraph.
+[GoLand](https://www.jetbrains.com/go/) is a popular IDE for developing Go projects from JetBrains. If you’re a GoLand user, you can find useful tips and tricks for setting up your GoLand to develop Sourcegraph.
 
 This page isn’t an exhaustive list of general-purpose tips for using GoLand; it aims to remain Sourcegraph specific.
 

@@ -1,8 +1,8 @@
 // @ts-check
 const path = require('path')
 
-const logger = require('gulplog')
 const semver = require('semver')
+const logger = require('signale')
 
 /** @type {import('@babel/core').ConfigFunction} */
 module.exports = api => {
@@ -26,7 +26,7 @@ module.exports = api => {
         '@babel/preset-env',
         {
           // Node (used for testing) doesn't support modules, so compile to CommonJS for testing.
-          modules: isTest ? 'commonjs' : false,
+          modules: process.env.BABEL_MODULE ?? (isTest ? 'commonjs' : false),
           bugfixes: true,
           useBuiltIns: 'entry',
           include: [

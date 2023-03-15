@@ -1,4 +1,5 @@
 export * from './browserDetection'
+export * from './compatNavigate'
 export * from './fetchCache'
 export * from './hashCode'
 export * from './highlightNode'

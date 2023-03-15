@@ -1,6 +1,7 @@
 package changed
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,41 +32,84 @@ func TestParseDiff(t *testing.T) {
 		name             string
 		files            []string
 		wantAffects      []Diff
+		wantChangedFiles ChangedFiles
 		doNotWantAffects []Diff
 	}{{
 		name:             "None",
 		files:            []string{"asdf"},
 		wantAffects:      []Diff{None},
+		wantChangedFiles: make(ChangedFiles),
 		doNotWantAffects: []Diff{Go, Client, DatabaseSchema, All},
 	}, {
 		name:             "Go",
 		files:            []string{"main.go", "func.go"},
 		wantAffects:      []Diff{Go},
+		wantChangedFiles: make(ChangedFiles),
 		doNotWantAffects: []Diff{Client, All},
 	}, {
 		name:             "go testdata",
 		files:            []string{"internal/cmd/search-blitz/queries.txt"},
 		wantAffects:      []Diff{Go},
+		wantChangedFiles: make(ChangedFiles),
 		doNotWantAffects: []Diff{Client, All},
 	}, {
 		name:             "DB schema implies Go and DB schema diff",
 		files:            []string{"migrations/file1", "migrations/file2"},
 		wantAffects:      []Diff{Go, DatabaseSchema},
+		wantChangedFiles: make(ChangedFiles),
 		doNotWantAffects: []Diff{Client, All},
 	}, {
 		name:             "Or",
 		files:            []string{"client/file1", "file2.graphql"},
 		wantAffects:      []Diff{Client | GraphQL},
+		wantChangedFiles: make(ChangedFiles),
 		doNotWantAffects: []Diff{Go, All},
-	}}
+	}, {
+		name:        "Wolfi",
+		files:       []string{"wolfi-images/image-test.yaml", "wolfi-packages/package-test.yaml"},
+		wantAffects: []Diff{WolfiBaseImages, WolfiPackages},
+		wantChangedFiles: ChangedFiles{
+			WolfiBaseImages: []string{"wolfi-images/image-test.yaml"},
+			WolfiPackages:   []string{"wolfi-packages/package-test.yaml"},
+		},
+		doNotWantAffects: []Diff{},
+	}, {
+		name:             "Protobuf definitions",
+		files:            []string{"cmd/searcher/messages.proto"},
+		wantAffects:      []Diff{Protobuf},
+		wantChangedFiles: make(ChangedFiles),
+		doNotWantAffects: []Diff{},
+	}, {
+		name:             "Protobuf generated code",
+		files:            []string{"cmd/searcher/messages.pb.go"},
+		wantAffects:      []Diff{Protobuf, Go},
+		wantChangedFiles: make(ChangedFiles),
+		doNotWantAffects: []Diff{},
+	}, {
+		name:             "Buf CLI module configuration",
+		files:            []string{"cmd/searcher/buf.yaml"},
+		wantAffects:      []Diff{Protobuf},
+		wantChangedFiles: make(ChangedFiles),
+		doNotWantAffects: []Diff{},
+	}, {
+		name:             "Buf CLI generated code configuration",
+		files:            []string{"cmd/searcher/buf.gen.yaml"},
+		wantAffects:      []Diff{Protobuf},
+		wantChangedFiles: make(ChangedFiles),
+		doNotWantAffects: []Diff{},
+	},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			diff := ParseDiff(tt.files)
+			diff, changedFiles := ParseDiff(tt.files)
 			for _, want := range tt.wantAffects {
 				assert.True(t, diff.Has(want))
 			}
 			for _, doNotWant := range tt.doNotWantAffects {
 				assert.False(t, diff.Has(doNotWant))
+			}
+			if !reflect.DeepEqual(changedFiles, tt.wantChangedFiles) {
+				t.Errorf("wantedChangedFiles not equal:\nGot: %+v\nWant: %+v\n", changedFiles, tt.wantChangedFiles)
 			}
 		})
 	}

@@ -66,9 +66,6 @@ func TestCreateAndGetNotebook(t *testing.T) {
 			SymbolContainerName: "container",
 			SymbolKind:          "FUNCTION",
 		}},
-		{ID: "5", Type: NotebookComputeBlockType, ComputeInput: &NotebookComputeBlockInput{
-			Value: "github.com/sourcegraph/sourcegraph"},
-		},
 	}
 	notebook := notebookByUser(&Notebook{Title: "Notebook Title", Blocks: blocks, Public: true}, user.ID)
 	createdNotebook, err := n.CreateNotebook(ctx, notebook)

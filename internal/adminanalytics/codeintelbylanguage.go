@@ -21,7 +21,7 @@ func (s *CodeIntelByLanguage) Count() float64    { return s.Count_ }
 func GetCodeIntelByLanguage(ctx context.Context, db database.DB, cache bool, dateRange string) ([]*CodeIntelByLanguage, error) {
 	cacheKey := fmt.Sprintf(`CodeIntelByLanguage:%s`, dateRange)
 
-	if cache == true {
+	if cache {
 		if nodes, err := getArrayFromCache[CodeIntelByLanguage](cacheKey); err == nil {
 			return nodes, nil
 		}
@@ -69,7 +69,7 @@ func GetCodeIntelByLanguage(ctx context.Context, db database.DB, cache bool, dat
 		items = append(items, &item)
 	}
 
-	if _, err := setArrayToCache(cacheKey, items); err != nil {
+	if err := setArrayToCache(cacheKey, items); err != nil {
 		return nil, err
 	}
 

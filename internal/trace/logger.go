@@ -16,7 +16,7 @@ func Logger(ctx context.Context, l log.Logger) log.Logger {
 	// Attach details about internal/trace
 	if t := TraceFromContext(ctx); t != nil {
 		if t.family != "" {
-			l = l.Scoped(t.family, "trace family")
+			l = l.With(log.String("trace.family", t.family))
 		}
 	}
 	// Attach any trace (WithTrace no-ops if empty trace is provided)

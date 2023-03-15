@@ -18,7 +18,10 @@ export type DeepReplace<T, M, R> = {
  */
 // needed for type parameter
 // eslint-disable-next-line unicorn/consistent-function-scoping
-export const subtypeOf = <U>() => <T extends U>(value: T): T => value
+export const subtypeOf =
+    <U>() =>
+    <T extends U>(value: T): T =>
+        value
 
 /**
  * Returns a type guard that checks whether the given value is strictly equal to a specific value.
@@ -26,7 +29,10 @@ export const subtypeOf = <U>() => <T extends U>(value: T): T => value
  *
  * @param constant The value to compare to. Pass this with `as const` to improve type inference.
  */
-export const isExactly = <T, C extends T>(constant: C) => (value: T): value is C => value === constant
+export const isExactly =
+    <T, C extends T>(constant: C) =>
+    (value: T): value is C =>
+        value === constant
 
 /**
  * Negates a type guard.
@@ -35,18 +41,20 @@ export const isExactly = <T, C extends T>(constant: C) => (value: T): value is C
  *
  * @param isType The type guard that checks whether the given input value should be excluded.
  */
-export const isNot = <TInput, TExclude extends TInput>(isType: (value: TInput) => value is TExclude) => (
-    value: TInput
-): value is Exclude<TInput, TExclude> => !isType(value)
+export const isNot =
+    <TInput, TExclude extends TInput>(isType: (value: TInput) => value is TExclude) =>
+    (value: TInput): value is Exclude<TInput, TExclude> =>
+        !isType(value)
 
 /**
  * Returns a function that returns `true` if the given `key` of the object passes the given type guard.
  *
  * @param key The key of the property to check.
  */
-export const hasProperty = <O extends object, K extends string | number | symbol>(key: K) => (
-    object: O
-): object is O & { [k in K]: unknown } => key in object
+export const hasProperty =
+    <O extends object, K extends string | number | symbol>(key: K) =>
+    (object: O): object is O & { [k in K]: unknown } =>
+        key in object
 
 /**
  * Returns a function that returns `true` if the given `key` exists in the given object, narrowing down the type of the _key_.
@@ -61,26 +69,28 @@ export const keyExistsIn = <O extends object>(key: string | number | symbol, obj
  * @param key The key of the property to check.
  * @param isType The type guard to evalute on the property value.
  */
-export const property = <O extends object, K extends keyof O, T extends O[K]>(
-    key: K,
-    isType: (value: O[K]) => value is T
-) => (object: O): object is O & Record<K, T> => isType(object[key])
+export const property =
+    <O extends object, K extends keyof O, T extends O[K]>(key: K, isType: (value: O[K]) => value is T) =>
+    (object: O): object is O & Record<K, T> =>
+        isType(object[key])
 
 /**
  * Resolves a tagged union type to a specific member of the union identified by the given tag value.
  */
-export const isTaggedUnionMember = <O extends object, K extends keyof O, V extends O[K]>(key: K, tagValue: V) => (
-    object: O
-): object is Extract<O, Record<K, V>> => object[key] === tagValue
+export const isTaggedUnionMember =
+    <O extends object, K extends keyof O, V extends O[K]>(key: K, tagValue: V) =>
+    (object: O): object is Extract<O, Record<K, V>> =>
+        object[key] === tagValue
 
 /**
  * Returns a function that returns `true` if the given value is an instance of the given class.
  *
  * @param constructor A reference to a class, e.g. `HTMLElement`
  */
-export const isInstanceOf = <C extends new () => object>(constructor: C) => (
-    value: unknown
-): value is InstanceType<C> => value instanceof constructor
+export const isInstanceOf =
+    <C extends new () => object>(constructor: C) =>
+    (value: unknown): value is InstanceType<C> =>
+        value instanceof constructor
 
 /**
  * Combines multiple type guards into one type guard that checks if the value passes any of the provided type guards.
@@ -135,4 +145,7 @@ export function allOf(...typeGuards: any[]): any {
 /**
  * Returns a type guard for a simple condition that does not check the type of the argument (but something about the value).
  */
-export const check = <T>(simpleCondition: (value: T) => boolean) => (value: T): value is T => simpleCondition(value)
+export const check =
+    <T>(simpleCondition: (value: T) => boolean) =>
+    (value: T): value is T =>
+        simpleCondition(value)

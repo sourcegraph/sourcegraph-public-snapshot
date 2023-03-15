@@ -1,0 +1,46 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.list {
+    padding: 0.25rem 0;
+    margin: 0;
+    list-style: none;
+    font-size: var(--code-font-size);
+    max-width: 55rem;
+
+    li {
+        padding: 0.25rem 1rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+
+        &:hover {
+            background-color: var(--body-bg);
+        }
+
+        &[aria-selected='true'] {
+            background-color: var(--dropdown-link-hover-bg);
+        }
+    }
+}
+
+.trigger-button {
+    background-color: transparent;
+    border: none;
+    color: var(--text-muted);
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
+    border-radius: 0.25rem;
+    padding: 0.0625rem 0.125rem;
+
+    &.open,
+    &:focus,
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
+
+    @media (--xs-breakpoint-down) {
+        border: 1px solid var(--input-border-color);
+        margin-left: 0;
+    }
+}

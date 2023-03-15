@@ -14,6 +14,7 @@ import (
 	"github.com/coreos/go-semver/semver"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -34,25 +35,32 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("4.1.1")
+	latestReleaseDockerServerImageBuild = newPingResponse("4.5.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("4.1.1")
+	latestReleaseKubernetesBuild = newPingResponse("4.5.1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("4.1.1")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("4.5.1")
+
+	// latestReleaseApp is only used by sourcegraph.com to tell existing Sourcegraph
+	// App instances what the latest version is. The version here _must_ be available for download/released
+	// before being referenced here.
+	latestReleaseApp = newPingResponse("2023.03.23+205301.ca3646")
 )
 
-func getLatestRelease(deployType string) build {
+func getLatestRelease(deployType string) pingResponse {
 	switch {
 	case deploy.IsDeployTypeKubernetes(deployType):
 		return latestReleaseKubernetesBuild
 	case deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return latestReleaseDockerComposeOrPureDocker
+	case deploy.IsDeployTypeApp(deployType):
+		return latestReleaseApp
 	default:
 		return latestReleaseDockerServerImageBuild
 	}
@@ -89,14 +97,14 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no version specified", http.StatusBadRequest)
 		return
 	}
-	if pr.ClientVersionString == "dev" {
+	if pr.ClientVersionString == "dev" && !deploy.IsDeployTypeApp(pr.DeployType) {
 		// No updates for dev servers.
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
-	latestReleaseBuild := getLatestRelease(pr.DeployType)
-	hasUpdate, err := canUpdate(pr.ClientVersionString, latestReleaseBuild)
+	pingResponse := getLatestRelease(pr.DeployType)
+	hasUpdate, err := canUpdate(pr.ClientVersionString, pingResponse, pr.DeployType)
 
 	// Always log, even on malformed version strings
 	logPing(logger, r, pr, hasUpdate)
@@ -105,30 +113,44 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	if deploy.IsDeployTypeApp(pr.DeployType) {
+		pingResponse.Notifications = getNotifications(pr.ClientVersionString)
+		pingResponse.UpdateAvailable = hasUpdate
+	}
+	body, err := json.Marshal(pingResponse)
+	if err != nil {
+		logger.Error("error preparing update check response", log.Error(err))
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	// Sourcegraph App: We always send back a ping response (rather than StatusNoContent) because
+	// the user's instance may have unseen notification messages.
+	if deploy.IsDeployTypeApp(pr.DeployType) {
+		if hasUpdate {
+			requestHasUpdateCounter.Inc()
+		}
+		w.Header().Set("content-type", "application/json; charset=utf-8")
+		_, _ = w.Write(body)
+		return
+	}
 
 	if !hasUpdate {
 		// No newer version.
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-
 	w.Header().Set("content-type", "application/json; charset=utf-8")
-	body, err := json.Marshal(latestReleaseBuild)
-	if err != nil {
-		logger.Error("error preparing update check response", log.Error(err))
-		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
 	requestHasUpdateCounter.Inc()
 	_, _ = w.Write(body)
 }
 
 // canUpdate returns true if the latestReleaseBuild is newer than the clientVersionString.
-func canUpdate(clientVersionString string, latestReleaseBuild build) (bool, error) {
+func canUpdate(clientVersionString string, latestReleaseBuild pingResponse, deployType string) (bool, error) {
 	// Check for a date in the version string to handle developer builds that don't have a semver.
 	// If there is an error parsing a date out of the version string, then we ignore the error
 	// and parse it as a semver.
-	if hasDateUpdate, err := canUpdateDate(clientVersionString); err == nil {
+	if hasDateUpdate, err := canUpdateDate(clientVersionString); err == nil && !deploy.IsDeployTypeApp(deployType) {
 		return hasDateUpdate, nil
 	}
 
@@ -138,7 +160,7 @@ func canUpdate(clientVersionString string, latestReleaseBuild build) (bool, erro
 
 // canUpdateVersion returns true if the latest released build is newer than
 // the clientVersionString. It returns an error if clientVersionString is not a semver.
-func canUpdateVersion(clientVersionString string, latestReleaseBuild build) (bool, error) {
+func canUpdateVersion(clientVersionString string, latestReleaseBuild pingResponse) (bool, error) {
 	clientVersionString = strings.TrimPrefix(clientVersionString, "v")
 	clientVersion, err := semver.NewVersion(clientVersionString)
 	if err != nil {
@@ -176,45 +198,51 @@ func canUpdateDate(clientVersionString string) (bool, error) {
 // We need to maintain backwards compatibility with the GET-only update checks
 // while expanding the payload size for newer instance versions (via HTTP body).
 type pingRequest struct {
-	ClientSiteID         string `json:"site"`
-	LicenseKey           string
+	ClientSiteID         string          `json:"site"`
+	LicenseKey           string          `json:",omitempty"`
 	DeployType           string          `json:"deployType"`
+	Os                   string          `json:"os,omitempty"` // Only used in Sourcegraph App
 	ClientVersionString  string          `json:"version"`
-	DependencyVersions   json.RawMessage `json:"dependencyVersions"`
-	AuthProviders        []string        `json:"auth"`
-	ExternalServices     []string        `json:"extsvcs"`
-	BuiltinSignupAllowed bool            `json:"signup"`
-	HasExtURL            bool            `json:"hasExtURL"`
-	UniqueUsers          int32           `json:"u"`
-	Activity             json.RawMessage `json:"act"`
-	BatchChangesUsage    json.RawMessage `json:"batchChangesUsage"`
+	DependencyVersions   json.RawMessage `json:"dependencyVersions,omitempty"`
+	AuthProviders        []string        `json:"auth,omitempty"`
+	ExternalServices     []string        `json:"extsvcs,omitempty"`
+	BuiltinSignupAllowed bool            `json:"signup,omitempty"`
+	AccessRequestEnabled bool            `json:"accessRequestEnabled,omitempty"`
+	HasExtURL            bool            `json:"hasExtURL,omitempty"`
+	UniqueUsers          int32           `json:"u,omitempty"`
+	Activity             json.RawMessage `json:"act,omitempty"`
+	BatchChangesUsage    json.RawMessage `json:"batchChangesUsage,omitempty"`
 	// AutomationUsage (campaigns) is deprecated, but here so we can receive pings from older instances
-	AutomationUsage               json.RawMessage `json:"automationUsage"`
-	GrowthStatistics              json.RawMessage `json:"growthStatistics"`
-	SavedSearches                 json.RawMessage `json:"savedSearches"`
-	HomepagePanels                json.RawMessage `json:"homepagePanels"`
-	SearchOnboarding              json.RawMessage `json:"searchOnboarding"`
-	Repositories                  json.RawMessage `json:"repositories"`
-	RetentionStatistics           json.RawMessage `json:"retentionStatistics"`
-	CodeIntelUsage                json.RawMessage `json:"codeIntelUsage"`
-	NewCodeIntelUsage             json.RawMessage `json:"newCodeIntelUsage"`
-	SearchUsage                   json.RawMessage `json:"searchUsage"`
-	ExtensionsUsage               json.RawMessage `json:"extensionsUsage"`
-	CodeInsightsUsage             json.RawMessage `json:"codeInsightsUsage"`
-	CodeInsightsCriticalTelemetry json.RawMessage `json:"codeInsightsCriticalTelemetry"`
-	CodeMonitoringUsage           json.RawMessage `json:"codeMonitoringUsage"`
-	NotebooksUsage                json.RawMessage `json:"notebooksUsage"`
-	CodeHostVersions              json.RawMessage `json:"codeHostVersions"`
-	CodeHostIntegrationUsage      json.RawMessage `json:"codeHostIntegrationUsage"`
-	IDEExtensionsUsage            json.RawMessage `json:"ideExtensionsUsage"`
-	MigratedExtensionsUsage       json.RawMessage `json:"migratedExtensionsUsage"`
-	InitialAdminEmail             string          `json:"initAdmin"`
-	TosAccepted                   bool            `json:"tosAccepted"`
-	TotalUsers                    int32           `json:"totalUsers"`
-	TotalOrgs                     int32           `json:"totalOrgs"`
-	HasRepos                      bool            `json:"repos"`
-	EverSearched                  bool            `json:"searched"`
-	EverFindRefs                  bool            `json:"refs"`
+	AutomationUsage               json.RawMessage `json:"automationUsage,omitempty"`
+	GrowthStatistics              json.RawMessage `json:"growthStatistics,omitempty"`
+	SavedSearches                 json.RawMessage `json:"savedSearches,omitempty"`
+	HomepagePanels                json.RawMessage `json:"homepagePanels,omitempty"`
+	SearchOnboarding              json.RawMessage `json:"searchOnboarding,omitempty"`
+	Repositories                  json.RawMessage `json:"repositories,omitempty"`
+	RepositorySizeHistogram       json.RawMessage `json:"repository_size_histogram,omitempty"`
+	RetentionStatistics           json.RawMessage `json:"retentionStatistics,omitempty"`
+	CodeIntelUsage                json.RawMessage `json:"codeIntelUsage,omitempty"`
+	NewCodeIntelUsage             json.RawMessage `json:"newCodeIntelUsage,omitempty"`
+	SearchUsage                   json.RawMessage `json:"searchUsage,omitempty"`
+	ExtensionsUsage               json.RawMessage `json:"extensionsUsage,omitempty"`
+	CodeInsightsUsage             json.RawMessage `json:"codeInsightsUsage,omitempty"`
+	CodeInsightsCriticalTelemetry json.RawMessage `json:"codeInsightsCriticalTelemetry,omitempty"`
+	CodeMonitoringUsage           json.RawMessage `json:"codeMonitoringUsage,omitempty"`
+	NotebooksUsage                json.RawMessage `json:"notebooksUsage,omitempty"`
+	CodeHostVersions              json.RawMessage `json:"codeHostVersions,omitempty"`
+	CodeHostIntegrationUsage      json.RawMessage `json:"codeHostIntegrationUsage,omitempty"`
+	IDEExtensionsUsage            json.RawMessage `json:"ideExtensionsUsage,omitempty"`
+	MigratedExtensionsUsage       json.RawMessage `json:"migratedExtensionsUsage,omitempty"`
+	OwnUsage                      json.RawMessage `json:"ownUsage,omitempty"`
+	InitialAdminEmail             string          `json:"initAdmin,omitempty"`
+	TosAccepted                   bool            `json:"tosAccepted,omitempty"`
+	TotalUsers                    int32           `json:"totalUsers,omitempty"`
+	TotalOrgs                     int32           `json:"totalOrgs,omitempty"`
+	TotalRepos                    int32           `json:"totalRepos,omitempty"` // Only used in Sourcegraph App
+	HasRepos                      bool            `json:"repos,omitempty"`
+	EverSearched                  bool            `json:"searched,omitempty"`
+	EverFindRefs                  bool            `json:"refs,omitempty"`
+	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Sourcegraph App
 }
 
 type dependencyVersions struct {
@@ -245,6 +273,7 @@ func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 		AuthProviders:        strings.Split(q.Get("auth"), ","),
 		ExternalServices:     strings.Split(q.Get("extsvcs"), ","),
 		BuiltinSignupAllowed: toBool(q.Get("signup")),
+		AccessRequestEnabled: toBool(q.Get("accessRequestEnabled")),
 		HasExtURL:            toBool(q.Get("hasExtURL")),
 		UniqueUsers:          toInt(q.Get("u")),
 		Activity:             toRawMessage(q.Get("act")),
@@ -310,6 +339,7 @@ type pingPayload struct {
 	HomepagePanels                json.RawMessage `json:"homepage_panels"`
 	RetentionStatistics           json.RawMessage `json:"retention_statistics"`
 	Repositories                  json.RawMessage `json:"repositories"`
+	RepositorySizeHistogram       json.RawMessage `json:"repository_size_histogram"`
 	SearchOnboarding              json.RawMessage `json:"search_onboarding"`
 	DependencyVersions            json.RawMessage `json:"dependency_versions"`
 	ExtensionsUsage               json.RawMessage `json:"extensions_usage"`
@@ -321,16 +351,21 @@ type pingPayload struct {
 	CodeHostIntegrationUsage      json.RawMessage `json:"code_host_integration_usage"`
 	IDEExtensionsUsage            json.RawMessage `json:"ide_extensions_usage"`
 	MigratedExtensionsUsage       json.RawMessage `json:"migrated_extensions_usage"`
+	OwnUsage                      json.RawMessage `json:"own_usage"`
 	InstallerEmail                string          `json:"installer_email"`
 	AuthProviders                 string          `json:"auth_providers"`
 	ExtServices                   string          `json:"ext_services"`
 	BuiltinSignupAllowed          string          `json:"builtin_signup_allowed"`
+	AccessRequestEnabled          string          `json:"access_request_enabled"`
 	DeployType                    string          `json:"deploy_type"`
 	TotalUserAccounts             string          `json:"total_user_accounts"`
+	TotalRepos                    string          `json:"total_repos"`
 	HasExternalURL                string          `json:"has_external_url"`
 	HasRepos                      string          `json:"has_repos"`
 	EverSearched                  string          `json:"ever_searched"`
 	EverFindRefs                  string          `json:"ever_find_refs"`
+	Os                            string          `json:"os"`
+	ActiveToday                   string          `json:"active_today"`
 	Timestamp                     string          `json:"timestamp"`
 }
 
@@ -389,6 +424,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		RemoteSiteVersion:             pr.ClientVersionString,
 		RemoteSiteID:                  pr.ClientSiteID,
 		LicenseKey:                    pr.LicenseKey,
+		Os:                            pr.Os,
 		HasUpdate:                     strconv.FormatBool(hasUpdate),
 		UniqueUsersToday:              strconv.FormatInt(int64(pr.UniqueUsers), 10),
 		SiteActivity:                  pr.Activity,          // no change in schema
@@ -400,6 +436,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		HomepagePanels:                pr.HomepagePanels,
 		RetentionStatistics:           pr.RetentionStatistics,
 		Repositories:                  pr.Repositories,
+		RepositorySizeHistogram:       pr.RepositorySizeHistogram,
 		SearchOnboarding:              pr.SearchOnboarding,
 		InstallerEmail:                pr.InitialAdminEmail,
 		DependencyVersions:            pr.DependencyVersions,
@@ -411,15 +448,19 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		CodeHostVersions:              pr.CodeHostVersions,
 		CodeHostIntegrationUsage:      pr.CodeHostIntegrationUsage,
 		IDEExtensionsUsage:            pr.IDEExtensionsUsage,
+		OwnUsage:                      pr.OwnUsage,
 		AuthProviders:                 strings.Join(pr.AuthProviders, ","),
 		ExtServices:                   strings.Join(pr.ExternalServices, ","),
 		BuiltinSignupAllowed:          strconv.FormatBool(pr.BuiltinSignupAllowed),
+		AccessRequestEnabled:          strconv.FormatBool(pr.AccessRequestEnabled),
 		DeployType:                    pr.DeployType,
 		TotalUserAccounts:             strconv.FormatInt(int64(pr.TotalUsers), 10),
+		TotalRepos:                    strconv.FormatInt(int64(pr.TotalRepos), 10),
 		HasExternalURL:                strconv.FormatBool(pr.HasExtURL),
 		HasRepos:                      strconv.FormatBool(pr.HasRepos),
 		EverSearched:                  strconv.FormatBool(pr.EverSearched),
 		EverFindRefs:                  strconv.FormatBool(pr.EverFindRefs),
+		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
 	})
 }

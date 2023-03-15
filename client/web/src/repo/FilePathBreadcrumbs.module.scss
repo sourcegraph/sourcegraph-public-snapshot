@@ -4,18 +4,28 @@
     overflow: hidden;
     align-items: center;
     white-space: nowrap;
+    justify-content: flex-end;
 
     .part {
         /* Ensure focus shadow is not clipped by overflow: hidden */
         margin: 0.125rem;
     }
 
+    .root-directory {
+        min-width: 0.5rem !important;
+    }
+
     .part-directory {
-        flex: 1 1 1em;
-        min-width: 1em;
+        min-width: 1px;
         max-width: fit-content;
         overflow: hidden;
         text-overflow: ellipsis;
+        text-align: center;
+    }
+
+    .part-separator {
+        color: var(--link-color);
+        min-width: 0.5em;
         text-align: center;
     }
 }

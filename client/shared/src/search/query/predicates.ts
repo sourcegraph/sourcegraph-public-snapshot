@@ -39,6 +39,8 @@ export const PREDICATES: Access[] = [
                     },
                     { name: 'description' },
                     { name: 'tag' },
+                    { name: 'key' },
+                    { name: 'topic' },
                 ],
             },
         ],
@@ -52,7 +54,7 @@ export const PREDICATES: Access[] = [
             },
             {
                 name: 'has',
-                fields: [{ name: 'content' }],
+                fields: [{ name: 'content' }, { name: 'owner' }],
             },
         ],
     },
@@ -177,36 +179,71 @@ export const predicateCompletion = (field: string): Completion[] => {
                 label: 'has.path(...)',
                 insertText: 'has.path(${1:CHANGELOG})',
                 asSnippet: true,
+                description: 'Search only inside repositories that contain matching file paths',
             },
             {
                 label: 'has.content(...)',
                 insertText: 'has.content(${1:TODO})',
                 asSnippet: true,
+                description: 'Search only inside repositories that contain matching file contents ',
             },
             {
                 label: 'has.file(...)',
                 insertText: 'has.file(path:${1:CHANGELOG} content:${2:fix})',
+                asSnippet: true,
+                description: 'Search only in repositories that contain matching file paths and contents',
+            },
+            {
+                label: 'has.topic(...)',
+                insertText: 'has.topic(${1})',
+                description: 'Search only inside repositories that have a matching GitHub tag',
                 asSnippet: true,
             },
             {
                 label: 'has.commit.after(...)',
                 insertText: 'has.commit.after(${1:1 month ago})',
                 asSnippet: true,
+                description: 'Search only in repositories that have been committed to since then',
             },
             {
                 label: 'has.description(...)',
                 insertText: 'has.description(${1})',
                 asSnippet: true,
+                description: 'Search only inside repositories whose description matches',
             },
             {
                 label: 'has.tag(...)',
                 insertText: 'has.tag(${1})',
                 asSnippet: true,
+                description: 'Search only inside repositories tagged with a given tag',
             },
             {
                 label: 'has(...)',
                 insertText: 'has(${1:key}:${2:value})',
+                description: 'Search only inside repositories having a specified key:value pair',
                 asSnippet: true,
+            },
+            {
+                label: 'has.key(...)',
+                insertText: 'has.key(${1})',
+                description: 'Search only inside repositories having a specifiec key with any value',
+                asSnippet: true,
+            },
+        ]
+    }
+    if (field === 'file') {
+        return [
+            {
+                label: 'has.content(...)',
+                insertText: 'has.content(${1:TODO})',
+                asSnippet: true,
+                description: 'Search only inside files whose contents match a pattern',
+            },
+            {
+                label: 'has.owner(...)',
+                insertText: 'has.owner(${1})',
+                asSnippet: true,
+                description: 'Search only inside files that have a specific owner',
             },
         ]
     }

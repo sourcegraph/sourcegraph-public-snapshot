@@ -15,7 +15,7 @@ interface UseCurrentSpanResult {
  * Returns `noopSpan` if OpenTelemetry tracing is disabled.
  */
 let useCurrentSpan = (): UseCurrentSpanResult => {
-    const span = trace.getSpan(useContext(TraceContext).context)
+    const span = trace.getSpan(useContext(TraceContext).current.context)
 
     return {
         span,

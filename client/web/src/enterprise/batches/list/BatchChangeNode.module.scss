@@ -1,6 +1,8 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .batch-change-node {
+    display: contents;
+
     // Old state badge
     &__badge {
         justify-self: center;

@@ -1,3 +1,5 @@
+import { currentUserMock } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+
 import { SourcegraphContext } from '../jscontext'
 
 export const siteID = 'TestSiteID'
@@ -13,13 +15,18 @@ export const builtinAuthProvider = {
 }
 
 export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: string }): SourcegraphContext => ({
+    currentUser: currentUserMock,
+    temporarySettings: null,
     externalURL: sourcegraphBaseUrl,
     accessTokensAllow: 'all-users-create',
     allowSignup: false,
     batchChangesEnabled: true,
     batchChangesDisableWebhooksWarning: false,
     batchChangesWebhookLogsEnabled: true,
+    codeInsightsEnabled: true,
     executorsEnabled: true,
+    extsvcConfigAllowEdits: false,
+    extsvcConfigFileExists: false,
     codeIntelAutoIndexingEnabled: true,
     codeIntelAutoIndexingAllowGlobalPolicies: true,
     externalServicesUserMode: 'disabled',
@@ -33,16 +40,21 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     likelyDockerOnMac: false,
     needServerRestart: false,
     needsSiteInit: false,
+    needsRepositoryConfiguration: false,
     resetPasswordEnabled: false,
     sentryDSN: null,
     site: {},
     siteID,
     siteGQLID,
     sourcegraphDotComMode: false,
+    sourcegraphAppMode: false,
     userAgentIsBot: false,
     version: '0.0.0',
     xhrHeaders: {},
     authProviders: [builtinAuthProvider],
     authMinPasswordLength: 12,
-    enableLegacyExtensions: false,
+    embeddingsEnabled: false,
+    runningOnMacOS: true,
+    localFilePickerAvailable: false,
+    srcServeGitUrl: 'http://127.0.0.1:3434',
 })

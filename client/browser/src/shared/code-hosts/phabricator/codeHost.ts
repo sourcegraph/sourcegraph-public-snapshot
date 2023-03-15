@@ -3,20 +3,17 @@ import { map } from 'rxjs/operators'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { fetchBlobContentLines } from '../../repo/backend'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView, toCodeViewResolver } from '../shared/codeViews'
-import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
 import { ViewResolver } from '../shared/views'
 
+import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { diffDomFunctions, diffusionDOMFns } from './domFunctions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './fileInfo'
-
-import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 
 import styles from './codeHost.module.scss'
 
@@ -54,35 +51,41 @@ const adjustCharacter = (position: Position, adjustment: number): Position => ({
     character: position.character + adjustment,
 })
 
-const getPositionAdjuster = (
-    requestGraphQL: PlatformContext['requestGraphQL']
-): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> => ({ direction, codeView, position }) =>
-    fetchBlobContentLines({ ...position, requestGraphQL }).pipe(
-        map(lines => {
-            const codeElement = diffDomFunctions.getCodeElementFromLineNumber(codeView, position.line, position.part)
-            if (!codeElement) {
-                throw new Error('(adjustPosition) could not find code element for line provided')
-            }
+const getPositionAdjuster =
+    (
+        requestGraphQL: PlatformContext['requestGraphQL']
+    ): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> =>
+    ({ direction, codeView, position }) =>
+        fetchBlobContentLines({ ...position, requestGraphQL }).pipe(
+            map(lines => {
+                const codeElement = diffDomFunctions.getCodeElementFromLineNumber(
+                    codeView,
+                    position.line,
+                    position.part
+                )
+                if (!codeElement) {
+                    throw new Error('(adjustPosition) could not find code element for line provided')
+                }
 
-            const textContentInfo = getTextContent(codeElement)
+                const textContentInfo = getTextContent(codeElement)
 
-            const documentLineContent = textContentInfo.textContent
-            const actualLineContent = lines[position.line - 1]
+                const documentLineContent = textContentInfo.textContent
+                const actualLineContent = lines[position.line - 1]
 
-            // See if we should adjust for whitespace changes.
-            const convertSpaces = convertSpacesToTabs(actualLineContent, documentLineContent)
+                // See if we should adjust for whitespace changes.
+                const convertSpaces = convertSpacesToTabs(actualLineContent, documentLineContent)
 
-            // Whether the adjustment should add or subtract from the given position.
-            const modifier = direction === AdjustmentDirection.CodeViewToActual ? -1 : 1
+                // Whether the adjustment should add or subtract from the given position.
+                const modifier = direction === AdjustmentDirection.CodeViewToActual ? -1 : 1
 
-            return convertSpaces
-                ? adjustCharacter(
-                      position,
-                      (spacesToTabsAdjustment(documentLineContent) + textContentInfo.adjust) * modifier
-                  )
-                : adjustCharacter(position, textContentInfo.adjust * modifier)
-        })
-    )
+                return convertSpaces
+                    ? adjustCharacter(
+                          position,
+                          (spacesToTabsAdjustment(documentLineContent) + textContentInfo.adjust) * modifier
+                      )
+                    : adjustCharacter(position, textContentInfo.adjust * modifier)
+            })
+        )
 
 export const commitCodeView = {
     dom: diffDomFunctions,
@@ -169,14 +172,6 @@ const phabSourceCodeViewResolver = toCodeViewResolver('.phabricator-source-code-
     resolveFileInfo: resolveDiffusionFileInfo,
 })
 
-const notificationClassNames = {
-    [NotificationType.Log]: 'phui-info-view phui-info-severity-plain',
-    [NotificationType.Success]: 'phui-info-view phui-info-severity-success',
-    [NotificationType.Info]: 'phui-info-view phui-info-severity-notice',
-    [NotificationType.Warning]: 'phui-info-view phui-info-severity-warning',
-    [NotificationType.Error]: 'phui-info-view phui-info-severity-error',
-}
-
 export const checkIsPhabricator = (): boolean => !!document.querySelector('.phabricator-wordmark')
 
 export const phabricatorCodeHost: CodeHost = {
@@ -195,13 +190,11 @@ export const phabricatorCodeHost: CodeHost = {
         actionItemClass: classNames('button grey', styles.actionItem),
         actionItemIconClass: styles.icon,
     },
-    notificationClassNames,
     hoverOverlayClassProps: {
         className: classNames('aphront-dialog-view', styles.hoverOverlay),
         actionItemClassName: classNames('button grey', styles.hoverOverlayActionItem),
         closeButtonClassName: 'button grey btn-icon--phabricator',
         iconClassName: styles.hoverOverlayActionItemIcon,
-        getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
     },
     codeViewsRequireTokenization: true,
 }

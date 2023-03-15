@@ -2,7 +2,6 @@ import React, { useMemo, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { groupBy, sortBy, startCase, sumBy } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import {
@@ -35,7 +34,7 @@ import { CODEINTEL_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
-export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
+export const AnalyticsCodeIntelPage: React.FC = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'CodeIntel' })
     const { data, error, loading } = useQuery<CodeIntelStatisticsResult, CodeIntelStatisticsVariables>(
         CODEINTEL_STATISTICS,
@@ -355,7 +354,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                                 <b>{repos.preciseCodeIntelCount}</b> of your <b>{repos.count}</b> repositories have
                                 precise code navigation.{' '}
                                 <AnchorLink
-                                    to="/help/code_navigation/explanations/precise_code_intelligence"
+                                    to="/help/code_navigation/explanations/precise_code_navigation"
                                     target="_blank"
                                 >
                                     Learn how to improve precise code navigation coverage.

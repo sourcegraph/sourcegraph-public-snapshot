@@ -1,0 +1,18 @@
+{
+  "id": "4c066745-c514-4a79-a099-2fed5e49dea3",
+  "name": "sgtestazureforks2",
+  "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazureforks2",
+  "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/4c066745-c514-4a79-a099-2fed5e49dea3",
+  "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazureforks2",
+  "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazureforks2",
+  "isDisabled": false,
+  "isFork": true,
+  "project": {
+   "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+   "name": "sgtestazure",
+   "state": "wellFormed",
+   "revision": 11,
+   "visibility": "private",
+   "url": "https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"
+  }
+ }

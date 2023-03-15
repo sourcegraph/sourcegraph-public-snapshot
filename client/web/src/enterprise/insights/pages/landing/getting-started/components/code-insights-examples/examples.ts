@@ -202,8 +202,31 @@ export const LOG_4_J_INCIDENT_INSIGHT: SearchInsightExampleContent<Datum> = {
                 { x: new Date('February 1, 2022'), y: 200 },
             ],
             color: DATA_SERIES_COLORS.RED,
-            query:
-                'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp',
+            query: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp',
+            getXValue: datum => datum.x,
+            getYValue: datum => datum.y,
+        },
+    ],
+}
+
+export const OPENSSL_PYTHON: SearchInsightExampleContent<Datum> = {
+    title: 'Find vulernable OpenSSL versions in the Python Ecosystem',
+    repositories: 'All repositories',
+    series: [
+        {
+            id: 'a',
+            data: [
+                { x: new Date('October 28, 2022'), y: 385 },
+                { x: new Date('October 29, 2022'), y: 385 },
+                { x: new Date('October 30, 2022'), y: 386 },
+                { x: new Date('November 01, 2022'), y: 386 },
+                { x: new Date('November 02, 2022'), y: 378 },
+                { x: new Date('November 05, 2022'), y: 378 },
+                { x: new Date('November 07, 2022'), y: 367 },
+            ],
+            name: 'pip/pipenv',
+            color: DATA_SERIES_COLORS.BLUE,
+            query: 'file:requirements.*txt cryptography(s*[=~]=s*(36.|37.|38.0.[0-2])) patternType:regexp archived:no fork:no',
             getXValue: datum => datum.x,
             getYValue: datum => datum.y,
         },

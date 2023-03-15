@@ -4,23 +4,22 @@ import { EditorView } from '@codemirror/view'
 import { mdiInformationOutline } from '@mdi/js'
 import { debounce } from 'lodash'
 
+import { createDefaultSuggestions } from '@sourcegraph/branded'
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
-import { createDefaultSuggestions } from '@sourcegraph/search-ui'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { Icon, Button, Input, InputStatus } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
 import { HighlightLineRange } from '../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../stores'
 import { parseLineRange, serializeLineRange } from '../../serialize'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
 
 import styles from './NotebookFileBlockInputs.module.scss'
 
-interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'>, ThemeProps {
+interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'> {
     id: string
     queryInput: string
     lineRange: HighlightLineRange | null
@@ -135,8 +134,9 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
                     label="Line range"
                     className="mb-0"
                     error={
-                        isLineRangeValid === false &&
-                        'Line range is invalid. Enter a single line (1), a line range (1-10), or leave empty to show the entire file.'
+                        isLineRangeValid === false
+                            ? 'Line range is invalid. Enter a single line (1), a line range (1-10), or leave empty to show the entire file.'
+                            : undefined
                     }
                 />
             </div>

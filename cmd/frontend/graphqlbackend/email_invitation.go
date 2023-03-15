@@ -68,7 +68,7 @@ func (r *schemaResolver) InviteEmailToSourcegraph(ctx context.Context, args *str
 		}
 
 		urlSignUp, _ := url.Parse("/sign-up?invitedBy=" + invitedBy.Username)
-		if err := txemail.Send(ctx, txemail.Message{
+		if err := txemail.Send(ctx, "user_invite", txemail.Message{
 			To:       []string{args.Email},
 			Template: emailTemplateEmailInvitation,
 			Data: struct {

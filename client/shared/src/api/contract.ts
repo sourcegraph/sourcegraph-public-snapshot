@@ -1,30 +1,28 @@
 import { Remote, ProxyMarked } from 'comlink'
-import * as sourcegraph from 'sourcegraph'
+import { Unsubscribable } from 'rxjs'
+import { DocumentHighlight } from 'sourcegraph'
 
 import { Contributions, Evaluated, Raw, TextDocumentPositionParameters, HoverMerged } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { DeepReplace, ErrorLike } from '@sourcegraph/common'
+import { DeepReplace } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { GraphQLResult } from '@sourcegraph/http-client'
 
+import type { ReferenceContext } from '../codeintel/legacy-extensions/api'
+import { Occurrence } from '../codeintel/scip'
 import { ConfiguredExtension } from '../extensions/extension'
 import { SettingsCascade } from '../settings/settings'
 
 import { SettingsEdit } from './client/services/settings'
 import { ExecutableExtension } from './extension/activation'
-import { StatusBarItemWithKey } from './extension/api/codeEditor'
 import { ProxySubscribable } from './extension/api/common'
-import {
-    FileDecorationsByPath,
-    LinkPreviewMerged,
-    ViewContexts,
-    PanelViewData,
-    ViewProviderResult,
-    ProgressNotification,
-    PlainNotification,
-    ContributionOptions,
-} from './extension/extensionHostApi'
+import { ViewContexts, PanelViewData, ViewProviderResult, ContributionOptions } from './extension/extensionHostApi'
 import { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
+
+export interface ScipParameters {
+    referenceOccurrence: Occurrence
+    documentOccurrences: Occurrence[]
+}
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -44,20 +42,17 @@ export interface FlatExtensionHostAPI {
 
     setSearchContext: (searchContext: string | undefined) => void
 
-    // Search
-    transformSearchQuery: (query: string) => ProxySubscribable<string>
-
     // Languages
     getHover: (parameters: TextDocumentPositionParameters) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
-    getDocumentHighlights: (
-        parameters: TextDocumentPositionParameters
-    ) => ProxySubscribable<sourcegraph.DocumentHighlight[]>
+    getDocumentHighlights: (parameters: TextDocumentPositionParameters) => ProxySubscribable<DocumentHighlight[]>
     getDefinition: (
-        parameters: TextDocumentPositionParameters
+        parameters: TextDocumentPositionParameters,
+        scipParameters?: ScipParameters
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
     getReferences: (
         parameters: TextDocumentPositionParameters,
-        context: sourcegraph.ReferenceContext
+        context: ReferenceContext,
+        scipParameters?: ScipParameters
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
     getLocations: (
         id: string,
@@ -65,9 +60,6 @@ export interface FlatExtensionHostAPI {
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
 
     hasReferenceProvidersForDocument: (parameters: TextDocumentPositionParameters) => ProxySubscribable<boolean>
-
-    // Tree
-    getFileDecorations: (parameters: sourcegraph.FileDecorationContext) => ProxySubscribable<FileDecorationsByPath>
 
     // CONTEXT + CONTRIBUTIONS
 
@@ -83,7 +75,7 @@ export interface FlatExtensionHostAPI {
      * Register contributions and return an unsubscribable that deregisters the contributions.
      * Any expressions in the contributions will be parsed in the extension host.
      */
-    registerContributions: (rawContributions: Raw<Contributions>) => sourcegraph.Unsubscribable & ProxyMarked
+    registerContributions: (rawContributions: Raw<Contributions>) => Unsubscribable & ProxyMarked
 
     /**
      * Returns an observable that emits all contributions (merged) evaluated in the current model
@@ -107,8 +99,6 @@ export interface FlatExtensionHostAPI {
     getActiveViewComponentChanges: () => ProxySubscribable<ExtensionViewer | undefined>
 
     getActiveCodeEditorPosition: () => ProxySubscribable<TextDocumentPositionParameters | null>
-
-    getTextDecorations: (viewerId: ViewerId) => ProxySubscribable<clientType.TextDocumentDecoration[]>
 
     /**
      * Add a viewer.
@@ -142,10 +132,6 @@ export interface FlatExtensionHostAPI {
      */
     removeViewer(viewer: ViewerId): void
 
-    // Notifications
-    getPlainNotifications: () => ProxySubscribable<PlainNotification>
-    getProgressNotifications: () => ProxySubscribable<ProgressNotification & ProxyMarked>
-
     // Views
     getPanelViews: () => ProxySubscribable<PanelViewData[]>
 
@@ -168,10 +154,6 @@ export interface FlatExtensionHostAPI {
     ) => ProxySubscribable<ViewProviderResult[]>
 
     getGlobalPageViews: (context: ViewContexts['global/page']) => ProxySubscribable<ViewProviderResult[]>
-    getStatusBarItems: (viewerId: ViewerId) => ProxySubscribable<StatusBarItemWithKey[]>
-
-    // Content
-    getLinkPreviews: (url: string) => ProxySubscribable<LinkPreviewMerged | null>
 
     /**
      * Emits true when the initial batch of extensions have been loaded.
@@ -202,16 +184,7 @@ export interface MainThreadAPI {
     registerCommand: (
         name: string,
         command: Remote<((...args: any) => any) & ProxyMarked>
-    ) => sourcegraph.Unsubscribable & ProxyMarked
-
-    // User interaction methods
-    showMessage: (message: string) => Promise<void>
-    showInputBox: (options?: sourcegraph.InputBoxOptions) => Promise<string | undefined>
-
-    getSideloadedExtensionURL: () => ProxySubscribable<string | null>
-    getScriptURLForExtension: () =>
-        | undefined
-        | (((bundleURLs: string[]) => Promise<(string | ErrorLike)[]>) & ProxyMarked)
+    ) => Unsubscribable & ProxyMarked
 
     getEnabledExtensions: () => ProxySubscribable<(ConfiguredExtension | ExecutableExtension)[]>
 

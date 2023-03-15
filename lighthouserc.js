@@ -9,7 +9,7 @@ const config = {
         'http://localhost:3080/github.com/sourcegraph/lighthouse-ci-test-repository',
         'http://localhost:3080/github.com/sourcegraph/lighthouse-ci-test-repository/-/blob/index.js',
       ],
-      startServerCommand: 'yarn workspace @sourcegraph/web serve:prod',
+      startServerCommand: 'pnpm --filter @sourcegraph/web serve:prod',
       settings: {
         preset: 'desktop',
         chromeFlags: '--no-sandbox --disable-dev-shm-usage',

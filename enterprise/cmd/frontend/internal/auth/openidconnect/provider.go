@@ -11,9 +11,9 @@ import (
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -21,42 +21,79 @@ import (
 
 const providerType = "openidconnect"
 
-type provider struct {
-	config schema.OpenIDConnectAuthProvider
+// Provider is an implementation of providers.Provider for the OpenID Connect
+// authentication.
+type Provider struct {
+	config      schema.OpenIDConnectAuthProvider
+	authPrefix  string
+	callbackUrl string
 
 	mu         sync.Mutex
 	oidc       *oidcProvider
 	refreshErr error
 }
 
+// NewProvider creates and returns a new OpenID Connect authentication provider
+// using the given config.
+func NewProvider(config schema.OpenIDConnectAuthProvider, authPrefix string, callbackUrl string) providers.Provider {
+	return &Provider{
+		config:      config,
+		authPrefix:  authPrefix,
+		callbackUrl: callbackUrl,
+	}
+}
+
 // ConfigID implements providers.Provider.
-func (p *provider) ConfigID() providers.ConfigID {
+func (p *Provider) ConfigID() providers.ConfigID {
 	return providers.ConfigID{
-		Type: providerType,
+		Type: p.config.Type,
 		ID:   providerConfigID(&p.config),
 	}
 }
 
 // Config implements providers.Provider.
-func (p *provider) Config() schema.AuthProviders {
+func (p *Provider) Config() schema.AuthProviders {
 	return schema.AuthProviders{Openidconnect: &p.config}
 }
 
 // Refresh implements providers.Provider.
-func (p *provider) Refresh(ctx context.Context) error {
+func (p *Provider) Refresh(context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.oidc, p.refreshErr = newProvider(p.config.Issuer)
+	p.oidc, p.refreshErr = newOIDCProvider(p.config.Issuer)
 	return p.refreshErr
 }
 
-func (p *provider) getCachedInfoAndError() (*providers.Info, error) {
+func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
+	return GetPublicExternalAccountData(ctx, &account.AccountData)
+}
+
+// oidcVerifier returns the token verifier of the underlying OIDC provider.
+func (p *Provider) oidcVerifier() *oidc.IDTokenVerifier {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.oidc.Verifier(
+		&oidc.Config{
+			ClientID: p.config.ClientID,
+		},
+	)
+}
+
+// oidcUserInfo returns the user info using the given token source from the
+// underlying OIDC provider.
+func (p *Provider) oidcUserInfo(ctx context.Context, tokenSource oauth2.TokenSource) (*oidc.UserInfo, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.oidc.UserInfo(ctx, tokenSource)
+}
+
+func (p *Provider) getCachedInfoAndError() (*providers.Info, error) {
 	info := providers.Info{
 		ServiceID:   p.config.Issuer,
 		ClientID:    p.config.ClientID,
 		DisplayName: p.config.DisplayName,
 		AuthenticationURL: (&url.URL{
-			Path:     path.Join(authPrefix, "login"),
+			Path:     path.Join(p.authPrefix, "login"),
 			RawQuery: (url.Values{"pc": []string{providerConfigID(&p.config)}}).Encode(),
 		}).String(),
 	}
@@ -76,12 +113,13 @@ func (p *provider) getCachedInfoAndError() (*providers.Info, error) {
 }
 
 // CachedInfo implements providers.Provider.
-func (p *provider) CachedInfo() *providers.Info {
+func (p *Provider) CachedInfo() *providers.Info {
 	info, _ := p.getCachedInfoAndError()
 	return info
 }
 
-func (p *provider) oauth2Config() *oauth2.Config {
+// oauth2Config constructs and returns an *oauth2.Config from the provider.
+func (p *Provider) oauth2Config() *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     p.config.ClientID,
 		ClientSecret: p.config.ClientSecret,
@@ -90,7 +128,7 @@ func (p *provider) oauth2Config() *oauth2.Config {
 		// many instances have the "/.auth/callback" value hardcoded in their external auth
 		// provider, so we can't change it easily
 		RedirectURL: globals.ExternalURL().
-			ResolveReference(&url.URL{Path: path.Join(auth.AuthURLPrefix, "callback")}).
+			ResolveReference(&url.URL{Path: p.callbackUrl}).
 			String(),
 
 		Endpoint: p.oidc.Endpoint(),
@@ -120,12 +158,12 @@ type providerExtraClaims struct {
 
 var mockNewProvider func(issuerURL string) (*oidcProvider, error)
 
-func newProvider(issuerURL string) (*oidcProvider, error) {
+func newOIDCProvider(issuerURL string) (*oidcProvider, error) {
 	if mockNewProvider != nil {
 		return mockNewProvider(issuerURL)
 	}
 
-	bp, err := oidc.NewProvider(context.Background(), issuerURL)
+	bp, err := oidc.NewProvider(oidc.ClientContext(context.Background(), httpcli.ExternalClient), issuerURL)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +176,7 @@ func newProvider(issuerURL string) (*oidcProvider, error) {
 }
 
 // revokeToken implements Token Revocation. See https://tools.ietf.org/html/rfc7009.
-func revokeToken(ctx context.Context, p *provider, accessToken, tokenType string) error {
+func revokeToken(ctx context.Context, p *Provider, accessToken, tokenType string) error {
 	postData := url.Values{}
 	postData.Set("token", accessToken)
 	if tokenType != "" {

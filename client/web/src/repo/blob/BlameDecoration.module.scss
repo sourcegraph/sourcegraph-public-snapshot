@@ -1,24 +1,87 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+:root {
+    --blame-decoration-width: 300px;
+    --blame-recency-width: 5px;
+}
+
+@media (--lg-breakpoint-up) {
+    :root {
+        --blame-decoration-width: 400px;
+    }
+}
+
+.blame {
+    display: flex;
+    height: 100%;
+    user-select: none;
+}
+
+.recency {
+    // We need to overlap the border-top
+    top: -1px;
+    position: relative;
+    // Using 1px for a hairline border
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    height: calc(100% + 1px);
+    flex: 0 0 var(--blame-recency-width);
+}
+
+.recency-first-in-hunk {
+    height: calc(100%) !important;
+    top: 0 !important;
+}
+
 .popover {
     &-trigger {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: inline-block;
-        width: 100%;
-        max-width: 240px;
+        display: inline-flex;
+        width: calc(100% - var(--blame-recency-width));
+        max-width: calc(var(--blame-decoration-width) - var(--blame-recency-width));
 
-        color: var(--body-color);
+        color: var(--text-muted);
         &:hover {
-            color: var(--body-color);
+            color: var(--text-muted);
+            text-decoration: none;
+            .content {
+                text-decoration: underline;
+            }
+        }
+
+        .avatar {
+            min-width: 1rem;
+            width: 1rem;
+            min-height: 1rem;
+            height: 1rem;
+            font-size: 0.5rem;
+            vertical-align: text-top;
+        }
+
+        .author {
+            margin: 0 0.5rem;
+            margin-right: 0.25rem;
+            display: inline-block;
+            text-decoration: none;
         }
 
         .content {
+            flex-shrink: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .date {
+            min-width: 80px;
+            display: inline-block;
+        }
+
+        .content,
+        .author,
+        .date {
             white-space: pre;
             color: var(--text-muted);
             font-family: var(--font-family-base);
-
-            &::before {
-                content: attr(data-contents);
-            }
+            height: 1.5rem;
         }
     }
 
@@ -40,10 +103,15 @@
             color: var(--color-bg-2);
         }
 
-        .body {
+        .block {
             margin-top: 0.75rem;
             margin-bottom: 0.5rem;
             font-size: 0.75rem;
+        }
+
+        .body {
+            padding-left: 0.625rem;
+            padding-right: 1rem;
             line-height: 1.3333333333;
             color: var(--body-color);
         }
@@ -54,6 +122,10 @@
 
         .link {
             color: var(--body-color);
+        }
+
+        .footer-link {
+            font-weight: 500;
         }
     }
 }

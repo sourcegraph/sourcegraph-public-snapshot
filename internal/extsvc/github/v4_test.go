@@ -4,19 +4,26 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -84,6 +91,83 @@ func TestGetAuthenticatedUserV4(t *testing.T) {
 		update("GetAuthenticatedUserV4"),
 		user,
 	)
+}
+
+func TestV4Client_RateLimitRetry(t *testing.T) {
+	rcache.SetupForTest(t)
+
+	ctx := context.Background()
+
+	tests := map[string]struct {
+		secondaryLimitWasHit bool
+		primaryLimitWasHit   bool
+		succeeded            bool
+		numRequests          int
+	}{
+		"hit secondary limit": {
+			secondaryLimitWasHit: true,
+			succeeded:            true,
+			numRequests:          2,
+		},
+		"hit primary limit": {
+			primaryLimitWasHit: true,
+			succeeded:          true,
+			numRequests:        2,
+		},
+		"no rate limit hit": {
+			succeeded:   true,
+			numRequests: 1,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			numRequests := 0
+			succeeded := false
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				numRequests++
+				if tt.secondaryLimitWasHit {
+					w.Header().Add("retry-after", "1")
+					w.WriteHeader(http.StatusForbidden)
+					w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
+
+					tt.secondaryLimitWasHit = false
+					return
+				}
+
+				if tt.primaryLimitWasHit {
+					w.Header().Add("x-ratelimit-remaining", "0")
+					w.Header().Add("x-ratelimit-limit", "5000")
+					resetTime := time.Now().Add(time.Second)
+					w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
+					w.WriteHeader(http.StatusForbidden)
+					w.Write([]byte(`{"message": "Primary rate limit hit"}`))
+
+					tt.primaryLimitWasHit = false
+					return
+				}
+
+				succeeded = true
+				w.Write([]byte(`{"message": "Very nice"}`))
+			}))
+
+			t.Cleanup(srv.Close)
+
+			srvURL, err := url.Parse(srv.URL)
+			require.NoError(t, err)
+
+			client := NewV4Client("test", srvURL, nil, nil)
+			_, err = client.GetAuthenticatedUser(ctx)
+			if tt.succeeded {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+
+			assert.Equal(t, tt.numRequests, numRequests)
+			assert.Equal(t, tt.succeeded, succeeded)
+		})
+	}
 }
 
 func TestV4Client_SearchRepos(t *testing.T) {
@@ -200,12 +284,11 @@ func TestCreatePullRequest(t *testing.T) {
 	cli, save := newV4Client(t, "CreatePullRequest")
 	defer save()
 
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// The requests here cannot be easily rerun with `-update` since you can only
-	// open a pull request once. To update, push two new branches to
-	// automation-testing, and put their branch names into the `success` and
-	// `draft-pr` cases below.
+	// The requests here cannot be easily rerun with `-update` since you can only open a
+	// pull request once. To update, push two new branches with at least one commit each to
+	// automation-testing, and put the branch names into the `success` and 'draft-pr' cases below.
 	//
 	// You can update just this test with `-update CreatePullRequest`.
 	for i, tc := range []struct {
@@ -219,7 +302,7 @@ func TestCreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-8",
+				HeadRefName:  "test-pr-12",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 			},
@@ -230,8 +313,8 @@ func TestCreatePullRequest(t *testing.T) {
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
 				HeadRefName:  "always-open-pr",
-				Title:        "This is a test PR that is always open",
-				Body:         "Feel free to ignore this. This is a test PR that is always open.",
+				Title:        "This is a test PR that is always open (keep it open!)",
+				Body:         "Feel free to ignore this. This is a test PR that is always open and is sometimes updated.",
 			},
 			err: ErrPullRequestAlreadyExists.Error(),
 		},
@@ -250,7 +333,7 @@ func TestCreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-9",
+				HeadRefName:  "test-pr-13",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 				Draft:        true,
@@ -321,16 +404,13 @@ func TestClosePullRequest(t *testing.T) {
 	cli, save := newV4Client(t, "ClosePullRequest")
 	defer save()
 
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// The requests here can be rerun with `-update` provided you have two PRs
-	// set up properly:
+	// This test can be updated with `-update ClosePullRequest`, provided:
 	//
 	// 1. https://github.com/sourcegraph/automation-testing/pull/44 must be open.
 	// 2. https://github.com/sourcegraph/automation-testing/pull/29 must be
 	//    closed, but _not_ merged.
-	//
-	// You can update just this test with `-update ClosePullRequest`.
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
@@ -381,17 +461,14 @@ func TestReopenPullRequest(t *testing.T) {
 	cli, save := newV4Client(t, "ReopenPullRequest")
 	defer save()
 
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// The requests here can be rerun with `-update` provided you have two PRs
-	// set up properly:
+	// This test can be updated with `-update ReopenPullRequest`, provided:
 	//
 	// 1. https://github.com/sourcegraph/automation-testing/pull/355 must be
 	//    open.
 	// 2. https://github.com/sourcegraph/automation-testing/pull/356 must be
 	//    closed, but _not_ merged.
-	//
-	// You can update just this test with `-update ReopenPullRequest`.
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
@@ -432,17 +509,14 @@ func TestMarkPullRequestReadyForReview(t *testing.T) {
 	cli, save := newV4Client(t, "MarkPullRequestReadyForReview")
 	defer save()
 
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// The requests here can be rerun with `-update` provided you have two PRs
-	// set up properly:
+	// This test can be updated with `-update MarkPullRequestReadyForReview`, provided:
 	//
 	// 1. https://github.com/sourcegraph/automation-testing/pull/467 must be
 	//    open as a draft.
 	// 2. https://github.com/sourcegraph/automation-testing/pull/466 must be
 	//    open and ready for review.
-	//
-	// You can update just this test with `-update MarkPullRequestReadyForReview`.
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
@@ -500,8 +574,8 @@ func TestMergePullRequest(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pr := &PullRequest{
-			// https://github.com/sourcegraph/automation-testing/pull/465
-			ID: "PR_kwDODS5xec4waLb5",
+			// https://github.com/sourcegraph/automation-testing/pull/488
+			ID: "PR_kwDODS5xec5JaPkU",
 		}
 
 		err := cli.MergePullRequest(context.Background(), pr, true)
@@ -790,19 +864,19 @@ func TestV4Client_WithAuthenticator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	old := &V4Client{
+	oldClient := &V4Client{
 		apiURL: uri,
 		auth:   &auth.OAuthBearerToken{Token: "old_token"},
 	}
 
 	newToken := &auth.OAuthBearerToken{Token: "new_token"}
-	new := old.WithAuthenticator(newToken)
-	if old == new {
+	newClient := oldClient.WithAuthenticator(newToken)
+	if oldClient == newClient {
 		t.Fatal("both clients have the same address")
 	}
 
-	if new.auth != newToken {
-		t.Fatalf("token: want %p but got %p", newToken, new.auth)
+	if newClient.auth != newToken {
+		t.Fatalf("token: want %p but got %p", newToken, newClient.auth)
 	}
 }
 
@@ -859,6 +933,10 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		IsLocked:         true,
 		ViewerPermission: "ADMIN",
 		Visibility:       "internal",
+		RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{
+			{Topic: Topic{Name: "topic1"}},
+			{Topic: Topic{Name: "topic2"}},
+		}},
 	}
 
 	clojureGrapherRepo := &Repository{
@@ -898,7 +976,21 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isArchived": true,
       "isLocked": true,
       "viewerPermission": "ADMIN",
-      "visibility": "internal"
+      "visibility": "internal",
+	  "repositoryTopics": {
+		"nodes": [
+		  {
+		    "topic": {
+			  "name": "topic1"
+			}
+		  },
+		  {
+			"topic": {
+			  "name": "topic2"
+			}
+		  }
+	    ]
+	  }
     },
     "repo_sourcegraph_clojure_grapher": {
       "id": "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
@@ -934,7 +1026,21 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isArchived": true,
       "isLocked": true,
       "viewerPermission": "ADMIN",
-      "visibility": "internal"
+      "visibility": "internal",
+	  "repositoryTopics": {
+		  "nodes": [
+			  {
+				  "topic": {
+					  "name": "topic1"
+				  }
+			  },
+			  {
+				  "topic": {
+					  "name": "topic2"
+				  }
+			  }
+		  ]
+	  }
     },
     "repo_sourcegraph_clojure_grapher": null
   },
@@ -1010,8 +1116,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 			sort.Slice(tc.wantRepos, newSortFunc(tc.wantRepos))
 			sort.Slice(repos, newSortFunc(repos))
 
-			if !repoListsAreEqual(repos, tc.wantRepos) {
-				t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(tc.wantRepos))
+			if diff := cmp.Diff(repos, tc.wantRepos, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("got repositories:\n%s", diff)
 			}
 		})
 	}

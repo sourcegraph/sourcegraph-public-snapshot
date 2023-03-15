@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import React, { FC, forwardRef } from 'react'
 
 import { encodeURIPathComponent, pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
@@ -11,19 +11,20 @@ import { BatchChangesIcon } from './icons'
 
 interface RepoBatchChangesButtonProps {
     className?: string
+    textClassName?: string
     repoName: string
 }
 
-export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChangesButtonProps>> = ({
-    className,
-    repoName,
-}) => {
+export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChangesButtonProps>> = forwardRef<
+    HTMLAnchorElement,
+    RepoBatchChangesButtonProps
+>(({ className, textClassName, repoName }, forwardedRef) => {
     const { data } = useQuery<RepoChangesetsStatsResult, RepoChangesetsStatsVariables>(REPO_CHANGESETS_STATS, {
         variables: { name: repoName },
         fetchPolicy: 'cache-first',
     })
 
-    if (!data || !data.repository) {
+    if (!data?.repository) {
         return null
     }
 
@@ -31,13 +32,14 @@ export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChanges
 
     return (
         <Button
+            ref={forwardedRef}
             className={className}
             to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}
             variant="secondary"
             outline={true}
             as={Link}
         >
-            <Icon as={BatchChangesIcon} aria-hidden={true} /> Batch Changes
+            <Icon as={BatchChangesIcon} aria-hidden={true} /> <span className={textClassName}>Batch Changes</span>
             {open > 0 && (
                 <Badge
                     tooltip={`${open} open ${pluralize('batch changeset', open)}`}
@@ -58,4 +60,4 @@ export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChanges
             )}
         </Button>
     )
-}
+})

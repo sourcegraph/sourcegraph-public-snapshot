@@ -100,6 +100,7 @@
       "properties": {
         "webhooks": {
           "title": "BitbucketServerPluginWebhooks",
+          "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice",
           "type": "object",
           "required": ["secret"],
           "properties": {

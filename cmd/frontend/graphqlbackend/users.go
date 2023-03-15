@@ -2,10 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"strconv"
 	"sync"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -17,14 +19,22 @@ import (
 
 type usersArgs struct {
 	graphqlutil.ConnectionArgs
+	After         *string
 	Query         *string
 	Tag           *string
 	ActivePeriod  *string
 	InactiveSince *gqlutil.DateTime
 }
 
-func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
-	var opt database.UsersListOptions
+func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConnectionResolver, error) {
+	// 🚨 SECURITY: Verify listing users is allowed.
+	if err := checkMembersAccess(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	opt := database.UsersListOptions{
+		ExcludeSourcegraphOperators: true,
+	}
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
@@ -35,7 +45,15 @@ func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
 		opt.InactiveSince = args.InactiveSince.Time
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}
+	if args.After != nil && opt.LimitOffset != nil {
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		opt.LimitOffset.Offset = int(cursor)
+	}
+
+	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}, nil
 }
 
 type UserConnectionResolver interface {
@@ -58,23 +76,20 @@ type userConnectionResolver struct {
 	err        error
 }
 
-// compute caches results from the more expensive user list creation that occurs when activePeriod
-// is set to a specific length of time.
 func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, int, error) {
-	if r.activePeriod == nil {
-		return nil, 0, errors.New("activePeriod must not be nil")
-	}
 	r.once.Do(func() {
 		var err error
-		switch *r.activePeriod {
-		case "TODAY":
-			r.opt.UserIDs, err = usagestats.ListRegisteredUsersToday(ctx, r.db)
-		case "THIS_WEEK":
-			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisWeek(ctx, r.db)
-		case "THIS_MONTH":
-			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisMonth(ctx, r.db)
-		default:
-			err = errors.Errorf("unknown user active period %s", *r.activePeriod)
+		if r.activePeriod != nil && *r.activePeriod != "ALL_TIME" {
+			switch *r.activePeriod {
+			case "TODAY":
+				r.opt.UserIDs, err = usagestats.ListRegisteredUsersToday(ctx, r.db)
+			case "THIS_WEEK":
+				r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisWeek(ctx, r.db)
+			case "THIS_MONTH":
+				r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisMonth(ctx, r.db)
+			default:
+				err = errors.Errorf("unknown user active period %s", *r.activePeriod)
+			}
 		}
 		if err != nil {
 			r.err = err
@@ -92,18 +107,7 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 }
 
 func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, error) {
-	// 🚨 SECURITY: Only site admins can list users.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
-	var users []*types.User
-	var err error
-	if r.useCache() {
-		users, _, err = r.compute(ctx)
-	} else {
-		users, err = r.db.Users().List(ctx, &r.opt)
-	}
+	users, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -122,50 +126,40 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 }
 
 func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// 🚨 SECURITY: Only site admins can count users.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return 0, err
-	}
-
-	var count int
-	var err error
-	if r.useCache() {
-		_, count, err = r.compute(ctx)
-	} else {
-		count, err = r.db.Users().Count(ctx, &r.opt)
-	}
+	_, count, err := r.compute(ctx)
 	return int32(count), err
 }
 
 func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	count, err := r.TotalCount(ctx)
+	users, totalCount, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && int(count) > r.opt.Limit), nil
-}
 
-func (r *userConnectionResolver) useCache() bool {
-	return r.activePeriod != nil && *r.activePeriod != "ALL_TIME"
-}
-
-// staticUserConnectionResolver implements the GraphQL type UserConnection based on an underlying
-// list of users that is computed statically.
-type staticUserConnectionResolver struct {
-	db    database.DB
-	users []*types.User
-}
-
-func (r *staticUserConnectionResolver) Nodes() []*UserResolver {
-	resolvers := make([]*UserResolver, len(r.users))
-	for i, user := range r.users {
-		resolvers[i] = NewUserResolver(r.db, user)
+	// We would have had all results when no limit set
+	if r.opt.LimitOffset == nil {
+		return graphqlutil.HasNextPage(false), nil
 	}
-	return resolvers
+
+	after := r.opt.LimitOffset.Offset + len(users)
+
+	// We got less results than limit, means we've had all results
+	if after < r.opt.Limit {
+		return graphqlutil.HasNextPage(false), nil
+	}
+
+	if totalCount > after {
+		return graphqlutil.NextPageCursor(strconv.Itoa(after)), nil
+	}
+	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *staticUserConnectionResolver) TotalCount() int32 { return int32(len(r.users)) }
-
-func (r *staticUserConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(false) // not paginated
+func checkMembersAccess(ctx context.Context, db database.DB) error {
+	// 🚨 SECURITY: Only site admins can list users on sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+			return err
+		}
+	}
+	return nil
 }

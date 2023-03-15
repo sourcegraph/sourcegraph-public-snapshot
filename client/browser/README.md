@@ -64,7 +64,7 @@ It works as follows:
 ## Requirements
 
 - `node`
-- `yarn`
+- `pnpm`
 - `make`
 
 ## Development
@@ -72,7 +72,7 @@ It works as follows:
 To build all the browser extensions for all browsers at once:
 
 ```bash
-yarn run dev
+pnpm run dev
 ```
 
 To only build for a single browser (which makes builds faster in local development), set the env var `TARGETS=chrome` or `TARGETS=firefox`.
@@ -98,8 +98,8 @@ Click reload for Sourcegraph at `chrome://extensions`
 In a separate terminal session run:
 
 ```bash
-yarn global add web-ext
-yarn run dev:firefox
+pnpm global add web-ext
+pnpm run dev:firefox
 ```
 
 A Firefox window will be spun up with the extension already installed.
@@ -111,7 +111,7 @@ Save a file and wait for webpack to finish rebuilding.
 #### Caveats
 
 The window that is spun up is completely separate from any existing sessions you have on Firefox.
-You'll have to sign into everything at the beginning of each development session(each time you run `yarn run dev:firefox`).
+You'll have to sign into everything at the beginning of each development session(each time you run `pnpm run dev:firefox`).
 You should ensure you're signed into any Sourcegraph instance you point the extension at as well as GitHub.
 
 ### Firefox (manual)
@@ -129,7 +129,7 @@ Click reload for Sourcegraph at `about:debugging`
 
 > **Note**: Requires MacOS with Xcode installed
 
-1. `yarn workspace @sourcegraph/browser dev:safari`
+1. `pnpm --filter @sourcegraph/browser dev:safari`
 1. Open Safari then: `Develop > Allow Unsigned Extensions`
 1. Open `client/browser/build/Sourcegraph for Safari/Sourcegraph for Safari.xcodeproj` using Xcode
 1. Choose `Sourcegraph for Safari (macOS)` in the top toolbar and click Run icon
@@ -147,7 +147,7 @@ Click reload for Sourcegraph at `about:debugging`
   - develop
     - add/edit test case or at least its part with navigation to a certain page
     - if there's no page snapshot for created test or page URL referenced in the existing test has been changed, test will fail with 'Page not found' error
-    - to generate or update page snapshots for tests run `yarn record-integration`
+    - to generate or update page snapshots for tests run `pnpm record-integration`
 - E2E tests: `sg test bext-build` & `sg test bext-e2e`
 
 ### E2E tests
@@ -167,7 +167,7 @@ It currently does not run in CI and is intended to be run manually for release t
 
 All test suites in `integration` run in CI. These tests run the browser extension against recordings of code hosts (using [Polly.JS](https://netflix.github.io/pollyjs/#/)) and mock data for our GraphQL API.
 
-To update all recordings, run `yarn record-integration`. To update a subset of recordings, run `POLLYJS_MODE=record SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-integration --grep=YOUR_PATTERN`, where `YOUR_PATTERN` is typically a test name.
+To update all recordings, run `pnpm record-integration`. To update a subset of recordings, run `POLLYJS_MODE=record SOURCEGRAPH_BASE_URL=https://sourcegraph.com pnpm test-integration --grep=YOUR_PATTERN`, where `YOUR_PATTERN` is typically a test name.
 
 ## Deploy
 
@@ -221,11 +221,11 @@ Use `nvm` to select the Node.js version specified in `.nvmrc`.
 nvm install
 ```
 
-Install dependencies with `yarn` (install it globally with `npm i -g yarn` if needed) and build.
+Install dependencies with `pnpm install` (install it globally with `npm i -g pnpm` if needed) and build.
 
 ```sh
-yarn
-yarn run build-browser-extension
+pnpm install
+pnpm run build-browser-extension
 ```
 
 The build step automatically pulls in [sourcegraph/code-intel-extensions](https://github.com/sourcegraph/code-intel-extensions) as a dependency.
@@ -241,7 +241,7 @@ The output will be in `browser/build`:
 
 ## Create a zip of the browser extension source code
 
-The `yarn run create-source-zip` command will create `sourcegraph.zip`, an archive of the source that can be used to do a build of the browser extension.
+The `pnpm run create-source-zip` command will create `sourcegraph.zip`, an archive of the source that can be used to do a build of the browser extension.
 
 This will pull the source code at a given revision (by default, the `bext/release` branch on GitHub) and create a zip of the source code, which can then be used to reproduce the exact build. Some directories of the repo, which are not relevant to the browser extension, are excluded from the archive.
 
@@ -251,5 +251,33 @@ Use this process to create a source code zip to attach to a Firefox add-on submi
 
 ```
 cd client/browser
-yarn run create-source-zip
+pnpm run create-source-zip
 ```
+
+## Testing the Phabricator native extension locally
+
+This is an adjusted version of @lguychard's [comment here](https://github.com/sourcegraph/sourcegraph/pull/11825#issuecomment-652040751).
+
+1. Start a Sourcegraph instance locally (`sg start`)
+2. Start Phabricator instance, running the latest version of Phabricator, using `./dev/phabricator/start.sh`
+3. Install the Sourcegraph extension into Phabricator using `./dev/install-sourcegraph.sh`
+4. Navigated to `127.0.0.1` to access the Phabricator instance, and logged in with `admin` / `sourcegraph` (as printed by `./dev/phabricator/start.sh`)
+5. Navigated to `http://127.0.0.1/config/group/sourcegraph/` (Config -> Application Settings -> Sourcegraph)
+6. Edited `corsOrigin` in site config at `https://sourcegraph.test:3443/site-admin/configuration` to include `http://127.0.0.1` (might need to be added in `dev-private` repo).
+7. Added a repository by mirroring a public GitHub repository (we have some docs for this [here](https://docs.sourcegraph.com/dev/phabricator_gitolite), but they need improving):
+   - Navigated to `http://127.0.0.1/diffusion/edit/?vcs=git`
+   - Created a repository with name `JsonRPC2`, callsign `JRPC`, short name `jrpc`
+   - Navigated to `http://127.0.0.1/source/jrpc/manage/uris/` (URIs)
+   - For all three default URIs:
+     - Edited, set I/O type "No IO", Display type "Hidden")
+   - Added a new URI, set it to `https://github.com/sourcegraph/jsonrpc2.git`
+   - Set I/O type "Observe", display type "Visible" (to mirror from GitHub)
+   - In `http://127.0.0.1/source/jrpc/manage/`, "Activate repository"
+   - Reload `http://127.0.0.1/source/jrpc/manage/` until status showed up as "Fully imported"
+8. If you are having issues with the daemons not updating the status, you can do the following:
+   - Shell into the Docker container running Phabricator: `docker exec -it phabricator /bin/bash`
+   - Switch into the main Phabricator directory: `cd /opt/bitnami/phabricator`
+   - Restart the daemons: `./bin/phd restart`
+9. Navigated to `http://127.0.0.1/source/jrpc/browse/master/async.go`
+
+Whenever you make changes to the native extension code, you need to run `pnpm build` inside the `client/browser` directory before seeing the changes in effect on the Phabricator instance.

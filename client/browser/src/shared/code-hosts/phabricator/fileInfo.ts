@@ -5,11 +5,10 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { FileInfo, DiffInfo, BlobInfo } from '../shared/codeHost'
 
+import { PhabricatorMode } from '.'
 import { queryConduitHelper, resolveDiffRevision } from './backend'
 import { getFilepathFromFileForDiff, getFilePathFromFileForRevision } from './scrape'
 import { getPhabricatorState } from './util'
-
-import { PhabricatorMode } from '.'
 
 export const resolveRevisionFileInfo = (
     codeView: HTMLElement,
@@ -17,29 +16,27 @@ export const resolveRevisionFileInfo = (
     queryConduit = queryConduitHelper
 ): Observable<DiffInfo> =>
     getPhabricatorState(window.location, requestGraphQL, queryConduit).pipe(
-        map(
-            (state): DiffInfo => {
-                if (state.mode !== PhabricatorMode.Revision) {
-                    throw new Error(
-                        `Unexpected Phabricator state for resolveRevisionFileInfo, PhabricatorMode: ${state.mode}`
-                    )
-                }
-                const { rawRepoName, headCommitID, baseCommitID } = state
-                const filePath = getFilePathFromFileForRevision(codeView)
-                return {
-                    base: {
-                        rawRepoName,
-                        filePath,
-                        commitID: baseCommitID,
-                    },
-                    head: {
-                        rawRepoName,
-                        filePath,
-                        commitID: headCommitID,
-                    },
-                }
+        map((state): DiffInfo => {
+            if (state.mode !== PhabricatorMode.Revision) {
+                throw new Error(
+                    `Unexpected Phabricator state for resolveRevisionFileInfo, PhabricatorMode: ${state.mode}`
+                )
             }
-        )
+            const { rawRepoName, headCommitID, baseCommitID } = state
+            const filePath = getFilePathFromFileForRevision(codeView)
+            return {
+                base: {
+                    rawRepoName,
+                    filePath,
+                    commitID: baseCommitID,
+                },
+                head: {
+                    rawRepoName,
+                    filePath,
+                    commitID: headCommitID,
+                },
+            }
+        })
     )
 
 export const resolveDiffFileInfo = (
@@ -122,21 +119,19 @@ export const resolveDiffusionFileInfo = (
     queryConduit = queryConduitHelper
 ): Observable<BlobInfo> =>
     getPhabricatorState(window.location, requestGraphQL, queryConduit).pipe(
-        map(
-            (state): BlobInfo => {
-                if (state.mode !== PhabricatorMode.Diffusion) {
-                    throw new Error(
-                        `Unexpected PhabricatorState for resolveDiffusionFileInfo, PhabricatorMode: ${state.mode}`
-                    )
-                }
-                const { filePath, commitID, rawRepoName } = state
-                return {
-                    blob: {
-                        filePath,
-                        commitID,
-                        rawRepoName,
-                    },
-                }
+        map((state): BlobInfo => {
+            if (state.mode !== PhabricatorMode.Diffusion) {
+                throw new Error(
+                    `Unexpected PhabricatorState for resolveDiffusionFileInfo, PhabricatorMode: ${state.mode}`
+                )
             }
-        )
+            const { filePath, commitID, rawRepoName } = state
+            return {
+                blob: {
+                    filePath,
+                    commitID,
+                    rawRepoName,
+                },
+            }
+        })
     )

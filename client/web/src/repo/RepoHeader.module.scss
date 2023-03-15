@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .repo-header {
     flex: none;
     padding: 0;
@@ -19,6 +21,10 @@
     }
 }
 
+.action-list {
+    gap: 0.625rem;
+}
+
 .action-list-item:not(:empty) {
     /* Have a small gap between buttons so they are visually distinct when pressed */
     /* stylelint-disable-next-line declaration-property-unit-allowed-list */
@@ -32,4 +38,10 @@
 
 .spacer {
     flex: 1 1 0;
+}
+
+.breadcrumb-wrap {
+    @media (--md-breakpoint-up) {
+        flex-wrap: nowrap !important;
+    }
 }

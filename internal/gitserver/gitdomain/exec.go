@@ -2,12 +2,13 @@ package gitdomain
 
 import (
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/grafana/regexp"
 	"k8s.io/utils/strings/slices"
+
+	"github.com/sourcegraph/log"
 )
 
 var (
@@ -36,6 +37,13 @@ var (
 		"cat-file":     {},
 		"lfs":          {},
 		"apply":        {"--cached", "-p0"},
+
+		// Commands used by Batch Changes when publishing changesets.
+		"init":       {},
+		"reset":      {"-q"},
+		"commit":     {"-m"},
+		"push":       {"--force"},
+		"update-ref": {},
 
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},
@@ -98,21 +106,22 @@ func isAllowedDiffArg(arg string) bool {
 	// make sure that arg is not a local file
 	_, err := os.Stat(arg)
 
-	if os.IsNotExist(err) {
-		return true
-	}
-
-	return false
+	return os.IsNotExist(err)
 }
 
 // isAllowedGitArg checks if the arg is allowed.
 func isAllowedGitArg(allowedArgs []string, arg string) bool {
 	// Split the arg at the first equal sign and check the LHS against the allowlist args.
 	splitArg := strings.Split(arg, "=")[0]
+
+	// We use -- to specify the end of command options.
+	// See: https://unix.stackexchange.com/a/11382/214756.
+	if splitArg == "--" {
+		return true
+	}
+
 	for _, allowedArg := range allowedArgs {
-		// We use -- to specify the end of command options.
-		// See: https://unix.stackexchange.com/a/11382/214756.
-		if splitArg == allowedArg || splitArg == "--" {
+		if splitArg == allowedArg {
 			return true
 		}
 	}

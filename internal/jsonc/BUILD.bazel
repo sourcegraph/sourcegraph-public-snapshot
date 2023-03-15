@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "jsonc",
+    srcs = ["jsonc.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/jsonc",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_sourcegraph_jsonx//:jsonx",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "jsonc_test",
+    srcs = ["jsonc_test.go"],
+    embed = [":jsonc"],
+)

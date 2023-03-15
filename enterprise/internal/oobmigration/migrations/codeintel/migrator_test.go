@@ -2,20 +2,24 @@ package codeintel
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	rawDB := lastDBWithLSIF(logger, t)
+	db := database.NewDB(logger, rawDB)
 	store := basestore.NewWithHandle(db.Handle())
 	driver := &testMigrationDriver{}
 	migrator := newMigrator(store, driver, migratorOptions{
@@ -126,7 +130,7 @@ type testMigrationDriver struct{}
 func (m *testMigrationDriver) ID() int                 { return 10 }
 func (m *testMigrationDriver) Interval() time.Duration { return time.Second }
 
-func (m *testMigrationDriver) MigrateRowUp(scanner scanner) ([]any, error) {
+func (m *testMigrationDriver) MigrateRowUp(scanner dbutil.Scanner) ([]any, error) {
 	var a, b, c int
 	if err := scanner.Scan(&a, &b, &c); err != nil {
 		return nil, err
@@ -135,11 +139,15 @@ func (m *testMigrationDriver) MigrateRowUp(scanner scanner) ([]any, error) {
 	return []any{a, b + c}, nil
 }
 
-func (m *testMigrationDriver) MigrateRowDown(scanner scanner) ([]any, error) {
+func (m *testMigrationDriver) MigrateRowDown(scanner dbutil.Scanner) ([]any, error) {
 	var a, b, c int
 	if err := scanner.Scan(&a, &b, &c); err != nil {
 		return nil, err
 	}
 
 	return []any{a, b - c}, nil
+}
+
+func lastDBWithLSIF(logger log.Logger, t *testing.T) *sql.DB {
+	return dbtest.NewDBAtRev(logger, t, "4.5.0")
 }

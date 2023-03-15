@@ -9,22 +9,25 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func testStore(db *sql.DB, options Options) *store {
-	return newStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), options, &observation.TestContext)
+func testStore[T workerutil.Record](db *sql.DB, options Options[T]) *store[T] {
+	return newStore(&observation.TestContext, basestore.NewHandleWithDB(log.NoOp(), db, sql.TxOptions{}), options)
 }
 
 type TestRecord struct {
 	ID            int
 	State         string
-	ExecutionLogs []ExecutionLogEntry
+	ExecutionLogs []executor.ExecutionLogEntry
 }
 
 func (v TestRecord) RecordID() int {
@@ -100,11 +103,11 @@ func setupStoreTest(t *testing.T) *sql.DB {
 	return db
 }
 
-func defaultTestStoreOptions(clock glock.Clock) Options {
-	return Options{
+func defaultTestStoreOptions[T workerutil.Record](clock glock.Clock, scanFn func(sc dbutil.Scanner) (T, error)) Options[T] {
+	return Options[T]{
 		Name:              "test",
 		TableName:         "workerutil_test",
-		Scan:              BuildWorkerScan(testScanRecord),
+		Scan:              BuildWorkerScan(scanFn),
 		OrderByExpression: sqlf.Sprintf("workerutil_test.created_at"),
 		ColumnExpressions: []*sqlf.Query{
 			sqlf.Sprintf("workerutil_test.id"),

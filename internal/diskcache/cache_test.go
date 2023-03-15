@@ -113,7 +113,7 @@ func TestEvict(t *testing.T) {
 			}
 			f.Close()
 		} else {
-			if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0600); err != nil {
+			if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o600); err != nil {
 				t.Fatal(err)
 			}
 		}

@@ -7,6 +7,7 @@ import {
     ExternalServiceKind,
     FileExternalLinksResult,
     FileNamesResult,
+    FileTreeEntriesResult,
     RepoChangesetsStatsResult,
     ResolveRepoRevResult,
 } from '../graphql-operations'
@@ -30,6 +31,9 @@ export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): T
     },
 })
 
+export const createFileTreeEntriesResult = (url: string, toplevelFiles: string[]): FileTreeEntriesResult =>
+    createTreeEntriesResult(url, toplevelFiles)
+
 export const createBlobContentResult = (
     content: string,
     html: string = `<div style="color:red">${content}<div>`,
@@ -38,8 +42,10 @@ export const createBlobContentResult = (
     repository: {
         commit: {
             file: {
+                __typename: 'VirtualFile',
                 content,
                 richHTML: '',
+                totalLines: content.split('\n').length,
                 highlight: {
                     aborted: false,
                     html,
@@ -65,6 +71,7 @@ export const createFileExternalLinksResult = (
 
 export const createRepoChangesetsStatsResult = (): RepoChangesetsStatsResult => ({
     repository: {
+        id: 'a',
         changesetsStats: {
             open: 2,
             merged: 4,

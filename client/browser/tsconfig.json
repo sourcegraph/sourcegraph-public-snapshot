@@ -1,14 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
-  "references": [
-    { "path": "../shared" },
-    { "path": "../branded" },
-    { "path": "../../schema" },
-    { "path": "../http-client" },
-    { "path": "../common" },
-    { "path": "../codeintellify" },
-    { "path": "../client-api" },
-  ],
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
     "baseUrl": ".",
@@ -29,5 +20,37 @@
     "coverage",
     "stories", // TODO fix type errors and include
     "src/end-to-end",
+  ],
+  "references": [
+    {
+      "path": "../branded",
+    },
+    {
+      "path": "../build-config",
+    },
+    {
+      "path": "../client-api",
+    },
+    {
+      "path": "../codeintellify",
+    },
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../extension-api",
+    },
+    {
+      "path": "../extension-api-types",
+    },
+    {
+      "path": "../http-client",
+    },
+    {
+      "path": "../shared",
+    },
+    {
+      "path": "../wildcard",
+    },
   ],
 }

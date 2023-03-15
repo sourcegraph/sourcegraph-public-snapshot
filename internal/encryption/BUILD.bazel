@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "encryption",
+    srcs = [
+        "encryptable.go",
+        "helpers.go",
+        "json_encryptable.go",
+        "key.go",
+        "noop.go",
+        "rsa.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/encryption",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/trace/ot",
+        "//lib/errors",
+        "@com_github_google_uuid//:uuid",
+        "@org_golang_x_crypto//ssh",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "encryption_test",
+    srcs = [
+        "encryptable_test.go",
+        "json_encryptable_test.go",
+        "rsa_test.go",
+        "utils_test.go",
+    ],
+    embed = [":encryption"],
+)

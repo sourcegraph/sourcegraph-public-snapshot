@@ -83,9 +83,8 @@ interface SavePolicyConfigurationResult {
 
 export const useSavePolicyConfiguration = (isNew: boolean): SavePolicyConfigurationResult => {
     const mutation = isNew ? CREATE_POLICY_CONFIGURATION : UPDATE_POLICY_CONFIGURATION
-    const [savePolicyConfiguration, { loading, error }] = useMutation<UpdateCodeIntelligenceConfigurationPolicyResult>(
-        mutation
-    )
+    const [savePolicyConfiguration, { loading, error }] =
+        useMutation<UpdateCodeIntelligenceConfigurationPolicyResult>(mutation)
 
     return {
         savePolicyConfiguration,

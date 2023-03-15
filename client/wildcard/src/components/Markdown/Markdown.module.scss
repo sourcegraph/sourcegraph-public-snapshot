@@ -1,0 +1,433 @@
+.markdown {
+    // marked wraps all content in <p>, even if there is only one child.
+    // If that is the case, treat the <p> as if it wasn't there
+    // so that the child can influence the layout (e.g. in a flexbox).
+    > p:only-child {
+        display: contents;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        /**
+         * So that the border only goes under the text, but the heading still
+         * takes up full width.
+         */
+        display: table;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+
+        a:global(.anchor) {
+            opacity: 0;
+            font-size: 1rem; // keep consistently-sized anchor links
+            margin-left: -1rem;
+            padding: 0.125rem;
+            &::before {
+                content: '#';
+            }
+        }
+        &:hover a:global(.anchor) {
+            opacity: 1;
+        }
+    }
+
+    h1 {
+        // workaround for svg in Sourcegraph README h1 logo not rendering with a size.
+        // also maybe intentional, to allow the h1 ruler all the way across the page?
+        width: 100%;
+    }
+
+    table,
+    th,
+    td {
+        border: 1px solid var(--border-color);
+        padding: 0.5rem 1rem;
+    }
+
+    table {
+        margin-bottom: 1rem;
+    }
+
+    ol,
+    ul {
+        margin-left: 0;
+    }
+
+    code,
+    pre {
+        background: var(--code-bg);
+    }
+
+    pre {
+        padding: 0.5rem;
+    }
+
+    code {
+        display: inline-block;
+        padding: 0.25rem;
+    }
+
+    p > code {
+        white-space: nowrap;
+    }
+
+    blockquote {
+        padding: 0 1rem;
+        color: var(--text-muted);
+        border-left: 4px solid var(--border-color);
+    }
+
+    img {
+        max-width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+// Steps to generate colors / variables:
+//   1. Run `chroma --html --style="github[-dark]" --html-all-styles`
+//   2. Use multicursor and kebab-case to match formatting below
+//   3. Generate preliminary color variables: `[css code here]`.split("\n").filter(_ => _.includes("color")).map(_ => `--${_.slice(_.indexOf("/* ")+3, _.indexOf(" */"))}-fg: ${_.slice(_.indexOf("color: ")+7, _.indexOf(" ", _.indexOf("color: ") + 7))}`).join("\n")
+//   4. Paste them in `colors.scss` and fix any background-foreground issues
+//   5. Prepend "chroma-" prefix to the child classes
+:global {
+    /* stylelint-disable */
+    /* chroma-error */
+    .chroma .chroma-err {
+        color: var(--chroma-error-fg);
+        background-color: var(--chroma-error-bg);
+    }
+    /* chroma-line-link */
+    .chroma .chroma-lnlinks {
+        outline: none;
+        text-decoration: none;
+        color: var(--chroma-line-link-fg);
+    }
+    /* chroma-line-table-td */
+    .chroma .chroma-lntd {
+        vertical-align: top;
+        padding: 0;
+        margin: 0;
+        border: 0;
+    }
+    /* chroma-line-table */
+    .chroma .chroma-lntable {
+        border-spacing: 0;
+        padding: 0;
+        margin: 0;
+        border: 0;
+    }
+    /* chroma-line-highlight */
+    .chroma .chroma-hl {
+        background-color: var(--chroma-line-highlight-bg);
+    }
+    /* chroma-line-numbers-table */
+    .chroma .chroma-lnt {
+        white-space: pre;
+        user-select: none;
+        margin-right: 0.4rem;
+        padding: 0 0.4rem 0 0.4rem;
+        color: var(--chroma-line-numbers-table-fg);
+    }
+    /* chroma-line-numbers */
+    .chroma .chroma-ln {
+        white-space: pre;
+        user-select: none;
+        margin-right: 0.4rem;
+        padding: 0 0.4rem 0 0.4rem;
+        color: var(--chroma-line-numbers-fg);
+    }
+    /* chroma-line */
+    .chroma .chroma-line {
+        display: flex;
+    }
+    /* chroma-keyword */
+    .chroma .chroma-k {
+        color: var(--chroma-keyword-fg);
+        font-weight: bold;
+    }
+    /* chroma-keyword-constant */
+    .chroma .chroma-kc {
+        color: var(--chroma-keyword-constant-fg);
+        font-weight: bold;
+    }
+    /* chroma-keyword-declaration */
+    .chroma .chroma-kd {
+        color: var(--chroma-keyword-declaration-fg);
+        font-weight: bold;
+    }
+    /* chroma-keyword-namespace */
+    .chroma .chroma-kn {
+        color: var(--chroma-keyword-namespace-fg);
+        font-weight: bold;
+    }
+    /* chroma-keyword-pseudo */
+    .chroma .chroma-kp {
+        color: var(--chroma-keyword-pseudo-fg);
+        font-weight: bold;
+    }
+    /* chroma-keyword-reserved */
+    .chroma .chroma-kr {
+        color: var(--chroma-keyword-reserved-fg);
+        font-weight: bold;
+    }
+    /* chroma-keyword-type */
+    .chroma .chroma-kt {
+        color: var(--chroma-keyword-type-fg);
+        font-weight: bold;
+    }
+    /* chroma-name-attribute */
+    .chroma .chroma-na {
+        color: var(--chroma-name-attribute-fg);
+    }
+    /* chroma-name-builtin */
+    .chroma .chroma-nb {
+        color: var(--chroma-name-builtin-fg);
+    }
+    /* chroma-name-builtin-pseudo */
+    .chroma .chroma-bp {
+        color: var(--chroma-name-builtin-pseudo-fg);
+    }
+    /* chroma-name-class */
+    .chroma .chroma-nc {
+        color: var(--chroma-name-class-fg);
+        font-weight: bold;
+    }
+    /* chroma-name-constant */
+    .chroma .chroma-no {
+        color: var(--chroma-name-constant-fg);
+    }
+    /* chroma-name-decorator */
+    .chroma .chroma-nd {
+        color: var(--chroma-name-decorator-fg);
+        font-weight: bold;
+    }
+    /* chroma-name-entity */
+    .chroma .chroma-ni {
+        color: var(--chroma-name-entity-fg);
+    }
+    /* chroma-name-exception */
+    .chroma .chroma-ne {
+        color: var(--chroma-name-exception-fg);
+        font-weight: bold;
+    }
+    /* chroma-name-function */
+    .chroma .chroma-nf {
+        color: var(--chroma-name-function-fg);
+        font-weight: bold;
+    }
+    /* chroma-name-label */
+    .chroma .chroma-nl {
+        color: var(--chroma-name-label-fg);
+        font-weight: bold;
+    }
+    /* chroma-name-namespace */
+    .chroma .chroma-nn {
+        color: var(--chroma-name-namespace-fg);
+    }
+    /* chroma-name-tag */
+    .chroma .chroma-nt {
+        color: var(--chroma-name-tag-fg);
+    }
+    /* chroma-name-variable */
+    .chroma .chroma-nv {
+        color: var(--chroma-name-variable-fg);
+    }
+    /* chroma-name-variable-class */
+    .chroma .chroma-vc {
+        color: var(--chroma-name-variable-class-fg);
+    }
+    /* chroma-name-variable-global */
+    .chroma .chroma-vg {
+        color: var(--chroma-name-variable-global-fg);
+    }
+    /* chroma-name-variable-instance */
+    .chroma .chroma-vi {
+        color: var(--chroma-name-variable-instance-fg);
+    }
+    /* chroma-literal-string */
+    .chroma .chroma-s {
+        color: var(--chroma-literal-string-fg);
+    }
+    /* chroma-literal-string-affix */
+    .chroma .chroma-sa {
+        color: var(--chroma-literal-string-affix-fg);
+    }
+    /* chroma-literal-string-backtick */
+    .chroma .chroma-sb {
+        color: var(--chroma-literal-string-backtick-fg);
+    }
+    /* chroma-literal-string-char */
+    .chroma .chroma-sc {
+        color: var(--chroma-literal-string-char-fg);
+    }
+    /* chroma-literal-string-delimiter */
+    .chroma .chroma-dl {
+        color: var(--chroma-literal-string-delimiter-fg);
+    }
+    /* chroma-literal-string-doc */
+    .chroma .chroma-sd {
+        color: var(--chroma-literal-string-doc-fg);
+    }
+    /* chroma-literal-string-double */
+    .chroma .chroma-s2 {
+        color: var(--chroma-literal-string-double-fg);
+    }
+    /* chroma-literal-string-escape */
+    .chroma .chroma-se {
+        color: var(--chroma-literal-string-escape-fg);
+    }
+    /* chroma-literal-string-heredoc */
+    .chroma .chroma-sh {
+        color: var(--chroma-literal-string-heredoc-fg);
+    }
+    /* chroma-literal-string-interpol */
+    .chroma .chroma-si {
+        color: var(--chroma-literal-string-interpol-fg);
+    }
+    /* chroma-literal-string-other */
+    .chroma .chroma-sx {
+        color: var(--chroma-literal-string-other-fg);
+    }
+    /* chroma-literal-string-regex */
+    .chroma .chroma-sr {
+        color: var(--chroma-literal-string-regex-fg);
+    }
+    /* chroma-literal-string-single */
+    .chroma .chroma-s1 {
+        color: var(--chroma-literal-string-single-fg);
+    }
+    /* chroma-literal-string-symbol */
+    .chroma .chroma-ss {
+        color: var(--chroma-literal-string-symbol-fg);
+    }
+    /* chroma-literal-number */
+    .chroma .chroma-m {
+        color: var(--chroma-literal-number-fg);
+    }
+    /* chroma-literal-number-bin */
+    .chroma .chroma-mb {
+        color: var(--chroma-literal-number-bin-fg);
+    }
+    /* chroma-literal-number-float */
+    .chroma .chroma-mf {
+        color: var(--chroma-literal-number-float-fg);
+    }
+    /* chroma-literal-number-hex */
+    .chroma .chroma-mh {
+        color: var(--chroma-literal-number-hex-fg);
+    }
+    /* chroma-literal-number-integer */
+    .chroma .chroma-mi {
+        color: var(--chroma-literal-number-integer-fg);
+    }
+    /* chroma-literal-number-integer-long */
+    .chroma .chroma-il {
+        color: var(--chroma-literal-number-integer-long-fg);
+    }
+    /* chroma-literal-number-oct */
+    .chroma .chroma-mo {
+        color: var(--chroma-literal-number-oct-fg);
+    }
+    /* chroma-operator */
+    .chroma .chroma-o {
+        color: var(--chroma-operator-fg);
+        font-weight: bold;
+    }
+    /* chroma-operator-word */
+    .chroma .chroma-ow {
+        color: var(--chroma-operator-word-fg);
+        font-weight: bold;
+    }
+    /* chroma-comment */
+    .chroma .chroma-c {
+        color: var(--chroma-comment-fg);
+        font-style: italic;
+    }
+    /* chroma-comment-hashbang */
+    .chroma .chroma-ch {
+        color: var(--chroma-comment-hashbang-fg);
+        font-style: italic;
+    }
+    /* chroma-comment-multiline */
+    .chroma .chroma-cm {
+        color: var(--chroma-comment-multiline-fg);
+        font-style: italic;
+    }
+    /* chroma-comment-single */
+    .chroma .chroma-c1 {
+        color: var(--chroma-comment-single-fg);
+        font-style: italic;
+    }
+    /* chroma-comment-special */
+    .chroma .chroma-cs {
+        color: var(--chroma-comment-special-fg);
+        font-weight: bold;
+        font-style: italic;
+    }
+    /* chroma-comment-preproc */
+    .chroma .chroma-cp {
+        color: var(--chroma-comment-preproc-fg);
+        font-weight: bold;
+        font-style: italic;
+    }
+    /* chroma-comment-preproc-file */
+    .chroma .chroma-cpf {
+        color: var(--chroma-comment-preproc-file-fg);
+        font-weight: bold;
+        font-style: italic;
+    }
+    /* chroma-generic-deleted */
+    .chroma .chroma-gd {
+        color: var(--chroma-generic-deleted-fg);
+        background-color: var(--chroma-generic-deleted-bg);
+    }
+    /* chroma-generic-emph */
+    .chroma .chroma-ge {
+        color: var(--chroma-generic-emph-fg);
+        font-style: italic;
+    }
+    /* chroma-generic-error */
+    .chroma .chroma-gr {
+        color: var(--chroma-generic-error-fg);
+    }
+    /* chroma-generic-heading */
+    .chroma .chroma-gh {
+        color: var(--chroma-generic-heading-fg);
+    }
+    /* chroma-generic-inserted */
+    .chroma .chroma-gi {
+        color: var(--chroma-generic-inserted-fg);
+        background-color: var(--chroma-generic-inserted-bg);
+    }
+    /* chroma-generic-output */
+    .chroma .chroma-go {
+        color: var(--chroma-generic-output-fg);
+    }
+    /* chroma-generic-prompt */
+    .chroma .chroma-gp {
+        color: var(--chroma-generic-prompt-fg);
+    }
+    /* chroma-generic-strong */
+    .chroma .chroma-gs {
+        font-weight: bold;
+    }
+    /* chroma-generic-subheading */
+    .chroma .chroma-gu {
+        color: var(--chroma-generic-subheading-fg);
+    }
+    /* chroma-generic-traceback */
+    .chroma .chroma-gt {
+        color: var(--chroma-generic-traceback-fg);
+    }
+    /* chroma-generic-underline */
+    .chroma .chroma-gl {
+        text-decoration: underline;
+    }
+    /* chroma-text-whitespace */
+    .chroma .chroma-w {
+        color: var(--chroma-text-whitespace-fg);
+    }
+}

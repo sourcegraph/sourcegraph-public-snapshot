@@ -37,6 +37,9 @@ At the heart of managing your Sourcegraph instance is Site configuration. Site c
 
 To access site config, go to **User menu > Site admin > Site configuration**.
 
+### Admin users configuration 
+If you need to add additional site admins, you can do so on the `/site-admin/users` page, under the actions for an individual user account. Any admin can revoke a user's admin privileges later using the same actions menu. 
+
 ### Connecting to code hosts
 Sourcegraph supports connections to and repository syncing from any Git code host. Once connected, Sourcegraph will clone and index your repos so that users can search and navigate across them. To get started, go to **User menu > Site Admin > Manage code hosts > Add code host**.
 
@@ -53,11 +56,11 @@ To get started setting up user authentication and SSO, please reference our [aut
 #### Repository Permissions:
 In addition to configuring user authentication to Sourcegraph, you may also want to ensure that users can only view repositories that they would have access to on your code host. Sourcegraph supports the ability to inherit and enforce these repository permissions on a per-user basis and can be configured for connections to GitHub, GitLab, and Bitbucket Server / Bitbucket Data Center.
 
-For more info, check out our complete [repository permission documentation.](../repo/permissions.md#repository-permissions)
+For more info, check out our complete [repository permissions documentation.](../permissions/index.md)
 
 
 ### External services 
-By default, Sourcegraph bundles the services it needs to operate into installations. These services include PostgreSQL, Redis, and MinIO. 
+By default, Sourcegraph bundles the services it needs to operate into installations. These services include PostgreSQL, Redis, and blobstore. 
 
 Your Sourcegraph instance can also be configured to use existing external services if you wish. For more information on configuring Sourcegraph to use your external services, please reference this [documentation.](../external_services/index.md)
 

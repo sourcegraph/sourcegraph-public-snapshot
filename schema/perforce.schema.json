@@ -19,7 +19,7 @@
       "examples": ["admin"]
     },
     "p4.passwd": {
-      "description": "The ticket value for the user (P4PASSWD).",
+      "description": "The ticket value for the user (P4PASSWD). You can get this by running `p4 login -p` or `p4 login -pa`. It should look like `6211C5E719EDE6925855039E8F5CC3D2`.",
       "type": "string"
     },
     "p4.client": {

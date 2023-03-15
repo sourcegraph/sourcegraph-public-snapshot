@@ -37,7 +37,7 @@ if [[ -f $COMMIT_FILE ]] && [[ -f $COMPARE_FILE ]]; then
   gsutil cp ./ui/assets/compare-report.html "gs://sourcegraph_reports/statoscope-reports/${BRANCH}/compare-report.html"
 
   echo "${COMMIT_FILE}" "${COMPARE_FILE}"
-  yarn workspace @sourcegraph/web run report-bundle-diff \
+  pnpm --filter @sourcegraph/web run report-bundle-diff \
     "${COMMIT_FILE}" \
     "${COMPARE_FILE}"
 else

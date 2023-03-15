@@ -3,20 +3,18 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    # Disabled due to flakes: https://github.com/sourcegraph/sourcegraph/issues/33183
-    # - depguard
+    - depguard
     - forbidigo
     - gocritic
     - goimports
     - gosimple
     - govet
     - ineffassign
-    # this is flakey: https://github.com/sourcegraph/sourcegraph/issues/34304
-    # - nolintlint
+    #- nolintlint see https://github.com/golangci/golangci-lint/issues/3228.
     - staticcheck
     - typecheck
     - unconvert
-    - unused
+    # - unused
     - unparam
     - exportloopref
 
@@ -34,6 +32,7 @@ linters-settings:
       - github.com/hashicorp/go-multierror: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
       # More performant regexp
       - regexp: "Use github.com/grafana/regexp instead"
+      - github.com/hexops/autogold$: "Use github.com/hexops/autogold/v2 instead"
   gocritic:
     disabled-checks:
       - appendAssign # Too many false positives
@@ -43,9 +42,14 @@ linters-settings:
       - exitAfterDefer # Only occurs in auxiliary tools
       - ifElseChain # Noisy for not much gain
       - singleCaseSwitch # Noisy for not much gain
+  #unparam:
+
   govet:
     disable:
       - composites
+  staticcheck:
+    checks:
+      - "all"
   forbidigo:
     forbid:
       # Use errors.Newf instead
@@ -58,6 +62,9 @@ issues:
     - path: _test\.go
       linters:
         - bodyclose
+        - unparam
+        - gosimple
+        - unused
 
 run:
   timeout: 5m
@@ -91,10 +98,3 @@ run:
     - main.go
     # In ./internal/cmd/progress-bot
     - main.go
-    # In ./internal/cmd/resources-report
-    - aws.go
-    - gcp.go
-    - main.go
-    - resource.go
-    - sheets.go
-    - slack.go

@@ -9,6 +9,7 @@ export interface Checks {
     isNotContext: true | false | undefined
     isNotCommitOrDiff: true | false | undefined
     isNoNewLines: true | false | undefined
+    isNotRev: true | false | undefined
 }
 
 export const searchQueryValidator = (value: string | undefined): Checks => {
@@ -20,6 +21,7 @@ export const searchQueryValidator = (value: string | undefined): Checks => {
             isNotContext: undefined,
             isNotCommitOrDiff: undefined,
             isNoNewLines: undefined,
+            isNotRev: undefined,
         }
     }
 
@@ -49,6 +51,10 @@ export const searchQueryValidator = (value: string | undefined): Checks => {
             filter => resolveFilter(filter.field.value)?.type === FilterType.repo && filter.value
         )
 
+        const hasRev = filters.some(
+            filter => resolveFilter(filter.field.value)?.type === FilterType.rev && filter.value
+        )
+
         const hasContext = filters.some(
             filter => resolveFilter(filter.field.value)?.type === FilterType.context && filter.value
         )
@@ -70,6 +76,7 @@ export const searchQueryValidator = (value: string | undefined): Checks => {
             isNotContext: !hasContext,
             isNotCommitOrDiff: !hasCommit && !hasDiff,
             isNoNewLines: !hasNewLines,
+            isNotRev: !hasRev,
         }
     }
 
@@ -80,5 +87,6 @@ export const searchQueryValidator = (value: string | undefined): Checks => {
         isNotContext: false,
         isNotCommitOrDiff: false,
         isNoNewLines: false,
+        isNotRev: false,
     }
 }

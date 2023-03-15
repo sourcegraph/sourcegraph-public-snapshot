@@ -2,42 +2,40 @@ import React, { useState, useCallback } from 'react'
 
 import addDays from 'date-fns/addDays'
 import endOfDay from 'date-fns/endOfDay'
-import { Observable } from 'rxjs'
-import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { gql, useMutation } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Alert, Button, useEventObservable, Link, Label, Input } from '@sourcegraph/wildcard'
+import { Alert, Button, Link, Label, Input, ErrorAlert, Form, Select, useDebounce } from '@sourcegraph/wildcard'
 
-import { mutateGraphQL } from '../../../../backend/graphql'
+import {
+    GenerateProductLicenseForSubscriptionResult,
+    GenerateProductLicenseForSubscriptionVariables,
+} from '../../../../graphql-operations'
 import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
+import { hasUnknownTags, ProductLicenseTags, UnknownTagWarning } from '../../../productSubscription/ProductLicenseTags'
 
 interface Props {
     subscriptionID: Scalars['ID']
+    subscriptionAccount: string
     onGenerate: () => void
 }
-
-const LOADING = 'loading' as const
 
 interface FormData {
     /** Comma-separated license tags. */
     tags: string
-
+    customer: string
+    plan: string
     userCount: number
-    validDays: number | null
-    expiresAt: number | null
+    expiresAt: Date
 }
 
-const EMPTY_FORM_DATA: FormData = {
+const getEmptyFormData = (account: string): FormData => ({
     tags: '',
+    customer: account,
+    plan: 'enterprise-1',
     userCount: 1,
-    validDays: 1,
-    expiresAt: addDaysAndRoundToEndOfDay(1),
-}
+    expiresAt: endOfDay(addDays(Date.now(), 366)),
+})
 
 const DURATION_LINKS = [
     { label: '7 days', days: 7 },
@@ -47,6 +45,28 @@ const DURATION_LINKS = [
     { label: '1 year', days: 366 }, // 366 not 365 to account for leap year
 ]
 
+const GENERATE_PRODUCT_LICENSE = gql`
+    mutation GenerateProductLicenseForSubscription($productSubscriptionID: ID!, $license: ProductLicenseInput!) {
+        dotcom {
+            generateProductLicenseForSubscription(productSubscriptionID: $productSubscriptionID, license: $license) {
+                id
+            }
+        }
+    }
+`
+
+const tagsFromString = (tagString: string): string[] =>
+    tagString
+        .split(',')
+        .map(item => item.trim())
+        .filter(tag => tag !== '')
+
+const getTagsFromFormData = (formData: FormData): string[] => [
+    `customer:${formData.customer}`,
+    `plan:${formData.plan}`,
+    ...tagsFromString(formData.tags),
+]
+
 /**
  * Displays a form to generate a new product license for a product subscription.
  *
@@ -54,76 +74,83 @@ const DURATION_LINKS = [
  */
 export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionComponent<
     React.PropsWithChildren<Props>
-> = ({ subscriptionID, onGenerate }) => {
-    const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA)
+> = ({ subscriptionID, subscriptionAccount, onGenerate }) => {
+    const [formData, setFormData] = useState<FormData>(getEmptyFormData(subscriptionAccount))
 
-    const onPlanChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => setFormData(formData => ({ ...formData, tags: event.currentTarget.value })),
+    const onPlanChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
+        event => setFormData(formData => ({ ...formData, plan: event.target.value })),
+        []
+    )
+
+    const onCustomerChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        event => setFormData(formData => ({ ...formData, customer: event.target.value })),
+        []
+    )
+
+    const onTagsChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        event => setFormData(formData => ({ ...formData, tags: event.target.value || '' })),
         []
     )
 
     const onUserCountChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => setFormData(formData => ({ ...formData, userCount: event.currentTarget.valueAsNumber })),
+        event => setFormData(formData => ({ ...formData, userCount: event.target.valueAsNumber })),
         []
     )
 
-    const setValidDays = useCallback((validDays: number | null): void => {
+    const setValidDays = useCallback((validDays: number): void => {
         setFormData(formData => ({
             ...formData,
-            validDays,
-            expiresAt: validDays !== null ? addDaysAndRoundToEndOfDay(validDays || 0) : null,
+            expiresAt: addDaysAndRoundToEndOfDay(validDays),
         }))
     }, [])
-    const onValidDaysChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+    const onExpiresAtChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         event =>
-            setValidDays(Number.isNaN(event.currentTarget.valueAsNumber) ? null : event.currentTarget.valueAsNumber),
-        [setValidDays]
+            setFormData(formData => ({
+                ...formData,
+                expiresAt: endOfDay(event.target.valueAsDate || getEmptyFormData(subscriptionAccount).expiresAt),
+            })),
+        [subscriptionAccount]
     )
 
-    const dismissAlert = useCallback((): void => setFormData(EMPTY_FORM_DATA), [])
-
-    /**
-     * The result of creating the product subscription, or undefined when not pending or complete,
-     * or loading, or an error.
-     */
-    const [nextCreation, creation] = useEventObservable(
-        useCallback(
-            (creations: Observable<void>) =>
-                creations.pipe(
-                    switchMap(() => {
-                        if (formData.expiresAt === null) {
-                            throw new Error('invalid expiresAt')
-                        }
-                        return generateProductLicenseForSubscription({
-                            productSubscriptionID: subscriptionID,
-                            license: {
-                                tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
-                                userCount: formData.userCount,
-                                expiresAt: Math.ceil(formData.expiresAt / 1000),
-                            },
-                        }).pipe(
-                            tap(() => onGenerate()),
-                            catchError(error => [asError(error)]),
-                            startWith(LOADING)
-                        )
-                    })
-                ),
-            [formData.expiresAt, formData.tags, formData.userCount, onGenerate, subscriptionID]
-        )
+    const dismissAlert = useCallback(
+        (): void => setFormData(getEmptyFormData(subscriptionAccount)),
+        [subscriptionAccount]
     )
+
+    const [generateLicense, { loading, error, data }] = useMutation<
+        GenerateProductLicenseForSubscriptionResult['dotcom']['generateProductLicenseForSubscription'],
+        GenerateProductLicenseForSubscriptionVariables
+    >(GENERATE_PRODUCT_LICENSE, {
+        variables: {
+            productSubscriptionID: subscriptionID,
+            license: {
+                tags: getTagsFromFormData(formData),
+                userCount: formData.userCount,
+                expiresAt: Math.floor(formData.expiresAt.getTime() / 1000),
+            },
+        },
+        onCompleted: onGenerate,
+    })
+
+    const plans =
+        window.context.licenseInfo?.knownLicenseTags?.filter(tag => tag.startsWith('plan:')).map(tag => tag.slice(5)) ||
+        []
+
     const onSubmit = useCallback<React.FormEventHandler>(
         event => {
             event.preventDefault()
-            nextCreation()
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            generateLicense()
         },
-        [nextCreation]
+        [generateLicense]
     )
 
-    const disableForm = Boolean(creation === LOADING || (creation && !isErrorLike(creation)))
+    const disableForm = loading || error !== undefined
+    const tags = useDebounce<string[]>(tagsFromString(formData.tags), 300)
 
     return (
         <div className="site-admin-generate-product-license-for-subscription-form">
-            {creation && !isErrorLike(creation) && creation !== LOADING ? (
+            {data ? (
                 <div className="border rounded border-success mb-5">
                     <Alert
                         variant="success"
@@ -137,30 +164,66 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                 </div>
             ) : (
                 <Form onSubmit={onSubmit}>
+                    <Alert variant="info">
+                        Please read the{' '}
+                        <Link to="https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer">
+                            guide for how to create a license key for a new prospect or new customer.
+                        </Link>
+                    </Alert>
+                    <div className="form-group">
+                        <Label htmlFor="site-admin-create-product-subscription-page__customer_input">Customer</Label>
+                        <Input
+                            id="site-admin-create-product-subscription-page__customer_input"
+                            type="text"
+                            disabled={disableForm}
+                            value={formData.customer || ''}
+                            onChange={onCustomerChange}
+                        />
+                        <small className="form-text text-muted">
+                            Name of the customer. Defaults to the Account name from the subscription.
+                        </small>
+                    </div>
+                    <div className="form-group">
+                        <Select
+                            id="site-admin-create-product-subscription-page__plan_select"
+                            label="Plan"
+                            disabled={disableForm}
+                            value={formData.plan}
+                            onChange={onPlanChange}
+                            className="mb-0"
+                        >
+                            {plans.map(plan => (
+                                <option key={plan} value={plan}>
+                                    {plan}
+                                </option>
+                            ))}
+                        </Select>
+                        <small className="form-text text-muted">Subscription plan. Required parameter.</small>
+                    </div>
                     <div className="form-group">
                         <Label htmlFor="site-admin-create-product-subscription-page__tags">Tags</Label>
                         <Input
                             type="text"
-                            className="form-control"
                             id="site-admin-create-product-subscription-page__tags"
                             disabled={disableForm}
                             value={formData.tags}
-                            list="knownPlans"
-                            onChange={onPlanChange}
+                            onChange={onTagsChange}
+                            list="known-tags"
+                            className="mb-0"
                         />
-                        <datalist id="knownPlans">
-                            <option value="true-up" />
-                            <option value="trial" />
-                            <option value="starter,trial" />
-                            <option value="starter,true-up" />
-                            <option value="dev" />
+                        <datalist id="known-tags">
+                            {tags.map(tag => (
+                                <option key={tag} value={tag}>
+                                    {tag}
+                                </option>
+                            ))}
                         </datalist>
+                        <div className="mt-1">
+                            <ProductLicenseTags tags={tags} />
+                        </div>
+                        {hasUnknownTags(tags) && <UnknownTagWarning />}
                         <small className="form-text text-muted">
-                            Tags restrict a license. Please refer to{' '}
-                            <Link to="https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer">
-                                How to create a license key for a new prospect or new customer
-                            </Link>{' '}
-                            for a complete guide.
+                            Comma separated list of tags. Tags restrict a license.
                         </small>
                     </div>
                     <div className="form-group">
@@ -175,15 +238,14 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                         />
                     </div>
                     <div className="form-group">
-                        <Label htmlFor="site-admin-create-product-subscription-page__validDays">Valid for (days)</Label>
+                        <Label htmlFor="site-admin-create-product-subscription-page__expiresAt">Expires At</Label>
                         <Input
-                            type="number"
-                            id="site-admin-create-product-subscription-page__validDays"
-                            disabled={disableForm}
-                            value={formData.validDays || ''}
-                            min={1}
-                            max={2000} // avoid overflowing int32
-                            onChange={onValidDaysChange}
+                            type="date"
+                            id="site-admin-create-product-subscription-page__expiresAt"
+                            min={formatDateForInput(addDaysAndRoundToEndOfDay(1))}
+                            max={formatDateForInput(addDaysAndRoundToEndOfDay(2000))}
+                            value={formatDateForInput(formData.expiresAt)}
+                            onChange={onExpiresAtChange}
                         />
                         <small className="form-text text-muted">
                             {formData.expiresAt !== null ? (
@@ -217,7 +279,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                     </Button>
                 </Form>
             )}
-            {isErrorLike(creation) && <ErrorAlert className="mt-3" error={creation} />}
+            {error && <ErrorAlert className="mt-3" error={error} />}
         </div>
     )
 }
@@ -227,41 +289,6 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
  * generous interpretation of "valid for N days" to avoid confusion over timezones or "will it
  * expire at the beginning of the day or at the end of the day?"
  */
-function addDaysAndRoundToEndOfDay(amount: number): number {
-    return endOfDay(addDays(Date.now(), amount)).getTime()
-}
+const addDaysAndRoundToEndOfDay = (amount: number): Date => endOfDay(addDays(Date.now(), amount))
 
-function generateProductLicenseForSubscription(
-    args: GQL.IGenerateProductLicenseForSubscriptionOnDotcomMutationArguments
-): Observable<Pick<GQL.IProductSubscription, 'id'>> {
-    return mutateGraphQL(
-        gql`
-            mutation GenerateProductLicenseForSubscription(
-                $productSubscriptionID: ID!
-                $license: ProductLicenseInput!
-            ) {
-                dotcom {
-                    generateProductLicenseForSubscription(
-                        productSubscriptionID: $productSubscriptionID
-                        license: $license
-                    ) {
-                        id
-                    }
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.dotcom ||
-                !data.dotcom.generateProductLicenseForSubscription ||
-                (errors && errors.length > 0)
-            ) {
-                throw createAggregateError(errors)
-            }
-            return data.dotcom.generateProductLicenseForSubscription
-        })
-    )
-}
+const formatDateForInput = (date: Date): string => date.toISOString().slice(0, 10)

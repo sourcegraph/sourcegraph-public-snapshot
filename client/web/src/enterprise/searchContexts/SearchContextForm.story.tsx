@@ -3,11 +3,12 @@ import { subDays } from 'date-fns'
 import { NEVER, Observable, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { IOrg, IRepository, ISearchContext } from '@sourcegraph/shared/src/schema'
+import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
+import { OrgAreaOrganizationFields, RepositoryFields } from '../../graphql-operations'
 
 import { SearchContextForm } from './SearchContextForm'
 
@@ -23,7 +24,7 @@ const config: Meta = {
 
 export default config
 
-const onSubmit = (): Observable<ISearchContext> =>
+const onSubmit = (): Observable<SearchContextFields> =>
     of({
         __typename: 'SearchContext',
         id: '1',
@@ -37,9 +38,11 @@ const onSubmit = (): Observable<ISearchContext> =>
         query: '',
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,
+        viewerHasAsDefault: false,
+        viewerHasStarred: false,
     })
 
-const searchContextToEdit: ISearchContext = {
+const searchContextToEdit: SearchContextFields = {
     __typename: 'SearchContext',
     id: '1',
     spec: 'public-ctx',
@@ -53,17 +56,18 @@ const searchContextToEdit: ISearchContext = {
         {
             __typename: 'SearchContextRepositoryRevisions',
             revisions: ['HEAD'],
-            repository: { name: 'github.com/example/example' } as IRepository,
+            repository: { name: 'github.com/example/example' } as RepositoryFields,
         },
     ],
     updatedAt: subDays(new Date(), 1).toISOString(),
     viewerCanManage: true,
+    viewerHasAsDefault: false,
+    viewerHasStarred: false,
 }
 
 const authUser: AuthenticatedUser = {
     __typename: 'User',
     id: '0',
-    email: 'alice@sourcegraph.com',
     username: 'alice',
     avatarURL: null,
     session: { canSignOut: true },
@@ -75,14 +79,16 @@ const authUser: AuthenticatedUser = {
         nodes: [
             { id: '0', settingsURL: '#', name: 'ACME', displayName: 'Acme Corp' },
             { id: '1', settingsURL: '#', name: 'BETA', displayName: 'Beta Inc' },
-        ] as IOrg[],
+        ] as OrgAreaOrganizationFields[],
     },
     tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
     tosAccepted: true,
     searchable: true,
-    emails: [],
+    emails: [{ email: 'alice@sourcegraph.com', isPrimary: true, verified: true }],
+    latestSettings: null,
+    permissions: { nodes: [] },
 }
 
 const deleteSearchContext = sinon.fake(() => NEVER)

@@ -34,9 +34,6 @@ func TestGCSInit(t *testing.T) {
 	} else if value := calls[0].Arg1; value != "pid" {
 		t.Errorf("unexpected projectId argument. want=%s have=%s", "pid", value)
 	}
-	if calls := bucketHandle.UpdateFunc.History(); len(calls) != 0 {
-		t.Fatalf("unexpected number of Update calls. want=%d have=%d", 0, len(calls))
-	}
 }
 
 func TestGCSInitBucketExists(t *testing.T) {
@@ -58,9 +55,6 @@ func TestGCSInitBucketExists(t *testing.T) {
 	if calls := bucketHandle.CreateFunc.History(); len(calls) != 0 {
 		t.Fatalf("unexpected number of Create calls. want=%d have=%d", 0, len(calls))
 	}
-	if calls := bucketHandle.UpdateFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Update calls. want=%d have=%d", 1, len(calls))
-	}
 }
 
 func TestGCSUnmanagedInit(t *testing.T) {
@@ -76,9 +70,6 @@ func TestGCSUnmanagedInit(t *testing.T) {
 
 	if calls := gcsClient.BucketFunc.History(); len(calls) != 0 {
 		t.Fatalf("unexpected number of Bucket calls. want=%d have=%d", 0, len(calls))
-	}
-	if calls := bucketHandle.UpdateFunc.History(); len(calls) != 0 {
-		t.Fatalf("unexpected number of Update calls. want=%d have=%d", 0, len(calls))
 	}
 	if calls := bucketHandle.CreateFunc.History(); len(calls) != 0 {
 		t.Fatalf("unexpected number of Create calls. want=%d have=%d", 0, len(calls))
@@ -246,16 +237,6 @@ func TestGCSDelete(t *testing.T) {
 
 	if calls := objectHandle.DeleteFunc.History(); len(calls) != 1 {
 		t.Fatalf("unexpected number of Delete calls. want=%d have=%d", 1, len(calls))
-	}
-}
-
-func TestGCSLifecycle(t *testing.T) {
-	client := rawGCSClient(nil, true)
-
-	if lifecycle := client.lifecycle(); len(lifecycle.Rules) != 1 {
-		t.Fatalf("unexpected lifecycle rules")
-	} else if value := lifecycle.Rules[0].Condition.AgeInDays; value != 3 {
-		t.Errorf("unexpected expiration days. want=%d have=%d", 3, value)
 	}
 }
 

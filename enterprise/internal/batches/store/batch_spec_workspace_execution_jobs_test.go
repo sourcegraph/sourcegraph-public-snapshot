@@ -475,11 +475,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 		createWorkspaces := func(t *testing.T, batchSpec *btypes.BatchSpec, workspaces ...*btypes.BatchSpecWorkspace) {
 			t.Helper()
 
-			batchSpec.NamespaceUserID = 1
-			if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-				t.Fatal(err)
-			}
-
 			for i, workspace := range workspaces {
 				workspace.BatchSpecID = batchSpec.ID
 				workspace.RepoID = 1

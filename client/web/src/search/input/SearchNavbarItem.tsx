@@ -1,36 +1,34 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useRef, useEffect } from 'react'
 
-import * as H from 'history'
+import { useLocation, useNavigate } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/search'
-import { SearchBox } from '@sourcegraph/search-ui'
+import { SearchBox, Toggles } from '@sourcegraph/branded'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Form } from '@sourcegraph/wildcard'
 
-import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
-import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
+import { useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
+import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
+import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 
+import { LazyExperimentalSearchInput } from './LazyExperimentalSearchInput'
 import { useRecentSearches } from './useRecentSearches'
 
 interface Props
     extends SettingsCascadeProps,
-        ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
+    isLightTheme: boolean
 }
 
 const selectQueryState = ({
@@ -39,53 +37,89 @@ const selectQueryState = ({
     submitSearch,
     searchCaseSensitivity,
     searchPatternType,
+    searchMode,
 }: NavbarQueryState): Pick<
     NavbarQueryState,
-    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'searchPatternType'
-> => ({ queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType })
+    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'searchPatternType' | 'searchMode'
+> => ({ queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode })
 
 /**
  * The search item in the navbar
  */
 export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
-    const autoFocus = props.isSearchAutoFocusRequired ?? true
-    // This uses the same logic as in Layout.tsx until we have a better solution
-    // or remove the search help button
-    const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
-    const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType } = useNavbarQueryState(
-        selectQueryState,
-        shallow
-    )
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-    const showSearchContextManagement = useExperimentalFeatures(
-        features => features.showSearchContextManagement ?? false
-    )
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
+    const navigate = useNavigate()
+    const location = useLocation()
+
+    const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
+        useNavbarQueryState(selectQueryState, shallow)
+
+    const [experimentalQueryInput] = useExperimentalQueryInput()
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
-    const { addRecentSearch } = useRecentSearches()
+    const { recentSearches } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
             submitSearch({
-                history: props.history,
+                historyOrNavigate: navigate,
+                location,
                 source: 'nav',
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
-                addRecentSearch,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.selectedSearchContextSpec, addRecentSearch]
+        [submitSearch, navigate, location, props.selectedSearchContextSpec]
     )
+    const submitSearchOnChangeRef = useRef(submitSearchOnChange)
+    useEffect(() => {
+        submitSearchOnChangeRef.current = submitSearchOnChange
+    }, [submitSearchOnChange])
 
-    const onSubmit = useCallback(
-        (event?: React.FormEvent): void => {
-            event?.preventDefault()
-            submitSearchOnChange()
-        },
-        [submitSearchOnChange]
-    )
+    const onSubmit = useCallback((event?: React.FormEvent): void => {
+        event?.preventDefault()
+        submitSearchOnChangeRef.current()
+    }, [])
+
+    // TODO (#48103): Remove/simplify when new search input is released
+    if (experimentalQueryInput) {
+        return (
+            <Form
+                className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
+                onSubmit={onSubmit}
+            >
+                <LazyExperimentalSearchInput
+                    visualMode="compact"
+                    telemetryService={props.telemetryService}
+                    patternType={searchPatternType}
+                    interpretComments={false}
+                    queryState={queryState}
+                    onChange={setQueryState}
+                    onSubmit={onSubmit}
+                    isLightTheme={props.isLightTheme}
+                    platformContext={props.platformContext}
+                    authenticatedUser={props.authenticatedUser}
+                    fetchSearchContexts={props.fetchSearchContexts}
+                    getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    submitSearch={submitSearchOnChange}
+                    selectedSearchContextSpec={props.selectedSearchContextSpec}
+                    className="flex-grow-1"
+                >
+                    <Toggles
+                        patternType={searchPatternType}
+                        caseSensitive={searchCaseSensitivity}
+                        setPatternType={setSearchPatternType}
+                        setCaseSensitivity={setSearchCaseSensitivity}
+                        searchMode={searchMode}
+                        setSearchMode={setSearchMode}
+                        settingsCascade={props.settingsCascade}
+                        navbarSearchQuery={queryState.query}
+                    />
+                </LazyExperimentalSearchInput>
+            </Form>
+        )
+    }
 
     return (
         <Form
@@ -94,23 +128,26 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         >
             <SearchBox
                 {...props}
-                editorComponent={editorComponent}
+                autoFocus={false}
                 applySuggestionsOnEnter={applySuggestionsOnEnter}
-                showSearchContext={showSearchContext}
-                showSearchContextManagement={showSearchContextManagement}
+                showSearchContext={props.searchContextsEnabled}
+                showSearchContextManagement={true}
                 caseSensitive={searchCaseSensitivity}
                 setCaseSensitivity={setSearchCaseSensitivity}
                 patternType={searchPatternType}
                 setPatternType={setSearchPatternType}
+                searchMode={searchMode}
+                setSearchMode={setSearchMode}
                 queryState={queryState}
                 onChange={setQueryState}
                 onSubmit={onSubmit}
                 submitSearchOnToggle={submitSearchOnChange}
                 submitSearchOnSearchContextChange={submitSearchOnChange}
-                autoFocus={autoFocus}
-                hideHelpButton={isSearchPage}
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                hideHelpButton={false}
+                showSearchHistory={true}
+                recentSearches={recentSearches}
             />
         </Form>
     )

@@ -21,7 +21,7 @@ interface CreateGraphQLClientGetterOptions {
 export function createGraphQLClientGetter({
     watchQueryMocks,
 }: CreateGraphQLClientGetterOptions): PlatformContext['getGraphQLClient'] {
-    const observableQuery = mock<ObservableQuery<unknown, unknown>>()
+    const observableQuery = mock<ObservableQuery<unknown, {}>>()
     const graphQlClient = mock<GraphQLClient>()
 
     graphQlClient.watchQuery.mockReturnValue(observableQuery)

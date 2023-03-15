@@ -1,4 +1,4 @@
-package queue
+package queue_test
 
 import (
 	"context"
@@ -13,318 +13,292 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestDequeue(t *testing.T) {
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/dequeue",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
-		responseStatus:   http.StatusOK,
-		responsePayload:  `{"id": 42}`,
+func TestClient_Dequeue(t *testing.T) {
+	tests := []struct {
+		name        string
+		spec        routeSpec
+		expectedJob types.Job
+		expectedErr error
+		isDequeued  bool
+	}{
+		{
+			name: "Success",
+			spec: routeSpec{
+				expectedMethod:   "POST",
+				expectedPath:     "/.executors/queue/test_queue/dequeue",
+				expectedUsername: "test",
+				expectedToken:    "hunter2",
+				expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev"}`,
+				responseStatus:   http.StatusOK,
+				responsePayload:  `{"id": 42}`,
+			},
+			expectedJob: types.Job{ID: 42, VirtualMachineFiles: map[string]types.VirtualMachineFile{}},
+			isDequeued:  true,
+		},
+		{
+			name: "No record",
+			spec: routeSpec{
+				expectedMethod:   "POST",
+				expectedPath:     "/.executors/queue/test_queue/dequeue",
+				expectedUsername: "test",
+				expectedToken:    "hunter2",
+				expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev"}`,
+				responseStatus:   http.StatusNoContent,
+				responsePayload:  ``,
+			},
+		},
+		{
+			name: "Bad Response",
+			spec: routeSpec{
+				expectedMethod:   "POST",
+				expectedPath:     "/.executors/queue/test_queue/dequeue",
+				expectedUsername: "test",
+				expectedToken:    "hunter2",
+				expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev"}`,
+				responseStatus:   http.StatusInternalServerError,
+				responsePayload:  ``,
+			},
+			expectedErr: errors.New("unexpected status code 500"),
+		},
 	}
-
-	testRoute(t, spec, func(client *Client) {
-		var job executor.Job
-		dequeued, err := client.Dequeue(context.Background(), "test_queue", &job)
-		if err != nil {
-			t.Fatalf("unexpected error dequeueing record: %s", err)
-		}
-		if !dequeued {
-			t.Fatalf("expected record to be dequeued")
-		}
-		if job.ID != 42 {
-			t.Errorf("unexpected id. want=%d have=%d", 42, job.ID)
-		}
-	})
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			testRoute(t, test.spec, func(client *queue.Client) {
+				job, dequeued, err := client.Dequeue(context.Background(), "worker", "foo")
+				if test.expectedErr != nil {
+					require.Error(t, err)
+					assert.Equal(t, test.expectedErr.Error(), err.Error())
+					assert.Zero(t, job.ID)
+					assert.False(t, dequeued)
+				} else {
+					require.NoError(t, err)
+					assert.Equal(t, test.expectedJob, job)
+					assert.Equal(t, test.isDequeued, dequeued)
+				}
+			})
+		})
+	}
 }
 
-func TestDequeueNoRecord(t *testing.T) {
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/dequeue",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
-		responseStatus:   http.StatusNoContent,
-		responsePayload:  ``,
+func TestClient_MarkComplete(t *testing.T) {
+	tests := []struct {
+		name        string
+		spec        routeSpec
+		job         types.Job
+		expectedErr error
+	}{
+		{
+			name: "Success",
+			spec: routeSpec{
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markComplete",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
+			},
+			job: types.Job{ID: 42, Token: "job-token"},
+		},
+		{
+			name: "Success general access token",
+			spec: routeSpec{
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markComplete",
+				expectedUsername:     "test",
+				expectedToken:        "hunter2",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
+			},
+			job: types.Job{ID: 42},
+		},
+		{
+			name: "Bad Response",
+			spec: routeSpec{
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markComplete",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
+				responseStatus:       http.StatusInternalServerError,
+				responsePayload:      ``,
+			},
+			job:         types.Job{ID: 42, Token: "job-token"},
+			expectedErr: errors.New("unexpected status code 500"),
+		},
 	}
-
-	testRoute(t, spec, func(client *Client) {
-		dequeued, err := client.Dequeue(context.Background(), "test_queue", nil)
-		if err != nil {
-			t.Fatalf("unexpected error dequeueing record: %s", err)
-		}
-		if dequeued {
-			t.Fatalf("did not expect a record to be dequeued")
-		}
-	})
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			testRoute(t, test.spec, func(client *queue.Client) {
+				marked, err := client.MarkComplete(context.Background(), test.job)
+				if test.expectedErr != nil {
+					require.Error(t, err)
+					assert.Equal(t, test.expectedErr.Error(), err.Error())
+					assert.False(t, marked)
+				} else {
+					assert.True(t, marked)
+				}
+			})
+		})
+	}
 }
 
-func TestDequeueBadResponse(t *testing.T) {
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/dequeue",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
-		responseStatus:   http.StatusInternalServerError,
-		responsePayload:  ``,
+func TestClient_MarkErrored(t *testing.T) {
+	tests := []struct {
+		name        string
+		spec        routeSpec
+		job         types.Job
+		expectedErr error
+	}{
+		{
+			name: "Success",
+			spec: routeSpec{
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markErrored",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
+			},
+			job: types.Job{ID: 42, Token: "job-token"},
+		},
+		{
+			name: "Success general access token",
+			spec: routeSpec{
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markErrored",
+				expectedUsername:     "test",
+				expectedToken:        "hunter2",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
+			},
+			job: types.Job{ID: 42},
+		},
+		{
+			name: "Bad Response",
+			spec: routeSpec{
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markErrored",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusInternalServerError,
+				responsePayload:      ``,
+			},
+			job:         types.Job{ID: 42, Token: "job-token"},
+			expectedErr: errors.New("unexpected status code 500"),
+		},
 	}
-
-	testRoute(t, spec, func(client *Client) {
-		if _, err := client.Dequeue(context.Background(), "test_queue", nil); err == nil {
-			t.Fatalf("expected an error")
-		}
-	})
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			testRoute(t, test.spec, func(client *queue.Client) {
+				marked, err := client.MarkErrored(context.Background(), test.job, "OH NO")
+				if test.expectedErr != nil {
+					require.Error(t, err)
+					assert.Equal(t, test.expectedErr.Error(), err.Error())
+					assert.False(t, marked)
+				} else {
+					assert.True(t, marked)
+				}
+			})
+		})
+	}
 }
 
-func TestAddExecutionLogEntry(t *testing.T) {
-	entry := workerutil.ExecutionLogEntry{
-		Key:        "foo",
-		Command:    []string{"ls", "-a"},
-		StartTime:  time.Unix(1587396557, 0).UTC(),
-		ExitCode:   intptr(123),
-		Out:        "<log payload>",
-		DurationMs: intptr(23123),
+func TestClient_MarkFailed(t *testing.T) {
+	tests := []struct {
+		name        string
+		spec        routeSpec
+		job         types.Job
+		expectedErr error
+	}{
+		{
+			name: "Success",
+			spec: routeSpec{
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markFailed",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
+			},
+			job: types.Job{ID: 42, Token: "job-token"},
+		},
+		{
+			name: "Success general access token",
+			spec: routeSpec{
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markFailed",
+				expectedUsername:     "test",
+				expectedToken:        "hunter2",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
+			},
+			job: types.Job{ID: 42},
+		},
+		{
+			name: "Bad Response",
+			spec: routeSpec{
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markFailed",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusInternalServerError,
+				responsePayload:      ``,
+			},
+			job:         types.Job{ID: 42, Token: "job-token"},
+			expectedErr: errors.New("unexpected status code 500"),
+		},
 	}
-
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/addExecutionLogEntry",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload: `{
-			"executorName": "deadbeef",
-			"jobId": 42,
-			"key": "foo",
-			"command": ["ls", "-a"],
-			"startTime": "2020-04-20T15:29:17Z",
-			"exitCode": 123,
-			"out": "<log payload>",
-			"durationMs": 23123
-		}`,
-		responseStatus:  http.StatusOK,
-		responsePayload: `99`,
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			testRoute(t, test.spec, func(client *queue.Client) {
+				marked, err := client.MarkFailed(context.Background(), test.job, "OH NO")
+				if test.expectedErr != nil {
+					require.Error(t, err)
+					assert.Equal(t, test.expectedErr.Error(), err.Error())
+					assert.False(t, marked)
+				} else {
+					assert.True(t, marked)
+				}
+			})
+		})
 	}
-
-	testRoute(t, spec, func(client *Client) {
-		entryID, err := client.AddExecutionLogEntry(context.Background(), "test_queue", 42, entry)
-		if err != nil {
-			t.Fatalf("unexpected error updating log contents: %s", err)
-		}
-		if entryID != 99 {
-			t.Fatalf("unexpected entryID returned. want=%d, have=%d", 99, entryID)
-		}
-	})
-}
-
-func TestAddExecutionLogEntryBadResponse(t *testing.T) {
-	entry := workerutil.ExecutionLogEntry{
-		Key:        "foo",
-		Command:    []string{"ls", "-a"},
-		StartTime:  time.Unix(1587396557, 0).UTC(),
-		ExitCode:   intptr(123),
-		Out:        "<log payload>",
-		DurationMs: intptr(23123),
-	}
-
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/addExecutionLogEntry",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload: `{
-			"executorName": "deadbeef",
-			"jobId": 42,
-			"key": "foo",
-			"command": ["ls", "-a"],
-			"startTime": "2020-04-20T15:29:17Z",
-			"exitCode": 123,
-			"out": "<log payload>",
-			"durationMs": 23123
-		}`,
-		responseStatus:  http.StatusInternalServerError,
-		responsePayload: ``,
-	}
-
-	testRoute(t, spec, func(client *Client) {
-		if _, err := client.AddExecutionLogEntry(context.Background(), "test_queue", 42, entry); err == nil {
-			t.Fatalf("expected an error")
-		}
-	})
-}
-
-func TestUpdateExecutionLogEntry(t *testing.T) {
-	entry := workerutil.ExecutionLogEntry{
-		Key:        "foo",
-		Command:    []string{"ls", "-a"},
-		StartTime:  time.Unix(1587396557, 0).UTC(),
-		ExitCode:   intptr(123),
-		Out:        "<log payload>",
-		DurationMs: intptr(23123),
-	}
-
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/updateExecutionLogEntry",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload: `{
-			"executorName": "deadbeef",
-			"jobId": 42,
-			"entryId": 99,
-			"key": "foo",
-			"command": ["ls", "-a"],
-			"startTime": "2020-04-20T15:29:17Z",
-			"exitCode": 123,
-			"out": "<log payload>",
-			"durationMs": 23123
-		}`,
-		responseStatus:  http.StatusNoContent,
-		responsePayload: ``,
-	}
-
-	testRoute(t, spec, func(client *Client) {
-		if err := client.UpdateExecutionLogEntry(context.Background(), "test_queue", 42, 99, entry); err != nil {
-			t.Fatalf("unexpected error updating log contents: %s", err)
-		}
-	})
-}
-
-func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
-	entry := workerutil.ExecutionLogEntry{
-		Key:        "foo",
-		Command:    []string{"ls", "-a"},
-		StartTime:  time.Unix(1587396557, 0).UTC(),
-		ExitCode:   intptr(123),
-		Out:        "<log payload>",
-		DurationMs: intptr(23123),
-	}
-
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/updateExecutionLogEntry",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload: `{
-			"executorName": "deadbeef",
-			"jobId": 42,
-			"entryId": 99,
-			"key": "foo",
-			"command": ["ls", "-a"],
-			"startTime": "2020-04-20T15:29:17Z",
-			"exitCode": 123,
-			"out": "<log payload>",
-			"durationMs": 23123
-		}`,
-		responseStatus:  http.StatusInternalServerError,
-		responsePayload: ``,
-	}
-
-	testRoute(t, spec, func(client *Client) {
-		if err := client.UpdateExecutionLogEntry(context.Background(), "test_queue", 42, 99, entry); err == nil {
-			t.Fatalf("expected an error")
-		}
-	})
-}
-
-func TestMarkComplete(t *testing.T) {
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/markComplete",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42}`,
-		responseStatus:   http.StatusNoContent,
-		responsePayload:  ``,
-	}
-
-	testRoute(t, spec, func(client *Client) {
-		if err := client.MarkComplete(context.Background(), "test_queue", 42); err != nil {
-			t.Fatalf("unexpected error completing job: %s", err)
-		}
-	})
-}
-
-func TestMarkCompleteBadResponse(t *testing.T) {
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/markComplete",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42}`,
-		responseStatus:   http.StatusInternalServerError,
-		responsePayload:  ``,
-	}
-
-	testRoute(t, spec, func(client *Client) {
-		if err := client.MarkComplete(context.Background(), "test_queue", 42); err == nil {
-			t.Fatalf("expected an error")
-		}
-	})
-}
-
-func TestMarkErrored(t *testing.T) {
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/markErrored",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-		responseStatus:   http.StatusNoContent,
-		responsePayload:  ``,
-	}
-
-	testRoute(t, spec, func(client *Client) {
-		if err := client.MarkErrored(context.Background(), "test_queue", 42, "OH NO"); err != nil {
-			t.Fatalf("unexpected error completing job: %s", err)
-		}
-	})
-}
-
-func TestMarkErroredBadResponse(t *testing.T) {
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/markErrored",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-		responseStatus:   http.StatusInternalServerError,
-		responsePayload:  ``,
-	}
-
-	testRoute(t, spec, func(client *Client) {
-		if err := client.MarkErrored(context.Background(), "test_queue", 42, "OH NO"); err == nil {
-			t.Fatalf("expected an error")
-		}
-	})
-}
-
-func TestMarkFailed(t *testing.T) {
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/markFailed",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-		responseStatus:   http.StatusNoContent,
-		responsePayload:  ``,
-	}
-
-	testRoute(t, spec, func(client *Client) {
-		if err := client.MarkFailed(context.Background(), "test_queue", 42, "OH NO"); err != nil {
-			t.Fatalf("unexpected error completing job: %s", err)
-		}
-	})
 }
 
 func TestCanceledJobs(t *testing.T) {
@@ -338,8 +312,8 @@ func TestCanceledJobs(t *testing.T) {
 		responsePayload:  `[1]`,
 	}
 
-	testRoute(t, spec, func(client *Client) {
-		if ids, err := client.CanceledJobs(context.Background(), "test_queue", []int{1}); err != nil {
+	testRoute(t, spec, func(client *queue.Client) {
+		if ids, err := client.CanceledJobs(context.Background(), []int{1}); err != nil {
 			t.Fatalf("unexpected error completing job: %s", err)
 		} else if diff := cmp.Diff(ids, []int{1}); diff != "" {
 			t.Fatalf("unexpected set of IDs returned: %s", diff)
@@ -356,6 +330,7 @@ func TestHeartbeat(t *testing.T) {
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobIds": [1,2,3],
+			"version": "V2",
 
 			"os": "test-os",
 			"architecture": "test-architecture",
@@ -368,17 +343,21 @@ func TestHeartbeat(t *testing.T) {
 			"prometheusMetrics": ""
 		}`,
 		responseStatus:  http.StatusOK,
-		responsePayload: `[1]`,
+		responsePayload: `{"knownIDs": [1], "cancelIDs": [1]}`,
 	}
 
-	testRoute(t, spec, func(client *Client) {
-		unknownIDs, err := client.Heartbeat(context.Background(), "test_queue", []int{1, 2, 3})
+	testRoute(t, spec, func(client *queue.Client) {
+		unknownIDs, cancelIDs, err := client.Heartbeat(context.Background(), []int{1, 2, 3})
 		if err != nil {
 			t.Fatalf("unexpected error performing heartbeat: %s", err)
 		}
 
 		if diff := cmp.Diff([]int{1}, unknownIDs); diff != "" {
 			t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff([]int{1}, cancelIDs); diff != "" {
+			t.Errorf("unexpected unknown cancel ids (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -392,6 +371,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobIds": [1,2,3],
+			"version": "V2",
 
 			"os": "test-os",
 			"architecture": "test-architecture",
@@ -407,37 +387,199 @@ func TestHeartbeatBadResponse(t *testing.T) {
 		responsePayload: ``,
 	}
 
-	testRoute(t, spec, func(client *Client) {
-		if _, err := client.Heartbeat(context.Background(), "test_queue", []int{1, 2, 3}); err == nil {
+	testRoute(t, spec, func(client *queue.Client) {
+		if _, _, err := client.Heartbeat(context.Background(), []int{1, 2, 3}); err == nil {
+			t.Fatalf("expected an error")
+		}
+	})
+}
+
+func TestAddExecutionLogEntry(t *testing.T) {
+	entry := internalexecutor.ExecutionLogEntry{
+		Key:        "foo",
+		Command:    []string{"ls", "-a"},
+		StartTime:  time.Unix(1587396557, 0).UTC(),
+		ExitCode:   intptr(123),
+		Out:        "<log payload>",
+		DurationMs: intptr(23123),
+	}
+
+	spec := routeSpec{
+		expectedMethod:       "POST",
+		expectedPath:         "/.executors/queue/test_queue/addExecutionLogEntry",
+		expectedUsername:     "test",
+		expectedToken:        "job-token",
+		expectedJobID:        "42",
+		expectedExecutorName: "deadbeef",
+		expectedPayload: `{
+			"executorName": "deadbeef",
+			"jobId": 42,
+			"key": "foo",
+			"command": ["ls", "-a"],
+			"startTime": "2020-04-20T15:29:17Z",
+			"exitCode": 123,
+			"out": "<log payload>",
+			"durationMs": 23123
+		}`,
+		responseStatus:  http.StatusOK,
+		responsePayload: `99`,
+	}
+
+	testRoute(t, spec, func(client *queue.Client) {
+		entryID, err := client.AddExecutionLogEntry(context.Background(), types.Job{ID: 42, Token: "job-token"}, entry)
+		if err != nil {
+			t.Fatalf("unexpected error updating log contents: %s", err)
+		}
+		if entryID != 99 {
+			t.Fatalf("unexpected entryID returned. want=%d, have=%d", 99, entryID)
+		}
+	})
+}
+
+func TestAddExecutionLogEntryBadResponse(t *testing.T) {
+	entry := internalexecutor.ExecutionLogEntry{
+		Key:        "foo",
+		Command:    []string{"ls", "-a"},
+		StartTime:  time.Unix(1587396557, 0).UTC(),
+		ExitCode:   intptr(123),
+		Out:        "<log payload>",
+		DurationMs: intptr(23123),
+	}
+
+	spec := routeSpec{
+		expectedMethod:       "POST",
+		expectedPath:         "/.executors/queue/test_queue/addExecutionLogEntry",
+		expectedUsername:     "test",
+		expectedToken:        "job-token",
+		expectedJobID:        "42",
+		expectedExecutorName: "deadbeef",
+		expectedPayload: `{
+			"executorName": "deadbeef",
+			"jobId": 42,
+			"key": "foo",
+			"command": ["ls", "-a"],
+			"startTime": "2020-04-20T15:29:17Z",
+			"exitCode": 123,
+			"out": "<log payload>",
+			"durationMs": 23123
+		}`,
+		responseStatus:  http.StatusInternalServerError,
+		responsePayload: ``,
+	}
+
+	testRoute(t, spec, func(client *queue.Client) {
+		if _, err := client.AddExecutionLogEntry(context.Background(), types.Job{ID: 42, Token: "job-token"}, entry); err == nil {
+			t.Fatalf("expected an error")
+		}
+	})
+}
+
+func TestUpdateExecutionLogEntry(t *testing.T) {
+	entry := internalexecutor.ExecutionLogEntry{
+		Key:        "foo",
+		Command:    []string{"ls", "-a"},
+		StartTime:  time.Unix(1587396557, 0).UTC(),
+		ExitCode:   intptr(123),
+		Out:        "<log payload>",
+		DurationMs: intptr(23123),
+	}
+
+	spec := routeSpec{
+		expectedMethod:       "POST",
+		expectedPath:         "/.executors/queue/test_queue/updateExecutionLogEntry",
+		expectedUsername:     "test",
+		expectedToken:        "job-token",
+		expectedJobID:        "42",
+		expectedExecutorName: "deadbeef",
+		expectedPayload: `{
+			"executorName": "deadbeef",
+			"jobId": 42,
+			"entryId": 99,
+			"key": "foo",
+			"command": ["ls", "-a"],
+			"startTime": "2020-04-20T15:29:17Z",
+			"exitCode": 123,
+			"out": "<log payload>",
+			"durationMs": 23123
+		}`,
+		responseStatus:  http.StatusNoContent,
+		responsePayload: ``,
+	}
+
+	testRoute(t, spec, func(client *queue.Client) {
+		if err := client.UpdateExecutionLogEntry(context.Background(), types.Job{ID: 42, Token: "job-token"}, 99, entry); err != nil {
+			t.Fatalf("unexpected error updating log contents: %s", err)
+		}
+	})
+}
+
+func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
+	entry := internalexecutor.ExecutionLogEntry{
+		Key:        "foo",
+		Command:    []string{"ls", "-a"},
+		StartTime:  time.Unix(1587396557, 0).UTC(),
+		ExitCode:   intptr(123),
+		Out:        "<log payload>",
+		DurationMs: intptr(23123),
+	}
+
+	spec := routeSpec{
+		expectedMethod:       "POST",
+		expectedPath:         "/.executors/queue/test_queue/updateExecutionLogEntry",
+		expectedUsername:     "test",
+		expectedToken:        "job-token",
+		expectedJobID:        "42",
+		expectedExecutorName: "deadbeef",
+		expectedPayload: `{
+			"executorName": "deadbeef",
+			"jobId": 42,
+			"entryId": 99,
+			"key": "foo",
+			"command": ["ls", "-a"],
+			"startTime": "2020-04-20T15:29:17Z",
+			"exitCode": 123,
+			"out": "<log payload>",
+			"durationMs": 23123
+		}`,
+		responseStatus:  http.StatusInternalServerError,
+		responsePayload: ``,
+	}
+
+	testRoute(t, spec, func(client *queue.Client) {
+		if err := client.UpdateExecutionLogEntry(context.Background(), types.Job{ID: 42, Token: "job-token"}, 99, entry); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})
 }
 
 type routeSpec struct {
-	expectedMethod   string
-	expectedPath     string
-	expectedUsername string
-	expectedToken    string
-	expectedPayload  string
-	responseStatus   int
-	responsePayload  string
+	expectedMethod       string
+	expectedPath         string
+	expectedUsername     string
+	expectedToken        string
+	expectedJobID        string
+	expectedExecutorName string
+	expectedPayload      string
+	responseStatus       int
+	responsePayload      string
 }
 
-func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
+func testRoute(t *testing.T, spec routeSpec, f func(client *queue.Client)) {
 	ts := testServer(t, spec)
 	defer ts.Close()
 
-	options := Options{
+	options := queue.Options{
 		ExecutorName: "deadbeef",
+		QueueName:    "test_queue",
 		BaseClientOptions: apiclient.BaseClientOptions{
+			ExecutorName: "deadbeef",
 			EndpointOptions: apiclient.EndpointOptions{
 				URL:        ts.URL,
 				PathPrefix: "/.executors/queue",
 				Token:      "hunter2",
 			},
 		},
-		TelemetryOptions: TelemetryOptions{
+		TelemetryOptions: queue.TelemetryOptions{
 			OS:              "test-os",
 			Architecture:    "test-architecture",
 			DockerVersion:   "test-docker-version",
@@ -448,40 +590,37 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 		},
 	}
 
-	client, err := New(options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }), &observation.TestContext)
+	client, err := newQueueClient(options)
 	require.NoError(t, err)
 	f(client)
 }
 
 func testServer(t *testing.T, spec routeSpec) *httptest.Server {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != spec.expectedMethod {
-			t.Errorf("unexpected method. want=%s have=%s", spec.expectedMethod, r.Method)
-		}
-		if r.URL.Path != spec.expectedPath {
-			t.Errorf("unexpected method. want=%s have=%s", spec.expectedPath, r.URL.Path)
-		}
+		assert.Equal(t, spec.expectedMethod, r.Method)
+		assert.Equal(t, spec.expectedPath, r.URL.Path)
 
 		parts := strings.Split(r.Header.Get("Authorization"), " ")
-		if len(parts) != 2 || parts[0] != "token-executor" {
-			if parts[1] != spec.expectedToken {
-				t.Errorf("unexpected token`. want=%s have=%s", spec.expectedToken, parts[1])
-			}
-		}
+		assert.Len(t, parts, 2)
+		assert.Equal(t, spec.expectedToken, parts[1])
+
+		assert.Equal(t, spec.expectedJobID, r.Header.Get("X-Sourcegraph-Job-ID"))
+		assert.Equal(t, spec.expectedExecutorName, r.Header.Get("X-Sourcegraph-Executor-Name"))
 
 		content, err := io.ReadAll(r.Body)
-		if err != nil {
-			t.Fatalf("unexpected error reading payload: %s", err)
-		}
-		if diff := cmp.Diff(normalizeJSON([]byte(spec.expectedPayload)), normalizeJSON(content)); diff != "" {
-			t.Errorf("unexpected request payload (-want +got):\n%s", diff)
-		}
+		require.NoError(t, err)
+		assert.JSONEq(t, normalizeJSON([]byte(spec.expectedPayload)), normalizeJSON(content))
 
 		w.WriteHeader(spec.responseStatus)
-		w.Write([]byte(spec.responsePayload))
+		_, err = w.Write([]byte(spec.responsePayload))
+		require.NoError(t, err)
 	}
 
 	return httptest.NewServer(http.HandlerFunc(handler))
+}
+
+func newQueueClient(options queue.Options) (*queue.Client, error) {
+	return queue.New(&observation.TestContext, options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }))
 }
 
 func normalizeJSON(v []byte) string {

@@ -59,7 +59,7 @@ type DiffOptions struct {
 // Diff returns an iterator that can be used to access the diff between two
 // commits on a per-file basis. The iterator must be closed with Close when no
 // longer required.
-func (c *clientImplementor) Diff(ctx context.Context, opts DiffOptions, checker authz.SubRepoPermissionChecker) (*DiffFileIterator, error) {
+func (c *clientImplementor) Diff(ctx context.Context, checker authz.SubRepoPermissionChecker, opts DiffOptions) (*DiffFileIterator, error) {
 	// Rare case: the base is the empty tree, in which case we must use ..
 	// instead of ... as the latter only works for commits.
 	if opts.Base == DevNullSHA {
@@ -157,7 +157,7 @@ type ContributorOptions struct {
 }
 
 func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ShortLog")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ShortLog") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -191,7 +191,7 @@ func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoN
 // execReader should NOT be exported. We want to limit direct git calls to this
 // package.
 func (c *clientImplementor) execReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadCloser, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecReader")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecReader") //nolint:staticcheck // OT is deprecated
 	span.SetTag("args", args)
 	defer span.Finish()
 
@@ -365,7 +365,7 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 
 // ReadDir reads the contents of the named directory at commit.
 func (c *clientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadDir")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadDir") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
 	span.SetTag("Recurse", recurse)
@@ -454,7 +454,7 @@ func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
 // symbolic link, the returned FileInfo describes the symbolic link. lStat makes
 // no attempt to follow the link.
 func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: lStat")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: lStat") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
 	defer span.Finish()
@@ -492,7 +492,7 @@ func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPerm
 		return fis[0], nil
 	} else {
 		if filteringErr != nil {
-			err = errors.Wrap(err, "filtering paths")
+			err = errors.Wrap(filteringErr, "filtering paths")
 		} else {
 			err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
 		}
@@ -671,8 +671,8 @@ func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, com
 type BlameOptions struct {
 	NewestCommit api.CommitID `json:",omitempty" url:",omitempty"`
 
-	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start byte (or 0 for beginning of file)
-	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end byte (or 0 for end of file)
+	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
+	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
 }
 
 // A Hunk is a contiguous portion of a file associated with a commit.
@@ -687,17 +687,70 @@ type Hunk struct {
 	Filename string
 }
 
-// BlameFile returns Git blame information about a file.
-func (c *clientImplementor) BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: BlameFile")
+// StreamBlameFile returns Git blame information about a file.
+func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (HunkReader, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: StreamBlameFile") //nolint:staticcheck // OT is deprecated
 	span.SetTag("repo", repo)
 	span.SetTag("path", path)
 	span.SetTag("opt", opt)
 	defer span.Finish()
-	return blameFileCmd(ctx, c.gitserverGitCommandFunc(repo), path, opt, repo, checker)
+
+	return streamBlameFileCmd(ctx, checker, repo, path, opt, c.gitserverGitCommandFunc(repo))
 }
 
-func blameFileCmd(ctx context.Context, command gitCommandFunc, path string, opt *BlameOptions, repo api.RepoName, checker authz.SubRepoPermissionChecker) ([]*Hunk, error) {
+type errUnauthorizedStreamBlame struct {
+	Repo api.RepoName
+}
+
+func (e errUnauthorizedStreamBlame) Unauthorized() bool {
+	return true
+}
+
+func (e errUnauthorizedStreamBlame) Error() string {
+	return fmt.Sprintf("not authorized (name=%s)", e.Repo)
+}
+
+func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions, command gitCommandFunc) (HunkReader, error) {
+	a := actor.FromContext(ctx)
+	hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path)
+	if err != nil {
+		return nil, err
+	}
+	if !hasAccess {
+		return nil, errUnauthorizedStreamBlame{Repo: repo}
+	}
+	if opt == nil {
+		opt = &BlameOptions{}
+	}
+	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
+		return nil, err
+	}
+
+	args := []string{"blame", "-w", "--porcelain", "--incremental"}
+	if opt.StartLine != 0 || opt.EndLine != 0 {
+		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
+	}
+	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
+
+	rc, err := command(args).StdoutReader(ctx)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed", args))
+	}
+
+	return newBlameHunkReader(rc), nil
+}
+
+// BlameFile returns Git blame information about a file.
+func (c *clientImplementor) BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: BlameFile") //nolint:staticcheck // OT is deprecated
+	span.SetTag("repo", repo)
+	span.SetTag("path", path)
+	span.SetTag("opt", opt)
+	defer span.Finish()
+	return blameFileCmd(ctx, checker, c.gitserverGitCommandFunc(repo), path, opt, repo)
+}
+
+func blameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, command gitCommandFunc, path string, opt *BlameOptions, repo api.RepoName) ([]*Hunk, error) {
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil || !hasAccess {
 		return nil, err
@@ -723,10 +776,15 @@ func blameFileCmd(ctx context.Context, command gitCommandFunc, path string, opt 
 		return nil, nil
 	}
 
+	return parseGitBlameOutput(string(out))
+}
+
+// parseGitBlameOutput parses the output of `git blame -w --porcelain`
+func parseGitBlameOutput(out string) ([]*Hunk, error) {
 	commits := make(map[string]gitdomain.Commit)
 	filenames := make(map[string]string)
 	hunks := make([]*Hunk, 0)
-	remainingLines := strings.Split(string(out[:len(out)-1]), "\n")
+	remainingLines := strings.Split(out[:len(out)-1], "\n")
 	byteOffset := 0
 	for len(remainingLines) > 0 {
 		// Consume hunk
@@ -875,7 +933,7 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 	}
 	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ResolveRevision")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ResolveRevision") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Spec", spec)
 	span.SetTag("Opt", fmt.Sprintf("%+v", opt))
 	defer span.Finish()
@@ -961,12 +1019,12 @@ func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPe
 	if len(files) > 0 && files[len(files)-1] == "" {
 		files = files[:len(files)-1]
 	}
-	return filterPaths(ctx, repo, checker, files)
+	return filterPaths(ctx, checker, repo, files)
 }
 
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
-func (c *clientImplementor) ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp, checker authz.SubRepoPermissionChecker) (_ []string, err error) {
+func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) (_ []string, err error) {
 	cmd := c.gitCommand(repo, "ls-tree", "--name-only", "-r", string(commit), "--")
 
 	out, err := cmd.CombinedOutput(ctx)
@@ -981,12 +1039,12 @@ func (c *clientImplementor) ListFiles(ctx context.Context, repo api.RepoName, co
 		}
 	}
 
-	return filterPaths(ctx, repo, checker, matching)
+	return filterPaths(ctx, checker, repo, matching)
 }
 
 // 🚨 SECURITY: All git methods that deal with file or path access need to have
 // sub-repo permissions applied
-func filterPaths(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker, paths []string) ([]string, error) {
+func filterPaths(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, paths []string) ([]string, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return paths, nil
 	}
@@ -1086,54 +1144,9 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 	return childrenMap
 }
 
-func (c *clientImplementor) LFSSmudge(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, checker authz.SubRepoPermissionChecker) (_ io.ReadCloser, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: LFSSmudge")
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(log.Error(err))
-		}
-		span.Finish()
-	}()
-
-	// First read in pointer. Pointer should be less than 200 bytes according
-	// to a few different implementations. Note: git-lfs implementation uses
-	// 1024, but we only support newer kind of pointers which are smaller.
-	r, err := c.NewFileReader(ctx, repo, commit, path, checker)
-	if err != nil {
-		return nil, err
-	}
-
-	pointer := make([]byte, 201)
-	n, err := io.ReadFull(r, pointer)
-	pointer = pointer[:n]
-	if err == nil {
-		// This file is too big to be an LFS pointer. So we can fallback to
-		// just returning r (but need to simulate "unreading" the bytes we
-		// have read)
-
-		return withCloser{
-			Reader: io.MultiReader(bytes.NewReader(pointer), r),
-			Closer: r,
-		}, nil
-	} else if err != io.ErrUnexpectedEOF {
-		return nil, errors.Wrapf(err, "failed to read LFS pointer %q in %s@%s", path, repo, commit)
-	}
-
-	cmd := c.gitCommand(repo, "lfs", "smudge", path)
-	cmd.SetStdin(pointer)
-
-	return cmd.StdoutReader(ctx)
-}
-
-type withCloser struct {
-	io.Reader
-	io.Closer
-}
-
 // ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
 func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
@@ -1222,7 +1235,7 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 
 // MergeBase returns the merge base commit for the specified commits.
 func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: MergeBase")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: MergeBase") //nolint:staticcheck // OT is deprecated
 	span.SetTag("A", a)
 	span.SetTag("B", b)
 	defer span.Finish()
@@ -1258,7 +1271,7 @@ func RevListArgs(givenCommit string) []string {
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
 func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	if err := checkSpecArgSafety(left); err != nil {
@@ -1287,12 +1300,12 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
-func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) ([]byte, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile")
+func (c *clientImplementor) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Name", name)
 	defer span.Finish()
 
-	br, err := c.NewFileReader(ctx, repo, commit, name, checker)
+	br, err := c.NewFileReader(ctx, checker, repo, commit, name)
 	if err != nil {
 		return nil, err
 	}
@@ -1308,7 +1321,7 @@ func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, com
 
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
-func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
+func (c *clientImplementor) NewFileReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
 		return nil, err
@@ -1316,7 +1329,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 		return nil, os.ErrNotExist
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetFileReader")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetFileReader") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Name", name)
 	defer span.Finish()
 
@@ -1401,7 +1414,7 @@ func (br *blobReader) convertError(err error) error {
 
 // Stat returns a FileInfo describing the named file at commit.
 func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Stat")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Stat") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
 	defer span.Finish()
@@ -1420,7 +1433,7 @@ func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermi
 	return fi, nil
 }
 
-// CommitsOptions specifies options for (Repository).Commits (Repository).CommitCount.
+// CommitsOptions specifies options for Commits.
 type CommitsOptions struct {
 	Range string // commit range (revspec, "A..B", "A...B", etc.)
 
@@ -1438,6 +1451,8 @@ type CommitsOptions struct {
 
 	Path string // only commits modifying the given path are selected (optional)
 
+	Follow bool // follow the history of the path beyond renames (works only for a single path)
+
 	// When true we opt out of attempting to fetch missing revisions
 	NoEnsureRevision bool
 
@@ -1448,7 +1463,7 @@ type CommitsOptions struct {
 var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
-func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (_ *gitdomain.Commit, err error) {
+func (c *clientImplementor) getCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
 	if honey.Enabled() && recordGetCommitQueries {
 		defer func() {
 			ev := honey.NewEvent("getCommit")
@@ -1501,18 +1516,18 @@ func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id
 // The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
-func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit")
+func (c *clientImplementor) GetCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*gitdomain.Commit, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Commit", id)
 	defer span.Finish()
 
-	return c.getCommit(ctx, repo, id, opt, checker)
+	return c.getCommit(ctx, checker, repo, id, opt)
 }
 
 // Commits returns all commits matching the options.
-func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+func (c *clientImplementor) Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error) {
 	opt = addNameOnly(opt, checker)
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Commits")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Commits") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -1522,7 +1537,7 @@ func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 	return c.commitLog(ctx, repo, opt, checker)
 }
 
-func filterCommits(ctx context.Context, commits []*wrappedCommit, repoName api.RepoName, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, commits []*wrappedCommit, repoName api.RepoName) ([]*gitdomain.Commit, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return unWrapCommits(commits), nil
 	}
@@ -1567,7 +1582,7 @@ func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.
 // commits on {branchName} not also on the tip of the default branch. If the
 // supplied branch name is the default branch, then this method instead returns
 // all commits reachable from HEAD.
-func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time, checker authz.SubRepoPermissionChecker) (_ map[string]time.Time, err error) {
+func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
 	args := []string{"log", "--pretty=format:%H:%cI"}
 	if maxAge != nil {
 		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
@@ -1594,7 +1609,7 @@ func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, repo api.
 func (c *clientImplementor) filterCommitsUniqueToBranch(ctx context.Context, repo api.RepoName, commitsMap map[string]time.Time, checker authz.SubRepoPermissionChecker) map[string]time.Time {
 	filtered := make(map[string]time.Time, len(commitsMap))
 	for commitID, timeStamp := range commitsMap {
-		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if _, err := c.GetCommit(ctx, checker, repo, api.CommitID(commitID), ResolveRevisionOptions{}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = timeStamp
 		}
 	}
@@ -1627,11 +1642,11 @@ func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err err
 
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 // contains a commit past a specified date.
-func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string, checker authz.SubRepoPermissionChecker) (bool, error) {
+func (c *clientImplementor) HasCommitAfter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, date string, revspec string) (bool, error) {
 	if authz.SubRepoEnabled(checker) {
 		return c.hasCommitAfterWithFiltering(ctx, repo, date, revspec, checker)
 	}
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: HasCommitAfter")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: HasCommitAfter") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Date", date)
 	span.SetTag("RevSpec", revspec)
 	defer span.Finish()
@@ -1645,16 +1660,28 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 		return false, err
 	}
 
-	n, err := c.commitCount(ctx, repo, CommitsOptions{
+	args, err := commitLogArgs([]string{"rev-list", "--count"}, CommitsOptions{
 		N:     1,
 		After: date,
 		Range: string(commitid),
 	})
+	if err != nil {
+		return false, err
+	}
+
+	cmd := c.gitCommand(repo, args...)
+	out, err := cmd.Output(ctx)
+	if err != nil {
+		return false, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+
+	out = bytes.TrimSpace(out)
+	n, err := strconv.Atoi(string(out))
 	return n > 0, err
 }
 
 func (c *clientImplementor) hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string, checker authz.SubRepoPermissionChecker) (bool, error) {
-	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec}, checker); err != nil {
+	if commits, err := c.Commits(ctx, checker, repo, CommitsOptions{After: date, Range: revspec}); err != nil {
 		return false, err
 	} else if len(commits) > 0 {
 		return true, nil
@@ -1675,7 +1702,7 @@ func (c *clientImplementor) commitLog(ctx context.Context, repo api.RepoName, op
 		return nil, err
 	}
 
-	filtered, err := filterCommits(ctx, wrappedCommits, repo, checker)
+	filtered, err := filterCommits(ctx, checker, wrappedCommits, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "filtering commits")
 	}
@@ -1740,7 +1767,7 @@ func (c *clientImplementor) getMoreCommits(ctx context.Context, repo api.RepoNam
 		if err != nil {
 			return nil, err
 		}
-		filtered, err := filterCommits(ctx, wrappedCommits, repo, checker)
+		filtered, err := filterCommits(ctx, checker, wrappedCommits, repo)
 		if err != nil {
 			return nil, err
 		}
@@ -1845,41 +1872,18 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	if opt.NameOnly {
 		args = append(args, "--name-only")
 	}
+	if opt.Follow {
+		args = append(args, "--follow")
+	}
 	if opt.Path != "" {
 		args = append(args, "--", opt.Path)
 	}
 	return args, nil
 }
 
-// commitCount returns the number of commits that would be returned by Commits.
-func (c *clientImplementor) commitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (uint, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: CommitCount")
-	span.SetTag("Opt", opt)
-	defer span.Finish()
-
-	args, err := commitLogArgs([]string{"rev-list", "--count"}, opt)
-	if err != nil {
-		return 0, err
-	}
-
-	if opt.Path != "" {
-		// This doesn't include --follow flag because rev-list doesn't support it, so the number may be slightly off.
-		args = append(args, "--", opt.Path)
-	}
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.Output(ctx)
-	if err != nil {
-		return 0, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
-	}
-
-	out = bytes.TrimSpace(out)
-	n, err := strconv.ParseUint(string(out), 10, 64)
-	return uint(n), err
-}
-
 // FirstEverCommit returns the first commit ever made to the repository.
-func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: FirstEverCommit")
+func (c *clientImplementor) FirstEverCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (*gitdomain.Commit, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: FirstEverCommit") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
@@ -1895,12 +1899,12 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoNa
 	}
 	first := tokens[0]
 	id := api.CommitID(bytes.TrimSpace(first))
-	return c.GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, checker)
+	return c.GetCommit(ctx, checker, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
 }
 
 // CommitExists determines if the given commit exists in the given repository.
-func (c *clientImplementor) CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID, checker authz.SubRepoPermissionChecker) (bool, error) {
-	commit, err := c.getCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, checker)
+func (c *clientImplementor) CommitExists(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID) (bool, error) {
+	commit, err := c.getCommit(ctx, checker, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
 	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		return false, nil
 	}
@@ -1913,8 +1917,8 @@ func (c *clientImplementor) CommitExists(ctx context.Context, repo api.RepoName,
 // CommitsExist determines if the given commits exists in the given repositories. This function returns
 // a slice of the same size as the input slice, true indicating that the commit at the symmetric index
 // exists.
-func (c *clientImplementor) CommitsExist(ctx context.Context, repoCommits []api.RepoCommit, checker authz.SubRepoPermissionChecker) ([]bool, error) {
-	commits, err := c.GetCommits(ctx, repoCommits, true, checker)
+func (c *clientImplementor) CommitsExist(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit) ([]bool, error) {
+	commits, err := c.GetCommits(ctx, checker, repoCommits, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1933,8 +1937,8 @@ func (c *clientImplementor) CommitsExist(ctx context.Context, repoCommits []api.
 //
 // If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
 // resulting commit to be nil, but not fail the entire operation.
-func (c *clientImplementor) GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: getCommits")
+func (c *clientImplementor) GetCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: getCommits") //nolint:staticcheck // OT is deprecated
 	span.SetTag("numRepoCommits", len(repoCommits))
 	defer span.Finish()
 
@@ -1987,7 +1991,7 @@ func (c *clientImplementor) GetCommits(ctx context.Context, repoCommits []api.Re
 		}
 
 		// Enforce sub-repository permissions
-		filteredCommits, err := filterCommits(ctx, wrappedCommits, repoCommit.Repo, checker)
+		filteredCommits, err := filterCommits(ctx, checker, wrappedCommits, repoCommit.Repo)
 		if err != nil {
 			// Note that we don't check ignoreErrors on this condition. When we
 			// ignore errors it's to hide an issue with a single git log request on a
@@ -2025,7 +2029,7 @@ func (c *clientImplementor) GetCommits(ctx context.Context, repoCommits []api.Re
 // If no HEAD revision exists for the given repository (which occurs with empty
 // repositories), a false-valued flag is returned along with a nil error and
 // empty revision.
-func (c *clientImplementor) Head(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (_ string, revisionExists bool, err error) {
+func (c *clientImplementor) Head(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (_ string, revisionExists bool, err error) {
 	cmd := c.gitCommand(repo, "rev-parse", "HEAD")
 
 	out, err := cmd.Output(ctx)
@@ -2034,7 +2038,7 @@ func (c *clientImplementor) Head(ctx context.Context, repo api.RepoName, checker
 	}
 	commitID := string(out)
 	if authz.SubRepoEnabled(checker) {
-		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); err != nil {
+		if _, err := c.GetCommit(ctx, checker, repo, api.CommitID(commitID), ResolveRevisionOptions{}); err != nil {
 			return checkError(err)
 		}
 	}
@@ -2136,10 +2140,10 @@ func parseCommitFileNames(partsPerCommit int, parts [][]byte) ([]string, []byte)
 
 // BranchesContaining returns a map from branch names to branch tip hashes for
 // each branch containing the given commit.
-func (c *clientImplementor) BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) ([]string, error) {
+func (c *clientImplementor) BranchesContaining(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) ([]string, error) {
 	if authz.SubRepoEnabled(checker) {
 		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{}, checker); err != nil {
+		if _, err := c.GetCommit(ctx, checker, repo, commit, ResolveRevisionOptions{}); err != nil {
 			return nil, err
 		}
 	}
@@ -2172,7 +2176,7 @@ func parseBranchesContaining(lines []string) []string {
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-func (c *clientImplementor) RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker, gitObjs ...string) (map[string][]gitdomain.RefDescription, error) {
+func (c *clientImplementor) RefDescriptions(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error) {
 	f := func(refPrefix string) (map[string][]gitdomain.RefDescription, error) {
 		format := strings.Join([]string{
 			derefField("objectname"),
@@ -2226,7 +2230,7 @@ func (c *clientImplementor) filterRefDescriptions(ctx context.Context,
 ) map[string][]gitdomain.RefDescription {
 	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
 	for commitID, descriptions := range refDescriptions {
-		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if _, err := c.GetCommit(ctx, checker, repo, api.CommitID(commitID), ResolveRevisionOptions{}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = descriptions
 		}
 	}
@@ -2313,10 +2317,10 @@ lineLoop:
 // CommitDate returns the time that the given commit was committed. If the given
 // revision does not exist, a false-valued flag is returned along with a nil
 // error and zero-valued time.
-func (c *clientImplementor) CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) (_ string, _ time.Time, revisionExists bool, err error) {
+func (c *clientImplementor) CommitDate(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) (_ string, _ time.Time, revisionExists bool, err error) {
 	if authz.SubRepoEnabled(checker) {
 		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{}, checker); err != nil {
+		if _, err := c.GetCommit(ctx, checker, repo, commit, ResolveRevisionOptions{}); err != nil {
 			return "", time.Time{}, false, nil
 		}
 	}
@@ -2378,7 +2382,7 @@ func (c *clientImplementor) ArchiveReader(
 	if ClientMocks.Archive != nil {
 		return ClientMocks.Archive(ctx, repo, options)
 	}
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Repo", repo)
 	span.SetTag("Treeish", options.Treeish)
 	defer func() {
@@ -2395,10 +2399,7 @@ func (c *clientImplementor) ArchiveReader(
 		return nil, err
 	}
 
-	u, err := c.archiveURL(ctx, repo, options)
-	if err != nil {
-		return nil, err
-	}
+	u := c.archiveURL(repo, options)
 
 	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
 	if err != nil {
@@ -2485,7 +2486,7 @@ func (f branchFilter) add(list []string) {
 
 // ListBranches returns a list of all branches in the repository.
 func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*gitdomain.Branch, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Branches")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Branches") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -2519,7 +2520,7 @@ func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName,
 
 		branch := &gitdomain.Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
-			branch.Commit, err = c.GetCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+			branch.Commit, err = c.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo, ref.CommitID, ResolveRevisionOptions{})
 			if err != nil {
 				return nil, err
 			}
@@ -2560,7 +2561,7 @@ func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // ListRefs returns a list of all refs in the repository.
 func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ListRefs")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ListRefs") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 	return c.showRef(ctx, repo)
 }

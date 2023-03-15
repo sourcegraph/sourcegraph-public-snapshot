@@ -1,42 +1,29 @@
-import * as fzy from 'fzy.js'
+import { extendedMatch, Fzf, FzfResultItem, Tiebreaker } from 'fzf'
 
 import { HighlightedLinkProps, RangePosition } from '../components/fuzzyFinder/HighlightedLink'
 
-import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult, SearchValue } from './FuzzySearch'
+import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult } from './FuzzySearch'
+import { SearchValue } from './SearchValue'
+import { SearchValueRankingCache } from './SearchValueRankingCache'
 import { createUrlFunction } from './WordSensitiveFuzzySearch'
 
-interface ScoredSearchValue extends SearchValue {
-    score: number
+function sortByTiebreakers<T>(values: FzfResultItem<T>[], tiebreakers: Tiebreaker<T>[]): FzfResultItem<T>[] {
+    return values.sort((a, b) => {
+        for (const tiebreaker of tiebreakers) {
+            const compareResult = tiebreaker(a, b, () => '')
+            if (compareResult !== 0) {
+                return compareResult
+            }
+        }
+        return 0
+    })
 }
-
-class CacheCandidate {
-    constructor(public readonly query: string, public readonly candidates: SearchValue[]) {}
-    public matches(parameters: FuzzySearchParameters): boolean {
-        return parameters.query.startsWith(this.query)
-    }
-}
-
-// The 0.2 value was chosen by manually observing the behavior and confirming
-// that it seems to give relevant results without too much noise.
-const FZY_MINIMUM_SCORE_THRESHOLD = 0.2
-
-const FZY_EQUAL_SCORE_THRESHOLD = 0.2
 
 /**
  * FuzzySearch implementation that uses the original fzy filtering algorithm from https://github.com/jhawthorn/fzy.js
  */
 export class CaseInsensitiveFuzzySearch extends FuzzySearch {
     public totalFileCount: number
-    // Optimization: stack of results from the previous queries. For example,
-    // when the user types ["P", "r", "o"] the stack contains the matching
-    // results for the queries ["P", "Pr", "Pro"]. When we get the query "Prov"
-    // we fuzzy match against the cached candidates for the query "Pro", which
-    // is most likely faster compared to fuzzy matching against the entire
-    // filename corpu. We cache all prefixes of the query instead of only the
-    // last query to allow the user to quickly delete // multiple characters
-    // from the query.
-    private cacheCandidates: CacheCandidate[] = []
-    private spaceSeparator = new RegExp('\\s+')
 
     constructor(public readonly values: SearchValue[], private readonly createUrl: createUrlFunction) {
         super()
@@ -44,98 +31,44 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
     }
 
     public search(parameters: FuzzySearchParameters): FuzzySearchResult {
-        const cacheCandidate = this.nextCacheCandidate(parameters)
-        const searchValues: SearchValue[] = cacheCandidate ? cacheCandidate.candidates : this.values
-        const isEmptyQuery = parameters.query.length === 0
-        const candidates: ScoredSearchValue[] = []
-        const candidatesWithMatch: ScoredSearchValue[] = []
-        const queryParts = parameters.query.split(this.spaceSeparator).filter(part => part.length > 0)
-        if (isEmptyQuery) {
-            // Empty query, match all values
-            candidates.push(...searchValues.map(value => ({ ...value, score: 1 })))
-        } else {
-            for (const value of searchValues) {
-                let score = 0
-                if (queryParts.length === 1 && queryParts[0] === value.text) {
-                    score = value.text.length
-                } else {
-                    for (const queryPart of queryParts) {
-                        // TODO: the query 'sourcegraph' should have a higher
-                        // score for the value 'sourcegraph/sourcegraph' instead
-                        // of 'sourcegraph/scip'. Right now, `sourcegraph/scip` scores
-                        // equally.
-                        const partScore = fzy.score(queryPart, value.text)
-                        score += partScore
-                    }
-                }
-                const noMatch = isNaN(score) || !isFinite(score)
-                if (noMatch) {
-                    continue
-                }
-                if (score > FZY_MINIMUM_SCORE_THRESHOLD) {
-                    candidates.push({ ...value, score })
-                } else {
-                    candidatesWithMatch.push({ ...value, score })
-                }
-            }
-        }
-
-        this.cacheCandidates.push(new CacheCandidate(parameters.query, [...candidates, ...candidatesWithMatch]))
-
-        const isComplete = candidates.length < parameters.maxResults
-        candidates.sort((a, b) => {
-            const byScore = b.score - a.score
-            if (byScore < FZY_EQUAL_SCORE_THRESHOLD && a.ranking && b.ranking) {
-                return b.ranking - a.ranking
-            }
-            return byScore
+        const historyCache = parameters.cache ?? new SearchValueRankingCache()
+        const tiebreakers: Tiebreaker<SearchValue>[] = [
+            (a, b) => historyCache.rank(b.item) - historyCache.rank(a.item),
+            (a, b) => (b.item?.ranking ?? 0) - (a.item?.ranking ?? 0),
+        ]
+        const fzf = new Fzf<SearchValue[]>(this.values, {
+            selector: ({ text }) => text,
+            limit: parameters.maxResults,
+            match: extendedMatch,
+            casing: 'case-insensitive',
+            tiebreakers,
         })
+        const isEmpty = parameters.query === ''
+        const candidates = isEmpty
+            ? sortByTiebreakers(
+                  this.values
+                      .filter(value => historyCache.rank(value))
+                      .map(value => ({ item: value, positions: new Set(), start: 0, end: 0, score: 0 })),
+                  tiebreakers
+              )
+            : fzf.find(parameters.query)
+        // this.cacheCandidates.push(new CacheCandidate(parameters.query, [...candidates.map(({ item }) => item)]))
+        const isComplete = candidates.length < parameters.maxResults
         candidates.slice(0, parameters.maxResults)
 
-        const links: HighlightedLinkProps[] = candidates.map(candidate => {
-            const offsets = new Set<number>()
-            for (const queryPart of queryParts) {
-                for (const offset of fzy.positions(queryPart, candidate.text)) {
-                    offsets.add(offset)
-                }
-            }
-            const positions = compressedRangePositions([...offsets])
+        const links: HighlightedLinkProps[] = candidates.map<HighlightedLinkProps>(candidate => {
+            const positions = compressedRangePositions([...candidate.positions])
             return {
-                ...candidate,
+                ...candidate.item,
+                score: candidate.score,
                 positions,
-                url: candidate.url || this.createUrl?.(candidate.text),
+                url: candidate.item.url || this.createUrl?.(candidate.item.text),
             }
         })
         return {
             isComplete,
             links,
         }
-    }
-
-    /**
-     * Returns the results from the last query, if any, that is a prefix of the current query.
-     *
-     * Removes cached candidates that are no longer a prefix of the current
-     * query.
-     */
-    private nextCacheCandidate(parameters: FuzzySearchParameters): CacheCandidate | undefined {
-        if (parameters.query === '') {
-            this.cacheCandidates = []
-            return undefined
-        }
-        let cacheCandidate = this.lastCacheCandidate()
-        while (cacheCandidate && !cacheCandidate.matches(parameters)) {
-            this.cacheCandidates.pop()
-            cacheCandidate = this.lastCacheCandidate()
-        }
-        return cacheCandidate
-    }
-
-    private lastCacheCandidate(): CacheCandidate | undefined {
-        if (this.cacheCandidates.length > 0) {
-            return this.cacheCandidates[this.cacheCandidates.length - 1]
-        }
-        return undefined
     }
 }
 

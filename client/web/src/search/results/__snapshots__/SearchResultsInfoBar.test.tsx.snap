@@ -19,10 +19,6 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         class="nav align-items-center"
       >
         <li
-          aria-hidden="true"
-          class="divider"
-        />
-        <li
           class="mr-2 navItem"
         >
           <button
@@ -34,9 +30,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
             id="menu-button-2"
             type="button"
           >
+            Actions
             <svg
               aria-hidden="true"
-              class="mdi-icon iconInline"
+              class="mdi-icon iconInline ml-1"
+              data-caret="true"
               fill="currentColor"
               height="24"
               role="img"
@@ -44,7 +42,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
               width="24"
             >
               <path
-                d="M16,12A2,2 0 0,1 18,10A2,2 0 0,1 20,12A2,2 0 0,1 18,14A2,2 0 0,1 16,12M10,12A2,2 0 0,1 12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12M4,12A2,2 0 0,1 6,10A2,2 0 0,1 8,12A2,2 0 0,1 6,14A2,2 0 0,1 4,12Z"
+                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
               />
             </svg>
           </button>
@@ -95,10 +93,6 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         class="nav align-items-center"
       >
         <li
-          aria-hidden="true"
-          class="divider"
-        />
-        <li
           class="mr-2 navItem"
         >
           <button
@@ -110,9 +104,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             id="menu-button-6"
             type="button"
           >
+            Actions
             <svg
               aria-hidden="true"
-              class="mdi-icon iconInline"
+              class="mdi-icon iconInline ml-1"
+              data-caret="true"
               fill="currentColor"
               height="24"
               role="img"
@@ -120,7 +116,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
               width="24"
             >
               <path
-                d="M16,12A2,2 0 0,1 18,10A2,2 0 0,1 20,12A2,2 0 0,1 18,14A2,2 0 0,1 16,12M10,12A2,2 0 0,1 12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12M4,12A2,2 0 0,1 6,10A2,2 0 0,1 8,12A2,2 0 0,1 6,14A2,2 0 0,1 4,12Z"
+                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
               />
             </svg>
           </button>
@@ -171,10 +167,6 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         class="nav align-items-center"
       >
         <li
-          aria-hidden="true"
-          class="divider"
-        />
-        <li
           class="mr-2 navItem"
         >
           <button
@@ -186,9 +178,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             id="menu-button-8"
             type="button"
           >
+            Actions
             <svg
               aria-hidden="true"
-              class="mdi-icon iconInline"
+              class="mdi-icon iconInline ml-1"
+              data-caret="true"
               fill="currentColor"
               height="24"
               role="img"
@@ -196,7 +190,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
               width="24"
             >
               <path
-                d="M16,12A2,2 0 0,1 18,10A2,2 0 0,1 20,12A2,2 0 0,1 18,14A2,2 0 0,1 16,12M10,12A2,2 0 0,1 12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12M4,12A2,2 0 0,1 6,10A2,2 0 0,1 8,12A2,2 0 0,1 6,14A2,2 0 0,1 4,12Z"
+                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
               />
             </svg>
           </button>
@@ -247,10 +241,6 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         class="nav align-items-center"
       >
         <li
-          aria-hidden="true"
-          class="divider"
-        />
-        <li
           class="mr-2 navItem"
         >
           <button
@@ -262,9 +252,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
             id="menu-button-4"
             type="button"
           >
+            Actions
             <svg
               aria-hidden="true"
-              class="mdi-icon iconInline"
+              class="mdi-icon iconInline ml-1"
+              data-caret="true"
               fill="currentColor"
               height="24"
               role="img"
@@ -272,7 +264,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
               width="24"
             >
               <path
-                d="M16,12A2,2 0 0,1 18,10A2,2 0 0,1 20,12A2,2 0 0,1 18,14A2,2 0 0,1 16,12M10,12A2,2 0 0,1 12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12M4,12A2,2 0 0,1 6,10A2,2 0 0,1 8,12A2,2 0 0,1 6,14A2,2 0 0,1 4,12Z"
+                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
               />
             </svg>
           </button>
@@ -323,10 +315,6 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
         class="nav align-items-center"
       >
         <li
-          aria-hidden="true"
-          class="divider"
-        />
-        <li
           class="mr-2 navItem"
         >
           <button
@@ -338,9 +326,11 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
             id="menu-button-10"
             type="button"
           >
+            Actions
             <svg
               aria-hidden="true"
-              class="mdi-icon iconInline"
+              class="mdi-icon iconInline ml-1"
+              data-caret="true"
               fill="currentColor"
               height="24"
               role="img"
@@ -348,7 +338,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
               width="24"
             >
               <path
-                d="M16,12A2,2 0 0,1 18,10A2,2 0 0,1 20,12A2,2 0 0,1 18,14A2,2 0 0,1 16,12M10,12A2,2 0 0,1 12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12M4,12A2,2 0 0,1 6,10A2,2 0 0,1 8,12A2,2 0 0,1 6,14A2,2 0 0,1 4,12Z"
+                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
               />
             </svg>
           </button>

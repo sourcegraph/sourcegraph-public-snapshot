@@ -3,11 +3,11 @@ package cliutil
 import (
 	"fmt"
 	"net/url"
-	"regexp"
 	"sort"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,8 +30,10 @@ func getSchemaJSONFilename(schemaName string) (string, error) {
 
 var errOutOfSync = errors.Newf("database schema is out of sync")
 
-func compareSchemaDescriptions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (err error) {
-	for _, f := range []func(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool{
+func compareSchemaDescriptions(rawOut *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (err error) {
+	out := &preambledOutput{rawOut, false}
+
+	for _, f := range []func(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool{
 		compareExtensions,
 		compareEnums,
 		compareFunctions,
@@ -45,12 +47,12 @@ func compareSchemaDescriptions(out *output.Output, schemaName, version string, a
 	}
 
 	if err == nil {
-		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "No drift detected"))
+		rawOut.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "No drift detected"))
 	}
 	return err
 }
 
-func compareExtensions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+func compareExtensions(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
 	return compareNamedLists(wrapStrings(actual.Extensions), wrapStrings(expected.Extensions), func(extension *stringNamer, expectedExtension stringNamer) bool {
 		if extension == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing extension %q", expectedExtension)))
@@ -62,7 +64,7 @@ func compareExtensions(out *output.Output, schemaName, version string, actual, e
 	}, noopAdditionalCallback[stringNamer])
 }
 
-func compareEnums(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+func compareEnums(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
 	return compareNamedLists(actual.Enums, expected.Enums, func(enum *schemas.EnumDescription, expectedEnum schemas.EnumDescription) bool {
 		quotedLabels := make([]string, 0, len(expectedEnum.Labels))
 		for _, label := range expectedEnum.Labels {
@@ -90,7 +92,7 @@ func compareEnums(out *output.Output, schemaName, version string, actual, expect
 	}, noopAdditionalCallback[schemas.EnumDescription])
 }
 
-func compareFunctions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+func compareFunctions(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
 	return compareNamedLists(actual.Functions, expected.Functions, func(function *schemas.FunctionDescription, expectedFunction schemas.FunctionDescription) bool {
 		definitionStmt := fmt.Sprintf("%s;", strings.TrimSpace(expectedFunction.Definition))
 
@@ -107,7 +109,7 @@ func compareFunctions(out *output.Output, schemaName, version string, actual, ex
 	}, noopAdditionalCallback[schemas.FunctionDescription])
 }
 
-func compareSequences(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+func compareSequences(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
 	return compareNamedLists(actual.Sequences, expected.Sequences, func(sequence *schemas.SequenceDescription, expectedSequence schemas.SequenceDescription) bool {
 		definitionStmt := makeSearchURL(schemaName, version,
 			fmt.Sprintf("CREATE SEQUENCE %s", expectedSequence.Name),
@@ -127,7 +129,7 @@ func compareSequences(out *output.Output, schemaName, version string, actual, ex
 	}, noopAdditionalCallback[schemas.SequenceDescription])
 }
 
-func compareTables(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+func compareTables(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
 	return compareNamedLists(actual.Tables, expected.Tables, func(table *schemas.TableDescription, expectedTable schemas.TableDescription) bool {
 		if table == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing table %q", expectedTable.Name)))
@@ -141,15 +143,15 @@ func compareTables(out *output.Output, schemaName, version string, actual, expec
 
 		outOfSync := false
 		outOfSync = compareColumns(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareConstraints(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareIndexes(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareTriggers(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareTableComments(out, schemaName, version, *table, expectedTable) || outOfSync
+		outOfSync = compareConstraints(out, *table, expectedTable) || outOfSync
+		outOfSync = compareIndexes(out, *table, expectedTable) || outOfSync
+		outOfSync = compareTriggers(out, *table, expectedTable) || outOfSync
+		outOfSync = compareTableComments(out, *table, expectedTable) || outOfSync
 		return outOfSync
 	}, noopAdditionalCallback[schemas.TableDescription])
 }
 
-func compareColumns(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareColumns(out *preambledOutput, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
 	return compareNamedLists(actualTable.Columns, expectedTable.Columns, func(column *schemas.ColumnDescription, expectedColumn schemas.ColumnDescription) bool {
 		if column == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing column %q.%q", expectedTable.Name, expectedColumn.Name)))
@@ -210,7 +212,7 @@ func compareColumns(out *output.Output, schemaName, version string, actualTable,
 	})
 }
 
-func compareConstraints(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareConstraints(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
 	return compareNamedLists(actualTable.Constraints, expectedTable.Constraints, func(constraint *schemas.ConstraintDescription, expectedConstraint schemas.ConstraintDescription) bool {
 		createConstraintStmt := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", expectedTable.Name, expectedConstraint.Name, expectedConstraint.ConstraintDefinition)
 		dropConstraintStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, expectedConstraint.Name)
@@ -236,7 +238,7 @@ func compareConstraints(out *output.Output, schemaName, version string, actualTa
 	})
 }
 
-func compareIndexes(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareIndexes(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
 	return compareNamedLists(actualTable.Indexes, expectedTable.Indexes, func(index *schemas.IndexDescription, expectedIndex schemas.IndexDescription) bool {
 		var createIndexStmt string
 		switch expectedIndex.ConstraintType {
@@ -270,7 +272,7 @@ func compareIndexes(out *output.Output, schemaName, version string, actualTable,
 	})
 }
 
-func compareTriggers(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareTriggers(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
 	return compareNamedLists(actualTable.Triggers, expectedTable.Triggers, func(trigger *schemas.TriggerDescription, expectedTrigger schemas.TriggerDescription) bool {
 		createTriggerStmt := fmt.Sprintf("%s;", expectedTrigger.Definition)
 		dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", expectedTrigger.Name, expectedTable.Name)
@@ -297,7 +299,7 @@ func compareTriggers(out *output.Output, schemaName, version string, actualTable
 	})
 }
 
-func compareTableComments(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareTableComments(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
 	if actualTable.Comment != expectedTable.Comment {
 		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected comment of table %q", expectedTable.Name)))
 		setDefaultStmt := fmt.Sprintf("COMMENT ON TABLE %s IS '%s';", expectedTable.Name, expectedTable.Comment)
@@ -308,7 +310,7 @@ func compareTableComments(out *output.Output, schemaName, version string, actual
 	return false
 }
 
-func compareViews(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+func compareViews(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
 	return compareNamedLists(actual.Views, expected.Views, func(view *schemas.ViewDescription, expectedView schemas.ViewDescription) bool {
 		// pgsql has weird indents here
 		viewDefinition := strings.TrimSpace(stripIndent(" " + expectedView.Definition))
@@ -333,13 +335,13 @@ func noopAdditionalCallback[T schemas.Namer](_ []T) bool {
 }
 
 // writeDiff writes a colorized diff of the given objects.
-func writeDiff(out *output.Output, a, b any) {
+func writeDiff(out *preambledOutput, a, b any) {
 	out.WriteCode("diff", strings.TrimSpace(cmp.Diff(a, b)))
 }
 
 // writeSQLSolution writes a block of text containing the given solution deescription
 // and the given SQL statements formatted (and colorized) as code.
-func writeSQLSolution(out *output.Output, description string, statements ...string) {
+func writeSQLSolution(out *preambledOutput, description string, statements ...string) {
 	out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: %s.", description)))
 	out.WriteCode("sql", strings.Join(statements, "\n"))
 }
@@ -347,7 +349,7 @@ func writeSQLSolution(out *output.Output, description string, statements ...stri
 // writeSearchHint writes a block of text containing the given hint description and
 // a link to a set of Sourcegraph search results relevant to the missing or unexpected
 // object definition.
-func writeSearchHint(out *output.Output, description, url string) {
+func writeSearchHint(out *preambledOutput, description, url string) {
 	out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Hint: %s using the definition at the following URL:", description)))
 	out.Write("")
 	out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleUnderline, url))
@@ -372,9 +374,9 @@ func makeSearchURL(schemaName, version string, searchTerms ...string) string {
 	qs.Add("patternType", "regexp")
 	qs.Add("q", strings.Join(queryParts, " "))
 
-	url, _ := url.Parse("https://sourcegraph.com/search")
-	url.RawQuery = qs.Encode()
-	return url.String()
+	searchUrl, _ := url.Parse("https://sourcegraph.com/search")
+	searchUrl.RawQuery = qs.Encode()
+	return searchUrl.String()
 }
 
 // quoteTerm converts the given literal search term into a regular expression.
@@ -486,7 +488,7 @@ func compareNamedLists[T schemas.Namer](
 		av := am[k]
 
 		if bv, ok := bm[k]; ok {
-			if cmp.Diff(av, bv) != "" {
+			if cmp.Diff(schemas.Normalize(av), schemas.Normalize(bv)) != "" {
 				if primaryCallback(&av, bv) {
 					outOfSync = true
 				}
@@ -566,4 +568,42 @@ func stripIndent(s string) string {
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+//
+// Output
+
+type preambledOutput struct {
+	out     *output.Output
+	emitted bool
+}
+
+func (o *preambledOutput) check() {
+	if o.emitted {
+		return
+	}
+
+	o.out.WriteLine(output.Line(output.EmojiFailure, output.StyleFailure, "Drift detected!"))
+	o.out.Write("")
+	o.emitted = true
+}
+
+func (o *preambledOutput) Write(s string) {
+	o.check()
+	o.out.Write(s)
+}
+
+func (o *preambledOutput) Writef(format string, args ...any) {
+	o.check()
+	o.out.Writef(format, args...)
+}
+
+func (o *preambledOutput) WriteLine(line output.FancyLine) {
+	o.check()
+	o.out.WriteLine(line)
+}
+
+func (o *preambledOutput) WriteCode(languageName, str string) error {
+	o.check()
+	return o.out.WriteCode(languageName, str)
 }

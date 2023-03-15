@@ -1,11 +1,23 @@
-import { Span, trace, context, Context } from '@opentelemetry/api'
+import { trace, context, Context } from '@opentelemetry/api'
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
+
+import { ReadWriteSpan } from './span'
 
 export enum SharedSpanName {
     PageView = 'PageView',
     WindowLoad = 'WindowLoad',
+    AppMount = 'AppMount',
 }
 
-type SharedSpanNames = keyof typeof SharedSpanName
+export type SharedSpanNames = `${SharedSpanName}`
+
+export function isSharedSpanName(spanName: string): spanName is SharedSpanNames {
+    return Object.values(SharedSpanName).some(name => name === spanName)
+}
+
+export function isNavigationSpanName(spanName: string): boolean {
+    return [SharedSpanName.PageView, SharedSpanName.WindowLoad].some(name => name === spanName)
+}
 
 /**
  * Used to store recent navigation spans to group other types of spans
@@ -24,10 +36,13 @@ type SharedSpanNames = keyof typeof SharedSpanName
  * 2. https://github.com/open-telemetry/opentelemetry-js-contrib/issues/732
  */
 class SharedSpanStore {
-    private spanMap: { [key in SharedSpanNames]?: Context } = {}
+    private spanMap: { [key in SharedSpanNames]?: { context: Context; span: ReadableSpan } } = {}
 
-    public set(spanName: SharedSpanName, span: Span): void {
-        this.spanMap[spanName] = trace.setSpan(context.active(), span)
+    public set(spanName: SharedSpanNames, span: ReadWriteSpan): void {
+        this.spanMap[spanName] = {
+            span,
+            context: trace.setSpan(context.active(), span),
+        }
     }
 
     /**
@@ -35,20 +50,21 @@ class SharedSpanStore {
      * Context created by either `PageView` or `WindowLoad` spans.
      */
     public getRootNavigationContext(): Context | undefined {
-        return this.spanMap.PageView || this.spanMap.WindowLoad
+        return (this.spanMap.PageView || this.spanMap.WindowLoad)?.context
     }
 
     /**
      * Get the most recent navigation span: either `PageView` or `WindowLoad` spans.
      */
-    public getRootNavigationSpan(): Span | undefined {
-        const navigationContext = this.getRootNavigationContext()
+    public getRootNavigationSpan(): ReadableSpan | undefined {
+        return (this.spanMap.PageView || this.spanMap.WindowLoad)?.span
+    }
 
-        if (navigationContext) {
-            return trace.getSpan(navigationContext)
-        }
-
-        return undefined
+    /**
+     * Get the most recent `AppMount` span.
+     */
+    public getAppMountSpan(): ReadableSpan | undefined {
+        return this.spanMap.AppMount?.span
     }
 }
 

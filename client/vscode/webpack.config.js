@@ -9,9 +9,11 @@ const {
   getMonacoWebpackPlugin,
   getCSSModulesLoader,
   getBasicCSSLoader,
+  getBabelLoader,
   getMonacoCSSRule,
   getCSSLoaders,
 } = require('@sourcegraph/build-config')
+
 /**
  * The VS Code extension core needs to be built for two targets:
  * - Node.js for VS Code desktop
@@ -57,7 +59,6 @@ function getExtensionCoreConfiguration(targetType) {
       vscode: 'commonjs vscode',
     },
     resolve: {
-      // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       alias:
         targetType === 'webworker'
@@ -88,12 +89,13 @@ function getExtensionCoreConfiguration(targetType) {
         {
           test: /\.tsx?$/,
           exclude: /node_modules/,
-          use: [
-            {
-              // TODO(tj): esbuild-loader https://github.com/privatenumber/esbuild-loader
-              loader: 'ts-loader',
-            },
-          ],
+          use: [getBabelLoader()],
+        },
+        {
+          test: /\.m?js/,
+          resolve: {
+            fullySpecified: false,
+          },
         },
       ],
     },
@@ -128,8 +130,7 @@ const searchSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'se
 const helpSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'help')
 // Extension Host Worker Path
 const extensionHostWorker = /main\.worker\.ts$/
-// Monaco Editor Path
-const MONACO_EDITOR_PATH = path.resolve(rootPath, 'node_modules', 'monaco-editor')
+
 /** @type {import('webpack').Configuration}*/
 const webviewConfig = {
   context: __dirname, // needed when running `gulp` from the root dir
@@ -173,11 +174,11 @@ const webviewConfig = {
       path: require.resolve('path-browserify'),
       './RepoSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'RepoSearchResult'),
       './CommitSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'CommitSearchResult'),
+      './SymbolSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'SymbolSearchResult'),
       './FileMatchChildren': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'FileMatchChildren'),
       './RepoFileLink': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'RepoFileLink'),
       '../documentation/ModalVideo': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'ModalVideo'),
     },
-    // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {
       path: require.resolve('path-browserify'),
@@ -191,11 +192,7 @@ const webviewConfig = {
       {
         test: /\.tsx?$/,
         exclude: [/node_modules/, extensionHostWorker],
-        use: [
-          {
-            loader: 'ts-loader',
-          },
-        ],
+        use: [getBabelLoader()],
       },
       {
         test: extensionHostWorker,
@@ -204,7 +201,7 @@ const webviewConfig = {
             loader: 'worker-loader',
             options: { inline: 'no-fallback' },
           },
-          'ts-loader',
+          getBabelLoader(),
         ],
       },
       {
@@ -223,10 +220,15 @@ const webviewConfig = {
       // to reference path in the extension when we load the font ourselves.
       {
         test: /\.ttf$/,
-        include: [MONACO_EDITOR_PATH],
         type: 'asset/resource',
         generator: {
           filename: '[name][ext]',
+        },
+      },
+      {
+        test: /\.m?js/,
+        resolve: {
+          fullySpecified: false,
         },
       },
     ],

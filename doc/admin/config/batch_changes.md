@@ -6,7 +6,7 @@
 
 By default, Sourcegraph attempts to reconcile (create, update, or close) changesets as quickly as the rate limits on the code host allow. This can result in CI systems being overwhelmed if hundreds or thousands of changesets are being handled as part of a single batch change.
 
-Configuring rollout windows allows changesets to be created and updated at a slower or faster rate based on the time of day and/or the day of the week. These windows are applied to changesets across all code hosts.
+Configuring rollout windows allows changesets to be reconciled at a slower or faster rate based on the time of day and/or the day of the week. These windows are applied to changesets across all code hosts, but they only affect the rate at which changesets are created/published, updated, or closed, as well as some other internal operations like importing and detaching. Bulk operations to publish changesets also respect the rollout window; however, bulk commenting, merging, and closing will happen all at once.
 
 Rollout windows are configured through the `batchChanges.rolloutWindows` [site configuration option](site_config.md). If specified, this option contains an array of rollout window objects that are used to schedule changesets. The format of these objects [is given below](#rollout-window-object).
 
@@ -46,9 +46,9 @@ You may encounter this error when publishing changesets to GitHub:
 >
 > Creating changeset: error in GraphQL response: was submitted too quickly
 
-In addition to their normal API rate limits, GitHub also has an internal _content creation_ limit, which is an intentional restriction on the platform to combat abuse by automated actors. At the time of writing, the specifics of this limit remain undocumented, due largely to the fact that it is dynamically determined (see [this GitHub issue](https://github.com/cli/cli/issues/4801)). However, the behavior of the limit is that it only permits a fixed number of resources to be created per minute and per hour, and exceeding this limit triggers a temporary hour-long suspension during which time no additional resources of this type can be created.
+In addition to their normal API rate limits, GitHub also has an internal _content creation_ limit (also called [secondary rate limit](https://docs.github.com/en/rest/guides/best-practices-for-integrators?apiVersion=2022-11-28#dealing-with-secondary-rate-limits)), which is an [intentional](https://github.com/cli/cli/issues/4801#issuecomment-1029207971) restriction on the platform to combat abuse by automated actors. At the time of writing, the specifics of this limit remain undocumented, due largely to the fact that it is dynamically determined (see [this GitHub issue](https://github.com/cli/cli/issues/4801)). However, the behavior of the limit is that it only permits a fixed number of resources to be created per minute and per hour, and exceeding this limit triggers a temporary hour-long suspension during which time no additional resources of this type can be created.
 
-Presently, Batch Changes does not automatically work around this limit (feature request tracked [here](https://github.com/sourcegraph/sourcegraph/issues/39847)). The current guidance if you do encounter this issue is to just to wait an hour and then try again.
+Presently, Batch Changes does not automatically work around this limit (feature request tracked [here](https://github.com/sourcegraph/sourcegraph/issues/44631). The current guidance if you do encounter this issue is to wait an hour and then try again, setting a less frequent `rolloutWindows` rate until this issue is no longer encountered.
 
 ### Rollout window object
 
@@ -123,44 +123,7 @@ To only allow changesets to be reconciled at 1 changeset per minute on (UTC) wee
 
 > NOTE: This feature was added in Sourcegraph 3.33.
 
-Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. These webhooks can be viewed by going to **Site Admin > Batch Changes > Incoming webhooks**.
-
-By default, sites without [database encryption](encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
-
-### Enabling webhook logging
-
-Webhook logging is controlled by the `webhook.logging` site configuration
-option. This option is an object with the following keys:
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `enabled` | `boolean` | If `true`, incoming webhooks will be stored. | `true` if no site encryption is enabled; `false` otherwise. |
-| `retention` | `string` | The length of time to retain the webhooks, expressed as a valid [Go duration](https://pkg.go.dev/time#ParseDuration). | `72h` |
-
-#### Examples
-
-To disable webhook logging:
-
-```json
-{
-  "webhook.logging": {"enabled": false}
-}
-```
-
-To retain webhook logs for one day:
-
-```json
-{
-  "webhook.logging": {
-    "enabled": false,
-    "retention": "24h"
-  }
-}
-```
-
-### Encrypting webhook logs
-
-Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk database encryption site configuration](encryption.md).
+Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. Learn [how to setup webhooks and configure logging](../../admin/config/webhooks.md#webhook-logging).
 
 ## Forks
 
@@ -168,7 +131,7 @@ Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk da
 
 Sourcegraph can be configured to push branches created by Batch Changes to a fork of the repository, rather than the repository itself, by enabling the `batchChanges.enforceForks` site configuration option.
 
-If enabled, branches will be pushed to a fork within the user's namespace; for example, a changeset that opens a pull request against https://github.com/org/project would push the branch to https://github.com/user/project, creating the fork if necessary. Note that if a [global service account](../../batch_changes/how-tos/configuring_credentials.md#global-service-account-tokens) is in use, then the fork will be created in the namespace of the service account, **not** the user.
+When enabled, Batch Changes will now prefix the name of the fork repo it creates with the original repo's namespace name in order to prevent repo name collisions. For example, a changeset that opens a pull request against https://github.com/org/project would push the branch to https://github.com/user/org-project. Note that if a [global service account](../../batch_changes/how-tos/configuring_credentials.md#global-service-account-tokens) is in use, then the fork will be created in the namespace of the service account, **not** the user.
 
 ### Examples
 

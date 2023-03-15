@@ -12,35 +12,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func connectFrontendDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
+func connectFrontendDB(observationCtx *observation.Context, dsn, appName string, validate, migrate bool) (*sql.DB, error) {
 	schema := schemas.Frontend
 	if !validate {
 		schema = nil
 	}
 
-	return connect(dsn, appName, "frontend", schema, migrate, observationContext)
+	return connect(observationCtx, dsn, appName, "frontend", schema, migrate)
 }
 
-func connectCodeIntelDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
+func connectCodeIntelDB(observationCtx *observation.Context, dsn, appName string, validate, migrate bool) (*sql.DB, error) {
 	schema := schemas.CodeIntel
 	if !validate {
 		schema = nil
 	}
 
-	return connect(dsn, appName, "codeintel", schema, migrate, observationContext)
+	return connect(observationCtx, dsn, appName, "codeintel", schema, migrate)
 }
 
-func connectCodeInsightsDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
+func connectCodeInsightsDB(observationCtx *observation.Context, dsn, appName string, validate, migrate bool) (*sql.DB, error) {
 	schema := schemas.CodeInsights
 	if !validate {
 		schema = nil
 	}
 
-	return connect(dsn, appName, "codeinsights", schema, migrate, observationContext)
+	return connect(observationCtx, dsn, appName, "codeinsights", schema, migrate)
 }
 
-func connect(dsn, appName, dbName string, schema *schemas.Schema, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	db, err := dbconn.ConnectInternal(observationContext.Logger, dsn, appName, dbName)
+func connect(observationCtx *observation.Context, dsn, appName, dbName string, schema *schemas.Schema, migrate bool) (*sql.DB, error) {
+	db, err := dbconn.ConnectInternal(observationCtx.Logger, dsn, appName, dbName)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func connect(dsn, appName, dbName string, schema *schemas.Schema, migrate bool, 
 	}()
 
 	if schema != nil {
-		if err := validateSchema(db, schema, !migrate, observationContext); err != nil {
+		if err := validateSchema(observationCtx, db, schema, !migrate); err != nil {
 			return nil, err
 		}
 	}
@@ -61,10 +61,10 @@ func connect(dsn, appName, dbName string, schema *schemas.Schema, migrate bool, 
 	return db, nil
 }
 
-func validateSchema(db *sql.DB, schema *schemas.Schema, validateOnly bool, observationContext *observation.Context) error {
+func validateSchema(observationCtx *observation.Context, db *sql.DB, schema *schemas.Schema, validateOnly bool) error {
 	ctx := context.Background()
-	storeFactory := newStoreFactory(observationContext)
-	migrationRunner := runnerFromDB(observationContext.Logger, storeFactory, db, schema)
+	storeFactory := newStoreFactory(observationCtx)
+	migrationRunner := runnerFromDB(observationCtx.Logger, storeFactory, db, schema)
 
 	if err := migrationRunner.Validate(ctx, schema.Name); err != nil {
 		outOfDateError := new(runner.SchemaOutOfDateError)

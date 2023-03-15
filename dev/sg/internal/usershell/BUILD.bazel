@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "usershell",
+    srcs = [
+        "autocomplete.go",
+        "command.go",
+        "usershell.go",
+    ],
+    embedsrcs = [
+        "autocomplete/bash_autocomplete",
+        "autocomplete/zsh_autocomplete",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_sourcegraph_run//:run",
+    ],
+)

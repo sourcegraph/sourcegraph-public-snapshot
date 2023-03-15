@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "timeutil",
+    srcs = [
+        "clock.go",
+        "fakeclock.go",
+        "sleep.go",
+        "week.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/timeutil",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    timeout = "short",
+    name = "timeutil_test",
+    srcs = ["week_test.go"],
+    embed = [":timeutil"],
+)

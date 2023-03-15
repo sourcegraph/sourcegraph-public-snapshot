@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
     "target": "es2020",
@@ -16,11 +16,27 @@
     "jsx": "react-jsx",
   },
   "references": [
-    { "path": "../shared" },
-    { "path": "../common" },
-    { "path": "../branded" },
-    { "path": "../search" },
-    { "path": "../search-ui" },
+    {
+      "path": "../branded",
+    },
+    {
+      "path": "../build-config",
+    },
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../http-client",
+    },
+    {
+      "path": "../shared",
+    },
+    {
+      "path": "../storybook",
+    },
+    {
+      "path": "../wildcard",
+    },
   ],
   "include": ["./package.json", "**/*", ".*", "**/*.d.ts"],
   "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist", "src", "gradle"],

@@ -14,24 +14,32 @@ import (
 // JSON blob in a typesafe way.
 func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *User, tok *oauth2.Token, err error) {
 	if data.Data != nil {
-		var u User
-		if err := encryption.DecryptJSON(ctx, data.Data, &u); err != nil {
+		usr, err = encryption.DecryptJSON[User](ctx, data.Data)
+		if err != nil {
 			return nil, nil, err
 		}
-
-		usr = &u
 	}
 
 	if data.AuthData != nil {
-		var t oauth2.Token
-		if err := encryption.DecryptJSON(ctx, data.AuthData, &t); err != nil {
+		tok, err = encryption.DecryptJSON[oauth2.Token](ctx, data.AuthData)
+		if err != nil {
 			return nil, nil, err
 		}
-
-		tok = &t
 	}
 
 	return usr, tok, nil
+}
+
+func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
+	data, _, err := GetExternalAccountData(ctx, accountData)
+	if err != nil {
+		return nil, err
+	}
+	return &extsvc.PublicAccountData{
+		DisplayName: &data.Name,
+		Login:       &data.Username,
+		URL:         &data.WebURL,
+	}, nil
 }
 
 // SetExternalAccountData sets the user and token into the external account data blob.

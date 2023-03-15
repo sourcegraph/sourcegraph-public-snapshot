@@ -4,8 +4,12 @@ package protocol
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
+
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // Request represents a request to searcher
@@ -43,7 +47,7 @@ type Request struct {
 	//
 	// This only times out how long we wait for the fetch request;
 	// the fetch will still happen in the background so future requests don't have to wait.
-	FetchTimeout string
+	FetchTimeout time.Duration
 
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
@@ -92,10 +96,6 @@ type PatternInfo struct {
 	// ExcludePattern); it is not possible in general to construct a single
 	// glob or Go regexp that represents multiple such patterns ANDed together.
 	IncludePatterns []string
-
-	// IncludeExcludePatternAreRegExps indicates that ExcludePattern, IncludePattern,
-	// and IncludePatterns are regular expressions (not globs).
-	PathPatternsAreRegExps bool
 
 	// IncludeExcludePatternAreCaseSensitive indicates that ExcludePattern, IncludePattern,
 	// and IncludePatterns are case sensitive.
@@ -163,10 +163,7 @@ func (p *PatternInfo) String() string {
 		args = append(args, fmt.Sprintf("select:%s", p.Select))
 	}
 
-	path := "glob"
-	if p.PathPatternsAreRegExps {
-		path = "f"
-	}
+	path := "f"
 	if p.PathPatternsAreCaseSensitive {
 		path = "F"
 	}
@@ -178,6 +175,66 @@ func (p *PatternInfo) String() string {
 	}
 
 	return fmt.Sprintf("PatternInfo{%s}", strings.Join(args, ","))
+}
+
+func (r *Request) ToProto() *proto.SearchRequest {
+	return &proto.SearchRequest{
+		Repo:      string(r.Repo),
+		RepoId:    uint32(r.RepoID),
+		CommitOid: string(r.Commit),
+		Branch:    r.Branch,
+		Indexed:   r.Indexed,
+		Url:       r.URL,
+		PatternInfo: &proto.PatternInfo{
+			Pattern:                      r.PatternInfo.Pattern,
+			IsNegated:                    r.PatternInfo.IsNegated,
+			IsRegexp:                     r.PatternInfo.IsRegExp,
+			IsStructural:                 r.PatternInfo.IsStructuralPat,
+			IsWordMatch:                  r.PatternInfo.IsWordMatch,
+			IsCaseSensitive:              r.PatternInfo.IsCaseSensitive,
+			ExcludePattern:               r.PatternInfo.ExcludePattern,
+			IncludePatterns:              r.PatternInfo.IncludePatterns,
+			PathPatternsAreCaseSensitive: r.PatternInfo.PathPatternsAreCaseSensitive,
+			Limit:                        int64(r.PatternInfo.Limit),
+			PatternMatchesContent:        r.PatternInfo.PatternMatchesContent,
+			PatternMatchesPath:           r.PatternInfo.PatternMatchesPath,
+			CombyRule:                    r.PatternInfo.CombyRule,
+			Languages:                    r.PatternInfo.Languages,
+			Select:                       r.PatternInfo.Select,
+		},
+		FetchTimeout: durationpb.New(r.FetchTimeout),
+		FeatHybrid:   r.FeatHybrid,
+	}
+}
+
+func (r *Request) FromProto(req *proto.SearchRequest) {
+	*r = Request{
+		Repo:   api.RepoName(req.Repo),
+		RepoID: api.RepoID(req.RepoId),
+		URL:    req.Url,
+		Commit: api.CommitID(req.CommitOid),
+		Branch: req.Branch,
+		PatternInfo: PatternInfo{
+			Pattern:                      req.PatternInfo.Pattern,
+			IsNegated:                    req.PatternInfo.IsNegated,
+			IsRegExp:                     req.PatternInfo.IsRegexp,
+			IsStructuralPat:              req.PatternInfo.IsStructural,
+			IsWordMatch:                  req.PatternInfo.IsWordMatch,
+			IsCaseSensitive:              req.PatternInfo.IsCaseSensitive,
+			ExcludePattern:               req.PatternInfo.ExcludePattern,
+			IncludePatterns:              req.PatternInfo.IncludePatterns,
+			PathPatternsAreCaseSensitive: req.PatternInfo.PathPatternsAreCaseSensitive,
+			Limit:                        int(req.PatternInfo.Limit),
+			PatternMatchesContent:        req.PatternInfo.PatternMatchesContent,
+			PatternMatchesPath:           req.PatternInfo.PatternMatchesPath,
+			Languages:                    req.PatternInfo.Languages,
+			CombyRule:                    req.PatternInfo.CombyRule,
+			Select:                       req.PatternInfo.Select,
+		},
+		FetchTimeout: req.FetchTimeout.AsDuration(),
+		Indexed:      req.Indexed,
+		FeatHybrid:   req.FeatHybrid,
+	}
 }
 
 // Response represents the response from a Search request.
@@ -199,6 +256,30 @@ type FileMatch struct {
 
 	// LimitHit is true if LineMatches may not include all LineMatches.
 	LimitHit bool
+}
+
+func (fm *FileMatch) ToProto() *proto.FileMatch {
+	chunkMatches := make([]*proto.ChunkMatch, len(fm.ChunkMatches))
+	for i, cm := range fm.ChunkMatches {
+		chunkMatches[i] = cm.ToProto()
+	}
+	return &proto.FileMatch{
+		Path:         fm.Path,
+		ChunkMatches: chunkMatches,
+		LimitHit:     fm.LimitHit,
+	}
+}
+
+func (fm *FileMatch) FromProto(pm *proto.FileMatch) {
+	chunkMatches := make([]ChunkMatch, len(pm.ChunkMatches))
+	for i, cm := range pm.ChunkMatches {
+		chunkMatches[i].FromProto(cm)
+	}
+	*fm = FileMatch{
+		Path:         pm.Path,
+		ChunkMatches: chunkMatches,
+		LimitHit:     pm.LimitHit,
+	}
 }
 
 func (fm FileMatch) MatchCount() int {
@@ -246,9 +327,49 @@ func (cm ChunkMatch) MatchedContent() []string {
 	return res
 }
 
+func (cm *ChunkMatch) ToProto() *proto.ChunkMatch {
+	ranges := make([]*proto.Range, len(cm.Ranges))
+	for i, r := range cm.Ranges {
+		ranges[i] = r.ToProto()
+	}
+	return &proto.ChunkMatch{
+		Content:      cm.Content,
+		ContentStart: cm.ContentStart.ToProto(),
+		Ranges:       ranges,
+	}
+}
+
+func (cm *ChunkMatch) FromProto(pm *proto.ChunkMatch) {
+	var contentStart Location
+	contentStart.FromProto(pm.GetContentStart())
+
+	ranges := make([]Range, len(pm.GetRanges()))
+	for i, r := range pm.GetRanges() {
+		ranges[i].FromProto(r)
+	}
+
+	*cm = ChunkMatch{
+		Content:      pm.GetContent(),
+		ContentStart: contentStart,
+		Ranges:       ranges,
+	}
+}
+
 type Range struct {
 	Start Location
 	End   Location
+}
+
+func (r *Range) ToProto() *proto.Range {
+	return &proto.Range{
+		Start: r.Start.ToProto(),
+		End:   r.End.ToProto(),
+	}
+}
+
+func (r *Range) FromProto(pr *proto.Range) {
+	r.Start.FromProto(pr.GetStart())
+	r.End.FromProto(pr.GetEnd())
 }
 
 type Location struct {
@@ -261,4 +382,20 @@ type Location struct {
 
 	// Column is the rune offset from the beginning of the last line.
 	Column int32
+}
+
+func (l *Location) ToProto() *proto.Location {
+	return &proto.Location{
+		Offset: l.Offset,
+		Line:   l.Line,
+		Column: l.Column,
+	}
+}
+
+func (l *Location) FromProto(pl *proto.Location) {
+	*l = Location{
+		Offset: pl.GetOffset(),
+		Line:   pl.GetLine(),
+		Column: pl.GetColumn(),
+	}
 }

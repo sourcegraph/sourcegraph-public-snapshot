@@ -2,22 +2,15 @@
     background-color: var(--color-bg-1);
 }
 
-.highlighted-file-wrapper {
-    padding: 0.25rem 1rem 1rem 1rem;
-
-    :global(.is-read-only-notebook) & {
-        padding-bottom: 0.25rem;
-    }
-}
-
 .header {
+    margin-bottom: 0.25rem;
+    a {
+        color: var(--text-muted);
+    }
+    font-size: 0.75rem;
+
     display: flex;
     align-items: center;
-    padding: 1rem 1rem 0.25rem 1rem;
-
-    :global(.is-read-only-notebook) & {
-        padding-top: 0.25rem;
-    }
 }
 
 .separator {
@@ -32,4 +25,8 @@
     padding: 0.5rem;
     overflow: auto;
     max-height: 32rem;
+}
+
+.symbol-kind {
+    color: inherit;
 }

@@ -2,9 +2,7 @@ import { readFile } from 'mz/fs'
 import { Observable, throwError, of } from 'rxjs'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
-import { SuccessGraphQLResult } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { IMutation, IQuery } from '@sourcegraph/shared/src/schema'
 
 import { DiffOrBlobInfo } from '../shared/codeHost'
 import { GraphQLResponseMap, mockRequestGraphQL } from '../shared/testHelpers'
@@ -96,19 +94,19 @@ const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
         of({
             data: {},
             errors: undefined,
-        } as SuccessGraphQLResult<IMutation>),
+        }),
     ResolveRepo: () =>
         of({
             data: {
                 repository: null,
             },
             errors: undefined,
-        } as SuccessGraphQLResult<IQuery>),
+        }),
     ResolveStagingRev: () =>
         of({
             data: { resolvePhabricatorDiff: { oid: 'staging-revision' } },
             errors: undefined,
-        } as SuccessGraphQLResult<IMutation>),
+        }),
 }
 
 function mockQueryConduit(responseMap?: ConduitResponseMap): QueryConduitHelper<any> {
@@ -385,7 +383,7 @@ describe('Phabricator file info', () => {
                                         },
                                     },
                                     errors: undefined,
-                                } as SuccessGraphQLResult<IQuery>),
+                                }),
                         },
                     },
                     resolveDiffFileInfo
@@ -411,7 +409,7 @@ describe('Phabricator file info', () => {
                                         },
                                     },
                                     errors: undefined,
-                                } as SuccessGraphQLResult<IMutation>),
+                                }),
                         },
                         conduitResponseMap: {
                             '/api/differential.getrawdiff': parameters =>
@@ -451,7 +449,7 @@ describe('Phabricator file info', () => {
                                         },
                                     },
                                     errors: undefined,
-                                } as SuccessGraphQLResult<IQuery>),
+                                }),
                         },
                     },
                     resolveDiffFileInfo

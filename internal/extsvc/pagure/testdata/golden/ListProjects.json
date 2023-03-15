@@ -1,13 +1,4 @@
 {
-  "pagination": {
-   "first": "https://src.fedoraproject.org/api/0/projects?per_page=5\u0026fork=true\u0026pattern=tmux\u0026page=1",
-   "last": "https://src.fedoraproject.org/api/0/projects?per_page=5\u0026fork=true\u0026pattern=tmux\u0026page=2",
-   "next": "https://src.fedoraproject.org/api/0/projects?per_page=5\u0026fork=true\u0026pattern=tmux\u0026page=2",
-   "page": 1,
-   "pages": 2,
-   "per_page": 5,
-   "prev": ""
-  },
   "projects": [
    {
     "description": "The tmux rpms",

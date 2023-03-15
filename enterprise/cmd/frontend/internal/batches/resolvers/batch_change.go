@@ -9,9 +9,11 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -47,17 +49,13 @@ type batchChangeResolver struct {
 
 const batchChangeIDKind = "BatchChange"
 
-func marshalBatchChangeID(id int64) graphql.ID {
-	return relay.MarshalID(batchChangeIDKind, id)
-}
-
 func unmarshalBatchChangeID(id graphql.ID) (batchChangeID int64, err error) {
 	err = relay.UnmarshalSpec(id, &batchChangeID)
 	return
 }
 
 func (r *batchChangeResolver) ID() graphql.ID {
-	return marshalBatchChangeID(r.batchChange.ID)
+	return bgql.MarshalBatchChangeID(r.batchChange.ID)
 }
 
 func (r *batchChangeResolver) Name() string {
@@ -72,16 +70,16 @@ func (r *batchChangeResolver) Description() *string {
 }
 
 func (r *batchChangeResolver) State() string {
-	var state btypes.BatchChangeState
+	var batchChangeState btypes.BatchChangeState
 	if r.batchChange.Closed() {
-		state = btypes.BatchChangeStateClosed
+		batchChangeState = btypes.BatchChangeStateClosed
 	} else if r.batchChange.IsDraft() {
-		state = btypes.BatchChangeStateDraft
+		batchChangeState = btypes.BatchChangeStateDraft
 	} else {
-		state = btypes.BatchChangeStateOpen
+		batchChangeState = btypes.BatchChangeStateOpen
 	}
 
-	return state.ToGraphQL()
+	return batchChangeState.ToGraphQL()
 }
 
 func (r *batchChangeResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {

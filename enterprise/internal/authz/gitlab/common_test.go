@@ -367,6 +367,10 @@ func (m mockAuthnProvider) Refresh(ctx context.Context) error {
 	panic("should not be called")
 }
 
+func (m mockAuthnProvider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
+	panic("should not be called")
+}
+
 func acct(t *testing.T, userID int32, serviceType, serviceID, accountID string) *extsvc.Account {
 	var data extsvc.AccountData
 

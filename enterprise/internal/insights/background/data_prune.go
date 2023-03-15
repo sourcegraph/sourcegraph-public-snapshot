@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -18,14 +18,16 @@ import (
 // NewInsightsDataPrunerJob will periodically delete recorded data series that have been marked `deleted`.
 func NewInsightsDataPrunerJob(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB) goroutine.BackgroundRoutine {
 	interval := time.Minute * 60
+	logger := log.Scoped("InsightsDataPrunerJob", "")
 
-	return goroutine.NewPeriodicGoroutine(ctx, interval,
-		goroutine.NewHandlerWithErrorMessage("insights_data_prune", func(ctx context.Context) (err error) {
-			return performPurge(ctx, postgres, insightsdb, time.Now().Add(interval))
+	return goroutine.NewPeriodicGoroutine(ctx,
+		"insights.data_prune", "deletes series that have been marked as 'deleted'",
+		interval, goroutine.HandlerFunc(func(ctx context.Context) (err error) {
+			return performPurge(ctx, postgres, insightsdb, logger, time.Now().Add(interval))
 		}))
 }
 
-func performPurge(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB, deletedBefore time.Time) (err error) {
+func performPurge(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB, logger log.Logger, deletedBefore time.Time) (err error) {
 	insightStore := store.NewInsightStore(insightsdb)
 	timeseriesStore := store.New(insightsdb, store.NewInsightPermissionStore(postgres))
 
@@ -41,11 +43,14 @@ func performPurge(ctx context.Context, postgres database.DB, insightsdb edb.Insi
 		// the series definition will always be referencable and therefore can be re-attempted. This operation
 		// isn't across the same database currently, so there isn't a single transaction across all the
 		// tables.
-		log15.Info("pruning insight series", "seriesId", id)
-		err := deleteQueuedRecords(ctx, postgres, id)
-		if err != nil {
+		logger.Info("pruning insight series", log.String("seriesId", id))
+		if err := deleteQueuedRecords(ctx, postgres, id); err != nil {
 			return errors.Wrap(err, "deleteQueuedRecords")
 		}
+		if err := deleteQueuedRetentionRecords(ctx, insightsdb, id); err != nil {
+			return errors.Wrap(err, "deleteQueuedRetentionRecords")
+		}
+
 		err = func() (err error) {
 			// scope the transaction to an anonymous function so we can defer Done
 			tx, err := timeseriesStore.Transact(ctx)
@@ -60,6 +65,7 @@ func performPurge(ctx context.Context, postgres database.DB, insightsdb edb.Insi
 			}
 
 			insightStoreTx := insightStore.With(tx)
+			// HardDeleteSeries will cascade delete to recording times and archived points and recording times.
 			return insightStoreTx.HardDeleteSeries(ctx, id)
 		}()
 		if err != nil {
@@ -77,4 +83,13 @@ func deleteQueuedRecords(ctx context.Context, postgres database.DB, seriesId str
 
 const deleteQueuedForSeries = `
 delete from insights_query_runner_jobs where series_id = %s;
+`
+
+func deleteQueuedRetentionRecords(ctx context.Context, insightsDB edb.InsightsDB, seriesId string) error {
+	queueStore := basestore.NewWithHandle(insightsDB.Handle())
+	return queueStore.Exec(ctx, sqlf.Sprintf(deleteQueuedRetentionRecordsSql, seriesId))
+}
+
+const deleteQueuedRetentionRecordsSql = `
+delete from insights_data_retention_jobs where series_id_string = %s;
 `

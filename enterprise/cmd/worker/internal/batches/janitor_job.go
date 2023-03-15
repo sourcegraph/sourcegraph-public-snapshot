@@ -3,11 +3,6 @@ package batches
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
@@ -15,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type janitorJob struct{}
@@ -32,12 +26,8 @@ func (j *janitorJob) Config() []env.Config {
 	return []env.Config{janitorConfigInst}
 }
 
-func (j *janitorJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "janitor job routines"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "janitor job routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()
@@ -45,7 +35,7 @@ func (j *janitorJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 		return nil, err
 	}
 
-	janitorMetrics := janitor.NewMetrics(observationContext)
+	janitorMetrics := janitor.NewMetrics(observationCtx)
 
 	reconcilerStore, err := InitReconcilerWorkerStore()
 	if err != nil {
@@ -64,7 +54,7 @@ func (j *janitorJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 		return nil, err
 	}
 
-	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "batches", workspaceExecutionStore, janitorConfigInst.MetricsConfig)
+	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationCtx, "batches", workspaceExecutionStore, janitorConfigInst.MetricsConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -73,22 +63,22 @@ func (j *janitorJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 		executorMetricsReporter,
 
 		janitor.NewReconcilerWorkerResetter(
-			logger.Scoped("ReconcilerWorkerResetter", ""),
+			observationCtx.Logger.Scoped("ReconcilerWorkerResetter", ""),
 			reconcilerStore,
 			janitorMetrics,
 		),
 		janitor.NewBulkOperationWorkerResetter(
-			logger.Scoped("BulkOperationWorkerResetter", ""),
+			observationCtx.Logger.Scoped("BulkOperationWorkerResetter", ""),
 			bulkOperationStore,
 			janitorMetrics,
 		),
 		janitor.NewBatchSpecWorkspaceExecutionWorkerResetter(
-			logger.Scoped("BatchSpecWorkspaceExecutionWorkerResetter", ""),
+			observationCtx.Logger.Scoped("BatchSpecWorkspaceExecutionWorkerResetter", ""),
 			workspaceExecutionStore,
 			janitorMetrics,
 		),
 		janitor.NewBatchSpecWorkspaceResolutionWorkerResetter(
-			logger.Scoped("BatchSpecWorkspaceResolutionWorkerResetter", ""),
+			observationCtx.Logger.Scoped("BatchSpecWorkspaceResolutionWorkerResetter", ""),
 			workspaceResolutionStore,
 			janitorMetrics,
 		),

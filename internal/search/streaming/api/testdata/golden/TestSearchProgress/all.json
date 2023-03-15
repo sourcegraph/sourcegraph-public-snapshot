@@ -33,6 +33,12 @@
     "severity": "warn"
    },
    {
+    "reason": "backend-missing",
+    "title": "1 backend down",
+    "message": "Some results may be missing due to backends being down. This is likely transient and due to a rollout, so retry your search.",
+    "severity": "warn"
+   },
+   {
     "reason": "repository-fork",
     "title": "5 forked",
     "message": "By default we exclude forked repositories. Include them with `fork:yes` in your query.",

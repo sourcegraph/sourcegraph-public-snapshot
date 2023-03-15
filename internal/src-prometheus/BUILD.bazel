@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "src-prometheus",
+    srcs = [
+        "prometheus.go",
+        "types.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/src-prometheus",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/env",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "src-prometheus_test",
+    srcs = ["prometheus_test.go"],
+    embed = [":src-prometheus"],
+    deps = ["//lib/errors"],
+)

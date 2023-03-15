@@ -4,9 +4,9 @@ package linters
 import (
 	"bytes"
 	"context"
-	"io"
 
 	"github.com/sourcegraph/run"
+	"go.bobheadxi.dev/streamline/pipeline"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
@@ -50,9 +50,9 @@ var Targets = []Target{
 	{
 		Name:        "docs",
 		Description: "Documentation checks",
-		Checks: []*linter{
-			runScript("Docsite lint", "dev/docsite.sh check"),
-			prettier,
+		Checks:      []*linter{
+			// Flaky https://buildkite.com/sourcegraph/sourcegraph/builds/189124
+			// runScript("Docsite lint", "dev/docsite.sh check"),
 		},
 	},
 	{
@@ -69,9 +69,8 @@ var Targets = []Target{
 		Checks: []*linter{
 			tsEnterpriseImport,
 			inlineTemplates,
-			runScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
+			runScript("pnpm dedupe", "dev/check/pnpm-deduplicate.sh"),
 			checkUnversionedDocsLinks(),
-			prettier,
 		},
 	},
 	{
@@ -90,6 +89,24 @@ var Targets = []Target{
 			shellCheck,
 			bashSyntax,
 		},
+	},
+	{
+		Name:        "protobuf",
+		Description: "Check protobuf code for linting errors, formatting, etc",
+		Checks: []*linter{
+			bufFormat,
+			bufGenerate,
+			bufLint,
+		},
+	},
+	Formatting,
+}
+
+var Formatting = Target{
+	Name:        "format",
+	Description: "Check client code and docs for formatting errors",
+	Checks: []*linter{
+		prettier,
 	},
 }
 
@@ -111,7 +128,7 @@ func runCheck(name string, check check.CheckAction[*repo.State]) *linter {
 	}
 }
 
-// yarnInstallFilter is a LineMap that filters out all the warning junk that yarn install
+// pnpmInstallFilter is a pipeline that filters out all the warning junk that pnpm install
 // emits that seem inconsequential, for example:
 //
 //	warning "@storybook/addon-storyshots > react-test-renderer@16.14.0" has incorrect peer dependency "react@^16.14.0".
@@ -122,15 +139,8 @@ func runCheck(name string, check check.CheckAction[*repo.State]) *linter {
 //	warning "storybook-addon-designs > @figspec/react@1.0.0" has incorrect peer dependency "react@^16.14.0 || ^17.0.0".
 //	warning Workspaces can only be enabled in private projects.
 //	warning Workspaces can only be enabled in private projects.
-func yarnInstallFilter() run.LineMap {
-	return func(ctx context.Context, line []byte, dst io.Writer) (int, error) {
-		// We can't seem to do a simple prefix check, so let's just do something lazy for
-		// now and figure it out later if it's an issue.
-		if bytes.Contains(line, []byte("warning")) {
-			return 0, nil
-		}
-		return dst.Write(line)
-	}
+func pnpmInstallFilter() pipeline.Pipeline {
+	return pipeline.Filter(func(line []byte) bool { return !bytes.Contains(line, []byte("warning")) })
 }
 
 // disabled can be used to mark a category or check as disabled.

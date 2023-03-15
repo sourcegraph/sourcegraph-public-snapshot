@@ -57,7 +57,7 @@ func TestReposourceCloneURLToRepoName(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repoName, err := ReposourceCloneURLToRepoName(ctx, db, test.cloneURL)
+			repoName, err := RepoSourceCloneURLToRepoName(ctx, db, test.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}

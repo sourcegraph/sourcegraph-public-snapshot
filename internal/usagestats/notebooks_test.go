@@ -35,12 +35,11 @@ VALUES
 	(9, 'SearchNotebookAddBlock', '{"type":"query"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', 'version', $1::timestamp - interval '1 day'),
 	(10, 'SearchNotebookAddBlock', '{"type":"file"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', 'version', $1::timestamp - interval '1 day'),
 	(11, 'SearchNotebookAddBlock', '{"type":"symbol"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', 'version', $1::timestamp - interval '1 day'),
-	(12, 'SearchNotebookAddBlock', '{"type":"compute"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', 'version', $1::timestamp - interval '1 day'),
+	(12, 'SearchNotebookPageViewed', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', 'version', $1::timestamp - interval '1 day'),
 	(13, 'SearchNotebookPageViewed', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', 'version', $1::timestamp - interval '1 day'),
-	(14, 'SearchNotebookPageViewed', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', 'version', $1::timestamp - interval '1 day'),
+	(14, 'SearchNotebooksListPageViewed', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', 'version', $1::timestamp - interval '1 day'),
 	(15, 'SearchNotebooksListPageViewed', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', 'version', $1::timestamp - interval '1 day'),
-	(16, 'SearchNotebooksListPageViewed', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', 'version', $1::timestamp - interval '1 day'),
-	(17, 'EmbeddedNotebookPageViewed', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', 'version', $1::timestamp - interval '1 day')
+	(16, 'EmbeddedNotebookPageViewed', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', 'version', $1::timestamp - interval '1 day')
 `, now)
 	if err != nil {
 		t.Fatal(err)
@@ -65,7 +64,6 @@ VALUES
 		NotebookAddedQueryBlocksCount:    &oneInt,
 		NotebookAddedFileBlocksCount:     &oneInt,
 		NotebookAddedSymbolBlocksCount:   &oneInt,
-		NotebookAddedComputeBlocksCount:  &oneInt,
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatal(diff)

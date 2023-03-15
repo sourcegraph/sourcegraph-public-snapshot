@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"time"
 
@@ -78,20 +79,24 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 }
 
 type Event struct {
-	Event          string
-	UserCookieID   string
-	FirstSourceURL *string
-	LastSourceURL  *string
-	URL            string
-	Source         string
-	Argument       *string
-	CohortID       *string
-	Referrer       *string
-	PublicArgument *string
-	UserProperties *string
-	DeviceID       *string
-	InsertID       *string
-	EventID        *int32
+	Event            string
+	UserCookieID     string
+	FirstSourceURL   *string
+	LastSourceURL    *string
+	URL              string
+	Source           string
+	Argument         *string
+	CohortID         *string
+	Referrer         *string
+	OriginalReferrer *string
+	SessionReferrer  *string
+	SessionFirstURL  *string
+	DeviceSessionID  *string
+	PublicArgument   *string
+	UserProperties   *string
+	DeviceID         *string
+	InsertID         *string
+	EventID          *int32
 }
 
 type EventBatch struct {
@@ -175,11 +180,15 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			EvaluatedFlagSet: featureflag.GetEvaluatedFlagSet(ctx),
 			CohortID:         args.CohortID,
 			Referrer:         args.Referrer,
+			OriginalReferrer: args.OriginalReferrer,
+			SessionReferrer:  args.SessionReferrer,
+			SessionFirstURL:  args.SessionFirstURL,
 			PublicArgument:   publicArgumentPayload,
 			UserProperties:   userPropertiesPayload,
 			DeviceID:         args.DeviceID,
 			EventID:          args.EventID,
 			InsertID:         args.InsertID,
+			DeviceSessionID:  args.DeviceSessionID,
 		})
 	}
 
@@ -209,7 +218,7 @@ func exportPrometheusSearchLatencies(event string, payload json.RawMessage) erro
 	var v struct {
 		DurationMS float64 `json:"durationMs"`
 	}
-	if err := json.Unmarshal([]byte(payload), &v); err != nil {
+	if err := json.Unmarshal(payload, &v); err != nil {
 		return err
 	}
 	if event == "search.latencies.frontend.code-load" {
@@ -226,16 +235,30 @@ var searchRankingResultClicked = promauto.NewHistogramVec(prometheus.HistogramOp
 	Name:    "src_search_ranking_result_clicked",
 	Help:    "the index of the search result which was clicked on by the user",
 	Buckets: prometheus.LinearBuckets(1, 1, 10),
-}, []string{"type"})
+}, []string{"type", "resultsLength", "ranked"})
 
 func exportPrometheusSearchRanking(payload json.RawMessage) error {
 	var v struct {
-		Index float64 `json:"index"`
-		Type  string  `json:"type"`
+		Index         float64 `json:"index"`
+		Type          string  `json:"type"`
+		ResultsLength int     `json:"resultsLength"`
+		Ranked        bool    `json:"ranked"`
 	}
-	if err := json.Unmarshal([]byte(payload), &v); err != nil {
+
+	if err := json.Unmarshal(payload, &v); err != nil {
 		return err
 	}
-	searchRankingResultClicked.WithLabelValues(v.Type).Observe(v.Index)
+
+	var resultsLength string
+	switch {
+	case v.ResultsLength <= 3:
+		resultsLength = "<=3"
+	default:
+		resultsLength = ">3"
+	}
+
+	ranked := strconv.FormatBool(v.Ranked)
+
+	searchRankingResultClicked.WithLabelValues(v.Type, resultsLength, ranked).Observe(v.Index)
 	return nil
 }

@@ -1,11 +1,15 @@
-import React, { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, ChangeEventHandler, FC } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
     MenuButton,
@@ -19,25 +23,29 @@ import {
     AnchorLink,
     Select,
     Icon,
-    Badge,
+    ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import { ThemePreferenceProps, ThemePreference } from '../theme'
-import { UserAvatar } from '../user/UserAvatar'
+import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 
 import styles from './UserNavItem.module.scss'
 
-export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
-    authenticatedUser: Pick<
-        AuthenticatedUser,
-        'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
-    >
-    showDotComMarketing: boolean
+const MAX_VISIBLE_ORGS = 5
+
+type MinimalAuthenticatedUser = Pick<
+    AuthenticatedUser,
+    'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
+>
+
+export interface UserNavItemProps extends TelemetryProps {
+    authenticatedUser: MinimalAuthenticatedUser
+    isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
-    position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
+    showFeedbackModal: () => void
     showKeyboardShortcutsHelp: () => void
 }
 
@@ -45,42 +53,56 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
  * Displays the user's avatar and/or username in the navbar and exposes a dropdown menu with more options for
  * authenticated viewers.
  */
-export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNavItemProps>> = props => {
+export const UserNavItem: FC<UserNavItemProps> = props => {
     const {
-        menuButtonRef,
-        themePreference,
-        onThemePreferenceChange,
+        authenticatedUser,
+        isSourcegraphDotCom,
+        isSourcegraphApp,
         codeHostIntegrationMessaging,
-        position = Position.bottomEnd,
+        menuButtonRef,
+        showFeedbackModal,
+        showKeyboardShortcutsHelp,
+        telemetryService,
     } = props
+
+    const { themeSetting, setThemeSetting } = useTheme()
+    const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
+    const [enableTeams] = useFeatureFlag('search-ownership')
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
         []
     )
 
-    const onThemeChange: React.ChangeEventHandler<HTMLSelectElement> = useCallback(
+    const onThemeChange: ChangeEventHandler<HTMLSelectElement> = useCallback(
         event => {
-            onThemePreferenceChange(event.target.value as ThemePreference)
+            setThemeSetting(event.target.value as ThemeSetting)
         },
-        [onThemePreferenceChange]
+        [setThemeSetting]
     )
 
     const onThemeCycle = useCallback((): void => {
-        onThemePreferenceChange(themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark)
-    }, [onThemePreferenceChange, themePreference])
+        setThemeSetting(themeSetting === ThemeSetting.Dark ? ThemeSetting.Light : ThemeSetting.Dark)
+    }, [setThemeSetting, themeSetting])
 
-    // Target ID for tooltip
-    const targetID = 'target-user-avatar'
-    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
-    const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
+    const organizations = authenticatedUser.organizations.nodes
+    const searchQueryInputFeature = useExperimentalFeatures(features => features.searchQueryInput)
+    const [experimentalQueryInputEnabled, setExperimentalQueryInputEnabled] = useExperimentalQueryInput()
+
+    const onExperimentalQueryInputChange = useCallback(
+        (enabled: boolean) => {
+            telemetryService.log(`SearchInputToggle${enabled ? 'On' : 'Off'}`)
+            setExperimentalQueryInputEnabled(enabled)
+        },
+        [telemetryService, setExperimentalQueryInputEnabled]
+    )
 
     return (
         <>
             {keyboardShortcutSwitchTheme?.keybindings.map((keybinding, index) => (
                 // `Shortcut` doesn't update its states when `onMatch` changes
                 // so we put `themePreference` in `key` binding to make it
-                <Shortcut key={`${themePreference}-${index}`} {...keybinding} onMatch={onThemeCycle} />
+                <Shortcut key={`${themeSetting}-${index}`} {...keybinding} onMatch={onThemeCycle} />
             ))}
             <Menu>
                 {({ isExpanded }) => (
@@ -94,33 +116,35 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                         >
                             <div className="position-relative">
                                 <div className="align-items-center d-flex">
-                                    <UserAvatar
-                                        user={props.authenticatedUser}
-                                        targetID={targetID}
-                                        className={styles.avatar}
-                                    />
+                                    <UserAvatar user={authenticatedUser} className={styles.avatar} />
                                     <Icon svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
                                 </div>
                             </div>
                         </MenuButton>
 
-                        <MenuList position={position} className={styles.dropdownMenu} aria-label="User. Open menu">
+                        <MenuList
+                            position={Position.bottomEnd}
+                            className={styles.dropdownMenu}
+                            aria-label="User. Open menu"
+                        >
                             <MenuHeader className={styles.dropdownHeader}>
-                                Signed in as <strong>@{props.authenticatedUser.username}</strong>
+                                Signed in as <strong>@{authenticatedUser.username}</strong>
                             </MenuHeader>
                             <MenuDivider className={styles.dropdownDivider} />
-                            <MenuLink as={Link} to={props.authenticatedUser.settingsURL!}>
+                            <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
                                 Settings
                             </MenuLink>
                             <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                 Saved searches
                             </MenuLink>
-                            {isOpenBetaEnabled && (
-                                <MenuLink
-                                    as={Link}
-                                    to={`/users/${props.authenticatedUser.username}/settings/organizations`}
-                                >
-                                    Your organizations <Badge variant="info">NEW</Badge>
+                            {isSourcegraphApp && (
+                                <MenuLink as={Link} to="/setup">
+                                    Setup wizard
+                                </MenuLink>
+                            )}
+                            {enableTeams && !isSourcegraphDotCom && (
+                                <MenuLink as={Link} to="/teams">
+                                    Teams
                                 </MenuLink>
                             )}
                             <MenuDivider />
@@ -133,15 +157,15 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                         selectSize="sm"
                                         data-testid="theme-toggle"
                                         onChange={onThemeChange}
-                                        value={props.themePreference}
+                                        value={themeSetting}
                                         className="mb-0 flex-1"
                                     >
-                                        <option value={ThemePreference.Light}>Light</option>
-                                        <option value={ThemePreference.Dark}>Dark</option>
-                                        <option value={ThemePreference.System}>System</option>
+                                        <option value={ThemeSetting.Light}>Light</option>
+                                        <option value={ThemeSetting.Dark}>Dark</option>
+                                        <option value={ThemeSetting.System}>System</option>
                                     </Select>
                                 </div>
-                                {props.themePreference === ThemePreference.System && !supportsSystemTheme && (
+                                {themeSetting === ThemeSetting.System && !supportsSystemTheme && (
                                     <div className="text-wrap">
                                         <small>
                                             <AnchorLink
@@ -156,35 +180,64 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     </div>
                                 )}
                             </div>
-                            {!isOpenBetaEnabled && props.authenticatedUser.organizations.nodes.length > 0 && (
+                            {searchQueryInputFeature === 'experimental' && (
+                                <div className="px-2 py-1">
+                                    <div className="d-flex align-items-center justify-content-between">
+                                        <div className="mr-2">
+                                            New search input <ProductStatusBadge status="beta" className="ml-1" />
+                                        </div>
+                                        <Toggle
+                                            value={experimentalQueryInputEnabled}
+                                            onToggle={onExperimentalQueryInputChange}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {organizations.length > 0 && (
                                 <>
                                     <MenuDivider className={styles.dropdownDivider} />
                                     <MenuHeader className={styles.dropdownHeader}>Your organizations</MenuHeader>
-                                    {props.authenticatedUser.organizations.nodes.map(org => (
+                                    {organizations.slice(0, MAX_VISIBLE_ORGS).map(org => (
                                         <MenuLink as={Link} key={org.id} to={org.settingsURL || org.url}>
                                             {org.displayName || org.name}
                                         </MenuLink>
                                     ))}
+                                    {organizations.length > MAX_VISIBLE_ORGS && (
+                                        <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
+                                            Show all organizations
+                                        </MenuLink>
+                                    )}
                                 </>
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
-                            {props.authenticatedUser.siteAdmin && (
+                            {authenticatedUser.siteAdmin && !isSourcegraphApp && (
                                 <MenuLink as={Link} to="/site-admin">
                                     Site admin
                                 </MenuLink>
                             )}
                             <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
-                                Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
+                                {isSourcegraphApp ? 'Documentation' : 'Help'}{' '}
+                                <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                             </MenuLink>
-                            <MenuItem onSelect={props.showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
-                            {props.authenticatedUser.session?.canSignOut && (
+                            {isSourcegraphApp ? (
+                                <MenuLink as={AnchorLink} to="/user/settings/product-research">
+                                    Feedback
+                                </MenuLink>
+                            ) : (
+                                <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
+                            )}
+
+                            <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
+
+                            {authenticatedUser.session?.canSignOut && !isSourcegraphApp && (
                                 <MenuLink as={AnchorLink} to="/-/sign-out">
                                     Sign out
                                 </MenuLink>
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
-                            {props.showDotComMarketing && (
+                            {isSourcegraphDotCom && (
                                 <MenuLink
                                     as={AnchorLink}
                                     to="https://about.sourcegraph.com"

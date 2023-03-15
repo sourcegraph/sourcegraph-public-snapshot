@@ -15,9 +15,9 @@ import (
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -78,10 +79,19 @@ type RepoStore interface {
 	GetByName(context.Context, api.RepoName) (*types.Repo, error)
 	GetByHashedName(context.Context, api.RepoHashedName) (*types.Repo, error)
 	GetFirstRepoNameByCloneURL(context.Context, string) (api.RepoName, error)
+	GetFirstRepoByCloneURL(context.Context, string) (*types.Repo, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	GetRepoDescriptionsByIDs(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
-	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
+	// ListSourcegraphDotComIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
+	// This includes all non-forked, non-archived repos with >= listSourcegraphDotComIndexableReposMinStars stars,
+	// plus all repos from the following data sources:
+	// - src.fedoraproject.org
+	// - maven
+	// - NPM
+	// - JDK
+	// THIS QUERY SHOULD NEVER BE USED OUTSIDE OF SOURCEGRAPH.COM.
+	ListSourcegraphDotComIndexableRepos(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error)
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
 	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
@@ -534,6 +544,8 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(github.Repository)
 	case extsvc.TypeGitLab:
 		r.Metadata = new(gitlab.Project)
+	case extsvc.TypeAzureDevOps:
+		r.Metadata = new(azuredevops.Repository)
 	case extsvc.TypeGerrit:
 		r.Metadata = new(gerrit.Project)
 	case extsvc.TypeBitbucketServer:
@@ -602,6 +614,9 @@ type ReposListOptions struct {
 	// A set of filters to select only repos with a given set of key-value pairs.
 	KVPFilters []RepoKVPFilter
 
+	// A set of filters to select only repos with the given set of topics
+	TopicFilters []RepoTopicFilter
+
 	// CaseSensitivePatterns determines if IncludePatterns and ExcludePattern are treated
 	// with case sensitivity or not.
 	CaseSensitivePatterns bool
@@ -668,6 +683,12 @@ type ReposListOptions struct {
 	// OnlyCloned excludes non-cloned repositories from the list.
 	OnlyCloned bool
 
+	// NoIndexed excludes repositories that are indexed by zoekt from the list.
+	NoIndexed bool
+
+	// OnlyIndexed excludes repositories that are not indexed by zoekt from the list.
+	OnlyIndexed bool
+
 	// CloneStatus if set will only return repos of that clone status.
 	CloneStatus types.CloneStatus
 
@@ -686,14 +707,14 @@ type ReposListOptions struct {
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
 
-	// IncludeUserPublicRepos will include repos from the user_public_repos table if this field is true, and the user_id
-	// is non-zero. Note that these are not repos owned by this user, just ones they are interested in.
-	IncludeUserPublicRepos bool
-
 	// FailedFetch, if true, will filter to only repos that failed to clone or fetch
 	// when last attempted. Specifically, this means that they have a non-null
 	// last_error value in the gitserver_repos table.
 	FailedFetch bool
+
+	// OnlyCorrupted, if true, will filter to only repos where corruption has been detected.
+	// A repository is corrupt in the gitserver_repos table if it has a non-null value in gitserver_repos.corrupted_at
+	OnlyCorrupted bool
 
 	// MinLastChanged finds repository metadata or data that has changed since
 	// MinLastChanged. It filters against repos.UpdatedAt,
@@ -724,6 +745,9 @@ type ReposListOptions struct {
 	// and if it doesn't end up being used this is wasted compute.
 	ExcludeSources bool
 
+	// cursor-based pagination args
+	PaginationArgs *PaginationArgs
+
 	*LimitOffset
 }
 
@@ -732,6 +756,16 @@ type RepoKVPFilter struct {
 	Value *string
 	// If negated is true, this filter will select only repos
 	// that do _not_ have the associated key and value
+	Negated bool
+	// If IgnoreValue is true, this filter will select only repos that
+	// have the given key, regardless of its value
+	KeyOnly bool
+}
+
+type RepoTopicFilter struct {
+	Topic string
+	// If negated is true, this filter will select only repos
+	// that do _not_ have the associated topic
 	Negated bool
 }
 
@@ -780,6 +814,7 @@ const (
 	RepoListName      RepoListColumn = "name"
 	RepoListID        RepoListColumn = "id"
 	RepoListStars     RepoListColumn = "stars"
+	RepoListSize      RepoListColumn = "gr.repo_size_bytes"
 )
 
 // List lists repositories in the Sourcegraph repository
@@ -793,8 +828,7 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 		tr.Finish()
 	}()
 
-	// always having ID in ORDER BY helps Postgres create a more performant query plan
-	if len(opt.OrderBy) == 0 || (len(opt.OrderBy) == 1 && opt.OrderBy[0].Field != RepoListID) {
+	if len(opt.OrderBy) == 0 {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
@@ -889,7 +923,7 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 		return err
 	}
 
-	tr.LogFields(trace.SQL(q))
+	tr.LogFields(trace.SQL(q)) //nolint:staticcheck // TODO when updating observation package
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -912,6 +946,19 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (*sqlf.Query, error) {
 	var ctes, joins, where []*sqlf.Query
 
+	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
+
+	if opt.PaginationArgs != nil {
+		p := opt.PaginationArgs.SQL()
+
+		if p.Where != nil {
+			where = append(where, p.Where)
+		}
+
+		querySuffix = p.AppendOrderToQuery(&sqlf.Query{})
+		querySuffix = p.AppendLimitToQuery(querySuffix)
+	}
+
 	// Cursor-based pagination requires parsing a handful of extra fields, which
 	// may result in additional query conditions.
 	if len(opt.Cursors) > 0 {
@@ -930,7 +977,14 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	}
 
 	if opt.Query != "" {
-		where = append(where, sqlf.Sprintf("lower(name) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"))
+		items := []*sqlf.Query{
+			sqlf.Sprintf("lower(name) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"),
+		}
+		// Query looks like an ID
+		if id, ok := maybeQueryIsID(opt.Query); ok {
+			items = append(items, sqlf.Sprintf("id = %d", id))
+		}
+		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(items, " OR ")))
 	}
 
 	for _, includePattern := range opt.IncludePatterns {
@@ -1010,15 +1064,27 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if opt.CloneStatus != types.CloneStatusUnknown {
 		where = append(where, sqlf.Sprintf("gr.clone_status = %s", opt.CloneStatus))
 	}
+	if opt.NoIndexed {
+		where = append(where, sqlf.Sprintf("zr.index_status = 'not_indexed'"))
+	}
+	if opt.OnlyIndexed {
+		where = append(where, sqlf.Sprintf("zr.index_status = 'indexed'"))
+	}
 
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
 	}
+
+	if opt.OnlyCorrupted {
+		where = append(where, sqlf.Sprintf("gr.corrupted_at IS NOT NULL"))
+	}
+
 	if !opt.MinLastChanged.IsZero() {
 		conds := []*sqlf.Query{
-			sqlf.Sprintf("gr.last_changed >= %s", opt.MinLastChanged),
+			sqlf.Sprintf("EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id AND gr.last_changed >= %s)", opt.MinLastChanged),
+			sqlf.Sprintf("EXISTS (SELECT 1 FROM codeintel_path_ranks pr WHERE pr.repository_id = repo.id AND pr.updated_at >= %s)", opt.MinLastChanged),
 			sqlf.Sprintf("COALESCE(repo.updated_at, repo.created_at) >= %s", opt.MinLastChanged),
-			sqlf.Sprintf("repo.id IN (SELECT scr.repo_id FROM search_context_repos scr LEFT JOIN search_contexts sc ON scr.search_context_id = sc.id WHERE sc.updated_at >= %s)", opt.MinLastChanged),
+			sqlf.Sprintf("EXISTS (SELECT 1 FROM search_context_repos scr LEFT JOIN search_contexts sc ON scr.search_context_id = sc.id WHERE scr.repo_id = repo.id AND sc.updated_at >= %s)", opt.MinLastChanged),
 		}
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(conds, " OR ")))
 	}
@@ -1070,9 +1136,6 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	} else if opt.UserID != 0 {
 		userReposCTE := sqlf.Sprintf(userReposCTEFmtstr, opt.UserID)
-		if opt.IncludeUserPublicRepos {
-			userReposCTE = sqlf.Sprintf("%s UNION %s", userReposCTE, sqlf.Sprintf(userPublicReposCTEFmtstr, opt.UserID))
-		}
 		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
 		joins = append(joins, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
 	} else if opt.OrgID != 0 {
@@ -1080,14 +1143,24 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos || opt.CloneStatus != types.CloneStatusUnknown {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.OnlyCorrupted || opt.joinGitserverRepos ||
+		opt.CloneStatus != types.CloneStatusUnknown || containsSizeField(opt.OrderBy) || (opt.PaginationArgs != nil && containsOrderBySizeField(opt.PaginationArgs.OrderBy)) {
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
+	}
+	if opt.OnlyIndexed || opt.NoIndexed {
+		joins = append(joins, sqlf.Sprintf("JOIN zoekt_repos zr ON zr.repo_id = repo.id"))
 	}
 
 	if len(opt.KVPFilters) > 0 {
 		var ands []*sqlf.Query
 		for _, filter := range opt.KVPFilters {
-			if filter.Value != nil {
+			if filter.KeyOnly {
+				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s)"
+				if filter.Negated {
+					q = "NOT " + q
+				}
+				ands = append(ands, sqlf.Sprintf(q, filter.Key))
+			} else if filter.Value != nil {
 				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value = %s)"
 				if filter.Negated {
 					q = "NOT " + q
@@ -1100,6 +1173,29 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 				}
 				ands = append(ands, sqlf.Sprintf(q, filter.Key))
 			}
+		}
+		where = append(where, sqlf.Join(ands, "AND"))
+	}
+
+	if len(opt.TopicFilters) > 0 {
+		var ands []*sqlf.Query
+		for _, filter := range opt.TopicFilters {
+			// This condition checks that the requested topics are contained in
+			// the repo's metadata. This is designed to work with the
+			// idx_repo_github_topics index.
+			//
+			// We use the unusual `jsonb_build_array` and `jsonb_build_object`
+			// syntax instead of JSONB literals so that we can use SQL
+			// variables for the user-provided topic names (don't want SQL
+			// injections here).
+			cond := `external_service_type = 'github' AND metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`
+			if filter.Negated {
+				// Use Coalesce in case the JSON access evaluates to NULL.
+				// Since negating a NULL evaluates to NULL, we want to
+				// explicitly treat NULLs as false first
+				cond = `NOT COALESCE(` + cond + `, false)`
+			}
+			ands = append(ands, sqlf.Sprintf(cond, filter.Topic))
 		}
 		where = append(where, sqlf.Join(ands, "AND"))
 	}
@@ -1128,8 +1224,6 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		queryPrefix = sqlf.Sprintf("WITH %s", sqlf.Join(ctes, ",\n"))
 	}
 
-	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
-
 	columns := repoColumns
 	if !opt.ExcludeSources {
 		columns = append(columns, getSourcesByRepoQueryStr)
@@ -1157,63 +1251,73 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	return q, nil
 }
 
+func containsSizeField(orderBy RepoListOrderBy) bool {
+	for _, field := range orderBy {
+		if field.Field == RepoListSize {
+			return true
+		}
+	}
+	return false
+}
+
+func containsOrderBySizeField(orderBy OrderBy) bool {
+	for _, field := range orderBy {
+		if field.Field == string(RepoListSize) {
+			return true
+		}
+	}
+	return false
+}
+
 const userReposCTEFmtstr = `
 SELECT repo_id as id FROM external_service_repos WHERE user_id = %d
 `
 
-const userPublicReposCTEFmtstr = `
-SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
-`
-
-type ListIndexableReposOptions struct {
+type ListSourcegraphDotComIndexableReposOptions struct {
 	// CloneStatus if set will only return indexable repos of that clone
 	// status.
 	CloneStatus types.CloneStatus
-
-	*LimitOffset
 }
 
-var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
-	"SRC_INDEXABLE_REPOS_MIN_STARS",
-	"8",
-	"Minimum stars needed for a public repo to be indexed on sourcegraph.com",
-))
+// listSourcegraphDotComIndexableReposMinStars is the minimum number of stars needed for a public
+// repo to be indexed on sourcegraph.com.
+const listSourcegraphDotComIndexableReposMinStars = 5
 
-// ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars.
-func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.MinimalRepo, err error) {
+func (s *repoStore) ListSourcegraphDotComIndexableRepos(ctx context.Context, opts ListSourcegraphDotComIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	var where, joins []*sqlf.Query
-
+	var joins, where []*sqlf.Query
 	if opts.CloneStatus != types.CloneStatusUnknown {
-		joins = append(joins, sqlf.Sprintf(
-			"JOIN gitserver_repos gr ON gr.repo_id = repo.id",
-		))
-		where = append(where, sqlf.Sprintf(
-			"gr.clone_status = %s", opts.CloneStatus,
-		))
+		if opts.CloneStatus == types.CloneStatusCloned {
+			// **Performance optimization case**:
+			//
+			// sourcegraph.com (at the time of this comment) has 2.8M cloned and 10k uncloned _indexable_ repos.
+			// At this scale, it is much faster (and logically equivalent) to perform an anti-join on the inverse
+			// set (i.e., filter out non-cloned repos) than a join on the target set (i.e., retaining cloned repos).
+			//
+			// If these scales change significantly this optimization should be reconsidered. The original query
+			// plans informing this change are available at https://github.com/sourcegraph/sourcegraph/pull/44129.
+			joins = append(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_status <> %s", types.CloneStatusCloned))
+			where = append(where, sqlf.Sprintf("gr.repo_id IS NULL"))
+		} else {
+			// Normal case: Filter out rows that do not have a gitserver repo with the target status
+			joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_status = %s", opts.CloneStatus))
+		}
 	}
 
 	if len(where) == 0 {
 		where = append(where, sqlf.Sprintf("TRUE"))
 	}
 
-	minStars := listIndexableReposMinStars
-	if minStars == 0 {
-		minStars = 8
-	}
-
 	q := sqlf.Sprintf(
-		listIndexableReposQuery,
+		listSourcegraphDotComIndexableReposQuery,
 		sqlf.Join(joins, "\n"),
-		minStars,
+		listSourcegraphDotComIndexableReposMinStars,
 		sqlf.Join(where, "\nAND"),
-		opts.LimitOffset.SQL(),
 	)
 
 	rows, err := s.Query(ctx, q)
@@ -1236,43 +1340,26 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 	return results, nil
 }
 
-const listIndexableReposQuery = `
+// N.B. This query's exact conditions are mirrored in the Postgres index
+// repo_dotcom_indexable_repos_idx. Any substantial changes to this query
+// may require an associated index redefinition.
+const listSourcegraphDotComIndexableReposQuery = `
 SELECT
-	repo.id, repo.name, repo.stars
+	repo.id,
+	repo.name,
+	repo.stars
 FROM repo
 %s
 WHERE
+	deleted_at IS NULL AND
+	blocked IS NULL AND
 	(
 		(repo.stars >= %s AND NOT COALESCE(fork, false) AND NOT archived)
 		OR
 		lower(repo.name) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'
-		OR
-		repo.id IN (
-			SELECT
-				repo_id
-			FROM
-				external_service_repos
-			WHERE
-				external_service_repos.user_id IS NOT NULL
-				OR
-				external_service_repos.org_id IS NOT NULL
-
-			UNION ALL
-
-			SELECT
-				repo_id
-			FROM
-				user_public_repos
-		)
-	)
-	AND
-	deleted_at IS NULL
-	AND
-	blocked IS NULL
-	AND
+	) AND
 	%s
 ORDER BY stars DESC NULLS LAST
-%s
 `
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.
@@ -1566,7 +1653,7 @@ LIMIT 1
 `
 
 // GetFirstRepoNameByCloneURL returns the first repo name in our database that
-// match the given clone url. If not repo is found, an empty string and nil error
+// match the given clone url. If no repo is found, an empty string and nil error
 // are returned.
 func (s *repoStore) GetFirstRepoNameByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
 	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
@@ -1576,18 +1663,29 @@ func (s *repoStore) GetFirstRepoNameByCloneURL(ctx context.Context, cloneURL str
 	return api.RepoName(name), nil
 }
 
+// GetFirstRepoByCloneURL returns the first repo in our database that matches the given clone url.
+// If no repo is found, nil and an error are returned.
+func (s *repoStore) GetFirstRepoByCloneURL(ctx context.Context, cloneURL string) (*types.Repo, error) {
+	repoName, err := s.GetFirstRepoNameByCloneURL(ctx, cloneURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.GetByName(ctx, repoName)
+}
+
 func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query, error) {
 	exact, like, pattern, err := parseIncludePattern(p)
 	if err != nil {
 		return nil, err
 	}
 
-	tr.LogFields(
-		otlog.String("parsePattern", p),
-		otlog.Bool("caseSensitive", caseSensitive),
-		trace.Strings("exact", exact),
-		trace.Strings("like", like),
-		otlog.String("pattern", pattern))
+	tr.SetAttributes(
+		attribute.String("parsePattern", p),
+		attribute.Bool("caseSensitive", caseSensitive),
+		attribute.StringSlice("exact", exact),
+		attribute.StringSlice("like", like),
+		attribute.String("pattern", pattern))
 
 	var conds []*sqlf.Query
 	if exact != nil {
@@ -1620,11 +1718,11 @@ func parseDescriptionPattern(tr *trace.Trace, p string) ([]*sqlf.Query, error) {
 		return nil, err
 	}
 
-	tr.LogFields(
-		otlog.String("parseDescriptionPattern", p),
-		trace.Strings("exact", exact),
-		trace.Strings("like", like),
-		otlog.String("pattern", pattern))
+	tr.SetAttributes(
+		attribute.String("parseDescriptionPattern", p),
+		attribute.StringSlice("exact", exact),
+		attribute.StringSlice("like", like),
+		attribute.String("pattern", pattern))
 
 	var conds []*sqlf.Query
 	if len(exact) > 0 {

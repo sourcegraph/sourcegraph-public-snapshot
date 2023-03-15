@@ -2,13 +2,12 @@ import delay from 'delay'
 import expect from 'expect'
 import { test } from 'mocha'
 
-import { SearchAggregationMode, SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { GetSearchAggregationResult, WebGraphQlOperations } from '../graphql-operations'
+import { GetSearchAggregationResult, WebGraphQlOperations, SearchAggregationMode } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
@@ -108,7 +107,7 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     { type: 'done', data: {} },
 ]
 
-const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     IsSearchContextAvailable: () => ({ isSearchContextAvailable: true }),
     UserAreaUserProfile: () => ({
@@ -123,6 +122,11 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             viewerCanAdminister: true,
             builtinAuth: true,
             tags: [],
+            createdAt: '2020-03-02T11:52:15Z',
+            roles: {
+                __typename: 'RoleConnection',
+                nodes: [],
+            },
         },
     }),
 }
@@ -180,7 +184,10 @@ describe('Search aggregation', () => {
                                 latestSettings: {
                                     id: 0,
                                     contents: JSON.stringify({
-                                        experimentalFeatures: { searchResultsAggregations: true },
+                                        experimentalFeatures: {
+                                            searchResultsAggregations: true,
+                                            searchQueryInput: 'v1',
+                                        },
                                     }),
                                 },
                             },
@@ -306,6 +313,11 @@ describe('Search aggregation', () => {
             await editor.waitForIt()
 
             await driver.page.waitForSelector('[aria-label="Bar chart content"] a')
+
+            // waitForSelector checks for dom element, but it doesn't track visual representation of the element
+            // Wait until chart is visually rendered and only then click the element, otherwise it may be possible
+            // to encounter a puppeter bug https://github.com/puppeteer/puppeteer/issues/8627
+            await delay(200)
             await driver.page.click('[aria-label="Sidebar search aggregation chart"] a')
 
             expect(await editor.getValue()).toStrictEqual('insights repo:sourcegraph/sourcegraph')
@@ -315,6 +327,12 @@ describe('Search aggregation', () => {
             await driver.page.waitForSelector(
                 '[aria-label="Expanded search aggregation chart"] [aria-label="Bar chart content"] g:nth-child(2) a'
             )
+
+            // waitForSelector checks for dom element, but it doesn't track visual representation of the element
+            // Wait until chart is visually rendered and only then click the element, otherwise it may be possible
+            // to encounter a puppeter bug https://github.com/puppeteer/puppeteer/issues/8627
+            await delay(200)
+
             await driver.page.click(
                 '[aria-label="Expanded search aggregation chart"] [aria-label="Bar chart content"] g:nth-child(2) a'
             )

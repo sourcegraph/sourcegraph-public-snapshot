@@ -7,16 +7,18 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/unpack"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
@@ -45,6 +47,8 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		configDeps = connection.Maven.Dependencies
 	}
 
+	chandle := coursier.NewCoursierHandle(observation.NewContext(log.Scoped("gitserver.jvmsyncer", "")))
+
 	return &vcsPackagesSyncer{
 		logger:      log.Scoped("JVMPackagesSyncer", "sync JVM packages"),
 		typ:         "jvm_packages",
@@ -52,13 +56,18 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  configDeps,
-		source:      &jvmPackagesSyncer{config: connection, fetch: coursier.FetchSources},
+		source: &jvmPackagesSyncer{
+			coursier: chandle,
+			config:   connection,
+			fetch:    chandle.FetchSources,
+		},
 	}
 }
 
 type jvmPackagesSyncer struct {
-	config *schema.JVMPackagesConnection
-	fetch  func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error)
+	coursier *coursier.CoursierHandle
+	config   *schema.JVMPackagesConnection
+	fetch    func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error)
 }
 
 func (jvmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
@@ -120,55 +129,43 @@ func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 }
 
 func unzipJarFile(jarPath, destination string) (err error) {
-	reader, err := zip.OpenReader(jarPath)
+	logger := log.Scoped("unzipJarFile", "unzipJarFile unpacks the given jvm archive into workDir")
+	workDir := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
+
+	zipFile, err := os.ReadFile(jarPath)
+	if err != nil {
+		errors.Wrap(err, "bad jvm package")
+	}
+
+	r := bytes.NewReader(zipFile)
+	opts := unpack.Opts{
+		SkipInvalid: true,
+		Filter: func(path string, file fs.FileInfo) bool {
+			size := file.Size()
+
+			const sizeLimit = 15 * 1024 * 1024
+			slogger := logger.With(
+				log.String("path", file.Name()),
+				log.Int64("size", size),
+				log.Float64("limit", sizeLimit),
+			)
+			if size >= sizeLimit {
+				slogger.Warn("skipping large file in JVM package")
+				return false
+			}
+
+			malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
+			return !malicious
+		},
+	}
+
+	err = unpack.Zip(r, int64(len(zipFile)), workDir, opts)
+
 	if err != nil {
 		return err
-	}
-	defer reader.Close()
-	destinationDirectory := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
-
-	for _, file := range reader.File {
-		cleanedOutputPath, isPotentiallyMalicious := isPotentiallyMaliciousFilepathInArchive(file.Name, destinationDirectory)
-		if isPotentiallyMalicious {
-			continue
-		}
-		err := copyZipFileEntry(file, cleanedOutputPath)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
-}
-
-func copyZipFileEntry(entry *zip.File, outputPath string) (err error) {
-	inputFile, err := entry.Open()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err1 := inputFile.Close()
-		if err == nil {
-			err = err1
-		}
-	}()
-
-	if err = os.MkdirAll(path.Dir(outputPath), 0o700); err != nil {
-		return err
-	}
-	outputFile, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err1 := outputFile.Close()
-		if err == nil {
-			err = err1
-		}
-	}()
-
-	_, err = io.Copy(outputFile, inputFile)
-	return err
 }
 
 // inferJVMVersionFromByteCode returns the JVM version that was used to compile
@@ -180,7 +177,7 @@ func (s *jvmPackagesSyncer) inferJVMVersionFromByteCode(ctx context.Context,
 		return dependency.Version, nil
 	}
 
-	byteCodeJarPath, err := coursier.FetchByteCode(ctx, s.config, dependency)
+	byteCodeJarPath, err := s.coursier.FetchByteCode(ctx, s.config, dependency)
 	if err != nil {
 		return "", err
 	}

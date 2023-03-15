@@ -16,7 +16,7 @@ In order to determine what we can cache and when to do it, we need to make sure 
 
 1. Will it be faster to download a cached version rather than building it?
 1. Can we come up with an identifier that represents accurately what version of the cache is needed, before building anything?
-   - Ex: the checksum of `yarn.lock` accurately tells us which version of the dependencies cache needs to be downloaded if it exists.
+   - Ex: the checksum of `pnpm-lock.yaml` accurately tells us which version of the dependencies cache needs to be downloaded if it exists.
 1. Is what is being cached, not the end result of that test?
    - If it were the case, it means we would be caching the result of the test, which is defeating the purpose of a continuous integration process.
 
@@ -30,20 +30,20 @@ For example: we want to cache the `node_modules` folder to avoid dowloading agai
 // Browser extension unit tests
 pipeline.AddStep(":jest::chrome: Test browser extension",
   bk.Cache(&buildkite.CacheOptions{
-    ID:          "node_modules_yarn_v3",
-    Key:         "cache-node_modules-yarn_v3-{{ checksum 'yarn.lock' }}",
-    RestoreKeys: []string{"cache-node_modules-yarn_v3-{{ checksum 'yarn.lock' }}"},
-    Paths:       []string{"node_modules", ".yarn/cache"},
+    ID:          "node_modules_pnpm",
+    Key:         "cache-node_modules-pnpm-{{ checksum 'pnpm-lock.yaml' }}",
+    RestoreKeys: []string{"cache-node_modules-pnpm-{{ checksum 'pnpm-lock.yaml' }}"},
+    Paths:       []string{"node_modules", ".pnpm/cache"},
   }),
-  bk.Cmd("dev/ci/yarn-test.sh client/browser"),
+  bk.Cmd("dev/ci/pnpm-test.sh client/browser"),
   bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 ```
 
 The important part here are:
 
 - The `Key` which defines how the cached version is named, so we can find it again on ulterior builds.
-  - It includes a `{{ checksum 'yarn.lock' }}` segment in its name, which means that any changes in the `yarn.lock` will be reflected in the key name.
-  - It means that if the `yarn.lock` checksum would change because dependencies have changed, it should use a different version of the cached dependencies. If those were to not be present on the cache, it will simply rebuild them and upload the result to the cache.
+  - It includes a `{{ checksum 'pnpm-lock.yaml' }}` segment in its name, which means that any changes in the `pnpm-lock.yaml` will be reflected in the key name.
+  - It means that if the `pnpm-lock.yaml` checksum would change because dependencies have changed, it should use a different version of the cached dependencies. If those were to not be present on the cache, it will simply rebuild them and upload the result to the cache.
 - The `RestoreKeys` lists the keys we can use to know if there is a cached version or not available. 99% of the time, that's the same exact thing as the `Key`.
 - The `Paths` lists the path to the files that needs to be cached. They **must be within the repository**, not outside.
 
@@ -77,12 +77,12 @@ While the [Cache Buildkite Plugin](https://github.com/sourcegraph/cache-buildkit
 1. Add `.buildkite/hooks/pre-command` to the root of your repository if it does not exist yet. This is a [Buildkite lifecycle hook](https://buildkite.com/docs/agent/v3/hooks#job-lifecycle-hooks) that runs before every build command. Then add the following snippet to this file:
     ```
     #!/usr/bin/env bash
-    
+
     set -e
-    
+
     # awscli is needed for Cache Buildkite Plugin
     asdf install awscli
-    
+
     # set the buildkite cache access keys
     AWS_CONFIG_DIR_PATH="/buildkite/.aws"
     mkdir -p "$AWS_CONFIG_DIR_PATH"
@@ -96,7 +96,7 @@ While the [Cache Buildkite Plugin](https://github.com/sourcegraph/cache-buildkit
 
    > NOTE: for `asdf install awscli` to succeed, a `.tool-versions` file containing the dependency and the desired version number must be present. You may replace `asdf` with any other installation method.
 
-   # 
+   #
 
    > NOTE: the environment variables `$BUILDKITE_HMAC_KEY` and `$BUILDKITE_HMAC_SECRET` are set on the Buildkite agent already.
 

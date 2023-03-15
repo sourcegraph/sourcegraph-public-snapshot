@@ -137,7 +137,7 @@ func TestNonLocalDefinition(t *testing.T) {
 
 		for _, ref := range m["ref"] {
 			squirrel.breadcrumbs = Breadcrumbs{}
-			gotSymbolInfo, err := squirrel.symbolInfo(context.Background(), ref.repoCommitPathPoint)
+			gotSymbolInfo, err := squirrel.SymbolInfo(context.Background(), ref.repoCommitPathPoint)
 			fatalIfErrorLabel(t, err, "symbolInfo")
 
 			if contains(ref.tags, "nodef") {
@@ -195,7 +195,7 @@ func TestNonLocalDefinition(t *testing.T) {
 		for _, tag := range a.tags {
 			if tag == "path" {
 				squirrel.breadcrumbs = Breadcrumbs{}
-				gotSymbolInfo, err := squirrel.symbolInfo(context.Background(), a.repoCommitPathPoint)
+				gotSymbolInfo, err := squirrel.SymbolInfo(context.Background(), a.repoCommitPathPoint)
 				fatalIfErrorLabel(t, err, "symbolInfo")
 
 				if gotSymbolInfo == nil {

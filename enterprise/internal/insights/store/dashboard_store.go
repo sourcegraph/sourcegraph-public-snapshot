@@ -12,7 +12,6 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -441,28 +440,3 @@ type DashboardStore interface {
 	RestoreDashboard(ctx context.Context, id int) error
 	HasDashboardPermission(ctx context.Context, dashboardId []int, userIds []int, orgIds []int) (bool, error)
 }
-
-// This is only used for the oob migration. Can be removed when that is deprecated.
-func (s *DBDashboardStore) DashboardExists(ctx context.Context, dashboard insights.SettingDashboard) (bool, error) {
-	var grantsQuery *sqlf.Query
-	if dashboard.UserID != nil {
-		grantsQuery = sqlf.Sprintf("dg.user_id = %s", *dashboard.UserID)
-	} else if dashboard.OrgID != nil {
-		grantsQuery = sqlf.Sprintf("dg.org_id = %s", *dashboard.OrgID)
-	} else {
-		grantsQuery = sqlf.Sprintf("dg.global IS TRUE")
-	}
-
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(dashboardExistsSql, dashboard.Title, grantsQuery)))
-	if err != nil {
-		return false, err
-	}
-
-	return count != 0, nil
-}
-
-const dashboardExistsSql = `
-SELECT COUNT(*) from dashboard
-JOIN dashboard_grants dg ON dashboard.id = dg.dashboard_id
-WHERE dashboard.title = %s AND %s;
-`

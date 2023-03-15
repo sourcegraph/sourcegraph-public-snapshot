@@ -3,7 +3,6 @@
 ## General
 
 - [Configure data retention policies](configure_data_retention.md)
-- [Enable code navigation on the air-gapped instances](enable_code_intel_on_air_gapped_instances.md)
 
 ## Language-specific guides
 

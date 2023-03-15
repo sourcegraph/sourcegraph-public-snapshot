@@ -1,15 +1,13 @@
-import React, { useCallback, useState } from 'react'
+import { FC, useCallback, useState } from 'react'
 
 import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 
-import { isErrorLike } from '@sourcegraph/common'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
     Button,
@@ -27,24 +25,19 @@ import {
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { AuthenticatedUser } from '../auth'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
-import { Tree } from '../tree/Tree'
 
+import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebar.module.scss'
 
-interface RepoRevisionSidebarProps
-    extends RepoFile,
-        ExtensionsControllerProps,
-        ThemeProps,
-        TelemetryProps,
-        SettingsCascadeProps {
+interface RepoRevisionSidebarProps extends RepoFile, TelemetryProps, SettingsCascadeProps {
     repoID?: Scalars['ID']
     isDir: boolean
     defaultBranch: string
     className: string
-    history: H.History
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
@@ -55,9 +48,7 @@ const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
-export const RepoRevisionSidebar: React.FunctionComponent<
-    React.PropsWithChildren<RepoRevisionSidebarProps>
-> = props => {
+export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(TABS_KEY, 0)
     const [persistedIsVisible, setPersistedIsVisible] = useLocalStorage(
         SIDEBAR_KEY,
@@ -67,11 +58,12 @@ export const RepoRevisionSidebar: React.FunctionComponent<
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
 
-    const enableMergedFileSymbolSidebar =
-        props.settingsCascade.final &&
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final.experimentalFeatures &&
-        props.settingsCascade.final.experimentalFeatures.enableMergedFileSymbolSidebar
+    const [initialFilePath, setInitialFilePath] = useState<string>(props.filePath)
+    const [initialFilePathIsDir, setInitialFilePathIsDir] = useState<boolean>(props.isDir)
+    const onExpandParent = useCallback((parent: string) => {
+        setInitialFilePath(parent)
+        setInitialFilePathIsDir(true)
+    }, [])
 
     const handleSidebarToggle = useCallback(
         (value: boolean) => {
@@ -84,111 +76,143 @@ export const RepoRevisionSidebar: React.FunctionComponent<
         },
         [setPersistedIsVisible, props.telemetryService]
     )
-    const handleSymbolClick = useCallback(() => props.telemetryService.log('SymbolTreeViewClicked'), [
-        props.telemetryService,
-    ])
+    const handleSymbolClick = useCallback(
+        () => props.telemetryService.log('SymbolTreeViewClicked'),
+        [props.telemetryService]
+    )
 
-    if (!isVisible) {
-        return (
-            <Tooltip content="Show sidebar">
-                <Button
-                    aria-label="Show sidebar"
-                    variant="icon"
-                    className={classNames(
-                        'position-absolute border-top border-bottom border-right mt-4',
-                        styles.toggle
-                    )}
-                    onClick={() => handleSidebarToggle(true)}
-                >
-                    <Icon aria-hidden={true} svgPath={mdiChevronDoubleRight} />
-                </Button>
-            </Tooltip>
-        )
-    }
+    const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
+    const focusFileTreeShortcut = useKeyboardShortcut('focusFileTree')
+    const focusSymbolsShortcut = useKeyboardShortcut('focusSymbols')
+    const [fileTreeFocusKey, setFileTreeFocusKey] = useState('')
+    const [symbolsFocusKey, setSymbolsFocusKey] = useState('')
 
     return (
-        <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY} ariaLabel="File sidebar">
-            <div className="d-flex flex-column h-100 w-100">
-                <GettingStartedTour
-                    className="mr-3"
-                    telemetryService={props.telemetryService}
-                    isAuthenticated={!!props.authenticatedUser}
-                    isSourcegraphDotCom={props.isSourcegraphDotCom}
-                />
-                {/* `key` is used to force rerendering the Tabs component when the UI
-                    setting changes. This is necessary to force registering Tabs and
-                    TabPanels properly. */}
-                <Tabs
-                    key={`ui-${enableMergedFileSymbolSidebar}`}
-                    className="w-100 test-repo-revision-sidebar pr-3 h-25 d-flex flex-column flex-grow-1"
-                    defaultIndex={enableMergedFileSymbolSidebar ? 0 : persistedTabIndex}
-                    onChange={setPersistedTabIndex}
-                    lazy={true}
-                >
-                    <TabList
-                        actions={
-                            <Tooltip content="Hide sidebar" placement="right">
-                                <Button
-                                    aria-label="Hide sidebar"
-                                    onClick={() => handleSidebarToggle(false)}
-                                    className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                                >
-                                    <Icon
-                                        className={styles.closeIcon}
-                                        aria-hidden={true}
-                                        svgPath={mdiChevronDoubleLeft}
-                                    />
-                                </Button>
-                            </Tooltip>
-                        }
-                    >
-                        <Tab data-tab-content="files">
-                            <span className="tablist-wrapper--tab-label">Files</span>
-                        </Tab>
-                        {!enableMergedFileSymbolSidebar && (
-                            <Tab data-tab-content="symbols">
-                                <span className="tablist-wrapper--tab-label">Symbols</span>
-                            </Tab>
-                        )}
-                    </TabList>
-                    <div className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)} tabIndex={-1}>
-                        {/* TODO: See if we can render more here, instead of waiting for these props */}
-                        {props.repoID && props.commitID && (
-                            <TabPanels>
-                                <TabPanel>
-                                    <Tree
-                                        key="files"
-                                        repoName={props.repoName}
-                                        repoID={props.repoID}
-                                        revision={props.revision}
-                                        commitID={props.commitID}
-                                        history={props.history}
-                                        scrollRootSelector=".explorer"
-                                        activePath={props.filePath}
-                                        activePathIsDir={props.isDir}
-                                        sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                        extensionsController={props.extensionsController}
-                                        isLightTheme={props.isLightTheme}
-                                        telemetryService={props.telemetryService}
-                                        enableMergedFileSymbolSidebar={!!enableMergedFileSymbolSidebar}
-                                    />
-                                </TabPanel>
-                                {!enableMergedFileSymbolSidebar && (
-                                    <TabPanel>
-                                        <RepoRevisionSidebarSymbols
-                                            key="symbols"
-                                            repoID={props.repoID}
-                                            revision={props.revision}
-                                            activePath={props.filePath}
-                                            onHandleSymbolClick={handleSymbolClick}
-                                        />
-                                    </TabPanel>
+        <>
+            {isVisible ? (
+                <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY} ariaLabel="File sidebar">
+                    <div className="d-flex flex-column h-100 w-100">
+                        <GettingStartedTour
+                            className="mr-3"
+                            telemetryService={props.telemetryService}
+                            isAuthenticated={!!props.authenticatedUser}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        />
+                        <Tabs
+                            className="w-100 test-repo-revision-sidebar pr-3 h-25 d-flex flex-column flex-grow-1"
+                            index={persistedTabIndex}
+                            onChange={setPersistedTabIndex}
+                            lazy={true}
+                            // The individual tabs should keep their state when switching around (e.g. scroll
+                            // position, which tree is expanded)
+                            behavior="memoize"
+                        >
+                            <TabList
+                                actions={
+                                    <Tooltip content="Hide sidebar" placement="right">
+                                        <Button
+                                            aria-label="Hide sidebar"
+                                            onClick={() => handleSidebarToggle(false)}
+                                            className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                                        >
+                                            <Icon
+                                                className={styles.closeIcon}
+                                                aria-hidden={true}
+                                                svgPath={mdiChevronDoubleLeft}
+                                            />
+                                        </Button>
+                                    </Tooltip>
+                                }
+                            >
+                                <Tab data-tab-content="files">
+                                    <span className="tablist-wrapper--tab-label">Files</span>
+                                </Tab>
+                                <Tab data-tab-content="symbols">
+                                    <span className="tablist-wrapper--tab-label">Symbols</span>
+                                </Tab>
+                            </TabList>
+                            <div
+                                className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)}
+                                tabIndex={-1}
+                            >
+                                {/* TODO: See if we can render more here, instead of waiting for these props */}
+                                {props.repoID && props.commitID && (
+                                    <TabPanels>
+                                        <TabPanel>
+                                            <RepoRevisionSidebarFileTree
+                                                key={initialFilePath}
+                                                focusKey={fileTreeFocusKey}
+                                                onExpandParent={onExpandParent}
+                                                repoName={props.repoName}
+                                                revision={props.revision}
+                                                commitID={props.commitID}
+                                                initialFilePath={initialFilePath}
+                                                initialFilePathIsDirectory={initialFilePathIsDir}
+                                                filePath={props.filePath}
+                                                filePathIsDirectory={props.isDir}
+                                                telemetryService={props.telemetryService}
+                                            />
+                                        </TabPanel>
+                                        <TabPanel>
+                                            <RepoRevisionSidebarSymbols
+                                                key="symbols"
+                                                focusKey={symbolsFocusKey}
+                                                repoID={props.repoID}
+                                                revision={props.revision}
+                                                activePath={props.filePath}
+                                                onHandleSymbolClick={handleSymbolClick}
+                                            />
+                                        </TabPanel>
+                                    </TabPanels>
                                 )}
-                            </TabPanels>
-                        )}
+                            </div>
+                        </Tabs>
                     </div>
-                </Tabs>
-            </div>
-        </Panel>
+                </Panel>
+            ) : (
+                <Tooltip content="Show sidebar">
+                    <Button
+                        aria-label="Show sidebar"
+                        variant="icon"
+                        className={classNames(
+                            'position-absolute border-top border-bottom border-right mt-4',
+                            styles.toggle
+                        )}
+                        onClick={() => handleSidebarToggle(true)}
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiChevronDoubleRight} />
+                    </Button>
+                </Tooltip>
+            )}
+
+            {enableBlobPageSwitchAreasShortcuts && (
+                <>
+                    {focusFileTreeShortcut?.keybindings.map((keybinding, index) => (
+                        <Shortcut
+                            key={index}
+                            {...keybinding}
+                            allowDefault={true}
+                            onMatch={() => {
+                                handleSidebarToggle(true)
+                                setPersistedTabIndex(0)
+                                setFileTreeFocusKey(Date.now().toString())
+                            }}
+                        />
+                    ))}
+                    {focusSymbolsShortcut?.keybindings.map((keybinding, index) => (
+                        <Shortcut
+                            key={index}
+                            {...keybinding}
+                            allowDefault={true}
+                            onMatch={() => {
+                                handleSidebarToggle(true)
+                                setPersistedTabIndex(1)
+                                setSymbolsFocusKey(Date.now().toString())
+                            }}
+                        />
+                    ))}
+                </>
+            )}
+        </>
     )
 }

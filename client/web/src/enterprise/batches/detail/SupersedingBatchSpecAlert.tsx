@@ -2,10 +2,10 @@ import React from 'react'
 
 import { parseISO } from 'date-fns'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
-import { Timestamp } from '../../../components/time/Timestamp'
 import { SupersedingBatchSpecFields } from '../../../graphql-operations'
 
 export interface SupersedingBatchSpecAlertProps {

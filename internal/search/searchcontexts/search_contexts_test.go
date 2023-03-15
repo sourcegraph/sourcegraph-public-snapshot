@@ -32,8 +32,6 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 		searchContextSpec     string
 		wantSearchContextName string
 	}{
-		{name: "resolve user search context", searchContextSpec: "@user", wantSearchContextName: "user"},
-		{name: "resolve organization search context", searchContextSpec: "@org", wantSearchContextName: "org"},
 		{name: "resolve global search context", searchContextSpec: "global", wantSearchContextName: "global"},
 		{name: "resolve empty search context as global", searchContextSpec: "", wantSearchContextName: "global"},
 		{name: "resolve namespaced search context", searchContextSpec: "@user/test", wantSearchContextName: "test"},
@@ -70,46 +68,6 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 
 	mockrequire.Called(t, ns.GetByNameFunc)
 	mockrequire.Called(t, sc.GetSearchContextFunc)
-}
-
-func TestResolvingValidSearchContextSpecs_Cloud(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
-
-	tests := []struct {
-		name                  string
-		searchContextSpec     string
-		wantSearchContextName string
-	}{
-		{name: "resolve organization search context", searchContextSpec: "@org", wantSearchContextName: "org"},
-	}
-
-	ns := database.NewMockNamespaceStore()
-	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
-		if name == "org" {
-			return &database.Namespace{Name: name, Organization: 1}, nil
-		}
-		return nil, errors.Errorf(`want "org", got %q`, name)
-	})
-
-	orgs := database.NewMockOrgMemberStore()
-	orgs.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
-
-	db := database.NewMockDB()
-	db.NamespacesFunc.SetDefaultReturn(ns)
-	db.OrgMembersFunc.SetDefaultReturn(orgs)
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			searchContext, err := ResolveSearchContextSpec(context.Background(), db, tt.searchContextSpec)
-			require.NoError(t, err)
-			assert.Equal(t, tt.wantSearchContextName, searchContext.Name)
-		})
-	}
-
-	mockrequire.Called(t, ns.GetByNameFunc)
-	mockrequire.Called(t, orgs.GetByOrgIDAndUserIDFunc)
 }
 
 func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
@@ -196,8 +154,8 @@ func TestConstructingSearchContextSpecs(t *testing.T) {
 		wantSearchContextSpec string
 	}{
 		{name: "global search context", searchContext: GetGlobalSearchContext(), wantSearchContextSpec: "global"},
-		{name: "user auto-defined search context", searchContext: &types.SearchContext{Name: "user", NamespaceUserID: 1}, wantSearchContextSpec: "@user"},
-		{name: "org auto-defined search context", searchContext: &types.SearchContext{Name: "org", NamespaceOrgID: 1}, wantSearchContextSpec: "@org"},
+		{name: "user auto-defined search context", searchContext: &types.SearchContext{Name: "user", NamespaceUserID: 1, AutoDefined: true}, wantSearchContextSpec: "@user"},
+		{name: "org auto-defined search context", searchContext: &types.SearchContext{Name: "org", NamespaceOrgID: 1, AutoDefined: true}, wantSearchContextSpec: "@org"},
 		{name: "user namespaced search context", searchContext: &types.SearchContext{ID: 1, Name: "context", NamespaceUserID: 1, NamespaceUserName: "user"}, wantSearchContextSpec: "@user/context"},
 		{name: "org namespaced search context", searchContext: &types.SearchContext{ID: 1, Name: "context", NamespaceOrgID: 1, NamespaceOrgName: "org"}, wantSearchContextSpec: "@org/context"},
 		{name: "instance-level search context", searchContext: &types.SearchContext{ID: 1, Name: "instance-level-context"}, wantSearchContextSpec: "instance-level-context"},
@@ -470,6 +428,44 @@ func TestCreatingSearchContexts(t *testing.T) {
 			},
 			wantErr: fmt.Sprintf("revision %q exceeds maximum allowed length (255)", tooLongRevision),
 		},
+		{
+			name:          "can create search context with repo:has query",
+			searchContext: &types.SearchContext{Name: "repo_has_kvp", Query: "repo:has(key:value)"},
+			userID:        user1.ID,
+		},
+		{
+			name:          "can create search context with repo:has.tag query",
+			searchContext: &types.SearchContext{Name: "repo_has_tag", Query: "repo:has.tag(tag)"},
+			userID:        user1.ID,
+		},
+		{
+			name:          "can create search context with repo:has.key query",
+			searchContext: &types.SearchContext{Name: "repo_has_key", Query: "repo:has.key(key)"},
+			userID:        user1.ID,
+		},
+		{
+			name:          "cannot create search context with unsupported repo field predicate in query",
+			searchContext: &types.SearchContext{Name: "unsupported_repo_predicate", Query: "repo:has.content(foo)"},
+			userID:        user1.ID,
+			wantErr:       fmt.Sprintf("unsupported repo field predicate in search context query: %q", "has.content(foo)"),
+		},
+		{
+			name:          "can create search context query with empty revision",
+			searchContext: &types.SearchContext{Name: "empty_revision", Query: "repo:foo/bar@"},
+			userID:        user1.ID,
+		},
+		{
+			name:          "cannot create search context query with ref glob",
+			searchContext: &types.SearchContext{Name: "unsupported_ref_glob", Query: "repo:foo/bar@*refs/tags/*"},
+			userID:        user1.ID,
+			wantErr:       fmt.Sprintf("unsupported rev glob in search context query: %q", "foo/bar@*refs/tags/*"),
+		},
+		{
+			name:          "cannot create search context query with exclude ref glob",
+			searchContext: &types.SearchContext{Name: "uunsupported_ref_glob", Query: "repo:foo/bar@*!refs/tags/*"},
+			userID:        user1.ID,
+			wantErr:       fmt.Sprintf("unsupported rev glob in search context query: %q", "foo/bar@*!refs/tags/*"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -592,7 +588,7 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	autoDefinedSearchContext := GetUserSearchContext(user1.ID, user1.Username)
+	autoDefinedSearchContext := GetGlobalSearchContext()
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user1.ID})
 	err = DeleteSearchContext(ctx, db, autoDefinedSearchContext)
 

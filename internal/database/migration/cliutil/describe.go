@@ -50,7 +50,7 @@ func Describe(commandName string, factory RunnerFactory, outFactory OutputFactor
 		}
 
 		schemaName := schemaNameFlag.Get(cmd)
-		_, store, err := setupStore(ctx, factory, schemaName)
+		store, err := setupStore(ctx, factory, schemaName)
 		if err != nil {
 			return err
 		}

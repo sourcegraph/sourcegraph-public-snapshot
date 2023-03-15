@@ -1,23 +1,20 @@
-import { ApolloCache, ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
+import { ApolloCache, ApolloClient, gql } from '@apollo/client'
 import { from, Observable, of } from 'rxjs'
 import { catchError, map, mapTo, switchMap } from 'rxjs/operators'
 import {
     AddInsightViewToDashboardResult,
     DeleteDashboardResult,
-    ExampleFirstRepositoryResult,
-    ExampleTodoRepositoryResult,
     GetDashboardInsightsResult,
     GetFrozenInsightsCountResult,
     GetInsightsResult,
-    HasAvailableCodeInsightResult,
     RemoveInsightViewFromDashboardResult,
     RemoveInsightViewFromDashboardVariables,
 } from 'src/graphql-operations'
 
+import { isDefined } from '@sourcegraph/common'
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
-import { ALL_INSIGHTS_DASHBOARD } from '../../../constants'
-import { Insight, InsightDashboard, InsightsDashboardOwner, isComputeInsight } from '../../types'
+import { Insight, InsightsDashboardOwner, isComputeInsight } from '../../types'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
     AssignInsightsToDashboardInput,
@@ -25,35 +22,19 @@ import {
     DashboardDeleteInput,
     DashboardUpdateInput,
     DashboardUpdateResult,
-    GetLangStatsInsightContentInput,
-    GetSearchInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
-    CategoricalChartContent,
-    SeriesChartContent,
-    UiFeaturesConfig,
     DashboardCreateResult,
-    InsightPreviewSettings,
-    BackendInsightDatum,
 } from '../code-insights-backend-types'
-import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
-import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
 
 import { createInsightView } from './deserialization/create-insight-view'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
-import { GET_EXAMPLE_FIRST_REPOSITORY_GQL, GET_EXAMPLE_TODO_REPOSITORY_GQL } from './gql/GetExampleRepository'
 import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { REMOVE_INSIGHT_FROM_DASHBOARD_GQL } from './gql/RemoveInsightFromDashboard'
 import { createDashboard } from './methods/create-dashboard/create-dashboard'
 import { createInsight } from './methods/create-insight/create-insight'
-import { getBuiltInInsight } from './methods/get-built-in-insight-data'
-import { getLangStatsInsightContent } from './methods/get-built-in-insight-data/get-lang-stats-insight-content'
-import { getSearchInsightContent } from './methods/get-built-in-insight-data/get-search-insight-content'
 import { getDashboardOwners } from './methods/get-dashboard-owners'
-import { getDashboardById } from './methods/get-dashboards/get-dashboard-by-id'
-import { getDashboards } from './methods/get-dashboards/get-dashboards'
-import { getInsightsPreview } from './methods/get-insight-preview'
 import { updateDashboard } from './methods/update-dashboard'
 import { updateInsight } from './methods/update-insight/update-insight'
 
@@ -63,23 +44,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // Insights
     public getInsights = (input: { dashboardId: string; withCompute: boolean }): Observable<Insight[]> => {
         const { dashboardId, withCompute } = input
-
-        // Handle virtual dashboard that doesn't exist in BE gql API and cause of that
-        // we need to use here insightViews query to fetch all available insights
-        if (dashboardId === ALL_INSIGHTS_DASHBOARD.id) {
-            return fromObservableQuery(
-                this.apolloClient.watchQuery<GetInsightsResult>({
-                    query: GET_INSIGHTS_GQL,
-                    // Prevent unnecessary network request after mutation over dashboard or insights within
-                    // current dashboard
-                    nextFetchPolicy: 'cache-first',
-                    errorPolicy: 'all',
-                })
-            ).pipe(
-                map(({ data }) => data.insightViews.nodes.map(createInsightView)),
-                map(insights => (withCompute ? insights : insights.filter(insight => !isComputeInsight(insight))))
-            )
-        }
 
         // Get all insights from the user-created dashboard
         return fromObservableQuery(
@@ -93,7 +57,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         ).pipe(
             map(({ data }) => data.insightsDashboards.nodes[0]),
-            map(dashboard => dashboard.views?.nodes.map(createInsightView) ?? []),
+            map(dashboard => dashboard.views?.nodes.filter(isDefined).map(createInsightView) ?? []),
             map(insights => (withCompute ? insights : insights.filter(insight => !isComputeInsight(insight))))
         )
     }
@@ -118,23 +82,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             catchError(() => of(null))
         )
 
-    public hasInsights = (first: number): Observable<boolean> =>
-        fromObservableQuery(
-            this.apolloClient.watchQuery<HasAvailableCodeInsightResult>({
-                query: gql`
-                    query HasAvailableCodeInsight($first: Int!) {
-                        insightViews(first: $first) {
-                            nodes {
-                                id
-                            }
-                        }
-                    }
-                `,
-                variables: { first },
-                nextFetchPolicy: 'cache-only',
-            })
-        ).pipe(map(({ data }) => data.insightViews.nodes.length === first))
-
     public getActiveInsightsCount = (first: number): Observable<number> =>
         fromObservableQuery(
             this.apolloClient.watchQuery<GetFrozenInsightsCountResult>({
@@ -150,13 +97,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 variables: { first },
             })
         ).pipe(map(({ data }) => data.insightViews.nodes.length))
-
-    // TODO: This method is used only for insight title validation but since we don't have
-    // limitations about title field in gql api remove this method and async validation for
-    // title field as soon as setting-based api will be deprecated
-    public findInsightByName = (): Observable<Insight | null> => of(null)
-
-    public getBuiltInInsightData = getBuiltInInsight
 
     public createInsight = (input: InsightCreateInput): Observable<unknown> => createInsight(this.apolloClient, input)
 
@@ -199,16 +139,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
     }
 
-    // Dashboards
-    public getDashboards = (id?: string): Observable<InsightDashboard[]> => getDashboards(this.apolloClient, id)
-
-    public getDashboardById = (input: { dashboardId: string | undefined }): Observable<InsightDashboard | null> =>
-        getDashboardById(this.apolloClient, input)
-
-    // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
-    // So we just return null to get the form to always accept.
-    public findDashboardByName = (name: string): Observable<InsightDashboard | null> => of(null)
-
     public getDashboardOwners = (): Observable<InsightsDashboardOwner[]> => getDashboardOwners(this.apolloClient)
 
     public createDashboard = (input: DashboardCreateInput): Observable<DashboardCreateResult> =>
@@ -229,28 +159,18 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     }
                 `,
                 variables: { id },
+                update(cache: ApolloCache<DeleteDashboardResult>) {
+                    const deletedDashboardReference = cache.identify({ __typename: 'InsightsDashboard', id })
+
+                    // Remove deleted insights from the apollo cache
+                    cache.evict({ id: deletedDashboardReference })
+                },
             })
         ).pipe(mapTo(undefined))
     }
 
     public updateDashboard = (input: DashboardUpdateInput): Observable<DashboardUpdateResult> =>
         updateDashboard(this.apolloClient, input)
-
-    // Live preview fetchers
-    public getSearchInsightContent = (input: GetSearchInsightContentInput): Promise<SeriesChartContent<any>> =>
-        getSearchInsightContent(input).then(data => data.content)
-
-    public getLangStatsInsightContent = (
-        input: GetLangStatsInsightContentInput
-    ): Promise<CategoricalChartContent<any>> => getLangStatsInsightContent(input).then(data => data.content)
-
-    public getInsightPreviewContent = (
-        input: InsightPreviewSettings
-    ): Promise<SeriesChartContent<BackendInsightDatum>> => getInsightsPreview(this.apolloClient, input)
-
-    // Repositories API
-    public getRepositorySuggestions = getRepositorySuggestions
-    public getResolvedSearchRepositories = getResolvedSearchRepositories
 
     public assignInsightsToDashboard = ({
         id,
@@ -300,33 +220,4 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             )
         )
     }
-
-    public getFirstExampleRepository = (): Observable<string> => {
-        const firstRepository = (): Observable<string> =>
-            fromObservableQuery(
-                this.apolloClient.watchQuery<ExampleFirstRepositoryResult>({
-                    query: GET_EXAMPLE_FIRST_REPOSITORY_GQL,
-                })
-            ).pipe(map(getRepositoryName))
-
-        const todoRepository = (): Observable<string> =>
-            fromObservableQuery(
-                this.apolloClient.watchQuery<ExampleTodoRepositoryResult>({
-                    query: GET_EXAMPLE_TODO_REPOSITORY_GQL,
-                })
-            ).pipe(map(getRepositoryName))
-
-        return todoRepository().pipe(
-            switchMap(todoRepository => (todoRepository ? of(todoRepository) : firstRepository()))
-        )
-    }
-
-    public readonly UIFeatures: UiFeaturesConfig = {
-        licensed: true,
-        insightsLimit: null,
-    }
 }
-
-const getRepositoryName = (
-    result: ApolloQueryResult<ExampleTodoRepositoryResult | ExampleFirstRepositoryResult>
-): string => result.data.search?.results.repositories[0]?.name || ''

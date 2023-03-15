@@ -355,6 +355,11 @@ type ExternalChangeset implements Node & Changeset {
     ): BatchChangeConnection!
 
     """
+    The batch change that "owns" this changeset: If this is null, it is imported/tracked by a batch change.
+    """
+    ownedByBatchChange: ID
+
+    """
     The events belonging to this changeset.
     """
     events(first: Int = 50, after: String): ChangesetEventConnection!
@@ -418,9 +423,15 @@ type ExternalChangeset implements Node & Changeset {
     host).
     """
     forkNamespace: String
+    """
+    If the changeset was opened from a fork, this is the name of the fork repository.
+    """
+    forkName: String
 
     """
     The review state of this changeset. This is only set once the changeset is published on the code host.
+
+    Note: The COMMENTED and DISMISSED review states are not yet implemented.
     """
     reviewState: ChangesetReviewState
 
@@ -514,6 +525,14 @@ type ChangesetsStats {
     The count of all changesets.
     """
     total: Int!
+    """
+    If true, then all changesets are either merged or closed. This indicates that the batch change is completed.
+    """
+    isCompleted: Boolean!
+    """
+    The count of changesets that are complete (i.e in a merged or closed state) and not archived or deleted.
+    """
+    percentComplete: Int!
 }
 
 """
@@ -1283,6 +1302,26 @@ extend type Mutation {
     ): ChangesetSpec!
 
     """
+    FOR INTERNAL USE ONLY.
+
+    Upload multiple changeset specs that will be used in a future update to a batch change. The changeset specs
+    are stored and can be referenced by their ID in the applyBatchChange mutation. Just uploading the
+    changeset specs does not result in changes to the batch change or any of its changesets; you need
+    to call applyBatchChange to use it.
+
+    The returned ChangesetSpecs is immutable and expires after a certain period of time (if not
+    used in a call to applyBatchChange), which can be queried on ChangesetSpec.expiresAt.
+    """
+    createChangesetSpecs(
+        """
+        The raw changeset specs (as JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/changeset_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
+        """
+        changesetSpecs: [String!]!
+    ): [ChangesetSpec!]!
+
+    """
     Enqueue the given changeset for high-priority syncing.
     """
     syncChangeset(changeset: ID!): EmptyResponse!
@@ -1421,8 +1460,6 @@ extend type Mutation {
 
         """
         Don't use cache entries.
-
-        TODO: Not implemented yet.
         """
         noCache: Boolean = false
 
@@ -1482,8 +1519,6 @@ extend type Mutation {
 
         """
         Don't use cache entries.
-
-        TODO: Not implemented yet.
         """
         noCache: Boolean = false
     ): BatchSpec!
@@ -1524,8 +1559,6 @@ extend type Mutation {
 
         """
         Don't use cache entries.
-
-        TODO: Not implemented yet.
         """
         noCache: Boolean = false
 
@@ -1565,11 +1598,10 @@ extend type Mutation {
         """
         batchSpec: ID!
         """
-        Don't use cache entries.
-
-        TODO: Not implemented yet.
+        Don't use cache entries. If set, will overwrite the current batchSpec.NoCache
+        state.
         """
-        noCache: Boolean = false
+        noCache: Boolean
         """
         Right away set the autoApplyEnabled flag on the batch spec.
 
@@ -2080,10 +2112,9 @@ type BatchSpecWorkspaceStages {
     setup: [ExecutionLogEntry!]!
 
     """
-    Execution log entry related to running src batch exec.
-    This field is null, if the step had not been executed.
+    Execution log entries related to running the steps of the batch spec.
     """
-    srcExec: ExecutionLogEntry
+    srcExec: [ExecutionLogEntry!]!
 
     """
     Execution log entries related to tearing down the workspace.
@@ -2473,8 +2504,8 @@ type BatchSpecWorkspaceStep {
         """
         Return the log lines after N lines.
         """
-        after: Int
-    ): [String!]
+        after: String
+    ): BatchSpecWorkspaceStepOutputLineConnection!
 
     """
     The time when the step started processing. Null, if not yet started.
@@ -2513,6 +2544,26 @@ type BatchSpecWorkspaceStep {
 }
 
 """
+A list of Output lines from a Batch spec workspace.
+"""
+type BatchSpecWorkspaceStepOutputLineConnection {
+    """
+    The total number of output lines in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+
+    """
+    A list of output lines.
+    """
+    nodes: [String!]!
+}
+
+"""
 An output variable in a step.
 """
 type BatchSpecWorkspaceOutputVariable {
@@ -2536,8 +2587,9 @@ type BatchSpecWorkspaceEnvironmentVariable {
     name: String!
     """
     The variable value.
+    If null, the variable will be populated from a secret.
     """
-    value: String!
+    value: String
 }
 
 """
@@ -2646,6 +2698,8 @@ type BatchChange implements Node {
         onlyClosable: Boolean
         """
         Only include changesets with the given review state.
+
+        Note: The COMMENTED and DISMISSED review states are not yet implemented.
         """
         reviewState: ChangesetReviewState
         """
@@ -3180,6 +3234,13 @@ type BatchSpec implements Node {
     allowUnsupported: Boolean
 
     """
+    If true, workspaces will not run with cached results.
+
+    Null, if not created through createBatchSpecFromRaw.
+    """
+    noCache: Boolean
+
+    """
     If true, viewer can retry the batch spec execution by calling
     retryBatchSpecExecution.
     """
@@ -3516,11 +3577,24 @@ type BatchSpecWorkspaceFile implements File2 & Node {
     """
     The content of this file.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the Blob. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -3530,7 +3604,16 @@ type BatchSpecWorkspaceFile implements File2 & Node {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The URL to this file (using the input revision specifier, which may not be immutable).
     """
@@ -3561,5 +3644,15 @@ type BatchSpecWorkspaceFile implements File2 & Node {
         Specifies which format/highlighting technique to use.
         """
         format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return highlight content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
 }

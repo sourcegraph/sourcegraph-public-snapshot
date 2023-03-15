@@ -1,0 +1,25 @@
+.link-color {
+    color: var(--link-color);
+}
+
+.loading-spinner-container {
+    background-color: var(--border-color);
+    opacity: 0.5;
+    z-index: 1;
+}
+
+.username-column {
+    max-width: 12rem;
+}
+
+.visible-actions-on-hover {
+    .actions-button {
+        visibility: hidden;
+    }
+
+    &:hover {
+        .actions-button {
+            visibility: visible;
+        }
+    }
+}

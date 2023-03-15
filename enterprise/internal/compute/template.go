@@ -10,8 +10,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/go-enry/go-enry/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // Template is just a list of Atom, where an Atom is either a Variable or a Constant string.
@@ -181,8 +183,8 @@ func toJSONString(template *Template) string {
 	for _, atom := range *template {
 		jsons = append(jsons, toJSON(atom))
 	}
-	json, _ := json.Marshal(jsons)
-	return string(json)
+	j, _ := json.Marshal(jsons)
+	return string(j)
 }
 
 type MetaEnvironment struct {
@@ -194,6 +196,7 @@ type MetaEnvironment struct {
 	Date    time.Time
 	Email   string
 	Lang    string
+	Owner   string
 }
 
 var empty = struct{}{}
@@ -234,7 +237,7 @@ func templatize(pattern string, env *MetaEnvironment) string {
 				case "date":
 					templatized = append(templatized, env.Date.Format("2006-01-02"))
 				default:
-					templateVar := strings.Title(a.Name[1:])
+					templateVar := cases.Title(language.English).String(a.Name[1:])
 					templatized = append(templatized, `{{.`+templateVar+`}}`)
 				}
 				continue
@@ -262,14 +265,14 @@ func substituteMetaVariables(pattern string, env *MetaEnvironment) (string, erro
 
 // NewMetaEnvironment maps results to a metavariable:value environment where
 // metavariables can be referenced and substituted for in an output template.
-func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
+func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
 	switch m := r.(type) {
-	case *result.RepoMatch:
+	case *searchresult.RepoMatch:
 		return &MetaEnvironment{
 			Repo:    string(m.Name),
 			Content: string(m.Name),
 		}
-	case *result.FileMatch:
+	case *searchresult.FileMatch:
 		lang, _ := enry.GetLanguageByExtension(m.Path)
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
@@ -278,7 +281,7 @@ func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 			Content: content,
 			Lang:    lang,
 		}
-	case *result.CommitMatch:
+	case *searchresult.CommitMatch:
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
 			Commit:  string(m.Commit.ID),
@@ -287,7 +290,7 @@ func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 			Email:   m.Commit.Author.Email,
 			Content: content,
 		}
-	case *result.CommitDiffMatch:
+	case *searchresult.CommitDiffMatch:
 		path := m.Path()
 		lang, _ := enry.GetLanguageByExtension(path)
 		return &MetaEnvironment{
@@ -298,6 +301,13 @@ func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 			Email:   m.Commit.Author.Email,
 			Path:    path,
 			Lang:    lang,
+			Content: content,
+		}
+	case *searchresult.OwnerMatch:
+		return &MetaEnvironment{
+			Repo:    string(m.Repo.Name),
+			Commit:  string(m.CommitID),
+			Owner:   m.ResolvedOwner.Identifier(),
 			Content: content,
 		}
 	}

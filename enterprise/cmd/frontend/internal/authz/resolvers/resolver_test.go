@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -12,22 +13,29 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
+
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -41,7 +49,8 @@ func clock() time.Time {
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
-	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, NewResolver(db, clock))
+	resolver := NewResolver(observation.TestContextTB(t), db)
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, resolver)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,14 +59,13 @@ func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 }
 
 func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
-
-		licensing.MockCheckFeatureError("")
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
@@ -180,12 +188,27 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			perms := edb.NewStrictMockPermsStore()
 			perms.TransactFunc.SetDefaultReturn(perms, nil)
 			perms.DoneFunc.SetDefaultReturn(nil)
-			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
+			perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, ids []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+				expUserIDs := maps.Keys(test.expUserIDs)
+				userIDs := make([]int32, len(ids))
+				for i, u := range ids {
+					userIDs[i] = u.UserID
+				}
+				if diff := cmp.Diff(expUserIDs, userIDs); diff != "" {
+					return nil, errors.Errorf("userIDs expected: %v, got: %v", expUserIDs, userIDs)
+				}
+				if source != authz.SourceAPI {
+					return nil, errors.Errorf("source expected: %s, got: %s", authz.SourceAPI, source)
+				}
+
+				return nil, nil
+			})
+			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 				ids := p.UserIDs
 				if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
-					return errors.Errorf("p.UserIDs: %v", diff)
+					return nil, errors.Errorf("p.UserIDs: %v", diff)
 				}
-				return nil
+				return nil, nil
 			})
 			perms.SetRepoPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
 				if diff := cmp.Diff(test.expAccounts, accounts); diff != "" {
@@ -225,6 +248,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 
 func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 	// TODO: Factor out this common check
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -286,6 +310,9 @@ func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 }
 
 func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -293,7 +320,6 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{})
 		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
@@ -303,43 +329,53 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		}
 	})
 
-	licensing.MockCheckFeatureError("")
 	users := database.NewStrictMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
-	r := &Resolver{
-		db: db,
-		repoupdaterClient: &fakeRepoupdaterClient{
-			mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
-				if len(args.RepoIDs) != 1 {
-					return errors.Errorf("RepoIDs: want 1 id but got %d", len(args.RepoIDs))
-				}
-				return nil
-			},
-		},
+	r := &Resolver{db: db}
+
+	const repoID = 1
+
+	called := false
+	permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+		called = true
+		if len(req.RepoIDs) != 1 && req.RepoIDs[0] == api.RepoID(repoID) {
+			t.Errorf("unexpected repoID argument. want=%d have=%d", repoID, req.RepoIDs[0])
+		}
+		if req.TriggeredByUserID != 1 {
+			t.Errorf("unexpected TriggeredByUserID argument. want=%d have=%d", 1, req.TriggeredByUserID)
+		}
 	}
-	_, err := r.ScheduleRepositoryPermissionsSync(context.Background(), &graphqlbackend.RepositoryIDArgs{
-		Repository: graphqlbackend.MarshalRepositoryID(1),
+	t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+
+	_, err := r.ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{
+		Repository: graphqlbackend.MarshalRepositoryID(api.RepoID(repoID)),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	if !called {
+		t.Fatalf("SchedulePermsSync not called")
+	}
 }
 
 func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
-	t.Run("authenticated as non-admin", func(t *testing.T) {
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 123})
+
+	t.Run("authenticated as non-admin and not the same user", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 123}, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{db: db}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{})
-		if want := auth.ErrMustBeSiteAdmin; err != want {
+		result, err := (&Resolver{db: db}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{User: graphqlbackend.MarshalUserID(1)})
+		if want := auth.ErrMustBeSiteAdminOrSameUser; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -348,58 +384,106 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	})
 
 	users := database.NewStrictMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 123, SiteAdmin: true}, nil)
 
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
+	const userID = int32(1)
+
 	t.Run("queue a user", func(t *testing.T) {
-		r := &Resolver{
-			db: db,
-			repoupdaterClient: &fakeRepoupdaterClient{
-				mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
-					if len(args.UserIDs) != 1 {
-						return errors.Errorf("UserIDs: want 1 id but got %d", len(args.UserIDs))
-					}
-					return nil
-				},
-			},
+		r := &Resolver{db: db}
+
+		called := false
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			called = true
+			if len(req.UserIDs) != 1 || req.UserIDs[0] != userID {
+				t.Errorf("unexpected UserIDs argument. want=%d have=%v", userID, req.UserIDs)
+			}
+			if req.TriggeredByUserID != 123 {
+				t.Errorf("unexpected TriggeredByUserID argument. want=%d have=%d", 1, req.TriggeredByUserID)
+			}
 		}
-		_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserPermissionsSyncArgs{
-			User: graphqlbackend.MarshalUserID(1),
-		})
+		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+
+		_, err := r.ScheduleUserPermissionsSync(actor.WithActor(context.Background(), &actor.Actor{UID: 123}),
+			&graphqlbackend.UserPermissionsSyncArgs{User: graphqlbackend.MarshalUserID(userID)})
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		if !called {
+			t.Fatal("expected SchedulePermsSync to be called but wasn't")
+		}
+	})
+
+	t.Run("queue the same user, not a site-admin", func(t *testing.T) {
+		userID := int32(123)
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		r := &Resolver{db: db}
+
+		called := false
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			called = true
+			if len(req.UserIDs) != 1 || req.UserIDs[0] != userID {
+				t.Errorf("unexpected UserIDs argument. want=%d have=%v", userID, req.UserIDs)
+			}
+			if req.TriggeredByUserID != userID {
+				t.Errorf("unexpected TriggeredByUserID argument. want=%d have=%d", 1, req.TriggeredByUserID)
+			}
+		}
+		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+
+		_, err := r.ScheduleUserPermissionsSync(actor.WithActor(context.Background(), &actor.Actor{UID: 123}),
+			&graphqlbackend.UserPermissionsSyncArgs{User: graphqlbackend.MarshalUserID(123)})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !called {
+			t.Fatal("expected SchedulePermsSync to be called but wasn't")
 		}
 	})
 
 	t.Run("queue a user with options", func(t *testing.T) {
-		r := &Resolver{
-			db: db,
-			repoupdaterClient: &fakeRepoupdaterClient{
-				mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
-					if len(args.UserIDs) != 1 {
-						return errors.Errorf("UserIDs: want 1 id but got %d", len(args.UserIDs))
-					}
-					if !args.Options.InvalidateCaches {
-						return errors.Errorf("Options.InvalidateCaches: expected true but got false")
-					}
-					return nil
-				},
-			},
+		r := &Resolver{db: db}
+
+		called := false
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			called = true
+			if len(req.UserIDs) != 1 && req.UserIDs[0] == userID {
+				t.Errorf("unexpected UserIDs argument. want=%d have=%d", userID, req.UserIDs[0])
+			}
+			if !req.Options.InvalidateCaches {
+				t.Errorf("expected InvalidateCaches to be set, but wasn't")
+			}
 		}
+
+		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 		trueVal := true
 		_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserPermissionsSyncArgs{
-			User:    graphqlbackend.MarshalUserID(1),
+			User:    graphqlbackend.MarshalUserID(userID),
 			Options: &struct{ InvalidateCaches *bool }{InvalidateCaches: &trueVal},
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		if !called {
+			t.Fatal("expected SchedulePermsSync to be called but wasn't")
+		}
 	})
 }
 
 func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
+	logger := logtest.Scoped(t)
+
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
+
 	t.Run("disabled on dotcom", func(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 
@@ -409,7 +493,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		r := &Resolver{db: db}
+		r := &Resolver{db: db, logger: logger}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx, nil)
@@ -433,7 +517,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		r := &Resolver{db: db}
+		r := &Resolver{db: db, logger: logger}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx, nil)
@@ -454,7 +538,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		r := &Resolver{db: db}
+		r := &Resolver{db: db, logger: logger}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx,
@@ -497,7 +581,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		})
 		db.ExternalServicesFunc.SetDefaultReturn(extSvc)
 
-		r := &Resolver{db: db}
+		r := &Resolver{db: db, logger: logger}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx,
@@ -537,7 +621,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		})
 		db.ExternalServicesFunc.SetDefaultReturn(extSvc)
 
-		r := &Resolver{db: db}
+		r := &Resolver{db: db, logger: logger}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
@@ -584,12 +668,179 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 	})
 }
 
-type fakeRepoupdaterClient struct {
-	mockSchedulePermsSync func(ctx context.Context, args protocol.PermsSyncRequest) error
+func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
+	logger := logtest.Scoped(t)
+
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
+
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db, logger: logger}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.CancelPermissionsSyncJob(ctx, nil)
+
+		require.EqualError(t, err, auth.ErrMustBeSiteAdmin.Error())
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageError, result)
+	})
+
+	t.Run("invalid sync job ID", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db, logger: logger}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.CancelPermissionsSyncJob(ctx,
+			&graphqlbackend.CancelPermissionsSyncJobArgs{
+				Job: graphqlbackend.MarshalRepositoryID(1337),
+			},
+		)
+
+		require.Error(t, err)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageError, result)
+	})
+
+	t.Run("sync job not found", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(database.MockPermissionsSyncJobNotFoundErr)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+		r := &Resolver{db: db, logger: logger}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		result, err := r.CancelPermissionsSyncJob(ctx,
+			&graphqlbackend.CancelPermissionsSyncJobArgs{
+				Job: marshalPermissionsSyncJobID(1337),
+			},
+		)
+
+		require.NoError(t, err)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageNotFound, result)
+	})
+
+	t.Run("SQL error", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+		const errorText = "oops"
+		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(errors.New(errorText))
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+		r := &Resolver{db: db, logger: logger}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		result, err := r.CancelPermissionsSyncJob(ctx,
+			&graphqlbackend.CancelPermissionsSyncJobArgs{
+				Job: marshalPermissionsSyncJobID(1337),
+			},
+		)
+
+		require.EqualError(t, err, errorText)
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageError, result)
+	})
+
+	t.Run("sync job successfully cancelled", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+		r := &Resolver{db: db, logger: logger}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		result, err := r.CancelPermissionsSyncJob(ctx,
+			&graphqlbackend.CancelPermissionsSyncJobArgs{
+				Job: marshalPermissionsSyncJobID(1337),
+			},
+		)
+
+		require.Equal(t, graphqlbackend.CancelPermissionsSyncJobResultMessageSuccess, result)
+		require.NoError(t, err)
+	})
 }
 
-func (c *fakeRepoupdaterClient) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
-	return c.mockSchedulePermsSync(ctx, args)
+func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
+
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+	permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultHook(func(_ context.Context, reason string, jobID int) error {
+		if jobID == 1 && reason == "because" {
+			return nil
+		}
+		return database.MockPermissionsSyncJobNotFoundErr
+	})
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+	t.Run("sync job successfully canceled with reason", func(t *testing.T) {
+		graphqlbackend.RunTest(t, &graphqlbackend.Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: fmt.Sprintf(`
+				mutation {
+					cancelPermissionsSyncJob(
+						job: "%s",
+						reason: "because"
+					)
+				}
+			`, marshalPermissionsSyncJobID(1)),
+			ExpectedResult: `
+				{
+					"cancelPermissionsSyncJob": "SUCCESS"
+				}
+			`,
+		})
+	})
+
+	t.Run("sync job is already dequeued", func(t *testing.T) {
+		graphqlbackend.RunTest(t, &graphqlbackend.Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: fmt.Sprintf(`
+				mutation {
+					cancelPermissionsSyncJob(
+						job: "%s",
+						reason: "cause"
+					)
+				}
+			`, marshalPermissionsSyncJobID(42)),
+			ExpectedResult: `
+				{
+					"cancelPermissionsSyncJob": "NOT_FOUND"
+				}
+			`,
+		})
+	})
 }
 
 func TestResolver_AuthorizedUserRepositories(t *testing.T) {
@@ -635,9 +886,11 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
-		p.IDs = map[int32]struct{}{1: {}}
-		return nil
+	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, userID int32) ([]authz.Permission, error) {
+		return []authz.Permission{{
+			UserID: userID,
+			RepoID: 1,
+		}}, nil
 	})
 	perms.LoadUserPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPendingPermissions) error {
 		p.IDs = map[int32]struct{}{2: {}, 3: {}, 4: {}, 5: {}}
@@ -920,6 +1173,51 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 	}
 }
 
+func TestResolver_AuthzProviderTypes(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
+		if want := auth.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	t.Run("get authz provider types", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
+			SiteAdmin: true,
+		}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		ghProvider := github.NewProvider("https://github.com", github.ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		authz.SetProviders(false, []authz.Provider{ghProvider})
+		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"github"}, result)
+	})
+}
+
+func mustURL(t *testing.T, u string) *url.URL {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return parsed
+}
+
 func TestResolver_AuthorizedUsers(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
@@ -957,9 +1255,16 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
-		p.UserIDs = map[int32]struct{}{1: {}, 2: {}, 3: {}, 4: {}, 5: {}}
-		return nil
+	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
+		permissions := make([]authz.Permission, 5)
+		for i, userID := range []int32{1, 2, 3, 4, 5} {
+			permissions[i] = authz.Permission{
+				UserID: userID,
+				RepoID: repoID,
+			}
+		}
+
+		return permissions, nil
 	})
 
 	db := edb.NewStrictMockEnterpriseDB()
@@ -1133,16 +1438,21 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
-		p.UpdatedAt = clock()
-		p.SyncedAt = clock()
-		return nil
+	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
+		return []authz.Permission{{RepoID: repoID, UserID: 42, UpdatedAt: clock()}}, nil
 	})
+	perms.IsRepoUnrestrictedFunc.SetDefaultHook(func(_ context.Context, _ api.RepoID) (bool, error) {
+		return false, nil
+	})
+
+	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: clock()}, nil)
 
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.PermsFunc.SetDefaultReturn(perms)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	tests := []struct {
 		name     string
@@ -1189,20 +1499,51 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 }
 
 func TestResolver_UserPermissionsInfo(t *testing.T) {
-	t.Run("authenticated as non-admin", func(t *testing.T) {
+	t.Run("authenticated as non-admin, asking not for self", func(t *testing.T) {
+		user := &types.User{ID: 42}
+
 		users := database.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
+		users.GetByIDFunc.SetDefaultReturn(user, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
-		if want := auth.ErrMustBeSiteAdmin; err != want {
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
+		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalUserID(1))
+		if want := auth.ErrMustBeSiteAdminOrSameUser; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
 			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	t.Run("authenticated as non-admin, asking for self succeeds", func(t *testing.T) {
+		user := &types.User{ID: 42}
+
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
+		users.GetByIDFunc.SetDefaultReturn(user, nil)
+
+		perms := edb.NewStrictMockPermsStore()
+		perms.LoadUserPermissionsFunc.SetDefaultReturn([]authz.Permission{}, nil)
+
+		syncJobs := database.NewStrictMockPermissionSyncJobStore()
+		syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PermsFunc.SetDefaultReturn(perms)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
+		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalUserID(user.ID))
+		if err != nil {
+			t.Errorf("err: want nil but got %v", err)
+		}
+		if result == nil {
+			t.Errorf("result: want non-nil but got nil")
 		}
 	})
 
@@ -1213,11 +1554,12 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
-		p.UpdatedAt = clock()
-		p.SyncedAt = clock()
-		return nil
+	perms.LoadUserPermissionsFunc.SetDefaultHook(func(context.Context, int32) ([]authz.Permission, error) {
+		return []authz.Permission{{UpdatedAt: clock()}}, nil
 	})
+
+	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: clock()}, nil)
 
 	repos := database.NewStrictMockRepoStore()
 	repos.GetByNameFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) (*types.Repo, error) {
@@ -1228,6 +1570,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.PermsFunc.SetDefaultReturn(perms)
 	db.ReposFunc.SetDefaultReturn(repos)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	tests := []struct {
 		name     string
@@ -1272,11 +1615,13 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 }
 
 func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		subrepos := database.NewStrictMockSubRepoPermsStore()
+		subrepos := edb.NewStrictMockSubRepoPermsStore()
 		subrepos.UpsertFunc.SetDefaultHook(func(ctx context.Context, i int32, id api.RepoID, permissions authz.SubRepoPermissions) error {
 			return nil
 		})
@@ -1314,7 +1659,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 			}, nil
 		})
 
-		subReposStore := database.NewStrictMockSubRepoPermsStore()
+		subReposStore := edb.NewStrictMockSubRepoPermsStore()
 		subReposStore.UpsertFunc.SetDefaultHook(func(ctx context.Context, i int32, id api.RepoID, permissions authz.SubRepoPermissions) error {
 			return nil
 		})
@@ -1328,11 +1673,8 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		})
 
 		db := edb.NewStrictMockEnterpriseDB()
-		db.TransactFunc.SetDefaultHook(func(ctx context.Context) (database.DB, error) {
-			return db, nil
-		})
-		db.DoneFunc.SetDefaultHook(func(err error) error {
-			return nil
+		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			return f(db)
 		})
 		db.UsersFunc.SetDefaultReturn(usersStore)
 		db.SubRepoPermsFunc.SetDefaultReturn(subReposStore)
@@ -1430,7 +1772,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Message: "either both pathIncludes and pathExcludes needs to be set, or paths needs to be set",
-						Path:    []any{string("setSubRepositoryPermissionsForUsers")},
+						Path:    []any{"setSubRepositoryPermissionsForUsers"},
 					},
 				},
 				ExpectedResult: "null",
@@ -1533,6 +1875,7 @@ query {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		bbProjects := database.NewMockBitbucketProjectPermissionsStore()
+		entry := executor.ExecutionLogEntry{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: intPtr(1), Out: "out", DurationMs: intPtr(1)}
 		bbProjects.ListJobsFunc.SetDefaultReturn([]*types.BitbucketProjectPermissionJob{
 			{
 				ID:                1,
@@ -1545,7 +1888,7 @@ query {
 				NumResets:         1,
 				NumFailures:       2,
 				LastHeartbeatAt:   mustParseTime("2020-01-05"),
-				ExecutionLogs:     []workerutil.ExecutionLogEntry{{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: intPtr(1), Out: "out", DurationMs: intPtr(1)}},
+				ExecutionLogs:     []types.ExecutionLogEntry{&entry},
 				WorkerHostname:    "worker-hostname",
 				ProjectKey:        "project-key",
 				ExternalServiceID: 1,
@@ -1618,6 +1961,600 @@ query {
 		}
 
 		graphqlbackend.RunTests(t, []*graphqlbackend.Test{test})
+	})
+}
+
+func TestResolverPermissionsSyncJobs(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{})
+
+		require.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
+		require.Nil(t, result)
+	})
+
+	t.Run("authenticated as non-admin with current user's ID as userID filter", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userID := graphqlbackend.MarshalUserID(1)
+		_, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{UserID: &userID})
+
+		require.NoError(t, err)
+	})
+
+	t.Run("authenticated as non-admin with different user's ID as userID filter", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userID := graphqlbackend.MarshalUserID(2)
+		_, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{UserID: &userID})
+
+		require.ErrorIs(t, err, auth.ErrMustBeSiteAdminOrSameUser)
+	})
+
+	t.Run("authenticated as admin with different user's ID as userID filter", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userID := graphqlbackend.MarshalUserID(2)
+		_, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{UserID: &userID})
+
+		require.NoError(t, err)
+	})
+
+	// Mocking users database queries.
+	users := database.NewStrictMockUserStore()
+	returnedUser := &types.User{ID: 1, SiteAdmin: true}
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(returnedUser, nil)
+	users.GetByIDFunc.SetDefaultReturn(returnedUser, nil)
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
+	// Mocking permission jobs database queries.
+	permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+	timeFormat := "2006-01-02T15:04:05Z"
+	queuedAt, err := time.Parse(timeFormat, "2023-03-02T15:04:05Z")
+	require.NoError(t, err)
+	finishedAt, err := time.Parse(timeFormat, "2023-03-02T15:05:05Z")
+	require.NoError(t, err)
+
+	// One job has a user who triggered it, another doesn't.
+	jobs := []*database.PermissionSyncJob{
+		{
+			ID:                 3,
+			State:              "COMPLETED",
+			Reason:             database.ReasonManualUserSync,
+			RepositoryID:       1,
+			TriggeredByUserID:  1,
+			QueuedAt:           queuedAt,
+			StartedAt:          queuedAt,
+			FinishedAt:         finishedAt,
+			NumResets:          0,
+			NumFailures:        0,
+			WorkerHostname:     "worker.hostname",
+			Cancel:             false,
+			Priority:           database.HighPriorityPermissionsSync,
+			NoPerms:            false,
+			InvalidateCaches:   false,
+			PermissionsAdded:   1337,
+			PermissionsRemoved: 42,
+			PermissionsFound:   404,
+			CodeHostStates:     []database.PermissionSyncCodeHostState{},
+		},
+		{
+			ID:               4,
+			State:            "QUEUED",
+			Reason:           database.ReasonUserEmailRemoved,
+			RepositoryID:     1,
+			QueuedAt:         queuedAt,
+			StartedAt:        queuedAt,
+			WorkerHostname:   "worker.hostname",
+			Cancel:           false,
+			Priority:         database.HighPriorityPermissionsSync,
+			NoPerms:          false,
+			InvalidateCaches: false,
+			CodeHostStates:   []database.PermissionSyncCodeHostState{},
+		},
+	}
+	permissionSyncJobStore.ListFunc.SetDefaultReturn(jobs, nil)
+	permissionSyncJobStore.CountFunc.SetDefaultReturn(len(jobs), nil)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+	// Mocking repository database queries.
+	repoStore := database.NewMockRepoStore()
+	repoStore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1}, nil)
+	db.ReposFunc.SetDefaultReturn(repoStore)
+
+	// Creating a resolver and validating GraphQL schema.
+	r := &Resolver{db: db}
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+	t.Run("all job fields successfully returned", func(t *testing.T) {
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema:  parsedSchema,
+			Query: `
+query {
+  permissionsSyncJobs(first:2) {
+	totalCount
+	pageInfo { hasNextPage }
+    nodes {
+		id
+		state
+		failureMessage
+		reason {
+			group
+			reason
+		}
+		cancellationReason
+		triggeredByUser {
+			id
+		}
+		queuedAt
+		startedAt
+		finishedAt
+		processAfter
+		ranForMs
+		numResets
+		numFailures
+		lastHeartbeatAt
+		workerHostname
+		cancel
+		subject {
+			... on Repository {
+				id
+			}
+		}
+		priority
+		noPerms
+		invalidateCaches
+		permissionsAdded
+		permissionsRemoved
+		permissionsFound
+		codeHostStates {
+			providerID
+		}
+	}
+  }
+}
+					`,
+			ExpectedResult: `
+{
+	"permissionsSyncJobs": {
+		"nodes": [
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjM=",
+				"state": "COMPLETED",
+				"failureMessage": null,
+				"reason": {
+					"group": "MANUAL",
+					"reason": "REASON_MANUAL_USER_SYNC"
+				},
+				"cancellationReason": null,
+				"triggeredByUser": {
+					"id": "VXNlcjox"
+				},
+				"queuedAt": "2023-03-02T15:04:05Z",
+				"startedAt": "2023-03-02T15:04:05Z",
+				"finishedAt": "2023-03-02T15:05:05Z",
+				"processAfter": null,
+				"ranForMs": 60000,
+				"numResets": 0,
+				"numFailures": 0,
+				"lastHeartbeatAt": null,
+				"workerHostname": "worker.hostname",
+				"cancel": false,
+				"subject": {
+					"id": "UmVwb3NpdG9yeTox"
+				},
+				"priority": "HIGH",
+				"noPerms": false,
+				"invalidateCaches": false,
+				"permissionsAdded": 1337,
+				"permissionsRemoved": 42,
+				"permissionsFound": 404,
+				"codeHostStates": []
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjQ=",
+				"state": "QUEUED",
+				"failureMessage": null,
+				"reason": {
+					"group": "SOURCEGRAPH",
+					"reason": "REASON_USER_EMAIL_REMOVED"
+				},
+				"cancellationReason": null,
+				"triggeredByUser": null,
+				"queuedAt": "2023-03-02T15:04:05Z",
+				"startedAt": "2023-03-02T15:04:05Z",
+				"finishedAt": null,
+				"processAfter": null,
+				"ranForMs": 0,
+				"numResets": 0,
+				"numFailures": 0,
+				"lastHeartbeatAt": null,
+				"workerHostname": "worker.hostname",
+				"cancel": false,
+				"subject": {
+					"id": "UmVwb3NpdG9yeTox"
+				},
+				"priority": "HIGH",
+				"noPerms": false,
+				"invalidateCaches": false,
+				"permissionsAdded": 0,
+				"permissionsRemoved": 0,
+				"permissionsFound": 0,
+				"codeHostStates": []
+			}
+		],
+		"pageInfo": {
+			"hasNextPage": false
+		},
+		"totalCount": 2
+	}
+}`,
+		}})
+	})
+}
+
+func TestResolverPermissionsSyncJobsFiltering(t *testing.T) {
+	// Mocking users database queries.
+	users := database.NewStrictMockUserStore()
+	returnedUser := &types.User{ID: 1, SiteAdmin: true}
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(returnedUser, nil)
+	users.GetByIDFunc.SetDefaultReturn(returnedUser, nil)
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
+	// Mocking permission jobs database queries.
+	permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+
+	// One job has a user who triggered it, another doesn't.
+	jobs := []*database.PermissionSyncJob{
+		{
+			ID:     5,
+			State:  "QUEUED",
+			Reason: database.ReasonGitHubUserAddedEvent,
+		},
+		{
+			ID:     6,
+			State:  "QUEUED",
+			Reason: database.ReasonUserEmailRemoved,
+		},
+		{
+			ID:     7,
+			State:  "QUEUED",
+			Reason: database.ReasonGitHubUserMembershipAddedEvent,
+		},
+		{
+			ID:     8,
+			State:  "COMPLETED",
+			Reason: database.ReasonUserEmailVerified,
+		},
+		{
+			ID:     9,
+			State:  "COMPLETED",
+			Reason: database.ReasonGitHubUserMembershipAddedEvent,
+		},
+		{
+			ID:     10,
+			State:  "COMPLETED",
+			Reason: database.ReasonGitHubUserAddedEvent,
+		},
+	}
+
+	doFilter := func(jobs []*database.PermissionSyncJob, opts database.ListPermissionSyncJobOpts) []*database.PermissionSyncJob {
+		filtered := make([]*database.PermissionSyncJob, 0, len(jobs))
+		for _, job := range jobs {
+			if opts.ReasonGroup != "" {
+				if job.Reason.ResolveGroup() != opts.ReasonGroup {
+					continue
+				}
+			}
+			if opts.State != "" {
+				if job.State != opts.State {
+					continue
+				}
+			}
+			filtered = append(filtered, job)
+		}
+		return filtered
+	}
+
+	permissionSyncJobStore.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ListPermissionSyncJobOpts) ([]*database.PermissionSyncJob, error) {
+		filtered := doFilter(jobs, opts)
+
+		if opts.PaginationArgs.First != nil && len(filtered) > *opts.PaginationArgs.First {
+			filtered = filtered[:*opts.PaginationArgs.First+1]
+		}
+		return filtered, nil
+	})
+	permissionSyncJobStore.CountFunc.SetDefaultHook(func(_ context.Context, opts database.ListPermissionSyncJobOpts) (int, error) {
+		return len(doFilter(jobs, opts)), nil
+	})
+	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+	// Mocking repository database queries.
+	repoStore := database.NewMockRepoStore()
+	repoStore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1}, nil)
+	db.ReposFunc.SetDefaultReturn(repoStore)
+
+	// Creating a resolver and validating GraphQL schema.
+	r := &Resolver{db: db}
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+	t.Run("filter by reason group", func(t *testing.T) {
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema:  parsedSchema,
+			Query: `
+query {
+  permissionsSyncJobs(first: 10, reasonGroup: SOURCEGRAPH) {
+	totalCount
+	nodes {
+		id
+	}
+  }
+}
+					`,
+			ExpectedResult: `
+{
+	"permissionsSyncJobs": {
+		"totalCount": 2,
+		"nodes": [
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjY="
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjg="
+			}
+		]
+	}
+}`,
+		}})
+	})
+
+	t.Run("filter by state", func(t *testing.T) {
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema:  parsedSchema,
+			Query: `
+query {
+  permissionsSyncJobs(first: 10, state:COMPLETED) {
+	totalCount
+	nodes {
+		id
+	}
+  }
+}
+					`,
+			ExpectedResult: `
+{
+	"permissionsSyncJobs": {
+		"totalCount": 3,
+		"nodes": [
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjg="
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjk="
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjEw"
+			}
+		]
+	}
+}`,
+		}})
+	})
+
+	t.Run("filter by reason group and state", func(t *testing.T) {
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema:  parsedSchema,
+			Query: `
+query {
+  permissionsSyncJobs(first: 10, reasonGroup: WEBHOOK, state: COMPLETED) {
+	totalCount
+	nodes {
+		id
+	}
+  }
+}
+					`,
+			ExpectedResult: `
+{
+	"permissionsSyncJobs": {
+		"totalCount": 2,
+		"nodes": [
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjk="
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjEw"
+			}
+		]
+	}
+}`,
+		}})
+	})
+}
+
+func TestResolverPermissionsSyncJobsSearching(t *testing.T) {
+	// Mocking users database queries.
+	users := database.NewStrictMockUserStore()
+	returnedUser := &types.User{ID: 1, SiteAdmin: true}
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(returnedUser, nil)
+	users.GetByIDFunc.SetDefaultReturn(returnedUser, nil)
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
+	// Mocking permission jobs database queries.
+	permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+
+	// One job has a user who triggered it, another doesn't.
+	jobs := []*database.PermissionSyncJob{
+		{
+			ID:     1,
+			State:  "QUEUED",
+			Reason: database.ReasonGitHubTeamRemovedFromRepoEvent,
+		},
+		{
+			ID:     2,
+			State:  "QUEUED",
+			Reason: database.ReasonManualRepoSync,
+		},
+		{
+			ID:     3,
+			State:  "QUEUED",
+			Reason: database.ReasonRepoOutdatedPermissions,
+		},
+		{
+			ID:     4,
+			State:  "COMPLETED",
+			Reason: database.ReasonRepoNoPermissions,
+		},
+		{
+			ID:     5,
+			State:  "COMPLETED",
+			Reason: database.ReasonGitHubTeamRemovedFromRepoEvent,
+		},
+		{
+			ID:     6,
+			State:  "COMPLETED",
+			Reason: database.ReasonManualRepoSync,
+		},
+	}
+
+	permissionSyncJobStore.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ListPermissionSyncJobOpts) ([]*database.PermissionSyncJob, error) {
+		if opts.SearchType == database.PermissionsSyncSearchTypeRepo && opts.Query == "repo" {
+			return jobs[:4], nil
+		}
+		if opts.SearchType == database.PermissionsSyncSearchTypeUser && opts.Query == "user" {
+			return jobs[3:], nil
+		}
+		return []*database.PermissionSyncJob{}, nil
+	})
+	permissionSyncJobStore.CountFunc.SetDefaultReturn(len(jobs)/2, nil)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+
+	// Mocking repository database queries.
+	repoStore := database.NewMockRepoStore()
+	repoStore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1}, nil)
+	db.ReposFunc.SetDefaultReturn(repoStore)
+
+	// Creating a resolver and validating GraphQL schema.
+	r := &Resolver{db: db}
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+	t.Run("search by repo name", func(t *testing.T) {
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema:  parsedSchema,
+			Query: `
+query {
+  permissionsSyncJobs(first: 3, query: "repo", searchType: REPOSITORY) {
+	totalCount
+	nodes {
+		id
+	}
+  }
+}
+					`,
+			ExpectedResult: `
+{
+	"permissionsSyncJobs": {
+		"totalCount": 3,
+		"nodes": [
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjE="
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjI="
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjM="
+			}
+		]
+	}
+}`,
+		}})
+	})
+
+	t.Run("search by user name", func(t *testing.T) {
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema:  parsedSchema,
+			Query: `
+query {
+  permissionsSyncJobs(first: 3, query: "user", searchType: USER) {
+	totalCount
+	nodes {
+		id
+	}
+  }
+}
+					`,
+			ExpectedResult: `
+{
+	"permissionsSyncJobs": {
+		"totalCount": 3,
+		"nodes": [
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjQ="
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjU="
+			},
+			{
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjY="
+			}
+		]
+	}
+}`,
+		}})
 	})
 }
 

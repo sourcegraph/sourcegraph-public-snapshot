@@ -47,7 +47,7 @@ type Observer struct {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	repositoryResolver := searchrepos.NewResolver(o.Logger, o.Db, gitserver.NewClient(o.Db), o.Searcher, o.Zoekt)
+	repositoryResolver := searchrepos.NewResolver(o.Logger, o.Db, gitserver.NewClient(), o.Searcher, o.Zoekt)
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
@@ -212,7 +212,7 @@ type alertKind string
 
 const (
 	smartSearchAdditionalResults alertKind = "smart-search-additional-results"
-	smartSearchPureResults                 = "smart-search-pure-results"
+	smartSearchPureResults       alertKind = "smart-search-pure-results"
 )
 
 func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, error) {
@@ -256,8 +256,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	if errors.As(err, &mErr) {
-		var a *search.Alert
-		a = AlertForMissingRepoRevs(mErr.Missing)
+		a := AlertForMissingRepoRevs(mErr.Missing)
 		a.Priority = 6
 		return a, nil
 	}

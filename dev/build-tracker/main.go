@@ -11,6 +11,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -18,73 +21,33 @@ var ErrInvalidToken = errors.New("buildkite token is invalid")
 var ErrInvalidHeader = errors.New("Header of request is invalid")
 var ErrUnwantedEvent = errors.New("Unwanted event received")
 
-var nowFunc func() time.Time = time.Now
+var nowFunc = time.Now
 
-const DefaultChannel = "#william-buildchecker-webhook-test"
+// CleanUpInterval determines how often the old build cleaner should run
+var CleanUpInterval = 5 * time.Minute
+
+// BuildExpiryWindow defines the window for a build to be consider 'valid'. A build older than this window
+// will be eligible for clean up.
+var BuildExpiryWindow = 4 * time.Hour
 
 // Server is the http server that listens for events from Buildkite. The server tracks builds and their associated jobs
 // with the use of a BuildStore. Once a build is finished and has failed, the server sends a notification.
 type Server struct {
 	logger       log.Logger
-	store        *BuildStore
-	config       *config
-	notifyClient *NotificationClient
+	store        *build.Store
+	config       *config.Config
+	notifyClient *notify.Client
 	http         *http.Server
 }
 
-type config struct {
-	BuildkiteToken string
-	SlackToken     string
-	GithubToken    string
-	SlackChannel   string
-	Production     bool
-	DebugPassword  string
-}
-
-func configFromEnv() (*config, error) {
-	var c config
-
-	err := envVar("BUILDKITE_WEBHOOK_TOKEN", &c.BuildkiteToken)
-	if err != nil {
-		return nil, err
-	}
-	err = envVar("SLACK_TOKEN", &c.SlackToken)
-	if err != nil {
-		return nil, err
-	}
-	err = envVar("GITHUB_TOKEN", &c.GithubToken)
-	if err != nil {
-		return nil, err
-	}
-
-	err = envVar("SLACK_CHANNEL", &c.SlackChannel)
-	if err != nil {
-		c.SlackChannel = DefaultChannel
-	}
-
-	err = envVar("BUILDTRACKER_PRODUCTION", &c.Production)
-	if err != nil {
-		c.Production = false
-	}
-
-	if c.Production {
-		_ = envVar("BUILDTRACKER_DEBUG_PASSWORD", &c.DebugPassword)
-		if c.DebugPassword == "" {
-			return nil, errors.New("BUILDTRACKER_DEBUG_PASSWORD is required when BUILDTRACKER_PRODUCTION is true")
-		}
-	}
-
-	return &c, nil
-}
-
 // NewServer creatse a new server to listen for Buildkite webhook events.
-func NewServer(logger log.Logger, c config) *Server {
+func NewServer(logger log.Logger, c config.Config) *Server {
 	logger = logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
 	server := &Server{
 		logger:       logger,
-		store:        NewBuildStore(logger),
+		store:        build.NewBuildStore(logger),
 		config:       &c,
-		notifyClient: NewNotificationClient(logger, c.SlackToken, c.GithubToken, c.SlackChannel),
+		notifyClient: notify.NewClient(logger, c.SlackToken, c.GithubToken, c.SlackChannel),
 	}
 
 	// Register routes the the server will be responding too
@@ -184,7 +147,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var event Event
+	var event build.Event
 	err = json.Unmarshal(data, &event)
 	if err != nil {
 		s.logger.Error("failed to unmarshall request body", log.Error(err))
@@ -201,40 +164,47 @@ func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful not notifcation is sent
-func (s *Server) notifyIfFailed(build *Build) error {
-	if build.hasFailed() {
-		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", intp(build.Number)))
-		return s.notifyClient.sendFailedBuild(build)
+// notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful no notifcation is sent
+func (s *Server) notifyIfFailed(b *build.Build) error {
+	info := toBuildNotification(b)
+	if info.BuildStatus == string(build.BuildFailed) || info.BuildStatus == string(build.BuildFixed) {
+		s.logger.Info("sending notification for build", log.Int("buildNumber", b.GetNumber()), log.String("status", string(info.BuildStatus)))
+		// We lock the build while we send a notificationn so that we can ensure any late jobs do not interfere with what
+		// we're about to send.
+		b.Lock()
+		defer b.Unlock()
+		err := s.notifyClient.Send(info)
+		return err
 	}
 
-	s.logger.Info("build has not failed", log.Int("buildNumber", intp(build.Number)))
+	s.logger.Info("build has not failed", log.Int("buildNumber", b.GetNumber()))
 	return nil
 }
 
-func (s *Server) startOldBuildCleaner(every, window time.Duration) func() {
+func (s *Server) deleteOldBuilds(window time.Duration) {
+	oldBuilds := make([]int, 0)
+	now := nowFunc()
+	for _, b := range s.store.FinishedBuilds() {
+		finishedAt := *b.FinishedAt
+		delta := now.Sub(finishedAt.Time)
+		if delta >= window {
+			s.logger.Debug("build past age window", log.Int("buildNumber", *b.Number), log.Time("FinishedAt", finishedAt.Time), log.Duration("window", window))
+			oldBuilds = append(oldBuilds, *b.Number)
+		}
+	}
+	s.logger.Info("deleting old builds", log.Int("oldBuildCount", len(oldBuilds)))
+	s.store.DelByBuildNumber(oldBuilds...)
+}
+
+func (s *Server) startCleaner(every, window time.Duration) func() {
 	ticker := time.NewTicker(every)
 	done := make(chan interface{})
 
-	// We could technically remove  the builds immediately after we've sent a notification for or it, or the build has passed.
-	// But we keep builds a little longer and prediodically clean them out so that we can in future allow possibly querying
-	// of builds and other use cases, like retrying a build etc.
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				oldBuilds := make([]int, 0)
-				now := nowFunc()
-				for _, b := range s.store.FinishedBuilds() {
-					finishedAt := *b.FinishedAt
-					delta := now.Sub(finishedAt.Time)
-					if delta >= window {
-						s.logger.Debug("build past age window", log.Int("buildNumber", *b.Number), log.Time("FinishedAt", finishedAt.Time), log.Duration("window", window))
-						oldBuilds = append(oldBuilds, *b.Number)
-					}
-				}
-				s.logger.Info("deleting old builds", log.Int("oldBuildCount", len(oldBuilds)))
-				s.store.DelByBuildNumber(oldBuilds...)
+				s.deleteOldBuilds(window)
 			case <-done:
 				ticker.Stop()
 				return
@@ -248,15 +218,49 @@ func (s *Server) startOldBuildCleaner(every, window time.Duration) func() {
 // processEvent processes a BuildEvent received from Buildkite. If the event is for a `build.finished` event we get the
 // full build which includes all recorded jobs for the build and send a notification.
 // processEvent delegates the decision to actually send a notifcation
-func (s *Server) processEvent(event *Event) {
-	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.buildNumber()), log.String("jobName", event.jobName()))
+func (s *Server) processEvent(event *build.Event) {
+	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.GetBuildNumber()), log.String("jobName", event.GetJobName()))
 	s.store.Add(event)
-	if event.isBuildFinished() {
-		build := s.store.GetByBuildNumber(event.buildNumber())
-		if err := s.notifyIfFailed(build); err != nil {
-			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.buildNumber()), log.Error(err))
+	b := s.store.GetByBuildNumber(event.GetBuildNumber())
+	shouldNotify := event.IsBuildFinished() || (b.IsFailed() && event.IsJobFinished())
+	if shouldNotify {
+		if err := s.notifyIfFailed(b); err != nil {
+			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
 		}
 	}
+}
+
+func toBuildNotification(b *build.Build) *notify.BuildNotification {
+	info := notify.BuildNotification{
+		BuildNumber:        b.GetNumber(),
+		ConsecutiveFailure: b.ConsecutiveFailure,
+		PipelineName:       b.Pipeline.GetName(),
+		AuthorEmail:        b.GetAuthorEmail(),
+		Message:            b.GetMessage(),
+		Commit:             b.GetCommit(),
+		BuildStatus:        "",
+		BuildURL:           *b.WebURL,
+		Fixed:              []notify.JobLine{},
+		Failed:             []notify.JobLine{},
+	}
+
+	groups := build.GroupByStatus(b.Steps)
+	for _, j := range groups[build.JobFixed] {
+		info.Fixed = append(info.Fixed, j)
+	}
+	for _, j := range groups[build.JobFailed] {
+		info.Failed = append(info.Failed, j)
+	}
+
+	if len(groups[build.JobFailed]) > 0 {
+		info.BuildStatus = string(build.BuildFailed)
+	} else if len(groups[build.JobFixed]) > 0 {
+		info.BuildStatus = string(build.BuildFixed)
+	} else {
+		info.BuildStatus = string(build.BuildPassed)
+	}
+
+	return &info
 }
 
 // Serve starts the http server and listens for buildkite build events to be sent on the route "/buildkite"
@@ -269,14 +273,14 @@ func main() {
 
 	logger := log.Scoped("BuildTracker", "main entrypoint for Build Tracking Server")
 
-	serverConf, err := configFromEnv()
+	serverConf, err := config.NewFromEnv()
 	if err != nil {
 		logger.Fatal("failed to get config from env", log.Error(err))
 	}
 	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", serverConf.SlackChannel), log.Bool("Production", serverConf.Production)))
 	server := NewServer(logger, *serverConf)
 
-	stopFn := server.startOldBuildCleaner(5*time.Minute, 24*time.Hour)
+	stopFn := server.startCleaner(CleanUpInterval, BuildExpiryWindow)
 	defer stopFn()
 
 	if server.config.Production {

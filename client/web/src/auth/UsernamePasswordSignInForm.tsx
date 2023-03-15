@@ -1,11 +1,10 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, logger } from '@sourcegraph/common'
-import { Label, Button, LoadingSpinner, Link, Text, Input } from '@sourcegraph/wildcard'
+import { Label, Button, LoadingSpinner, Link, Text, Input, Form } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
@@ -14,11 +13,11 @@ import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
 interface Props {
     onAuthError: (error: Error | null) => void
-    noThirdPartyProviders?: boolean
     context: Pick<
         SourcegraphContext,
         'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
     >
+    className?: string
 }
 
 /**
@@ -26,7 +25,7 @@ interface Props {
  */
 export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onAuthError,
-    noThirdPartyProviders,
+    className,
     context,
 }) => {
     const location = useLocation()
@@ -91,7 +90,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
 
     return (
         <>
-            <Form onSubmit={handleSubmit}>
+            <Form onSubmit={handleSubmit} className={className}>
                 <Input
                     id="username-or-email"
                     label={<Text alignment="left">Username or email</Text>}
@@ -127,11 +126,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                     )}
                 </div>
 
-                <div
-                    className={classNames('form-group', {
-                        'mb-0': noThirdPartyProviders,
-                    })}
-                >
+                <div className={classNames('form-group', 'mb-0')}>
                     <Button display="block" type="submit" disabled={loading} variant="primary">
                         {loading ? <LoadingSpinner /> : 'Sign in'}
                     </Button>

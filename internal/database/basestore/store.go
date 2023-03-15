@@ -135,6 +135,33 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	return &Store{handle: handle}, nil
 }
 
+var ErrPanicDuringTransaction = errors.New("encountered panic during transaction")
+
+// WithTransact executes the callback using a transaction on the store. If the callback
+// returns an error or panics, the transaction will be rolled back.
+func (s *Store) WithTransact(ctx context.Context, f func(tx *Store) error) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			// If we're panicking, roll back the transaction
+			// even when err is nil.
+			err = tx.Done(ErrPanicDuringTransaction)
+			// Re-throw the panic after rolling back the transaction
+			panic(r)
+		} else {
+			// If we're not panicking, roll back the transaction if the
+			// operation on the transaction failed for whatever reason.
+			err = tx.Done(err)
+		}
+	}()
+
+	return f(tx)
+}
+
 // Done performs a commit or rollback of the underlying transaction/savepoint depending
 // on the value of the error parameter. The resulting error value is a multierror containing
 // the error parameter along with any error that occurs during commit or rollback of the

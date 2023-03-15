@@ -1,8 +1,9 @@
 package client
 
 import (
-	"sort"
 	"time"
+
+	"golang.org/x/exp/slices"
 
 	sgapi "github.com/sourcegraph/sourcegraph/internal/api"
 	searchshared "github.com/sourcegraph/sourcegraph/internal/search"
@@ -58,6 +59,7 @@ func (p *ProgressAggregator) currentStats() api.ProgressStats {
 	return api.ProgressStats{
 		MatchCount:          p.MatchCount,
 		ElapsedMilliseconds: int(time.Since(p.Start).Milliseconds()),
+		BackendsMissing:     p.Stats.BackendsMissing,
 		ExcludedArchived:    p.Stats.ExcludedArchived,
 		ExcludedForks:       p.Stats.ExcludedForks,
 		Timedout:            getRepos(p.Stats, searchshared.RepoStatusTimedout),
@@ -102,9 +104,7 @@ func getRepos(stats streaming.Stats, status searchshared.RepoStatus) []sgapi.Rep
 	})
 	// Filter runs in a random order (map traversal), so we should sort to
 	// give deterministic messages between updates.
-	sort.Slice(repos, func(i, j int) bool {
-		return repos[i] < repos[j]
-	})
+	slices.Sort(repos)
 	return repos
 }
 

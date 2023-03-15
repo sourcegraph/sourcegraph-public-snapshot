@@ -165,6 +165,7 @@ export interface MetaSelector extends BaseMetaToken {
 export enum MetaSelectorKind {
     Repo = 'repo',
     File = 'file',
+    FileOwners = 'file.owners',
     Content = 'content',
     Symbol = 'symbol',
     Commit = 'commit',
@@ -1006,6 +1007,9 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
             break
         }
         case 'has.tag':
+        case 'has.owner':
+        case 'has.key':
+        case 'has.topic':
             return [
                 {
                     type: 'literal',
@@ -1199,7 +1203,7 @@ export const toCSSClassName = (token: DecoratedToken): string => {
     }
 }
 
-interface Decoration {
+export interface Decoration {
     value: string
     key: number
     className: string
@@ -1217,33 +1221,33 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
         case 'metaStructural':
             return {
                 value: token.value,
-                key: token.range.start,
+                key: token.range.start + token.range.end,
                 className,
             }
         case 'openingParen':
             return {
                 value: '(',
-                key: token.range.start,
+                key: token.range.start + token.range.end,
                 className,
             }
         case 'closingParen':
             return {
                 value: ')',
-                key: token.range.start,
+                key: token.range.start + token.range.end,
                 className,
             }
 
         case 'metaFilterSeparator':
             return {
                 value: ':',
-                key: token.range.start,
+                key: token.range.start + token.range.end,
                 className,
             }
         case 'metaRepoRevisionSeparator':
         case 'metaContextPrefix':
             return {
                 value: '@',
-                key: token.range.start,
+                key: token.range.start + token.range.end,
                 className,
             }
 
@@ -1262,14 +1266,14 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
             }
             return {
                 value,
-                key: token.range.start,
+                key: token.range.start + token.range.end,
                 className,
             }
         }
     }
     return {
         value: query.slice(token.range.start, token.range.end),
-        key: token.range.start,
+        key: token.range.start + token.range.end,
         className,
     }
 }

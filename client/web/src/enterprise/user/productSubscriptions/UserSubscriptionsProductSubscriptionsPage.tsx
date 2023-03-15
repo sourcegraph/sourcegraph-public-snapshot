@@ -1,6 +1,5 @@
 import React, { useEffect, useCallback } from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -25,14 +24,9 @@ import {
     ProductSubscriptionNodeProps,
 } from '../../dotcom/productSubscriptions/ProductSubscriptionNode'
 
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     user: UserAreaUserFields
 }
-
-class FilteredProductSubscriptionConnection extends FilteredConnection<
-    ProductSubscriptionFields,
-    ProductSubscriptionNodeProps
-> {}
 
 /**
  * Displays the product subscriptions associated with this account.
@@ -50,7 +44,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 first: args.first ?? null,
                 account: props.user.id,
             }
-            return queryGraphQL(
+            return queryGraphQL<ProductSubscriptionsResult>(
                 gql`
                     query ProductSubscriptions($first: Int, $account: ID) {
                         dotcom {
@@ -70,7 +64,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 variables
             ).pipe(
                 map(({ data, errors }) => {
-                    if (!data || !data.dotcom || !data.dotcom.productSubscriptions || (errors && errors.length > 0)) {
+                    if (!data?.dotcom?.productSubscriptions || (errors && errors.length > 0)) {
                         throw createAggregateError(errors)
                     }
                     return data.dotcom.productSubscriptions
@@ -88,14 +82,20 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 path={[{ text: 'Subscriptions' }]}
                 description={
                     <>
-                        Contact us to purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
-                        <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
+                        Search your private code with{' '}
+                        <Link
+                            to="https://about.sourcegraph.com"
+                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Subscriptions' })}
+                        >
+                            Sourcegraph Enterprise
+                        </Link>
+                        . See <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
                     </>
                 }
                 className="mb-3"
             />
             <Container className="mb-3">
-                <FilteredProductSubscriptionConnection
+                <FilteredConnection<ProductSubscriptionFields, ProductSubscriptionNodeProps>
                     listComponent="table"
                     listClassName="table mb-0"
                     noun="subscription"
@@ -105,8 +105,6 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                     nodeComponent={ProductSubscriptionNode}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
-                    history={props.history}
-                    location={props.location}
                     emptyElement={
                         <Text alignment="center" className="w-100 mb-0 text-muted">
                             You have no subscriptions.

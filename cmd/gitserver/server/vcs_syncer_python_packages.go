@@ -1,17 +1,17 @@
 package server
 
 import (
-	"bytes"
 	"context"
-	"fmt"
+	"io"
 	"io/fs"
 	"net/url"
+	"os"
 	"path"
 	"strings"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
@@ -20,48 +20,39 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func assertPythonParsesPlaceholder() *reposource.PythonVersionedPackage {
-	placeholder, err := reposource.ParseVersionedPackage("sourcegraph.com/placeholder@v0.0.0")
-	if err != nil {
-		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
-	}
-
-	return placeholder
-}
-
 func NewPythonPackagesSyncer(
 	connection *schema.PythonPackagesConnection,
 	svc *dependencies.Service,
 	client *pypi.Client,
+	reposDir string,
 ) VCSSyncer {
-	placeholder := assertPythonParsesPlaceholder()
-
 	return &vcsPackagesSyncer{
 		logger:      log.Scoped("PythonPackagesSyncer", "sync Python packages"),
 		typ:         "python_packages",
 		scheme:      dependencies.PythonPackagesScheme,
-		placeholder: placeholder,
+		placeholder: reposource.ParseVersionedPackage("sourcegraph.com/placeholder@v0.0.0"),
 		svc:         svc,
 		configDeps:  connection.Dependencies,
-		source:      &pythonPackagesSyncer{client: client},
+		source:      &pythonPackagesSyncer{client: client, reposDir: reposDir},
 	}
 }
 
 // pythonPackagesSyncer implements packagesSource
 type pythonPackagesSyncer struct {
-	client *pypi.Client
+	client   *pypi.Client
+	reposDir string
 }
 
 func (pythonPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
-	return reposource.ParseVersionedPackage(string(name) + "==" + version)
+	return reposource.ParseVersionedPackage(string(name) + "==" + version), nil
 }
 
 func (pythonPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseVersionedPackage(dep)
+	return reposource.ParseVersionedPackage(dep), nil
 }
 
 func (pythonPackagesSyncer) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParsePythonPackageFromName(name)
+	return reposource.ParsePythonPackageFromName(name), nil
 }
 
 func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
@@ -75,23 +66,24 @@ func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep rep
 		return err
 	}
 	packageURL := pypiFile.URL
-	pkg, err := s.client.Download(ctx, packageURL)
+	pkgData, err := s.client.Download(ctx, packageURL)
 	if err != nil {
 		return errors.Wrap(err, "download")
 	}
+	defer pkgData.Close()
 
-	if err = unpackPythonPackage(pkg, packageURL, dir); err != nil {
+	if err = unpackPythonPackage(pkgData, packageURL, s.reposDir, dir); err != nil {
 		return errors.Wrap(err, "failed to unzip python module")
 	}
 
 	return nil
 }
 
-// unpackPythonPackages unpacks the given python package archive into workDir, skipping any
+// unpackPythonPackage unpacks the given python package archive into workDir, skipping any
 // files that aren't valid or that are potentially malicious. It detects the kind of archive
 // and compression used with the given packageURL.
-func unpackPythonPackage(pkg []byte, packageURL, workDir string) error {
-	logger := log.Scoped("unpackPythonPackages", "unpackPythonPackages unpacks the given python package archive into workDir")
+func unpackPythonPackage(pkg io.Reader, packageURL, reposDir, workDir string) error {
+	logger := log.Scoped("unpackPythonPackage", "unpackPythonPackage unpacks the given python package archive into workDir")
 	u, err := url.Parse(packageURL)
 	if err != nil {
 		return errors.Wrap(err, "bad python package URL")
@@ -99,42 +91,81 @@ func unpackPythonPackage(pkg []byte, packageURL, workDir string) error {
 
 	filename := path.Base(u.Path)
 
-	r := bytes.NewReader(pkg)
 	opts := unpack.Opts{
 		SkipInvalid: true,
 		Filter: func(path string, file fs.FileInfo) bool {
 			size := file.Size()
 
 			const sizeLimit = 15 * 1024 * 1024
-			slogger := logger.With(
-				log.String("path", file.Name()),
-				log.Int64("size", size),
-				log.Float64("limit", sizeLimit),
-			)
 			if size >= sizeLimit {
-				slogger.Warn("skipping large file in npm package")
+				logger.With(
+					log.String("path", file.Name()),
+					log.Int64("size", size),
+					log.Float64("limit", sizeLimit),
+				).Warn("skipping large file in python package")
 				return false
 			}
 
-			_, malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
+			malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
 			return !malicious
 		},
 	}
 
 	switch {
 	case strings.HasSuffix(filename, ".tar.gz"), strings.HasSuffix(filename, ".tgz"):
-		err = unpack.Tgz(r, workDir, opts)
+		err = unpack.Tgz(pkg, workDir, opts)
+		if err != nil {
+			return err
+		}
 	case strings.HasSuffix(filename, ".whl"), strings.HasSuffix(filename, ".zip"):
-		err = unpack.Zip(r, int64(len(pkg)), workDir, opts)
+		// We cannot unzip in a streaming fashion, so we write the zip file to
+		// a temporary file. Otherwise, we would need to load the entire zip into
+		// memory, which isn't great for multi-megabyte+ files.
+
+		// Create a tmpdir that gitserver manages.
+		tmpdir, err := tempDir(reposDir, "pypi-packages")
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(tmpdir)
+
+		// Write the whole package to a temporary file.
+		zip, zipLen, err := writeZipToTemp(tmpdir, pkg)
+		if err != nil {
+			return err
+		}
+		defer zip.Close()
+
+		err = unpack.Zip(zip, zipLen, workDir, opts)
+		if err != nil {
+			return err
+		}
 	case strings.HasSuffix(filename, ".tar"):
-		err = unpack.Tar(r, workDir, opts)
+		err = unpack.Tar(pkg, workDir, opts)
+		if err != nil {
+			return err
+		}
 	default:
 		return errors.Errorf("unsupported python package type %q", filename)
 	}
 
+	return stripSingleOutermostDirectory(workDir)
+}
+
+func writeZipToTemp(tmpdir string, pkg io.Reader) (*os.File, int64, error) {
+	// Create a temp file.
+	f, err := os.CreateTemp(tmpdir, "pypi-package-")
 	if err != nil {
-		return err
+		return nil, 0, err
 	}
 
-	return stripSingleOutermostDirectory(workDir)
+	// Write contents to file.
+	read, err := io.Copy(f, pkg)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Reset read head.
+	_, err = f.Seek(0, 0)
+	return f, read, err
 }

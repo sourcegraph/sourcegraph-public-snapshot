@@ -9,11 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
@@ -84,7 +83,6 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	ie.enqueueQueryRunnerJob = enqueueQueryRunnerJob
 
 	dataSeriesStore := store.NewMockDataSeriesStore()
-	featureStore := database.NewMockFeatureFlagStore()
 
 	dataSeriesStore.GetDataSeriesFunc.SetDefaultReturn([]types.InsightSeries{
 		{
@@ -101,7 +99,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 		},
 	}, nil)
 
-	if err := ie.discoverAndEnqueueInsights(ctx, dataSeriesStore, featureStore); err != nil {
+	if err := ie.discoverAndEnqueueInsights(ctx, dataSeriesStore); err != nil {
 		t.Fatal(err)
 	}
 
@@ -110,7 +108,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("0", `[
+	autogold.Expect(`[
   {
     "SeriesID": "series1",
     "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query1",

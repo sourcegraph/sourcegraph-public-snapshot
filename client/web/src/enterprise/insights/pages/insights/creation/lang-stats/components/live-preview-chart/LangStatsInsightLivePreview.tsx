@@ -1,7 +1,6 @@
-import { FC, HTMLAttributes, useContext, useMemo } from 'react'
+import { FC, HTMLAttributes } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useDeepMemo } from '@sourcegraph/wildcard'
+import { useDebounce, useDeepMemo, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     CategoricalBasedChartTypes,
@@ -12,10 +11,9 @@ import {
     LivePreviewChart,
     LivePreviewLoading,
     LivePreviewUpdateButton,
-    useLivePreview,
-    StateStatus,
 } from '../../../../../../components'
-import { CodeInsightsBackendContext, CategoricalChartContent } from '../../../../../../core'
+import { CategoricalChartContent } from '../../../../../../core'
+import { LivePreviewStatus, useLivePreviewLangStatsInsight } from '../../../../../../core/hooks/live-preview-insight'
 
 import { DEFAULT_PREVIEW_MOCK } from './constants'
 
@@ -36,37 +34,29 @@ export interface LangStatsInsightLivePreviewProps extends HTMLAttributes<HTMLEle
  */
 export const LangStatsInsightLivePreview: FC<LangStatsInsightLivePreviewProps> = props => {
     const { repository = '', threshold, disabled = false, ...attributes } = props
-    const { getLangStatsInsightContent } = useContext(CodeInsightsBackendContext)
 
     const settings = useDeepMemo({
         repository: repository.trim(),
         otherThreshold: threshold / 100,
-        disabled,
+        skip: disabled,
     })
 
-    const getLivePreviewContent = useMemo(
-        () => ({
-            disabled: settings.disabled,
-            fetcher: () => getLangStatsInsightContent(settings),
-        }),
-        [settings, getLangStatsInsightContent]
-    )
-
-    const { state, update } = useLivePreview(getLivePreviewContent)
+    const debouncedSettings = useDebounce(settings, 500)
+    const { state, refetch } = useLivePreviewLangStatsInsight(debouncedSettings)
 
     return (
         <aside {...attributes}>
-            <LivePreviewUpdateButton disabled={disabled} onClick={update} />
+            <LivePreviewUpdateButton disabled={disabled} onClick={refetch} />
 
             <LivePreviewCard>
-                {state.status === StateStatus.Loading ? (
+                {state.status === LivePreviewStatus.Loading ? (
                     <LivePreviewLoading>Loading code insight</LivePreviewLoading>
-                ) : state.status === StateStatus.Error ? (
-                    <ErrorAlert error={state.error} />
+                ) : state.status === LivePreviewStatus.Error ? (
+                    <ErrorAlert error={state.error} className="m-0" />
                 ) : (
                     <LivePreviewChart>
                         {parent =>
-                            state.status === StateStatus.Data ? (
+                            state.status === LivePreviewStatus.Data ? (
                                 <CategoricalChart
                                     type={CategoricalBasedChartTypes.Pie}
                                     width={parent.width}

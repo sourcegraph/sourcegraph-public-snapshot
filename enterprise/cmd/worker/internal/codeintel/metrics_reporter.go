@@ -3,18 +3,18 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type metricsReporterJob struct{}
@@ -24,7 +24,7 @@ func NewMetricsReporterJob() job.Job {
 }
 
 func (j *metricsReporterJob) Description() string {
-	return ""
+	return "executor push-based metrics reporting routines"
 }
 
 func (j *metricsReporterJob) Config() []env.Config {
@@ -33,30 +33,37 @@ func (j *metricsReporterJob) Config() []env.Config {
 	}
 }
 
-func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+func (j *metricsReporterJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	observationContext := observation.ContextWithLogger(
-		logger.Scoped("routines", "metrics reporting routines"),
+	db, err := workerdb.InitDB(observationCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: move this and dependency {sync,index} metrics back to their respective jobs and keep for executor reporting only
+	uploads.MetricReporters(observationCtx, services.UploadsService)
+
+	dependencySyncStore := dbworkerstore.New(observationCtx, db.Handle(), autoindexing.DependencySyncingJobWorkerStoreOptions)
+	dependencyIndexingStore := dbworkerstore.New(observationCtx, db.Handle(), autoindexing.DependencyIndexingJobWorkerStoreOptions)
+	dbworker.InitPrometheusMetric(observationCtx, dependencySyncStore, "codeintel", "dependency_sync", nil)
+	dbworker.InitPrometheusMetric(observationCtx, dependencyIndexingStore, "codeintel", "dependency_index", nil)
+
+	executorMetricsReporter, err := executorqueue.NewMetricReporter(
+		observationCtx,
+		"codeintel",
+		dbworkerstore.New(observationCtx, db.Handle(), autoindexing.IndexWorkerStoreOptions),
+		configInst.MetricsConfig,
 	)
-
-	uploads.GetBackgroundJob(services.UploadsService).SetMetricReporters(observationContext)
-	dbworker.InitPrometheusMetric(observationContext, autoindexing.GetDependencySyncStore(services.AutoIndexingService), "codeintel", "dependency_sync", nil)
-	dbworker.InitPrometheusMetric(observationContext, autoindexing.GetDependencyIndexingStore(services.AutoIndexingService), "codeintel", "dependency_index", nil)
-
-	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", autoindexing.GetWorkerutilStore(services.AutoIndexingService), configInst.MetricsConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	return []goroutine.BackgroundRoutine{executorMetricsReporter}, nil
 }
-
-//
-//
 
 type janitorConfig struct {
 	MetricsConfig *executorqueue.Config

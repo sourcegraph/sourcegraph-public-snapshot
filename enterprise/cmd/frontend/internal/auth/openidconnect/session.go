@@ -8,9 +8,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const sessionKey = "oidc@0"
+// SessionKey is the key of the key-value pair in a user session for the OpenID
+// Connect authentication provider.
+const SessionKey = "oidc@0"
 
-type sessionData struct {
+// SessionData is the data format to be stored in a user session.
+type SessionData struct {
 	ID providers.ConfigID
 
 	// Store only the oauth2.Token fields we need, to avoid hitting the ~4096-byte session data
@@ -22,14 +25,14 @@ type sessionData struct {
 // SignOut clears OpenID Connect-related data from the session. If possible, it revokes the token
 // from the OP. If there is an end-session endpoint, it returns that for the caller to present to
 // the user.
-func SignOut(w http.ResponseWriter, r *http.Request) (endSessionEndpoint string, err error) {
+func SignOut(w http.ResponseWriter, r *http.Request, sessionKey string, getProvider func(id string) *Provider) (endSessionEndpoint string, err error) {
 	defer func() {
 		if err != nil {
 			_ = session.SetData(w, r, sessionKey, nil) // clear the bad data
 		}
 	}()
 
-	var data *sessionData
+	var data *SessionData
 	if err := session.GetData(r, sessionKey, &data); err != nil {
 		return "", errors.WithMessage(err, "reading OpenID Connect session data")
 	}

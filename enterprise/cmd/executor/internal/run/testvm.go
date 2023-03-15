@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -65,12 +65,12 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 	operations := command.NewOperations(&observation.TestContext)
 
 	hostRunner := command.NewRunner("", commandLogger, command.Options{}, operations)
-	workspace, err := workspace.NewFirecrackerWorkspace(
+	firecrackerWorkspace, err := workspace.NewFirecrackerWorkspace(
 		ctx,
 		// No need for files store in the test.
 		nil,
 		// Just enough to spin up a VM.
-		executor.Job{
+		types.Job{
 			RepositoryName: repositoryName,
 			Commit:         revision,
 		},
@@ -94,9 +94,10 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 	fopts := firecrackerOptions(config)
 	fopts.Enabled = true
 
-	runner := command.NewRunner(workspace.Path(), commandLogger, command.Options{
+	runner := command.NewRunner(firecrackerWorkspace.Path(), commandLogger, command.Options{
 		ExecutorName:       name,
 		ResourceOptions:    resourceOptions(config),
+		DockerOptions:      dockerOptions(config),
 		FirecrackerOptions: fopts,
 	}, operations)
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -30,7 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+var updateRegex = flag.String("update-integration", "", "Update testdata of tests matching the given regex")
 
 func update(name string) bool {
 	if updateRegex == nil || *updateRegex == "" {
@@ -129,7 +130,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			userID, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -137,23 +138,28 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				Status:       "SUCCESS",
+				Message:      "FetchRepoPerms",
+			}}, providerStates)
 
-			p := &authz.UserPermissions{
-				UserID: userID,
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
-			}
-			err = permsStore.LoadUserPermissions(ctx, p)
+			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
 			if err != nil {
 				t.Fatal(err)
+			}
+			gotIDs := make([]int32, len(p))
+			for i, perm := range p {
+				gotIDs[i] = perm.RepoID
 			}
 
 			wantIDs := []int32{1}
-			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
+			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -209,7 +215,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			userID, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -217,36 +223,53 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				Status:       "SUCCESS",
+				Message:      "FetchRepoPerms",
+			}}, providerStates)
 
-			p := &authz.UserPermissions{
-				UserID: userID,
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
-			}
-			err = permsStore.LoadUserPermissions(ctx, p)
+			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
 			if err != nil {
 				t.Fatal(err)
+			}
+			gotIDs := make([]int32, len(p))
+			for i, perm := range p {
+				gotIDs[i] = perm.RepoID
 			}
 
 			wantIDs := []int32{1}
-			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
+			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 
 			// sync again and check
-			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			_, providerStates, err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = permsStore.LoadUserPermissions(ctx, p)
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				Status:       "SUCCESS",
+				Message:      "FetchRepoPerms",
+			}}, providerStates)
+
+			p, err = permsStore.LoadUserPermissions(ctx, user.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
+			gotIDs = make([]int32, len(p))
+			for i, perm := range p {
+				gotIDs[i] = perm.RepoID
+			}
+
+			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -313,7 +336,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
-			userID, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
+			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: extsvc.NewUnencryptedData(authData),
 			})
 			if err != nil {
@@ -323,23 +346,28 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				Status:       "SUCCESS",
+				Message:      "FetchUserPerms",
+			}}, providerStates)
 
-			p := &authz.UserPermissions{
-				UserID: userID,
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
-			}
-			err = permsStore.LoadUserPermissions(ctx, p)
+			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
 			if err != nil {
 				t.Fatal(err)
+			}
+			gotIDs := make([]int32, len(p))
+			for i, perm := range p {
+				gotIDs[i] = perm.RepoID
 			}
 
 			wantIDs := []int32{1}
-			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
+			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -396,7 +424,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
-			userID, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
+			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: extsvc.NewUnencryptedData(authData),
 			})
 			if err != nil {
@@ -406,36 +434,53 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				Status:       "SUCCESS",
+				Message:      "FetchUserPerms",
+			}}, providerStates)
 
-			p := &authz.UserPermissions{
-				UserID: userID,
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
-			}
-			err = permsStore.LoadUserPermissions(ctx, p)
+			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
 			if err != nil {
 				t.Fatal(err)
+			}
+			gotIDs := make([]int32, len(p))
+			for i, perm := range p {
+				gotIDs[i] = perm.RepoID
 			}
 
 			wantIDs := []int32{1}
-			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
+			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 
 			// sync again and check
-			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			_, providerStates, err = syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = permsStore.LoadUserPermissions(ctx, p)
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				Status:       "SUCCESS",
+				Message:      "FetchUserPerms",
+			}}, providerStates)
+
+			p, err = permsStore.LoadUserPermissions(ctx, user.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
+			gotIDs = make([]int32, len(p))
+			for i, perm := range p {
+				gotIDs[i] = perm.RepoID
+			}
+
+			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})

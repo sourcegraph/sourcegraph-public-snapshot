@@ -62,12 +62,12 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 		return nil, errors.Wrap(err, "marshal request body")
 	}
 
-	url, err := gqlURL("CodeMonitorSettings")
+	urlStr, err := gqlURL("CodeMonitorSettings")
 	if err != nil {
 		return nil, errors.Wrap(err, "construct frontend URL")
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", urlStr, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, errors.Wrap(err, "construct request")
 	}
@@ -107,8 +107,8 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 	return &unmarshaledSettings, nil
 }
 
-func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
-	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
+func Search(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs)
 	inputs, err := searchClient.Plan(
 		ctx,
 		"V3",
@@ -125,14 +125,14 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 
 	// Inline job creation so we can mutate the commit job before running it
 	clients := searchClient.JobClients()
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, enterpriseJobs)
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
-			return hookWithID(ctx, db, gs, monitorID, repoID, args, doSearch)
+			return hookWithID(ctx, db, logger, gs, monitorID, repoID, args, doSearch)
 		}
 		{
 			// This block is a transitional block that can be removed in a
@@ -187,8 +187,8 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 // Snapshot runs a dummy search that just saves the current state of the searched repos in the database.
 // On subsequent runs, this allows us to treat all new repos or sets of args as something new that should
 // be searched from the beginning.
-func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
-	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
+func Snapshot(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, query string, monitorID int64, settings *schema.Settings) error {
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs)
 	inputs, err := searchClient.Plan(
 		ctx,
 		"V3",
@@ -204,7 +204,7 @@ func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query stri
 	}
 
 	clients := searchClient.JobClients()
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, enterpriseJobs)
 	if err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 		default:
 			if len(j.Children()) == 0 {
 				if err == nil {
-					err = errors.Errorf("found invalid atom job type %T for code monitor search", j)
+					err = errors.New("all branches of query must be of type:diff or type:commit. If you have an AND/OR operator in your query, ensure that both sides have type:commit or type:diff.")
 				}
 			}
 			return j
@@ -272,6 +272,7 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 func hookWithID(
 	ctx context.Context,
 	db database.DB,
+	logger log.Logger,
 	gs commit.GitserverClient,
 	monitorID int64,
 	repoID api.RepoID,
@@ -311,10 +312,18 @@ func hookWithID(
 
 	// Execute the search
 	err = doSearch(&argsCopy)
-	// ignore any errors from early cancellation
-	err = errors.Ignore(err, errors.IsContextError)
 	if err != nil {
-		return err
+		if errors.IsContextError(err) {
+			logger.Warn(
+				"commit search timed out, some commits may have been skipped",
+				log.Error(err),
+				log.String("repo", string(args.Repo)),
+				log.Strings("include", commitHashes),
+				log.Strings("exlcude", lastSearched),
+			)
+		} else {
+			return err
+		}
 	}
 
 	// If the search was successful, store the resolved hashes

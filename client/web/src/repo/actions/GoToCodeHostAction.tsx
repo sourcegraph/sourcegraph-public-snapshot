@@ -11,7 +11,8 @@ import { catchError } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
-import { HelixSwarmIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
+// TODO: Switch mdi icon
+import { HelixSwarmIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { ButtonLinkProps, Icon, Link, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
@@ -279,9 +280,10 @@ function getPerforceChangelistNumberFromCommitMessage(commitMessage: string): st
     return commitMessage.slice(changeIndex + 9, -1)
 }
 
-function serviceKindDisplayNameAndIcon(
-    serviceKind: ExternalServiceKind | null
-): { displayName: string; icon?: React.ComponentType<{ className?: string }> } {
+export function serviceKindDisplayNameAndIcon(serviceKind: ExternalServiceKind | null): {
+    displayName: string
+    icon?: React.ComponentType<{ className?: string }>
+} {
     if (!serviceKind) {
         return { displayName: 'code host' }
     }

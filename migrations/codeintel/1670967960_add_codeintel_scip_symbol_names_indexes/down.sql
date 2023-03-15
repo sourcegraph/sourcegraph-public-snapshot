@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS codeintel_scip_symbol_names_upload_id_roots;
+DROP INDEX IF EXISTS codeisdntel_scip_symbol_names_upload_id_children;

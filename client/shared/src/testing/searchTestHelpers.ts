@@ -2,10 +2,9 @@ import { noop } from 'lodash'
 import { EMPTY, NEVER, of, Subscription } from 'rxjs'
 import sinon from 'sinon'
 
-import { FetchFileParameters } from '@sourcegraph/search-ui'
-
 import { FlatExtensionHostAPI } from '../api/contract'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
+import { FetchFileParameters } from '../backend/file'
 import { Controller } from '../extensions/controller'
 import { PlatformContext } from '../platform/context'
 import { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '../search/stream'
@@ -616,10 +615,10 @@ export const HIGHLIGHTED_FILE_LINES_LONG_REQUEST = sinon.fake((parameters: Fetch
     of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES_LONG[0].slice(range.startLine, range.endLine)))
 )
 
-export const NOOP_SETTINGS_CASCADE = ({
+export const NOOP_SETTINGS_CASCADE = {
     subjects: null,
     final: null,
-} as any) as SettingsCascade
+} as any as SettingsCascade
 
 export const extensionsController: Controller = {
     executeCommand: () => Promise.resolve(),
@@ -631,7 +630,6 @@ export const extensionsController: Controller = {
             haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
         })
     ),
-    commandErrors: EMPTY,
     unsubscribe: noop,
 }
 

@@ -1,5 +1,5 @@
 # SAML
-Security Assertion Markup Language (SAML) is a common web protocol used to pass authorized credentials between two web applications, a service provider (SP) - Sourcegraph in this instance and an Identity Provider (IdP). This communication is conducted via XML assertions.
+Security Assertion Markup Language (SAML) is a common web protocol used to pass authorized credentials between two web applications, a service provider (SP)—Sourcegraph in this instance and an Identity Provider (IdP). This communication is conducted via XML assertions.
 
 ## Identity Providers
 
@@ -78,6 +78,10 @@ The most likely error message indicating a problem is:
 Error prefetching SAML service provider metadata
 ```
 
+> NOTE: Email or NameID changes in the identity provider are not automatically reflected in Sourcegraph. Admins may manually update a users email via the admin interface at `https://example-sourcegraph.com/users/<user>/settings/emails`, or remove the user and recreate a new account. 
+>
+> Work is planned to support SCIM on SAML auth providers, which should automate this process. ([tracking issue](https://github.com/sourcegraph/sourcegraph/issues/22732))
+
 ### How to control user sign-up and sign-in
 
 Use the following filters to restrict how users can create accounts and sign in to your Sourcegraph instance via SAML auth provider.
@@ -97,6 +101,8 @@ Use the following filters to restrict how users can create accounts and sign in 
       "allowSignup": false
     }
   ```
+
+  > NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://about.sourcegraph.com/pricing).
 
 **allowGroups**
 
@@ -124,7 +130,7 @@ Use the following filters to restrict how users can create accounts and sign in 
 
   Special characters such as the `&` (ampersand) will be encoded in the XML document, the format used by SAML. For example, if you have a group `Dogs & cats` set in your Identity Provider, it will be shown as `Dogs &amp; cats` in the XML assertions.
 
-  This is expected - just avoid using the encoded character when adding a group name to the `allowGroups` array.
+  This is expected—just avoid using the encoded character when adding a group name to the `allowGroups` array.
 
   _Instead of_
   ```json

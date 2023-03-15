@@ -291,7 +291,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 **Intended purpose:** To track the number of insight views, grouped by presentation type.
 
-**Functional implementation:** This is calculated using the `insight_view` table. 
+**Functional implementation:** This is calculated using the `insight_view` table. Unlike critical telemetry which only [shows the number of unlocked insights](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/pings/insights_ping_aggregators.go?L286) for customers without full access, this ping [shows the total number that are locked or unlocked](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/pings/insights_ping_aggregators.go?L243-247) (and may have been created during a trial or free beta phase).  
 
 **Other considerations:** N/A
 
@@ -359,6 +359,20 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - Event Code: [WeeklySeriesBackfillTime](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+WeeklySeriesBackfillTime&patternType=standard)
 - **Version added:** 4.1
 
+### Data export requests
+
+**Type:** BE capture
+
+**Intended purpose:** To track usage of data exporting functionality.
+
+**Functional implementation:** Telemetry events are fired when a request reaches the backend HTTP handler, whether that comes from the webapp or the CLI.
+
+**Other considerations:** The ping name contains `click` but this does indeed also record events from the CLI.
+
+- Aggregation: weekly
+- Event Code: [WeeklyDataExportClicks](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+WeeklyDataExportClicks&patternType=standard), `InsightsDataExportRequest` in `event_logs`
+- **Version added:** 4.6
+
 ## Search results aggregations metrics
 
 ### Information icon hovers
@@ -406,7 +420,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - Event Codes: 
   - [WeeklyGroupResultsAggregationModeClicked](https://sourcegraph.com/search?q=context:%40sourcegraph/all+WeeklyGroupResultsAggregationModeClicked%7CGroupAggregationModeClicked&patternType=regexp)
   - [WeeklyGroupResultsAggregationModeDisabledHover](https://sourcegraph.com/search?q=context:%40sourcegraph/all+WeeklyGroupResultsAggregationModeDisabledHover%7CGroupAggregationModeDisabledHover&patternType=regexp)
-- **Version added:** 4.0 ([#40977](https://github.com/sourcegraph/sourcegraph/pull/40977))
+- **Version added:** 4.0 ([#40997](https://github.com/sourcegraph/sourcegraph/pull/40997))
 
 ### Aggregation chart clicks and hovers 
 
@@ -423,3 +437,15 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
   - [WeeklyGroupResultsChartBarClick](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsChartBarClick&patternType=regexp)
   - [WeeklyGroupResultsChartBarHover](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsChartBarHover&patternType=regexp)
 - **Version added:** 4.0 ([#40977](https://github.com/sourcegraph/sourcegraph/pull/40977))
+
+### Search mode (proactive/extended) success rate
+
+**Type:** FE event
+
+**Intended purpose:** To track the number of aggregation searches that succeed or hit limit in either a proactive or extended search. 
+
+**Functional implementation:** These pings fire a telemetry event when an aggregation search completes or times out.
+
+- Aggregation: weekly
+- Event Code: [WeeklyGroupResultsSearches](https://sourcegraph.com/search?q=context:%40sourcegraph/all+WeeklyGroupResultsSearches&patternType=lucky)
+- **Version added:** 4.1 ([#42554](https://github.com/sourcegraph/sourcegraph/pull/42554))

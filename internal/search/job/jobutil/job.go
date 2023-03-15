@@ -6,6 +6,8 @@ import (
 
 	"github.com/grafana/regexp"
 
+	zoektquery "github.com/sourcegraph/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -14,24 +16,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/keyword"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
-	"github.com/sourcegraph/sourcegraph/internal/search/lucky"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	"github.com/sourcegraph/sourcegraph/internal/search/smartsearch"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 // NewPlanJob converts a query.Plan into its job tree representation.
-func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
+func NewPlanJob(inputs *search.Inputs, plan query.Plan, enterpriseJobs EnterpriseJobs) (job.Job, error) {
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
-		child, err := NewBasicJob(inputs, q)
+		child, err := NewBasicJob(inputs, q, enterpriseJobs)
 		if err != nil {
 			return nil, err
 		}
@@ -40,10 +41,10 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 
 	jobTree := NewOrJob(children...)
 	newJob := func(b query.Basic) (job.Job, error) {
-		return NewBasicJob(inputs, b)
+		return NewBasicJob(inputs, b, enterpriseJobs)
 	}
-	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky || inputs.Features.AbLuckySearch {
-		jobTree = lucky.NewFeelingLuckySearchJob(jobTree, newJob, plan)
+	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
+		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
 	} else if inputs.PatternType == query.SearchTypeKeyword && len(plan) == 1 {
 		newJobTree, err := keyword.NewKeywordSearchJob(plan[0], newJob)
 		if err != nil {
@@ -54,11 +55,13 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 		}
 	}
 
-	return NewAlertJob(inputs, jobTree), nil
+	alertJob := NewAlertJob(inputs, jobTree)
+	logJob := NewLogJob(inputs, alertJob)
+	return logJob, nil
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
-func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
+func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs EnterpriseJobs) (job.Job, error) {
 	var children []job.Job
 	addJob := func(j job.Job) {
 		children = append(children, j)
@@ -100,20 +103,20 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
 			// Create Global Text Search jobs.
 			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.TextRequest)
+				searchJob, err := builder.newZoektGlobalSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
 				}
-				addJob(job)
+				addJob(searchJob)
 			}
 
 			if !skipRepoSubsetSearch && runZoektOverRepos {
-				job, err := builder.newZoektSearch(search.TextRequest)
+				searchJob, err := builder.newZoektSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
 				}
 				addJob(&repoPagerJob{
-					child:            &reposPartialJob{job},
+					child:            &reposPartialJob{searchJob},
 					repoOpts:         repoOptions,
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
@@ -123,20 +126,20 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		if resultTypes.Has(result.TypeSymbol) {
 			// Create Global Symbol Search jobs.
 			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
+				searchJob, err := builder.newZoektGlobalSearch(search.SymbolRequest)
 				if err != nil {
 					return nil, err
 				}
-				addJob(job)
+				addJob(searchJob)
 			}
 
 			if !skipRepoSubsetSearch && runZoektOverRepos {
-				job, err := builder.newZoektSearch(search.SymbolRequest)
+				searchJob, err := builder.newZoektSearch(search.SymbolRequest)
 				if err != nil {
 					return nil, err
 				}
 				addJob(&repoPagerJob{
-					child:            &reposPartialJob{job},
+					child:            &reposPartialJob{searchJob},
 					repoOpts:         repoOptions,
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
@@ -181,10 +184,9 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		}
 	}
 
-	{ // Apply selectors
-		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
-			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-			basicJob = NewSelectJob(sp, basicJob)
+	{ // Apply code ownership post-search filter
+		if includeOwners, excludeOwners, ok := isOwnershipSearch(b); ok {
+			basicJob = enterpriseJobs.FileHasOwnerJob(basicJob, inputs.Features, includeOwners, excludeOwners)
 		}
 	}
 
@@ -192,6 +194,24 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		checker := authz.DefaultSubRepoPermsChecker
 		if authz.SubRepoEnabled(checker) {
 			basicJob = NewFilterJob(basicJob)
+		}
+	}
+
+	{ // Apply selectors
+		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
+			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+			if isSelectOwnersSearch(sp) {
+				// the select owners job is ran separately as it requires state and can return multiple owners from one match.
+				basicJob = enterpriseJobs.SelectFileOwnerJob(basicJob, inputs.Features)
+			} else {
+				basicJob = NewSelectJob(sp, basicJob)
+			}
+		}
+	}
+
+	{ // Apply search result sanitization post-filter if enabled
+		if len(inputs.SanitizeSearchPatterns) > 0 {
+			basicJob = NewSanitizeJob(inputs.SanitizeSearchPatterns, basicJob)
 		}
 	}
 
@@ -206,18 +226,16 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	}
 
 	{
-		// WORKAROUND: On Sourcegraph.com not all repositories are
-		// indexed. So searcher (which does no ranking) can race with
-		// Zoekt (which does ranking). This leads to unpleasant results,
-		// especially due to the large index on Sourcegraph.com. We have
-		// this hacky workaround here to ensure we search Zoekt first.
-		// Context:
+		// WORKAROUND: On Sourcegraph.com some jobs can race with Zoekt (which
+		// does ranking). This leads to unpleasant results, especially due to
+		// the large index on Sourcegraph.com. We have this hacky workaround
+		// here to ensure we search Zoekt first. Context:
 		// https://github.com/sourcegraph/sourcegraph/issues/35993
 		// https://github.com/sourcegraph/sourcegraph/issues/35994
 
 		if inputs.OnSourcegraphDotCom && b.Pattern != nil {
 			if _, ok := b.Pattern.(query.Pattern); ok {
-				basicJob = orderSearcherJob(basicJob)
+				basicJob = orderRacingJobs(basicJob)
 			}
 		}
 
@@ -226,33 +244,39 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	return basicJob, nil
 }
 
-// orderSearcherJob ensures that, if a searcher job exists, then it is only ever
-// run sequentially after a Zoekt search has returned all its results.
-func orderSearcherJob(j job.Job) job.Job {
-	// First collect the searcher job, if any, and delete it from the tree.
-	// This job will be sequentially ordered after any Zoekt jobs. We assume
-	// at most one searcher job exists.
-	var pagedSearcherJob job.Job
+// orderRacingJobs ensures that searcher and repo search jobs only ever run
+// sequentially after a Zoekt search has returned all its results.
+func orderRacingJobs(j job.Job) job.Job {
+	// First collect the searcher and repo job, if any, and delete them from
+	// the tree. The jobs will be sequentially ordered after any Zoekt jobs. We
+	// assume at most one searcher and one repo job exists.
+	var collection []job.Job
+
 	newJob := job.MapType(j, func(pager *repoPagerJob) job.Job {
 		if job.HasDescendent[*searcher.TextSearchJob](pager) {
-			pagedSearcherJob = pager
+			collection = append(collection, pager)
 			return &NoopJob{}
 		}
+
 		return pager
 	})
 
-	if pagedSearcherJob == nil {
-		// No searcher job, nothing to worry about.
+	newJob = job.MapType(newJob, func(j *RepoSearchJob) job.Job {
+		collection = append(collection, j)
+		return &NoopJob{}
+	})
+
+	if len(collection) == 0 {
 		return j
 	}
 
-	// Map the tree to execute paged searcher jobs after any Zoekt jobs.
-	// We assume at most one of either two Zoekt search jobs may exist.
+	// Map the tree to execute jobs in "collection" after any Zoekt jobs. We
+	// assume at most one of either two Zoekt search jobs may exist.
 	seenZoektRepoSearch := false
 	newJob = job.MapType(newJob, func(pager *repoPagerJob) job.Job {
 		if job.HasDescendent[*zoekt.RepoSubsetTextSearchJob](pager) {
 			seenZoektRepoSearch = true
-			return NewSequentialJob(false, pager, pagedSearcherJob)
+			return NewSequentialJob(false, append([]job.Job{pager}, collection...)...)
 		}
 		return pager
 	})
@@ -261,7 +285,7 @@ func orderSearcherJob(j job.Job) job.Job {
 	newJob = job.MapType(newJob, func(current *zoekt.GlobalTextSearchJob) job.Job {
 		if !seenZoektGlobalSearch {
 			seenZoektGlobalSearch = true
-			return NewSequentialJob(false, current, pagedSearcherJob)
+			return NewSequentialJob(false, append([]job.Job{current}, collection...)...)
 		}
 		return current
 	})
@@ -390,23 +414,18 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					return opts, true
 				}
 
-				opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
+				opts.RepoFilters = append(make([]query.ParsedRepoFilter, 0, len(opts.RepoFilters)), opts.RepoFilters...)
 				opts.CaseSensitiveRepoFilters = f.IsCaseSensitive()
 
 				patternPrefix := strings.SplitN(pattern, "@", 2)
-				if len(patternPrefix) == 1 {
-					// No "@" in pattern? We're good.
-					opts.RepoFilters = append(opts.RepoFilters, pattern)
-					return opts, true
-				}
-
-				if patternPrefix[0] != "" {
+				if len(patternPrefix) == 1 || patternPrefix[0] != "" {
 					// Extend the repo search using the pattern value, but
-					// since the pattern contains @, only search the part
+					// if the pattern contains @, only search the part
 					// prefixed by the first @. This because downstream
 					// logic will get confused by the presence of @ and try
 					// to resolve repo revisions. See #27816.
-					if _, err := regexp.Compile(patternPrefix[0]); err != nil {
+					repoFilter, err := query.ParseRepositoryRevisions(patternPrefix[0])
+					if err != nil {
 						// Prefix is not valid regexp, so just reject it. This can happen for patterns where we've automatically added `(...).*?(...)`
 						// such as `foo @bar` which becomes `(foo).*?(@bar)`, which when stripped becomes `(foo).*?(` which is unbalanced and invalid.
 						// Why is this a mess? Because validation for everything, including repo values, should be done up front so far possible, not downtsream
@@ -414,7 +433,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 						// a search. But fixing the order of concerns for repo code is not something @rvantonder is doing today.
 						return search.RepoOptions{}, false
 					}
-					opts.RepoFilters = append(opts.RepoFilters, patternPrefix[0])
+					opts.RepoFilters = append(opts.RepoFilters, repoFilter)
 					return opts, true
 				}
 
@@ -435,12 +454,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 
 					repoNamePatterns := make([]*regexp.Regexp, 0, len(repoOptions.RepoFilters))
 					for _, repoFilter := range repoOptions.RepoFilters {
-						if repoOptions.CaseSensitiveRepoFilters {
-							// escaping regexp meta characters in literal patterns is handled by call to PatternString() above
-							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(repoFilter))
-						} else {
-							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(`(?i)`+repoFilter))
-						}
+						repoNamePatterns = append(repoNamePatterns, repoFilter.RepoRegex)
 					}
 
 					addJob(&RepoSearchJob{
@@ -493,6 +507,29 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 }
 
 func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
+	// Temporary fix:
+	// If doing ownership search, we post-filter results so we may need more than
+	// b.Count() results from the search backends to end up with enough results
+	// sent down the stream.
+	//
+	// This is actually a more general problem with other post-filters, too but
+	// keeps the scope of this change minimal.
+	// The proper fix will likely be to establish proper result streaming and cancel
+	// the stream once enough results have been consumed. We will revisit this
+	// post-Starship March 2023 as part of search performance improvements for
+	// ownership search.
+	if _, _, ok := isOwnershipSearch(b); ok {
+		// This is the int equivalent of count:all.
+		return query.CountAllLimit
+	}
+	if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
+		sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+		if isSelectOwnersSearch(sp) {
+			// This is the int equivalent of count:all.
+			return query.CountAllLimit
+		}
+	}
+
 	if count := b.Count(); count != nil {
 		return *count
 	}
@@ -504,6 +541,18 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 		return limits.DefaultMaxSearchResultsStreaming
 	}
 	panic("unreachable")
+}
+
+func isOwnershipSearch(b query.Basic) (include, exclude []string, ok bool) {
+	if includeOwners, excludeOwners := b.FileHasOwner(); len(includeOwners) > 0 || len(excludeOwners) > 0 {
+		return includeOwners, excludeOwners, true
+	}
+	return nil, nil, false
+}
+
+func isSelectOwnersSearch(sp filter.SelectPath) bool {
+	// If the filter is for file.owners, this is a select:file.owners search, and we should apply special limits.
+	return sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners"
 }
 
 func timeoutDuration(b query.Basic) time.Duration {
@@ -523,11 +572,11 @@ func timeoutDuration(b query.Basic) time.Duration {
 }
 
 func mapSlice(values []string, f func(string) string) []string {
-	result := make([]string, len(values))
+	res := make([]string, len(values))
 	for i, v := range values {
-		result[i] = f(v)
+		res[i] = f(v)
 	}
-	return result
+	return res
 }
 
 func count(b query.Basic, p search.Protocol) int {
@@ -680,6 +729,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		CommitAfter:         b.RepoContainsCommitAfter(),
 		UseIndex:            b.Index(),
 		HasKVPs:             b.RepoHasKVPs(),
+		HasTopics:           b.RepoHasTopics(),
 	}
 }
 
@@ -939,6 +989,18 @@ func isGlobal(op search.RepoOptions) bool {
 	// Zoekt does not know about repo descriptions, so we depend on the
 	// database to handle this filter.
 	if len(op.DescriptionPatterns) > 0 {
+		return false
+	}
+
+	// Zoekt does not know about repo key-value pairs or tags, so we depend on the
+	// database to handle this filter.
+	if len(op.HasKVPs) > 0 {
+		return false
+	}
+
+	// Zoekt does not know about repo topics, so we depend on the database to
+	// handle this filter.
+	if len(op.HasTopics) > 0 {
 		return false
 	}
 

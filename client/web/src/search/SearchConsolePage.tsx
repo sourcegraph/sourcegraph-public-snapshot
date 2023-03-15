@@ -3,8 +3,8 @@ import React, { useCallback, useMemo } from 'react'
 import { Prec } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
 import classNames from 'classnames'
-import * as H from 'history'
-import { BehaviorSubject } from 'rxjs'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { BehaviorSubject, of } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import {
@@ -13,17 +13,16 @@ import {
     CodeMirrorQueryInput,
     createDefaultSuggestions,
     changeListener,
-} from '@sourcegraph/search-ui'
-import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+} from '@sourcegraph/branded'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../graphql-operations'
-import { useExperimentalFeatures } from '../stores'
-import { eventLogger } from '../tracking/eventLogger'
+import { OwnConfigProps } from '../own/OwnConfigProps'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
@@ -33,49 +32,43 @@ interface SearchConsolePageProps
     extends SearchStreamingProps,
         Omit<
             StreamingSearchResultsListProps,
-            'allExpanded' | 'extensionsController' | 'executedQuery' | 'showSearchContext'
+            'allExpanded' | 'executedQuery' | 'showSearchContext' | 'enableOwnershipSearch'
         >,
-        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'> {
+        OwnConfigProps {
     globbing: boolean
     isMacPlatform: boolean
-    history: H.History
-    location: H.Location
 }
 
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
-    const { globbing, streamSearch, extensionsController, isSourcegraphDotCom } = props
-    const extensionHostAPI =
-        extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
-    const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
-        features => features.enableGoImportsSearchQueryTransform
-    )
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+    const location = useLocation()
+    const navigate = useNavigate()
+    const { globbing, streamSearch, isSourcegraphDotCom, ownEnabled } = props
+    const { applySuggestionsOnEnter } = useExperimentalFeatures(features => ({
+        applySuggestionsOnEnter: features.applySearchQuerySuggestionOnEnter ?? true,
+    }))
+    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
+    const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
 
-    const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
-        props.location.search,
-    ])
+    const searchQuery = useMemo(
+        () => new BehaviorSubject<string>(parseSearchURLQuery(location.search) ?? ''),
+        [location.search]
+    )
 
     const patternType = useMemo(
-        () => parseSearchURLPatternType(props.location.search) || SearchPatternType.structural,
-        [props.location.search]
+        () => parseSearchURLPatternType(location.search) || SearchPatternType.structural,
+        [location.search]
     )
 
     const triggerSearch = useCallback(() => {
-        props.history.push('/search/console?q=' + encodeURIComponent(searchQuery.value))
-    }, [props.history, searchQuery])
+        navigate('/search/console?q=' + encodeURIComponent(searchQuery.value))
+    }, [navigate, searchQuery])
 
     const transformedQuery = useMemo(() => {
-        let query = parseSearchURLQuery(props.location.search)
+        let query = parseSearchURLQuery(location.search)
         query = query?.replace(/\/\/.*/g, '') || ''
 
-        return transformSearchQuery({
-            query,
-            extensionHostAPIPromise: extensionHostAPI,
-            enableGoImportsSearchQueryTransform,
-            eventLogger,
-        })
-    }, [props.location.search, extensionHostAPI, enableGoImportsSearchQueryTransform])
+        return query
+    }, [location.search])
 
     const autocompletion = useMemo(
         () =>
@@ -101,7 +94,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
     const results = useObservable(
         useMemo(
             () =>
-                streamSearch(transformedQuery, {
+                streamSearch(of(transformedQuery), {
                     version: LATEST_VERSION,
                     patternType: patternType ?? SearchPatternType.standard,
                     caseSensitive: false,
@@ -119,7 +112,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                     <div className={styles.editor}>
                         <CodeMirrorQueryInput
                             className="d-flex flex-column overflow-hidden"
-                            isLightTheme={props.isLightTheme}
                             patternType={patternType}
                             interpretComments={true}
                             value={searchQuery.value}
@@ -137,11 +129,11 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                         ) : (
                             <StreamingSearchResultsList
                                 {...props}
+                                enableOwnershipSearch={enableOwnershipSearch}
                                 allExpanded={false}
                                 results={results}
-                                showSearchContext={false}
                                 assetsRoot={window.context?.assetsRoot || ''}
-                                executedQuery={props.location.search}
+                                executedQuery={location.search}
                             />
                         ))}
                 </div>

@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -20,7 +21,6 @@ import (
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -63,8 +63,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	})
 	defer state.Unmock()
 
-	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-	defer func() { internalClient = internalapi.Client }()
+	btypes.MockInternalClientExternalURL("https://sourcegraph.test")
+	t.Cleanup(btypes.ResetInternalClient)
 
 	githubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := gitdomain.EnsureRefPrefix(githubPR.HeadRefName)
@@ -1040,7 +1040,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				HeadRef:    "refs/heads/my-branch",
 				Typ:        btypes.ChangesetSpecTypeBranch,
 				Published:  true,
-				CommitDiff: "testdiff",
+				CommitDiff: []byte("testdiff"),
 			})
 
 			fakeSource := &stesting.FakeChangesetSource{Svc: tt.extSvc, CurrentAuthenticator: tt.credential}
@@ -1089,8 +1089,8 @@ func TestDecorateChangesetBody(t *testing.T) {
 		return &database.Namespace{Name: "my-user", User: user}, nil
 	})
 
-	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-	defer func() { internalClient = internalapi.Client }()
+	btypes.MockInternalClientExternalURL("https://sourcegraph.test")
+	t.Cleanup(btypes.ResetInternalClient)
 
 	fs := &FakeStore{
 		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
@@ -1138,105 +1138,31 @@ func TestHandleArchivedRepo(t *testing.T) {
 		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
 		repo := &types.Repo{Archived: false}
 
-		store := repos.NewMockStore()
-		store.UpdateRepoFunc.SetDefaultReturn(repo, nil)
+		mockStore := repos.NewMockStore()
+		mockStore.UpdateRepoFunc.SetDefaultReturn(repo, nil)
 
-		err := handleArchivedRepo(ctx, store, repo, ch)
+		err := handleArchivedRepo(ctx, mockStore, repo, ch)
 		assert.NoError(t, err)
 		assert.True(t, repo.Archived)
 		assert.Equal(t, btypes.ChangesetExternalStateReadOnly, ch.ExternalState)
-		assert.NotEmpty(t, store.UpdateRepoFunc.History())
+		assert.NotEmpty(t, mockStore.UpdateRepoFunc.History())
 	})
 
 	t.Run("store error", func(t *testing.T) {
 		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
 		repo := &types.Repo{Archived: false}
 
-		store := repos.NewMockStore()
+		mockStore := repos.NewMockStore()
 		want := errors.New("")
-		store.UpdateRepoFunc.SetDefaultReturn(nil, want)
+		mockStore.UpdateRepoFunc.SetDefaultReturn(nil, want)
 
-		have := handleArchivedRepo(ctx, store, repo, ch)
+		have := handleArchivedRepo(ctx, mockStore, repo, ch)
 		assert.Error(t, have)
 		assert.ErrorIs(t, have, want)
 		assert.True(t, repo.Archived)
 		assert.Equal(t, btypes.ChangesetExternalStateDraft, ch.ExternalState)
-		assert.NotEmpty(t, store.UpdateRepoFunc.History())
+		assert.NotEmpty(t, mockStore.UpdateRepoFunc.History())
 	})
-}
-
-func TestBatchChangeURL(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("errors", func(t *testing.T) {
-		for name, tc := range map[string]*mockInternalClient{
-			"ExternalURL error": {err: errors.New("foo")},
-			"invalid URL":       {externalURL: "foo://:bar"},
-		} {
-			t.Run(name, func(t *testing.T) {
-				internalClient = tc
-				defer func() { internalClient = internalapi.Client }()
-
-				if _, err := batchChangeURL(ctx, nil, nil); err == nil {
-					t.Error("unexpected nil error")
-				}
-			})
-		}
-	})
-
-	t.Run("success", func(t *testing.T) {
-		internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-		defer func() { internalClient = internalapi.Client }()
-
-		url, err := batchChangeURL(
-			ctx,
-			&database.Namespace{Name: "foo", Organization: 123},
-			&btypes.BatchChange{Name: "bar"},
-		)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if want := "https://sourcegraph.test/organizations/foo/batch-changes/bar"; url != want {
-			t.Errorf("unexpected URL: have=%q want=%q", url, want)
-		}
-	})
-}
-
-func TestNamespaceURL(t *testing.T) {
-	t.Parallel()
-
-	for name, tc := range map[string]struct {
-		ns   *database.Namespace
-		want string
-	}{
-		"user": {
-			ns:   &database.Namespace{User: 123, Name: "user"},
-			want: "/users/user",
-		},
-		"org": {
-			ns:   &database.Namespace{Organization: 123, Name: "org"},
-			want: "/organizations/org",
-		},
-		"neither": {
-			ns:   &database.Namespace{Name: "user"},
-			want: "/users/user",
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			if have := namespaceURL(tc.ns); have != tc.want {
-				t.Errorf("unexpected URL: have=%q want=%q", have, tc.want)
-			}
-		})
-	}
-}
-
-type mockInternalClient struct {
-	externalURL string
-	err         error
-}
-
-func (c *mockInternalClient) ExternalURL(ctx context.Context) (string, error) {
-	return c.externalURL, c.err
 }
 
 type mockRepoArchivedError struct{}

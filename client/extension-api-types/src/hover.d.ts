@@ -1,4 +1,4 @@
-import * as sourcegraph from 'sourcegraph'
+import type { Hover as APIHover } from 'sourcegraph'
 
 import { Range } from './location'
 
@@ -7,7 +7,7 @@ import { Range } from './location'
  *
  * @see module:sourcegraph.Hover
  */
-export interface Hover extends Pick<sourcegraph.Hover, 'contents' | 'alerts'> {
+export interface Hover extends Pick<APIHover, 'contents'> {
     /** The range that the hover applies to. */
     readonly range?: Range
 }

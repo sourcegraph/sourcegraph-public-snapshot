@@ -33,13 +33,24 @@ extend type Mutation {
         """
         repositories: [SearchContextRepositoryRevisionsInput!]!
     ): SearchContext!
+    """
+    Add a star on a search context for the specified user.
+    Only one star can be created per context and user pair.
+    If the star already exists, this is a no-op.
+    """
+    createSearchContextStar(searchContextID: ID!, userID: ID!): EmptyResponse!
+    """
+    Delete a star on a search context for the specified user.
+    If the star does not exist, this is a no-op.
+    """
+    deleteSearchContextStar(searchContextID: ID!, userID: ID!): EmptyResponse!
+    """
+    Set the default search context for the specified user.
+    """
+    setDefaultSearchContext(searchContextID: ID!, userID: ID!): EmptyResponse!
 }
 
 extend type Query {
-    """
-    Auto-defined search contexts available to the current user.
-    """
-    autoDefinedSearchContexts: [SearchContext!]!
     """
     All available user-defined search contexts. Excludes auto-defined contexts.
     """
@@ -66,6 +77,10 @@ extend type Query {
         namespaces: [ID] = []
         """
         Sort field.
+        Despite the value, the results are always sorted with the global context first,
+        user's default context next, followed by the user's starred contexts,
+        followed by the rest of the contexts.
+        This controls the order of these internal groups.
         """
         orderBy: SearchContextsOrderBy = SEARCH_CONTEXT_SPEC
         """
@@ -82,6 +97,10 @@ extend type Query {
     The set consists of contexts created by the user, contexts created by the users' organizations, and instance-level contexts.
     """
     isSearchContextAvailable(spec: String!): Boolean!
+    """
+    Gets the default search context for the current user. This context is guaranteed to be available to the user.
+    """
+    defaultSearchContext: SearchContext
 }
 
 """
@@ -110,9 +129,8 @@ type SearchContext implements Node {
     """
     spec: String!
     """
-    Whether the search context is autodefined by Sourcegraph. Current examples include:
-    global search context ("global"), default user search context ("@user"), and
-    default organization search context ("@org").
+    Whether the search context is autodefined by Sourcegraph.
+    The only autodefined context currently is the global search context ("global").
     """
     autoDefined: Boolean!
     """
@@ -140,6 +158,14 @@ type SearchContext implements Node {
     If current viewer can manage (edit, delete) the search context.
     """
     viewerCanManage: Boolean!
+    """
+    If the viewer has set this context as default.
+    """
+    viewerHasAsDefault: Boolean!
+    """
+    If the viewer has starred this context.
+    """
+    viewerHasStarred: Boolean!
 }
 
 """

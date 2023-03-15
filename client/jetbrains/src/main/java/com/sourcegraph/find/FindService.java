@@ -87,6 +87,7 @@ public class FindService implements Disposable {
 
         if (keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
             if (mainPanel.getPreviewPanel() != null && mainPanel.getPreviewPanel().getPreviewContent() != null) {
+                // This must run on EDT (Event Dispatch Thread) because it may interact with the editor.
                 ApplicationManager.getApplication().invokeLater(() -> {
                     try {
                         mainPanel.getPreviewPanel().getPreviewContent().openInEditorOrBrowser();

@@ -3,13 +3,9 @@ import React, { useEffect, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { QueryState } from '@sourcegraph/search'
-import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { LazyQueryInput } from '@sourcegraph/branded'
+import { QueryState } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Container,
     PageHeader,
@@ -21,12 +17,14 @@ import {
     Input,
     Code,
     Label,
+    ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
+import { Scalars, SearchPatternType } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
-import { useExperimentalFeatures } from '../stores'
 
 import styles from './SavedSearchForm.module.scss'
 
@@ -39,7 +37,7 @@ export interface SavedQueryFields {
     slackWebhookURL: string | null
 }
 
-export interface SavedSearchFormProps extends NamespaceProps, ThemeProps {
+export interface SavedSearchFormProps extends NamespaceProps {
     authenticatedUser: AuthenticatedUser | null
     defaultValues?: Partial<SavedQueryFields>
     title?: string
@@ -64,15 +62,15 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
      *
      * @param key The key of saved query fields that a change of this input should update
      */
-    const createInputChangeHandler = (
-        key: keyof SavedQueryFields
-    ): React.FormEventHandler<HTMLInputElement> => event => {
-        const { value, checked, type } = event.currentTarget
-        setValues(values => ({
-            ...values,
-            [key]: type === 'checkbox' ? checked : value,
-        }))
-    }
+    const createInputChangeHandler =
+        (key: keyof SavedQueryFields): React.FormEventHandler<HTMLInputElement> =>
+        event => {
+            const { value, checked, type } = event.currentTarget
+            setValues(values => ({
+                ...values,
+                [key]: type === 'checkbox' ? checked : value,
+            }))
+        }
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
@@ -96,7 +94,6 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
     const { query, description, notify, notifySlack, slackWebhookURL } = values
 
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -108,10 +105,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
     return (
         <div className="saved-search-form" data-testid="saved-search-form">
-            <PageHeader
-                description="Get notifications when there are new results for specific search queries."
-                className="mb-3"
-            >
+            <PageHeader className="mb-3">
                 <PageTitle title={props.title} />
                 <PageHeader.Heading as="h3" styleAs="h2">
                     <PageHeader.Breadcrumb>{props.title}</PageHeader.Breadcrumb>
@@ -131,10 +125,8 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                     <Label className={classNames('w-100 form-group', styles.label)}>
                         <div className="mb-2">Query</div>
 
-                        <LazyMonacoQueryInput
+                        <LazyQueryInput
                             className={classNames('form-control', styles.queryInput)}
-                            editorComponent={editorComponent}
-                            isLightTheme={props.isLightTheme}
                             patternType={SearchPatternType.standard}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
                             caseSensitive={false}

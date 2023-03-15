@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -24,15 +24,6 @@ func FileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	return parseRe(pattern, true, false, queryIsCaseSensitive)
 }
 
-func noOpAnyChar(re *syntax.Regexp) {
-	if re.Op == syntax.OpAnyChar {
-		re.Op = syntax.OpAnyCharNotNL
-	}
-	for _, s := range re.Sub {
-		noOpAnyChar(s)
-	}
-}
-
 const regexpFlags = syntax.ClassNL | syntax.PerlX | syntax.UnicodeGroups
 
 func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
@@ -41,7 +32,6 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	if err != nil {
 		return nil, err
 	}
-	noOpAnyChar(re)
 
 	// OptimizeRegexp currently only converts capture groups into non-capture
 	// groups (faster for stdlib regexp to execute).
@@ -72,7 +62,7 @@ func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[stri
 
 	spanContext = make(map[string]string)
 	if span := opentracing.SpanFromContext(ctx); span != nil {
-		if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
+		if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil { //nolint:staticcheck // Drop once we get rid of OpenTracing
 			log15.Warn("Error injecting span context into map: %s", err)
 			return true, nil
 		}
@@ -109,66 +99,45 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		ChunkMatches: true,
 	}
 
-	if limit := int(o.FileMatchLimit); o.Features.Ranking && limit < 1000 {
-		// It is hard to think up general stats here based on limit. So
-		// instead we only run the ranking code path if the limit is
-		// reasonably small. This is fine while we experiment.
-		searchOpts.ShardMaxMatchCount = 1000
-		searchOpts.TotalMaxMatchCount = 10000
-		searchOpts.MaxDocDisplayCount = limit
-		searchOpts.FlushWallTime = 500 * time.Millisecond
+	// If we're searching repos, ignore the other options and only check one file per repo
+	if o.Selector.Root() == filter.Repository {
+		searchOpts.ShardRepoMaxMatchCount = 1
 		return searchOpts
 	}
 
-	if userProbablyWantsToWaitLonger := o.FileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(o.FileMatchLimit) / float64(limits.DefaultMaxSearchResults))
+	if o.Features.Debug {
+		searchOpts.DebugScore = true
 	}
 
-	if o.Selector.Root() == filter.Repository {
-		searchOpts.ShardRepoMaxMatchCount = 1
-	} else {
-		k := o.resultCountFactor()
-		searchOpts.ShardMaxMatchCount = 100 * k
-		searchOpts.TotalMaxMatchCount = 100 * k
-		searchOpts.ShardMaxImportantMatch = 15 * k
-		searchOpts.TotalMaxImportantMatch = 25 * k
-		// Ask for 2000 more results so we have results to populate
-		// RepoStatusLimitHit.
-		searchOpts.MaxDocDisplayCount = int(o.FileMatchLimit) + 2000
+	if o.Features.Ranking {
+		// This enables our stream based ranking, where we wait a certain amount
+		// of time to collect results before ranking.
+		searchOpts.FlushWallTime = conf.SearchFlushWallTime()
+
+		// This enables the use of document ranks in scoring, if they are available.
+		searchOpts.UseDocumentRanks = true
+		searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
+	}
+
+	// These are reasonable default amounts of work to do per shard and
+	// replica respectively.
+	searchOpts.ShardMaxMatchCount = 10_000
+	searchOpts.TotalMaxMatchCount = 100_000
+
+	// Tell each zoekt replica to not send back more than limit results.
+	limit := int(o.FileMatchLimit)
+	searchOpts.MaxDocDisplayCount = limit
+
+	// If we are searching for large limits, raise the amount of work we
+	// are willing to do per shard and zoekt replica respectively.
+	if limit > searchOpts.ShardMaxMatchCount {
+		searchOpts.ShardMaxMatchCount = limit
+	}
+	if limit > searchOpts.TotalMaxMatchCount {
+		searchOpts.TotalMaxMatchCount = limit
 	}
 
 	return searchOpts
-}
-
-func (o *Options) resultCountFactor() (k int) {
-	if o.GlobalSearch {
-		// for globalSearch, numRepos = 0, but effectively we are searching over all
-		// indexed repos, hence k should be 1
-		k = 1
-	} else {
-		// If we're only searching a small number of repositories, return more
-		// comprehensive results. This is arbitrary.
-		switch {
-		case o.NumRepos <= 5:
-			k = 100
-		case o.NumRepos <= 10:
-			k = 10
-		case o.NumRepos <= 25:
-			k = 8
-		case o.NumRepos <= 50:
-			k = 5
-		case o.NumRepos <= 100:
-			k = 3
-		case o.NumRepos <= 500:
-			k = 2
-		default:
-			k = 1
-		}
-	}
-	if o.FileMatchLimit > limits.DefaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(o.FileMatchLimit) / float64(limits.DefaultMaxSearchResults))
-	}
-	return k
 }
 
 // repoRevFunc is a function which maps repository names returned from Zoekt

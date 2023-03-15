@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -35,7 +36,7 @@ type store struct {
 	*basestore.Store
 }
 
-func NewStore(dbFile string) (Store, error) {
+func NewStore(observationCtx *observation.Context, dbFile string) (Store, error) {
 	db, err := sql.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return nil, err
@@ -43,7 +44,7 @@ func NewStore(dbFile string) (Store, error) {
 
 	return &store{
 		db:    db,
-		Store: basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
+		Store: basestore.NewWithHandle(basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})),
 	}, nil
 }
 
@@ -60,8 +61,8 @@ func (s *store) Transact(ctx context.Context) (Store, error) {
 	return &store{db: s.db, Store: tx}, nil
 }
 
-func WithSQLiteStore(dbFile string, callback func(db Store) error) error {
-	db, err := NewStore(dbFile)
+func WithSQLiteStore(observationCtx *observation.Context, dbFile string, callback func(db Store) error) error {
+	db, err := NewStore(observationCtx, dbFile)
 	if err != nil {
 		return err
 	}
@@ -74,8 +75,8 @@ func WithSQLiteStore(dbFile string, callback func(db Store) error) error {
 	return callback(db)
 }
 
-func WithSQLiteStoreTransaction(ctx context.Context, dbFile string, callback func(db Store) error) error {
-	return WithSQLiteStore(dbFile, func(db Store) (err error) {
+func WithSQLiteStoreTransaction(ctx context.Context, observationCtx *observation.Context, dbFile string, callback func(db Store) error) error {
+	return WithSQLiteStore(observationCtx, dbFile, func(db Store) (err error) {
 		tx, err := db.Transact(ctx)
 		if err != nil {
 			return err

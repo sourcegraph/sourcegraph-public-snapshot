@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 
 import * as H from 'history'
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Badge, useDebounce } from '@sourcegraph/wildcard'
 
-import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import { ConnectionSummary } from '../../components/FilteredConnection/ui'
 import {
     GitCommitAncestorFields,
@@ -136,7 +136,11 @@ export const RevisionsPopoverCommits: React.FunctionComponent<
     const query = useDebounce(searchValue, 200)
     const location = useLocation()
 
-    const response = useConnection<RepositoryGitCommitResult, RepositoryGitCommitVariables, GitCommitAncestorFields>({
+    const response = useShowMorePagination<
+        RepositoryGitCommitResult,
+        RepositoryGitCommitVariables,
+        GitCommitAncestorFields
+    >({
         query: REPOSITORY_GIT_COMMIT,
         variables: {
             query,

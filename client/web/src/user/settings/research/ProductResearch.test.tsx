@@ -10,8 +10,11 @@ describe('ProductResearchPage', () => {
     beforeEach(() => {
         queries = render(
             <ProductResearchPage
+                isSourcegraphApp={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                authenticatedUser={{ email: 'test@sourcegraph.com' }}
+                authenticatedUser={{
+                    emails: [{ email: 'test@sourcegraph.com', isPrimary: true, verified: true }],
+                }}
             />
         )
     })

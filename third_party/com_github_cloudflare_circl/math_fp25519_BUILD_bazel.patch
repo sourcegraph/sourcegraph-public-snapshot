@@ -1,0 +1,24 @@
+--- math/fp25519/BUILD.bazel	2023-01-30 15:41:44
++++ math/fp25519/BUILD.bazel	2023-01-30 15:49:33
+@@ -1,4 +1,4 @@
+-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
++load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_source", "go_test")
+
+ go_library(
+     name = "fp25519",
+@@ -20,6 +20,14 @@
+         ],
+         "//conditions:default": [],
+     }),
++)
++
++go_source(
++    name ="headers",
++    srcs = [
++        "fp_amd64.h"
++    ],
++    visibility = ["//visibility:public"],
+ )
+
+ alias(
+

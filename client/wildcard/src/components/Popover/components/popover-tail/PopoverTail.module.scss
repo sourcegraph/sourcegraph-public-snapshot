@@ -2,16 +2,17 @@
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 2;
-    overflow: hidden;
-
-    --tail-width: 24px;
-
     width: var(--tail-width);
     height: calc(var(--tail-width) / 2);
+    overflow: hidden;
+    pointer-events: none;
+
+    &--size-sm {
+        --tail-width: 16px;
+    }
 
     &--size-md {
-        --tail-width: 28px;
+        --tail-width: 24px;
     }
 
     &--size-lg {
@@ -68,7 +69,7 @@
         height: 70%;
         transform: translate(0%, -70%) rotate(45deg);
 
-        background-color: var(--dropdown-bg);
-        border: 1px solid var(--dropdown-border-color);
+        background-color: var(--tail-background, var(--dropdown-bg));
+        border: var(--tail-border, 1px solid var(--dropdown-border-color));
     }
 }

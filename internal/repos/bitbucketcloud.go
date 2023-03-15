@@ -80,6 +80,14 @@ func newBitbucketCloudSource(logger log.Logger, svc *types.ExternalService, c *s
 	}, nil
 }
 
+func (s BitbucketCloudSource) CheckConnection(ctx context.Context) error {
+	_, err := s.client.CurrentUser(ctx)
+	if err != nil {
+		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+	}
+	return nil
+}
+
 // ListRepos returns all Bitbucket Cloud repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s BitbucketCloudSource) ListRepos(ctx context.Context, results chan SourceResult) {
@@ -175,7 +183,7 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 		var err error
 		var repos []*bitbucketcloud.Repo
 		for page.HasMore() || page.Page == 0 {
-			if repos, page, err = s.client.Repos(ctx, page, s.config.Username); err != nil {
+			if repos, page, err = s.client.Repos(ctx, page, s.config.Username, nil); err != nil {
 				ch <- batch{err: errors.Wrapf(err, "bitbucketcloud.repos: item=%q, page=%+v", s.config.Username, page)}
 				break
 			}
@@ -194,7 +202,7 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 			var err error
 			var repos []*bitbucketcloud.Repo
 			for page.HasMore() || page.Page == 0 {
-				if repos, page, err = s.client.Repos(ctx, page, t); err != nil {
+				if repos, page, err = s.client.Repos(ctx, page, t, nil); err != nil {
 					ch <- batch{err: errors.Wrapf(err, "bitbucketcloud.teams: item=%q, page=%+v", t, page)}
 					break
 				}

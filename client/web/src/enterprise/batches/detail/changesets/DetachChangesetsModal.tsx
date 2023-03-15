@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Modal, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Modal, H3, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import { Scalars } from '../../../../graphql-operations'

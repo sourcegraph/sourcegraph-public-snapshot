@@ -31,9 +31,8 @@ const vscodeWebviewProxyTransferHandler: Comlink.TransferHandler<
     },
     deserialize: serialized => {
         // Get endpoint factory based on relationship type
-        const endpointFactory = endpointFactories[
-            serialized.relationshipType === 'webToWeb' ? 'webToWeb' : 'webToNode'
-        ]!
+        const endpointFactory =
+            endpointFactories[serialized.relationshipType === 'webToWeb' ? 'webToWeb' : 'webToNode']!
 
         // Create endpoint, return wrapped proxy.
         const endpoint = endpointFactory(serialized.nestedConnectionId)
@@ -49,9 +48,7 @@ Comlink.transferHandlers.set('proxy', vscodeWebviewProxyTransferHandler)
  *
  * @param target Typically a WebWorker or `self` from a WebWorker (`Endpoint` for main thread).
  */
-export function createEndpointsForWebToWeb(
-    target: Comlink.Endpoint
-): {
+export function createEndpointsForWebToWeb(target: Comlink.Endpoint): {
     webview: Comlink.Endpoint
     worker: Comlink.Endpoint
 } {

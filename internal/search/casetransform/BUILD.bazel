@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "casetransform",
+    srcs = [
+        "lower.go",
+        "lower_amd64.go",
+        "lower_amd64.s",
+        "lower_other.go",
+        "lower_regexp.go",
+        "regexp.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/casetransform",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_sourcegraph_zoekt//query",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "casetransform_test",
+    srcs = [
+        "lower_regexp_test.go",
+        "lower_test.go",
+    ],
+    embed = [":casetransform"],
+)

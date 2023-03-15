@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	sglog "github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/opentracing/opentracing-go/log"
 
@@ -40,13 +41,13 @@ func (h *UploadHandler[T]) handleEnqueueSinglePayload(ctx context.Context, uploa
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
-	trace.Log(log.Int("uploadID", id))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", id))
 
 	size, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.lsif.gz", id), body)
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
-	trace.Log(log.Int("gzippedUploadSize", int(size)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("gzippedUploadSize", int(size)))
 
 	if err := tx.MarkQueued(ctx, id, &size); err != nil {
 		return nil, http.StatusInternalServerError, err

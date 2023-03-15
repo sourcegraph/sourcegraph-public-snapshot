@@ -4,14 +4,35 @@ Site admins can sync Git repositories hosted on [GitLab](https://gitlab.com) (Gi
 
 To connect GitLab to Sourcegraph:
 
-1. Depending on whether you are a site admin or user:
-    1. *Site admin*: Go to **Site admin > Manage code hosts > Add repositories**
-    1. *User*: Go to **Settings > Manage code hosts**.
-1. Select **GitLab**.
-1. Configure the connection to GitLab using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
-1. Press **Add repositories**.
+1. Go to **Site admin > Manage code hosts > Add code host**
+2. Select **GitLab** (for GitLab.com) or **GitLab Self-Managed**.
+3. Set **url** to the URL of your GitLab instance, such as https://gitlab.example.com or https://gitlab.com (for GitLab.com).
+4. Create a GitLab access token using these [instructions](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token) with repo scope, and set it to be the value of the token.
+5. Use the [Repository syncing documentation below](#repository-syncing) to select and add your preferred projects/repos to the configuration.
+6. You can use the action buttons above the text field to add the fields, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration) for additional fields.
+7. Click **Add repositories**.
 
-**NOTE** That adding code hosts as a user is currently in private beta.
+Example config:
+```
+{
+  "url": "https://gitlab.com",
+  "token": "<access token>",
+  "projectQuery": [
+    "groups/mygroup/projects",
+    "projects?membership=true&archived=no",
+    "?search=<search query>",
+    "?membership=true\u0026search=foo"
+ ],
+ "projects": [
+  {
+     "name": "group/name"
+  },
+  {
+      "id": 42
+  }
+ ]
+}
+```
 
 ## Supported versions
 
@@ -38,9 +59,87 @@ curl -H 'Private-Token: $ACCESS_TOKEN' -XGET 'https://$GITLAB_HOSTNAME/api/v4/pr
 
 ## Repository permissions
 
-By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use
-GitLab's per-user repository permissions, see "[Repository
-permissions](../repo/permissions.md#gitlab)".
+GitLab permissions can be configured in three ways:
+
+1. Set up GitLab as an OAuth sign-on provider for Sourcegraph (recommended)
+2. Use a GitLab administrator (sudo-level) personal access token in conjunction with another SSO provider
+   (recommended only if the first option is not possible)
+3. Assume username equivalency between Sourcegraph and GitLab (warning: this is generally unsafe and
+   should only be used if you are using strictly `http-header` authentication).
+
+> NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
+
+### OAuth application
+
+Prerequisite: [Add GitLab as an authentication provider.](../auth/index.md#gitlab)
+
+Then, [add or edit a GitLab connection](#repository-syncing) and include the `authorization` field:
+
+```json
+{
+  "url": "https://gitlab.com",
+  "token": "$PERSONAL_ACCESS_TOKEN",
+  // ...
+  "authorization": {
+    "identityProvider": {
+      "type": "oauth"
+    }
+  }
+}
+```
+
+### Administrator (sudo-level) access token
+
+This method requires administrator access to GitLab so that Sourcegraph can access the [admin GitLab Users API endpoint](https://docs.gitlab.com/ee/api/users.html#for-admins). For each GitLab user, this endpoint provides the user ID that comes from the authentication provider, so Sourcegraph can associate a user in its system to a user in GitLab.
+
+Prerequisite: Add the [SAML](../auth/index.md#saml) or [OpenID Connect](../auth/index.md#openid-connect)
+authentication provider you use to sign into GitLab.
+
+Then, [add or edit a GitLab connection](#repository-syncing) using an administrator (sudo-level) personal access token, and include the `authorization` field:
+
+```json
+{
+  "url": "https://gitlab.com",
+  "token": "$PERSONAL_ACCESS_TOKEN",
+  // ...
+  "authorization": {
+    "identityProvider": {
+      "type": "external",
+      "authProviderID": "$AUTH_PROVIDER_ID",
+      "authProviderType": "$AUTH_PROVIDER_TYPE",
+      "gitlabProvider": "$AUTH_PROVIDER_GITLAB_ID"
+    }
+  }
+}
+```
+
+`$AUTH_PROVIDER_ID` and `$AUTH_PROVIDER_TYPE` identify the authentication provider to use and should
+match the fields specified in the authentication provider config
+(`auth.providers`). The authProviderID can be found in the `configID` field of the auth provider config.
+
+`$AUTH_PROVIDER_GITLAB_ID` should match the `identities.provider` returned by
+[the admin GitLab Users API endpoint](https://docs.gitlab.com/ee/api/users.html#for-admins).
+
+### Username
+
+Prerequisite: Ensure that `http-header` is the *only* authentication provider type configured for
+Sourcegraph. If this is not the case, then it will be possible for users to escalate privileges,
+because Sourcegraph usernames are mutable.
+
+[Add or edit a GitLab connection](#repository-syncing) and include the `authorization` field:
+
+```json
+{
+  "url": "https://gitlab.com",
+  "token": "$PERSONAL_ACCESS_TOKEN",
+  // ...
+  "authorization": {
+    "identityProvider": {
+      "type": "username"
+    }
+  }
+}
+```
 
 ## User authentication
 
@@ -104,29 +203,6 @@ We are actively collaborating with GitLab to improve our integration (e.g. the [
 
 ## Webhooks
 
-The `webhooks` setting allows specifying the webhook secrets necessary to authenticate incoming webhook requests to `/.api/gitlab-webhooks`.
+Using the `webhooks` property on the external service has been deprecated.
 
-```json
-"webhooks": [
-  {"secret": "verylongrandomsecret"}
-]
-```
-
-Using webhooks is highly recommended when using [batch changes](../../batch_changes/index.md), since they speed up the syncing of pull request data between GitLab and Sourcegraph and make it more efficient.
-
-To set up webhooks:
-
-1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the GitLab configuration.
-1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"secret": "verylongrandomsecret"}]`
-1. Click **Update repositories**.
-1. Copy the webhook URL displayed below the **Update repositories** button.
-1. On GitLab, go to your project, and then **Settings > Webhooks** (or **Settings > Integration** on older GitLab versions that don't have the **Webhooks** option).
-1. Fill in the webhook form:
-   * **URL**: the URL you copied above from Sourcegraph.
-   * **Secret token**: the secret token you configured Sourcegraph to use above.
-   * **Trigger**: select **Merge request events** and **Pipeline events**.
-   * **Enable SSL verification**: ensure this is enabled if you have configured SSL with a valid certificate in your Sourcegraph instance.
-1. Click **Add webhook**.
-1. Confirm that the new webhook is listed below **Project Hooks**.
-
-Done! Sourcegraph will now receive webhook events from GitLab and use them to sync merge request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+Please consult [this page](../config/webhooks.md) in order to configure webhooks.

@@ -99,11 +99,12 @@ function install_executor() {
   cat <<EOF >/etc/systemd/system/executor.service
 [Unit]
 Description=User code executor
+After=docker.service
+BindsTo=docker.service
 
 [Service]
 ExecStart=/usr/local/bin/executor
 ExecStopPost=/shutdown_executor.sh
-Requires=docker
 Restart=on-failure
 EnvironmentFile=/etc/systemd/system/executor.env
 Environment=HOME="%h"

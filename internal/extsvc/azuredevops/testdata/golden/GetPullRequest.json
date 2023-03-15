@@ -1,0 +1,51 @@
+{
+  "repository": {
+   "id": "c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+   "name": "sgtestazure",
+   "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazure",
+   "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+   "isDisabled": false,
+   "isFork": false,
+   "project": {
+    "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+    "name": "sgtestazure",
+    "state": "wellFormed",
+    "revision": 11,
+    "visibility": "private",
+    "url": "https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"
+   }
+  },
+  "pullRequestId": 36,
+  "codeReviewId": 36,
+  "status": "abandoned",
+  "creationDate": "2023-02-21T21:04:50.301238Z",
+  "title": "Test PR",
+  "description": "test description",
+  "createdBy": {
+   "id": "473dec3e-03d7-6147-b106-0b0a7f766a92",
+   "displayName": "idan.varsano@sourcegraph.com",
+   "uniqueName": "idan.varsano@sourcegraph.com",
+   "url": "https://spsprodcca1.vssps.visualstudio.com/Ab768986f-7304-43dd-be74-f37e30f66c38/_apis/Identities/473dec3e-03d7-6147-b106-0b0a7f766a92",
+   "imageUrl": "https://dev.azure.com/sgtestazure/_api/_common/identityImage?id=473dec3e-03d7-6147-b106-0b0a7f766a92"
+  },
+  "sourceRefName": "refs/heads/add-codeowners",
+  "targetRefName": "refs/heads/main",
+  "mergeStatus": "",
+  "mergeId": "78c10525-c830-4d26-9d69-a6af858c91ca",
+  "lastMergeSourceCommit": {
+   "commitId": "bb76f558e69f76c26c9c7844b9bc473a054ab1dc",
+   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/commits/bb76f558e69f76c26c9c7844b9bc473a054ab1dc"
+  },
+  "lastMergeTargetCommit": {
+   "commitId": "1c70d536b4ab3187b5aed41af8f259f1b8ceba6b",
+   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/commits/1c70d536b4ab3187b5aed41af8f259f1b8ceba6b"
+  },
+  "supportsIterations": true,
+  "artifactId": "vstfs:///Git/PullRequestId/dc493f7d-0b57-4de2-a59b-3f74ff3ea334%2fc4d186ef-18a6-4de4-a610-aa9ebd4e1faa%2f36",
+  "reviewers": [],
+  "forkSource": null,
+  "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/pullRequests/36",
+  "isDraft": false
+ }

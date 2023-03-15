@@ -17,11 +17,13 @@ RUN apk add --no-cache nss su-exec shadow &&\
     chown -R postgres:postgres /var/lib/postgresql &&\
     chown -R postgres:postgres /var/run/postgresql
 
-RUN apk add --upgrade --no-cache busybox>=1.35.0-r18 &&\
-    apk add --upgrade --no-cache libxslt>=1.1.35 &&\
-    apk add --upgrade --no-cache libxml2>=2.9.12 &&\
-    apk add --upgrade --no-cache libgcrypt>=1.8.8 &&\
-    apk add --upgrade --no-cache apk-tools>=2.12.7
+RUN apk add --upgrade --no-cache \
+    'busybox>=1.35.0-r17' \
+    'libxslt>=1.1.35' \
+    'libxml2>=2.9.14-r2' \
+    'libgcrypt>=1.8.8' \
+    'apk-tools>=2.12.7' \
+    'krb5-libs>=1.19.4-r0'
 
 ENV POSTGRES_PASSWORD='' \
     POSTGRES_USER=sg \

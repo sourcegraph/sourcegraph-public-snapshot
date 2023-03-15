@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Edit, JSONPath, ModificationOptions, modify } from 'jsonc-parser'
+import { Edit, JSONPath, ModificationOptions, modify, parse as parseJSONC } from 'jsonc-parser'
 import AwsIcon from 'mdi-react/AwsIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -13,10 +13,12 @@ import LanguageRubyIcon from 'mdi-react/LanguageRubyIcon'
 import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
+import { hasProperty } from '@sourcegraph/common'
 import { PerforceIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Link, Code, Text } from '@sourcegraph/wildcard'
+import { Link, Code, Text, setLinkComponent, RouterLink } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
+import azureDevOpsSchemaJSON from '../../../../../schema/azuredevops.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../../schema/bitbucket_server.schema.json'
 import gerritSchemaJSON from '../../../../../schema/gerrit.schema.json'
@@ -33,8 +35,17 @@ import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json
 import pythonPackagesJSON from '../../../../../schema/python-packages.schema.json'
 import rubyPackagesSchemaJSON from '../../../../../schema/ruby-packages.schema.json'
 import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
-import { ExternalRepositoryFields, ExternalServiceKind } from '../../graphql-operations'
+import {
+    ExternalRepositoryFields,
+    ExternalServiceFields,
+    ExternalServiceKind,
+    ExternalServiceSyncJobState,
+} from '../../graphql-operations'
 import { EditorAction } from '../../settings/EditorActionsGroup'
+
+import { GerritIcon } from './GerritIcon'
+
+setLinkComponent(RouterLink)
 
 /**
  * Metadata associated with adding a given external service.
@@ -81,6 +92,11 @@ export interface AddExternalServiceOptions {
      * Default external service configuration
      */
     defaultConfig: string
+
+    /**
+     * If present, denotes that we should show a status label, e.g. Beta or Experimental
+     */
+    status?: 'experimental' | 'beta'
 }
 
 const defaultModificationOptions: ModificationOptions = {
@@ -174,11 +190,7 @@ const githubInstructions = (isEnterprise: boolean): React.ReactNode => (
         </ol>
         <Text>
             See{' '}
-            <Link
-                rel="noopener noreferrer"
-                target="_blank"
-                to="https://docs.sourcegraph.com/admin/external_service/github#configuration"
-            >
+            <Link rel="noopener noreferrer" target="_blank" to="/help/admin/external_service/github#configuration">
                 the docs for more options
             </Link>
             , or try one of the buttons below.
@@ -242,11 +254,7 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
         </ol>
         <Text>
             See{' '}
-            <Link
-                rel="noopener noreferrer"
-                target="_blank"
-                to="https://docs.sourcegraph.com/admin/external_service/gitlab#configuration"
-            >
+            <Link rel="noopener noreferrer" target="_blank" to="/help/admin/external_service/gitlab#configuration">
                 the docs for more options
             </Link>
             , or try one of the buttons below.
@@ -517,6 +525,18 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     },
 ]
 
+const azureDevOpsEditorActions = (): EditorAction[] => [
+    {
+        id: 'excludeRepo',
+        label: 'Exclude a repository',
+        run: (config: string) => {
+            const value = { name: '<project>/<repository>' }
+            const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
+            return { edits, selectText: '<project>/<repository>' }
+        },
+    },
+]
+
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
     title: 'GitHub',
@@ -603,7 +623,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/aws_codecommit#configuration"
+                    to="/help/admin/external_service/aws_codecommit#configuration"
                 >
                     the docs for more options
                 </Link>
@@ -741,7 +761,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/bitbucket_cloud#configuration"
+                    to="/help/admin/external_service/bitbucket_cloud#configuration"
                 >
                     the docs for more options
                 </Link>
@@ -830,7 +850,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#configuration"
+                    to="/help/admin/external_service/bitbucket_server#configuration"
                 >
                     the docs for more options
                 </Link>
@@ -1009,7 +1029,7 @@ const GITOLITE: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/gitolite#configuration"
+                    to="/help/admin/external_service/gitolite#configuration"
                 >
                     the docs for more advanced options
                 </Link>
@@ -1034,6 +1054,15 @@ const GITOLITE: AddExternalServiceOptions = {
                 const value = 'gitolite.example.com/'
                 const edits = modify(config, ['prefix'], value, defaultModificationOptions)
                 return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'excludeRepo',
+            label: 'Exclude a repository',
+            run: (config: string) => {
+                const value = { name: '<name>' }
+                const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
+                return { edits, selectText: '<name>' }
             },
         },
     ],
@@ -1111,11 +1140,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
             </ol>
             <Text>
                 See{' '}
-                <Link
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/other#configuration"
-                >
+                <Link rel="noopener noreferrer" target="_blank" to="/help/admin/external_service/other#configuration">
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
@@ -1170,11 +1195,7 @@ const PERFORCE: AddExternalServiceOptions = {
             </ol>
             <Text>
                 See{' '}
-                <Link
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    to="https://docs.sourcegraph.com/admin/repo/perforce#configuration"
-                >
+                <Link rel="noopener noreferrer" target="_blank" to="/help/admin/repo/perforce#configuration">
                     the docs for more advanced options
                 </Link>
                 , or try one of the buttons below.
@@ -1260,11 +1281,11 @@ const PAGURE: AddExternalServiceOptions = {
 const GERRIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GERRIT,
     title: 'Gerrit',
-    icon: GitIcon,
+    icon: GerritIcon,
     jsonSchema: gerritSchemaJSON,
     defaultDisplayName: 'Gerrit',
     defaultConfig: `{
-  "url": "https://gerrit.example.com",
+  "url": "https://gerrit.example.com"
 }`,
     instructions: (
         <div>
@@ -1276,6 +1297,49 @@ const GERRIT: AddExternalServiceOptions = {
         </div>
     ),
     editorActions: [],
+    status: 'beta',
+}
+
+const AZUREDEVOPS: AddExternalServiceOptions = {
+    kind: ExternalServiceKind.AZUREDEVOPS,
+    title: 'Azure DevOps',
+    icon: GitIcon,
+    jsonSchema: azureDevOpsSchemaJSON,
+    defaultDisplayName: 'Azure DevOps',
+    defaultConfig: `{
+  "url": "https://dev.azure.com",
+  "username": "<username>",
+  "token": "<token>",
+  "orgs": [],
+  "projects": []
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>url</Field> to the URL of Azure DevOps Services:{' '}
+                    <Link to="https://dev.azure.com">https://dev.azure.com</Link>.
+                </li>
+                <li>
+                    In the configuration below, set <Field>username</Field> to the authenticated username for Azure
+                    DevOps Services.
+                </li>
+                <li>
+                    In the configuration below, set <Field>token</Field> to the authenticated token for Azure DevOps
+                    Services. See the{' '}
+                    <Link to="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows#create-a-pat">
+                        Azure DevOps documentation
+                    </Link>{' '}
+                    for instructions on how to create a Personal Access Token.
+                </li>
+                <li>
+                    In the configuration below, set <Field>orgs</Field> and/or <Field>projects</Field> to the
+                    organizations/projects you want to sync repositories from.
+                </li>
+            </ol>
+        </div>
+    ),
+    editorActions: azureDevOpsEditorActions(),
 }
 
 const NPM_PACKAGES: AddExternalServiceOptions = {
@@ -1449,6 +1513,8 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     srcservegit: SRC_SERVE_GIT,
     gitolite: GITOLITE,
     git: GENERIC_GIT,
+    gerrit: GERRIT,
+    azuredevops: AZUREDEVOPS,
     ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rubyPackages === 'enabled' ? { rubyPackages: RUBY_PACKAGES } : {}),
@@ -1457,7 +1523,6 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-    ...(window.context?.experimentalFeatures?.gerrit === 'enabled' ? { gerrit: GERRIT } : {}),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
@@ -1471,6 +1536,7 @@ export const allExternalServices = {
 
 export const defaultExternalServices: Record<ExternalServiceKind, AddExternalServiceOptions> = {
     [ExternalServiceKind.GITHUB]: GITHUB_DOTCOM,
+    [ExternalServiceKind.AZUREDEVOPS]: AZUREDEVOPS,
     [ExternalServiceKind.BITBUCKETCLOUD]: BITBUCKET_CLOUD,
     [ExternalServiceKind.BITBUCKETSERVER]: BITBUCKET_SERVER,
     [ExternalServiceKind.GITLAB]: GITLAB_DOTCOM,
@@ -1490,8 +1556,49 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
 }
 
 export const externalRepoIcon = (
-    externalRepo: ExternalRepositoryFields
+    externalRepo: Pick<ExternalRepositoryFields, 'serviceType'>
 ): React.ComponentType<{ className?: string }> | undefined => {
     const externalServiceKind = externalRepo.serviceType.toUpperCase() as ExternalServiceKind
     return defaultExternalServices[externalServiceKind]?.icon ?? undefined
+}
+
+export const EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES = new Set<ExternalServiceSyncJobState>([
+    ExternalServiceSyncJobState.QUEUED,
+    ExternalServiceSyncJobState.PROCESSING,
+    ExternalServiceSyncJobState.CANCELING,
+])
+
+export const resolveExternalServiceCategory = (
+    externalService?: ExternalServiceFields
+): AddExternalServiceOptions | undefined => {
+    let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
+    if (externalService && [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB].includes(externalService.kind)) {
+        const parsedConfig: unknown = parseJSONC(externalService.config)
+        const url =
+            typeof parsedConfig === 'object' &&
+            parsedConfig !== null &&
+            hasProperty('url')(parsedConfig) &&
+            typeof parsedConfig.url === 'string' &&
+            isValidURL(parsedConfig.url)
+                ? new URL(parsedConfig.url)
+                : undefined
+        // We have no way of finding out whether an external service is GITHUB or GitHub.com or GitHub enterprise, so we need to guess based on the URL.
+        if (externalService.kind === ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
+            externalServiceCategory = codeHostExternalServices.ghe
+        }
+        // We have no way of finding out whether an external service is GITLAB or Gitlab.com or Gitlab self-hosted, so we need to guess based on the URL.
+        if (externalService.kind === ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
+            externalServiceCategory = codeHostExternalServices.gitlab
+        }
+    }
+    return externalServiceCategory
+}
+
+export function isValidURL(url: string): boolean {
+    try {
+        new URL(url)
+        return true
+    } catch {
+        return false
+    }
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useReducer } from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 
@@ -15,6 +16,10 @@ export interface DurationProps extends React.HTMLAttributes<HTMLDivElement> {
      * is changing (e.g. for a timer). Default is true.
      */
     stableWidth?: boolean
+    /** String to precede screen-reader readout of the duration. */
+    labelPrefix?: string
+    /** String to follow screen-reader readout of the duration. */
+    labelSuffix?: string
 }
 
 /**
@@ -26,6 +31,8 @@ export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationP
     end,
     className,
     stableWidth = true,
+    labelPrefix,
+    labelSuffix,
     ...props
 }) {
     // Parse the start date.
@@ -56,8 +63,16 @@ export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationP
         return undefined
     }, [end])
 
+    const label = `${labelPrefix || ''} ${hours} hours, ${minutes} minutes, and ${seconds} seconds ${
+        labelSuffix || ''
+    }`.trim()
+
     return (
-        <div className={classNames('chromatic-ignore', { [styles.stableWidth]: stableWidth }, className)} {...props}>
+        <div
+            className={classNames('chromatic-ignore', { [styles.stableWidth]: stableWidth }, className)}
+            {...props}
+            role={end === undefined ? 'timer' : undefined}
+        >
             {stableWidth && (
                 // Set the width of the parent with a filler block of full-width digits,
                 // to prevent layout shift if the time changes.
@@ -66,7 +81,8 @@ export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationP
                     00:00:00
                 </span>
             )}
-            <span className={styles.duration}>
+            <VisuallyHidden>{label}</VisuallyHidden>
+            <span className={styles.duration} aria-hidden={true}>
                 {leading0(hours)}:{leading0(minutes)}:{leading0(seconds)}
             </span>
         </div>

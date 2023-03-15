@@ -39,8 +39,18 @@ func TestValidate(t *testing.T) {
 		}
 	})
 
+	t.Run("valid with additionalProperties", func(t *testing.T) {
+		res, err := validate([]byte(schema.SiteSchemaJSON), []byte(`{"a":123}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(res.Errors()) != 0 {
+			t.Errorf("errors: %v", res.Errors())
+		}
+	})
+
 	t.Run("invalid", func(t *testing.T) {
-		res, err := validate([]byte(schema.SiteSchemaJSON), []byte(`{"a":1}`))
+		res, err := validate([]byte(schema.SiteSchemaJSON), []byte(`{"maxReposToSearch":true}`))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -128,7 +138,7 @@ func TestValidateSettings(t *testing.T) {
 }
 
 func TestDoValidate(t *testing.T) {
-	schema := schema.SiteSchemaJSON
+	siteSchemaJSON := schema.SiteSchemaJSON
 
 	tests := map[string]struct {
 		input        string
@@ -149,7 +159,7 @@ func TestDoValidate(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			problems := doValidate([]byte(test.input), schema)
+			problems := doValidate([]byte(test.input), siteSchemaJSON)
 			if !reflect.DeepEqual(problems, test.wantProblems) {
 				t.Errorf("got problems %v, want %v", problems, test.wantProblems)
 			}
@@ -223,6 +233,61 @@ func TestRedactSecrets(t *testing.T) {
 
 	want := getTestSiteWithRedactedSecrets()
 	assert.Equal(t, want, redacted.Site)
+}
+
+func TestRedactConfSecrets(t *testing.T) {
+	conf := `{
+  "auth.providers": [
+    {
+      "clientID": "sourcegraph-client-openid",
+      "clientSecret": "strongsecret",
+      "displayName": "Keycloak local OpenID Connect #1 (dev)",
+      "issuer": "http://localhost:3220/auth/realms/master",
+      "type": "openidconnect"
+    }
+  ]
+}`
+
+	want := `{
+  "auth.providers": [
+    {
+      "clientID": "sourcegraph-client-openid",
+      "clientSecret": "%s",
+      "displayName": "Keycloak local OpenID Connect #1 (dev)",
+      "issuer": "http://localhost:3220/auth/realms/master",
+      "type": "openidconnect"
+    }
+  ]
+}`
+
+	testCases := []struct {
+		name           string
+		hasSecrets     bool
+		redactedFmtStr string
+	}{
+		{
+			name:       "hasSecrets true",
+			hasSecrets: true,
+			// This is the first 10 chars of the SHA256 of "strongsecret". See this go playground to
+			// verify: https://go.dev/play/p/N-4R4_fO9XI.
+			redactedFmtStr: "REDACTED-DATA-CHUNK-f434ecc765",
+		},
+		{
+			name:           "hasSecrets false",
+			hasSecrets:     false,
+			redactedFmtStr: "REDACTED",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hasSecrets)
+			require.NoError(t, err)
+
+			want := fmt.Sprintf(want, tc.redactedFmtStr)
+			assert.Equal(t, want, redacted.Site)
+		})
+	}
 }
 
 func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {

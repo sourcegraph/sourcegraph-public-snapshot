@@ -49,16 +49,16 @@ func TestMergeSettings(t *testing.T) {
 	}, {
 		name: "merge bool",
 		left: &schema.Settings{
-			AlertsShowPatchUpdates:    false,
-			CodeHostUseNativeTooltips: true,
+			AlertsShowPatchUpdates:              false,
+			BasicCodeIntelGlobalSearchesEnabled: true,
 		},
 		right: &schema.Settings{
-			AlertsShowPatchUpdates:    true,
-			CodeHostUseNativeTooltips: false, // This is the zero value, so will not override a previous non-zero value
+			AlertsShowPatchUpdates:              true,
+			BasicCodeIntelGlobalSearchesEnabled: false, // This is the zero value, so will not override a previous non-zero value
 		},
 		expected: &schema.Settings{
-			AlertsShowPatchUpdates:    true,
-			CodeHostUseNativeTooltips: true,
+			AlertsShowPatchUpdates:              true,
+			BasicCodeIntelGlobalSearchesEnabled: true,
 		},
 	}, {
 		name: "merge int",
@@ -78,18 +78,18 @@ func TestMergeSettings(t *testing.T) {
 		name: "deep merge struct pointer",
 		left: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				ShowSearchNotebook: boolPtr(true),
+				CodeMonitoringWebHooks: boolPtr(true),
 			},
 		},
 		right: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				ShowSearchContextManagement: boolPtr(false),
+				ShowMultilineSearchConsole: boolPtr(false),
 			},
 		},
 		expected: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				ShowSearchNotebook:          boolPtr(true),
-				ShowSearchContextManagement: boolPtr(false),
+				CodeMonitoringWebHooks:     boolPtr(true),
+				ShowMultilineSearchConsole: boolPtr(false),
 			},
 		},
 	}, {
@@ -114,63 +114,8 @@ func TestMergeSettings(t *testing.T) {
 		expected: &schema.Settings{
 			SearchScopes: []*schema.SearchScope{{Name: "test1"}, {Name: "test2"}},
 		},
-	}, {
-		name: "no deep merge slice",
-		left: &schema.Settings{
-			Notices: []*schema.Notice{{Message: "test1"}},
-		},
-		right: &schema.Settings{
-			Notices: []*schema.Notice{{Message: "test2"}},
-		},
-		expected: &schema.Settings{
-			Notices: []*schema.Notice{{Message: "test2"}},
-		},
-	}, {
-		name: "deep merge map",
-		left: &schema.Settings{
-			SearchRepositoryGroups: map[string][]any{
-				"test1": {"test", 1},
-				"test2": {"test", 2},
-			},
-		},
-		right: &schema.Settings{
-			SearchRepositoryGroups: map[string][]any{
-				"test2": {"overridden", 3},
-				"test3": {"merged", 4},
-			},
-		},
-		expected: &schema.Settings{
-			SearchRepositoryGroups: map[string][]any{
-				"test1": {"test", 1},
-				"test2": {"overridden", 3},
-				"test3": {"merged", 4},
-			},
-		},
-	}, {
-		name: "deep merge insightsDashboards",
-		left: &schema.Settings{
-			InsightsDashboards: map[string]schema.InsightDashboard{
-				"1": {Id: "1"},
-				"2": {Id: "2"},
-				"3": {Id: "3"},
-			},
-		},
-		right: &schema.Settings{
-			InsightsDashboards: map[string]schema.InsightDashboard{
-				"2": {Id: "overridden", Title: "overridden"},
-				"3": {Title: "overridden"},
-				"4": {Id: "merged"},
-			},
-		},
-		expected: &schema.Settings{
-			InsightsDashboards: map[string]schema.InsightDashboard{
-				"1": {Id: "1"},
-				"2": {Id: "overridden", Title: "overridden"},
-				"3": {Title: "overridden"},
-				"4": {Id: "merged"},
-			},
-		},
-	}}
+	},
+	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

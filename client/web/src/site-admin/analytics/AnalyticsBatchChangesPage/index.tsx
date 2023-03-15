@@ -1,7 +1,6 @@
 import React, { useMemo, useEffect } from 'react'
 
 import { startCase } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Card, LoadingSpinner, H2, Text, LineChart, Series } from '@sourcegraph/wildcard'
@@ -20,7 +19,7 @@ import { BATCHCHANGES_STATISTICS } from './queries'
 
 export const DEFAULT_MINS_SAVED_PER_CHANGESET = 15
 
-export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
+export const AnalyticsBatchChangesPage: React.FunctionComponent = () => {
     const { dateRange, grouping } = useChartFilters({ name: 'BatchChanges' })
     const { data, error, loading } = useQuery<BatchChangesStatisticsResult, BatchChangesStatisticsVariables>(
         BATCHCHANGES_STATISTICS,

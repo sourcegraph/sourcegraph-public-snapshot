@@ -1,7 +1,8 @@
+import { QueryResult } from '@apollo/client'
 import { EMPTY, Observable } from 'rxjs'
 import { expand, map, reduce } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -18,7 +19,6 @@ import {
     SyncChangesetVariables,
     Scalars,
     ChangesetCountsOverTimeVariables,
-    ChangesetCountsOverTimeFields,
     ChangesetCountsOverTimeResult,
     DeleteBatchChangeResult,
     ChangesetDiffResult,
@@ -61,6 +61,8 @@ const changesetsStatsFragment = gql`
         open
         unpublished
         archived
+        isCompleted
+        percentComplete
     }
 `
 
@@ -80,6 +82,7 @@ const bulkOperationFragment = gql`
                         url
                     }
                     repository {
+                        id
                         name
                         url
                     }
@@ -157,6 +160,24 @@ const batchChangeFragment = gql`
         currentSpec {
             id
             originalInput
+            description {
+                __typename
+                name
+            }
+            files {
+                totalCount
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+                nodes {
+                    id
+                    name
+                    binary
+                    byteSize
+                    url
+                }
+            }
             source
             supersedingBatchSpec {
                 createdAt
@@ -461,7 +482,7 @@ export async function reenqueueChangeset(changeset: Scalars['ID']): Promise<Chan
 }
 
 // Because thats the name in the API:
-// eslint-disable-next-line unicorn/prevent-abbreviations
+
 export const gitRefSpecFields = gql`
     fragment GitRefSpecFields on GitRevSpec {
         __typename
@@ -568,38 +589,32 @@ const changesetCountsOverTimeFragment = gql`
     }
 `
 
-export const queryChangesetCountsOverTime = ({
-    batchChange,
-    includeArchived,
-}: ChangesetCountsOverTimeVariables): Observable<ChangesetCountsOverTimeFields[]> =>
-    requestGraphQL<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables>(
-        gql`
-            query ChangesetCountsOverTime($batchChange: ID!, $includeArchived: Boolean!) {
-                node(id: $batchChange) {
-                    __typename
-                    ... on BatchChange {
-                        changesetCountsOverTime(includeArchived: $includeArchived) {
-                            ...ChangesetCountsOverTimeFields
-                        }
-                    }
+export const CHANGESET_COUNTS_OVER_TIME = gql`
+    query ChangesetCountsOverTime($batchChange: ID!, $includeArchived: Boolean!) {
+        node(id: $batchChange) {
+            __typename
+            ... on BatchChange {
+                changesetCountsOverTime(includeArchived: $includeArchived) {
+                    ...ChangesetCountsOverTimeFields
                 }
             }
+        }
+    }
 
-            ${changesetCountsOverTimeFragment}
-        `,
-        { batchChange, includeArchived }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error(`BatchChange with ID ${batchChange} does not exist`)
-            }
-            if (node.__typename !== 'BatchChange') {
-                throw new Error(`The given ID is a ${node.__typename}, not a BatchChange`)
-            }
-            return node.changesetCountsOverTime
-        })
-    )
+    ${changesetCountsOverTimeFragment}
+`
+
+export const useChangesetCountsOverTime = (
+    batchChange: Scalars['ID'],
+    includeArchived: boolean
+): QueryResult<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables> =>
+    useQuery<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables>(CHANGESET_COUNTS_OVER_TIME, {
+        variables: {
+            batchChange,
+            includeArchived,
+        },
+        fetchPolicy: 'cache-and-network',
+    })
 
 export async function deleteBatchChange(batchChange: Scalars['ID']): Promise<void> {
     const result = await requestGraphQL<DeleteBatchChangeResult, DeleteBatchChangeVariables>(
@@ -619,6 +634,7 @@ const changesetDiffFragment = gql`
     fragment ChangesetDiffFields on ExternalChangeset {
         currentSpec {
             description {
+                __typename
                 ... on GitBranchChangesetDescription {
                     commits {
                         diff

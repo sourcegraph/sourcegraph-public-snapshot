@@ -1,80 +1,73 @@
 import React, { SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
+import CommentQuoteOutline from 'mdi-react/CommentQuoteOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+import { RouteObject, useLocation } from 'react-router-dom'
 
-import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
-import { SearchContextInputProps } from '@sourcegraph/search'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, ButtonLink, useWindowSize, FeedbackPrompt, PopoverTrigger } from '@sourcegraph/wildcard'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { addSourcegraphAppOutboundUrlParameters, buildEnterpriseTrialURL } from '@sourcegraph/shared/src/util/url'
+import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
+import { CodyIcon } from '../cody/CodyIcon'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
-import { renderShortcutKey } from '../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
-import { WebCommandListPopoverButton } from '../components/shared'
+import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
+import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { NotebookProps } from '../notebooks'
-import { LayoutRouteProps } from '../routes'
+import { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
-import { ThemePreferenceProps } from '../theme'
+import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
+import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
-import { showDotComMarketing } from '../util/features'
 
+import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
-
-import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
 
 export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
-        ExtensionsControllerProps,
         TelemetryProps,
-        ThemeProps,
-        ThemePreferenceProps,
         SearchContextInputProps,
         CodeInsightsProps,
         BatchChangesProps,
         NotebookProps,
-        CodeMonitoringProps {
-    history: H.History
-    location: H.Location
+        CodeMonitoringProps,
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     showSearchBox: boolean
-    routes: readonly LayoutRouteProps<{}>[]
+    routes: RouteObject[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
-    enableLegacyExtensions?: boolean
     branding?: typeof window.context.branding
     showKeyboardShortcutsHelp: () => void
+    showFeedbackModal: () => void
 
     setFuzzyFinderIsVisible: React.Dispatch<SetStateAction<boolean>>
 }
@@ -119,56 +112,41 @@ function FuzzyFinderNavItem(setFuzzyFinderVisible: React.Dispatch<SetStateAction
                 size="sm"
             >
                 <span aria-hidden={true} aria-label={isMacPlatform() ? 'command-k' : 'ctrl-k'}>
-                    {isMacPlatform() ? renderShortcutKey('Mod') + 'K' : [renderShortcutKey('Mod'), 'K'].join('+')}
+                    {shortcutDisplayName('Mod+K')}
                 </span>
             </Button>
-        </NavAction>
-    )
-}
-const AnalyticsNavItem: React.FunctionComponent = () => {
-    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
-
-    if (isAdminAnalyticsDisabled) {
-        return null
-    }
-
-    return (
-        <NavAction className="d-none d-sm-flex">
-            <Link to="/site-admin" className={styles.link}>
-                Analytics
-            </Link>
         </NavAction>
     )
 }
 
 export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<GlobalNavbarProps>> = ({
     showSearchBox,
-    isLightTheme,
     branding,
-    location,
-    history,
     isSourcegraphDotCom,
+    isSourcegraphApp,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,
     codeMonitoringEnabled,
     notebooksEnabled,
-    extensionsController,
-    enableLegacyExtensions,
+    ownEnabled,
+    showFeedbackModal,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
 
+    const location = useLocation()
+
     const routeMatch = useRoutesMatch(props.routes)
-    const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch,
-    })
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext) && searchContextsEnabled
-    const showCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring) && codeMonitoringEnabled
-    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook) && notebooksEnabled
+    // Search context management is still enabled on .com
+    // but should not show in the navbar. Users can still
+    // access this feature via the context dropdown.
+    const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
+    const showCodeMonitoring = codeMonitoringEnabled
+    const showSearchNotebook = notebooksEnabled
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -190,11 +168,15 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
+            ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [showSearchContext])
+    }, [ownEnabled, showSearchContext])
 
-    const { fuzzyFinderNavbar } = getFuzzyFinderFeatureFlags(props.settingsCascade.final) ?? false
+    const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
+
+    const [codyEnabled] = useFeatureFlag('cody')
+    const isLightTheme = useIsLightTheme()
 
     return (
         <>
@@ -239,7 +221,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {showCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.CodeMonitoring}>
+                            <NavLink variant={navLinkVariant} to="/code-monitoring">
                                 Monitoring
                             </NavLink>
                         </NavItem>
@@ -252,17 +234,41 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Insights}>
+                            <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
                             </NavLink>
                         </NavItem>
                     )}
-                    {enableLegacyExtensions && (
-                        <NavItem icon={PuzzleOutlineIcon}>
-                            <NavLink variant={navLinkVariant} to={PageRoutes.Extensions}>
-                                Extensions
+                    {codyEnabled && (
+                        <NavItem icon={CodyIcon}>
+                            <NavLink variant={navLinkVariant} to="/cody">
+                                Cody
                             </NavLink>
                         </NavItem>
+                    )}
+                    {isSourcegraphApp && (
+                        <NavDropdown
+                            routeMatch="something-that-never-matches"
+                            toggleItem={{
+                                path: '#',
+                                icon: CommentQuoteOutline,
+                                content: 'Feedback',
+                                variant: navLinkVariant,
+                            }}
+                            mobileHomeItem={{ content: 'Feedback' }}
+                            items={[
+                                {
+                                    content: 'Join our Discord',
+                                    path: 'https://about.sourcegraph.com/community',
+                                    target: '_blank',
+                                },
+                                {
+                                    content: 'File an issue',
+                                    path: 'https://github.com/sourcegraph/app',
+                                    target: '_blank',
+                                },
+                            ]}
+                        />
                     )}
                 </NavGroup>
                 <NavActions>
@@ -270,51 +276,52 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <>
                             <NavAction>
                                 <Link className={styles.link} to="https://about.sourcegraph.com">
-                                    About <span className="d-none d-sm-inline">Sourcegraph</span>
+                                    About
                                 </Link>
                             </NavAction>
 
-                            {showDotComMarketing && (
+                            {isSourcegraphDotCom && (
                                 <NavAction>
-                                    <Link
-                                        className={classNames('font-weight-medium', styles.link)}
-                                        to="/help"
-                                        target="_blank"
-                                    >
+                                    <Link className={styles.link} to="/help" target="_blank">
                                         Docs
                                     </Link>
                                 </NavAction>
                             )}
                         </>
                     )}
-                    {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
+                    {isSourcegraphApp && (
+                        <ButtonLink
+                            variant="secondary"
+                            outline={true}
+                            to={addSourcegraphAppOutboundUrlParameters(
+                                buildEnterpriseTrialURL(props.authenticatedUser)
+                            )}
+                            size="sm"
+                            onClick={() =>
+                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBarSourcegraphApp' })
+                            }
+                        >
+                            Try Sourcegraph Enterprise
+                        </ButtonLink>
+                    )}
+                    {props.authenticatedUser?.siteAdmin && (
+                        <AccessRequestsGlobalNavItem
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                            context={window.context}
+                        />
+                    )}
+                    {isSourcegraphDotCom && (
+                        <NavAction>
+                            <Link
+                                to="https://about.sourcegraph.com"
+                                className={styles.link}
+                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBar' })}
+                            >
+                                {props.authenticatedUser && 'Get '} Enterprise
+                            </Link>
+                        </NavAction>
+                    )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    {props.authenticatedUser && (
-                        <NavAction>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
-                                <PopoverTrigger
-                                    as={Button}
-                                    aria-label="Feedback"
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                    className={styles.feedbackTrigger}
-                                >
-                                    <span>Feedback</span>
-                                </PopoverTrigger>
-                            </FeedbackPrompt>
-                        </NavAction>
-                    )}
-                    {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
-                        <NavAction>
-                            <WebCommandListPopoverButton
-                                {...props}
-                                extensionsController={extensionsController}
-                                location={location}
-                                menu={ContributableMenu.CommandPalette}
-                            />
-                        </NavAction>
-                    )}
                     {props.authenticatedUser?.siteAdmin && (
                         <NavAction>
                             <StatusMessagesNavItem />
@@ -328,7 +335,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         className="mr-1"
                                         to={
                                             '/sign-in?returnTo=' +
-                                            encodeURI(history.location.pathname + history.location.search)
+                                            encodeURI(location.pathname + location.search + location.hash)
                                         }
                                         variant="secondary"
                                         outline={true}
@@ -337,14 +344,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     >
                                         Sign in
                                     </Button>
-                                    <ButtonLink
-                                        className={styles.signUp}
-                                        to={buildGetStartedURL('nav')}
-                                        size="sm"
-                                        onClick={() => eventLogger.log('ClickedOnTopNavTrialButton')}
-                                    >
-                                        Search your code
-                                    </ButtonLink>
+                                    {!isSourcegraphDotCom && window.context?.allowSignup && (
+                                        <ButtonLink to="/sign-up" variant="primary" size="sm">
+                                            Sign up
+                                        </ButtonLink>
+                                    )}
                                 </div>
                             </NavAction>
                         </>
@@ -352,32 +356,29 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavAction>
                             <UserNavItem
                                 {...props}
-                                isLightTheme={isLightTheme}
                                 authenticatedUser={props.authenticatedUser}
-                                showDotComMarketing={showDotComMarketing}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                isSourcegraphApp={isSourcegraphApp}
                                 codeHostIntegrationMessaging={
                                     (!isErrorLike(props.settingsCascade.final) &&
                                         props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                     'browser-extension'
                                 }
+                                showFeedbackModal={showFeedbackModal}
                             />
                         </NavAction>
                     )}
                 </NavActions>
             </NavBar>
             {showSearchBox && (
-                <div className="w-100 px-3 pt-2">
-                    <div className="pb-2 border-bottom">
-                        <SearchNavbarItem
-                            {...props}
-                            location={location}
-                            history={history}
-                            isLightTheme={isLightTheme}
-                            isSourcegraphDotCom={isSourcegraphDotCom}
-                            searchContextsEnabled={searchContextsEnabled}
-                            isRepositoryRelatedPage={isRepositoryRelatedPage}
-                        />
-                    </div>
+                <div className={styles.searchNavBar}>
+                    <SearchNavbarItem
+                        {...props}
+                        isLightTheme={isLightTheme}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                        searchContextsEnabled={searchContextsEnabled}
+                        isRepositoryRelatedPage={isRepositoryRelatedPage}
+                    />
                 </div>
             )}
         </>

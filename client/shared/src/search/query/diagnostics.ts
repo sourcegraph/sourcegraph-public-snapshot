@@ -91,6 +91,8 @@ interface PatternData {
     diagnostics: Diagnostic[]
     // Used by the rev+repo patterns to keep track of the rev filter
     revFilter?: Filter
+    // Used by structural search check to add language
+    patterns: Token[]
 }
 
 function filterDiagnosticCreator(
@@ -246,13 +248,43 @@ const rules: PatternOf<Token[], PatternData>[] = [
             ),
         })
     ),
+
+    // Warn if structural search runs without `lang:` filter
+    allOf(
+        oneOf(
+            some({ field: { value: 'patterntype' }, value: { value: 'structural' } }),
+            allOf(
+                (_tokens, context) => context.data.searchPatternType === SearchPatternType.structural,
+                not(some({ field: { value: 'patterntype' }, value: { value: not('structural') } }))
+            )
+        ),
+        oneOf({
+            $pattern: not(some({ field: { value: oneOf('language', 'lang', 'l') } })),
+            $data: addDiagnostic((_tokens, context) =>
+                context.data.patterns.length > 0
+                    ? [
+                          createDiagnostic(
+                              'Add a `lang` filter when using structural search. Structural search may miss results without a `lang` filter because it only guesses the language of files searched.',
+                              context.data.patterns[0],
+                              'warning'
+                          ),
+                      ]
+                    : []
+            ),
+        })
+    ),
 ]
 
 /**
  * Returns the diagnostics for a scanned search query to be displayed in the query input.
  */
 export function getDiagnostics(tokens: Token[], searchPatternType: SearchPatternType): Diagnostic[] {
-    const result = matchesValue<Token[], PatternData>(tokens, eachOf(...rules), { searchPatternType, diagnostics: [] })
+    const patterns = tokens.filter(token => token.type === 'pattern')
+    const result = matchesValue<Token[], PatternData>(tokens, eachOf(...rules), {
+        searchPatternType,
+        diagnostics: [],
+        patterns,
+    })
     if (result.success) {
         return result.data.diagnostics
     }

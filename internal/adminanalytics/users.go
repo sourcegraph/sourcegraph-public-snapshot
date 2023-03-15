@@ -35,14 +35,14 @@ func (s *Users) Activity() (*AnalyticsFetcher, error) {
 	}, nil
 }
 
-var (
+const (
 	frequencyQuery = `
 	WITH user_days_used AS (
-        SELECT 
+        SELECT
             CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END AS user_id,
-            COUNT(DISTINCT DATE(timestamp)) AS days_used 
+            COUNT(DISTINCT DATE(timestamp)) AS days_used
         FROM event_logs
-        WHERE 
+        WHERE
             DATE(timestamp) %s
             AND %s
         GROUP BY 1
@@ -53,8 +53,8 @@ var (
         GROUP BY 1
     ),
     days_used_total_frequency AS (
-        SELECT 
-            days_used_frequency.days_used, 
+        SELECT
+            days_used_frequency.days_used,
             SUM(more_days_used_frequency.frequency) AS frequency
         FROM days_used_frequency
             LEFT JOIN days_used_frequency AS more_days_used_frequency
@@ -65,9 +65,9 @@ var (
         SELECT MAX(frequency) AS max_frequency
         FROM days_used_total_frequency
     )
-    SELECT 
-        days_used, 
-        frequency, 
+    SELECT
+        days_used,
+        frequency,
         frequency * 100.00 / COALESCE(max_frequency, 1) AS percentage
     FROM days_used_total_frequency, max_days_used_total_frequency
     ORDER BY 1 ASC;
@@ -76,7 +76,7 @@ var (
 
 func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) {
 	cacheKey := fmt.Sprintf("Users:%s:%s", "Frequencies", f.DateRange)
-	if f.Cache == true {
+	if f.Cache {
 		if nodes, err := getArrayFromCache[UsersFrequencyNode](cacheKey); err == nil {
 			return nodes, nil
 		}
@@ -113,7 +113,7 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 		nodes = append(nodes, &UsersFrequencyNode{data})
 	}
 
-	if _, err := setArrayToCache(cacheKey, nodes); err != nil {
+	if err := setArrayToCache(cacheKey, nodes); err != nil {
 		return nil, err
 	}
 
@@ -136,13 +136,13 @@ func (n *UsersFrequencyNode) Frequency() float64 { return n.Data.Frequency }
 
 func (n *UsersFrequencyNode) Percentage() float64 { return n.Data.Percentage }
 
-var (
+const (
 	mauQuery = `
-	SELECT 
+	SELECT
 		TO_CHAR(timestamp, 'YYYY-MM') AS date,
 		COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS count
 	FROM event_logs
-	WHERE 
+	WHERE
 		timestamp BETWEEN %s AND %s
     AND %s
 	GROUP BY 1
@@ -187,7 +187,7 @@ func (f *Users) MonthlyActiveUsers(ctx context.Context) ([]*MonthlyActiveUsersRo
 		nodes = append(nodes, &MonthlyActiveUsersRow{data})
 	}
 
-	if _, err := setArrayToCache(cacheKey, nodes); err != nil {
+	if err := setArrayToCache(cacheKey, nodes); err != nil {
 		return nil, err
 	}
 

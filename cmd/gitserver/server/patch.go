@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -25,7 +26,7 @@ import (
 
 var patchID uint64
 
-func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleCreateCommitFromPatchBinary(w http.ResponseWriter, r *http.Request) {
 	var req protocol.CreateCommitFromPatchRequest
 	var resp protocol.CreateCommitFromPatchResponse
 	var status int
@@ -110,12 +111,12 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// Temporary logging command wrapper
 	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
-		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args) {
+		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args[1:]) {
 			return nil, errors.New("command not on allow list")
 		}
 
 		t := time.Now()
-		out, err := runWith(ctx, cmd, true, nil)
+		out, err := runWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
 
 		logger := logger.With(
 			log.String("prefix", prefix),
@@ -188,11 +189,11 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd = exec.CommandContext(ctx, "git", applyArgs...)
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
-	cmd.Stdin = strings.NewReader(req.Patch)
+	cmd.Stdin = bytes.NewReader(req.Patch)
 
 	if out, err := run(cmd, "applying patch"); err != nil {
 		logger.Error("Failed to apply patch", log.String("output", string(out)))
-		return http.StatusInternalServerError, resp
+		return http.StatusBadRequest, resp
 	}
 
 	message := req.CommitInfo.Message

@@ -1,27 +1,24 @@
 import { act } from '@testing-library/react'
-import { createMemoryHistory } from 'history'
 import { of } from 'rxjs'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+
+import { ProductSubscriptionFieldsOnSubscriptionPage } from '../../../graphql-operations'
 
 import { UserSubscriptionsProductSubscriptionPage } from './UserSubscriptionsProductSubscriptionPage'
 
 describe('UserSubscriptionsProductSubscriptionPage', () => {
     test('renders', () => {
-        const history = createMemoryHistory()
         const component = renderWithBrandedContext(
             <UserSubscriptionsProductSubscriptionPage
                 user={{ settingsURL: '/u' }}
-                match={{ isExact: true, params: { subscriptionUUID: 's' }, path: '/p', url: '/p' }}
                 _queryProductSubscription={() =>
-                    of<GQL.IProductSubscription>({
+                    of<ProductSubscriptionFieldsOnSubscriptionPage>({
                         __typename: 'ProductSubscription',
-                    } as GQL.IProductSubscription)
+                    } as ProductSubscriptionFieldsOnSubscriptionPage)
                 }
-                history={history}
             />,
-            { history }
+            { path: '/:subscriptionUUID', route: '/43002662-f627-4550-9af6-d621d2a878de' }
         )
         act(() => undefined)
         expect(component.asFragment()).toMatchSnapshot()

@@ -6,6 +6,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -29,14 +30,18 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	defer func() { finish(alert, err) }()
 
 	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
-	err = repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
-		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
+	it := repos.Iterator(ctx, s.RepoOpts)
+
+	for it.Next() {
+		page := it.Current()
+		tr.SetAttributes(attribute.Int("resolved.len", len(page.RepoRevs)))
+		page.MaybeSendStats(stream)
 
 		descriptionMatches := make(map[api.RepoID][]result.Range)
 		if len(s.DescriptionPatterns) > 0 {
 			repoDescriptionsSet, err := s.repoDescriptions(ctx, clients.DB, page.RepoRevs)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			descriptionMatches = s.descriptionMatchRanges(repoDescriptionsSet)
 		}
@@ -44,13 +49,11 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 		stream.Send(streaming.SearchEvent{
 			Results: repoRevsToRepoMatches(page.RepoRevs, s.RepoNamePatterns, descriptionMatches),
 		})
-
-		return nil
-	})
+	}
 
 	// Do not error with no results for repo search. For text search, this is an
 	// actionable error, but for repo search, it is not.
-	err = errors.Ignore(err, errors.IsPred(searchrepos.ErrNoResolvedRepos))
+	err = errors.Ignore(it.Err(), errors.IsPred(searchrepos.ErrNoResolvedRepos))
 	return nil, err
 }
 

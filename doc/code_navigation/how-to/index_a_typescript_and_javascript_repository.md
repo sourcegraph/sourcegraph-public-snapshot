@@ -59,6 +59,10 @@ For example:
   ```sh
   scip-typescript index --yarn-workspaces
   ```
+- If you are indexing a project using Pnpm workspaces, add the `--pnpm-workspaces` flag.
+  ```sh
+  scip-typescript index --pnpm-workspaces
+  ```
 
 ## Indexing in CI using the scip-typescript Docker image
 
@@ -124,5 +128,5 @@ The steps here are similar to those in the GitHub Actions example from before.
    # for public instances
    src code-intel upload -github-token=<your github token>
    ```
-   The upload command will provide a URL you can visit to see the upload's status. 
+   The upload command will provide a URL you can visit to see the upload's status.
    Once the upload finishes processing, you can visit the repo and enjoy precise code navigation!

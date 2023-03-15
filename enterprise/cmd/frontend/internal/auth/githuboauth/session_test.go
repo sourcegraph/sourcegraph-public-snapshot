@@ -2,28 +2,22 @@ package githuboauth
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"reflect"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	githublogin "github.com/dghubble/gologin/github"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-github/github"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -375,12 +369,60 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 	}
 }
 
-func TestSessionIssuerHelper_CreateCodeHostConnection(t *testing.T) {
-	createCodeHostConnectionHelper(t, false)
-}
+func TestSessionIssuerHelper_SignupFailsWithLastError(t *testing.T) {
+	githubsvc.MockGetAuthenticatedUserEmails = func(ctx context.Context) ([]*githubsvc.UserEmail, error) {
+		return []*githubsvc.UserEmail{
+			{
+				Email:    "primary@example.com",
+				Primary:  true,
+				Verified: true,
+			},
+			{
+				Email:    "secondary@example.com",
+				Primary:  false,
+				Verified: true,
+			},
+		}, nil
+	}
+	errorMessage := "could not create new user account, license limit has been reached"
 
-func TestSessionIssuerHelper_CreateCodeHostConnectionHandlesExistingService(t *testing.T) {
-	createCodeHostConnectionHelper(t, true)
+	// We just want to make sure that we end up getting to the signup part
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+		if op.CreateIfNotExist {
+			// We should not get here as we should hit the second email address
+			// before trying again with creation enabled.
+			return 0, errorMessage, errors.New(errorMessage)
+		}
+		return 0, "no match", errors.New("no match")
+	}
+	defer func() {
+		githubsvc.MockGetAuthenticatedUserEmails = nil
+		auth.MockGetAndSaveUser = nil
+	}()
+
+	ghURL, _ := url.Parse("https://github.com")
+	codeHost := extsvc.NewCodeHost(ghURL, extsvc.TypeGitHub)
+	clientID := "client-id"
+	ghUser := &github.User{
+		ID:    github.Int64(101),
+		Login: github.String("alice"),
+	}
+
+	ctx := githublogin.WithUser(context.Background(), ghUser)
+	s := &sessionIssuerHelper{
+		CodeHost:    codeHost,
+		clientID:    clientID,
+		allowSignup: true,
+		allowOrgs:   nil,
+	}
+	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
+	_, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if err.Error() != errorMessage {
+		t.Fatalf("expected error message to be %s, got %s", errorMessage, err.Error())
+	}
 }
 
 func TestVerifyUserOrgs_UserHasMoreThan100Orgs(t *testing.T) {
@@ -419,91 +461,6 @@ func generate100Orgs(startIdx int) (orgs []*githubsvc.Org) {
 		orgs = append(orgs, &githubsvc.Org{Login: strconv.Itoa(i)})
 	}
 	return
-}
-
-func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
-	t.Helper()
-
-	ctx := context.Background()
-	db := database.NewMockDB()
-	s := &sessionIssuerHelper{db: db}
-	t.Run("Unauthenticated request", func(t *testing.T) {
-		_, _, err := s.CreateCodeHostConnection(ctx, nil, "")
-		assert.Error(t, err)
-	})
-
-	mockGitHubCom := newMockProvider(t, db, "githubcomclient", "githubcomsecret", "https://github.com/")
-	providers.MockProviders = []providers.Provider{mockGitHubCom.Provider}
-	defer func() { providers.MockProviders = nil }()
-
-	tok := &oauth2.Token{
-		AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness",
-	}
-	act := &actor.Actor{UID: 1}
-	ghUser := &github.User{
-		ID:    github.Int64(101),
-		Login: github.String("alice"),
-	}
-
-	ctx = actor.WithActor(ctx, act)
-	ctx = githublogin.WithUser(ctx, ghUser)
-	now := time.Now()
-
-	externalServices := database.NewMockExternalServiceStore()
-	externalServices.TransactFunc.SetDefaultReturn(externalServices, nil)
-	externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		if !serviceExists {
-			return nil, nil
-		}
-
-		return []*types.ExternalService{
-			{
-				Kind:        extsvc.KindGitHub,
-				DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
-				Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
-{
-  "url": "%s",
-  "token": "%s",
-  "orgs": []
-}
-`, mockGitHubCom.ServiceID, "a-token-that-should-be-replaced")),
-				NamespaceUserID: act.UID,
-				CreatedAt:       now,
-				UpdatedAt:       now,
-			},
-		}, nil
-	})
-	var got *types.ExternalService
-	externalServices.UpsertFunc.SetDefaultHook(func(ctx context.Context, svcs ...*types.ExternalService) error {
-		require.Len(t, svcs, 1)
-
-		// Tweak timestamps
-		svcs[0].CreatedAt = now
-		svcs[0].UpdatedAt = now
-		got = svcs[0]
-		return nil
-	})
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-
-	fromCreation, _, err := s.CreateCodeHostConnection(ctx, tok, mockGitHubCom.ConfigID().ID)
-	require.NoError(t, err)
-
-	want := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
-		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
-{
-  "url": "%s",
-  "token": "%s",
-  "orgs": []
-}
-`, mockGitHubCom.ServiceID, tok.AccessToken)),
-		NamespaceUserID: act.UID,
-		CreatedAt:       now,
-		UpdatedAt:       now,
-	}
-	assert.Equal(t, want, got)
-	assert.Equal(t, want, fromCreation)
 }
 
 func u(username, email string, emailIsVerified bool) database.NewUser {

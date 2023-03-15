@@ -1,18 +1,20 @@
 import { useEffect, useRef } from 'react'
 
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { BrowserRouter } from 'react-router-dom'
 import { EMPTY, NEVER } from 'rxjs'
 import { useDarkMode } from 'storybook-dark-mode'
 
-import { SearchPatternType } from '@sourcegraph/search'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { usePrependStyles } from '@sourcegraph/storybook'
+import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
+import { usePrependStyles } from '@sourcegraph/wildcard/src/stories'
 
 import { applyTheme } from '..'
 import { dark } from '../../bridge-mock/theme-snapshots/dark'
 import { light } from '../../bridge-mock/theme-snapshots/light'
+import { SearchPatternType } from '../../graphql-operations'
 
 import { JetBrainsSearchBox } from './JetBrainsSearchBox'
 
@@ -42,46 +44,46 @@ export const JetBrainsSearchBoxStory: Story = () => {
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <div ref={rootElementRef}>
-                <div className="d-flex justify-content-center">
-                    <div className="mx-6">
-                        <JetBrainsSearchBox
-                            caseSensitive={true}
-                            setCaseSensitivity={() => {}}
-                            patternType={SearchPatternType.regexp}
-                            setPatternType={() => {}}
-                            isSourcegraphDotCom={false}
-                            structuralSearchDisabled={false}
-                            queryState={{ query: 'type:file test AND test repo:contains.file(CHANGELOG)' }}
-                            onChange={() => {}}
-                            onSubmit={() => {}}
-                            authenticatedUser={null}
-                            searchContextsEnabled={true}
-                            showSearchContext={true}
-                            showSearchContextManagement={false}
-                            defaultSearchContextSpec="global"
-                            setSelectedSearchContextSpec={() => {}}
-                            selectedSearchContextSpec={undefined}
-                            fetchSearchContexts={() => {
-                                throw new Error('fetchSearchContexts')
-                            }}
-                            fetchAutoDefinedSearchContexts={() => NEVER}
-                            getUserSearchContextNamespaces={() => []}
-                            fetchStreamSuggestions={() => NEVER}
-                            settingsCascade={EMPTY_SETTINGS_CASCADE}
-                            globbing={false}
-                            isLightTheme={!isDarkTheme}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                            platformContext={{ requestGraphQL: () => EMPTY }}
-                            className=""
-                            containerClassName=""
-                            autoFocus={true}
-                            editorComponent="monaco"
-                            hideHelpButton={true}
-                        />
+            <ThemeContext.Provider value={{ themeSetting: !isDarkTheme ? ThemeSetting.Light : ThemeSetting.Dark }}>
+                <BrowserRouter>
+                    <div ref={rootElementRef}>
+                        <div className="d-flex justify-content-center">
+                            <div className="mx-6">
+                                <JetBrainsSearchBox
+                                    caseSensitive={true}
+                                    setCaseSensitivity={() => {}}
+                                    patternType={SearchPatternType.regexp}
+                                    setPatternType={() => {}}
+                                    isSourcegraphDotCom={false}
+                                    structuralSearchDisabled={false}
+                                    queryState={{ query: 'type:file test AND test repo:contains.file(CHANGELOG)' }}
+                                    onChange={() => {}}
+                                    onSubmit={() => {}}
+                                    authenticatedUser={null}
+                                    searchContextsEnabled={true}
+                                    showSearchContext={true}
+                                    showSearchContextManagement={false}
+                                    setSelectedSearchContextSpec={() => {}}
+                                    selectedSearchContextSpec={undefined}
+                                    fetchSearchContexts={() => {
+                                        throw new Error('fetchSearchContexts')
+                                    }}
+                                    getUserSearchContextNamespaces={() => []}
+                                    fetchStreamSuggestions={() => NEVER}
+                                    settingsCascade={EMPTY_SETTINGS_CASCADE}
+                                    globbing={false}
+                                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                                    platformContext={{ requestGraphQL: () => EMPTY }}
+                                    className=""
+                                    containerClassName=""
+                                    autoFocus={true}
+                                    hideHelpButton={true}
+                                />
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
+                </BrowserRouter>
+            </ThemeContext.Provider>
         </WildcardThemeContext.Provider>
     )
 }

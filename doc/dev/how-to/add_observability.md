@@ -23,11 +23,7 @@ The high-level ideas behind the [`internal/observation` package](https://sourceg
 ## Usage
 
 ```go
-observationContext := observation.Context{
-    Logger:     log.Scoped("my-scope", "a simple description"),
-    Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-    Registerer: prometheus.DefaultRegisterer,
-}
+observationContext := observation.NewContext(log.Scoped("my-scope", "a simple description"))
 
 metrics := metrics.NewREDMetrics(
     observationContext.Registerer,
@@ -41,7 +37,7 @@ operation := observationContext.Operation(observation.Op{
     Metrics:      metrics,
 })
 
-// You can log some logs directly using operation - these logs will be structured
+// You can log some logs directly using operation—these logs will be structured
 // with context about your operation.
 operation.Info("something happened!", log.String("additional", "context"))
 
@@ -55,7 +51,7 @@ function SomeOperation(ctx context.Context) (err error) {
 
     // ...
 
-    // You can log some logs directly from the returned trace - these logs will be
+    // You can log some logs directly from the returned trace—these logs will be
     // structured with the trace ID, trace fields, and observation context.
     trace.Info("I did the thing!", log.Int("things", 3))
 

@@ -6,23 +6,24 @@ import (
 	"flag"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/oauth2"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetAuthenticatedUserOAuthScopes(t *testing.T) {
@@ -102,16 +103,6 @@ func TestClient_doWithBaseURL(t *testing.T) {
 
 	ctx := context.Background()
 
-	mockOauthContext := &oauthutil.OAuthContext{
-		ClientID:     "client_id",
-		ClientSecret: "client_secret",
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "url/oauth/authorize",
-			TokenURL: "url/oauth/token",
-		},
-		Scopes: []string{"read_user"},
-	}
-
 	provider := NewClientProvider("Test", baseURL, doer)
 
 	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", RefreshFunc: func(ctx context.Context, cli httpcli.Doer, obt *auth.OAuthBearerToken) (string, string, time.Time, error) {
@@ -125,8 +116,101 @@ func TestClient_doWithBaseURL(t *testing.T) {
 	require.NoError(t, err)
 
 	var result map[string]any
-	_, _, err = client.doWithBaseURL(ctx, mockOauthContext, req, &result)
+	_, _, err = client.doWithBaseURL(ctx, req, &result)
 	require.NoError(t, err)
+}
+
+func TestRateLimitRetry(t *testing.T) {
+	rcache.SetupForTest(t)
+
+	ctx := context.Background()
+
+	tests := map[string]struct {
+		useRateLimit     bool
+		useRetryAfter    bool
+		succeeded        bool
+		waitForRateLimit bool
+		wantNumRequests  int
+	}{
+		"retry-after hit": {
+			useRetryAfter:    true,
+			succeeded:        true,
+			waitForRateLimit: true,
+			wantNumRequests:  2,
+		},
+		"rate limit hit": {
+			useRateLimit:     true,
+			succeeded:        true,
+			waitForRateLimit: true,
+			wantNumRequests:  2,
+		},
+		"no rate limit hit": {
+			succeeded:        true,
+			waitForRateLimit: true,
+			wantNumRequests:  1,
+		},
+		"error if rate limit hit but no waitForRateLimit": {
+			useRateLimit:    true,
+			wantNumRequests: 1,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			numRequests := 0
+			succeeded := false
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				numRequests += 1
+				if tt.useRetryAfter {
+					w.Header().Add("Retry-After", "1")
+					w.WriteHeader(http.StatusTooManyRequests)
+					w.Write([]byte("Try again later"))
+
+					tt.useRetryAfter = false
+					return
+				}
+
+				if tt.useRateLimit {
+					w.Header().Add("RateLimit-Name", "test")
+					w.Header().Add("RateLimit-Limit", "60")
+					w.Header().Add("RateLimit-Observed", "67")
+					w.Header().Add("RateLimit-Remaining", "0")
+					resetTime := time.Now().Add(time.Second)
+					w.Header().Add("RateLimit-Reset", strconv.Itoa(int(resetTime.Unix())))
+					w.WriteHeader(http.StatusTooManyRequests)
+					w.Write([]byte("Try again later"))
+
+					tt.useRateLimit = false
+					return
+				}
+
+				succeeded = true
+				w.Write([]byte(`{"some": "response"}`))
+			}))
+			t.Cleanup(srv.Close)
+
+			srvURL, err := url.Parse(srv.URL)
+			require.NoError(t, err)
+
+			provider := NewClientProvider("Test", srvURL, nil)
+			client := provider.getClient(nil)
+			client.waitForRateLimit = tt.waitForRateLimit
+
+			req, err := http.NewRequest(http.MethodGet, "url", nil)
+			require.NoError(t, err)
+			var result map[string]any
+
+			_, _, err = client.do(ctx, req, &result)
+			if tt.succeeded {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+
+			assert.Equal(t, tt.succeeded, succeeded)
+			assert.Equal(t, tt.wantNumRequests, numRequests)
+		})
+	}
 }
 
 func TestGetOAuthContext(t *testing.T) {

@@ -17,6 +17,8 @@ const (
 	maxFiles          = 5
 )
 
+var escaper = strings.NewReplacer(" ", `\ `)
+
 func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (string, result.Ranges) {
 	var buf strings.Builder
 	var loc result.Location
@@ -34,13 +36,16 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (s
 		fileCount++
 
 		ranges = append(ranges, fdh.OldFile.Add(loc)...)
-		buf.WriteString(fileDiff.OrigName)
+		// NOTE(@camdencheek): this does not correctly update the highlight ranges of files with spaces in the name.
+		// Doing so would require a smarter replacer.
+		escaped := escaper.Replace(fileDiff.OrigName)
+		buf.WriteString(escaped)
 		buf.WriteByte(' ')
 		loc.Offset = buf.Len()
-		loc.Column = len(fileDiff.OrigName) + len(" ")
+		loc.Column = len(escaped) + len(" ")
 
 		ranges = append(ranges, fdh.NewFile.Add(loc)...)
-		buf.WriteString(fileDiff.NewName)
+		buf.WriteString(escaper.Replace(fileDiff.NewName))
 		buf.WriteByte('\n')
 		loc.Offset = buf.Len()
 		loc.Line++

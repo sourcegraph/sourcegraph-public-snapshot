@@ -68,6 +68,7 @@ exports[`HoverOverlay actions and hover loading 1`] = `
           aria-label="Loading"
           aria-live="polite"
           class="mdi-icon loadingSpinner"
+          data-loading-spinner="true"
           role="img"
         />
       </div>
@@ -112,7 +113,6 @@ exports[`HoverOverlay actions and hover present 1`] = `
         >
           <button
             class="test-action-item action test-tooltip-untitled"
-            data-state="closed"
             type="button"
           >
               
@@ -215,7 +215,6 @@ exports[`HoverOverlay actions present 1`] = `
         >
           <button
             class="test-action-item action test-tooltip-some-title"
-            data-state="closed"
             type="button"
           >
              Some title 
@@ -245,6 +244,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
           aria-label="Loading"
           aria-live="polite"
           class="mdi-icon loadingSpinner"
+          data-loading-spinner="true"
           role="img"
         />
       </div>
@@ -260,91 +260,6 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
         >
           <button
             class="test-action-item action test-tooltip-untitled"
-            data-state="closed"
-            type="button"
-          >
-              
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</DocumentFragment>
-`;
-
-exports[`HoverOverlay actions, hover and alert present 1`] = `
-<DocumentFragment>
-  <div
-    class="card hoverOverlay"
-    data-testid="hover-overlay"
-    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
-  >
-    <div
-      class="hoverOverlayContents"
-      data-testid="hover-overlay-contents"
-    >
-      <span
-        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-        data-testid="hover-overlay-content"
-      >
-        <p>
-          v
-        </p>
-        
-
-      </span>
-    </div>
-    <div
-      class="hoverOverlayAlerts"
-    >
-      <div
-        aria-live="polite"
-        class="alert"
-        role="alert"
-      >
-        <span
-          class="hoverOverlayContent hoverOverlayContent"
-          data-testid="hover-overlay-content"
-        >
-          <span>
-            <p>
-              Testing 
-              <code>
-                markdown
-              </code>
-               rendering.
-            </p>
-            
-
-          </span>
-        </span>
-        <div
-          class="alertDismiss"
-        >
-          <a
-            class=""
-            href=""
-            role="button"
-          >
-            <small>
-              Dismiss
-            </small>
-          </a>
-        </div>
-      </div>
-    </div>
-    <div
-      class="actionsContainer"
-    >
-      <div
-        class="actions"
-      >
-        <div
-          class="actionsInner"
-        >
-          <button
-            class="test-action-item action test-tooltip-untitled"
-            data-state="closed"
             type="button"
           >
               
@@ -414,7 +329,6 @@ exports[`HoverOverlay hover error, actions present 1`] = `
         >
           <button
             class="test-action-item action test-tooltip-untitled"
-            data-state="closed"
             type="button"
           >
               
@@ -444,6 +358,7 @@ exports[`HoverOverlay hover loading 1`] = `
           aria-label="Loading"
           aria-live="polite"
           class="mdi-icon loadingSpinner"
+          data-loading-spinner="true"
           role="img"
         />
       </div>

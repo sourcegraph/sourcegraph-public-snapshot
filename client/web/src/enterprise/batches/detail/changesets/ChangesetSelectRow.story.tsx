@@ -56,7 +56,16 @@ export const AllStates: Story = args => {
     const initialSelected = CHANGESET_IDS.slice(0, args.selectedChangesets)
     const initialVisible = CHANGESET_IDS.slice(0, args.visibleChangesets)
 
-    const queryAvailableBulkOperations: typeof _queryAvailableBulkOperations = () => of(allBulkOperations)
+    const createAvailableOperationsQuery =
+        (bulkOperations: BulkOperationType[]): typeof _queryAvailableBulkOperations =>
+        () =>
+            of(bulkOperations)
+
+    const allAvailableBulkOperationsQuery = createAvailableOperationsQuery(allBulkOperations)
+    const commentAndDetachBulkOperationsQuery = createAvailableOperationsQuery([
+        BulkOperationType.COMMENT,
+        BulkOperationType.DETACH,
+    ])
 
     return (
         <WebStory>
@@ -69,7 +78,7 @@ export const AllStates: Story = args => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAllChangesetIDs}
-                            queryAvailableBulkOperations={queryAvailableBulkOperations}
+                            queryAvailableBulkOperations={allAvailableBulkOperationsQuery}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -89,7 +98,7 @@ export const AllStates: Story = args => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll100ChangesetIDs}
-                            queryAvailableBulkOperations={queryAvailableBulkOperations}
+                            queryAvailableBulkOperations={allAvailableBulkOperationsQuery}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -109,7 +118,7 @@ export const AllStates: Story = args => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll100ChangesetIDs}
-                            queryAvailableBulkOperations={queryAvailableBulkOperations}
+                            queryAvailableBulkOperations={allAvailableBulkOperationsQuery}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -129,7 +138,7 @@ export const AllStates: Story = args => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll100ChangesetIDs}
-                            queryAvailableBulkOperations={queryAvailableBulkOperations}
+                            queryAvailableBulkOperations={allAvailableBulkOperationsQuery}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -149,7 +158,7 @@ export const AllStates: Story = args => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll50ChangesetIDs}
-                            queryAvailableBulkOperations={queryAvailableBulkOperations}
+                            queryAvailableBulkOperations={allAvailableBulkOperationsQuery}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -169,7 +178,7 @@ export const AllStates: Story = args => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll50ChangesetIDs}
-                            queryAvailableBulkOperations={queryAvailableBulkOperations}
+                            queryAvailableBulkOperations={allAvailableBulkOperationsQuery}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -189,7 +198,7 @@ export const AllStates: Story = args => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll100ChangesetIDs}
-                            queryAvailableBulkOperations={queryAvailableBulkOperations}
+                            queryAvailableBulkOperations={allAvailableBulkOperationsQuery}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -212,7 +221,7 @@ export const AllStates: Story = args => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll100ChangesetIDs}
-                            queryAvailableBulkOperations={queryAvailableBulkOperations}
+                            queryAvailableBulkOperations={allAvailableBulkOperationsQuery}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -232,7 +241,7 @@ export const AllStates: Story = args => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll100ChangesetIDs}
-                            queryAvailableBulkOperations={queryAvailableBulkOperations}
+                            queryAvailableBulkOperations={allAvailableBulkOperationsQuery}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -252,7 +261,7 @@ export const AllStates: Story = args => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll50ChangesetIDs}
-                            queryAvailableBulkOperations={queryAvailableBulkOperations}
+                            queryAvailableBulkOperations={allAvailableBulkOperationsQuery}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -275,7 +284,32 @@ export const AllStates: Story = args => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll50ChangesetIDs}
-                            queryAvailableBulkOperations={queryAvailableBulkOperations}
+                            queryAvailableBulkOperations={allAvailableBulkOperationsQuery}
+                            queryArguments={{
+                                batchChange: 'test-123',
+                                checkState: null,
+                                onlyArchived: null,
+                                onlyPublishedByThisBatchChange: null,
+                                reviewState: null,
+                                search: null,
+                                state: null,
+                            }}
+                        />
+                    </MultiSelectContextProvider>
+                    <hr />
+                    <H3 className="mt-3">
+                        Half visible, half selectable, half selected with a subset of available bulk operations
+                    </H3>
+                    <MultiSelectContextProvider
+                        initialSelected={HALF_CHANGESET_IDS}
+                        initialVisible={HALF_CHANGESET_IDS}
+                    >
+                        <ChangesetSelectRow
+                            {...props}
+                            onSubmit={onSubmit}
+                            batchChangeID="test-123"
+                            queryAllChangesetIDs={queryAll50ChangesetIDs}
+                            queryAvailableBulkOperations={commentAndDetachBulkOperationsQuery}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,

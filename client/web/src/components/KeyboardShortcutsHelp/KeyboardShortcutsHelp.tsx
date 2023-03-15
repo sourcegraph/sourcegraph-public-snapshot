@@ -1,15 +1,19 @@
 import React from 'react'
 
 import { mdiClose } from '@mdi/js'
+import { omit } from 'lodash'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { isMacPlatform } from '@sourcegraph/common'
-import { Keybinding, KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-import { ModifierKey, Key } from '@sourcegraph/shared/src/react-shortcuts'
-import { getModKey } from '@sourcegraph/shared/src/react-shortcuts/ShortcutManager'
+import { Keybinding, KeyboardShortcut, shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
+import {
+    KEYBOARD_SHORTCUTS,
+    EXPERIMENTAL_BLOB_PAGE_SHORTCUTS,
+} from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Modal, Icon, H4, Label } from '@sourcegraph/wildcard'
+
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
 import styles from './KeyboardShortcutsHelp.module.scss'
 
@@ -28,19 +32,6 @@ const LEGACY_KEYBOARD_SHORTCUTS: Record<string, KeyboardShortcut> = {
         keybindings: [{ ordered: ['y'] }],
     },
 }
-
-const SHORTCUT_KEY_TO_NAME: { [P in Key | ModifierKey | string]?: string } = {
-    Mod: ((modKey: string) => (modKey === 'Meta' ? (isMacPlatform() ? '⌘' : 'Cmd') : 'Ctrl'))(getModKey()),
-    Meta: isMacPlatform() ? '⌘' : 'Cmd',
-    Shift: isMacPlatform() ? '⇧' : 'Shift',
-    Control: 'Ctrl',
-    '†': 't',
-}
-
-export function renderShortcutKey(key: string): string {
-    return SHORTCUT_KEY_TO_NAME[key] ?? key
-}
-
 const MODAL_LABEL_ID = 'keyboard-shortcuts-help-modal-title'
 
 export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -51,7 +42,7 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChild
         'characterKeyShortcuts.enabled',
         true
     )
-
+    const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
     return (
         <Modal
             position="center"
@@ -68,7 +59,12 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChild
             </div>
             <div>
                 <ul className="list-group list-group-flush">
-                    {Object.values({ ...KEYBOARD_SHORTCUTS, ...LEGACY_KEYBOARD_SHORTCUTS })
+                    {Object.values({
+                        ...(enableBlobPageSwitchAreasShortcuts
+                            ? KEYBOARD_SHORTCUTS
+                            : omit(KEYBOARD_SHORTCUTS, Object.keys(EXPERIMENTAL_BLOB_PAGE_SHORTCUTS))),
+                        ...LEGACY_KEYBOARD_SHORTCUTS,
+                    })
                         .filter(({ hideInHelp }) => !hideInHelp)
                         .map(({ title, keybindings }, index) => (
                             <li
@@ -104,7 +100,8 @@ export function plaintextKeybindings(keybindings: Keybinding[]): string {
     return keybindings
         .map<string>(keybinding => {
             const ordered = keybinding.ordered.map(key => key.toUpperCase())
-            return [...(keybinding.held || []), ...ordered].map(key => renderShortcutKey(key)).join('')
+            const joinString = isMacPlatform() ? '' : '+'
+            return [...(keybinding.held || []), ...ordered].map(key => shortcutDisplayName(key)).join(joinString)
         })
         .join(' or ')
 }
@@ -112,12 +109,13 @@ export const Keybindings: React.FunctionComponent<KeybindingProps> = ({ keybindi
     <>
         {keybindings.map((keybinding, index) => {
             const ordered = uppercaseOrdered ? keybinding.ordered.map(key => key.toUpperCase()) : keybinding.ordered
+            const joinString = isMacPlatform() ? '' : '+'
             return (
                 <span key={index}>
                     {index !== 0 && ' or '}
-                    {[...(keybinding.held || []), ...ordered].map((key, index) => (
-                        <kbd key={index}>{renderShortcutKey(key)}</kbd>
-                    ))}
+                    {[...(keybinding.held || []), ...ordered]
+                        .map<React.ReactNode>((key, index) => <kbd key={index}>{shortcutDisplayName(key)}</kbd>)
+                        .reduce((previous, current) => [previous, joinString, current])}
                 </span>
             )
         })}

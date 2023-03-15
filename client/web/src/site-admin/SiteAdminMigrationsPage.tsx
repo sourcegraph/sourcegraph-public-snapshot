@@ -2,12 +2,11 @@ import React, { useCallback, useMemo } from 'react'
 
 import { mdiAlertCircle, mdiAlert, mdiArrowLeftBold, mdiArrowRightBold } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 import { Observable, of, timer } from 'rxjs'
 import { catchError, concatMap, delay, map, repeatWhen, takeWhile } from 'rxjs/operators'
 import { parse as _parseVersion, SemVer } from 'semver'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -21,12 +20,12 @@ import {
     Text,
     Tooltip,
     PageHeader,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { Timestamp } from '../components/time/Timestamp'
 import { OutOfBandMigrationFields } from '../graphql-operations'
 
 import {
@@ -36,7 +35,7 @@ import {
 
 import styles from './SiteAdminMigrationsPage.module.scss'
 
-export interface SiteAdminMigrationsPageProps extends RouteComponentProps<{}>, TelemetryProps {
+export interface SiteAdminMigrationsPageProps extends TelemetryProps {
     fetchAllMigrations?: typeof defaultFetchAllMigrations
     fetchSiteUpdateCheck?: () => Observable<{ productVersion: string }>
     now?: () => Date
@@ -86,7 +85,6 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
     now,
     telemetryService,
-    ...props
 }) => {
     const migrationsOrError = useObservable(
         useMemo(
@@ -163,9 +161,8 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
                             queryConnection={queryMigrations}
                             nodeComponent={MigrationNode}
                             nodeComponentProps={{ now }}
-                            history={props.history}
-                            location={props.location}
                             filters={filters}
+                            autoFocus={false}
                         />
                     </Container>
                 </>
@@ -184,9 +181,10 @@ const MigrationBanners: React.FunctionComponent<React.PropsWithChildren<Migratio
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
 }) => {
     const productVersion = useObservable(
-        useMemo(() => fetchSiteUpdateCheck().pipe(map(site => parseVersion(site.productVersion))), [
-            fetchSiteUpdateCheck,
-        ])
+        useMemo(
+            () => fetchSiteUpdateCheck().pipe(map(site => parseVersion(site.productVersion))),
+            [fetchSiteUpdateCheck]
+        )
     )
     if (!productVersion) {
         return <></>

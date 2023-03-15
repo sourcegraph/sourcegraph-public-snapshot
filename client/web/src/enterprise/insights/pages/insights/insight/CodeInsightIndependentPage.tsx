@@ -1,5 +1,7 @@
 import { FunctionComponent, useContext, useEffect, useMemo } from 'react'
 
+import { useParams } from 'react-router-dom'
+
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
@@ -16,14 +18,16 @@ import { Standalone404Insight } from './components/standalone-404-insight/Standa
 import styles from './CodeInsightIndependentPage.module.scss'
 
 interface CodeInsightIndependentPage extends TelemetryProps {
-    insightId: string
+    isSourcegraphApp: boolean
 }
 
 export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependentPage> = props => {
-    const { insightId, telemetryService } = props
+    const { telemetryService } = props
+
+    const { insightId } = useParams()
     const { getInsightById } = useContext(CodeInsightsBackendContext)
 
-    const insight = useObservable(useMemo(() => getInsightById(insightId), [getInsightById, insightId]))
+    const insight = useObservable(useMemo(() => getInsightById(insightId!), [getInsightById, insightId]))
 
     useEffect(() => {
         telemetryService.logPageView('StandaloneInsightPage')
@@ -38,10 +42,10 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
     }
 
     return (
-        <CodeInsightsPage className={styles.root}>
+        <CodeInsightsPage isSourcegraphApp={props.isSourcegraphApp} className={styles.root}>
             <PageTitle title={`${insight.title} - Code Insights`} />
             <PageHeader
-                path={[{ to: '/insights/dashboards/all', icon: CodeInsightsIcon }, { text: insight.title }]}
+                path={[{ to: '/insights/all', icon: CodeInsightsIcon }, { text: insight.title }]}
                 actions={<CodeInsightIndependentPageActions insight={insight} telemetryService={telemetryService} />}
             />
 

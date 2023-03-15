@@ -5,12 +5,10 @@ package srcprometheus
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"syscall"
-	"time"
-
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,7 +27,6 @@ var PrometheusURL = env.Get("PROMETHEUS_URL", "", "prometheus server URL")
 // prom-wrapper. See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 type Client interface {
 	GetAlertsStatus(ctx context.Context) (*AlertsStatus, error)
-	GetAlertsHistory(ctx context.Context, timespan time.Duration) (*AlertsHistory, error)
 	GetConfigStatus(ctx context.Context) (*ConfigStatus, error)
 }
 
@@ -79,8 +76,10 @@ func (c *client) do(ctx context.Context, req *http.Request) (*http.Response, err
 		return nil, errors.Errorf("src-prometheus: %w", err)
 	}
 	if resp.StatusCode != 200 {
-		log15.Error("src-prometheus request made but failed with non-zero status", "request", req, "resp", resp)
-		return nil, errors.Errorf("src-prometheus: %s %q: failed with status %d", req.Method, req.URL.String(), resp.StatusCode)
+		respBody, _ := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		return nil, errors.Errorf("src-prometheus: %s %q: failed with status %d: %s",
+			req.Method, req.URL.String(), resp.StatusCode, string(respBody))
 	}
 	return resp, nil
 }
@@ -104,29 +103,6 @@ func (c *client) GetAlertsStatus(ctx context.Context) (*AlertsStatus, error) {
 		return nil, err
 	}
 	return &alertsStatus, nil
-}
-
-const EndpointAlertsStatusHistory = EndpointAlertsStatus + "/history"
-
-// GetAlertsHistory retrieves a historical summary of all alerts
-func (c *client) GetAlertsHistory(ctx context.Context, timespan time.Duration) (*AlertsHistory, error) {
-	query := make(url.Values)
-	query.Add("timespan", timespan.String())
-	req, err := c.newRequest(EndpointAlertsStatusHistory, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.do(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	var alertsHistory AlertsHistory
-	defer resp.Body.Close()
-	if err := json.NewDecoder(resp.Body).Decode(&alertsHistory); err != nil {
-		return nil, err
-	}
-	return &alertsHistory, nil
 }
 
 const EndpointConfigSubscriber = "/prom-wrapper/config-subscriber"

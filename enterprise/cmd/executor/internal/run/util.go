@@ -1,16 +1,16 @@
 package run
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net/url"
 	"os/exec"
 	"runtime"
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
@@ -18,9 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func newQueueTelemetryOptions(ctx context.Context, useFirecracker bool, logger log.Logger) queue.TelemetryOptions {
@@ -58,39 +58,42 @@ func newQueueTelemetryOptions(ctx context.Context, useFirecracker bool, logger l
 }
 
 func getGitVersion(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "git", "version")
-	out, err := cmd.Output()
+	out, err := execOutput(ctx, "git", "version")
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimPrefix(strings.TrimSpace(string(out)), "git version "), nil
+	return strings.TrimPrefix(out, "git version "), nil
 }
 
 func getSrcVersion(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "src", "version", "-client-only")
-	out, err := cmd.Output()
+	out, err := execOutput(ctx, "src", "version", "-client-only")
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimPrefix(strings.TrimSpace(string(out)), "Current version: "), nil
+	return strings.TrimPrefix(out, "Current version: "), nil
 }
 
 func getDockerVersion(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "docker", "version", "-f", "{{.Server.Version}}")
-	out, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(out)), nil
+	return execOutput(ctx, "docker", "version", "-f", "{{.Server.Version}}")
 }
 
 func getIgniteVersion(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "ignite", "version", "-o", "short")
-	out, err := cmd.Output()
-	if err != nil {
-		return "", err
+	return execOutput(ctx, "ignite", "version", "-o", "short")
+}
+
+// execCommand allows the ability to mock the command in unit tests.
+var execCommand = exec.CommandContext
+
+func execOutput(ctx context.Context, name string, args ...string) (string, error) {
+	var buf bytes.Buffer
+	cmd := execCommand(ctx, name, args...)
+	cmd.Stderr = &buf
+	cmd.Stdout = &buf
+	if err := cmd.Run(); err != nil {
+		cmdLine := strings.Join(append([]string{name}, args...), " ")
+		return "", errors.Wrap(err, fmt.Sprintf("'%s': %s", cmdLine, buf.String()))
 	}
-	return strings.TrimSpace(string(out)), nil
+	return strings.TrimSpace(buf.String()), nil
 }
 
 func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOptions) apiworker.Options {
@@ -99,6 +102,7 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 		KeepWorkspaces:     c.KeepWorkspaces,
 		QueueName:          c.QueueName,
 		WorkerOptions:      workerOptions(c),
+		DockerOptions:      dockerOptions(c),
 		FirecrackerOptions: firecrackerOptions(c),
 		ResourceOptions:    resourceOptions(c),
 		GitServicePath:     "/.executors/git",
@@ -121,7 +125,6 @@ func workerOptions(c *config.Config) workerutil.WorkerOptions {
 		NumHandlers:          c.MaximumNumJobs,
 		Interval:             c.QueuePollInterval,
 		HeartbeatInterval:    5 * time.Second,
-		CancelInterval:       c.QueuePollInterval,
 		Metrics:              makeWorkerMetrics(c.QueueName),
 		NumTotalJobs:         c.NumTotalJobs,
 		MaxActiveTime:        c.MaxActiveTime,
@@ -130,14 +133,29 @@ func workerOptions(c *config.Config) workerutil.WorkerOptions {
 	}
 }
 
+func dockerOptions(c *config.Config) command.DockerOptions {
+	u, _ := url.Parse(c.FrontendURL)
+	return command.DockerOptions{
+		DockerAuthConfig: c.DockerAuthConfig,
+		// If the configured Sourcegraph endpoint is host.docker.internal add a
+		// host entry and route to it to the containers. This is used for LSIF
+		// uploads and should not be required anymore once we support native uploads.
+		AddHostGateway: u.Hostname() == "host.docker.internal",
+	}
+}
+
 func firecrackerOptions(c *config.Config) command.FirecrackerOptions {
+	dockerMirrors := []string{}
+	if len(c.DockerRegistryMirrorURL) > 0 {
+		dockerMirrors = strings.Split(c.DockerRegistryMirrorURL, ",")
+	}
 	return command.FirecrackerOptions{
 		Enabled:                  c.UseFirecracker,
 		Image:                    c.FirecrackerImage,
 		KernelImage:              c.FirecrackerKernelImage,
 		SandboxImage:             c.FirecrackerSandboxImage,
 		VMStartupScriptPath:      c.VMStartupScriptPath,
-		DockerRegistryMirrorURLs: strings.Split(c.DockerRegistryMirrorURL, ","),
+		DockerRegistryMirrorURLs: dockerMirrors,
 	}
 }
 
@@ -155,6 +173,7 @@ func resourceOptions(c *config.Config) command.ResourceOptions {
 func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) queue.Options {
 	return queue.Options{
 		ExecutorName:      c.WorkerHostname,
+		QueueName:         c.QueueName,
 		BaseClientOptions: baseClientOptions(c, "/.executors/queue"),
 		TelemetryOptions:  telemetryOptions,
 		ResourceOptions: queue.ResourceOptions{
@@ -167,12 +186,14 @@ func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) que
 
 func filesOptions(c *config.Config) apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
+		ExecutorName:    c.WorkerHostname,
 		EndpointOptions: endpointOptions(c, "/.executors/files"),
 	}
 }
 
 func baseClientOptions(c *config.Config, pathPrefix string) apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
+		ExecutorName:    c.WorkerHostname,
 		EndpointOptions: endpointOptions(c, pathPrefix),
 	}
 }
@@ -186,13 +207,9 @@ func endpointOptions(c *config.Config, pathPrefix string) apiclient.EndpointOpti
 }
 
 func makeWorkerMetrics(queueName string) workerutil.WorkerObservability {
-	observationContext := &observation.Context{
-		Logger:     log.Scoped("executor_processor", "executor worker processor"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationCtx := observation.NewContext(log.Scoped("executor_processor", "executor worker processor"))
 
-	return workerutil.NewMetrics(observationContext, "executor_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }),
+	return workerutil.NewMetrics(observationCtx, "executor_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }),
 		// derived from historic data, ideally we will use spare high-res histograms once they're a reality
 		// 										 30s 1m	 2.5m 5m   7.5m 10m  15m  20m	30m	  45m	1hr
 		workerutil.WithDurationBuckets([]float64{30, 60, 150, 300, 450, 600, 900, 1200, 1800, 2700, 3600}),

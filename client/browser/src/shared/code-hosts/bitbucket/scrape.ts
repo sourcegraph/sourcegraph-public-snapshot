@@ -303,9 +303,8 @@ export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
 export const getFileInfoFromCommitDiffCodeView = (codeViewElement: HTMLElement): DiffInfo => {
     const commitID = getCommitIDFromLink('.commit-badge-oneline .commitid')
     const baseCommitID = getCommitIDFromLink('.commit-parents .commitid')
-    const { rawRepoName, filePath, baseFilePath } = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(
-        codeViewElement
-    )
+    const { rawRepoName, filePath, baseFilePath } =
+        getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeViewElement)
     return {
         head: { rawRepoName, filePath, commitID },
         base: {

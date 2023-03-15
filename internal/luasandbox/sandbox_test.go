@@ -246,7 +246,13 @@ func TestCallGenerator(t *testing.T) {
 func TestDefaultLuaModulesFilesLoad(t *testing.T) {
 	ctx := context.Background()
 
-	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{})
+	modules, err := DefaultGoModules.Init()
+	if err != nil {
+		t.Fatalf("unexpected error loading modules: %s", err)
+	}
+	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{
+		GoModules: modules,
+	})
 	if err != nil {
 		t.Fatalf("unexpected error creating sandbox: %s", err)
 	}

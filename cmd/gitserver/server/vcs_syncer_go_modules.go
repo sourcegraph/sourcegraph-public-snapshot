@@ -8,12 +8,11 @@ import (
 	"os"
 	"path"
 
+	"github.com/sourcegraph/log"
 	"golang.org/x/mod/module"
 	modzip "golang.org/x/mod/zip"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -109,7 +108,7 @@ func unzip(mod module.Version, zipBytes []byte, workDir string) error {
 	err = unpack.Zip(br, int64(br.Len()), workDir, unpack.Opts{
 		SkipInvalid: true,
 		Filter: func(path string, file fs.FileInfo) bool {
-			_, malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
+			malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
 			_, ok := valid[path]
 			return ok && !malicious
 		},

@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "auth",
+    srcs = [
+        "const.go",
+        "orgs.go",
+        "site_admin.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/auth",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/types",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    timeout = "short",
+    name = "auth_test",
+    srcs = ["site_admin_test.go"],
+    embed = [":auth"],
+    deps = [
+        "//internal/actor",
+        "//internal/database",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_stretchr_testify//require",
+    ],
+)

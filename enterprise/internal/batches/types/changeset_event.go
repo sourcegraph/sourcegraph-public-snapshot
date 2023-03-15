@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -102,6 +104,19 @@ const (
 	ChangesetEventKindBitbucketCloudRepoCommitStatusCreated          ChangesetEventKind = "bitbucketcloud:repo:commit_status_created"          // RepoCommitStatusCreatedEvent
 	ChangesetEventKindBitbucketCloudRepoCommitStatusUpdated          ChangesetEventKind = "bitbucketcloud:repo:commit_status_updated"          // RepoCommitStatusUpdatedEvent
 
+	ChangesetEventKindAzureDevOpsPullRequestCreated                 ChangesetEventKind = "azuredevops:pullrequest:created"
+	ChangesetEventKindAzureDevOpsPullRequestMerged                  ChangesetEventKind = "azuredevops:pullrequest:merged"
+	ChangesetEventKindAzureDevOpsPullRequestUpdated                 ChangesetEventKind = "azuredevops:pullrequest:updated"
+	ChangesetEventKindAzureDevOpsPullRequestApproved                ChangesetEventKind = "azuredevops:pullrequest:approved"
+	ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions ChangesetEventKind = "azuredevops:pullrequest:approved_with_suggestions"
+	ChangesetEventKindAzureDevOpsPullRequesReviewed                 ChangesetEventKind = "azuredevops:pullrequest:reviewed"
+	ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor        ChangesetEventKind = "azuredevops:pullrequest:waiting_for_author"
+	ChangesetEventKindAzureDevOpsPullRequestRejected                ChangesetEventKind = "azuredevops:pullrequest:rejected"
+	ChangesetEventKindAzureDevOpsPullRequestBuildSucceeded          ChangesetEventKind = "azuredevops:pullrequest:build_succeeded"
+	ChangesetEventKindAzureDevOpsPullRequestBuildFailed             ChangesetEventKind = "azuredevops:pullrequest:build_failed"
+	ChangesetEventKindAzureDevOpsPullRequestBuildError              ChangesetEventKind = "azuredevops:pullrequest:build_error"
+	ChangesetEventKindAzureDevOpsPullRequestBuildPending            ChangesetEventKind = "azuredevops:pullrequest:build_pending"
+
 	ChangesetEventKindInvalid ChangesetEventKind = "invalid"
 )
 
@@ -162,7 +177,28 @@ func (e *ChangesetEvent) ReviewAuthor() string {
 
 	case *bitbucketcloud.PullRequestChangesRequestRemovedEvent:
 		return meta.ChangesRequest.User.UUID
-
+	case *azuredevops.PullRequestApprovedEvent:
+		if len(meta.PullRequest.Reviewers) == 0 {
+			return meta.PullRequest.CreatedBy.UniqueName
+		}
+		return meta.PullRequest.Reviewers[len(meta.PullRequest.Reviewers)-1].UniqueName
+	case *azuredevops.PullRequestApprovedWithSuggestionsEvent:
+		if len(meta.PullRequest.Reviewers) == 0 {
+			return meta.PullRequest.CreatedBy.UniqueName
+		}
+		return meta.PullRequest.Reviewers[len(meta.PullRequest.Reviewers)-1].UniqueName
+	case *azuredevops.PullRequestWaitingForAuthorEvent:
+		if len(meta.PullRequest.Reviewers) == 0 {
+			return meta.PullRequest.CreatedBy.UniqueName
+		}
+		return meta.PullRequest.Reviewers[len(meta.PullRequest.Reviewers)-1].UniqueName
+	case *azuredevops.PullRequestRejectedEvent:
+		if len(meta.PullRequest.Reviewers) == 0 {
+			return meta.PullRequest.CreatedBy.UniqueName
+		}
+		return meta.PullRequest.Reviewers[len(meta.PullRequest.Reviewers)-1].UniqueName
+	case *azuredevops.PullRequestUpdatedEvent:
+		return meta.PullRequest.CreatedBy.UniqueName
 	default:
 		return ""
 	}
@@ -174,14 +210,17 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 	case ChangesetEventKindBitbucketServerApproved,
 		ChangesetEventKindGitLabApproved,
 		ChangesetEventKindBitbucketCloudApproved,
-		ChangesetEventKindBitbucketCloudPullRequestApproved:
+		ChangesetEventKindBitbucketCloudPullRequestApproved,
+		ChangesetEventKindAzureDevOpsPullRequestApproved:
 		return ChangesetReviewStateApproved, nil
 
 	// BitbucketServer's "REVIEWED" activity is created when someone clicks
 	// the "Needs work" button in the UI, which is why we map it to "Changes Requested"
 	case ChangesetEventKindBitbucketServerReviewed,
 		ChangesetEventKindBitbucketCloudChangesRequested,
-		ChangesetEventKindBitbucketCloudPullRequestChangesRequestCreated:
+		ChangesetEventKindBitbucketCloudPullRequestChangesRequestCreated,
+		ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor,
+		ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions:
 		return ChangesetReviewStateChangesRequested, nil
 
 	case ChangesetEventKindGitHubReviewed:
@@ -203,9 +242,9 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 		ChangesetEventKindBitbucketServerDismissed,
 		ChangesetEventKindGitLabUnapproved,
 		ChangesetEventKindBitbucketCloudPullRequestUnapproved,
-		ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved:
+		ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved,
+		ChangesetEventKindAzureDevOpsPullRequestRejected:
 		return ChangesetReviewStateDismissed, nil
-
 	default:
 		return ChangesetReviewStatePending, nil
 	}
@@ -316,6 +355,18 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = ev.CommitStatus.CreatedOn
 	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
 		t = ev.CommitStatus.UpdatedOn
+	case *azuredevops.PullRequestUpdatedEvent:
+		t = ev.CreatedDate
+	case *azuredevops.PullRequestApprovedEvent:
+		t = ev.CreatedDate
+	case *azuredevops.PullRequestApprovedWithSuggestionsEvent:
+		t = ev.CreatedDate
+	case *azuredevops.PullRequestWaitingForAuthorEvent:
+		t = ev.CreatedDate
+	case *azuredevops.PullRequestRejectedEvent:
+		t = ev.CreatedDate
+	case *azuredevops.PullRequestMergedEvent:
+		t = ev.CreatedDate
 	}
 
 	return t
@@ -852,6 +903,30 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 
 	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
 		o := o.Metadata.(*bitbucketcloud.RepoCommitStatusUpdatedEvent)
+		*e = *o
+
+	case *azuredevops.PullRequestUpdatedEvent:
+		o := o.Metadata.(*azuredevops.PullRequestUpdatedEvent)
+		*e = *o
+
+	case *azuredevops.PullRequestMergedEvent:
+		o := o.Metadata.(*azuredevops.PullRequestMergedEvent)
+		*e = *o
+
+	case *azuredevops.PullRequestApprovedEvent:
+		o := o.Metadata.(*azuredevops.PullRequestApprovedEvent)
+		*e = *o
+
+	case *azuredevops.PullRequestApprovedWithSuggestionsEvent:
+		o := o.Metadata.(*azuredevops.PullRequestApprovedWithSuggestionsEvent)
+		*e = *o
+
+	case *azuredevops.PullRequestWaitingForAuthorEvent:
+		o := o.Metadata.(*azuredevops.PullRequestWaitingForAuthorEvent)
+		*e = *o
+
+	case *azuredevops.PullRequestRejectedEvent:
+		o := o.Metadata.(*azuredevops.PullRequestRejectedEvent)
 		*e = *o
 
 	default:
