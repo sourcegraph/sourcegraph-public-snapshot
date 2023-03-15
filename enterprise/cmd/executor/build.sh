@@ -8,3 +8,7 @@ set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")"/docker-image
 
 ./build.sh "$@"
+
+#cd "$(dirname "${BASH_SOURCE[0]}")"/kubernetes
+#
+#./build.sh "$@"
