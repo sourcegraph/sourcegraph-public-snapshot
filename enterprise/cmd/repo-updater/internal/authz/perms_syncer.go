@@ -562,7 +562,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	return results, nil
 }
 
-func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32, acctID int32, repoIDs []int32) error {
+func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32, acctID int32, repoIDs []int32) (*database.SetPermissionsResult, error) {
 	logger := s.logger.Scoped("saveUserPermsForAccount", "saves permissions per external account").With(
 		log.Object("user",
 			log.Int32("ID", userID),
@@ -574,17 +574,17 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 	// Save new permissions to database
 	defer s.permsUpdateLock.Unlock()
 
-	_, err := s.permsStore.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
+	stats, err := s.permsStore.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
 		UserID:            userID,
 		ExternalAccountID: acctID,
 	}, repoIDs, authz.SourceUserSync)
 
 	if err != nil {
 		logger.Warn("saving perms to DB", log.Error(err))
-		return err
+		return nil, err
 	}
 
-	return nil
+	return stats, nil
 }
 
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
@@ -628,12 +628,20 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		IDs:    map[int32]struct{}{},
 	}
 
+	unifiedResult := &database.SetPermissionsResult{
+		Added:   0,
+		Found:   0,
+		Removed: 0,
+	}
 	for acctID, repoIDs := range results.repoPerms {
 		// write to new user_repo_permissions table by default
-		err = s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
+		stats, err := s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
 		if err != nil {
 			return result, providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
 		}
+		unifiedResult.Added += stats.Added
+		unifiedResult.Found += stats.Found
+		unifiedResult.Removed += stats.Removed
 
 		for _, repoID := range repoIDs {
 			p.IDs[repoID] = struct{}{}
@@ -661,6 +669,11 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	result, err = s.permsStore.SetUserPermissions(ctx, p)
 	if err != nil {
 		return result, providerStates, errors.Wrapf(err, "set user permissions for user %q (id: %d)", user.Username, user.ID)
+	}
+
+	// return result from unified table if flag enabled
+	if edb.UnifiedPermsEnabled() {
+		result = unifiedResult
 	}
 
 	logger.Debug("synced",
@@ -824,12 +837,16 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	defer func() { err = txs.Done(err) }()
 
 	// write to new user_repo_permissions table by default
-	if _, err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
+	var unifiedResult *database.SetPermissionsResult
+	if unifiedResult, err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
 		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
 	result, err = txs.SetRepoPermissions(ctx, p)
 	if err != nil {
 		return result, providerStates, errors.Wrapf(err, "set repository permissions for repository %q (id: %d)", repo.Name, repo.ID)
+	}
+	if edb.UnifiedPermsEnabled() {
+		result = unifiedResult
 	}
 	regularCount := len(p.UserIDs)
 
