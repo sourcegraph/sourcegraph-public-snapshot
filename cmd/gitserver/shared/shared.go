@@ -77,7 +77,7 @@ type EnterpriseInit func(db database.DB)
 type Config struct {
 	env.BaseConfig
 
-	ReposDir string
+	ReposDir         string
 	CoursierCacheDir string
 }
 
