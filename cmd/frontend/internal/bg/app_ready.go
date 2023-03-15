@@ -1,6 +1,9 @@
 package bg
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"os"
 	"strings"
 
@@ -9,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	frontendapp "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 )
 
@@ -20,6 +24,19 @@ func AppReady(logger log.Logger) {
 	}
 
 	externalURL := globals.ExternalURL().String()
+
+	password, err := generatePassword()
+	if err != nil {
+		logger.Error("failed to generate site admin password", log.Error(err))
+	} else {
+		email := "app@sourcegraph.com"
+		username := "admin"
+		err := frontendapp.AppHandleSiteInit(context.Background(), email, username, password)
+		if err != nil {
+			logger.Error("failed to create site admin account", log.Error(err))
+		}
+	}
+
 	printExternalURL(externalURL)
 	if err := browser.OpenURL(externalURL); err != nil {
 		logger.Error("failed to open browser", log.String("url", externalURL), log.Error(err))
@@ -42,4 +59,13 @@ func printExternalURL(externalURL string) {
 	output.Fprintf(os.Stderr, "| %s |"+newLine, pad("Sourcegraph is now available on "+externalURL, 76))
 	output.Fprintf(os.Stderr, "| %s |"+newLine, emptyLine)
 	output.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
+}
+
+func generatePassword() (string, error) {
+	data := make([]byte, 64)
+	_, err := rand.Read(data)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(data), nil
 }
