@@ -7,7 +7,6 @@
     padding: 1rem 1.25rem;
 }
 
-
 .file-picker {
     width: 65%;
     @media (--sm-breakpoint-down) {
@@ -53,7 +52,7 @@
     &:empty {
         display: none;
     }
-    
+
     svg {
         overflow: initial;
     }
