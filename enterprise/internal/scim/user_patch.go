@@ -353,14 +353,14 @@ func standardMultiValueReplaceNotFoundStrategy(
 	_ string,
 	_ interface{},
 	_ string,
-	filterExpression filter.Expression) ([]interface{}, error) {
+	_ filter.Expression) ([]interface{}, error) {
 	return nil, scimerrors.ScimErrorNoTarget
 }
 
 func azureMultiValueReplaceNotFoundStrategy(multiValueAttribute []interface{},
 	propertyToSet string,
 	value interface{},
-	operation string,
+	_ string,
 	filterExpression filter.Expression,
 ) ([]interface{}, error) {
 	switch v := filterExpression.(type) {
