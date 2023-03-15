@@ -7,6 +7,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -148,6 +149,9 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 		return nil
 	}
 
+	// if the next check passes, we know that any filters added/updated before this timestamp did not block it
+	instant := time.Now()
+
 	if allowed, err := s.svc.IsPackageRepoVersionAllowed(ctx, s.scheme, dep.PackageSyntax(), dep.PackageVersion()); !allowed || err != nil {
 		// if err == nil && !allowed, this will return nil
 		return errors.Wrap(err, "error checking if package repo version is allowed")
@@ -161,9 +165,10 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 
 	if _, _, err = s.svc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
 		{
-			Scheme:   dep.Scheme(),
-			Name:     dep.PackageSyntax(),
-			Versions: []string{dep.PackageVersion()},
+			Scheme:        dep.Scheme(),
+			Name:          dep.PackageSyntax(),
+			Versions:      []dependencies.MinimalPackageRepoRefVersion{{Version: dep.PackageVersion(), LastCheckedAt: &instant}},
+			LastCheckedAt: &instant,
 		},
 	}); err != nil {
 		// We don't want to ignore when writing to the database failed, since
