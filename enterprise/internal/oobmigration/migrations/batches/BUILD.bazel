@@ -34,6 +34,7 @@ go_test(
         # Test requires localhost database
         "requires-network",
     ],
+    timemout = "short",
     deps = [
         "//enterprise/internal/batches/sources/bitbucketcloud",
         "//enterprise/internal/batches/store",
