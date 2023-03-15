@@ -10,15 +10,13 @@
 
 > NOTE: This functionality was added in Sourcegraph 5.0.
 
-Sourcegraph uses [Role-Based Access Control (RBAC)](https://en.wikipedia.org/wiki/Role-based_access_control) to enable fine-grained control over different features and abilities of Sourcegraph, without having to modify permissions for each user individually. Currently, the scope of permissions control is limited to [Batch Changes](batch_changes.md), but it will be expanded to other areas in the future.
+Sourcegraph uses [Role-Based Access Control (RBAC)](https://en.wikipedia.org/wiki/Role-based_access_control) to enable fine-grained control over different features and abilities of Sourcegraph, without having to modify permissions for each user individually. Currently, the scope of permissions control is limited to [Batch Changes](batch_changes.md) functionality, but it will be expanded to other areas in the future.
 
 ## Managing roles and permissions
 
 <!-- TODO: Screenshots -->
 
-Site admins can control which features each type of user has access to by creating custom
-roles and assigning permissions to them. You can see all available roles and create new
-ones under _Site admin_ > _Users & auth_ > _Roles_.
+Site admins can control which features each type of user has access to by creating custom roles and assigning permissions to them. You can see all available roles and create new ones under _Site admin_ > _Users & auth_ > _Roles_.
 
 ### System roles
 
