@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiPlus } from '@mdi/js'
+import { mdiPlus, mdiClose } from '@mdi/js'
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
 import { cloneDeep, uniqueId } from 'lodash'
@@ -14,6 +14,7 @@ import {
     Icon,
     LoadingSpinner,
     Select,
+    Tooltip,
     useDeepMemo,
 } from '@sourcegraph/wildcard'
 
@@ -174,6 +175,7 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
                             value={filter.root}
                             labelVariant="block"
                             onChange={event => setFilter({ ...filter, root: event.target.value })}
+                            className="mb-2"
                         >
                             <option value="">All</option>
                             {roots.map(root => (
@@ -191,6 +193,7 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
                             value={filter.indexer}
                             labelVariant="block"
                             onChange={event => setFilter({ ...filter, indexer: event.target.value })}
+                            className="mb-2"
                         >
                             <option value="">All</option>
                             {indexers.sort().map(indexer => (
@@ -209,15 +212,27 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
                 )}
 
                 {filteredJobs.map((job, index) => (
-                    <Container id={job.meta.id} key={job.meta.id} className={styles.job}>
-                        <IndexJobNode
-                            job={job}
-                            jobNumber={index + 1}
-                            readOnly={readOnly}
-                            onChange={getChangeHandler(job.meta.id)}
-                            onRemove={getRemoveHandler(job.meta.id)}
-                        />
-                    </Container>
+                    <div className="d-flex justify-content-between align-items-baseline">
+                        <Container id={job.meta.id} key={job.meta.id} className={styles.job}>
+                            <IndexJobNode
+                                job={job}
+                                jobNumber={index + 1}
+                                readOnly={readOnly}
+                                onChange={getChangeHandler(job.meta.id)}
+                            />
+                        </Container>
+                        {!readOnly && (
+                            <Tooltip content="Remove job">
+                                <Button
+                                    variant="icon"
+                                    className="ml-3 text-danger d-inline"
+                                    onClick={getRemoveHandler(job.meta.id)}
+                                >
+                                    <Icon svgPath={mdiClose} aria-hidden={true} />
+                                </Button>
+                            </Tooltip>
+                        )}
+                    </div>
                 ))}
                 {!readOnly && (
                     <div className="d-flex justify-content-between">
