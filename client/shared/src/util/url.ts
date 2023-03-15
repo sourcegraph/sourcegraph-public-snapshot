@@ -562,11 +562,11 @@ export function buildSearchURLQuery(
 
 /**
  *
- * @param authenticatedUser - User email/name for Cloud form prefill
- * @param product - CTA source product page, determines dynamic Cloud description
+ * @param authenticatedUser - User email/name for Enterprise form prefill
+ * @param product - CTA source product page, determines dynamic Enterprise description
  * @returns signup UR string with relevant params attached
  */
-export const buildCloudTrialURL = (
+export const buildEnterpriseTrialURL = (
     authenticatedUser: Pick<AuthenticatedUser, 'displayName' | 'emails'> | null | undefined,
     product?: string
 ): string => {
