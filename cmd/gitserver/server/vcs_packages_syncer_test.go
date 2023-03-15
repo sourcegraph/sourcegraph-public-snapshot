@@ -163,7 +163,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 		require.Equal(t, s.svc.(*fakeDepsService).upsertedDeps, []dependencies.MinimalPackageRepoRef{{
 			Scheme:   fakeVersionedPackage{}.Scheme(),
 			Name:     "foo",
-			Versions: []string{"0.0.3"},
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "0.0.3"}},
 		}})
 		s.assertRefs(t, dir, bothV2andV3Refs)
 		// We triggered a single download for v0.0.3 since it was lazily requested.
@@ -207,20 +207,28 @@ type fakeDepsService struct {
 }
 
 func (s *fakeDepsService) InsertPackageRepoRefs(ctx context.Context, depsToAdd []dependencies.MinimalPackageRepoRef) (newRepos []dependencies.PackageRepoReference, newVersions []dependencies.PackageRepoRefVersion, _ error) {
+	for i := range depsToAdd {
+		depsToAdd[i].LastCheckedAt = nil
+		for j := range depsToAdd[i].Versions {
+			depsToAdd[i].Versions[j].LastCheckedAt = nil
+		}
+	}
 	s.upsertedDeps = append(s.upsertedDeps, depsToAdd...)
 	for _, depToAdd := range depsToAdd {
 		if existingDep, exists := s.deps[depToAdd.Name]; exists {
 			for _, version := range depToAdd.Versions {
 				if !slices.ContainsFunc(existingDep.Versions, func(v dependencies.PackageRepoRefVersion) bool {
-					return v.Version == version
+					return v.Version == version.Version
 				}) {
 					existingDep.Versions = append(existingDep.Versions, dependencies.PackageRepoRefVersion{
 						PackageRefID: existingDep.ID,
-						Version:      version,
+						Version:      version.Version,
+						Blocked:      version.Blocked,
 					})
 					s.deps[depToAdd.Name] = existingDep
 					newVersions = append(newVersions, dependencies.PackageRepoRefVersion{
-						Version: version,
+						Version: version.Version,
+						Blocked: version.Blocked,
 					})
 				}
 			}
@@ -228,7 +236,8 @@ func (s *fakeDepsService) InsertPackageRepoRefs(ctx context.Context, depsToAdd [
 			versionsForDep := make([]dependencies.PackageRepoRefVersion, 0, len(depToAdd.Versions))
 			for _, version := range depToAdd.Versions {
 				versionsForDep = append(versionsForDep, dependencies.PackageRepoRefVersion{
-					Version: version,
+					Version: version.Version,
+					Blocked: version.Blocked,
 				})
 			}
 			s.deps[depToAdd.Name] = dependencies.PackageRepoReference{
