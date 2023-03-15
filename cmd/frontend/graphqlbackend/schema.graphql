@@ -4011,9 +4011,13 @@ type MirrorRepositoryInfo {
     """
     corruptionLogs: [RepoCorruptionLog!]!
     """
-    When the repository was last successfully updated from the remote source repository..
+    When the repository was last successfully updated from the remote source repository.
     """
     updatedAt: DateTime
+    """
+    When the repository is next scheduled to be updated from the remote source repository.
+    """
+    due: DateTime
     """
     The state of this repository in the update schedule.
     """
