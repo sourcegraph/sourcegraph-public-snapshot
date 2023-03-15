@@ -1,7 +1,9 @@
 import { EditorView } from '@codemirror/view'
+import { merge } from 'lodash'
 import { Page } from 'puppeteer'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
 
@@ -130,7 +132,7 @@ export const percySnapshotWithVariants = async (
     await percySnapshot(page, `${name} - light theme`)
 }
 
-type Editor = 'monaco' | 'codemirror6'
+type Editor = 'monaco' | 'codemirror6' | 'experimental-search-input'
 
 export interface EditorAPI {
     name: Editor
@@ -232,7 +234,7 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
             },
             async focus() {
                 await api.waitForIt()
-                await driver.page.click(rootSelector)
+                await driver.page.click(readySelector)
             },
             getValue() {
                 return driver.page.evaluate((selector: string) => {
@@ -293,6 +295,37 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
         }
         return api
     },
+    'experimental-search-input': (driver: Driver, rootSelector: string) => {
+        // Selector to use to wait for the editor to be complete loaded
+        const completionSelector = `${rootSelector} [role="grid"]`
+        const completionLabelSelector = `${completionSelector} .test-option-label`
+
+        const api = {
+            ...editors.codemirror6(driver, `${rootSelector} .test-query-input`),
+            async waitForSuggestion(suggestion?: string) {
+                await driver.page.waitForSelector(completionSelector)
+                if (suggestion !== undefined) {
+                    await driver.findElementWithText(suggestion, {
+                        selector: completionLabelSelector,
+                        wait: { timeout: 5000 },
+                    })
+                }
+                // It seems CodeMirror needs some additional time before it
+                // recognizes events on the suggestions element (such as
+                // selecting a suggestion via the Tab key)
+                await driver.page.waitForTimeout(100)
+            },
+            async selectSuggestion(suggestion: string) {
+                await driver.page.waitForSelector(completionSelector)
+                await driver.findElementWithText(suggestion, {
+                    action: 'click',
+                    selector: completionLabelSelector,
+                    wait: { timeout: 5000 },
+                })
+            },
+        }
+        return api
+    },
 }
 
 /**
@@ -308,31 +341,57 @@ export const createEditorAPI = async (driver: Driver, rootSelector: string): Pro
         selector => (document.querySelector(selector) as HTMLElement).dataset.editor,
         rootSelector
     )
-    switch (editor) {
-        case 'monaco':
-        case 'codemirror6':
-            break
-        case undefined:
-            throw new Error("Can't determine editor, data-editor=... is not set.")
-        default:
-            throw new Error(`${editor} is not a supported editor`)
+    if (!editor) {
+        throw new Error("Can't determine editor, data-editor=... is not set.")
     }
-    const api = editors[editor](driver, rootSelector)
+    if (!Object.hasOwn(editors, editor)) {
+        throw new Error(`${editor} is not a supported editor`)
+    }
+    const api = editors[editor as Editor](driver, rootSelector)
     await api.waitForIt()
     return api
 }
 
+export type SearchQueryInput = Extract<Editor, 'codemirror6' | 'experimental-search-input'>
+interface SearchQueryInputAPI {
+    /**
+     * The name of the currently used query input implementation. Can be used to dynamically generate
+     * test names.
+     */
+    name: SearchQueryInput
+    waitForInput: (driver: Driver, selector: string) => Promise<EditorAPI>
+    applySettings: (settings?: Settings) => Settings
+}
+
+const searchInputNames: SearchQueryInput[] = ['codemirror6', 'experimental-search-input']
+
+const searchInputConfigs: Record<SearchQueryInput, SearchQueryInputAPI> = {
+    codemirror6: {
+        name: 'codemirror6',
+        waitForInput: (driver: Driver, rootSelector: string) => createEditorAPI(driver, rootSelector),
+        applySettings: (settings = {}) =>
+            merge(settings, { experimentalFeatures: { searchQueryInput: 'v1' } } satisfies Settings),
+    },
+    'experimental-search-input': {
+        name: 'experimental-search-input',
+        waitForInput: (driver: Driver, rootSelector: string) => createEditorAPI(driver, rootSelector),
+        applySettings: (settings = {}) =>
+            merge(settings, { experimentalFeatures: { searchQueryInput: 'experimental' } } satisfies Settings),
+    },
+}
+
+export const getSearchQueryInputConfig = (input: SearchQueryInput): SearchQueryInputAPI => searchInputConfigs[input]
+
 /**
  * Helper function for abstracting away testing different search query input
- * implementations. The callback function gets passed the editor name which can
- * be used with {@link enableEditor} and {@link createEditorAPI}.
+ * implementations. The callback function gets passed an object to interact with
+ * the input and to configure the necessary settings.
  */
-export const withSearchQueryInput = (callback: (editorName: Editor) => void): void => {
-    const editorNames: Editor[] = ['codemirror6']
-    for (const editor of editorNames) {
+export const withSearchQueryInput = (callback: (config: SearchQueryInputAPI) => void): void => {
+    for (const input of searchInputNames) {
         // This callback is supposed to be called multiple times
         // eslint-disable-next-line callback-return
-        callback(editor)
+        callback(getSearchQueryInputConfig(input))
     }
 }
 

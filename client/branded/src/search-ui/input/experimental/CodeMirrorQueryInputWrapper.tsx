@@ -384,7 +384,6 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                         // comboboxes are not allowed to be multiline
                         'aria-multiline': 'false',
                         'aria-controls': popoverID,
-                        'aria-owns': popoverID,
                         'aria-haspopup': 'grid',
                         'aria-label': 'Search query',
                     }),
@@ -437,17 +436,17 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
         return (
             <div
                 ref={inputContainerRef}
-                className={classNames(styles.container, className, {
+                className={classNames(styles.container, className, 'test-experimental-search-input', 'test-editor', {
                     [styles.containerCompact]: visualMode === QueryInputVisualMode.Compact,
                 })}
                 role="search"
+                data-editor="experimental-search-input"
             >
                 <div className={styles.focusContainer}>
                     <SearchModeSwitcher mode={mode} onModeChange={toggleHistoryMode} />
                     <div
                         ref={editorContainerRef}
                         className={classNames(styles.input, 'test-query-input', 'test-editor')}
-                        data-editor="codemirror6"
                     />
                     {!mode && children}
                 </div>
