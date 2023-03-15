@@ -633,6 +633,7 @@ ts_project(
         "src/enterprise/insights/admin-ui/query.ts",
         "src/enterprise/insights/components/DownloadFileButton.tsx",
         "src/enterprise/insights/components/code-insights-page/CodeInsightsPage.tsx",
+        "src/enterprise/insights/components/code-insights-page/limit-access-banner/CodeInsightsLimitAccessAppBanner.tsx",
         "src/enterprise/insights/components/code-insights-page/limit-access-banner/CodeInsightsLimitAccessBanner.tsx",
         "src/enterprise/insights/components/creation-ui/CodeInsightDashboardsVisibility.tsx",
         "src/enterprise/insights/components/creation-ui/code-insight-time-step-picker/CodeInsightTimeStepPicker.tsx",
