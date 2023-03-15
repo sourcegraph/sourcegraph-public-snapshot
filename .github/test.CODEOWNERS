@@ -245,5 +245,3 @@
 /client/web/src/**/own/ @sourcegraph/own
 /cmd/frontend/graphqlbackend/own* @sourcegraph/own
 /internal/usagestats/own* @sourcegraph/own
-
-
