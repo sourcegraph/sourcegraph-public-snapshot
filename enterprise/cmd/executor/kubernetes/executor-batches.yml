@@ -26,10 +26,14 @@ spec:
               value: hunter2hunter2hunter2
             - name: EXECUTOR_QUEUE_NAME
               value: batches
-            - name: EXECUTOR_USE_FIRECRACKER
-              value: "false"
             - name: EXECUTOR_MAXIMUM_NUM_JOBS
               value: "10"
+            - name: SRC_LOG_LEVEL
+              value: info
+            - name: SRC_LOG_FORMAT
+              value: condensed
+            - name: SRC_TRACE_LOG
+              value: "false"
           volumeMounts:
             - mountPath: /data
               name: executor-volume
