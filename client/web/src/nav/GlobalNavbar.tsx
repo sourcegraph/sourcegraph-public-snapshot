@@ -298,7 +298,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             )}
                             size="sm"
                             onClick={() =>
-                                eventLogger.log('ClickedOnEnterpriseCTA', { enterpriseCtaType: 'NavBarSourcegraphApp' })
+                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBarSourcegraphApp' })
                             }
                         >
                             Try Sourcegraph Enterprise
