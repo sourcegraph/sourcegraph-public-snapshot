@@ -24,6 +24,7 @@ go_library(
 
 go_test(
     name = "batches_test",
+    timeout = "short",
     srcs = [
         "empty_spec_id_migrator_test.go",
         "external_fork_name_migrator_test.go",
@@ -34,7 +35,6 @@ go_test(
         # Test requires localhost database
         "requires-network",
     ],
-    timemout = "short",
     deps = [
         "//enterprise/internal/batches/sources/bitbucketcloud",
         "//enterprise/internal/batches/store",
