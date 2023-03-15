@@ -379,7 +379,7 @@ func azureMultiValueReplaceNotFoundStrategy(multiValueAttribute []interface{},
 
 func getMultiValueReplaceNotFoundStrategy(provider IdentityProvider) multiValueReplaceNotFoundStrategy {
 	switch provider {
-	case SCIM_AZURE_AD:
+	case IDPAzureAd:
 		return azureMultiValueReplaceNotFoundStrategy
 	default:
 		return standardMultiValueReplaceNotFoundStrategy

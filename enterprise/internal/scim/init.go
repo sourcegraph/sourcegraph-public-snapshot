@@ -19,17 +19,17 @@ import (
 type IdentityProvider string
 
 const (
-	SCIM_AZURE_AD IdentityProvider = "Azure AD"
-	SCIM_STANDARD IdentityProvider = "STANDARD"
+	IDPAzureAd  IdentityProvider = "Azure AD"
+	IDPStandard IdentityProvider = "standards-compatible"
 )
 
 func getConfiguredIdentityProvider() IdentityProvider {
 	value := conf.Get().ScimIdentityProvider
 	switch value {
-	case string(SCIM_AZURE_AD):
-		return SCIM_AZURE_AD
+	case string(IDPAzureAd):
+		return IDPAzureAd
 	default:
-		return SCIM_STANDARD
+		return IDPStandard
 	}
 }
 

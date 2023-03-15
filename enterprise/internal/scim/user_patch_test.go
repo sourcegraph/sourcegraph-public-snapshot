@@ -315,7 +315,7 @@ func Test_UserResourceHandler_Patch_ReplaceStrategies(t *testing.T) {
 		config     *conf.Unified
 	}{
 		{
-			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimIdentityProvider: string(SCIM_AZURE_AD)}},
+			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimIdentityProvider: string(IDPAzureAd)}},
 			name:   "Add email with replace Azure",
 			userId: "1",
 			operations: []scim.PatchOperation{
