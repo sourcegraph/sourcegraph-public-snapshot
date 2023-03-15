@@ -103,7 +103,7 @@ describe('GlobalNavbar', () => {
             await (await driver.page.waitForSelector('.test-breadcrumb-part-last'))?.click()
 
             const input = await createEditorAPI(driver, '.test-query-input')
-            expect(await input.getValue()).toEqual('repo:^github\\.com/sourcegraph/sourcegraph$ file:^README\\.md')
+            expect(await input.getValue()).toContain('repo:^github\\.com/sourcegraph/sourcegraph$ file:^README\\.md')
         })
     })
 

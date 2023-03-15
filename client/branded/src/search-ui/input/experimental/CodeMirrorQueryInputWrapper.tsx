@@ -447,6 +447,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                     <div
                         ref={editorContainerRef}
                         className={classNames(styles.input, 'test-query-input', 'test-editor')}
+                        data-editor="codemirror6"
                     />
                     {!mode && children}
                 </div>
