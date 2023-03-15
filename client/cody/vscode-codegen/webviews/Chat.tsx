@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 
@@ -25,6 +25,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [formInput, setFormInput] = useState('')
+    const chatboxRef = useRef<HTMLInputElement>(null)
 
     const inputHandler = useCallback(
         (inputValue: string) => {
@@ -62,6 +63,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [formInput, setTranscript, setMessageInProgress, transcript])
 
     const bubbleClassName = (speaker: string): string => (speaker === 'you' ? 'human' : 'bot')
+
+    const scrollToBottom = () => {
+        chatboxRef.current?.scrollIntoView?.({ behavior: 'smooth' })
+    }
+
+    useEffect(() => {
+        scrollToBottom()
+    }, [transcript, chatboxRef])
 
     return (
         <div className="inner-container">
@@ -119,6 +128,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                 </div>
                             </div>
                         )}
+                        <div ref={chatboxRef} />
                     </div>
                 )}
             </div>
@@ -160,7 +170,7 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
         return (
             <p className="context-files-expanded">
                 <span className="context-files-toggle-icon" onClick={() => setIsExpanded(false)}>
-                    <i className="codicon codicon-triangle-up" slot="start" />
+                    <i className="codicon codicon-triangle-down" slot="start" />
                 </span>
                 <div>
                     <div className="context-files-list-title" onClick={() => setIsExpanded(false)}>
