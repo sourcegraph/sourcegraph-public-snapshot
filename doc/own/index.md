@@ -94,3 +94,19 @@ After clicking on the Own bar, a bottom panel appears listing all the owners.
 ![File view with the ownership tab selected in the bottom panel](https://storage.googleapis.com/sourcegraph-assets/docs/own/blob-view-panel.png)
 
 There is always a single rule in a CODEOWNERS file that determines ownership (if any). Next to each of the owners listed in the bottom panel, there is a description: _Owner is associated with a rule in a CODEOWNERS file_. This description links to the line containing the responsible rule in the CODEOWNERS file.
+
+## Ownership search
+
+Code ownership is a first-class citizen in search. Ownership can be either a query input or a search result:
+
+*   `file:has.owner(user@example.com)` keeps only the search results associated with given user (here referred to by e-mail).
+*   `-file:has.owner(@username)` removes all results owned by specific user (here referred to by name).
+
+Ownership predicate can also be used without parameters:
+
+*   `file:has.owner()` will only include files with an owner assigned to them.
+*   `-file:has.owner()` will only include files without an owner.
+
+When performing a search a `select:file.owners` makes the query return owners.
+
+For instance one can find all the owners of TypeScript files in a given repository by using `repo:^github\.com/sourcegraph/sourcegraph$ lang:TypeScript select:file.owners`.
