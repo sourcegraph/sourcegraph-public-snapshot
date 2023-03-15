@@ -364,11 +364,12 @@ inserted AS (
 	SELECT
 		temp.repository_id,
 		%s,
-		sg_jsonb_concat_agg(temp.row)
+		jsonb_object_agg(temp.path, temp.count)
 	FROM (
 		SELECT
 			cr.repository_id,
-			jsonb_build_object(cr.path, SUM(count)) AS row
+			cr.path,
+			SUM(count) AS count
 		FROM input_ranks cr
 		GROUP BY cr.repository_id, cr.path
 	) temp
@@ -380,8 +381,8 @@ inserted AS (
 				THEN EXCLUDED.payload
 			ELSE
 				(
-					SELECT sg_jsonb_concat_agg(row) FROM (
-						SELECT jsonb_build_object(key, SUM(value::int)) AS row
+					SELECT jsonb_object_agg(key, sum) FROM (
+						SELECT key, SUM(value::int) AS sum
 						FROM
 							(
 								SELECT * FROM jsonb_each(pr.payload)
