@@ -11,7 +11,9 @@ go_library(
     deps = [
         "//internal/conf",
         "//internal/env",
-        "//ui/assets",
         "@com_github_shurcool_httpgzip//:httpgzip",
-    ],
+    ] + select({
+        "//:bundle_dist": ["//ui/assets:assets_dist_enterprise"],
+        "//conditions:default": ["//ui/assets:assets"],
+    }),
 )

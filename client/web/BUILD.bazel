@@ -1932,6 +1932,7 @@ webpack_bundle(
     output_dir = True,
     webpack_config = "webpack.bazel.config.js",
     deps = WEBPACK_CONFIG_DEPS,
+    visibility = ["//ui/assets:__subpackages__"],
 )
 
 webpack_devserver(

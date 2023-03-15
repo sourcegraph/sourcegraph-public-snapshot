@@ -54,7 +54,7 @@ go_library(
         "//internal/types",
         "//internal/version",
         "//lib/errors",
-        "//ui/assets",
+        # "//ui/assets",
         "@com_github_coreos_go_semver//semver",
         "@com_github_golang_gddo//httputil",
         "@com_github_gorilla_mux//:mux",
@@ -66,7 +66,10 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
-    ],
+    ]+ select({
+        "//:bundle_dist": ["//ui/assets:assets_dist_enterprise"],
+        "//conditions:default": ["//ui/assets:assets"],
+    }),
 )
 
 go_test(
@@ -104,5 +107,5 @@ go_test(
         "//ui/assets",
         "@com_github_gorilla_mux//:mux",
         "@com_github_stretchr_testify//assert",
-    ],
+    ]
 )

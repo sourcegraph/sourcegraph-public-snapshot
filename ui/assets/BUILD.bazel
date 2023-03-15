@@ -1,14 +1,49 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 
 go_library(
     name = "assets",
     srcs = [
-        "assets_dev.go",
         "doc.go",
         "load_manifest_dev.go",
         "manifest.go",
+        "assets_dev.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
     visibility = ["//visibility:public"],
     deps = ["//lib/errors"],
+)
+
+go_library(
+    name = "assets_dist_oss",
+    srcs = [
+        "doc.go",
+        "load_manifest_dist.go", #keep
+        "manifest.go",
+        "assets_dist.go", #keep
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
+    visibility = ["//visibility:public"],
+    deps = ["//lib/errors"],
+)
+
+go_library(
+    name = "assets_dist_enterprise",
+    srcs = [
+        "doc.go",
+        "load_manifest_dist.go", #keep
+        "manifest.go",
+        "assets_dist.go", #keep
+    ],
+    embedsrcs = ["copy_bundle_enterprise"],
+    importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
+    visibility = ["//visibility:public"],
+    deps = ["//lib/errors"],
+)
+
+copy_to_directory(
+    name = "copy_bundle_enterprise",
+    srcs = ["//client/web:bundle-enterprise"],
+    root_paths = ["**"],
 )
