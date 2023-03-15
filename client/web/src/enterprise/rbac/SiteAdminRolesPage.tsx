@@ -4,7 +4,7 @@ import { mdiPlus } from '@mdi/js'
 import { groupBy, noop } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button, Icon, ProductStatusBadge, ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Icon, ProductStatusBadge, ErrorAlert, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 
@@ -55,10 +55,17 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
             <PageTitle title="Roles - Admin" />
             <PageHeader
                 className={styles.rolesPageHeader}
-                description="Roles represent a set of permissions that are granted to a user. Roles are currently only available for Batch Changes functionality."
+                description={
+                    <>
+                        Roles are a part of the{' '}
+                        <Link to="/help/admin/access_control">Role-Based Access Control system</Link> for Sourcegraph
+                        and represent a set of in-product permissions that are granted to a user. Roles are currently
+                        only available for Batch Changes functionality.
+                    </>
+                }
                 actions={
                     <Button variant="primary" onClick={openModal}>
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create Role
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create role
                     </Button>
                 }
             >
