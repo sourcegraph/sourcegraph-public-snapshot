@@ -45,7 +45,7 @@ const QUERY = gql`
 export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isSourcegraphDotCom }) => {
     const settings = useSettings()
     const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
-        fetchPolicy: 'cache-first',
+        fetchPolicy: 'cache-and-network',
     })
     const siteFlagsValue = data?.site
 
