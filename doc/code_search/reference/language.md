@@ -315,7 +315,10 @@ ComplexDiagram(
             Optional(
                 Sequence(
                     Terminal("."),
-                    Terminal("file kind", {href: "#file-kind"})),
+                    Choice(0,
+                        Terminal("file kind", {href: "#file-kind"}),
+                        Terminal("file.owners", {href: "#file-owners"}),
+                    )),
                 'skip')),
         Terminal("content"),
         Sequence(
@@ -418,6 +421,17 @@ Select only directory paths of file results with `select:file.directory`. This i
 `select:file.path` returns the full path for the file and is equivalent to `select:file`. It exists as a fully-qualified alternative.
 
 **Example:** [`file:package\.json select:file.directory` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:package%5C.json+select:file.directory&patternType=literal)
+
+#### File owners
+
+<script>
+ComplexDiagram(
+    Terminal("file.owners")).addTo();
+</script>
+
+Select owners associated with the results of a query.
+
+**Example:** `lang:TypeScript select:file.owners` Displays owners of all TypeScript files.
 
 ### Type
 
