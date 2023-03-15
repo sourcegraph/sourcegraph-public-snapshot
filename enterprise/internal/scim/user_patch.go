@@ -195,7 +195,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 			}
 			validator, _ := sgfilter.NewValidator(buildFilterString(valueExpr, attrName), h.coreSchema, getExtensionSchemas(h.schemaExtensions)...)
 			filterMatched := false
-			// Capture the proper name of the attribute to set so we don't have to do it each iteration
+			// Capture the proper name of the attribute to set, so we don't have to do it each iteration
 			attributeToSet := attrName
 			if subAttrName != "" {
 				attributeToSet = subAttrName
@@ -206,7 +206,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 					continue // if this isn't a map of properties it can't match or be replaced
 				}
 				if arrayItemMatchesFilter(attrName, item, validator) {
-					// Note that we found a matching item so we dont' need to take additional actions
+					// Note that we found a matching item, so we don't need to take additional actions
 					filterMatched = true
 					newlyChanged := applyAttributeChange(item, attributeToSet, v, op.Op)
 					if newlyChanged {
@@ -271,13 +271,13 @@ func applyChangeToAttributes(attributes scim.ResourceAttributes, rawPath string,
 
 // applyAttributeChange applies a change to an _existing_ resource attribute (for example, userName).
 func applyAttributeChange(attributes scim.ResourceAttributes, attrName string, value interface{}, op string) (changed bool) {
-	// apply remove operation
+	// Apply remove operation
 	if op == "remove" {
 		delete(attributes, attrName)
 		return true
 	}
 
-	// add only works for arrays and maps, otherwise it's the same as replace
+	// Add only works for arrays and maps, otherwise it's the same as replace
 	if op == "add" {
 		switch value := value.(type) {
 		case []interface{}:
@@ -288,7 +288,7 @@ func applyAttributeChange(attributes scim.ResourceAttributes, attrName string, v
 		}
 	}
 
-	// apply replace operation (or add operation for non-array and non-map values)
+	// Apply "replace" operation (or "add" operation for non-array and non-map values)
 	attributes[attrName] = value
 	return true
 }
