@@ -88,8 +88,10 @@
 }
 
 .hover-actions {
-    display: flex;
-    gap: 5px;
+    > span:not(:first-child) {
+        /* Add margin between buttons. */
+        margin-left: 0.25rem !important;
+    }
 }
 
 /* Hover overlay buttons */
@@ -102,6 +104,11 @@
 
     &:first-child {
         border-left: none !important;
+    }
+
+    /* Add margin between buttons. Important is required to override the rule above. */
+    & + & {
+        margin-left: 0.25rem !important;
     }
 }
 
