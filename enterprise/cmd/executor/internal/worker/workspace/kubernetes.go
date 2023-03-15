@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
@@ -30,7 +30,7 @@ func NewKubernetesWorkspace(
 	var path string
 	var workspaceDir string
 	var err error
-	if util.IsKubernetes() {
+	if config.IsKubernetes() {
 		path = fmt.Sprintf("job-%d", job.ID)
 		workspaceDir = fmt.Sprintf("/data/%s", path)
 	} else {

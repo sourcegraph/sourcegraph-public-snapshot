@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"sort"
-	"sync"
 
 	"github.com/Masterminds/semver"
 
@@ -221,14 +220,4 @@ func (e *ErrMissingTools) Error() string {
 		errs = errors.Append(errs, errors.Newf("%s not found in PATH, is it installed?%s", tool, helpLine))
 	}
 	return errs.Error()
-}
-
-var kubernetesOnce sync.Once
-var isKubernetes = false
-
-func IsKubernetes() bool {
-	kubernetesOnce.Do(func() {
-		_, isKubernetes = os.LookupEnv("KUBERNETES_SERVICE_HOST")
-	})
-	return isKubernetes
 }

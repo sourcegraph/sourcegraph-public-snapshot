@@ -7,6 +7,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
@@ -73,12 +74,12 @@ func New(
 		}
 	}
 
-	if util.IsKubernetes() {
-		config, err := clientcmd.BuildConfigFromFlags("", runnerOpts.KubernetesOptions.ConfigPath)
+	if config.IsKubernetes() {
+		kubConfig, err := clientcmd.BuildConfigFromFlags("", runnerOpts.KubernetesOptions.ConfigPath)
 		if err != nil {
 			return nil, err
 		}
-		clientset, err := kubernetes.NewForConfig(config)
+		clientset, err := kubernetes.NewForConfig(kubConfig)
 		if err != nil {
 			return nil, err
 		}
