@@ -58,7 +58,7 @@ func exportRankingGraph(
 			return 0, 0, 0, err
 		}
 
-		if err := store.InsertInitialPathRanks(ctx, upload.RepoID, documentPaths, graphKey); err != nil {
+		if err := store.InsertInitialPathRanks(ctx, upload.ID, documentPaths, graphKey); err != nil {
 			logger.Error(
 				"Failed to insert initial path counts",
 				log.Int("id", upload.ID),
@@ -156,6 +156,15 @@ func vacuumStaleReferences(ctx context.Context, store store.Store) (int, int, er
 
 	numReferenceRecordsScanned, numReferenceRecordsRemoved, err := store.VacuumStaleReferences(ctx, rankingshared.GraphKey())
 	return numReferenceRecordsScanned, numReferenceRecordsRemoved, err
+}
+
+func vacuumStaleInitialPaths(ctx context.Context, store store.Store) (int, int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, 0, nil
+	}
+
+	numPathRecordsScanned, numStalePathRecordsDeleted, err := store.VacuumStaleInitialPaths(ctx, rankingshared.GraphKey())
+	return numPathRecordsScanned, numStalePathRecordsDeleted, err
 }
 
 func vacuumStaleGraphs(ctx context.Context, store store.Store) (int, int, error) {

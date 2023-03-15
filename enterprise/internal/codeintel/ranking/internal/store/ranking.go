@@ -336,7 +336,7 @@ WITH
 unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
-		ipr.repository_id,
+		ipr.upload_id,
 		ipr.document_path,
 		ipr.graph_key
 	FROM codeintel_initial_path_ranks ipr
@@ -364,12 +364,13 @@ locked_path_counts AS (
 ins AS (
 	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
 	SELECT
-		upc.repository_id,
+		u.repository_id,
 		upc.document_path,
 		0,
 		%s
 	FROM locked_path_counts lpc
 	JOIN unprocessed_path_counts upc on upc.id = lpc.codeintel_initial_path_ranks_id
+	JOIN lsif_uploads u ON u.id = upc.upload_id
 	RETURNING 1
 )
 SELECT
@@ -377,12 +378,12 @@ SELECT
 	(SELECT COUNT(*) FROM ins)
 `
 
-func (s *store) InsertInitialPathRanks(ctx context.Context, repositoryID int, documentPath []string, derivativeGraphKey string) (err error) {
+func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPath []string, graphKey string) (err error) {
 	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(
 		ctx,
 		&err,
 		observation.Args{LogFields: []otlog.Field{
-			otlog.String("derivativeGraphKey", derivativeGraphKey),
+			otlog.String("graphKey", graphKey),
 		}},
 	)
 	defer endObservation(1, observation.Args{})
@@ -418,7 +419,7 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, repositoryID int, do
 		return err
 	}
 
-	if err = tx.Exec(ctx, sqlf.Sprintf(insertInitialPathRankCountsQuery, repositoryID, derivativeGraphKey)); err != nil {
+	if err = tx.Exec(ctx, sqlf.Sprintf(insertInitialPathRankCountsQuery, uploadID, graphKey)); err != nil {
 		return err
 	}
 
@@ -433,7 +434,7 @@ ON COMMIT DROP
 `
 
 const insertInitialPathRankCountsQuery = `
-INSERT INTO codeintel_initial_path_ranks (repository_id, document_path, graph_key)
+INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
 	SELECT
 		%s,
 		document_path,
@@ -674,6 +675,65 @@ deleted_references AS (
 SELECT
 	(SELECT COUNT(*) FROM locked_references),
 	(SELECT COUNT(*) FROM deleted_references)
+`
+
+func (s *store) VacuumStaleInitialPaths(ctx context.Context, graphKey string) (
+	numPathRecordsScanned int,
+	numStalePathRecordsDeleted int,
+	err error,
+) {
+	ctx, _, endObservation := s.operations.vacuumStalePaths.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
+		vacuumStalePathsQuery,
+		graphKey, int(threshold/time.Hour), vacuumBatchSize,
+	))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&numPathRecordsScanned,
+			&numStalePathRecordsDeleted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return numPathRecordsScanned, numStalePathRecordsDeleted, nil
+}
+
+const vacuumStalePathsQuery = `
+WITH
+locked_initial_path_ranks AS (
+	SELECT
+		ipr.id,
+		ipr.upload_id,
+		EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.upload_id = ipr.upload_id AND uvt.is_default_branch) AS safe
+	FROM codeintel_initial_path_ranks ipr
+	WHERE
+		ipr.graph_key = %s AND
+		(ipr.last_scanned_at IS NULL OR NOW() - ipr.last_scanned_at >= %s * '1 hour'::interval)
+	ORDER BY ipr.last_scanned_at ASC NULLS FIRST
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+updated_initial_path_ranks AS (
+	UPDATE codeintel_initial_path_ranks
+	SET last_scanned_at = NOW()
+	WHERE id IN (SELECT lr.id FROM locked_initial_path_ranks lr WHERE lr.safe)
+),
+deleted_initial_path_ranks AS (
+	DELETE FROM codeintel_initial_path_ranks
+	WHERE id IN (SELECT lr.id FROM locked_initial_path_ranks lr WHERE NOT lr.safe)
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM locked_initial_path_ranks),
+	(SELECT COUNT(*) FROM deleted_initial_path_ranks)
 `
 
 func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (

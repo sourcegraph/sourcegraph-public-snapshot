@@ -827,15 +827,18 @@ Contains auto-index job inference Lua scripts as an alternative to setting via e
 
 # Table "public.codeintel_initial_path_ranks"
 ```
-    Column     |  Type   | Collation | Nullable |                         Default                          
----------------+---------+-----------+----------+----------------------------------------------------------
- id            | bigint  |           | not null | nextval('codeintel_initial_path_ranks_id_seq'::regclass)
- repository_id | integer |           | not null | 
- document_path | text    |           | not null | 
- graph_key     | text    |           | not null | 
+     Column      |           Type           | Collation | Nullable |                         Default                          
+-----------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id              | bigint                   |           | not null | nextval('codeintel_initial_path_ranks_id_seq'::regclass)
+ upload_id       | integer                  |           | not null | 
+ document_path   | text                     |           | not null | 
+ graph_key       | text                     |           | not null | 
+ last_scanned_at | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_initial_path_ranks_pkey" PRIMARY KEY, btree (id)
-    "codeintel_initial_path_ranks_graph_key_and_repository_id" btree (graph_key, repository_id)
+    "codeintel_initial_path_ranks_graph_key_id" btree (graph_key, id)
+    "codeintel_initial_path_ranks_graph_key_last_scanned_at" btree (graph_key, last_scanned_at NULLS FIRST, id)
+    "codeintel_initial_path_upload_id" btree (upload_id)
 Referenced by:
     TABLE "codeintel_initial_path_ranks_processed" CONSTRAINT "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
 
@@ -850,6 +853,7 @@ Referenced by:
  codeintel_initial_path_ranks_id | bigint |           | not null | 
 Indexes:
     "codeintel_initial_path_ranks_processed_pkey" PRIMARY KEY, btree (id)
+    "codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini" UNIQUE, btree (graph_key, codeintel_initial_path_ranks_id)
 Foreign-key constraints:
     "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
 
