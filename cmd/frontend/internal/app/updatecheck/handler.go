@@ -419,6 +419,11 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		return nil, errors.Wrap(err, "malformed search usage")
 	}
 
+	repositoryHistogramSize, err := reserializeRepositorySizeHistogram(pr.RepositorySizeHistogram)
+	if err != nil {
+		return nil, errors.Wrap(err, "malformed repository size histogram")
+	}
+
 	return json.Marshal(&pingPayload{
 		RemoteIP:                      clientAddr,
 		RemoteSiteVersion:             pr.ClientVersionString,
@@ -436,7 +441,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		HomepagePanels:                pr.HomepagePanels,
 		RetentionStatistics:           pr.RetentionStatistics,
 		Repositories:                  pr.Repositories,
-		RepositorySizeHistogram:       pr.RepositorySizeHistogram,
+		RepositorySizeHistogram:       repositoryHistogramSize,
 		SearchOnboarding:              pr.SearchOnboarding,
 		InstallerEmail:                pr.InitialAdminEmail,
 		DependencyVersions:            pr.DependencyVersions,
@@ -646,6 +651,21 @@ type jsonEventSummary struct {
 	CrossRepository bool   `json:"cross_repository"`
 	WAUs            int32  `json:"waus"`
 	TotalActions    int32  `json:"total_actions"`
+}
+
+type jsonRepositorySizeHistogram struct {
+	Lt    *int32 `json:"lt"`
+	Gte   *int32 `json:"gte"`
+	Count *int32 `json:"count"`
+}
+
+func reserializeRepositorySizeHistogram(payload json.RawMessage) json.RawMessage {
+    var histogram []jsonRepositorySizeHistogram
+    if err := json.Unmarshal([]byte(payload), &histogram); err != nil {
+        return nil, err
+    }
+
+    return json.Marshal(histogram)
 }
 
 var codeIntelActionNames = map[types.CodeIntelAction]string{
