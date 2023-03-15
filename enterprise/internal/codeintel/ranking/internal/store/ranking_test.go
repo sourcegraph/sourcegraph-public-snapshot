@@ -186,6 +186,42 @@ func TestInsertInitialPathRanks(t *testing.T) {
 		t.Fatalf("unexpected error inserting initial path counts: %s", err)
 	}
 
+	inputs, err := getInitialPathRanks(ctx, t, db, mockRankingGraphKey)
+	if err != nil {
+		t.Fatalf("unexpected error getting path count inputs: %s", err)
+	}
+
+	expectedInputs := []initialPathRanks{
+		{RepositoryID: 1, DocumentPath: "bar.go"},
+		{RepositoryID: 1, DocumentPath: "baz.go"},
+		{RepositoryID: 1, DocumentPath: "foo.go"},
+	}
+	if diff := cmp.Diff(expectedInputs, inputs); diff != "" {
+		t.Errorf("unexpected path count inputs (-want +got):\n%s", diff)
+	}
+}
+
+func TestInsertInitialPathCounts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	mockRepoID := 1
+	mockPathNames := []string{"foo.go", "bar.go", "baz.go"}
+
+	if err := store.InsertInitialPathRanks(ctx, mockRepoID, mockPathNames, mockRankingGraphKey); err != nil {
+		t.Fatalf("unexpected error inserting initial path counts: %s", err)
+	}
+
+	if _, _, err := store.InsertInitialPathCounts(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 1000); err != nil {
+		t.Fatalf("unexpected error inserting initial path counts: %s", err)
+	}
+
 	inputs, err := getPathCountsInputs(ctx, t, db, mockRankingGraphKey)
 	if err != nil {
 		t.Fatalf("unexpected error getting path count inputs: %s", err)
@@ -676,6 +712,42 @@ func getPathCountsInputs(
 	}
 
 	return pathCountsInputs, nil
+}
+
+type initialPathRanks struct {
+	RepositoryID int
+	DocumentPath string
+}
+
+func getInitialPathRanks(
+	ctx context.Context,
+	t *testing.T,
+	db database.DB,
+	graphKey string,
+) (pathRanks []initialPathRanks, err error) {
+	query := sqlf.Sprintf(`
+		SELECT repository_id, document_path
+		FROM codeintel_initial_path_ranks
+		WHERE graph_key LIKE %s || '%%'
+		GROUP BY repository_id, document_path
+		ORDER BY repository_id, document_path
+	`, graphKey)
+	rows, err := db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		var input initialPathRanks
+		if err := rows.Scan(&input.RepositoryID, &input.DocumentPath); err != nil {
+			return nil, err
+		}
+
+		pathRanks = append(pathRanks, input)
+	}
+
+	return pathRanks, nil
 }
 
 // insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository

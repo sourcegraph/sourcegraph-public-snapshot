@@ -335,30 +335,31 @@ const insertInitialPathCountsInputsQuery = `
 WITH
 unprocessed_path_counts AS (
 	SELECT
+		ipr.id,
 		ipr.repository_id,
 		ipr.document_path,
 		ipr.graph_key
 	FROM codeintel_initial_path_ranks ipr
 	WHERE
-		irp.graph_key = %s AND
+		ipr.graph_key = %s AND
 		NOT EXISTS (
 			SELECT 1
 			FROM codeintel_initial_path_ranks_processed prp
 			WHERE
 				prp.graph_key = %s AND
-				prp.codeintel_initial_path_rank_id = ipr.id
+				prp.codeintel_initial_path_ranks_id = ipr.id
 		)
 	ORDER BY ipr.id
 	LIMIT %s
 ),
 locked_path_counts AS (
-	INSERT INTO codeintel_initial_path_ranks_processed (graph_key, codeintel_initial_path_rank_id)
+	INSERT INTO codeintel_initial_path_ranks_processed (graph_key, codeintel_initial_path_ranks_id)
 	SELECT
 		%s,
 		upc.id
 	FROM unprocessed_path_counts upc
 	ON CONFLICT DO NOTHING
-	RETURNING codeintel_initial_path_rank_id
+	RETURNING codeintel_initial_path_ranks_id
 ),
 ins AS (
 	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
@@ -368,7 +369,7 @@ ins AS (
 		0,
 		%s
 	FROM locked_path_counts lpc
-	JOIN unprocessed_path_counts upc on upc.id = lpc.codeintel_initial_path_rank_id
+	JOIN unprocessed_path_counts upc on upc.id = lpc.codeintel_initial_path_ranks_id
 	RETURNING 1
 )
 SELECT
