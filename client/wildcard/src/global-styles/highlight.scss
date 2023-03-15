@@ -106,16 +106,15 @@
     // --scip-comment: #3f6212;
 
     // Tailwind 700
-    --scip-keyword: #c2410c; // Orange
-    --scip-identifier: #1d4ed8; // Blue
-    --scip-identifier-constant: #0369a1; // Sky
-    --scip-identifier-type: #4338ca; // Indigo
-    --scip-identifier-attribute: #a21caf; // Fuchsia
-    --scip-identifier-function: #a16207; // Yello
-    --scip-string-literal: #0f766e; // Teal
-    --scip-escape: #b91c1c; // Red
-    --scip-numeric-literal: #0e7490; // Cyan
-    --scip-comment: #4d7c0f; // Lime
+    --scip-keyword: var(--oc-orange-7);
+    --scip-identifier: var(--oc-blue-7);
+    --scip-identifier-type: var(--oc-indigo-7);
+    --scip-identifier-attribute: var(--oc-grape-7);
+    --scip-identifier-function: var(--oc-yellow-7);
+    --scip-string-literal: var(--oc-teal-7);
+    --scip-escape: var(--oc-red-7);
+    --scip-numeric-literal: var(--oc-cyan-7);
+    --scip-comment: var(--oc-green-7);
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
     // Define these in a way that are good. These are just the same values as before.
@@ -540,7 +539,7 @@
         color: var(--scip-keyword);
     }
     .hl-typed-IdentifierConstant {
-        color: var(--scip-identifier-constant);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierMutableGlobal {
         color: var(--scip-identifier);
@@ -925,29 +924,17 @@
     //
     // Each group should exactly match the name of the spec.
     // .hl-typed-$SYNTAX_KIND
-    // --scip-identifier: #859900;
-    // --scip-keyword: #429feb;
-    // --scip-identifier: #c0c5ce;
-    // --scip-identifier-constant: #96b5b4;
-    // --scip-identifier-type: #96b5b4;
-    // --scip-identifier-attribute: #eb519c; // Properties/fields
-    // --scip-identifier-function: #fbd460;
-    // --scip-string-literal: #fb90c4;
-    // --scip-escape: #d70505;
-    // --scip-numeric-literal: #c0c0c9;
-    // --scip-comment: #3fad55;
 
     // Tailwind 300
-    --scip-keyword: #fdba74; // Orange
-    --scip-identifier: #93c5fd; // Blue
-    --scip-identifier-constant: #7dd3fc; // Sky
-    --scip-identifier-type: #a5b4fc; // Indigo
-    --scip-identifier-attribute: #f0abfc; // Fuchsia
-    --scip-identifier-function: #fde047; // Yellow
-    --scip-string-literal: #5eead4; // Teal
-    --scip-escape: #fca5a5; // Red
-    --scip-numeric-literal: #67e8f9; // Cyan
-    --scip-comment: #bef264; // Lime
+    --scip-keyword: var(--oc-orange-4);
+    --scip-identifier: var(--oc-blue-3);
+    --scip-identifier-type: var(--oc-indigo-3);
+    --scip-identifier-attribute: var(--oc-grape-3);
+    --scip-identifier-function: var(--oc-yellow-3);
+    --scip-string-literal: var(--oc-teal-3);
+    --scip-escape: var(--oc-red-3);
+    --scip-numeric-literal: var(--oc-cyan-3);
+    --scip-comment: var(--oc-green-5);
 
     .hl-typed-Comment {
         color: var(--scip-comment);
@@ -989,7 +976,7 @@
         color: var(--scip-keyword);
     }
     .hl-typed-IdentifierConstant {
-        color: var(--scip-identifier-constant);
+        color: var(--scip-identifier);
     }
     .hl-typed-IdentifierMutableGlobal {
         color: var(--scip-identifier);
