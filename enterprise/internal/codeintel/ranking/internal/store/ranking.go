@@ -307,7 +307,7 @@ func (s *store) InsertInitialPathCounts(ctx context.Context, repositoryID int, d
 
 	inserter := func(inserter *batch.Inserter) error {
 		for _, path := range documentPath {
-			if err := inserter.Insert(ctx, repositoryID, path, 0, derivativeGraphKey); err != nil {
+			if err := inserter.Insert(ctx, path); err != nil {
 				return err
 			}
 		}
@@ -315,27 +315,45 @@ func (s *store) InsertInitialPathCounts(ctx context.Context, repositoryID int, d
 		return nil
 	}
 
+	if err := tx.Exec(ctx, sqlf.Sprintf(createInitialPathTemporaryTableQuery)); err != nil {
+		return err
+	}
+
 	if err := batch.WithInserter(
 		ctx,
 		tx.Handle(),
-		"codeintel_ranking_path_counts_inputs",
+		"t_codeintel_ranking_path_counts_inputs",
 		batch.MaxNumPostgresParameters,
 		[]string{
-			"repository_id",
 			"document_path",
-			"count",
-			"graph_key",
 		},
 		inserter,
 	); err != nil {
 		return err
 	}
 
+	if err = tx.Exec(ctx, sqlf.Sprintf(insertInitialPathRankCountsQuery, repositoryID, derivativeGraphKey)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
+const createInitialPathTemporaryTableQuery = `
+CREATE TEMPORARY TABLE IF NOT EXISTS t_codeintel_ranking_path_counts_inputs (
+	document_path text NOT NULL
+)
+ON COMMIT DROP
+`
+
 const insertInitialPathRankCountsQuery = `
 INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
+	SELECT
+		%s,
+		document_path,
+		0,
+		%s
+	FROM t_codeintel_ranking_path_counts_inputs
 `
 
 func (s *store) InsertPathRanks(
