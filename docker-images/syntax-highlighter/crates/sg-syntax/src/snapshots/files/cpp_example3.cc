@@ -110,7 +110,6 @@ void literals() {
     auto utf8StringLit = u8"World";
     auto utf16StringLit = u"World";
     auto utf32StringLit = U"World";
-    const wchar_t* sC = LR"--(STUV)--"; // ok, raw string literal
     auto rawStringLit = R"sequence(Hello
     \n
     \r
@@ -118,6 +117,9 @@ void literals() {
     World)sequence";
     auto nullptrLit = nullptr;
     auto nullLit = NULL;
+
+    // Examples from https://en.cppreference.com/w/cpp/language/string_literal
+    const wchar_t* sC = LR"--(STUV)--"; // ok, raw string literal
     const wchar_t* s4 = L"ABC" L"DEF"; // ok, same as
     const wchar_t* s5 = L"ABCDEF";
     const char32_t* s6 = U"GHI" "JKL"; // ok, same as

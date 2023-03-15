@@ -374,16 +374,10 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^ Keyword 
 //         ^^^^^^^^^^^^^^ Identifier 
 //                          ^^^^^^^^ StringLiteral 
-      const wchar_t* sC = LR"--(STUV)--"; // ok, raw string literal
-//    ^^^^^ Keyword 
-//          ^^^^^^^ IdentifierType 
-//                   ^^ Identifier 
-//                        ^^^^^^^^^^^^^^ StringLiteral 
-//                                        ^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
       auto rawStringLit = R"sequence(Hello
 //    ^^^^ Keyword 
 //         ^^^^^^^^^^^^ Identifier 
-//                        ^^^^^^^^^^^^^^^^ StringLiteral 113:24..117:19 
+//                        ^^^^^^^^^^^^^^^^ StringLiteral 112:24..116:19 
       \n
       \r
       \t
@@ -396,6 +390,15 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^ Keyword 
 //         ^^^^^^^ Identifier 
 //                   ^^^^ IdentifierNull 
+  
+      // Examples from https://en.cppreference.com/w/cpp/language/string_literal
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      const wchar_t* sC = LR"--(STUV)--"; // ok, raw string literal
+//    ^^^^^ Keyword 
+//          ^^^^^^^ IdentifierType 
+//                   ^^ Identifier 
+//                        ^^^^^^^^^^^^^^ StringLiteral 
+//                                        ^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
       const wchar_t* s4 = L"ABC" L"DEF"; // ok, same as
 //    ^^^^^ Keyword 
 //          ^^^^^^^ IdentifierType 
