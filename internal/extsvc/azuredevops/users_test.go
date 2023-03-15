@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/stretchr/testify/require"
 )
 
 func TestClient_AzureServicesProfile(t *testing.T) {
@@ -34,10 +33,14 @@ func TestClient_ListAuthorizedUserOrganizations(t *testing.T) {
 
 	ctx := context.Background()
 	profile, err := cli.GetAuthorizedProfile(ctx)
-	require.NoError(t, err, "failed to get authorized profile")
+	if err != nil {
+		t.Fatalf("failed to get authorized profile: %v", err)
+	}
 
 	orgs, err := cli.ListAuthorizedUserOrganizations(ctx, profile)
-	require.NoError(t, err, "failed to list authorized user organizations")
+	if err != nil {
+		t.Fatalf("failed to list authorized user origanizations: %v", err)
+	}
 
 	testutil.AssertGolden(t, "testdata/golden/ListAuthorizedUserOrganizations.json", *update, orgs)
 }
