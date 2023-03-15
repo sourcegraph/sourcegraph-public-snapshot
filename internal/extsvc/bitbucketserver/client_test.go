@@ -10,6 +10,8 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"reflect"
@@ -21,6 +23,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -69,6 +72,29 @@ func TestParseQueryStrings(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClientKeepsBaseURLPath(t *testing.T) {
+	ctx := context.Background()
+
+	succeeded := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/testpath") {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		succeeded = true
+	}))
+
+	srvURL, err := url.JoinPath(srv.URL, "/testpath")
+	require.NoError(t, err)
+	bbConf := &schema.BitbucketServerConnection{Url: srvURL}
+	client, err := NewClient("test", bbConf, nil)
+	require.NoError(t, err)
+
+	_, _ = client.AuthenticatedUsername(ctx)
+	assert.Equal(t, true, succeeded)
 }
 
 func TestUserFilters(t *testing.T) {
