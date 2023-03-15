@@ -3,7 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5
+FROM --platform=linux/amd64 sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -16,6 +16,11 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 # Firecracker doesn't work in docker, so disable it by default.
 ENV EXECUTOR_USE_FIRECRACKER=false
+
+# Preconfigure bundled-executor to take 1 parallel job and restart afterwards, this is to keep the
+# environment clean-ish.
+ENV EXECUTOR_MAXIMUM_NUM_JOBS=1
+ENV EXECUTOR_NUM_TOTAL_JOBS=1
 
 # Install git and docker. We use the same version here as we use in gitserver.
 RUN apk add --no-cache \
@@ -33,13 +38,15 @@ RUN set -ex && \
     chmod +x /usr/local/bin/src && \
     rm -rf src-cli.tar.gz
 
-# Install additional common tools for running batch changes.
+# Install additional common tools for running batch changes. TODO: Doesn't work, isn't statically linked.
+COPY --from=comby/comby /usr/local/bin/comby /usr/local/bin/comby
 # RUN apk add --no-cache \
 #     docker \
 #     ca-certificates
 
 # Install batcheshelper.
 COPY batcheshelper /usr/local/bin/
+ENV PATH="$PATH:/usr/local/bin"
 
 USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/executor"]

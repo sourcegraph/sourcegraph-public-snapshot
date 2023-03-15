@@ -1,4 +1,5 @@
 //go:build shell
+// +build shell
 
 package command
 
@@ -11,6 +12,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func init() {
+	println("Hello from the SHELL executor")
+	allowedBinaries = append(allowedBinaries, "/bin/sh")
+}
 
 // NewRunner creates a new runner with the given options.
 func NewRunner(dir string, logger Logger, options Options, operations *Operations) Runner {

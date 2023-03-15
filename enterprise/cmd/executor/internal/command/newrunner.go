@@ -1,4 +1,5 @@
 //go:build !shell
+// +build !shell
 
 package command
 
