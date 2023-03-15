@@ -69,4 +69,5 @@ go_test(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
     ],
+    size = "large",
 )
