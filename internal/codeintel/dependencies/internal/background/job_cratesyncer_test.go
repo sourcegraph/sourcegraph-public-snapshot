@@ -44,7 +44,9 @@ func TestCrateSyncer(t *testing.T) {
 			if versions, ok := refs[r.Name]; ok {
 				refs[r.Name] = append(versions, r.Versions...)
 				for _, v := range r.Versions {
-					if slices.Contains(versions, v) {
+					if slices.ContainsFunc(versions, func(v2 shared.MinimalPackageRepoRefVersion) bool {
+						return v.Version == v2.Version && v.Blocked == v2.Blocked
+					}) {
 						newV = append(newV, shared.PackageRepoRefVersion{Version: v.Version})
 					}
 				}
@@ -169,7 +171,7 @@ func TestCrateSyncer(t *testing.T) {
 		}
 
 		if len(extsvcStore.GetByIDFunc.History()) != 1 {
-			t.Errorf("unexpected number of calls to GetByID (want=%d, got=%d)", 0, len(extsvcStore.GetByIDFunc.History()))
+			t.Errorf("unexpected number of calls to GetByID (want=%d, got=%d)", 1, len(extsvcStore.GetByIDFunc.History()))
 		}
 
 		if len(autoindexSvc.QueueIndexesForPackageFunc.History()) != 2 {
@@ -184,13 +186,7 @@ func createArchive(t *testing.T, info fileInfo) io.ReadCloser {
 	var buf bytes.Buffer
 	tarWriter := tar.NewWriter(&buf)
 
-	// switch path {
-	// case "petgraph":
-	// 	addFileToTarball(t, tarWriter, fileInfo{"petgraph", []byte(petgraphJSON)})
-	// case "percent":
-	//  addFileToTarball(t, tarWriter, fileInfo{"percent", []byte(percentEncJSON)})
 	addFileToTarball(t, tarWriter, info)
-	// }
 
 	return io.NopCloser(&buf)
 }
