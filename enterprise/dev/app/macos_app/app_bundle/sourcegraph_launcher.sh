@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
 # clear out the child pid variables to ensure that there is no channel for outside interference in killing pids
-unset ZPID RPID UPID
+unset ZPID RPID UPID SPID
 
 cleanup() {
+  [[ ${SPID:-0} -gt 0 ]] && {
+    echo "$(date) CONTROL KILLING sourcegraph process ${SPID}" | tee -a "${sgdir}/sourcegraph.log"
+    kill "${SPID}"
+  }
   # App no longer uses the same syntax highlighter, but leave this in place in case it's brought back
   [[ ${RPID:-0} -gt 0 ]] && {
     echo "$(date) CONTROL KILLING syntect_server process ${RPID}" | tee -a "${sgdir}/sourcegraph.log"
@@ -136,6 +140,9 @@ cat >"${sgdir}/site-config.json" <<EOF
 EOF
 
 # launch app
-# send it to background so that I can also open the webpage
+# send it to background so that I can explicitly kill it later
 echo "$(date) CONTROL START" | tee "${sgdir}/sourcegraph.log"
-"${DIR}"/sourcegraph 2>&1 | tee -a "${sgdir}/sourcegraph.log"
+"${DIR}"/sourcegraph 2>&1 | tee -a "${sgdir}/sourcegraph.log" &
+SPID=$!
+
+wait
