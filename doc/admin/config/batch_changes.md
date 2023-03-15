@@ -2,6 +2,10 @@
 
 [Batch Changes](../../batch_changes/index.md) is generally configured through the same [site configuration](site_config.md) and [code host configuration](../external_service/index.md) as the rest of Sourcegraph. However, Batch Changes features may require specific configuration, and those are documented here.
 
+## User access and permissions
+
+Batch Changes is [RBAC-enabled](../../admin/access_control/index.md) <span class="badge badge-beta">Beta</span>. By default, all users have full read and write access for Batch Changes, but this can be restricted by changing the default role permissions, or by creating new custom roles.
+
 ## Rollout windows
 
 By default, Sourcegraph attempts to reconcile (create, update, or close) changesets as quickly as the rate limits on the code host allow. This can result in CI systems being overwhelmed if hundreds or thousands of changesets are being handled as part of a single batch change.
