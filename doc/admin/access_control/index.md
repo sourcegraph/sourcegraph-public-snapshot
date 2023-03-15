@@ -6,7 +6,7 @@
 </p>
 </aside>
 
-> NOTE: This page refers to in-product permissions, which determine who can, for example, create a batch change or who is a site admin. This is *not* the same as [repository permissions](../permissions/index.md), which enforces the same repository access on Sourcegraph as your code host
+> NOTE: This page refers to in-product permissions, which determine who can, for example, create a batch change, or who is a site admin. This is *not* the same as [repository permissions](../permissions/index.md), which enforces the same repository access on Sourcegraph as your code host.
 
 > NOTE: This functionality was added in Sourcegraph 5.0.
 
