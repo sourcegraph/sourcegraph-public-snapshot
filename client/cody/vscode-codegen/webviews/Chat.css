@@ -63,7 +63,7 @@
 
 .bubble-content pre,
 .bubble-content code {
-    color: white;
+    color: var(--vscode-input-foreground);
 }
 
 .human-bubble-content {
