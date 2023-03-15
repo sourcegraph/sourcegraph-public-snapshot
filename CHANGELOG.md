@@ -53,6 +53,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Native support for ingesting and searching GitHub topics with `repo:has.topic()` [#48875](https://github.com/sourcegraph/sourcegraph/pull/48875)
 - [Sourcegraph Own](https://docs.sourcegraph.com/own) is now available as an experimental enterprise feature. Enable the `search-ownership` feature flag to use it.
 - Gitserver supports a new `COURSIER_CACHE_DIR` env var to configure the cache location for coursier JVM package repos.
+- Pings now emit a histogram of repository sizes cloned by Sourcegraph [48211](https://github.com/sourcegraph/sourcegraph/pull/48211).
 
 ### Changed
 
