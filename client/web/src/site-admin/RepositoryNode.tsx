@@ -54,26 +54,6 @@ interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
-// const useOnClickDetector = (
-//     reference: React.RefObject<HTMLDivElement>
-// ): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
-//     const [onClick, setOnClick] = useState(false)
-//
-//     useEffect(() => {
-//         function handleToggleOpen(): void {
-//             if (reference.current) {
-//                 setOnClick(false)
-//             }
-//         }
-//         document.addEventListener('mouseup', handleToggleOpen)
-//         return () => {
-//             document.removeEventListener('mouseup', handleToggleOpen)
-//         }
-//     }, [reference, setOnClick])
-//
-//     return [onClick, setOnClick]
-// }
-
 export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const navigate = useNavigate()
