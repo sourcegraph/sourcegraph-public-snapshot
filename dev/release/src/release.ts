@@ -386,7 +386,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             let message: string
             // notify cs team on patch release cut
             if (release.version.patch !== 0) {
-                message = `:mega: *${release.version.version}* branch has been cut cc: @cs`
+                message = `:mega: *${release.version.version}* branch has been cut cc: @cs\nIf you need to include changes in the release, see instructions on how to backport: https://handbook.sourcegraph.com/departments/engineering/dev/tools/backport/#how-should-i-use-the-backporting-tool.`
             } else {
                 message = `:mega: *${release.version.version}* branch has been cut.`
             }
@@ -1152,6 +1152,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 console.log(chalk.green('All versions matched expected version!'))
             } else {
                 console.log(chalk.red('Failed to verify src-cli versions'))
+                exit(1)
             }
         },
     },

@@ -45,9 +45,9 @@ type UserResourceHandler struct {
 	schemaExtensions []scim.SchemaExtension
 }
 
-func (u *UserResourceHandler) getLogger() log.Logger {
-	if u.observationCtx != nil && u.observationCtx.Logger != nil {
-		return u.observationCtx.Logger.Scoped("scim.user", "resource handler for scim user")
+func (h *UserResourceHandler) getLogger() log.Logger {
+	if h.observationCtx != nil && h.observationCtx.Logger != nil {
+		return h.observationCtx.Logger.Scoped("scim.user", "resource handler for scim user")
 	}
 	return log.Scoped("scim.user", "resource handler for scim user")
 }

@@ -39,14 +39,6 @@
             "pointer": true
           }
         },
-        "setupWizard": {
-          "description": "Experimental setup wizard",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "searchContextsQuery": {
           "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
           "type": "boolean",
@@ -564,7 +556,9 @@
     "perforce.codeHostToSwarmMap": {
       "description": "Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like \"perforce.company.com:1666\". Values should look like \"https://swarm.company.com/\", with a slash at the end.",
       "type": "object",
-      "additionalProperties": { "type": "string" },
+      "additionalProperties": {
+        "type": "string"
+      },
       "default": {}
     }
   },
@@ -617,8 +611,12 @@
       "description": "Performs a filter",
       "required": ["includeRepoRegexp", "excludeRepoRegexp"],
       "properties": {
-        "includeRepoRegexp": { "type": "string" },
-        "excludeRepoRegexp": { "type": "string" },
+        "includeRepoRegexp": {
+          "type": "string"
+        },
+        "excludeRepoRegexp": {
+          "type": "string"
+        },
         "repositories": {
           "type": "array",
           "items": {

@@ -4,7 +4,6 @@ go_library(
     name = "background",
     srcs = [
         "job_graph_exporter.go",
-        "observabililty.go",
         "ranking.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background",
@@ -18,7 +17,6 @@ go_library(
         "//internal/conf",
         "//internal/goroutine",
         "//internal/observation",
-        "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_scip//bindings/go/scip",
     ],

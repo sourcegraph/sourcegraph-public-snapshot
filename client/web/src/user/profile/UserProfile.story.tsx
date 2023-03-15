@@ -39,7 +39,10 @@ const mockUser: UserAreaUserFields = {
     ],
     roles: {
         __typename: 'RoleConnection',
-        nodes: [{ name: 'USER' }, { name: 'OPERATOR' }],
+        nodes: [
+            { name: 'USER', system: true },
+            { name: 'Operator', system: false },
+        ],
     },
 }
 

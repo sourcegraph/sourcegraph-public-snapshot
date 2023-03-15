@@ -188,20 +188,20 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			perms := edb.NewStrictMockPermsStore()
 			perms.TransactFunc.SetDefaultReturn(perms, nil)
 			perms.DoneFunc.SetDefaultReturn(nil)
-			perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, ids []authz.UserIDWithExternalAccountID, source authz.PermsSource) error {
+			perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, ids []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 				expUserIDs := maps.Keys(test.expUserIDs)
 				userIDs := make([]int32, len(ids))
 				for i, u := range ids {
 					userIDs[i] = u.UserID
 				}
 				if diff := cmp.Diff(expUserIDs, userIDs); diff != "" {
-					return errors.Errorf("userIDs expected: %v, got: %v", expUserIDs, userIDs)
+					return nil, errors.Errorf("userIDs expected: %v, got: %v", expUserIDs, userIDs)
 				}
 				if source != authz.SourceAPI {
-					return errors.Errorf("source expected: %s, got: %s", authz.SourceAPI, source)
+					return nil, errors.Errorf("source expected: %s, got: %s", authz.SourceAPI, source)
 				}
 
-				return nil
+				return nil, nil
 			})
 			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 				ids := p.UserIDs
@@ -1979,6 +1979,54 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 
 		require.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
 		require.Nil(t, result)
+	})
+
+	t.Run("authenticated as non-admin with current user's ID as userID filter", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userID := graphqlbackend.MarshalUserID(1)
+		_, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{UserID: &userID})
+
+		require.NoError(t, err)
+	})
+
+	t.Run("authenticated as non-admin with different user's ID as userID filter", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userID := graphqlbackend.MarshalUserID(2)
+		_, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{UserID: &userID})
+
+		require.ErrorIs(t, err, auth.ErrMustBeSiteAdminOrSameUser)
+	})
+
+	t.Run("authenticated as admin with different user's ID as userID filter", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userID := graphqlbackend.MarshalUserID(2)
+		_, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{UserID: &userID})
+
+		require.NoError(t, err)
 	})
 
 	// Mocking users database queries.

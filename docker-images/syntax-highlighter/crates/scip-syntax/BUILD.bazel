@@ -26,6 +26,7 @@ rust_library(
     ],
 )
 
+# gazelle:exclude testdata
 rust_test(
     name = "unit_test",
     size = "small",
