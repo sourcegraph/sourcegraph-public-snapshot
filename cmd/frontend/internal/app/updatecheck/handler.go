@@ -659,13 +659,13 @@ type jsonRepositorySizeHistogram struct {
 	Count *int32 `json:"count"`
 }
 
-func reserializeRepositorySizeHistogram(payload json.RawMessage) json.RawMessage {
-    var histogram []jsonRepositorySizeHistogram
-    if err := json.Unmarshal([]byte(payload), &histogram); err != nil {
-        return nil, err
-    }
+func reserializeRepositorySizeHistogram(payload json.RawMessage) (json.RawMessage, error) {
+	var histogram []jsonRepositorySizeHistogram
+	if err := json.Unmarshal([]byte(payload), &histogram); err != nil {
+		return nil, err
+	}
 
-    return json.Marshal(histogram)
+	return json.Marshal(histogram)
 }
 
 var codeIntelActionNames = map[types.CodeIntelAction]string{
