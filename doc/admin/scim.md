@@ -26,7 +26,7 @@ To configure:
    ```
    "scim.authToken": "{your token}"
    ```
-3. If you use Microsoft Azure AD: Add the following setting to your site config:
+3. If you use Microsoft Azure AD, add the following setting to your site config:
 
    ```
    "scim.identityProvider": "Azure AD"
