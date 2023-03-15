@@ -1,13 +1,12 @@
 import path from 'path'
 
-import fetch from 'node-fetch'
-import * as vscode from 'vscode'
+import { ContextMessage, Message, TranscriptChunk } from '@sourcegraph/cody-common'
 
-import { ContextMessage, Message, QueryInfo, TranscriptChunk } from '@sourcegraph/cody-common'
+import { Editor } from '../editor'
+import { Embeddings, EmbeddingSearchResult } from '../embeddings'
+import { IntentDetector } from '../intent-detector'
+import { KeywordContextFetcher } from '../keyword-context'
 
-import { EmbeddingsClient, EmbeddingSearchResult } from '../embeddings-client'
-
-import { LocalKeywordFetcher } from './context'
 import { ContextSearchOptions } from './context-search-options'
 import { renderMarkdown } from './markdown'
 import { getRecipe } from './recipes/index'
@@ -24,17 +23,14 @@ const CHARS_PER_TOKEN = 4
 
 export class Transcript {
     private transcript: TranscriptChunk[] = []
-    private keywords: LocalKeywordFetcher
 
     constructor(
-        private embeddingsClient: EmbeddingsClient | null,
         private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
-        private serverUrl: string,
-        private accessToken: string,
-        private rgPath: string
-    ) {
-        this.keywords = new LocalKeywordFetcher(this.rgPath)
-    }
+        private embeddings: Embeddings | null,
+        private intentDetector: IntentDetector,
+        private keywords: KeywordContextFetcher,
+        private editor: Editor
+    ) {}
 
     public getTranscript(): TranscriptChunk[] {
         return this.transcript
@@ -61,35 +57,17 @@ export class Transcript {
         return []
     }
 
-    private async detectIntent(text: string): Promise<QueryInfo> {
-        const resp = await fetch(`${this.serverUrl}/info?q=${encodeURIComponent(text)}`, {
-            method: 'GET',
-            headers: {
-                Authorization: 'Bearer ' + this.accessToken,
-            },
-        })
-        const respJSON = await resp.json()
-        if (!('needsCodebaseContext' in respJSON) || !('needsCurrentFileContext' in respJSON)) {
-            throw new Error(`malformed response from /info: ${JSON.stringify(respJSON)}`)
-        }
-        return respJSON as QueryInfo
-    }
-
     private async getCodebaseContextMessages(query: string): Promise<ContextMessage[]> {
-        const { needsCurrentFileContext, needsCodebaseContext } = await this.detectIntent(query)
-
+        const { needsCurrentFileContext, needsCodebaseContext } = await this.intentDetector.detect(query)
         if (needsCurrentFileContext) {
-            const activeEditor = vscode.window.activeTextEditor
-            const documentText = activeEditor?.document.getText()
-            const documentUri = activeEditor?.document.uri
-
-            if (!documentText || !documentUri) {
+            const activeTextEditor = this.editor.getActiveTextEditor()
+            if (!activeTextEditor) {
                 return []
             }
-            const truncatedDocumentText = truncateText(documentText, MAX_CURRENT_FILE_TOKENS)
+            const truncatedDocumentText = truncateText(activeTextEditor.content, MAX_CURRENT_FILE_TOKENS)
             return [
                 {
-                    filename: path.basename(documentUri.path),
+                    filename: path.basename(activeTextEditor.filePath),
                     speaker: 'you',
                     text: `Here is the current open file to add to your knowledge base:\n\`\`\`\n${truncatedDocumentText}\n\`\`\``,
                 },
@@ -115,7 +93,7 @@ export class Transcript {
 
         switch (this.contextType) {
             case 'blended':
-                if (this.embeddingsClient) {
+                if (this.embeddings) {
                     contextMessages = await fetchEmbeddingsMessages()
                     if (needsCodebaseContext && !contextMessages.length) {
                         contextMessages = await this.keywords.getContextMessages(query)
@@ -144,17 +122,17 @@ export class Transcript {
         query: string,
         options: ContextSearchOptions
     ): Promise<ContextMessage[]> {
-        if (!this.embeddingsClient) {
+        if (!this.embeddings) {
             console.log('no embeddings client for current codebase')
             return []
         }
-        if (!(await this.embeddingsClient.queryNeedsAdditionalContext(query))) {
+        if (!(await this.embeddings.queryNeedsAdditionalContext(query))) {
             console.log('embeddings: no context needed')
             return []
         }
 
         console.log('fetching embeddings context')
-        const embeddingsSearchResults = await this.embeddingsClient.search(
+        const embeddingsSearchResults = await this.embeddings.search(
             query,
             options.numCodeResults,
             options.numMarkdownResults
@@ -287,6 +265,7 @@ export class Transcript {
         }
         const prompt = await recipe.getPrompt(
             MAX_RECIPE_INPUT_TOKENS + MAX_RECIPE_SURROUNDING_TOKENS,
+            this.editor,
             (query: string, options: ContextSearchOptions): Promise<Message[]> =>
                 this.getEmbeddingsContextMessages(query, options)
         )

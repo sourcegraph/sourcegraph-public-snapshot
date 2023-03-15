@@ -1,4 +1,4 @@
-import { EmbeddingSearchResult } from '../embeddings-client'
+import { EmbeddingSearchResult } from '../embeddings'
 
 export interface ContextSearchOptions {
     numCodeResults: number
