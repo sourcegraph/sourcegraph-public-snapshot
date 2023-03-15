@@ -106,7 +106,8 @@ Once the shared secret is set in Sourcegraph, you can start setting up executors
   </a>
 </div>
 
-<div class="grid">
+<!-- Hidden for now while they're still experimental. -->
+<!-- <div class="grid">
   <a class="btn-app btn" href="/admin/executors/deploy_executors_kubernetes">
     <h3>Kubernetes</h3>
     <p>Run executors on kubernetes</p>
@@ -117,7 +118,7 @@ Once the shared secret is set in Sourcegraph, you can start setting up executors
     <p>Run executors on any linux amd64 machine with docker-compose</p>
     <p>Requires privileged access to a container runtime.</p>
   </a>
-</div>
+</div> -->
 
 ## Confirm executors are working
 
