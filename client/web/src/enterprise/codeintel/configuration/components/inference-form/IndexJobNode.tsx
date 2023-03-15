@@ -25,14 +25,21 @@ import { sanitizeIndexer, sanitizeRoot } from './util'
 import styles from './IndexJobNode.module.scss'
 
 interface IndexJobNodeProps {
+    open: boolean
     job: InferenceFormJob
     jobNumber: number
     readOnly: boolean
     onChange: (name: keyof InferenceFormJob, value: unknown) => void
 }
 
-export const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({ job, jobNumber, readOnly, onChange }) => {
-    const [isOpened, setOpened] = useState(false)
+export const IndexJobNode: React.FunctionComponent<IndexJobNodeProps> = ({
+    open,
+    job,
+    jobNumber,
+    readOnly,
+    onChange,
+}) => {
+    const [isOpened, setOpened] = useState(open)
 
     return (
         <Collapse isOpen={isOpened} onOpenChange={() => setOpened(!isOpened)}>

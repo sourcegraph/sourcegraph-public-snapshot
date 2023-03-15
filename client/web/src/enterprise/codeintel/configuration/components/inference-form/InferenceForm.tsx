@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 
 import { mdiPlus, mdiClose } from '@mdi/js'
 import AJV from 'ajv'
@@ -50,21 +50,30 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
     const initialFormData = useDeepMemo(cloneDeep(_initialFormData))
     const [formData, setFormData] = useState<InferenceFormData>(initialFormData)
     const [loading, setLoading] = useState(false)
+
     const isDirty = useMemo(() => formData.dirty, [formData.dirty])
     const location = useLocation()
 
-    useEffect(() => {
+    const [openJobId, setOpenJobId] = useState<string | null>(null)
+    const jobRefs = useRef(new Map())
+
+    // Set initial scroll position
+    useMemo(() => {
         if (!location.hash) {
             return
         }
 
-        const id = location.hash.slice(1)
-        if (formData.index_jobs.some(job => job.meta.id === id)) {
-            // eslint-disable-next-line unicorn/prefer-query-selector
-            const element = document.getElementById(id)
-            element?.scrollIntoView()
+        setOpenJobId(location.hash.slice(1))
+    }, [location.hash])
+
+    // Update scroll position whenever a job is forced open
+    // (e.g. when a new job added)
+    useEffect(() => {
+        if (jobRefs.current.has(openJobId)) {
+            const targetElement = jobRefs.current.get(openJobId)
+            targetElement.scrollIntoView()
         }
-    }, [formData.index_jobs, location.hash])
+    }, [openJobId])
 
     const handleSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>) => {
@@ -133,6 +142,7 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
     )
 
     const addJob = useCallback(() => {
+        const jobId = uniqueId()
         setFormData(previous => ({
             dirty: true,
             index_jobs: [
@@ -146,11 +156,12 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
                     outfile: '',
                     steps: [],
                     meta: {
-                        id: uniqueId(),
+                        id: jobId,
                     },
                 },
             ],
         }))
+        setOpenJobId(jobId)
     }, [])
 
     const [filter, setFilter] = useState({
@@ -215,9 +226,18 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
                 )}
 
                 {filteredJobs.map((job, index) => (
-                    <div className="d-flex justify-content-between align-items-baseline">
-                        <Container id={job.meta.id} key={job.meta.id} className={styles.job}>
+                    <div
+                        key={job.meta.id}
+                        className="d-flex justify-content-between align-items-baseline"
+                        ref={jobElement => {
+                            if (jobElement) {
+                                jobRefs.current.set(job.meta.id, jobElement)
+                            }
+                        }}
+                    >
+                        <Container className={styles.job}>
                             <IndexJobNode
+                                open={openJobId === job.meta.id}
                                 job={job}
                                 jobNumber={index + 1}
                                 readOnly={readOnly}
