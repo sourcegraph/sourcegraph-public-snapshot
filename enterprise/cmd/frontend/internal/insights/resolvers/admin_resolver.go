@@ -369,14 +369,11 @@ func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 			return nil, err
 		}
 
-		fmt.Println("HEREIAMYO")
 		var metadata json.RawMessage
 		row := r.backfillStore.QueryRow(ctx, sqlf.Sprintf("select row_to_json(insight_series) from insight_series where id = %s", series.InsightSeriesID))
 		if err = row.Scan(&metadata); err != nil {
 			return nil, err
 		}
-		fmt.Println("metadata")
-		fmt.Println(string(metadata))
 
 		seriesDebug := insightDebugInfo{
 			QueueStatus: queueDebug{
