@@ -32,6 +32,7 @@ go_library(
 
 go_test(
     name = "adminanalytics_test",
+    timeout = "short",
     srcs = ["users_test.go"],
     embed = [":adminanalytics"],
     tags = [

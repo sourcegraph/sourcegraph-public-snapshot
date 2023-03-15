@@ -40,6 +40,7 @@ go_library(
 
 go_test(
     name = "api_test",
+    timeout = "short",
     srcs = [
         "handler_test.go",
         "mocks_test.go",

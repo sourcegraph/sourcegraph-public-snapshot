@@ -62,6 +62,7 @@ go_library(
 
 go_test(
     name = "gitserver_test",
+    timeout = "short",
     srcs = [
         "addrs_test.go",
         "client_test.go",

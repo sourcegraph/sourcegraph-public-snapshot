@@ -23,6 +23,7 @@ go_binary(
 
 go_test(
     name = "build-tracker_test",
+    timeout = "short",
     srcs = [
         "integration_test.go",
         "main_test.go",

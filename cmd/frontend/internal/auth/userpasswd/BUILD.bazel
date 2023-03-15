@@ -54,6 +54,7 @@ go_library(
 
 go_test(
     name = "userpasswd_test",
+    timeout = "short",
     srcs = [
         "config_test.go",
         "handlers_test.go",

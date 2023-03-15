@@ -32,6 +32,7 @@ go_library(
 
 go_test(
     name = "authz_test",
+    timeout = "short",
     srcs = [
         "header_test.go",
         "iface_test.go",

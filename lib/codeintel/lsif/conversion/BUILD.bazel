@@ -26,6 +26,7 @@ go_library(
 
 go_test(
     name = "conversion_test",
+    timeout = "short",
     srcs = [
         "canonicalize_test.go",
         "correlate_test.go",

@@ -9237,6 +9237,21 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1678832491,
+				"Name": "remove sg_jsonb_concat_agg",
+				"UpQuery": "-- Perform migration here.\n--\n-- See /migrations/README.md. Highlights:\n--  * Make migrations idempotent (use IF EXISTS)\n--  * Make migrations backwards-compatible (old readers/writers must continue to work)\n--  * If you are using CREATE INDEX CONCURRENTLY, then make sure that only one statement\n--    is defined per file, and that each such statement is NOT wrapped in a transaction.\n--    Each such migration must also declare \"createIndexConcurrently: true\" in their\n--    associated metadata.yaml file.\n--  * If you are modifying Postgres extensions, you must also declare \"privileged: true\"\n--    in the associated metadata.yaml file.\n\nDROP AGGREGATE IF EXISTS sg_jsonb_concat_agg(jsonb);",
+				"DownQuery": "-- Undo the changes made in the up migration\n\nCREATE OR REPLACE AGGREGATE sg_jsonb_concat_agg(jsonb) (\n    SFUNC = jsonb_concat,\n    STYPE = jsonb,\n    INITCOND = '{}'\n);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1676420496,
+					1678409821,
+					1678456448
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -9466,7 +9481,8 @@
 			"v5.0.0": {
 				"RootID": 1648051770,
 				"LeafIDs": [
-					1678601228
+					1678601228,
+					1678832491
 				],
 				"PreCreation": false
 			}

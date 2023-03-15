@@ -55,7 +55,7 @@ pkgs.mkShell {
       version = "7.28.0";
       src = fetchurl {
         url = "https://registry.npmjs.org/pnpm/-/pnpm-7.28.0.tgz";
-        sha512 = "sha512-XDTYvZf3xF/kaX0pcdh9GWpak9tV5uDGuNCjkN1SFa0UE350mJGpszmM/j2rVyfoOOFzVR73GNdN3Purd4rXlg==";
+        sha512 = "sha512-nbuY07S2519jEjaV9KLjSFmOwh0b6KIViIdc/RCJkgco8SZa2+ikQQe4N3CfNn5By5BH0dKVbZ8Ox1Mw8wItSA==";
       };
     })
     nodePackages.typescript

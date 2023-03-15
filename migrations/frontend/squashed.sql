@@ -823,12 +823,6 @@ BEGIN
     RETURN NEW;
 END $$;
 
-CREATE AGGREGATE sg_jsonb_concat_agg(jsonb) (
-    SFUNC = jsonb_concat,
-    STYPE = jsonb,
-    INITCOND = '{}'
-);
-
 CREATE AGGREGATE snapshot_transition_columns(hstore[]) (
     SFUNC = merge_audit_log_transitions,
     STYPE = hstore,

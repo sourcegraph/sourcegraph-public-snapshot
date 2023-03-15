@@ -39,6 +39,7 @@ go_library(
 
 go_test(
     name = "auth_test",
+    timeout = "short",
     srcs = [
         "auth_test.go",
         "non_public_test.go",

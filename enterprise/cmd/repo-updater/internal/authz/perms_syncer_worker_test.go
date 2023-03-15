@@ -2,6 +2,7 @@ package authz
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -424,10 +425,14 @@ type combinedRequest struct {
 }
 
 type dummyPermsSyncer struct {
+	sync.Mutex
 	request combinedRequest
 }
 
 func (d *dummyPermsSyncer) syncRepoPerms(_ context.Context, repoID api.RepoID, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
+	d.Lock()
+	defer d.Unlock()
+
 	d.request = combinedRequest{
 		RepoID:  repoID,
 		NoPerms: noPerms,
@@ -436,6 +441,9 @@ func (d *dummyPermsSyncer) syncRepoPerms(_ context.Context, repoID api.RepoID, n
 	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, database.CodeHostStatusesSet{}, nil
 }
 func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
+	d.Lock()
+	defer d.Unlock()
+
 	d.request = combinedRequest{
 		UserID:  userID,
 		NoPerms: noPerms,
@@ -445,12 +453,16 @@ func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerm
 }
 
 type dummySyncerWithErrors struct {
+	sync.Mutex
 	request      combinedRequest
 	userIDErrors map[int32]struct{}
 	repoIDErrors map[api.RepoID]struct{}
 }
 
 func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.RepoID, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
+	d.Lock()
+	defer d.Unlock()
+
 	if _, ok := d.repoIDErrors[repoID]; ok {
 		return nil, nil, errors.New(errorMsg)
 	}
@@ -462,6 +474,9 @@ func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.Repo
 	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, database.CodeHostStatusesSet{}, nil
 }
 func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
+	d.Lock()
+	defer d.Unlock()
+
 	if _, ok := d.userIDErrors[userID]; ok {
 		return nil, nil, errors.New(errorMsg)
 	}

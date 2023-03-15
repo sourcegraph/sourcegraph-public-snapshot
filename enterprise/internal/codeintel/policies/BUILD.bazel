@@ -33,6 +33,7 @@ go_library(
 
 go_test(
     name = "policies_test",
+    timeout = "short",
     srcs = [
         "helpers_test.go",
         "matcher_common_test.go",

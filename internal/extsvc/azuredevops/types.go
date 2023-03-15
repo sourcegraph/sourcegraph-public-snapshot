@@ -45,11 +45,6 @@ type OrgProjectRepoArgs struct {
 	RepoNameOrID string
 }
 
-type ListAuthorizedUserProjectsResponse struct {
-	Count int       `json:"count"`
-	Value []Project `json:"value"`
-}
-
 // ListRepositoriesByProjectOrOrgArgs defines options to be set on the ListRepositories methods' calls.
 type ListRepositoriesByProjectOrOrgArgs struct {
 	// Should be in the form of 'org/project' for projects and 'org' for orgs.
