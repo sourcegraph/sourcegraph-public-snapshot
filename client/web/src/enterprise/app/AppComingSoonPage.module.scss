@@ -4,5 +4,34 @@
 }
 
 .section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin: 0;
+}
+
+.image {
+    max-width: 100%;
+    object-fit: contain;
+    object-position: bottom;
+}
+
+.container {
+    padding: 0 !important;
+}
+
+.text {
+    padding: 2rem;
     min-width: 25rem;
+}
+
+.image-wrapper {
+    flex-shrink: 1;
+    height: 100%;
+    max-width: 100%;
+    padding: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    border-bottom-right-radius: var(--border-radius);
 }

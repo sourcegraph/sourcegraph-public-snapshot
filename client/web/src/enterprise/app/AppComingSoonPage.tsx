@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Container,
     H1,
@@ -22,6 +23,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import styles from './AppComingSoonPage.module.scss'
 
 export const AppComingSoonPage: React.FC = () => {
+    const isLightTheme = useIsLightTheme()
     useEffect(() => eventLogger.logPageView('AppComingSoonPage'), [])
     const allowAutoplay = useMatchMedia('(prefers-reduced-motion: no-preference)')
 
@@ -37,9 +39,9 @@ export const AppComingSoonPage: React.FC = () => {
                 </H1>
             </PageHeader>
 
-            <Container className="mb-3">
-                <section className={classNames('row align-items-center', styles.section)}>
-                    <div className="col-12 col-md-6">
+            <Container className={classNames('mb-3', styles.container)}>
+                <section className={classNames('row', styles.section)}>
+                    <div className={classNames('col-12 col-md-5', styles.text)}>
                         <ProductStatusBadge status="private-beta" className="mb-4 text-uppercase" />
                         <H2 as="h3" className="mb-4">
                             Cody
@@ -60,29 +62,21 @@ export const AppComingSoonPage: React.FC = () => {
                             Learn more <Icon role="img" aria-label="Open in a new tab" svgPath={mdiChevronRight} />
                         </Link>
                     </div>
-                    <div className="col-12 col-md-6">
-                        <video
-                            className="w-100 h-auto shadow percy-hide"
-                            width={1280}
-                            height={720}
-                            autoPlay={allowAutoplay}
-                            muted={true}
-                            loop={true}
-                            playsInline={true}
-                            controls={!allowAutoplay}
-                        >
-                            <source
-                                type="video/mp4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/own-search-file-owners.mp4"
-                            />
-                        </video>
+                    <div className={classNames('col-12 col-md-7', styles.imageWrapper)}>
+                        <img
+                            src="https://storage.googleapis.com/sourcegraph-assets/app-coming-soon-cody.png"
+                            alt=""
+                            width={612}
+                            height={370}
+                            className={classNames('max-w-100 percy-hide', styles.image)}
+                        />
                     </div>
                 </section>
             </Container>
 
-            <Container className="mb-3">
-                <section className={classNames('row align-items-center', styles.section)}>
-                    <div className="col-12 col-md-6">
+            <Container className={classNames('mb-3', styles.container)}>
+                <section className={styles.section}>
+                    <div className={classNames('col-12 col-md-5', styles.text)}>
                         <ProductStatusBadge status="experimental" className="mb-4 text-uppercase" />
                         <H2 as="h3" className="mb-4">
                             Sourcegraph Own
@@ -103,22 +97,16 @@ export const AppComingSoonPage: React.FC = () => {
                             Learn more <Icon role="img" aria-label="Open in a new tab" svgPath={mdiChevronRight} />
                         </Link>
                     </div>
-                    <div className="col-12 col-md-6">
-                        <video
-                            className="w-100 h-auto shadow percy-hide"
-                            width={1280}
-                            height={720}
-                            autoPlay={allowAutoplay}
-                            muted={true}
-                            loop={true}
-                            playsInline={true}
-                            controls={!allowAutoplay}
-                        >
-                            <source
-                                type="video/mp4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/own-search-file-owners.mp4"
-                            />
-                        </video>
+                    <div className={classNames('col-12 col-md-7', styles.imageWrapper)}>
+                        <img
+                            src={`https://storage.googleapis.com/sourcegraph-assets/app-coming-soon-own-${
+                                isLightTheme ? 'light' : 'dark'
+                            }.png`}
+                            alt=""
+                            width={612}
+                            height={369}
+                            className={classNames('max-w-100 percy-hide', styles.image)}
+                        />
                     </div>
                 </section>
             </Container>
