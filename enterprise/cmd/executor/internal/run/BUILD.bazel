@@ -20,7 +20,7 @@ go_library(
         "//enterprise/cmd/executor/internal/janitor",
         "//enterprise/cmd/executor/internal/worker",
         "//enterprise/cmd/executor/internal/worker/workspace",
-        "//enterprise/internal/executor",
+        "//enterprise/internal/executor/types",
         "//internal/download",
         "//internal/goroutine",
         "//internal/observation",
@@ -38,6 +38,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "run_test",
     srcs = ["validate_test.go"],
     embed = [":run"],

@@ -35,6 +35,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "gitlaboauth_test",
     srcs = [
         "config_test.go",
@@ -42,6 +43,10 @@ go_test(
         "session_test.go",
     ],
     embed = [":gitlaboauth"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/auth/providers",

@@ -22,6 +22,13 @@ export const currentUserMock = {
     searchable: true,
     emails: [{ email: 'felix@sourcegraph.com', isPrimary: true, verified: true }],
     latestSettings: null,
+    permissions: {
+        __typename: 'PermissionConnection',
+        nodes: [
+            { __typename: 'Permission', id: 'id1', displayName: 'BATCH_CHANGES#READ' },
+            { __typename: 'Permission', id: 'id2', displayName: 'BATCH_CHANGES#WRITE' },
+        ],
+    },
 } satisfies AuthenticatedUser
 
 /**

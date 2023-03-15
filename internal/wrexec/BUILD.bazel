@@ -15,10 +15,15 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "wrexec_test",
     srcs = [
         "cmd_test.go",
         "recording_cmd_test.go",
+    ],
+    tags = [
+        # requires localhost database
+        "requires-network",
     ],
     deps = [
         ":wrexec",

@@ -15,6 +15,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "search_test",
     srcs = ["text_test.go"],
     embed = [":search"],

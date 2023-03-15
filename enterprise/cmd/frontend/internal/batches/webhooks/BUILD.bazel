@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "webhooks",
     srcs = [
+        "azuredevops.go",
         "bitbucketcloud.go",
         "bitbucketserver.go",
         "github.go",
@@ -21,6 +22,7 @@ go_library(
         "//internal/api",
         "//internal/database",
         "//internal/extsvc",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/github",
@@ -38,6 +40,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "webhooks_test",
     srcs = [
         "bitbucketcloud_test.go",
@@ -49,6 +52,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":webhooks"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/webhooks",
         "//enterprise/internal/batches/sources",

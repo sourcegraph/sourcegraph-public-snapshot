@@ -9,6 +9,7 @@ import { Occurrence, Position, Range } from '@sourcegraph/shared/src/codeintel/s
 import { BlobViewState, parseRepoURI, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
+import { syntaxHighlight } from '../highlight'
 import {
     isInteractiveOccurrence,
     occurrenceAtMouseEvent,
@@ -130,7 +131,12 @@ async function goToDefinition(
     params: TextDocumentPositionParameters
 ): Promise<DefinitionResult> {
     const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
-    const definition = await api.getDefinition(params).toPromise()
+    const definition = await api
+        .getDefinition(params, {
+            referenceOccurrence: occurrence,
+            documentOccurrences: view.state.facet(syntaxHighlight).occurrences,
+        })
+        .toPromise()
     const locationFrom: Location = { uri: params.textDocument.uri, range: occurrence.range }
 
     if (definition.length === 0) {

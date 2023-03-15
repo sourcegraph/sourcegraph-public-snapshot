@@ -33,12 +33,17 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "http_test",
     srcs = [
         "handler_test.go",
         "mocks_test.go",
     ],
     embed = [":http"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/backend",
         "//enterprise/internal/codeintel/uploads",

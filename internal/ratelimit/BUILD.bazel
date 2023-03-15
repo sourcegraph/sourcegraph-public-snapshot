@@ -11,6 +11,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
+        "//internal/timeutil",
         "//lib/errors",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
@@ -19,6 +20,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "ratelimit_test",
     srcs = [
         "monitor_test.go",

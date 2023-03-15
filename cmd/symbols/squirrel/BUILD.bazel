@@ -40,12 +40,14 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "squirrel_test",
     srcs = [
         "hover_test.go",
         "local_code_intel_test.go",
         "service_test.go",
     ],
+    data = glob(["test_repos/**"]),
     embed = [":squirrel"],
     deps = [
         "//internal/search",

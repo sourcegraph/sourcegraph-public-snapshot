@@ -21,6 +21,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "pagure_test",
     srcs = ["client_test.go"],
     data = glob(["testdata/**"]),

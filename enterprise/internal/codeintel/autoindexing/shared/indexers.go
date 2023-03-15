@@ -2,6 +2,7 @@ package shared
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -31,7 +32,7 @@ func PopulateInferredAvailableIndexers[J JobsOrHints](jobsOrHints []J, blocklist
 				ai.Indexer = p
 			}
 
-			inferredAvailableIndexers[indexer] = ai
+			inferredAvailableIndexers[key] = ai
 		}
 	}
 
@@ -40,5 +41,9 @@ func PopulateInferredAvailableIndexers[J JobsOrHints](jobsOrHints []J, blocklist
 
 // GetKeyForLookup creates a quick unique key for a map lookup.
 func GetKeyForLookup(indexer, root string) string {
-	return fmt.Sprintf("%s:%s", indexer, root)
+	return fmt.Sprintf("%s:%s", sanitizeIndexer(indexer), root)
+}
+
+func sanitizeIndexer(indexer string) string {
+	return strings.TrimPrefix(strings.Split(strings.Split(indexer, "@")[0], ":")[0], "sourcegraph/")
 }

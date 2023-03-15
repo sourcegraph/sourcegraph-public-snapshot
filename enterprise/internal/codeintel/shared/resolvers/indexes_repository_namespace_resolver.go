@@ -23,7 +23,7 @@ func (r *lsifIndexesWithRepositoryNamespaceResolver) Root() string {
 }
 
 func (r *lsifIndexesWithRepositoryNamespaceResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	return types.NewCodeIntelIndexerResolver(r.indexesSummary.Indexer)
+	return types.NewCodeIntelIndexerResolver(r.indexesSummary.Indexer, "")
 }
 
 func (r *lsifIndexesWithRepositoryNamespaceResolver) Indexes() []resolverstubs.LSIFIndexResolver {

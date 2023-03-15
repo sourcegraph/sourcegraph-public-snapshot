@@ -2,18 +2,11 @@ import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
-
 import { RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 
 const RepositoryFileTreePage = lazyComponent(() => import('./RepositoryFileTreePage'), 'RepositoryFileTreePage')
-
-const ActionItemsBar = lazyComponent<ActionItemsBarProps, 'ActionItemsBar'>(
-    () => import('../extensions/components/ActionItemsBar'),
-    'ActionItemsBar'
-)
 
 // Work around the issue that react router can not match nested splats when the URL contains spaces
 // by expanding the repo matcher to an optional path of up to 10 segments.
@@ -42,16 +35,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         render: props => (
             <TraceSpanProvider name="RepositoryFileTreePage" attributes={{ objectType }}>
                 <RepositoryFileTreePage {...props} objectType={objectType} />
-                {window.context.enableLegacyExtensions && (
-                    <ActionItemsBar
-                        repo={props.repo}
-                        useActionItemsBar={props.useActionItemsBar}
-                        extensionsController={props.extensionsController}
-                        platformContext={props.platformContext}
-                        telemetryService={props.telemetryService}
-                        source={objectType === 'blob' ? 'blob' : undefined}
-                    />
-                )}
             </TraceSpanProvider>
         ),
     })),

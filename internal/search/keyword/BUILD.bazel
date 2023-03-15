@@ -3,7 +3,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "keyword",
     srcs = [
-        "file_score.go",
         "keyword_search_job.go",
         "keywords.go",
         "match_groups.go",
@@ -27,6 +26,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "keyword_test",
     srcs = [
         "match_groups_test.go",
@@ -36,6 +36,6 @@ go_test(
     deps = [
         "//internal/search/query",
         "//internal/search/result",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

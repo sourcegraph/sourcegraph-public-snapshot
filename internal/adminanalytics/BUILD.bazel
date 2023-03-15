@@ -31,9 +31,14 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "adminanalytics_test",
     srcs = ["users_test.go"],
     embed = [":adminanalytics"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

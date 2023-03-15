@@ -2,13 +2,11 @@ import 'focus-visible'
 
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ApolloProvider } from '@apollo/client'
-import ServerIcon from 'mdi-react/ServerIcon'
+import { ApolloProvider, SuspenseCache } from '@apollo/client'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent } from 'rxjs'
 
-import { isTruthy, logger } from '@sourcegraph/common'
-import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
+import { HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
 import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -29,27 +27,25 @@ import {
     SettingsSubjectCommonFields,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
-import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
+import { setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
-import { getWebGraphQLClient } from './backend/graphql'
 import { ComponentsComposer } from './components/ComponentsComposer'
-import { ErrorBoundary } from './components/ErrorBoundary'
-import { HeroPage } from './components/HeroPage'
-import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
-import { Layout } from './Layout'
+import { ErrorBoundary, RouteError } from './components/ErrorBoundary'
+import { FeatureFlagsLocalOverrideAgent } from './featureFlags/FeatureFlagsProvider'
 import { LegacyRoute, LegacyRouteContextProvider } from './LegacyRouteContext'
+import { PageError } from './PageError'
 import { createPlatformContext } from './platform/context'
 import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import { StaticAppConfig } from './staticAppConfig'
-import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
+import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
+import { AppShellInit } from './storm/app-shell-init'
+import { Layout } from './storm/pages/LayoutPage/LayoutPage'
+import { loader } from './storm/pages/LayoutPage/LayoutPage.loader'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
-
-import styles from './LegacySourcegraphWebApp.module.scss'
 
 export interface StaticSourcegraphWebAppContext {
     setSelectedSearchContextSpec: (spec: string) => void
@@ -95,6 +91,8 @@ const WILDCARD_THEME: WildcardTheme = {
 
 setLinkComponent(RouterLink)
 
+const suspenseCache = new SuspenseCache()
+
 /**
  * The synchronous and static value that creates the `platformContext.settings`
  * observable that sends the API request to the server to get `viewerSettings`.
@@ -103,7 +101,11 @@ setLinkComponent(RouterLink)
  */
 const platformContext = createPlatformContext()
 
-export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
+interface SourcegraphWebAppProps extends StaticAppConfig, AppShellInit {}
+
+export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
+    const { graphqlClient, temporarySettingsStorage } = props
+
     const [subscriptions] = useState(() => new Subscription())
 
     const [resolvedAuthenticatedUser, setResolvedAuthenticatedUser] = useState<AuthenticatedUser | null>(
@@ -116,13 +118,6 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
      */
     const [settingsCascade, setSettingsCascade] = useState<SettingsCascadeOrError<Settings>>(EMPTY_SETTINGS_CASCADE)
     const [viewerSubject, setViewerSubject] = useState<SettingsSubjectCommonFields>(() => siteSubjectNoAdmin())
-
-    /**
-     * TODO: Make it synchrounously available in the `SourcegraphWebApp` component to remove redundant `useState`s
-     * for the `graphqlClient` and `temporarySettingsStorage`.
-     */
-    const [graphqlClient, setGraphqlClient] = useState<GraphQLClient | null>(null)
-    const [temporarySettingsStorage, setTemporarySettingsStorage] = useState<TemporarySettingsStorage | null>(null)
 
     const [selectedSearchContextSpec, _setSelectedSearchContextSpec] = useState<string | undefined>()
 
@@ -199,21 +194,9 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
         const parsedSearchURL = parseSearchURL(window.location.search)
         const parsedSearchQuery = parsedSearchURL.query || ''
 
-        getWebGraphQLClient()
-            .then(graphqlClient => {
-                setGraphqlClient(graphqlClient)
-                setTemporarySettingsStorage(
-                    new TemporarySettingsStorage(graphqlClient, window.context.isAuthenticatedUser)
-                )
-            })
-            .catch(error => {
-                logger.error('Error initializing GraphQL client', error)
-            })
-
         subscriptions.add(
             combineLatest([from(platformContext.settings), authenticatedUserSubject]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
-                    setExperimentalFeaturesFromSettings(settingsCascade)
                     setQueryStateFromSettings(settingsCascade)
                     setSettingsCascade(settingsCascade)
                     setResolvedAuthenticatedUser(authenticatedUser ?? null)
@@ -278,41 +261,19 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
         () =>
             createBrowserRouter([
                 {
+                    // The layout page is needed for every route so we do not need to lazy-load it.
+                    loader,
                     element: <LegacyRoute render={props => <Layout {...props} />} />,
-                    children: props.routes.filter(isTruthy),
+                    children: props.routes,
+                    errorElement: <RouteError />,
                 },
             ]),
         [props.routes]
     )
 
-    // TODO: move into a standalone component and reuse it between `SourcegraphWebApp` and `LegacySourcegraphWebApp`.
-    if (window.pageError && window.pageError.statusCode !== 404) {
-        const statusCode = window.pageError.statusCode
-        const statusText = window.pageError.statusText
-        const errorMessage = window.pageError.error
-        const errorID = window.pageError.errorID
-
-        let subtitle: JSX.Element | undefined
-        if (errorID) {
-            subtitle = <FeedbackText headerText="Sorry, there's been a problem." />
-        }
-        if (errorMessage) {
-            subtitle = (
-                <div className={styles.error}>
-                    {subtitle}
-                    {subtitle && <hr className="my-3" />}
-                    <pre>{errorMessage}</pre>
-                </div>
-            )
-        } else {
-            subtitle = <div className={styles.error}>{subtitle}</div>
-        }
-
-        return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
-    }
-
-    if (graphqlClient === null || temporarySettingsStorage === null) {
-        return null
+    const pageError = window.pageError
+    if (pageError && pageError.statusCode !== 404) {
+        return <PageError pageError={pageError} />
     }
 
     return (
@@ -320,12 +281,12 @@ export const SourcegraphWebApp: FC<StaticAppConfig> = props => {
             components={[
                 // `ComponentsComposer` provides children via `React.cloneElement`.
                 /* eslint-disable react/no-children-prop, react/jsx-key */
-                <ApolloProvider client={graphqlClient} children={undefined} />,
+                <ApolloProvider client={graphqlClient} children={undefined} suspenseCache={suspenseCache} />,
                 <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
                 <SettingsProvider settingsCascade={settingsCascade} />,
                 <ErrorBoundary location={null} />,
                 <TraceSpanProvider name={SharedSpanName.AppMount} />,
-                <FeatureFlagsProvider />,
+                <FeatureFlagsLocalOverrideAgent />,
                 <ShortcutProvider />,
                 <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
                 <SearchResultsCacheProvider />,

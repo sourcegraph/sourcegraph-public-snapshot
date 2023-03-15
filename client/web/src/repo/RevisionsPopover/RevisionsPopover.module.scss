@@ -3,6 +3,12 @@
     width: 35rem;
 }
 
+.revisions-popover-slim {
+    width: 15rem;
+    // Override ConnectionPopover default
+    min-width: auto;
+}
+
 .tabs {
     padding-left: 1rem;
     padding-right: 1rem;

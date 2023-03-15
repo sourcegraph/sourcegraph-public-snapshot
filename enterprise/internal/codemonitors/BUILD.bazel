@@ -33,9 +33,14 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "codemonitors_test",
     srcs = ["search_test.go"],
     embed = [":codemonitors"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//internal/actor",

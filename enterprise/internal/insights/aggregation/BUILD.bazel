@@ -26,6 +26,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "aggregation_test",
     srcs = [
         "aggregation_test.go",
@@ -39,6 +40,6 @@ go_test(
         "//internal/search/result",
         "//internal/search/streaming",
         "//internal/types",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

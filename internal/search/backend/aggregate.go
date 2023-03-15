@@ -102,8 +102,8 @@ type flushCollectSender struct {
 	mu            sync.Mutex
 	collectSender *collectSender
 	sender        zoekt.Sender
-	// Map of endpoints to boolean, indicating whether we've received their first set of search results
-	firstEvent   map[string]bool
+	// Map of endpoints to boolean, indicating whether we've received their first set of non-empty search results
+	firstResults map[string]bool
 	maxSizeBytes int
 	timerCancel  chan struct{}
 }
@@ -115,9 +115,9 @@ type flushCollectSender struct {
 // If it has not heard back from every endpoint by a certain timeout, then it will
 // flush as a 'fallback plan' to avoid delaying the search too much.
 func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSizeBytes int, sender zoekt.Sender) *flushCollectSender {
-	firstEvent := map[string]bool{}
+	firstResults := map[string]bool{}
 	for _, endpoint := range endpoints {
-		firstEvent[endpoint] = true
+		firstResults[endpoint] = true
 	}
 
 	collectSender := newCollectSender(opts)
@@ -125,7 +125,7 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSiz
 
 	flushSender := &flushCollectSender{collectSender: collectSender,
 		sender:       sender,
-		firstEvent:   firstEvent,
+		firstResults: firstResults,
 		maxSizeBytes: maxSizeBytes,
 		timerCancel:  timerCancel}
 
@@ -147,21 +147,23 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSiz
 
 // Send consumes a search event. We transition through 3 states
 // 1. collectSender != nil: collect results via collectSender
-// 2. len(firstEvent) == 0: we've received one result from every endpoint (or the 'done' signal)
+// 2. len(firstResults) == 0: we've received one non-empty result from every endpoint (or the 'done' signal)
 // 3. collectSender == nil: directly use sender
 func (f *flushCollectSender) Send(endpoint string, event *zoekt.SearchResult) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.collectSender != nil {
-		// Ignore first events with no files, like stats-only events
-		if f.firstEvent[endpoint] && len(event.Files) > 0 {
+		if f.firstResults[endpoint] {
 			f.collectSender.Send(event)
-			delete(f.firstEvent, endpoint)
+			// Ignore first events with no files, like stats-only events
+			if len(event.Files) > 0 {
+				delete(f.firstResults, endpoint)
+			}
 		} else {
 			f.collectSender.SendOverflow(event)
 		}
 
-		if len(f.firstEvent) == 0 {
+		if len(f.firstResults) == 0 {
 			f.stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
 		} else if f.maxSizeBytes >= 0 && f.collectSender.sizeBytes > uint64(f.maxSizeBytes) {
 			// Protect against too large aggregates. This should be the exception and only
@@ -177,8 +179,8 @@ func (f *flushCollectSender) Send(endpoint string, event *zoekt.SearchResult) {
 // may not return any results, so we must use SendDone to signal their completion.
 func (f *flushCollectSender) SendDone(endpoint string) {
 	f.mu.Lock()
-	delete(f.firstEvent, endpoint)
-	if len(f.firstEvent) == 0 {
+	delete(f.firstResults, endpoint)
+	if len(f.firstResults) == 0 {
 		f.stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
 	}
 	f.mu.Unlock()

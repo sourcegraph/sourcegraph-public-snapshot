@@ -7,6 +7,7 @@ go_library(
         "middleware.go",
         "provider.go",
         "session.go",
+        "utils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
@@ -22,6 +23,7 @@ go_library(
         "//internal/database",
         "//internal/env",
         "//internal/extsvc",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
@@ -39,6 +41,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "oauth_test",
     srcs = ["provider_test.go"],
     embed = [":oauth"],

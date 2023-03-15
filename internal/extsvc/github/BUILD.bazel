@@ -23,7 +23,6 @@ go_library(
         "//internal/metrics",
         "//internal/oauthutil",
         "//internal/ratelimit",
-        "//internal/timeutil",
         "//internal/trace/ot",
         "//lib/errors",
         "@com_github_golang_jwt_jwt_v4//:jwt",
@@ -40,6 +39,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "github_test",
     srcs = [
         "common_test.go",
@@ -60,8 +60,10 @@ go_test(
         "//lib/errors",
         "//schema",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

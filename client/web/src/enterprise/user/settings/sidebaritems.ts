@@ -1,5 +1,6 @@
 import { userSettingsSideBarItems } from '../../../user/settings/sidebaritems'
 import { UserSettingsSidebarItems } from '../../../user/settings/UserSettingsSidebar'
+import { canWriteBatchChanges } from '../../batches/utils'
 import { SHOW_BUSINESS_FEATURES } from '../../dotcom/productSubscriptions/features'
 
 export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = [
@@ -12,19 +13,21 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = [
     {
         to: '/batch-changes',
         label: 'Batch Changes',
-        condition: ({ batchChangesEnabled, user: { viewerCanAdminister } }) =>
-            batchChangesEnabled && viewerCanAdminister,
+        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
+            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
     },
     {
         to: '/executors/secrets',
         label: 'Executor secrets',
-        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
+        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
+            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
     },
     ...userSettingsSideBarItems.slice(2),
     {
         label: 'Permissions',
         to: '/permissions',
         exact: true,
+        condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     },
     {
         to: '/event-log',

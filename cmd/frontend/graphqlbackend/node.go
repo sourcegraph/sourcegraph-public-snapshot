@@ -166,6 +166,11 @@ func (r *NodeResolver) ToExternalServiceNamespace() (*externalServiceNamespaceRe
 	return n, ok
 }
 
+func (r *NodeResolver) ToExternalServiceRepository() (*externalServiceRepositoryResolver, bool) {
+	n, ok := r.Node.(*externalServiceRepositoryResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
 	n, ok := r.Node.(*GitRefResolver)
 	return n, ok
@@ -173,6 +178,11 @@ func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
 
 func (r *NodeResolver) ToRepository() (*RepositoryResolver, bool) {
 	n, ok := r.Node.(*RepositoryResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToRepoEmbeddingJob() (RepoEmbeddingJobResolver, bool) {
+	n, ok := r.Node.(RepoEmbeddingJobResolver)
 	return n, ok
 }
 
@@ -196,13 +206,6 @@ func (r *NodeResolver) ToGitCommit() (*GitCommitResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
-	if NodeToRegistryExtension == nil {
-		return nil, false
-	}
-	return NodeToRegistryExtension(r.Node)
-}
-
 func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
 	n, ok := r.Node.(*savedSearchResolver)
 	return n, ok
@@ -220,6 +223,16 @@ func (r *NodeResolver) ToNotebook() (NotebookResolver, bool) {
 
 func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	n, ok := r.Node.(*siteResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToVulnerability() (resolverstubs.VulnerabilityResolver, bool) {
+	n, ok := r.Node.(resolverstubs.VulnerabilityResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToVulnerabilityMatch() (resolverstubs.VulnerabilityMatchResolver, bool) {
+	n, ok := r.Node.(resolverstubs.VulnerabilityMatchResolver)
 	return n, ok
 }
 
@@ -351,5 +364,15 @@ func (r *NodeResolver) ToRole() (RoleResolver, bool) {
 
 func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
 	n, ok := r.Node.(PermissionResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToAccessRequest() (*accessRequestResolver, bool) {
+	n, ok := r.Node.(*accessRequestResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToCodeownersIngestedFile() (CodeownersIngestedFileResolver, bool) {
+	n, ok := r.Node.(CodeownersIngestedFileResolver)
 	return n, ok
 }

@@ -11,6 +11,7 @@ import {
     mixedSearchStreamEvents,
     highlightFileResult,
     symbolSearchStreamEvents,
+    ownerSearchStreamEvents,
 } from '@sourcegraph/shared/src/search/integration'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
@@ -76,6 +77,10 @@ const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedG
             builtinAuth: true,
             tags: [],
             createdAt: '2020-03-02T11:52:15Z',
+            roles: {
+                __typename: 'RoleConnection',
+                nodes: [],
+            },
         },
     }),
 }
@@ -486,6 +491,24 @@ describe('Search', () => {
             })
 
             await percySnapshotWithVariants(driver.page, 'Streaming search symbols', {
+                waitForCodeHighlighting: true,
+            })
+            await accessibilityAudit(driver.page)
+        })
+
+        test('owner results', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                ...highlightFileResult,
+            })
+            testContext.overrideSearchStreamEvents(ownerSearchStreamEvents)
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('[data-testid="owner-search-result"]', {
+                visible: true,
+            })
+
+            await percySnapshotWithVariants(driver.page, 'Streaming search owners', {
                 waitForCodeHighlighting: true,
             })
             await accessibilityAudit(driver.page)

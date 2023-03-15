@@ -1,5 +1,11 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
+filegroup(
+    name = "nginx",
+    srcs = glob(["nginx/**"]),
+    visibility = ["//visibility:public"],
+)
+
 go_library(
     name = "assets",
     srcs = ["assets.go"],

@@ -39,6 +39,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "permissions_test",
     srcs = [
         "bitbucket_projects_test.go",
@@ -46,6 +47,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":permissions"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//internal/api",
@@ -61,5 +66,6 @@ go_test(
         "//schema",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_exp//slices",
     ],
 )

@@ -82,7 +82,8 @@ func findFilepathsWithGenerate(dir string) (map[string]struct{}, error) {
 	for _, entry := range entries {
 		path := filepath.Join(dir, entry.Name())
 
-		if entry.IsDir() {
+		// recurse in the directory, but skip the directory if it's a vendor dir
+		if entry.IsDir() && entry.Name() != "vendor" {
 			paths, err := findFilepathsWithGenerate(path)
 			if err != nil {
 				return nil, err
@@ -107,7 +108,7 @@ func findFilepathsWithGenerate(dir string) (map[string]struct{}, error) {
 			file.Close()
 
 			if err := scanner.Err(); err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "bufio.Scanner failed on file %q", path)
 			}
 		}
 	}

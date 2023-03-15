@@ -19,12 +19,12 @@ go_library(
         "//internal/httpcli",
         "//internal/observation",
         "@com_github_sourcegraph_log//:log",
-        "@org_golang_google_grpc//:go_default_library",
         "@org_golang_x_sync//semaphore",
     ],
 )
 
 go_test(
+    timeout = "short",
     name = "integration_tests_test",
     srcs = [
         "commits_test.go",
@@ -33,6 +33,9 @@ go_test(
         "tree_test.go",
     ],
     embed = [":integration_tests"],
+    # This test loads coursier as a side effect, so we ensure the
+    # path is sandboxed properly.
+    env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
         "//internal/actor",
         "//internal/api",

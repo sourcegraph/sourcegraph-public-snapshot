@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -19,15 +20,52 @@ const (
 	EngineInvalid EngineType = iota
 	EngineTreeSitter
 	EngineSyntect
+	EngineScipSyntax
 )
 
-// Converts an engine type to the corresponding parameter value for the syntax
-// highlighting request. Defaults to "syntec".
-func getEngineParameter(engine EngineType) string {
-	if engine == EngineTreeSitter {
+func (e EngineType) String() string {
+	switch e {
+	case EngineSyntect:
+		return gosyntect.SyntaxEngineSyntect
+	case EngineTreeSitter:
 		return gosyntect.SyntaxEngineTreesitter
+	case EngineScipSyntax:
+		return gosyntect.SyntaxEngineScipSyntax
+	default:
+		return gosyntect.SyntaxEngineInvalid
 	}
-	return gosyntect.SyntaxEngineSyntect
+}
+
+func (e EngineType) isTreesitterBased() bool {
+	switch e {
+	case EngineTreeSitter, EngineScipSyntax:
+		return true
+	default:
+		return false
+	}
+}
+
+// Converts an engine type to the corresponding parameter value for the syntax
+// highlighting request. Defaults to "syntect".
+func getEngineParameter(engine EngineType) string {
+	if engine == EngineInvalid {
+		return EngineSyntect.String()
+	}
+
+	return engine.String()
+}
+
+func engineNameToEngineType(engineName string) (engine EngineType, ok bool) {
+	switch engineName {
+	case gosyntect.SyntaxEngineSyntect:
+		return EngineSyntect, true
+	case gosyntect.SyntaxEngineTreesitter:
+		return EngineTreeSitter, true
+	case gosyntect.SyntaxEngineScipSyntax:
+		return EngineScipSyntax, true
+	default:
+		return EngineInvalid, false
+	}
 }
 
 type SyntaxEngineQuery struct {
@@ -59,6 +97,9 @@ var highlightConfig = syntaxHighlightConfig{
 }
 var baseHighlightConfig = syntaxHighlightConfig{
 	Extensions: map[string]string{
+		"jsx":  "jsx", // default `getLanguage()` helper doesn't handle JSX
+		"tsx":  "tsx", // default `getLanguage()` helper doesn't handle TSX
+		"ncl":  "nickel",
 		"sbt":  "scala",
 		"sc":   "scala",
 		"xlsg": "xlsg",
@@ -89,12 +130,10 @@ var engineConfig = syntaxEngineConfig{
 // Eventually, we will switch from having `Default` be EngineSyntect and move
 // to having it be EngineTreeSitter.
 var baseEngineConfig = syntaxEngineConfig{
-	Default: EngineSyntect,
+	Default: EngineTreeSitter,
 	Overrides: map[string]EngineType{
-		"scala":   EngineTreeSitter,
-		"c#":      EngineTreeSitter,
-		"jsonnet": EngineTreeSitter,
-		"xlsg":    EngineTreeSitter,
+		// Languages enabled for advanced syntax features
+		"perl": EngineScipSyntax,
 	},
 }
 
@@ -184,23 +223,6 @@ func init() {
 	}()
 }
 
-var engineToDisplay = map[EngineType]string{
-	EngineInvalid:    "invalid",
-	EngineSyntect:    "syntect",
-	EngineTreeSitter: "tree-sitter",
-}
-
-func engineNameToEngineType(engineName string) (engine EngineType, ok bool) {
-	switch engineName {
-	case "tree-sitter":
-		return EngineTreeSitter, true
-	case "syntect":
-		return EngineSyntect, true
-	default:
-		return EngineInvalid, false
-	}
-}
-
 // Matches against config. Only returns values if there is a match.
 func getLanguageFromConfig(config syntaxHighlightConfig, path string) (string, bool) {
 	extension := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
@@ -225,7 +247,43 @@ func getLanguage(path string, contents string) (string, bool) {
 		return lang, true
 	}
 
-	return enry.GetLanguage(path, []byte(contents)), false
+	// Force the use of the shebang.
+	if shebangLang, ok := overrideViaShebang(path, contents); ok {
+		return shebangLang, false
+	}
+
+	// Lastly, fall back to whatever enry decides is a useful algorithm for calculating.
+	lang = enry.GetLanguage(path, []byte(contents))
+
+	return lang, false
+}
+
+// overrideViaShebang handles explicitly using the shebang whenever possible.
+//
+// It also covers some edge cases when enry eagerly returns more languages
+// than necessary, which ends up overriding the shebang completely (which,
+// IMO is the highest priority match we can have).
+//
+// For example, enry will return "Perl" and "Pod" for a shebang of `#!/usr/bin/env perl`.
+// This is actually unhelpful, because then enry will *not* select "Perl" as the
+// language (which is our desired behavior).
+func overrideViaShebang(path, content string) (lang string, ok bool) {
+	shebangs := enry.GetLanguagesByShebang(path, []byte(content), []string{})
+	if len(shebangs) == 0 {
+		return "", false
+	}
+
+	if len(shebangs) == 1 {
+		return shebangs[0], true
+	}
+
+	// There are some shebangs that enry returns that are not really
+	// useful for our syntax highlighters to distinguish between.
+	if slices.Equal(shebangs, []string{"Perl", "Pod"}) {
+		return "Perl", true
+	}
+
+	return "", false
 }
 
 // DetectSyntaxHighlightingLanguage will calculate the SyntaxEngineQuery from a given
@@ -238,6 +296,10 @@ func DetectSyntaxHighlightingLanguage(path string, contents string) SyntaxEngine
 	engine := engineConfig.Default
 	if overrideEngine, ok := engineConfig.Overrides[lang]; ok {
 		engine = overrideEngine
+	}
+
+	if engine.isTreesitterBased() && lang == "c++" {
+		lang = "cpp"
 	}
 
 	return SyntaxEngineQuery{

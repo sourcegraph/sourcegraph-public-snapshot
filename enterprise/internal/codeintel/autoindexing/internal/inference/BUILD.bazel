@@ -17,6 +17,7 @@ go_library(
         "//enterprise/internal/codeintel/autoindexing/internal/inference/libs",
         "//enterprise/internal/codeintel/autoindexing/internal/inference/lua",
         "//enterprise/internal/codeintel/autoindexing/internal/inference/luatypes",
+        "//enterprise/internal/paths",
         "//internal/api",
         "//internal/authz",
         "//internal/codeintel/dependencies",
@@ -33,7 +34,6 @@ go_library(
         "//internal/ratelimit",
         "//lib/codeintel/autoindex/config",
         "//lib/errors",
-        "@com_github_grafana_regexp//:regexp",
         "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
         "@com_github_yuin_gopher_lua//:gopher-lua",
@@ -43,6 +43,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "inference_test",
     srcs = [
         "infer_test.go",
@@ -61,16 +62,17 @@ go_test(
     embed = [":inference"],
     deps = [
         "//enterprise/internal/codeintel/autoindexing/internal/inference/libs",
+        "//enterprise/internal/paths",
         "//internal/api",
         "//internal/codeintel/dependencies",
         "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
         "//internal/luasandbox",
         "//internal/observation",
         "//internal/ratelimit",
         "//internal/unpack/unpacktest",
         "//lib/codeintel/autoindex/config",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_grafana_regexp//:regexp",
         "@org_golang_x_time//rate",
     ],
 )

@@ -16,7 +16,7 @@ export const mkSquirrel = (api: API): PromiseProviders => ({
         }
 
         const symbolInfo = await api.fetchSymbolInfo(document, position)
-        if (!symbolInfo || !symbolInfo.definition.range) {
+        if (!symbolInfo?.definition?.range) {
             return null
         }
 

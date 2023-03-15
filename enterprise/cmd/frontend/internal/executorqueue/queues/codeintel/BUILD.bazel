@@ -12,7 +12,7 @@ go_library(
         "//enterprise/cmd/frontend/internal/executorqueue/handler",
         "//enterprise/internal/codeintel/autoindexing",
         "//enterprise/internal/codeintel/shared/types",
-        "//enterprise/internal/executor",
+        "//enterprise/internal/executor/types",
         "//internal/conf",
         "//internal/database",
         "//internal/encryption/keyring",
@@ -25,13 +25,14 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "codeintel_test",
     srcs = ["transform_test.go"],
     embed = [":codeintel"],
     deps = [
         "//enterprise/cmd/frontend/internal/executorqueue/handler",
         "//enterprise/internal/codeintel/shared/types",
-        "//enterprise/internal/executor",
+        "//enterprise/internal/executor/types",
         "//internal/conf",
         "//internal/database",
         "//internal/src-cli",

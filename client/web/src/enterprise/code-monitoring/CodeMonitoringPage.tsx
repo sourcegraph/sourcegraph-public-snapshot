@@ -7,7 +7,7 @@ import { catchError, map } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     PageHeader,
     LoadingSpinner,
@@ -21,7 +21,6 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
-import { useExperimentalFeatures } from '../../stores'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import {
@@ -36,7 +35,7 @@ export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> 
     authenticatedUser: AuthenticatedUser | null
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
-
+    isSourcegraphApp: boolean
     // For testing purposes only
     testForceTab?: 'list' | 'getting-started' | 'logs'
 }
@@ -46,6 +45,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     fetchUserCodeMonitors = _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     testForceTab,
+    isSourcegraphApp,
 }) => {
     const userHasCodeMonitors = useObservable(
         useMemo(
@@ -102,14 +102,16 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
 
     const showList = userHasCodeMonitors !== undefined && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 
-    const showLogsTab = useExperimentalFeatures(features => features.showCodeMonitoringLogs) && authenticatedUser
+    const showLogsTab =
+        useExperimentalFeatures(features => features.showCodeMonitoringLogs) && authenticatedUser && !isSourcegraphApp
 
     return (
         <div className="code-monitoring-page" data-testid="code-monitoring-page">
             <PageTitle title="Code Monitoring" />
             <PageHeader
                 actions={
-                    authenticatedUser && (
+                    authenticatedUser &&
+                    !isSourcegraphApp && (
                         <Button to="/code-monitoring/new" variant="primary" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiPlus} /> Create a code monitor
                         </Button>
@@ -131,24 +133,24 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                 <div className="d-flex flex-column">
                     <div className="code-monitoring-page-tabs mb-4">
                         <div className="nav nav-tabs">
+                            {!isSourcegraphApp && (
+                                <div className="nav-item">
+                                    <Link
+                                        to=""
+                                        onClick={event => {
+                                            event.preventDefault()
+                                            setCurrentTab('list')
+                                        }}
+                                        className={classNames('nav-link', currentTab === 'list' && 'active')}
+                                        role="button"
+                                    >
+                                        <span className="text-content" data-tab-content="Code monitors">
+                                            Code monitors
+                                        </span>
+                                    </Link>
+                                </div>
+                            )}
                             <div className="nav-item">
-                                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                                <Link
-                                    to=""
-                                    onClick={event => {
-                                        event.preventDefault()
-                                        setCurrentTab('list')
-                                    }}
-                                    className={classNames('nav-link', currentTab === 'list' && 'active')}
-                                    role="button"
-                                >
-                                    <span className="text-content" data-tab-content="Code monitors">
-                                        Code monitors
-                                    </span>
-                                </Link>
-                            </div>
-                            <div className="nav-item">
-                                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                                 <Link
                                     to=""
                                     onClick={event => {
@@ -165,7 +167,6 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                             </div>
                             {showLogsTab && (
                                 <div className="nav-item">
-                                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                                     <Link
                                         to=""
                                         onClick={event => {
@@ -186,7 +187,10 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                     </div>
 
                     {currentTab === 'getting-started' && (
-                        <CodeMonitoringGettingStarted authenticatedUser={authenticatedUser} />
+                        <CodeMonitoringGettingStarted
+                            authenticatedUser={authenticatedUser}
+                            isSourcegraphApp={isSourcegraphApp}
+                        />
                     )}
 
                     {currentTab === 'logs' && <CodeMonitoringLogs />}

@@ -66,8 +66,13 @@ func TestPermissionLevels(t *testing.T) {
 
 	// Global test data that we reuse in every test
 	adminID := bt.CreateTestUser(t, db, true).ID
+	role, _ := assignBatchChangesWritePermissionToUser(ctx, t, db, adminID)
+
 	userID := bt.CreateTestUser(t, db, false).ID
+	bt.AssignRoleToUser(ctx, t, db, userID, role.ID)
+
 	nonOrgUserID := bt.CreateTestUser(t, db, false).ID
+	bt.AssignRoleToUser(ctx, t, db, nonOrgUserID, role.ID)
 
 	// Create an organisation that only has userID in it.
 	orgID := bt.CreateTestOrg(t, db, "org", userID).ID

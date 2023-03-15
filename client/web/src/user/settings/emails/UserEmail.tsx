@@ -1,4 +1,4 @@
-import { useState, FunctionComponent } from 'react'
+import { FunctionComponent, useState } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
@@ -6,13 +6,13 @@ import { Badge, Button, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
-    UserEmailsResult,
     RemoveUserEmailResult,
     RemoveUserEmailVariables,
-    SetUserEmailVerifiedResult,
-    SetUserEmailVerifiedVariables,
     ResendVerificationEmailResult,
     ResendVerificationEmailVariables,
+    SetUserEmailVerifiedResult,
+    SetUserEmailVerifiedVariables,
+    UserEmailsResult,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -21,8 +21,8 @@ import styles from './UserEmail.module.scss'
 interface Props {
     user: string
     email: (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
+    disableControls: boolean
     onError: (error: ErrorLike) => void
-
     onDidRemove?: (email: string) => void
     onEmailVerify?: () => void
     onEmailResendVerification?: () => void
@@ -31,6 +31,7 @@ interface Props {
 export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
     email: { email, isPrimary, verified, verificationPending, viewerCanManuallyVerify },
+    disableControls,
     onError,
     onDidRemove,
     onEmailVerify,
@@ -162,7 +163,7 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
                             <Button
                                 className="p-0"
                                 onClick={() => resendEmailVerification(email)}
-                                disabled={isLoading}
+                                disabled={isLoading || disableControls}
                                 variant="link"
                             >
                                 Resend verification email
@@ -175,14 +176,19 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
                         <Button
                             className="p-0"
                             onClick={() => updateEmailVerification(!verified)}
-                            disabled={isLoading}
+                            disabled={isLoading || disableControls}
                             variant="link"
                         >
                             {verified ? 'Mark as unverified' : 'Mark as verified'}
                         </Button>
                     )}{' '}
                     {!isPrimary && (
-                        <Button className="text-danger p-0" onClick={removeEmail} disabled={isLoading} variant="link">
+                        <Button
+                            className="text-danger p-0"
+                            onClick={removeEmail}
+                            disabled={isLoading || disableControls}
+                            variant="link"
+                        >
                             Remove
                         </Button>
                     )}

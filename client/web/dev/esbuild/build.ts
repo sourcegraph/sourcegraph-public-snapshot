@@ -9,7 +9,6 @@ import {
     STATIC_ASSETS_PATH,
     stylePlugin,
     packageResolutionPlugin,
-    workerPlugin,
     monacoPlugin,
     RXJS_RESOLUTIONS,
     buildMonaco,
@@ -18,7 +17,7 @@ import {
 } from '@sourcegraph/build-config'
 import { isDefined } from '@sourcegraph/common'
 
-import { ENVIRONMENT_CONFIG } from '../utils'
+import { ENVIRONMENT_CONFIG, IS_DEVELOPMENT, IS_PRODUCTION } from '../utils'
 
 import { manifestPlugin } from './manifestPlugin'
 
@@ -34,16 +33,17 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
             : path.join(ROOT_PATH, 'client/web/src/main.tsx'),
     },
     bundle: true,
+    minify: IS_PRODUCTION,
     format: 'esm',
     logLevel: 'error',
     jsx: 'automatic',
-    jsxDev: true, // we're only using esbuild for dev server right now
+    jsxDev: IS_DEVELOPMENT,
     splitting: true,
     chunkNames: 'chunks/chunk-[name]-[hash]',
+    entryNames: IS_PRODUCTION ? 'scripts/[name]-[hash]' : undefined,
     outdir: STATIC_ASSETS_PATH,
     plugins: [
         stylePlugin,
-        workerPlugin,
         manifestPlugin,
         packageResolutionPlugin({
             path: require.resolve('path-browserify'),
@@ -101,6 +101,7 @@ export const build = async (): Promise<void> => {
     }
     if (!omitSlowDeps) {
         const ctx = await buildMonaco(STATIC_ASSETS_PATH)
+        await ctx.rebuild()
         await ctx.dispose()
     }
 }

@@ -8,10 +8,9 @@
   },
   "engines": {
     "node": "^v16.18.1",
-    "pnpm": "^7.24.2"
+    "pnpm": "^7.28.0"
   },
   "scripts": {
-    "deduplicate": "pnpm-deduplicate",
     "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write",
     "format:changed": "prettier $(git diff --diff-filter=d --name-only origin/main... && git ls-files --other --modified --exclude-standard | grep -E '\\.(js|json|ts|tsx|graphql|md|scss)$' | xargs) --write --list-different --config prettier.config.js",
     "format:check": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --config prettier.config.js --check --write=false",
@@ -57,6 +56,7 @@
     "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\"",
     "build-vsce": "pnpm --filter @sourcegraph/vscode run build",
     "watch-vsce": "pnpm --filter @sourcegraph/vscode run watch",
+    "watch-cody": "pnpm --filter kodj run watch",
     "postinstall": "set-project-references --save && pnpm run format:tsconfig",
     "postuninstall": "set-project-references --save && pnpm run format:tsconfig"
   },
@@ -93,6 +93,7 @@
   "devDependencies": {
     "@atlassian/aui": "^7.10.3",
     "@axe-core/puppeteer": "^4.4.2",
+    "@babel/cli": "^7.20.7",
     "@babel/core": "^7.20.5",
     "@babel/plugin-transform-typescript": "^7.20.2",
     "@babel/preset-env": "^7.20.2",
@@ -105,12 +106,12 @@
     "@graphql-codegen/typescript": "2.8.5",
     "@graphql-codegen/typescript-apollo-client-helpers": "^2.2.6",
     "@graphql-codegen/typescript-operations": "2.5.10",
+    "@ianvs/prettier-plugin-sort-imports": "^3.7.1",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@jest/types": "^28.1.0",
     "@lhci/cli": "0.8.1",
     "@mermaid-js/mermaid-cli": "^8.13.10",
     "@octokit/rest": "^16.36.0",
-    "@peculiar/webcrypto": "^1.1.7",
     "@percy/cli": "^1.16.0",
     "@percy/puppeteer": "^2.0.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.10",
@@ -152,7 +153,6 @@
     "@terminus-term/to-string-loader": "^1.1.7-beta.1",
     "@testing-library/dom": "^8.13.0",
     "@testing-library/jest-dom": "^5.16.4",
-    "@testing-library/react": "^13.4.0",
     "@testing-library/react-hooks": "^8.0.0",
     "@testing-library/user-event": "^13.5.0",
     "@types/babel__core": "7.1.20",
@@ -229,7 +229,6 @@
     "babel-plugin-lodash": "^3.3.4",
     "babel-plugin-webpack-chunkname": "^1.2.0",
     "browserslist": "^4.21.3",
-    "buffer": "^6.0.3",
     "bundlesize2": "^0.0.31",
     "chalk": "^4.1.0",
     "chokidar-cli": "^2.1.0",
@@ -263,7 +262,6 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^28.1.0",
     "jest-canvas-mock": "^2.3.0",
-    "jest-environment-jsdom": "^28.1.0",
     "jest-fetch-mock": "^3.0.3",
     "jest-junit": "^13.0.0",
     "jest-mock-extended": "^2.0.2-beta2",
@@ -293,7 +291,6 @@
     "postcss-loader": "^7.0.2",
     "prettier": "2.8.1",
     "prettier-plugin-svelte": "^2.9.0",
-    "process": "^0.11.10",
     "punycode": "2.1.1",
     "puppeteer": "^13.5.1",
     "react-refresh": "^0.10.0",
@@ -333,7 +330,17 @@
     "wildcard-mock-link": "^2.0.1",
     "worker-loader": "^3.0.8",
     "yaml": "^2.2.1",
-    "yauzl": "^2.10.0"
+    "yauzl": "^2.10.0",
+    "concurrently": "^7.6.0",
+    "@types/stopword": "^2.0.0",
+    "@types/stream-json": "^1.7.3",
+    "@types/ws": "^8.5.3",
+    "@vscode/vsce": "^2.18.0",
+    "@vitejs/plugin-react": "^3.1.0",
+    "vite": "^4.1.4",
+    "nodemon": "^2.0.20",
+    "@types/body-parser": "^1.19.2",
+    "@types/google-spreadsheet": "^3.3.1"
   },
   "dependencies": {
     "@apollo/client": "^3.8.0-alpha.7",
@@ -342,6 +349,7 @@
     "@codemirror/lang-json": "^6.0.0",
     "@codemirror/lang-markdown": "^6.0.0",
     "@codemirror/language": "^6.2.0",
+    "@codemirror/legacy-modes": "^6.3.1",
     "@codemirror/lint": "^6.0.0",
     "@codemirror/search": "^6.0.1",
     "@codemirror/state": "^6.2.0",
@@ -350,6 +358,7 @@
     "@lezer/common": "^1.0.0",
     "@lezer/highlight": "^1.0.0",
     "@mdi/js": "7.1.96",
+    "@microsoft/fast-web-utilities": "^6.0.0",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@opentelemetry/api": "^1.4.0",
     "@opentelemetry/context-zone": "^1.9.1",
@@ -361,6 +370,7 @@
     "@opentelemetry/sdk-trace-base": "1.9.1",
     "@opentelemetry/sdk-trace-web": "^1.9.1",
     "@opentelemetry/semantic-conventions": "^1.9.1",
+    "@peculiar/webcrypto": "^1.1.7",
     "@reach/accordion": "^0.16.1",
     "@reach/auto-id": "^0.16.0",
     "@reach/combobox": "^0.16.5",
@@ -372,6 +382,7 @@
     "@sentry/browser": "^7.8.1",
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@storybook/addon-controls": "^6.5.14",
+    "@testing-library/react": "^13.4.0",
     "@visx/annotation": "^2.10.0",
     "@visx/axis": "^2.11.1",
     "@visx/event": "2.6.0",
@@ -390,6 +401,7 @@
     "ajv-formats": "^2.1.1",
     "apollo3-cache-persist": "^0.12.1",
     "bloomfilter": "^0.0.18",
+    "buffer": "^6.0.3",
     "case-sensitive-paths-webpack-plugin": "^2.3.0",
     "classnames": "^2.2.6",
     "comlink": "^4.3.0",
@@ -419,6 +431,7 @@
     "https-proxy-agent": "^5.0.1",
     "is-absolute-url": "^3.0.3",
     "iterare": "^1.2.1",
+    "jest-environment-jsdom": "^28.1.0",
     "js-base64": "^3.7.2",
     "js-cookie": "^2.2.1",
     "js-yaml": "^4.1.0",
@@ -429,6 +442,7 @@
     "marked": "4.0.16",
     "mdi-react": "^8.1.0",
     "minimatch": "^3.0.4",
+    "mockdate": "^3.0.2",
     "monaco-editor": "^0.24.0",
     "monaco-yaml": "^3.2.1",
     "nice-ticks": "^1.0.1",
@@ -438,6 +452,7 @@
     "path-browserify": "^1.0.1",
     "postcss-inset": "^1.0.0",
     "pretty-bytes": "^5.3.0",
+    "process": "^0.11.10",
     "prop-types": "^15.7.2",
     "react": "18.1.0",
     "react-calendar": "^3.7.0",
@@ -458,8 +473,6 @@
     "sanitize-html": "^2.0.0",
     "semver": "^7.3.2",
     "stream-http": "^3.2.0",
-    "string-score": "^1.0.1",
-    "tabbable": "^5.1.5",
     "tagged-template-noop": "^2.1.1",
     "ts-key-enum": "^2.0.7",
     "tslib": "^2.1.0",
@@ -474,9 +487,28 @@
     "webext-domain-permission-toggle": "^1.0.1",
     "webextension-polyfill": "^0.6.0",
     "yaml-ast-parser": "^0.0.43",
-    "zustand": "^3.6.9"
+    "zustand": "^3.6.9",
+    "isomorphic-ws": "^5.0.0",
+    "stopword": "^2.0.7",
+    "stream-json": "^1.7.5",
+    "vscode-uri": "^3.0.7",
+    "ws": "^8.11.0"
   },
-  "packageManager": "pnpm@7.24.2",
+  "packageManager": "pnpm@7.28.0",
+  "pnpm": {
+    "packageExtensions": {
+      "cpu-features": {
+        "dependencies": {
+          "node-gyp": "*"
+        }
+      },
+      "@percy/sdk-utils": {
+        "dependencies": {
+          "ws": "*"
+        }
+      }
+    }
+  },
   "resolutions": {
     "@types/webpack": "5",
     "history": "4.5.1",

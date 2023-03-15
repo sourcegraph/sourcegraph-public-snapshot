@@ -3,27 +3,27 @@ package graphql
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type codeIntelligenceConfigurationPolicyConnectionResolver struct {
-	policySvc  *policies.Service
+	repoStore  database.RepoStore
 	policies   []types.ConfigurationPolicy
 	totalCount int
 	errTracer  *observation.ErrCollector
 }
 
 func NewCodeIntelligenceConfigurationPolicyConnectionResolver(
-	policySvc *policies.Service,
+	repoStore database.RepoStore,
 	policies []types.ConfigurationPolicy,
 	totalCount int,
 	errTracer *observation.ErrCollector,
 ) resolverstubs.CodeIntelligenceConfigurationPolicyConnectionResolver {
 	return &codeIntelligenceConfigurationPolicyConnectionResolver{
-		policySvc:  policySvc,
+		repoStore:  repoStore,
 		policies:   policies,
 		totalCount: totalCount,
 		errTracer:  errTracer,
@@ -33,7 +33,7 @@ func NewCodeIntelligenceConfigurationPolicyConnectionResolver(
 func (r *codeIntelligenceConfigurationPolicyConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelligenceConfigurationPolicyResolver, error) {
 	resolvers := make([]resolverstubs.CodeIntelligenceConfigurationPolicyResolver, 0, len(r.policies))
 	for _, policy := range r.policies {
-		resolvers = append(resolvers, NewConfigurationPolicyResolver(r.policySvc, policy, r.errTracer))
+		resolvers = append(resolvers, NewConfigurationPolicyResolver(r.repoStore, policy, r.errTracer))
 	}
 
 	return resolvers, nil

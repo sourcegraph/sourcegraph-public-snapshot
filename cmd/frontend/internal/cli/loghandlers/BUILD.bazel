@@ -9,6 +9,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "loghandlers_test",
     srcs = ["loghandlers_test.go"],
     embed = [":loghandlers"],

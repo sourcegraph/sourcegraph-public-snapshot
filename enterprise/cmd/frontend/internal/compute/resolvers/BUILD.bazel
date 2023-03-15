@@ -10,6 +10,7 @@ go_library(
         "//enterprise/internal/compute",
         "//internal/database",
         "//internal/gitserver",
+        "//internal/search/job/jobutil",
         "//internal/search/result",
         "//internal/types",
         "@com_github_inconshreveable_log15//:log15",
@@ -19,6 +20,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "resolvers_test",
     srcs = ["resolvers_test.go"],
     embed = [":resolvers"],
@@ -26,6 +28,6 @@ go_test(
         "//enterprise/internal/compute",
         "//internal/database",
         "//internal/search/result",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

@@ -6,13 +6,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
-	"net/http"
 	"path"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
-	"unicode/utf8"
 
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -23,6 +21,7 @@ import (
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/sourcegraph/sourcegraph/internal/binary"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 
@@ -64,18 +63,6 @@ func getHighlightOp() *observation.Operation {
 	})
 
 	return highlightOp
-}
-
-// IsBinary is a helper to tell if the content of a file is binary or not.
-// TODO(tjdevries): This doesn't make sense to be here, IMO
-func IsBinary(content []byte) bool {
-	// We first check if the file is valid UTF8, since we always consider that
-	// to be non-binary.
-	//
-	// Secondly, if the file is not valid UTF8, we check if the detected HTTP
-	// content type is text, which covers a whole slew of other non-UTF8 text
-	// encodings for us.
-	return !utf8.Valid(content) && !strings.HasPrefix(http.DetectContentType(content), "text/")
 }
 
 // Params defines mandatory and optional parameters to use when highlighting
@@ -266,7 +253,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 		appendTextToNode(currentCell, kind, line)
 	}
 
-	lsifToHTML(h.code, h.document, addRow, addText, validLines)
+	scipToHTML(h.code, h.document, addRow, addText, validLines)
 
 	stringRows := map[int32]string{}
 	for row, node := range htmlRows {
@@ -357,7 +344,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		otlog.Int("sizeBytes", len(p.Content)),
 		otlog.Bool("highlightLongLines", p.HighlightLongLines),
 		otlog.Bool("disableTimeout", p.DisableTimeout),
-		otlog.String("syntaxEngine", engineToDisplay[filetypeQuery.Engine]),
+		otlog.String("syntaxEngine", filetypeQuery.Engine.String()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -384,7 +371,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	}
 
 	// Never pass binary files to the syntax highlighter.
-	if IsBinary(p.Content) {
+	if binary.IsBinary(p.Content) {
 		return nil, false, ErrBinary
 	}
 	code := string(p.Content)
@@ -445,7 +432,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	//       whatever we were calculating before)
 	//    2. We are using treesitter. Always have syntect use the language provided in that
 	//       case to make sure that we have normalized the names of the language by then.
-	if filetypeQuery.LanguageOverride || filetypeQuery.Engine == EngineTreeSitter {
+	if filetypeQuery.LanguageOverride || filetypeQuery.Engine.isTreesitterBased() {
 		query.Filetype = filetypeQuery.Language
 	}
 
@@ -460,8 +447,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	//    two separate binaries, and separate processes, to function semi-reliably.
 	//
 	// Instead, in Sourcegraph App we defer to Chroma for syntax highlighting.
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
+	if deploy.IsApp() {
 		document, err := highlightWithChroma(code, p.Filepath)
 		if err != nil {
 			return unhighlightedCode(err, code)
@@ -527,7 +513,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 
 	// We need to return SCIP data if explicitly requested or if the selected
 	// engine is tree sitter.
-	if p.Format == gosyntect.FormatJSONSCIP || filetypeQuery.Engine == EngineTreeSitter {
+	if p.Format == gosyntect.FormatJSONSCIP || filetypeQuery.Engine.isTreesitterBased() {
 		document := new(scip.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
 

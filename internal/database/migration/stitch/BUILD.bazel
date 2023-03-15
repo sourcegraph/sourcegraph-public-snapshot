@@ -23,6 +23,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "stitch_test",
     srcs = ["stitch_test.go"],
     embed = [":stitch"],

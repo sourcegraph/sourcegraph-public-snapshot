@@ -25,6 +25,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "redispool_test",
     srcs = [
         "keyvalue_test.go",
@@ -32,6 +33,10 @@ go_test(
         "redispool_test.go",
     ],
     embed = [":redispool"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

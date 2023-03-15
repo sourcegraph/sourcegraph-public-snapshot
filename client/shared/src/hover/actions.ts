@@ -322,13 +322,13 @@ export const getDefinitionURL =
  */
 export function registerHoverContributions({
     extensionsController,
-    platformContext: { urlToFile, requestGraphQL },
+    platformContext: { urlToFile, requestGraphQL, clientApplication },
     historyOrNavigate,
     getLocation,
     locationAssign,
 }: {
     extensionsController: Pick<Controller, 'extHostAPI' | 'registerCommand'>
-    platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
+    platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL' | 'clientApplication'>
 } & {
     historyOrNavigate: HistoryOrNavigate
     locationAssign: typeof globalThis.location.assign
@@ -488,7 +488,12 @@ export function registerHoverContributions({
             subscriptions.add(syncRemoteSubscription(referencesContributionPromise))
 
             let implementationsContributionPromise: Promise<unknown> = Promise.resolve()
-            if (window.context?.enableLegacyExtensions === false) {
+            /**
+             * Register find implementations contributions only for Sourcegraph web app.
+             * Other client applications (browser extension, VSCode extension) use code-intel extensions bundles with
+             * "Find implementations" action defined (see https://github.com/sourcegraph/sourcegraph/pull/49025 description).
+             */
+            if (clientApplication === 'sourcegraph') {
                 const promise = extensionHostAPI.registerContributions({
                     actions: [
                         ...languageSpecs.map(spec => ({

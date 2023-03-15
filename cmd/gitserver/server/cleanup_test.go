@@ -272,7 +272,7 @@ func TestGitGCAuto(t *testing.T) {
 	// Create a test repository with detectable garbage that GC can prune.
 	wd := t.TempDir()
 	repo := filepath.Join(wd, "garbage-repo")
-	runCmd(t, wd, "git", "init", repo)
+	runCmd(t, wd, "git", "init", "--initial-branch", "main", repo)
 
 	// First we need to generate a moderate number of commits.
 	for i := 0; i < 50; i++ {
@@ -290,7 +290,7 @@ func TestGitGCAuto(t *testing.T) {
 	}
 
 	// Bring everything back together in one branch.
-	runCmd(t, repo, "git", "checkout", "master")
+	runCmd(t, repo, "git", "checkout", "main")
 	runCmd(t, repo, "git", "merge", "secondary")
 
 	// Now create a bare repo like gitserver expects
@@ -1259,6 +1259,11 @@ func TestJitterDuration(t *testing.T) {
 func prepareEmptyGitRepo(t *testing.T, dir string) GitDir {
 	t.Helper()
 	cmd := exec.Command("git", "init", ".")
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("execution error: %v, output %s", err, out)
+	}
+	cmd = exec.Command("git", "config", "user.email", "test@sourcegraph.com")
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("execution error: %v, output %s", err, out)

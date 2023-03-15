@@ -29,16 +29,21 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "insights_test",
     srcs = ["migrator_test.go"],
     data = glob(["testdata/**"]),
     embed = [":insights"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "//internal/database/dbutil",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_lib_pq//:pq",
         "@com_github_sourcegraph_log//logtest",

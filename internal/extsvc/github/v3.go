@@ -52,11 +52,17 @@ type V3Client struct {
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
 
-	// rateLimitMonitor is the API rate limit monitor.
-	rateLimitMonitor *ratelimit.Monitor
+	// externalRateLimiter is the external API rate limit monitor.
+	externalRateLimiter *ratelimit.Monitor
 
-	// rateLimit is our self-imposed rate limiter
-	rateLimit *ratelimit.InstrumentedLimiter
+	// internalRateLimiter is our self-imposed rate limiter
+	internalRateLimiter *ratelimit.InstrumentedLimiter
+
+	// waitForRateLimit determines whether or not the client will wait and retry a request if external rate limits are encountered
+	waitForRateLimit bool
+
+	// maxRateLimitRetries determines how many times we retry requests due to rate limits
+	maxRateLimitRetries int
 
 	// resource specifies which API this client is intended for.
 	// One of 'rest' or 'search'.
@@ -115,14 +121,16 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 				log.String("urn", urn),
 				log.String("resource", resource),
 			),
-		urn:              urn,
-		apiURL:           apiURL,
-		githubDotCom:     urlIsGitHubDotCom(apiURL),
-		auth:             a,
-		httpClient:       cli,
-		rateLimit:        rl,
-		rateLimitMonitor: rlm,
-		resource:         resource,
+		urn:                 urn,
+		apiURL:              apiURL,
+		githubDotCom:        urlIsGitHubDotCom(apiURL),
+		auth:                a,
+		httpClient:          cli,
+		internalRateLimiter: rl,
+		externalRateLimiter: rlm,
+		resource:            resource,
+		waitForRateLimit:    true,
+		maxRateLimitRetries: 2,
 	}
 }
 
@@ -133,9 +141,15 @@ func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
 	return newV3Client(c.log, c.urn, c.apiURL, a, c.resource, c.httpClient)
 }
 
-// RateLimitMonitor exposes the rate limit monitor.
-func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
-	return c.rateLimitMonitor
+// SetWaitForRateLimit sets whether the client should respond to external rate
+// limits by waiting and retrying a request.
+func (c *V3Client) SetWaitForRateLimit(wait bool) {
+	c.waitForRateLimit = wait
+}
+
+// ExternalRateLimiter exposes the rate limit monitor.
+func (c *V3Client) ExternalRateLimiter() *ratelimit.Monitor {
+	return c.externalRateLimiter
 }
 
 func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*httpResponseState, error) {
@@ -192,7 +206,7 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		req.Header.Add("Accept", "application/vnd.github.nebula-preview+json")
 	}
 
-	err := c.rateLimit.Wait(ctx)
+	err := c.internalRateLimiter.Wait(ctx)
 	if err != nil {
 		// We don't want to return a misleading rate limit exceeded error if the error is coming
 		// from the context.
@@ -204,7 +218,32 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		return nil, errInternalRateLimitExceeded
 	}
 
-	return doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+	if c.waitForRateLimit {
+		c.externalRateLimiter.WaitForRateLimit(ctx, 1) // We don't care whether we waited or not, this is a preventative measure.
+	}
+
+	var resp *httpResponseState
+	resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
+
+	apiError := &APIError{}
+	numRetries := 0
+	// We retry only if waitForRateLimit is set, and until:
+	// 1. We've exceeded the number of retries
+	// 2. The error returned is not a rate limit error
+	// 3. We succeed
+	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries &&
+		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
+		// If we end up waiting because of an external rate limit, we need to retry the request.
+		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
+			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
+			numRetries++
+		} else {
+			// We did not wait because of rate limiting, so we break the loop
+			break
+		}
+	}
+
+	return resp, err
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with
@@ -565,13 +604,13 @@ func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64
 // page is the page of results to return, and is 1-indexed (so the first call should be
 // for page 1).
 // visibility and affiliations are filters for which repositories should be returned.
-func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, affiliations ...RepositoryAffiliation) (
+func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, perPage int, affiliations ...RepositoryAffiliation) (
 	repos []*Repository,
 	hasNextPage bool,
 	rateLimitCost int,
 	err error,
 ) {
-	path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=100", visibility, page)
+	path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=%d", visibility, page, perPage)
 	if len(affiliations) > 0 {
 		affilationsStrings := make([]string, 0, len(affiliations))
 		for _, affiliation := range affiliations {

@@ -2,9 +2,9 @@ import { FC, useContext } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { useExperimentalFeatures } from '../../../../../stores'
 import { CodeInsightsBackendContext, CreationInsightInput } from '../../../core'
 import { useQueryParameters } from '../../../hooks'
 import { encodeDashboardIdQueryParam } from '../../../routers.constant'
@@ -27,16 +27,17 @@ interface InsightCreateEvent {
 
 interface InsightCreationPageProps extends TelemetryProps {
     mode: InsightCreationPageType
+    isSourcegraphApp: boolean
 }
 
 export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
-    const { mode, telemetryService } = props
+    const { mode, telemetryService, isSourcegraphApp } = props
 
     const navigate = useNavigate()
     const { createInsight } = useContext(CodeInsightsBackendContext)
     const { dashboardId } = useQueryParameters(['dashboardId'])
 
-    const { codeInsightsCompute } = useExperimentalFeatures()
+    const codeInsightsCompute = useExperimentalFeatures(features => features.codeInsightsCompute)
 
     const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<unknown> => {
         const { insight } = event
@@ -75,6 +76,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
                 onCancel={handleCancel}
+                isSourcegraphApp={isSourcegraphApp}
             />
         )
     }
@@ -87,6 +89,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
                 onCancel={handleCancel}
+                isSourcegraphApp={isSourcegraphApp}
             />
         )
     }
@@ -99,6 +102,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
                 onCancel={handleCancel}
+                isSourcegraphApp={isSourcegraphApp}
             />
         )
     }
@@ -110,6 +114,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
             onInsightCreateRequest={handleInsightCreateRequest}
             onSuccessfulCreation={handleInsightSuccessfulCreation}
             onCancel={handleCancel}
+            isSourcegraphApp={isSourcegraphApp}
         />
     )
 }

@@ -21,6 +21,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "notebooks_test",
     srcs = [
         "main_test.go",
@@ -29,12 +30,16 @@ go_test(
         "validate_test.go",
     ],
     embed = [":notebooks"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/database",
         "//internal/database/dbtest",
         "//lib/errors",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_sourcegraph_log//logtest",
     ],
 )

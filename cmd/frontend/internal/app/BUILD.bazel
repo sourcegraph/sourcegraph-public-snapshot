@@ -29,6 +29,7 @@ go_library(
         "//cmd/frontend/internal/app/otlpadapter",
         "//cmd/frontend/internal/app/router",
         "//cmd/frontend/internal/app/ui",
+        "//cmd/frontend/internal/auth/accessrequest",
         "//cmd/frontend/internal/auth/userpasswd",
         "//cmd/frontend/internal/routevar",
         "//cmd/frontend/internal/session",
@@ -62,6 +63,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "app_test",
     srcs = [
         "app_test.go",
@@ -74,6 +76,10 @@ go_test(
         "verify_email_test.go",
     ],
     embed = [":app"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/oneclickexport",

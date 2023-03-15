@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "runtype_test",
     srcs = ["runtype_test.go"],
     embed = [":runtype"],

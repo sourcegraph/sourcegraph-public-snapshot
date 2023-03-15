@@ -5,6 +5,7 @@ import { Omit } from 'utility-types'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
 import { QueryState } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Container,
     PageHeader,
@@ -24,7 +25,6 @@ import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { Scalars, SearchPatternType } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
-import { useExperimentalFeatures } from '../stores'
 
 import styles from './SavedSearchForm.module.scss'
 
@@ -105,10 +105,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
     return (
         <div className="saved-search-form" data-testid="saved-search-form">
-            <PageHeader
-                description="Get notifications when there are new results for specific search queries."
-                className="mb-3"
-            >
+            <PageHeader className="mb-3">
                 <PageTitle title={props.title} />
                 <PageHeader.Heading as="h3" styleAs="h2">
                     <PageHeader.Breadcrumb>{props.title}</PageHeader.Breadcrumb>

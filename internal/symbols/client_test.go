@@ -208,8 +208,7 @@ type mockSymbolsServer struct {
 
 func (m *mockSymbolsServer) NewHandler(l log.Logger) (handler http.Handler, cleanup func()) {
 	grpcServer := defaults.NewServer(l)
-
-	grpcServer.RegisterService(&proto.SymbolsService_ServiceDesc, m)
+	proto.RegisterSymbolsServiceServer(grpcServer, m)
 
 	handler = internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(m.serveRestHandler))
 	cleanup = func() {

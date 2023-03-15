@@ -86,7 +86,7 @@
     flex-grow: 1;
     margin: auto;
     max-width: 55rem;
-    padding: 0.5rem;
+    padding: 0 0.5rem 0.5rem;
 }
 
 .actions {
@@ -96,10 +96,7 @@
 .footer {
     display: flex;
     flex-direction: column;
-    position: sticky;
-    bottom: 0;
-
-    $self: &;
+    background-color: var(--gray-02);
 
     :global(.theme-dark) & {
         background-color: var(--color-bg-2);
@@ -107,14 +104,13 @@
 
     &-navigation {
         display: flex;
-        background-color: var(--gray-02);
         border-top: 1px solid var(--border-color);
     }
 
     &-inner-navigation {
         display: flex;
         flex-grow: 1;
-        gap: 0.5rem;
+        gap: 0.25rem;
         padding: 0.5rem;
         width: 100%;
         max-width: 55rem;
@@ -123,20 +119,40 @@
 
     &-widget {
         display: flex;
+        flex-grow: 1;
         width: 100%;
-        background-color: var(--color-bg-1);
-        border-top: 1px solid var(--border-color);
-
-        &:has(> #{$self}-inner-widget:empty) {
-            display: none;
-        }
-    }
-
-    &-inner-widget {
         max-width: 55rem;
         margin: auto;
-        flex-grow: 1;
+        position: relative;
         padding: 0.25rem 0.5rem;
+
+        // Hide when we have no custom widget within
+        &:empty {
+            display: none;
+        }
+
+        // Since empty selector above implies that widget should have
+        // only custom widget and no wrappers (otherwise :empty will
+        // be never triggered) we set border and background with pseudo after
+        // element stretched to the full width of the screen
+        //
+        // Note: dynamic :has(element:empty) { display: none } doesn't work
+        // properly in Safari
+        &::after {
+            background-color: var(--color-bg-1);
+            border-top: 1px solid var(--border-color);
+
+            display: block;
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            // stylelint-disable-next-line declaration-property-unit-allowed-list
+            margin: 0 calc(50% - 50vw);
+            height: 100%;
+            z-index: 0;
+        }
     }
 
     // Hide default next button if the custom button is rendered
@@ -144,8 +160,7 @@
         display: none;
     }
 
-    &-next-portal,
-    &-next {
-        margin-left: auto;
+    &-skip {
+        margin-right: auto;
     }
 }

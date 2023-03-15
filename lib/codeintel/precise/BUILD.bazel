@@ -17,6 +17,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "precise_test",
     srcs = [
         "hash_test.go",

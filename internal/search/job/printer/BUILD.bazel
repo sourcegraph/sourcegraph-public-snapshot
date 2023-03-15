@@ -17,6 +17,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "printer_test",
     srcs = [
         "json_test.go",
@@ -28,7 +29,7 @@ go_test(
     embed = [":printer"],
     deps = [
         "//internal/search/job",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_opentracing_opentracing_go//log",
     ],
 )

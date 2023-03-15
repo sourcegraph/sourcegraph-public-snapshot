@@ -1,30 +1,22 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { Diagnostic as CMDiagnostic, linter, LintSource } from '@codemirror/lint'
-import { EditorSelection, Extension, Prec, Compartment, Range, EditorState } from '@codemirror/state'
-import {
-    EditorView,
-    ViewUpdate,
-    keymap,
-    Decoration,
-    placeholder as placeholderExtension,
-    ViewPlugin,
-    WidgetType,
-} from '@codemirror/view'
+import { EditorSelection, Extension, Prec, Compartment, EditorState } from '@codemirror/state'
+import { EditorView, ViewUpdate, keymap, placeholder as placeholderExtension } from '@codemirror/view'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
-import { renderMarkdown } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
-import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
-import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { Filter } from '@sourcegraph/shared/src/search/query/token'
+import {
+    EditorHint,
+    QueryChangeSource,
+    type QueryState,
+    type SearchPatternTypeProps,
+} from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
@@ -32,8 +24,10 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { createDefaultSuggestions, singleLine } from './codemirror'
+import { decorateActiveFilter, filterPlaceholder } from './codemirror/active-filter'
+import { queryDiagnostic } from './codemirror/diagnostics'
 import { HISTORY_USER_EVENT, searchHistory as searchHistoryFacet } from './codemirror/history'
-import { queryTokens, parseInputAsQuery, setQueryParseOptions } from './codemirror/parsedQuery'
+import { parseInputAsQuery, setQueryParseOptions } from './codemirror/parsedQuery'
 import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
 import { tokenInfo } from './codemirror/token-info'
 import { QueryInputProps } from './QueryInput'
@@ -116,7 +110,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     // reference that doesn't change across renders (and some hooks should only
     // run when a prop changes, not the editor).
     const [editor, setEditor] = useState<EditorView | undefined>()
-    const editorReference = useRef<EditorView>()
+    const editorReference = useRef<EditorView | null>(null)
     const focusSearchBarShortcut = useKeyboardShortcut('focusSearch')
     const navigate = useNavigate()
 
@@ -126,7 +120,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
             editorReference.current = editor
             onEditorCreated?.(editor)
         },
-        [editorReference, onEditorCreated]
+        [onEditorCreated]
     )
 
     const autocompletion = useMemo(
@@ -239,11 +233,11 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected])
 
     // Always focus the editor on 'selectedSearchContextSpec' change
-    useEffect(() => {
-        if (selectedSearchContextSpec) {
+    useOnValueChanged(selectedSearchContextSpec, () => {
+        if (selectedSearchContextSpec && selectedSearchContextSpec) {
             editorReference.current?.focus()
         }
-    }, [selectedSearchContextSpec])
+    })
 
     // Focus the editor if the autoFocus prop is truthy
     useEffect(() => {
@@ -252,37 +246,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
         }
     }, [editor, autoFocus])
 
-    // Update the editor's selection and cursor depending on how the search
-    // query was changed.
-    useEffect(() => {
-        if (!editor) {
-            return
-        }
-
-        if (queryState.changeSource === QueryChangeSource.userInput) {
-            // Don't react to user input
-            return
-        }
-
-        editor.dispatch({
-            selection: queryState.selectionRange
-                ? // Select the specified range (most of the time this will be a
-                  // placeholder filter value).
-                  EditorSelection.range(queryState.selectionRange.start, queryState.selectionRange.end)
-                : // Place the cursor at the end of the query.
-                  EditorSelection.cursor(editor.state.doc.length),
-            scrollIntoView: true,
-        })
-
-        if (queryState.hint) {
-            if ((queryState.hint & EditorHint.Focus) === EditorHint.Focus) {
-                editor.focus()
-            }
-            if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
-                startCompletion(editor)
-            }
-        }
-    }, [editor, queryState])
+    useUpdateEditorFromQueryState(editorReference, queryState, startCompletion)
 
     // It looks like <Shortcut ... /> needs a stable onMatch callback, hence we
     // are storing the editor in a ref so that `globalFocus` is stable.
@@ -309,6 +273,21 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     )
 }
 
+/**
+ * Helper hook to run the function whenever the provided changes
+ * (but only after the initial render)
+ */
+function useOnValueChanged<T = unknown>(value: T, func: () => void): void {
+    const previousValue = useRef(value)
+
+    useEffect(() => {
+        if (previousValue.current !== value) {
+            func()
+            previousValue.current = value
+        }
+    }, [value, func])
+}
+
 const EMPTY: any[] = []
 
 interface CodeMirrorQueryInputProps extends SearchPatternTypeProps {
@@ -326,18 +305,33 @@ interface CodeMirrorQueryInputProps extends SearchPatternTypeProps {
  */
 export const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> = React.memo(
     ({ onEditorCreated, patternType, interpretComments, value, className, extensions = EMPTY }) => {
-        // This is using state instead of a ref because `useRef` doesn't cause a
-        // re-render when the ref is attached, but we need that so that
-        // `useCodeMirror` is called again and the editor is actually created.
-        // See https://reactjs.org/docs/hooks-faq.html#how-can-i-measure-a-dom-node
-        const [container, setContainer] = useState<HTMLDivElement | null>(null)
+        const containerRef = useRef<HTMLDivElement | null>(null)
         const isLightTheme = useIsLightTheme()
-
         const externalExtensions = useMemo(() => new Compartment(), [])
         const themeExtension = useMemo(() => new Compartment(), [])
 
-        const editor = useCodeMirror(
-            container,
+        const editorRef = useRef<EditorView | null>(null)
+
+        // Update pattern type and/or interpretComments when changed
+        useEffect(() => {
+            editorRef.current?.dispatch({ effects: setQueryParseOptions.of({ patternType, interpretComments }) })
+        }, [patternType, interpretComments])
+
+        // Update theme if it changes
+        useEffect(() => {
+            editorRef.current?.dispatch({
+                effects: themeExtension.reconfigure(EditorView.darkTheme.of(isLightTheme === false)),
+            })
+        }, [themeExtension, isLightTheme])
+
+        // Update external extensions if they changed
+        useEffect(() => {
+            editorRef.current?.dispatch({ effects: externalExtensions.reconfigure(extensions) })
+        }, [externalExtensions, extensions])
+
+        useCodeMirror(
+            editorRef,
+            containerRef,
             value,
             useMemo(
                 () => [
@@ -350,15 +344,7 @@ export const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputP
                     // The precedence of these extensions needs to be decreased
                     // explicitly, otherwise the diagnostic indicators will be
                     // hidden behind the highlight background color
-                    Prec.low([
-                        tokenInfo(),
-                        highlightFocusedFilter,
-                        // It baffels me but the syntax highlighting extension has
-                        // to come after the highlight current filter extension,
-                        // otherwise CodeMirror keeps steeling the focus.
-                        // See https://github.com/sourcegraph/sourcegraph/issues/38677
-                        querySyntaxHighlighting,
-                    ]),
+                    Prec.low([tokenInfo(), querySyntaxHighlighting, decorateActiveFilter, filterPlaceholder]),
                     externalExtensions.of(extensions),
                 ],
                 // patternType and interpretComments are updated via a
@@ -376,32 +362,15 @@ export const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputP
         // having a reference to the editor allows other components to initiate
         // transactions.
         useEffect(() => {
-            if (editor) {
-                onEditorCreated?.(editor)
+            if (editorRef.current) {
+                onEditorCreated?.(editorRef.current)
             }
-        }, [editor, onEditorCreated])
-
-        // Update pattern type and/or interpretComments when changed
-        useEffect(() => {
-            editor?.dispatch({ effects: setQueryParseOptions.of({ patternType, interpretComments }) })
-        }, [editor, patternType, interpretComments])
-
-        // Update theme if it changes
-        useEffect(() => {
-            editor?.dispatch({
-                effects: themeExtension.reconfigure(EditorView.darkTheme.of(isLightTheme === false)),
-            })
-        }, [editor, themeExtension, isLightTheme])
-
-        // Update external extensions if they changed
-        useEffect(() => {
-            editor?.dispatch({ effects: externalExtensions.reconfigure(extensions) })
-        }, [editor, externalExtensions, extensions])
+        }, [onEditorCreated])
 
         return (
             <TraceSpanProvider name="CodeMirrorQueryInput">
                 <div
-                    ref={setContainer}
+                    ref={containerRef}
                     className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
                     data-editor="codemirror6"
                 />
@@ -409,6 +378,65 @@ export const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputP
         )
     }
 )
+CodeMirrorQueryInput.displayName = 'CodeMirrorQueryInput'
+
+/**
+ * Update the editor's value, selection and cursor depending on how the search
+ * query was changed.
+ */
+export function useUpdateEditorFromQueryState(
+    editorRef: RefObject<EditorView | null>,
+    queryState: QueryState,
+    startCompletion: (view: EditorView) => void
+): void {
+    const startCompletionRef = useRef(startCompletion)
+
+    useEffect(() => {
+        startCompletionRef.current = startCompletion
+    }, [startCompletion])
+
+    useEffect(() => {
+        const editor = editorRef.current
+        if (!editor) {
+            return
+        }
+
+        if (queryState.changeSource === QueryChangeSource.userInput) {
+            // Don't react to user input
+            return
+        }
+
+        const changes =
+            editor.state.sliceDoc() !== queryState.query
+                ? { from: 0, to: editor.state.doc.length, insert: queryState.query }
+                : undefined
+        editor.dispatch({
+            // Update value if it's different
+            changes,
+            selection: queryState.selectionRange
+                ? // Select the specified range (most of the time this will be a
+                  // placeholder filter value).
+                  EditorSelection.range(queryState.selectionRange.start, queryState.selectionRange.end)
+                : // Place the cursor at the end of the query if it changed.
+                changes
+                ? EditorSelection.cursor(queryState.query.length)
+                : undefined,
+            scrollIntoView: true,
+        })
+
+        if (queryState.hint) {
+            if ((queryState.hint & EditorHint.Focus) === EditorHint.Focus) {
+                editor.focus()
+            }
+            if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
+                startCompletionRef.current(editor)
+            }
+            if ((queryState.hint & EditorHint.Blur) === EditorHint.Blur) {
+                editor.contentDOM.blur()
+            }
+        }
+    }, [editorRef, queryState])
+}
 
 // The remainder of the file defines all the extensions that provide the query
 // editor behavior. Here is also a brief overview over CodeMirror's architecture
@@ -511,152 +539,3 @@ const [callbacksField, setCallbacks] = createUpdateableField<
         }
     }),
 ])
-
-// Defines decorators for syntax highlighting
-const focusedFilterDeco = Decoration.mark({ class: styles.focusedFilter })
-
-class PlaceholderWidget extends WidgetType {
-    constructor(private placeholder: string) {
-        super()
-    }
-
-    /* eslint-disable-next-line id-length */
-    public eq(other: PlaceholderWidget): boolean {
-        return this.placeholder === other.placeholder
-    }
-
-    public toDOM(): HTMLElement {
-        const span = document.createElement('span')
-        span.className = styles.placeholder
-        span.textContent = this.placeholder
-        return span
-    }
-}
-
-// Determines whether the cursor is over a filter and if yes, decorates that
-// filter.
-const highlightFocusedFilter = ViewPlugin.define(
-    () => ({
-        decorations: Decoration.none,
-        update(update) {
-            if (update.docChanged || update.selectionSet || update.focusChanged) {
-                if (update.view.hasFocus) {
-                    const query = update.state.facet(queryTokens)
-                    const position = update.state.selection.main.head
-                    const focusedFilter = query.tokens.find(
-                        (token): token is Filter =>
-                            // Inclusive end so that the filter is highlighted when
-                            // the cursor is positioned directly after the value
-                            token.type === 'filter' && token.range.start <= position && token.range.end >= position
-                    )
-                    const decorations: Range<Decoration>[] = []
-
-                    if (focusedFilter) {
-                        // Adds decoration for background highlighting
-                        decorations.push(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
-
-                        // Adds widget decoration for filter placeholder
-                        if (!focusedFilter.value?.value) {
-                            const resolvedFilter = resolveFilter(focusedFilter.field.value)
-                            if (resolvedFilter?.definition.placeholder) {
-                                decorations.push(
-                                    Decoration.widget({
-                                        widget: new PlaceholderWidget(resolvedFilter.definition.placeholder),
-                                        side: 1, // show after the cursor
-                                    }).range(focusedFilter.range.end)
-                                )
-                            }
-                        }
-                    }
-
-                    this.decorations = Decoration.set(decorations)
-                } else {
-                    this.decorations = Decoration.none
-                }
-            }
-        },
-    }),
-    {
-        decorations: plugin => plugin.decorations,
-    }
-)
-
-/**
- * Sets up client side query validation.
- */
-function queryDiagnostic(): Extension {
-    // The setup is a bit "strange" because @codemirror/lint only triggers
-    // linting when the document changes. But in our case the linting rules
-    // change depending on the query "type" (regexp, structural, ...). Changing
-    // the query type does not involve changing the document and to linting
-    // wouldn't be triggered. To work around this we explictly reconfigure the
-    // linter via a compartment when the parsed query changes but the document
-    // hadsn't change. This queues a new linting pass.
-    // See
-    // - https://discuss.codemirror.net/t/can-we-manually-force-linting-even-if-the-document-hasnt-changed/3570/2
-    // - https://github.com/sourcegraph/sourcegraph/issues/43836
-    //
-    const source: LintSource = view => {
-        const query = view.state.facet(queryTokens)
-        return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType).map(toCMDiagnostic) : []
-    }
-    const config = {
-        delay: 200,
-    }
-
-    const linterCompartment = new Compartment()
-
-    return [
-        linterCompartment.of(linter(source, config)),
-        EditorView.updateListener.of(update => {
-            if (update.state.facet(queryTokens) !== update.startState.facet(queryTokens) && !update.docChanged) {
-                update.view.dispatch({ effects: linterCompartment.reconfigure(linter(source, config)) })
-            }
-        }),
-        EditorView.theme({
-            '.cm-diagnosticText': {
-                display: 'block',
-            },
-            '.cm-diagnosticAction': {
-                color: 'var(--body-color)',
-                borderColor: 'var(--secondary)',
-                backgroundColor: 'var(--secondary)',
-                borderRadius: 'var(--border-radius)',
-                padding: 'var(--btn-padding-y-sm) .5rem',
-                fontSize: 'calc(min(0.75rem, 0.9166666667em))',
-                lineHeight: '1rem',
-                margin: '0.5rem 0 0 0',
-            },
-            '.cm-diagnosticAction + .cm-diagnosticAction': {
-                marginLeft: '1rem',
-            },
-        }),
-    ]
-}
-
-function renderMarkdownNode(message: string): Element {
-    const div = document.createElement('div')
-    div.innerHTML = renderMarkdown(message)
-    return div.firstElementChild || div
-}
-
-function toCMDiagnostic(diagnostic: Diagnostic): CMDiagnostic {
-    return {
-        from: diagnostic.range.start,
-        to: diagnostic.range.end,
-        message: diagnostic.message,
-        renderMessage() {
-            return renderMarkdownNode(diagnostic.message)
-        },
-        severity: diagnostic.severity,
-        actions: diagnostic.actions?.map(action => ({
-            name: action.label,
-            apply(view) {
-                view.dispatch({ changes: action.change, selection: action.selection })
-                if (action.selection && !view.hasFocus) {
-                    view.focus()
-                }
-            },
-        })),
-    }
-}

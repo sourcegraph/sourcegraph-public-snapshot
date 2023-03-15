@@ -85,9 +85,6 @@ const jsContextChanges = `
         // Only username/password auth-provider provider is supported with the standalone server.
         authProviders: window.context.authProviders.filter(provider => provider.isBuiltin),
 
-        // For some reason, the standalone server crashes with legacy extensions enabled.
-        enableLegacyExtensions: false,
-
         // Sync externalURL with the development environment config.
         externalURL: '${HTTPS_WEB_SERVER_URL}',
 

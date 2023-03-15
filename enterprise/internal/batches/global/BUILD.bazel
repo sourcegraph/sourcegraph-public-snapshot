@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "global_test",
     srcs = ["global_test.go"],
     embed = [":global"],

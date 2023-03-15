@@ -3,7 +3,6 @@ package own
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
@@ -24,7 +23,6 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	g := gitserver.NewClient()
-	o := backend.NewOwnService(g, db)
-	enterpriseServices.OwnResolver = resolvers.New(db, o)
+	enterpriseServices.OwnResolver = resolvers.New(db, g, observationCtx.Logger.Scoped("own", "Code ownership"))
 	return nil
 }

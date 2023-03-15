@@ -32,6 +32,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "sourcegraphoperator_test",
     srcs = [
         "associate_test.go",
@@ -39,6 +40,10 @@ go_test(
         "middleware_test.go",
     ],
     embed = [":sourcegraphoperator"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/auth/providers",

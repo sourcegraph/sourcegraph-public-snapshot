@@ -1,11 +1,12 @@
 import { within, fireEvent } from '@testing-library/react'
 import { createPath } from 'react-router-dom'
 
+import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { setExperimentalFeaturesFromSettings } from '../stores'
+import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
+
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ReferencesPanel } from './ReferencesPanel'
 import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
@@ -14,13 +15,16 @@ describe('ReferencesPanel', () => {
     async function renderReferencesPanel() {
         const { url, requestMocks } = buildReferencePanelMocks()
 
-        // TODO: we won't need to set experimental features explicitly once we cover CodeMirror side blob view with tests:
-        // https://github.com/sourcegraph/sourcegraph/issues/48049
-        setExperimentalFeaturesFromSettings(defaultProps.settingsCascade)
-
         const result = renderWithBrandedContext(
             <MockedTestProvider mocks={requestMocks}>
-                <ReferencesPanel {...defaultProps} />
+                <SettingsProvider
+                    settingsCascade={{
+                        final: { experimentalFeatures: { enableCodeMirrorFileView: false } },
+                        subjects: [],
+                    }}
+                >
+                    <ReferencesPanel {...defaultProps} />
+                </SettingsProvider>
             </MockedTestProvider>,
             { route: url }
         )
@@ -103,7 +107,7 @@ describe('ReferencesPanel', () => {
 
         // Assert the current URL points at the reference panel
         expect(createPath(locationRef.current!)).toBe(
-            '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2&subtree=true#tab=references'
+            '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2#tab=references'
         )
         // Click on reference the second time promotes the active location to the URL (and main blob view)
         fireEvent.click(referenceButton)

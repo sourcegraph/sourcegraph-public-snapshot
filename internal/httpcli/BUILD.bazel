@@ -36,12 +36,17 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "httpcli_test",
     srcs = [
         "client_test.go",
         "redis_logger_middleware_test.go",
     ],
     embed = [":httpcli"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/rcache",

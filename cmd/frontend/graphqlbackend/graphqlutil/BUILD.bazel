@@ -19,6 +19,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "graphqlutil_test",
     srcs = ["connection_resolver_test.go"],
     embed = [":graphqlutil"],

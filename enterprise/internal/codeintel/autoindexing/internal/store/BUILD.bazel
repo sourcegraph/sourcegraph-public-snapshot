@@ -38,16 +38,21 @@ go_library(
 
 go_test(
     name = "store_test",
-    timeout = "short",
+    size = "large",
     srcs = [
         "store_configurations_test.go",
         "store_dependency_indexing_job_test.go",
         "store_expiration_test.go",
         "store_indexes_test.go",
         "store_language_support_test.go",
+        "store_repositories_test.go",
         "store_sourced_commits_test.go",
     ],
     embed = [":store"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/globals",
         "//enterprise/internal/codeintel/autoindexing/shared",

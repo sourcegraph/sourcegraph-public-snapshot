@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -83,7 +84,8 @@ func TestGithubSource_GetRepo(t *testing.T) {
 						ForkCount:      164,
 						// We're hitting github.com here, so visibility will be empty irrespective
 						// of repository type. This is a GitHub enterprise only feature.
-						Visibility: "",
+						Visibility:       "",
+						RepositoryTopics: github.RepositoryTopics{Nodes: []github.RepositoryTopic{}},
 					},
 				}
 
@@ -168,15 +170,16 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 						},
 					},
 					Metadata: &github.Repository{
-						ID:             "MDEwOlJlcG9zaXRvcnk0NDIyODU=",
-						DatabaseID:     442285,
-						NameWithOwner:  "admiring-austin-120/fluffy-enigma",
-						Description:    "Internal repo used in tests in sourcegraph code.",
-						URL:            "https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
-						StargazerCount: 0,
-						ForkCount:      0,
-						IsPrivate:      true,
-						Visibility:     github.VisibilityInternal,
+						ID:               "MDEwOlJlcG9zaXRvcnk0NDIyODU=",
+						DatabaseID:       442285,
+						NameWithOwner:    "admiring-austin-120/fluffy-enigma",
+						Description:      "Internal repo used in tests in sourcegraph code.",
+						URL:              "https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
+						StargazerCount:   0,
+						ForkCount:        0,
+						IsPrivate:        true,
+						Visibility:       github.VisibilityInternal,
+						RepositoryTopics: github.RepositoryTopics{Nodes: []github.RepositoryTopic{{Topic: github.Topic{Name: "fluff"}}}},
 					},
 				}
 
@@ -241,6 +244,26 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMakeRepo_NullCharacter(t *testing.T) {
+	r := &github.Repository{
+		Description: "Fun nulls \x00\x00\x00",
+	}
+
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindGitHub,
+		Config: extsvc.NewEmptyConfig(),
+	}
+	schema := &schema.GitHubConnection{
+		Url: "https://github.com",
+	}
+	s, err := newGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, schema, nil)
+	require.NoError(t, err)
+	repo := s.makeRepo(r)
+
+	require.Equal(t, "Fun nulls ", repo.Description)
 }
 
 func TestGithubSource_makeRepo(t *testing.T) {
@@ -651,7 +674,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 	})
 }
 
-func TestRepositoryQuery_Do(t *testing.T) {
+func TestRepositoryQuery_DoWithRefinedWindow(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
 		query string
@@ -663,7 +686,7 @@ func TestRepositoryQuery_Do(t *testing.T) {
 			name:  "exceeds-limit",
 			query: "stars:10000..10100",
 			first: 10,
-			limit: 20, // We simulate a lower limit that the 1000 limit on github.com
+			limit: 20, // We simulate a lower limit than the 1000 limit on github.com
 		},
 		{
 			name:  "doesnt-exceed-limit",
@@ -695,7 +718,7 @@ func TestRepositoryQuery_Do(t *testing.T) {
 
 			results := make(chan *githubResult)
 			go func() {
-				q.Do(context.Background(), results)
+				q.DoWithRefinedWindow(context.Background(), results)
 				close(results)
 			}()
 
@@ -714,6 +737,263 @@ func TestRepositoryQuery_Do(t *testing.T) {
 			}
 
 			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update(t.Name()), have)
+		})
+	}
+}
+
+func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		query string
+		first int
+		limit int
+		now   time.Time
+	}{
+		{
+			name:  "exceeds-limit",
+			query: "stars:10000..10100",
+			first: 10,
+			limit: 20, // We simulate a lower limit than the 1000 limit on github.com
+		},
+		{
+			name:  "doesnt-exceed-limit",
+			query: "repo:tsenart/vegeta stars:>=14000",
+			first: 10,
+			limit: 20,
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(t.Name()), t.Name())
+			t.Cleanup(save)
+
+			cli, err := cf.Doer()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			apiURL, _ := url.Parse("https://api.github.com")
+			token := &auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
+
+			q := repositoryQuery{
+				Logger:   logtest.Scoped(t),
+				Query:    tc.query,
+				First:    tc.first,
+				Limit:    tc.limit,
+				Searcher: github.NewV4Client("Test", apiURL, token, cli),
+			}
+
+			results := make(chan *githubResult)
+			go func() {
+				q.DoSingleRequest(context.Background(), results)
+				close(results)
+			}()
+
+			type result struct {
+				Repo  *github.Repository
+				Error string
+			}
+
+			var have []result
+			for r := range results {
+				res := result{Repo: r.repo}
+				if r.err != nil {
+					res.Error = r.err.Error()
+				}
+				have = append(have, res)
+			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update(t.Name()), have)
+		})
+	}
+}
+
+func TestGithubSource_SearchRepositories(t *testing.T) {
+	assertReposSearched := func(want []string) typestest.ReposAssertion {
+		return func(t testing.TB, rs types.Repos) {
+			t.Helper()
+
+			have := rs.Names()
+			sort.Strings(have)
+			sort.Strings(want)
+
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Error(diff)
+			}
+		}
+	}
+
+	testCases := []struct {
+		name         string
+		query        string
+		first        int
+		excludeRepos []string
+		assert       typestest.ReposAssertion
+		mw           httpcli.Middleware
+		conf         *schema.GitHubConnection
+		err          string
+	}{
+		{
+			name:         "query string found",
+			query:        "sourcegraph sourcegraph",
+			first:        5,
+			excludeRepos: []string{},
+			assert: assertReposSearched([]string{
+				"github.com/sourcegraph/about",
+				"github.com/sourcegraph/sourcegraph",
+				"github.com/sourcegraph/src-cli",
+				"github.com/sourcegraph/deploy-sourcegraph-docker",
+				"github.com/sourcegraph/deploy-sourcegraph",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+		{
+			name:         "query string found reduced first",
+			query:        "sourcegraph sourcegraph",
+			first:        1,
+			excludeRepos: []string{},
+			assert: assertReposSearched([]string{
+				"github.com/sourcegraph/sourcegraph",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+		{
+			name:         "query string empty results",
+			query:        "horsegraph",
+			first:        5,
+			excludeRepos: []string{},
+			assert:       assertReposSearched([]string{}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+		{
+			name:         "query string exclude one positive match",
+			query:        "sourcegraph sourcegraph",
+			first:        5,
+			excludeRepos: []string{"sourcegraph/about"},
+			assert: assertReposSearched([]string{
+				"github.com/sourcegraph/sourcegraph",
+				"github.com/sourcegraph/src-cli",
+				"github.com/sourcegraph/deploy-sourcegraph-docker",
+				"github.com/sourcegraph/deploy-sourcegraph",
+				"github.com/sourcegraph/handbook",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+		{
+			name:         "empty query string found",
+			query:        "",
+			first:        5,
+			excludeRepos: []string{},
+			assert: assertReposSearched([]string{
+				"github.com/sourcegraph/vulnerable-js-test",
+				"github.com/sourcegraph/scip-excel",
+				"github.com/sourcegraph/controller-cdktf",
+				"github.com/sourcegraph/deploy-sourcegraph-k8s",
+				"github.com/sourcegraph/embedded-postgres",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+		{
+			name:         "empty query string found reduced first",
+			query:        "",
+			first:        1,
+			excludeRepos: []string{},
+			assert: assertReposSearched([]string{
+				"github.com/sourcegraph/vulnerable-js-test",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+		{
+			name:  "empty query string exclude two positive match",
+			query: "",
+			first: 5,
+			excludeRepos: []string{
+				"sourcegraph/vulnerable-js-test",
+				"sourcegraph/scip-excel",
+			},
+			assert: assertReposSearched([]string{
+				"github.com/sourcegraph/controller-cdktf",
+				"github.com/sourcegraph/deploy-sourcegraph-k8s",
+				"github.com/sourcegraph/embedded-postgres",
+				"github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1",
+				"github.com/sourcegraph/tf-dag",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{},
+			},
+			err: "<nil>",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GITHUB-SEARCH-REPOS/" + tc.name
+		t.Run(tc.name, func(t *testing.T) {
+			setUpRcache(t)
+
+			var (
+				cf   *httpcli.Factory
+				save func(testing.TB)
+			)
+			if tc.mw != nil {
+				cf, save = newClientFactory(t, tc.name, tc.mw)
+			} else {
+				cf, save = newClientFactory(t, tc.name)
+			}
+
+			defer save(t)
+
+			svc := &types.ExternalService{
+				Kind:   extsvc.KindGitHub,
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
+			}
+
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repos, err := searchRepositories(context.Background(), githubSrc, tc.query, tc.first, tc.excludeRepos)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if tc.assert != nil {
+				tc.assert(t, repos)
+			}
 		})
 	}
 }

@@ -21,6 +21,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "comby_test",
     srcs = [
         "comby_test.go",
@@ -30,6 +31,6 @@ go_test(
     deps = [
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

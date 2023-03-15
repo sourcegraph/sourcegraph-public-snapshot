@@ -66,6 +66,10 @@
       interfaces:
         - Client
       prefix: BitbucketCloud
+    - path: github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops
+      interfaces:
+        - Client
+      prefix: AzureDevOps
 - filename: enterprise/internal/batches/syncer/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer
   interfaces:
@@ -126,11 +130,6 @@
       interfaces:
         - UploadService
         - GitserverClient
-- filename: enterprise/internal/codeintel/policies/enterprise/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise
-  interfaces:
-    - GitserverClient
-  package: policies
 - filename: enterprise/internal/codeintel/codenav/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store
@@ -251,10 +250,6 @@
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking
-      interfaces:
-        - GitserverClient
-        - SymbolsClient
     - path: github.com/sourcegraph/sourcegraph/internal/conf/conftypes
       interfaces:
         - SiteConfigQuerier

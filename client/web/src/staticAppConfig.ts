@@ -1,3 +1,5 @@
+import { RouteObject } from 'react-router-dom'
+
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 
 import { BatchChangesProps } from './batches'
@@ -9,12 +11,12 @@ import type { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
 import type { OrgSettingsSidebarItems } from './org/settings/OrgSettingsSidebar'
+import type { OwnConfigProps } from './own/OwnConfigProps'
 import type { RepoContainerRoute } from './repo/RepoContainer'
 import type { RepoHeaderActionButton } from './repo/RepoHeader'
 import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import type { LayoutRouteProps } from './routes'
 import { SearchAggregationProps } from './search'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -37,13 +39,13 @@ export interface StaticHardcodedAppConfig
         Pick<NotebookProps, 'notebooksEnabled'>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<CodeInsightsProps, 'codeInsightsEnabled'>,
-        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled'> {}
+        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled'>,
+        Pick<OwnConfigProps, 'ownEnabled'> {}
 
 /**
  * Non-primitive values (components, objects) we inject at the tip of the React tree.
  */
-export interface StaticInjectedAppConfig
-    extends Pick<CodeIntelligenceProps, 'codeIntelligenceBadgeContent' | 'useCodeIntel' | 'codeIntelligenceBadgeMenu'> {
+export interface StaticInjectedAppConfig extends Pick<CodeIntelligenceProps, 'useCodeIntel' | 'brainDot'> {
     siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
@@ -60,7 +62,7 @@ export interface StaticInjectedAppConfig
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    routes: readonly LayoutRouteProps[]
+    routes: RouteObject[]
 }
 
 /**
@@ -72,6 +74,7 @@ export interface StaticInjectedAppConfig
 export interface StaticWindowContextComputedAppConfig extends Pick<BatchChangesProps, 'batchChangesEnabled'> {
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
+    needsRepositoryConfiguration: boolean
     batchChangesWebhookLogsEnabled: boolean
 }
 
@@ -82,6 +85,7 @@ export interface StaticWindowContextComputedAppConfig extends Pick<BatchChangesP
 export const windowContextConfig = {
     isSourcegraphDotCom: window.context.sourcegraphDotComMode,
     isSourcegraphApp: window.context.sourcegraphAppMode,
+    needsRepositoryConfiguration: window.context.needsRepositoryConfiguration,
     batchChangesWebhookLogsEnabled: window.context.batchChangesWebhookLogsEnabled,
     batchChangesEnabled: window.context.batchChangesEnabled,
 } satisfies StaticWindowContextComputedAppConfig

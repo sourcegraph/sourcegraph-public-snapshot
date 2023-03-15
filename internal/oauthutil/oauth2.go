@@ -27,6 +27,9 @@ type OAuthContext struct {
 	Endpoint Endpoint
 	// Scope specifies optional requested permissions.
 	Scopes []string
+
+	// CustomQueryParams are URL parameters which may be needed by a specific provider that may have a custom OAuth2 implementation.
+	CustomQueryParams map[string]string
 }
 
 // TokenRefresher is a function to refresh and return the new OAuth token.

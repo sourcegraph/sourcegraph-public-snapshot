@@ -6,14 +6,15 @@ import { matchPath, useLocation, Route, Routes, Navigate } from 'react-router-do
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
+import { FeedbackPrompt, LoadingSpinner, Panel, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import { RouteError } from './components/ErrorBoundary'
 import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
@@ -29,11 +30,9 @@ import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
-import { useExperimentalFeatures } from './stores'
-import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
-import styles from './Layout.module.scss'
+import styles from './storm/pages/LayoutPage/LayoutPage.module.scss'
 
 const LazySetupWizard = lazyComponent(() => import('./setup-wizard'), 'SetupWizard')
 
@@ -54,7 +53,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // TODO: Replace with useMatches once top-level <Router/> is V6
     const routeMatch = props.routes.find(
         route =>
-            matchPath(route.path, location.pathname) || matchPath(route.path.replace(/\/\*$/, ''), location.pathname)
+            (route.path && matchPath(route.path, location.pathname)) ||
+            (route.path && matchPath(route.path.replace(/\/\*$/, ''), location.pathname))
     )?.path
 
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
@@ -64,11 +64,15 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
 
-    const { setupWizard } = useExperimentalFeatures()
-    const isSetupWizardPage = setupWizard && location.pathname.startsWith(PageRoutes.SetupWizard)
+    // eslint-disable-next-line no-restricted-syntax
+    const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
 
-    // enable fuzzy finder by default unless it's explicitly disabled in settings
-    const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
+    const { fuzzyFinder } = useExperimentalFeatures(features => ({
+        // enable fuzzy finder by default unless it's explicitly disabled in settings
+        fuzzyFinder: features.fuzzyFinder ?? true,
+    }))
+    const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
+
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
     const userHistory = useUserHistory(isRepositoryRelatedPage)
 
@@ -81,10 +85,14 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp =
-        location.pathname === PageRoutes.SignIn ||
-        location.pathname === PageRoutes.SignUp ||
-        location.pathname === PageRoutes.PasswordReset ||
-        location.pathname === PageRoutes.Welcome
+        routeMatch &&
+        [
+            PageRoutes.SignIn,
+            PageRoutes.SignUp,
+            PageRoutes.PasswordReset,
+            PageRoutes.Welcome,
+            PageRoutes.RequestAccess,
+        ].includes(routeMatch as PageRoutes)
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
@@ -124,7 +132,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         return <Navigate replace={true} to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
 
-    if (isSetupWizardPage) {
+    if (isSetupWizardPage && !!props.authenticatedUser?.siteAdmin) {
         return (
             <Suspense
                 fallback={
@@ -133,9 +141,18 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard />
+                <LazySetupWizard isSourcegraphApp={props.isSourcegraphApp} telemetryService={props.telemetryService} />
             </Suspense>
         )
+    }
+
+    // We have to use window.context here instead of injected context-based
+    // props because we have to have this prop changes over time based on
+    // setup wizard state, since we don't have a good solution for this at the
+    // moment, we use mutable window.context object here.
+    // TODO remove window.context and use injected context store/props
+    if (window.context.needsRepositoryConfiguration && !wasSetupWizardSkipped && props.authenticatedUser?.siteAdmin) {
+        return <Navigate to={PageRoutes.SetupWizard} replace={true} />
     }
 
     return (
@@ -167,11 +184,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts
-                authenticatedUser={props.authenticatedUser}
-                settingsCascade={props.settingsCascade}
-                isSourcegraphDotCom={props.isSourcegraphDotCom}
-            />
+            <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphDotCom={props.isSourcegraphDotCom} />
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}
@@ -189,31 +202,29 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                     showFeedbackModal={showFeedbackModal}
-                    enableLegacyExtensions={window.context.enableLegacyExtensions}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
-            <ErrorBoundary location={location}>
-                <Suspense
-                    fallback={
-                        <div className="flex flex-1">
-                            <LoadingSpinner className="m-2" />
-                        </div>
-                    }
-                >
-                    <AppRouterContainer>
-                        <Routes>
-                            {props.routes.map(({ ...route }) => (
-                                <Route
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    path={route.path}
-                                    element={route.element}
-                                />
-                            ))}
-                        </Routes>
-                    </AppRouterContainer>
-                </Suspense>
-            </ErrorBoundary>
+            <Suspense
+                fallback={
+                    <div className="flex flex-1">
+                        <LoadingSpinner className="m-2" />
+                    </div>
+                }
+            >
+                <AppRouterContainer>
+                    <Routes>
+                        {props.routes.map(({ ...route }) => (
+                            <Route
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                path={route.path}
+                                element={route.element}
+                                errorElement={<RouteError />}
+                            />
+                        ))}
+                    </Routes>
+                </AppRouterContainer>
+            </Suspense>
             {parseQueryAndHash(location.search, location.hash).viewState && location.pathname !== PageRoutes.SignIn && (
                 <Panel
                     className={styles.panel}

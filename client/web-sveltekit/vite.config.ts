@@ -23,6 +23,12 @@ const config: UserConfig = {
             },
         },
     },
+    optimizeDeps: {
+        exclude: [
+            // Without addings this Vite throws an error
+            'linguist-languages',
+        ],
+    },
 }
 
 export default config

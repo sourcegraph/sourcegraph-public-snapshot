@@ -22,6 +22,7 @@ export const esbuildDevelopmentServer = async (
     // is rare enough to ignore here).
     if (!ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS) {
         const ctx = await buildMonaco(STATIC_ASSETS_PATH)
+        await ctx.rebuild()
         await ctx.dispose()
     }
 

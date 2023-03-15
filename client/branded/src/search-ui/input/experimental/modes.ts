@@ -125,7 +125,7 @@ export function getSelectedMode(state: EditorState): ModeDefinition | null {
     return state.field(selectedModeField, false)?.selectedMode ?? null
 }
 
-function setMode(view: EditorView, name: string | null | ((mode: string | null) => string | null)): boolean {
+export function setMode(view: EditorView, name: string | null | ((mode: string | null) => string | null)): boolean {
     const resolvedName = typeof name === 'function' ? name(getSelectedMode(view.state)?.name ?? null) : name
 
     if (resolvedName === null) {

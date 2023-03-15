@@ -28,13 +28,14 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "perforce_test",
     srcs = [
         "main_test.go",
         "perforce_test.go",
         "protects_test.go",
     ],
-    data = glob(["testdata/**"]),
+    data = ["//enterprise/internal/authz/perforce/testdata:data"],
     embed = [":perforce"],
     deps = [
         "//enterprise/internal/authz/subrepoperms",

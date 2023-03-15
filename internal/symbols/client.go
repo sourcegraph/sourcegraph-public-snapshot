@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -15,7 +14,10 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
+	"github.com/sourcegraph/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -44,6 +46,7 @@ func defaultEndpoints() *endpoint.Map {
 func LoadConfig() {
 	DefaultClient = &Client{
 		Endpoints:           defaultEndpoints(),
+		GRPCConnectionCache: defaults.NewConnectionCache(log.Scoped("symbolsConnectionCache", "grpc connection cache for clients of the symbols service")),
 		HTTPClient:          defaultDoer,
 		HTTPLimiter:         limiter.New(500),
 		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
@@ -67,6 +70,8 @@ type Client struct {
 	// Endpoints to symbols service.
 	Endpoints *endpoint.Map
 
+	GRPCConnectionCache *defaults.ConnectionCache
+
 	// HTTP client to use
 	HTTPClient httpcli.Doer
 
@@ -80,13 +85,6 @@ type Client struct {
 
 	langMappingOnce  resetonce.Once
 	langMappingCache map[string][]glob.Glob
-}
-
-func (c *Client) url(repo api.RepoName) (string, error) {
-	if c.Endpoints == nil {
-		return "", errors.New("a symbols service has not been configured")
-	}
-	return c.Endpoints.Get(string(repo))
 }
 
 func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_ map[string][]glob.Glob, err error) {
@@ -126,15 +124,12 @@ func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_
 }
 
 func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.RepoName) (map[string][]string, error) {
-	// TODO@ggilmore: This endpoint doesn't need the repository name for anything order than dialing
+	// TODO@ggilmore: This address doesn't need the repository name for anything order than dialing
 	// an arbitrary symbols host. We should remove this requirement from this method.
-
-	conn, err := c.dialGRPC(ctx, repository)
+	conn, err := c.getGRPCConn(string(repository))
 	if err != nil {
-		return nil, errors.Wrap(err, "dialing symbols service")
+		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
 	}
-
-	defer conn.Close()
 
 	client := proto.NewSymbolsServiceClient(conn)
 	resp, err := client.ListLanguages(ctx, &proto.ListLanguagesRequest{})
@@ -151,7 +146,7 @@ func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.Re
 }
 
 func (c *Client) listLanguageMappingsJSON(ctx context.Context, repository api.RepoName) (map[string][]string, error) {
-	// TODO@ggilmore: This endpoint doesn't need the repository name for anything order than dialing
+	// TODO@ggilmore: This address doesn't need the repository name for anything order than dialing
 	// an arbitrary symbols host. We should remove this requirement from this method.
 
 	var resp *http.Response
@@ -236,12 +231,10 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 }
 
 func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {
-	conn, err := c.dialGRPC(ctx, args.Repo)
+	conn, err := c.getGRPCConn(string(args.Repo))
 	if err != nil {
-		return search.SymbolsResponse{}, errors.Wrap(err, "dialing GRPC service")
+		return search.SymbolsResponse{}, errors.Wrap(err, "getting gRPC connection to symbols server")
 	}
-
-	defer conn.Close()
 
 	grpcClient := proto.NewSymbolsServiceClient(conn)
 
@@ -306,12 +299,10 @@ func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) 
 }
 
 func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
-	conn, err := c.dialGRPC(ctx, api.RepoName(path.Repo))
+	conn, err := c.getGRPCConn(path.Repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "dialing GRPC symbols server endpoint")
+		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
 	}
-
-	defer conn.Close()
 
 	grpcClient := proto.NewSymbolsServiceClient(conn)
 
@@ -321,6 +312,13 @@ func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPa
 	protoArgs := proto.LocalCodeIntelRequest{RepoCommitPath: &rcp}
 	protoResponse, err := grpcClient.LocalCodeIntel(ctx, &protoArgs)
 	if err != nil {
+		if status.Code(err) == codes.Unimplemented {
+			// This ignores errors from LocalCodeIntel to match the behavior found here:
+			// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a1631d58604815917096acc3356447c55baebf22/-/blob/cmd/symbols/squirrel/http_handlers.go?L57-57
+			//
+			// This is weird, and maybe not intentional, but things break if we return an error.
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -402,12 +400,10 @@ func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint)
 }
 
 func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
-	conn, err := c.dialGRPC(ctx, api.RepoName(args.Repo))
+	conn, err := c.getGRPCConn(args.Repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "dialing GRPC symbols server endpoint")
+		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
 	}
-
-	defer conn.Close()
 
 	client := proto.NewSymbolsServiceClient(conn)
 
@@ -424,6 +420,11 @@ func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPo
 
 	protoResponse, err := client.SymbolInfo(ctx, &protoArgs)
 	if err != nil {
+		if status.Code(err) == codes.Unimplemented {
+			// This ignores unimplemented errors from SymbolInfo to match the behavior here:
+			// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b039aa70fbd155b5b1eddc4b5deede739626a978/-/blob/cmd/symbols/squirrel/http_handlers.go?L114-114
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -471,7 +472,7 @@ func (c *Client) httpPost(
 		span.Finish()
 	}()
 
-	repoUrl, err := c.url(repo)
+	symbolsURL, err := c.url(repo)
 	if err != nil {
 		return nil, err
 	}
@@ -481,10 +482,10 @@ func (c *Client) httpPost(
 		return nil, err
 	}
 
-	if !strings.HasSuffix(repoUrl, "/") {
-		repoUrl += "/"
+	if !strings.HasSuffix(symbolsURL, "/") {
+		symbolsURL += "/"
 	}
-	req, err := http.NewRequest("POST", repoUrl+method, bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", symbolsURL+method, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
@@ -505,23 +506,18 @@ func (c *Client) httpPost(
 	return c.HTTPClient.Do(req)
 }
 
-// dialGRPC establishes a GRPC connection with the symbols server instance that handles
-// the named repository.
-func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.ClientConn, error) {
-	rawURL, err := c.url(repository)
+func (c *Client) getGRPCConn(repo string) (*grpc.ClientConn, error) {
+	address, err := c.Endpoints.Get(repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting symbols service URL")
+		return nil, errors.Wrapf(err, "getting symbols server address for repo %q", repo)
 	}
 
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing symbols service URL")
-	}
+	return c.GRPCConnectionCache.GetConnection(address)
+}
 
-	conn, err := defaults.DialContext(ctx, u.Host)
-	if err != nil {
-		return nil, errors.Wrap(err, "dialing symbols GRPC service")
+func (c *Client) url(repo api.RepoName) (string, error) {
+	if c.Endpoints == nil {
+		return "", errors.New("a symbols service has not been configured")
 	}
-
-	return conn, nil
+	return c.Endpoints.Get(string(repo))
 }

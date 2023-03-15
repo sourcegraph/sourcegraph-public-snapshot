@@ -8,7 +8,6 @@ import { Button, H1, H2, Icon, Link } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { AuthenticatedUser } from '../auth'
-import { SourcegraphContext } from '../jscontext'
 
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { FilePathBreadcrumbs } from './FilePathBreadcrumbs'
@@ -24,10 +23,6 @@ const mockUser = {
     emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
     siteAdmin: true,
 } as AuthenticatedUser
-
-if (!window.context) {
-    window.context = { enableLegacyExtensions: false } as SourcegraphContext & Mocha.SuiteFunction
-}
 
 const decorator: DecoratorFn = story => (
     <BrandedStory initialEntries={['/github.com/sourcegraph/sourcegraph/-/tree/']} styles={webStyles}>
@@ -70,12 +65,6 @@ export const Default: Story = () => (
         </div>
     </>
 )
-const useActionItemsToggle = () => ({
-    isOpen: false,
-    toggle: () => null,
-    toggleReference: () => null,
-    barInPage: false,
-})
 
 const onLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycleProps) => {
     lifecycleProps.repoHeaderContributionsLifecycleProps?.onRepoHeaderContributionAdd({
@@ -152,7 +141,6 @@ const createBreadcrumbs = (path: string) => [
 
 const createProps = (path: string, forceWrap: boolean = false): React.ComponentProps<typeof RepoHeader> => ({
     actionButtons: [],
-    useActionItemsToggle,
     breadcrumbs: createBreadcrumbs(path),
     repoName: 'sourcegraph/sourcegraph',
     revision: 'main',
@@ -160,7 +148,6 @@ const createProps = (path: string, forceWrap: boolean = false): React.ComponentP
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     authenticatedUser: mockUser,
     platformContext: {} as any,
-    extensionsController: null,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     forceWrap,
 })

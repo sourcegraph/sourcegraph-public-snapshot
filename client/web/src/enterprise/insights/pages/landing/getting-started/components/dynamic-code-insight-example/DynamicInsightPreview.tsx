@@ -1,7 +1,7 @@
 import { FC } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Series, useDebounce, useDeepMemo, ErrorAlert } from '@sourcegraph/wildcard'
+import { Series, useDeepMemo, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     SeriesBasedChartTypes,
@@ -44,15 +44,12 @@ export const DynamicInsightPreview: FC<DynamicInsightPreviewProps> = props => {
 
     // Compare live insight settings with deep check to avoid unnecessary
     // search insight content fetching
-    const settings = useDebounce(
-        useDeepMemo({
-            disabled,
-            repoScope: { repositories },
-            series: createExampleDataSeries(query),
-            step: { months: 2 },
-        }),
-        500
-    )
+    const settings = useDeepMemo({
+        disabled,
+        repoScope: { repositories },
+        series: createExampleDataSeries(query),
+        step: { months: 2 },
+    })
 
     const { state } = useLivePreviewSeriesInsight({
         skip: disabled,

@@ -13,7 +13,7 @@ go_library(
         "//enterprise/cmd/frontend/internal/executorqueue/handler",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
-        "//enterprise/internal/executor",
+        "//enterprise/internal/executor/types",
         "//internal/actor",
         "//internal/conf",
         "//internal/database",
@@ -29,6 +29,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "batches_test",
     srcs = [
         "mocks_test.go",
@@ -39,7 +40,7 @@ go_test(
         "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
-        "//enterprise/internal/executor",
+        "//enterprise/internal/executor/types",
         "//internal/api",
         "//internal/conf",
         "//internal/database",

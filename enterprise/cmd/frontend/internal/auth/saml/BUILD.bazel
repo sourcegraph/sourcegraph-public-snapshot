@@ -37,6 +37,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "saml_test",
     srcs = [
         "config_test.go",

@@ -13,6 +13,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "trie_test",
     srcs = ["trie_test.go"],
     data = glob(["testdata/**"]),

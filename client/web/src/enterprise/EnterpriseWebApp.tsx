@@ -2,6 +2,8 @@ import { FC } from 'react'
 
 import '../SourcegraphWebApp.scss'
 
+import { logger } from '@sourcegraph/common'
+
 import { LegacySourcegraphWebApp } from '../LegacySourcegraphWebApp'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import {
@@ -10,9 +12,10 @@ import {
     StaticInjectedAppConfig,
     windowContextConfig,
 } from '../staticAppConfig'
+import { AppShellInit } from '../storm/app-shell-init'
+import { routes } from '../storm/routes'
 
-import { CodeIntelligenceBadgeContent } from './codeintel/badge/components/CodeIntelligenceBadgeContent'
-import { CodeIntelligenceBadgeMenu } from './codeintel/badge/components/CodeIntelligenceBadgeMenu'
+import { BrainDot } from './codeintel/dashboard/components/BrainDot'
 import { useCodeIntel } from './codeintel/useCodeIntel'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
@@ -58,8 +61,7 @@ const injectedValuesConfig = {
      * Per feature injections
      */
     useCodeIntel,
-    codeIntelligenceBadgeMenu: CodeIntelligenceBadgeMenu,
-    codeIntelligenceBadgeContent: CodeIntelligenceBadgeContent,
+    brainDot: BrainDot,
 } satisfies StaticInjectedAppConfig
 
 const hardcodedConfig = {
@@ -69,6 +71,7 @@ const hardcodedConfig = {
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
     searchAggregationEnabled: true,
+    ownEnabled: true,
 } satisfies StaticHardcodedAppConfig
 
 const staticAppConfig = {
@@ -77,12 +80,20 @@ const staticAppConfig = {
     ...hardcodedConfig,
 } satisfies StaticAppConfig
 
-export const EnterpriseWebApp: FC = () => {
+export const EnterpriseWebApp: FC<AppShellInit> = props => {
     if (window.context.experimentalFeatures.enableStorm) {
-        // eslint-disable-next-line no-console
-        console.log('Storm 🌪️ is enabled for this page load.')
+        const { graphqlClient, temporarySettingsStorage } = props
 
-        return <SourcegraphWebApp {...staticAppConfig} />
+        logger.log('Storm 🌪️ is enabled for this page load.')
+
+        return (
+            <SourcegraphWebApp
+                {...staticAppConfig}
+                routes={routes}
+                graphqlClient={graphqlClient}
+                temporarySettingsStorage={temporarySettingsStorage}
+            />
+        )
     }
 
     return <LegacySourcegraphWebApp {...staticAppConfig} />

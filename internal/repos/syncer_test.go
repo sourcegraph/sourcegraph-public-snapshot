@@ -12,8 +12,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -1344,6 +1346,55 @@ func TestCloudDefaultExternalServicesDontSync(t *testing.T) {
 	if !errors.Is(have, want) {
 		t.Fatalf("have err: %v, want %v", have, want)
 	}
+}
+
+func TestDotComPrivateReposDontSync(t *testing.T) {
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	t.Cleanup(func() {
+		envvar.MockSourcegraphDotComMode(orig)
+		cancel()
+	})
+
+	store := getTestRepoStore(t)
+
+	now := time.Now()
+
+	svc1 := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test1",
+		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	// setup services
+	if err := store.ExternalServiceStore().Upsert(ctx, svc1); err != nil {
+		t.Fatal(err)
+	}
+
+	privateRepo := &types.Repo{
+		Name:    "github.com/org/foo",
+		Private: true,
+	}
+
+	syncer := &repos.Syncer{
+		ObsvCtx: observation.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
+			s := repos.NewFakeSource(svc1, nil, privateRepo)
+			return s, nil
+		},
+		Store: store,
+		Now:   time.Now,
+	}
+
+	have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder)
+	errorMsg := fmt.Sprintf("%s is private, but dotcom does not support private repositories.", string(privateRepo.Name))
+
+	require.EqualError(t, have, errorMsg)
 }
 
 var basicGitHubConfig = `{"url": "https://github.com", "token": "beef", "repos": ["owner/name"]}`

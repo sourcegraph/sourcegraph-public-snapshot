@@ -10,6 +10,9 @@ import (
 	"strings"
 	"time"
 
+	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -69,6 +72,7 @@ var changesetStringColumns = SQLColumns{
 	"closing",
 	"syncer_error",
 	"detached_at",
+	"previous_failure_message",
 }
 
 // ChangesetColumns are used by the changeset related Store methods and by
@@ -112,6 +116,7 @@ var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.closing"),
 	sqlf.Sprintf("changesets.syncer_error"),
 	sqlf.Sprintf("changesets.detached_at"),
+	sqlf.Sprintf("changesets.previous_failure_message"),
 }
 
 // changesetInsertColumns is the list of changeset columns that are modified in
@@ -154,6 +159,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	// the business logic for determining it is in one place and the field is
 	// indexable for searching.
 	sqlf.Sprintf("external_title"),
+	sqlf.Sprintf("previous_failure_message"),
 }
 
 // changesetCodeHostStateInsertColumns are the columns that Store.UpdateChangesetCodeHostState uses to update a changeset
@@ -215,6 +221,7 @@ var changesetInsertStringColumns = []string{
 	"closing",
 	"syncer_error",
 	"external_title",
+	"previous_failure_message",
 }
 
 // temporaryChangesetInsertColumns is the list of column names used by Store.UpdateChangesetsForApply to insert into
@@ -309,6 +316,7 @@ func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (e
 				c.Closing,
 				c.SyncErrorMessage,
 				dbutil.NullStringColumn(title),
+				c.PreviousFailureMessage,
 			); err != nil {
 				return err
 			}
@@ -786,6 +794,8 @@ SET
 	reconciler_state = %s,
 	num_resets = 0,
 	num_failures = 0,
+	-- Copy over and reset the previous failure message
+	previous_failure_message = changesets.failure_message,
 	failure_message = NULL,
 	syncer_error = NULL,
 	updated_at = %s
@@ -888,6 +898,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		c.Closing,
 		c.SyncErrorMessage,
 		dbutil.NullStringColumn(title),
+		c.PreviousFailureMessage,
 	}
 
 	if includeID {
@@ -901,7 +912,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 
 var updateChangesetQueryFmtstr = `
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -993,6 +1004,7 @@ CREATE TEMPORARY TABLE temp_changesets (
     ui_publication_state batch_changes_changeset_ui_publication_state,
     reconciler_state text DEFAULT 'queued'::text,
     failure_message text,
+	previous_failure_message text,
     num_resets integer DEFAULT 0 NOT NULL,
     num_failures integer DEFAULT 0 NOT NULL,
     closing boolean DEFAULT false NOT NULL,
@@ -1006,6 +1018,7 @@ UPDATE changesets c SET batch_change_ids = source.batch_change_ids, updated_at =
                         diff_stat_deleted = source.diff_stat_deleted, current_spec_id = source.current_spec_id,
                         previous_spec_id = source.previous_spec_id, ui_publication_state = source.ui_publication_state,
                         reconciler_state = source.reconciler_state, failure_message = source.failure_message,
+						previous_failure_message = source.previous_failure_message,
                         num_resets = source.num_resets, num_failures = source.num_failures, closing = source.closing,
                         syncer_error = source.syncer_error
 FROM temp_changesets source
@@ -1374,12 +1387,13 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 	var metadata, syncState json.RawMessage
 
 	var (
-		externalState       string
-		externalReviewState string
-		externalCheckState  string
-		failureMessage      string
-		syncErrorMessage    string
-		reconcilerState     string
+		externalState          string
+		externalReviewState    string
+		externalCheckState     string
+		failureMessage         string
+		syncErrorMessage       string
+		reconcilerState        string
+		previousFailureMessage string
 	)
 	err := s.Scan(
 		&t.ID,
@@ -1417,6 +1431,7 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&t.Closing,
 		&dbutil.NullString{S: &syncErrorMessage},
 		&dbutil.NullTime{Time: &t.DetachedAt},
+		&dbutil.NullString{S: &previousFailureMessage},
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")
@@ -1427,6 +1442,9 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 	t.ExternalCheckState = btypes.ChangesetCheckState(externalCheckState)
 	if failureMessage != "" {
 		t.FailureMessage = &failureMessage
+	}
+	if previousFailureMessage != "" {
+		t.PreviousFailureMessage = &previousFailureMessage
 	}
 	if syncErrorMessage != "" {
 		t.SyncErrorMessage = &syncErrorMessage
@@ -1444,6 +1462,11 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		m := new(bbcs.AnnotatedPullRequest)
 		// Ensure the inner PR is initialized, it should never be nil.
 		m.PullRequest = &bitbucketcloud.PullRequest{}
+		t.Metadata = m
+	case extsvc.TypeAzureDevOps:
+		m := new(adobatches.AnnotatedPullRequest)
+		// Ensure the inner PR is initialized, it should never be nil.
+		m.PullRequest = &azuredevops.PullRequest{}
 		t.Metadata = m
 	default:
 		return errors.New("unknown external service type")

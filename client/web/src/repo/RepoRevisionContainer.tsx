@@ -16,10 +16,10 @@ import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
-import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
+import { OwnConfigProps } from '../own/OwnConfigProps'
 import { SearchStreamingProps } from '../search'
 import { eventLogger } from '../tracking/eventLogger'
 import { RouteV6Descriptor } from '../util/contributions'
@@ -28,6 +28,7 @@ import { parseBrowserRepoURL } from '../util/url'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
 import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
+import { isPackageServiceType } from './packages/isPackageServiceType'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -49,13 +50,13 @@ export interface RepoRevisionContainerContext
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
-        ActionItemsBarProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
         Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
         CodeInsightsProps,
-        NotebookProps {
+        NotebookProps,
+        OwnConfigProps {
     repo: RepositoryFields | undefined
     resolvedRevision: ResolvedRevision | undefined
 
@@ -81,13 +82,13 @@ interface RepoRevisionContainerProps
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
-        ActionItemsBarProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        NotebookProps {
+        NotebookProps,
+        OwnConfigProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -151,6 +152,7 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
                     <RevisionsPopover
                         repoId={repo?.id}
                         repoName={repoName}
+                        repoServiceType={repo?.externalRepository?.serviceType}
                         defaultBranch={resolvedRevision?.defaultBranch}
                         currentRev={revision}
                         currentCommitID={resolvedRevision?.commitID}
@@ -192,6 +194,11 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
         }, [resolvedRevision, revision, repo, repoName])
     )
 
+    const isPackage = useMemo(
+        () => isPackageServiceType(repo?.externalRepository.serviceType),
+        [repo?.externalRepository.serviceType]
+    )
+
     const repoRevisionContainerContext: RepoRevisionContainerContext = {
         ...props,
         ...breadcrumbSetters,
@@ -219,7 +226,7 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                     <CopyPathAction telemetryService={eventLogger} filePath={filePath || repoName} key="copy-path" />
                 )}
             </RepoHeaderContributionPortal>
-            {resolvedRevision && (
+            {resolvedRevision && !isPackage && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={3}

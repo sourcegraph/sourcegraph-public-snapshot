@@ -230,3 +230,12 @@ func (teams *Teams) DeleteTeamMember(ctx context.Context, members ...*types.Team
 	}
 	return nil
 }
+
+func (teams *Teams) IsTeamMember(ctx context.Context, teamID, userID int32) (bool, error) {
+	for _, m := range teams.members {
+		if m.TeamID == teamID && m.UserID == userID {
+			return true, nil
+		}
+	}
+	return false, nil
+}

@@ -18,7 +18,19 @@ import (
 const (
 	SyntaxEngineSyntect    = "syntect"
 	SyntaxEngineTreesitter = "tree-sitter"
+	SyntaxEngineScipSyntax = "scip-syntax"
+
+	SyntaxEngineInvalid = "invalid"
 )
+
+func isTreesitterBased(engine string) bool {
+	switch engine {
+	case SyntaxEngineTreesitter, SyntaxEngineScipSyntax:
+		return true
+	default:
+		return false
+	}
+}
 
 type HighlightResponseType string
 
@@ -131,19 +143,6 @@ type response struct {
 	Code  string `json:"code"`
 }
 
-// Make sure all names are lowercase here, since they are normalized
-var enryLanguageMappings = map[string]string{
-	"c#": "c_sharp",
-}
-
-var supportedFiletypes = map[string]struct{}{
-	"go":      {},
-	"c_sharp": {},
-	"jsonnet": {},
-	"scala":   {},
-	"xlsg":    {},
-}
-
 // Client represents a client connection to a syntect_server.
 type Client struct {
 	syntectServer string
@@ -161,22 +160,16 @@ func normalizeFiletype(filetype string) string {
 }
 
 func IsTreesitterSupported(filetype string) bool {
-	_, contained := supportedFiletypes[normalizeFiletype(filetype)]
+	_, contained := treesitterSupportedFiletypes[normalizeFiletype(filetype)]
 	return contained
 }
 
 // Highlight performs a query to highlight some code.
-//
-// TOOD(tjdevries): I think it would be good to remove `useTreeSitter` as a
-// variable and instead use either two different callpaths or just
-// automatically do this via the query or something else. It feels a bit goofy
-// to be a separate param. But I need to clean up these other deprecated
-// options later, so it's OK for the first iteration.
 func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightResponseType) (*Response, error) {
 	// Normalize filetype
 	q.Filetype = normalizeFiletype(q.Filetype)
 
-	if q.Engine == SyntaxEngineTreesitter && !IsTreesitterSupported(q.Filetype) {
+	if isTreesitterBased(q.Engine) && !IsTreesitterSupported(q.Filetype) {
 		return nil, errors.New("Not a valid treesitter filetype")
 	}
 
@@ -189,7 +182,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 	var url string
 	if format == FormatJSONSCIP {
 		url = "/scip"
-	} else if q.Engine == SyntaxEngineTreesitter {
+	} else if isTreesitterBased(q.Engine) {
 		// "Legacy SCIP mode" for the HTML blob view and languages configured to
 		// be processed with tree sitter.
 		url = "/lsif"

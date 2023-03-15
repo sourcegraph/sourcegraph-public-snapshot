@@ -145,12 +145,21 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		})
 	}
 
+	topicFilters := make([]database.RepoTopicFilter, 0, len(op.HasTopics))
+	for _, filter := range op.HasTopics {
+		topicFilters = append(topicFilters, database.RepoTopicFilter{
+			Topic:   filter.Topic,
+			Negated: filter.Negated,
+		})
+	}
+
 	options := database.ReposListOptions{
 		IncludePatterns:       includePatterns,
 		ExcludePattern:        query.UnionRegExps(excludePatterns),
 		DescriptionPatterns:   op.DescriptionPatterns,
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 		KVPFilters:            kvpFilters,
+		TopicFilters:          topicFilters,
 		Cursors:               op.Cursors,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset:  &database.LimitOffset{Limit: limit + 1},
@@ -645,26 +654,40 @@ func (r *Resolver) filterRepoHasFileContent(
 	}
 
 	{ // Use searcher for unindexed revs
+
+		checkHasMatches := func(ctx context.Context, arg query.RepoHasFileContentArgs, repo types.MinimalRepo, rev string) (bool, error) {
+			commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+			if err != nil {
+				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
+					return false, err
+				} else if e := (&gitdomain.RevisionNotFoundError{}); errors.As(err, &e) && (rev == "HEAD" || rev == "") {
+					// In the case that we can't find HEAD, that means there are no commits, which means
+					// we can safely say this repo does not have the file being requested.
+					return false, nil
+				}
+
+				// For any other error, add this repo/rev pair to the set of missing repos
+				addMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{{RevSpec: rev}}})
+				return false, nil
+			}
+
+			return r.repoHasFileContentAtCommit(ctx, repo, commitID, arg)
+		}
+
 		for _, repoRevs := range unindexed {
 			for _, rev := range repoRevs.Revs {
 				repo, rev := repoRevs.Repo, rev
 
 				p.Go(func(ctx context.Context) error {
 					for _, arg := range op.HasFileContent {
-						commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
-						if err != nil {
-							if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
-								return err
-							}
-							addMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{{RevSpec: rev}}})
-							return nil
-						}
-
-						foundMatches, err := r.repoHasFileContentAtCommit(ctx, repo, commitID, arg)
+						hasMatches, err := checkHasMatches(ctx, arg, repo, rev)
 						if err != nil {
 							return err
 						}
-						if !foundMatches {
+
+						wantMatches := !arg.Negated
+						if wantMatches != hasMatches {
+							// One of the conditions has failed, so we can return early
 							return nil
 						}
 					}

@@ -2,12 +2,12 @@ import React, { useEffect } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { useExperimentalFeatures } from '../../../../../../stores'
 import { CodeInsightsPage } from '../../../../components'
 
 import {
@@ -19,7 +19,9 @@ import {
 
 import styles from './IntroCreationPage.module.scss'
 
-interface IntroCreationPageProps extends TelemetryProps {}
+interface IntroCreationPageProps extends TelemetryProps {
+    isSourcegraphApp: boolean
+}
 
 /** Displays intro page for insights creation UI. */
 export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<IntroCreationPageProps>> = props => {
@@ -27,7 +29,7 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
 
     const navigate = useNavigate()
     const { search } = useLocation()
-    const { codeInsightsCompute } = useExperimentalFeatures()
+    const codeInsightsCompute = useExperimentalFeatures(features => features.codeInsightsCompute)
 
     const handleCreateSearchBasedInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
@@ -54,7 +56,7 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
     }, [telemetryService])
 
     return (
-        <CodeInsightsPage className={styles.container}>
+        <CodeInsightsPage className={styles.container} isSourcegraphApp={props.isSourcegraphApp}>
             <PageTitle title="Create insight - Code Insights" />
             <PageHeader
                 path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}

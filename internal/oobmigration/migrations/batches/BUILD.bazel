@@ -21,12 +21,17 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "batches_test",
     srcs = [
         "extsvc_webhook_migrator_test.go",
         "role_assignment_migrator_test.go",
     ],
     embed = [":batches"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/basestore",
@@ -35,8 +40,10 @@ go_test(
         "//internal/types",
         "//schema",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

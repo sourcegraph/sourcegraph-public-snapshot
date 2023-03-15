@@ -17,6 +17,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "limiter_test",
     srcs = [
         "historical_test.go",

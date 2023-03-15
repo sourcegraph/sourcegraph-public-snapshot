@@ -7,6 +7,7 @@ import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EditorHint, QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Button,
     Code,
@@ -25,7 +26,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { InsightRepositoriesCountResult, InsightRepositoriesCountVariables } from '../../../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../../../stores'
 import { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
 import { getRepoQueryPreview, RepositoriesField, MonacoField } from '../../form'
 import { MonacoPreviewLink } from '../../form/monaco-field'

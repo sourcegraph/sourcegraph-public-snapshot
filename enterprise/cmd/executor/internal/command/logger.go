@@ -11,7 +11,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -92,8 +92,7 @@ type logger struct {
 	done    chan struct{}
 	handles chan *entryHandle
 
-	job      executor.Job
-	recordID int
+	job types.Job
 
 	replacer *strings.Replacer
 
@@ -103,8 +102,8 @@ type logger struct {
 
 // ExecutionLogEntryStore handle interactions with executor.Job logs.
 type ExecutionLogEntryStore interface {
-	AddExecutionLogEntry(ctx context.Context, id int, entry internalexecutor.ExecutionLogEntry) (int, error)
-	UpdateExecutionLogEntry(ctx context.Context, id, entryID int, entry internalexecutor.ExecutionLogEntry) error
+	AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (int, error)
+	UpdateExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internalexecutor.ExecutionLogEntry) error
 }
 
 // logEntryBufSize is the maximum number of log entries that are logged by the
@@ -117,7 +116,7 @@ const logEntryBufsize = 50
 // replace with a non-sensitive value.
 // Each log message is written to the store in a goroutine. The Flush method
 // must be called to ensure all entries are written.
-func NewLogger(store ExecutionLogEntryStore, job executor.Job, recordID int, replacements map[string]string) Logger {
+func NewLogger(store ExecutionLogEntryStore, job types.Job, recordID int, replacements map[string]string) Logger {
 	oldnew := make([]string, 0, len(replacements)*2)
 	for k, v := range replacements {
 		oldnew = append(oldnew, k, v)
@@ -126,7 +125,6 @@ func NewLogger(store ExecutionLogEntryStore, job executor.Job, recordID int, rep
 	l := &logger{
 		store:    store,
 		job:      job,
-		recordID: recordID,
 		done:     make(chan struct{}),
 		handles:  make(chan *entryHandle, logEntryBufsize),
 		replacer: strings.NewReplacer(oldnew...),
@@ -170,12 +168,12 @@ func (l *logger) writeEntries() {
 	var wg sync.WaitGroup
 	for handle := range l.handles {
 		initialLogEntry := handle.CurrentLogEntry()
-		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.recordID, initialLogEntry)
+		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.job, initialLogEntry)
 		if err != nil {
 			// If there is a timeout or cancellation error we don't want to skip
 			// writing these logs as users will often want to see how far something
 			// progressed prior to a timeout.
-			log15.Warn("Failed to upload executor log entry for job", "id", l.recordID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "error", err)
+			log15.Warn("Failed to upload executor log entry for job", "id", l.job.ID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "error", err)
 
 			l.appendError(err)
 
@@ -230,7 +228,7 @@ func (l *logger) syncLogEntry(handle *entryHandle, entryID int, old internalexec
 
 		log15.Debug("Updating executor log entry", logArgs...)
 
-		if err := l.store.UpdateExecutionLogEntry(context.Background(), l.recordID, entryID, current); err != nil {
+		if err := l.store.UpdateExecutionLogEntry(context.Background(), l.job, entryID, current); err != nil {
 			logMethod := log15.Warn
 			if lastWrite {
 				logMethod = log15.Error

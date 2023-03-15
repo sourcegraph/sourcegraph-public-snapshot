@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -143,6 +144,8 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		log15.Error("UpsertChangesetEvents", "err", err)
 		return err
 	}
+
+	e.ch.PreviousFailureMessage = nil
 
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
@@ -647,7 +650,7 @@ func handleArchivedRepo(
 }
 
 func (e *executor) enqueueWebhook(ctx context.Context, eventType string) {
-	webhooks.EnqueueChangeset(ctx, e.logger, e.tx, eventType, e.ch)
+	webhooks.EnqueueChangeset(ctx, e.logger, e.tx, eventType, bgql.MarshalChangesetID(e.ch.ID))
 }
 
 func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
