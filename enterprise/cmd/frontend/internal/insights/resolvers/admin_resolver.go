@@ -314,13 +314,13 @@ type insightViewDebugResolver struct {
 func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 	type queueDebug struct {
 		types.InsightSeriesStatus
-		SearchErrors   []types.InsightSearchFailure
-		SeriesMetadata json.RawMessage
+		SearchErrors []types.InsightSearchFailure
 	}
 
 	type insightDebugInfo struct {
-		QueueStatus queueDebug
-		Backfills   []scheduler.SeriesBackfillDebug
+		QueueStatus    queueDebug
+		Backfills      []scheduler.SeriesBackfillDebug
+		SeriesMetadata json.RawMessage
 	}
 
 	ids := make([]string, 0, len(r.viewSeries))
@@ -379,9 +379,9 @@ func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 			QueueStatus: queueDebug{
 				SearchErrors:        seriesErrors,
 				InsightSeriesStatus: status,
-				SeriesMetadata:      metadata,
 			},
-			Backfills: backfillDebugInfo,
+			Backfills:      backfillDebugInfo,
+			SeriesMetadata: metadata,
 		}
 		debugJson, err := json.Marshal(seriesDebug)
 		if err != nil {
