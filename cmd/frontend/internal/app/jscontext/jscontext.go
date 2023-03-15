@@ -299,24 +299,29 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	repoStatsResolver := graphqlbackend.NewRepositoryStatsResolver(db)
 
-	totalRemoteRepos, err := repoStatsResolver.Total(ctx)
-	if err != nil {
-		totalRemoteRepos = 0
-	}
-
 	totalLocalRepos := int32(0)
-	if deploy.IsApp() {
+
+	totalRepos, err := repoStatsResolver.Total(ctx)
+	if err != nil {
+		// assume no repositories (remote or local) on database read error
+		totalRepos = 0
+	} else if deploy.IsApp() {
 		appResolver := graphqlbackend.NewAppResolver(logger.Scoped("jscontext-app", "constructing jscontext - sourcegraph app"), db)
 		if localExternalServices, err := appResolver.LocalExternalServices(ctx); err == nil {
 			for _, svc := range localExternalServices {
 				reposCount, err := svc.RepoCount(ctx)
 				if err == nil {
 					totalLocalRepos += reposCount
-					totalRemoteRepos -= reposCount
 				}
 			}
 		}
+	}
 
+	totalRemoteRepos := totalRepos - totalLocalRepos
+	if totalLocalRepos > totalRepos {
+		// assume no repositories (remote or local)
+		totalRemoteRepos = 0
+		totalLocalRepos = 0
 	}
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
