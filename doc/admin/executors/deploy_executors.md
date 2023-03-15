@@ -95,24 +95,24 @@ Once the shared secret is set in Sourcegraph, you can start setting up executors
 ### Supported installation types
 
 <div class="grid">
-  <a class="btn-app btn" href="/admin/deploy_executors_terraform">
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_terraform">
     <h3>Terraform</h3>
     <p>Simply launch executors on AWS or GCP using Sourcegraph-maintained modules and machine images.</p>
     <p>Supports auto scaling.</p>
   </a>
-  <a class="btn-app btn" href="/admin/deploy_executors_binary">
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_binary">
     <h3>Install executor on your machine</h3>
     <p>Run executors on any linux amd64 machine.</p>
   </a>
 </div>
 
 <div class="grid">
-  <a class="btn-app btn" href="/admin/deploy_executors_kubernetes">
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_kubernetes">
     <h3>Kubernetes</h3>
     <p>Run executors on kubernetes</p>
     <p>Requires privileged access to a container runtime.</p>
   </a>
-  <a class="btn-app btn" href="/admin/deploy_executors_docker">
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_docker">
     <h3>Docker Compose</h3>
     <p>Run executors on any linux amd64 machine with docker-compose</p>
     <p>Requires privileged access to a container runtime.</p>
