@@ -74,9 +74,10 @@ else
 fi
 
 # copy in the launcher shell script
-# the destination name is governed by Platypus
-cp "${exedir}/macos_app/app_bundle/sourcegraph_launcher.sh" "${app_name}/Contents/Resources/script" || exit 1
-chmod 555 "${app_name}/Contents/Resources/script" || exit 1
+# the destination name needs to match what the app bundle executable expects
+# which used to be controlled by Platypus, but is now a Xcode project
+cp "${exedir}/macos_app/app_bundle/sourcegraph_launcher.sh" "${app_name}/Contents/Resources/sourcegraph_launcher.sh" || exit 1
+chmod 555 "${app_name}/Contents/Resources/sourcegraph_launcher.sh" || exit 1
 
 # copy in the sourcegraph binary
 # the destination name is specified by the launcher shell script
