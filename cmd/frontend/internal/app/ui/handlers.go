@@ -26,11 +26,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -355,6 +357,15 @@ func serveSignIn(db database.DB) handlerFunc {
 			return nil // request was handled
 		}
 		common.Title = brandNameSubtitle("Sign in")
+
+		nonce := r.URL.Query().Get("nonce")
+		if deploy.IsApp() && nonce != "" {
+			if err := userpasswd.AppSignIn(w, r, db, nonce); err != nil {
+				return err
+			}
+			r.URL.Path = "/search"
+			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
+		}
 
 		return renderTemplate(w, "app.html", common)
 	}

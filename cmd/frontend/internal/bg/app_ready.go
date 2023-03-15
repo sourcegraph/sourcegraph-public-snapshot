@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"net/url"
 	"os"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	frontendapp "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 )
 
@@ -23,7 +25,7 @@ func AppReady(logger log.Logger) {
 		return
 	}
 
-	externalURL := globals.ExternalURL().String()
+	externalURL := appSignInURL()
 
 	password, err := generatePassword()
 	if err != nil {
@@ -41,6 +43,20 @@ func AppReady(logger log.Logger) {
 	if err := browser.OpenURL(externalURL); err != nil {
 		logger.Error("failed to open browser", log.String("url", externalURL), log.Error(err))
 	}
+}
+
+func appSignInURL() string {
+	externalURL := globals.ExternalURL().String()
+	u, err := url.Parse(externalURL)
+	if err != nil {
+		return externalURL
+	}
+	nonce := userpasswd.AppReadCurrentNonce()
+	u.Path = "/sign-in"
+	query := u.Query()
+	query.Set("nonce", nonce)
+	u.RawQuery = query.Encode()
+	return u.String()
 }
 
 func printExternalURL(externalURL string) {
@@ -67,5 +83,9 @@ func generatePassword() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return base64.StdEncoding.EncodeToString(data), nil
+	pw := base64.StdEncoding.EncodeToString(data)
+	if len(pw) > 72 {
+		return pw[:72], nil
+	}
+	return pw, nil
 }

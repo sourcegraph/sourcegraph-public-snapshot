@@ -129,19 +129,6 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	}
 }
 
-// AppSiteInit is called in the case of Sourcegraph App to create the initial site admin account.
-//
-// Returns a nil error if the admin account already exists, or if it was created.
-func AppSiteInit(ctx context.Context, logger log.Logger, db database.DB, email, username, password string) error {
-	failIfNewUserIsNotInitialSiteAdmin := true
-	err, _, _ := unsafeSignUp(ctx, logger, db, credentials{
-		Email:    email,
-		Username: username,
-		Password: password,
-	}, failIfNewUserIsNotInitialSiteAdmin)
-	return err
-}
-
 // unsafeSignUp is called to create a new user account. It is called for the normal user signup process (where a
 // non-admin user is created) and for the site initialization process (where the initial site admin user account is
 // created).
