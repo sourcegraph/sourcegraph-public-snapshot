@@ -55,30 +55,53 @@ while IFS= read -r f; do
   [ "$(file "${workdir}/${app_name}.app/${f}" | grep -c Mach-O)" -gt 0 ] && files_to_sign+=("${f}")
 done < <(cd "${workdir}/${app_name}.app" && find . -type f)
 for f in "${files_to_sign[@]}"; do
-  chmod 777 "${workdir}/${app_name}.app/${f}"
-  docker run --rm \
-    -v "${application_cert_path}:/certs/cert.p12" \
-    -v "${workdir}/${app_name}.app:/sign" \
-    -w "/sign" \
-    sourcegraph/apple-codesign:0.22.0 \
-    sign \
-    --p12-file "/certs/cert.p12" \
-    --p12-password "${APPLE_DEV_ID_APPLICATION_PASSWORD}" \
-    --code-signature-flags runtime \
-    "${f}" || exit 1
+  # I get the occasional "Error: I/O error: Operation not permitted (os error 1)" error when signing the files
+  # which is probably happening because the file permissions are out of sync. It always works the second try,
+  # so give it a chance to try a few times
+  rc=0
+  for try in 1 2 3; do
+    chmod 777 "${workdir}/${app_name}.app/${f}"
+    docker run --rm \
+      -v "/Users/pguy/sourcegraph/sourcegraph.app/enterprise/dev/app/macos_app/macos.entitlements:/entitle/macos.entitlements" \
+      -v "${application_cert_path}:/certs/cert.p12" \
+      -v "${workdir}/${app_name}.app:/sign" \
+      -w "/sign" \
+      sourcegraph/apple-codesign:0.22.0 \
+      sign \
+      --entitlements-xml-path "/entitle/macos.entitlements" \
+      --p12-file "/certs/cert.p12" \
+      --p12-password "${APPLE_DEV_ID_APPLICATION_PASSWORD}" \
+      --code-signature-flags runtime \
+      --entitlements-xml-path "/entitle/macos.entitlements" \
+      "${f}"
+    rc=$?
+    [[ ${rc:-0} -eq 0 ]] && break
+  done
+  [[ ${rc:-0} -eq 0 ]] || exit 1
 done
 
 # now sign the whole thing
-docker run --rm \
-  -v "${application_cert_path}:/certs/cert.p12" \
-  -v "${workdir}:/sign" \
-  -w "/sign" \
-  sourcegraph/apple-codesign:0.22.0 \
-  sign \
-  --p12-file "/certs/cert.p12" \
-  --p12-password "${APPLE_DEV_ID_APPLICATION_PASSWORD}" \
-  --code-signature-flags runtime \
-  "/sign/${app_name}.app" || exit 1
+# I get the occasional "Error: I/O error: Operation not permitted (os error 1)" error when signing the files
+# which is probably happening because the file permissions are out of sync. It always works the second try,
+# so give it a chance to try a few times
+rc=0
+for try in 1 2 3; do
+  docker run --rm \
+    -v "/Users/pguy/sourcegraph/sourcegraph.app/enterprise/dev/app/macos_app/macos.entitlements:/entitle/macos.entitlements" \
+    -v "${application_cert_path}:/certs/cert.p12" \
+    -v "${workdir}:/sign" \
+    -w "/sign" \
+    sourcegraph/apple-codesign:0.22.0 \
+    sign \
+    --entitlements-xml-path "/entitle/macos.entitlements" \
+    --p12-file "/certs/cert.p12" \
+    --p12-password "${APPLE_DEV_ID_APPLICATION_PASSWORD}" \
+    --code-signature-flags runtime \
+    "/sign/${app_name}.app"
+  rc=$?
+  [[ ${rc:-0} -eq 0 ]] && break
+done
+[[ ${rc:-0} -eq 0 ]] || exit 1
 
 # close down permissions on the executables after signing
 for f in "${files_to_sign[@]}"; do
