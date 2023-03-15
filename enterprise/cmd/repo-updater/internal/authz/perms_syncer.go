@@ -574,7 +574,7 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 	// Save new permissions to database
 	defer s.permsUpdateLock.Unlock()
 
-	err := s.permsStore.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
+	_, err := s.permsStore.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
 		UserID:            userID,
 		ExternalAccountID: acctID,
 	}, repoIDs, authz.SourceUserSync)
@@ -824,7 +824,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	defer func() { err = txs.Done(err) }()
 
 	// write to new user_repo_permissions table by default
-	if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
+	if _, err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
 		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
 	result, err = txs.SetRepoPermissions(ctx, p)

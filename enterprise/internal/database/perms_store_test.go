@@ -97,7 +97,7 @@ func TestPermsStore_LoadUserPermissions(t *testing.T) {
 			}
 			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
 
-			if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
+			if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
 				t.Fatal(err)
 			} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -124,7 +124,7 @@ func TestPermsStore_LoadUserPermissions(t *testing.T) {
 			}
 			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
 
-			if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
+			if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
 				t.Fatal(err)
 			} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -156,7 +156,7 @@ func TestPermsStore_LoadUserPermissions(t *testing.T) {
 			}
 			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 1, RepoID: 1}, {UserID: 2, RepoID: 1}, {UserID: 3, RepoID: 1}})
 
-			if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 1}, {UserID: 2}}, authz.SourceRepoSync); err != nil {
+			if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 1}, {UserID: 2}}, authz.SourceRepoSync); err != nil {
 				t.Fatal(err)
 			} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -167,7 +167,7 @@ func TestPermsStore_LoadUserPermissions(t *testing.T) {
 				Perm:    authz.Read,
 				UserIDs: toMapset(2, 3),
 			}
-			if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}, {UserID: 3}}, authz.SourceRepoSync); err != nil {
+			if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}, {UserID: 3}}, authz.SourceRepoSync); err != nil {
 				t.Fatal(err)
 			} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -247,7 +247,7 @@ func TestPermsStore_LoadRepoPermissions(t *testing.T) {
 				Type:   authz.PermRepos,
 				IDs:    toMapset(1),
 			}
-			if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
+			if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
 				t.Fatal(err)
 			} else if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
@@ -274,7 +274,7 @@ func TestPermsStore_LoadRepoPermissions(t *testing.T) {
 				Type:   authz.PermRepos,
 				IDs:    toMapset(1),
 			}
-			if err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
+			if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
 				t.Fatal(err)
 			} else if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
@@ -1211,7 +1211,7 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 		if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 			t.Fatal(err)
 		}
-		if err := s.SetRepoPerms(context.Background(), int32(i+1), []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
+		if _, err := s.SetRepoPerms(context.Background(), int32(i+1), []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -2760,7 +2760,7 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 						})
 					}
 
-					if err := s.SetRepoPerms(ctx, repoID, users, authz.SourceRepoSync); err != nil {
+					if _, err := s.SetRepoPerms(ctx, repoID, users, authz.SourceRepoSync); err != nil {
 						t.Fatal(err)
 					}
 
@@ -2936,7 +2936,7 @@ func TestPermsStore_DeleteAllUserPermissions(t *testing.T) {
 	// Set unified permissions for user 1 and 2
 	for _, userID := range []int32{1, 2} {
 		for _, repoID := range []int32{1, 2} {
-			if err := s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: userID, ExternalAccountID: repoID}, []int32{repoID}, authz.SourceUserSync); err != nil {
+			if _, err := s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: userID, ExternalAccountID: repoID}, []int32{repoID}, authz.SourceUserSync); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -3406,7 +3406,7 @@ func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
 		q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonRepoNoPermissions)
 		execQuery(t, ctx, s, q)
 
-		err := s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, authz.SourceRepoSync)
+		_, err := s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, authz.SourceRepoSync)
 		if err != nil {
 			t.Fatal(err)
 		}
