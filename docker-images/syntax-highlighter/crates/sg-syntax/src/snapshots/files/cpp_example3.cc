@@ -107,9 +107,23 @@ void literals() {
     char charLit = 'x';
     auto stringLit = "Hello";
     auto wideStringLit = L"World";
-    auto rawStringLit = R"(Hello
-    World)";
+    auto utf8StringLit = u8"World";
+    auto utf16StringLit = u"World";
+    auto utf32StringLit = U"World";
+    const wchar_t* sC = LR"--(STUV)--"; // ok, raw string literal
+    auto rawStringLit = R"sequence(Hello
+    \n
+    \r
+    \t
+    World)sequence";
     auto nullptrLit = nullptr;
+    auto nullLit = NULL;
+    const wchar_t* s4 = L"ABC" L"DEF"; // ok, same as
+    const wchar_t* s5 = L"ABCDEF";
+    const char32_t* s6 = U"GHI" "JKL"; // ok, same as
+    const char32_t* s7 = U"GHIJKL";
+    const char16_t* s9 = "MN" u"OP" "QR"; // ok, same as
+    const char16_t* sA = u"MNOPQR";
 }
 
 
@@ -196,5 +210,4 @@ void attributes() {
     if (has_attribute<my_attribute>(myData)) {
         // data has the my_attribute attribute
     }
-}
 }

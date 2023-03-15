@@ -362,13 +362,77 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^ Keyword 
 //         ^^^^^^^^^^^^^ Identifier 
 //                         ^^^^^^^^ StringLiteral 
-      auto rawStringLit = R"(Hello
+      auto utf8StringLit = u8"World";
+//    ^^^^ Keyword 
+//         ^^^^^^^^^^^^^ Identifier 
+//                         ^^^^^^^^^ StringLiteral 
+      auto utf16StringLit = u"World";
+//    ^^^^ Keyword 
+//         ^^^^^^^^^^^^^^ Identifier 
+//                          ^^^^^^^^ StringLiteral 
+      auto utf32StringLit = U"World";
+//    ^^^^ Keyword 
+//         ^^^^^^^^^^^^^^ Identifier 
+//                          ^^^^^^^^ StringLiteral 
+      const wchar_t* sC = LR"--(STUV)--"; // ok, raw string literal
+//    ^^^^^ Keyword 
+//          ^^^^^^^ IdentifierType 
+//                   ^^ Identifier 
+//                        ^^^^^^^^^^^^^^ StringLiteral 
+//                                        ^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      auto rawStringLit = R"sequence(Hello
 //    ^^^^ Keyword 
 //         ^^^^^^^^^^^^ Identifier 
-      World)";
+//                        ^^^^^^^^^^^^^^^^ StringLiteral 113:24..117:19 
+      \n
+      \r
+      \t
+      World)sequence";
       auto nullptrLit = nullptr;
 //    ^^^^ Keyword 
 //         ^^^^^^^^^^ Identifier 
+//                      ^^^^^^^ IdentifierNull 
+      auto nullLit = NULL;
+//    ^^^^ Keyword 
+//         ^^^^^^^ Identifier 
+//                   ^^^^ IdentifierNull 
+      const wchar_t* s4 = L"ABC" L"DEF"; // ok, same as
+//    ^^^^^ Keyword 
+//          ^^^^^^^ IdentifierType 
+//                   ^^ Identifier 
+//                        ^^^^^^ StringLiteral 
+//                               ^^^^^^ StringLiteral 
+//                                       ^^^^^^^^^^^^^^ Comment 
+      const wchar_t* s5 = L"ABCDEF";
+//    ^^^^^ Keyword 
+//          ^^^^^^^ IdentifierType 
+//                   ^^ Identifier 
+//                        ^^^^^^^^^ StringLiteral 
+      const char32_t* s6 = U"GHI" "JKL"; // ok, same as
+//    ^^^^^ Keyword 
+//          ^^^^^^^^ IdentifierBuiltinType 
+//                    ^^ Identifier 
+//                         ^^^^^^ StringLiteral 
+//                                ^^^^^ StringLiteral 
+//                                       ^^^^^^^^^^^^^^ Comment 
+      const char32_t* s7 = U"GHIJKL";
+//    ^^^^^ Keyword 
+//          ^^^^^^^^ IdentifierBuiltinType 
+//                    ^^ Identifier 
+//                         ^^^^^^^^^ StringLiteral 
+      const char16_t* s9 = "MN" u"OP" "QR"; // ok, same as
+//    ^^^^^ Keyword 
+//          ^^^^^^^^ IdentifierBuiltinType 
+//                    ^^ Identifier 
+//                         ^^^^ StringLiteral 
+//                              ^^^^^ StringLiteral 
+//                                    ^^^^ StringLiteral 
+//                                          ^^^^^^^^^^^^^^ Comment 
+      const char16_t* sA = u"MNOPQR";
+//    ^^^^^ Keyword 
+//          ^^^^^^^^ IdentifierBuiltinType 
+//                    ^^ Identifier 
+//                         ^^^^^^^^^ StringLiteral 
   }
   
   
@@ -646,6 +710,5 @@ expression: "dump_document(&document, &contents)"
           // data has the my_attribute attribute
 //        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
       }
-  }
   }
 
