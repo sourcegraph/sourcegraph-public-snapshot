@@ -36,8 +36,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "dbconn_test",
+    timeout = "short",
     srcs = ["config_test.go"],
     embed = [":dbconn"],
     deps = ["@com_github_sourcegraph_log//logtest"],

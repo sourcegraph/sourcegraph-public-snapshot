@@ -32,8 +32,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "syncer_test",
+    timeout = "short",
     srcs = [
         "mocks_test.go",
         "queue_test.go",

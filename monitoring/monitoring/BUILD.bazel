@@ -36,8 +36,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "monitoring_test",
+    timeout = "short",
     srcs = [
         "generator_test.go",
         "variables_test.go",

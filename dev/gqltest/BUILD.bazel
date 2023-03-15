@@ -1,8 +1,8 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
-    timeout = "short",
     name = "gqltest_test",
+    timeout = "short",
     srcs = [
         "access_token_test.go",
         "bitbucket_projects_perms_sync_test.go",

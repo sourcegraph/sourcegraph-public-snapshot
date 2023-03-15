@@ -23,8 +23,8 @@ go_binary(
 )
 
 go_test(
-    timeout = "short",
     name = "git-combine_test",
+    timeout = "short",
     srcs = ["git-combine_test.go"],
     embed = [":git-combine_lib"],
     deps = [

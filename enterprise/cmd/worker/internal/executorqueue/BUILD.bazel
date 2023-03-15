@@ -40,8 +40,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "executorqueue_test",
+    timeout = "short",
     srcs = ["queue_allocation_test.go"],
     embed = [":executorqueue"],
 )

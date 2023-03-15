@@ -15,8 +15,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "env_test",
+    timeout = "short",
     srcs = [
         "env_test.go",
         "var_test.go",

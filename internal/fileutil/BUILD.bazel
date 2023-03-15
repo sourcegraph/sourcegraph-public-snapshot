@@ -11,8 +11,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "fileutil_test",
+    timeout = "short",
     srcs = ["fileutil_test.go"],
     embed = [":fileutil"],
 )
