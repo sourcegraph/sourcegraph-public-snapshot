@@ -3506,7 +3506,7 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		wantResults := map[int32]time.Time{1: user1UpdatedAt}
+		wantResults := map[int32]time.Time{1: user1UpdatedAt, 2: user2UpdatedAt}
 		if diff := cmp.Diff(wantResults, results); diff != "" {
 			t.Fatal(diff)
 		}
@@ -3596,7 +3596,7 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		wantResults := map[api.RepoID]time.Time{1: repo1UpdatedAt}
+		wantResults := map[api.RepoID]time.Time{1: repo1UpdatedAt, 2: repo2UpdatedAt}
 		if diff := cmp.Diff(wantResults, results); diff != "" {
 			t.Fatal(diff)
 		}
