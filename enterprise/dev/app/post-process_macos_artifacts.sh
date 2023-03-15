@@ -80,7 +80,8 @@ while IFS= read -r gcs_file; do
     exit 1
   }
   rm -f "${zip_file_name}.zip"
-done < <(gsutil ls "gs://sourcegraph-app-releases/${VERSION}/*darwin*.zip")
+  ### limit binary signing to only the universal binary because the arch-specific ones are for Homebrew
+done < <(gsutil ls "gs://sourcegraph-app-releases/${VERSION}/sourcegraph_${VERSION}_darwin_all.zip")
 
 # the macOS universal binary should have been left by the binary signing process
 [ -f "sourcegraph" ] || {
