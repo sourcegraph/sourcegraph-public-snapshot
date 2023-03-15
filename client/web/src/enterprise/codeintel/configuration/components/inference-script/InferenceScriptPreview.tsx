@@ -61,14 +61,13 @@ export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPrev
     })
 
     return (
-        <div className={styles.container}>
+        <div>
             <Form className={styles.actionContainer} ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>
                 <Label id="preview-label">Run your script against a repository</Label>
                 <div className="d-flex align-items-center">
                     <Input
                         as={RepositoryField}
                         required={true}
-                        autoFocus={true}
                         aria-label="Repository"
                         placeholder="Example: github.com/sourcegraph/sourcegraph"
                         {...getDefaultInputProps(repository)}
