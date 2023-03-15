@@ -137,6 +137,14 @@ func (c *KubernetesCommand) WaitForPodToStart(ctx context.Context, namespace str
 	})
 }
 
+// backoff is a slight modification to retry.DefaultBackoff.
+var backoff = wait.Backoff{
+	Steps:    50,
+	Duration: 10 * time.Millisecond,
+	Factor:   5.0,
+	Jitter:   0.1,
+}
+
 // FindPod finds the pod for the given job name.
 func (c *KubernetesCommand) FindPod(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
 	list, err := c.Clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "job-name=" + name})
@@ -176,14 +184,6 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace 
 
 func (c *KubernetesCommand) getJob(ctx context.Context, namespace string, name string) (*batchv1.Job, error) {
 	return c.Clientset.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
-}
-
-// backoff is a slight modification to retry.DefaultBackoff.
-var backoff = wait.Backoff{
-	Steps:    50,
-	Duration: 10 * time.Millisecond,
-	Factor:   5.0,
-	Jitter:   0.1,
 }
 
 // NewKubernetesJob creates a Kubernetes job with the given name, image, volume path, and spec.
