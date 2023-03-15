@@ -65,7 +65,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const bubbleClassName = (speaker: string): string => (speaker === 'you' ? 'human' : 'bot')
 
     const scrollToBottom = () => {
-        chatboxRef.current?.scrollIntoView({ behavior: 'smooth' })
+        chatboxRef.current?.scrollIntoView?.({ behavior: 'smooth' })
     }
 
     useEffect(() => {
