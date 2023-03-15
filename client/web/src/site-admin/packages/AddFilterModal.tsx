@@ -1,0 +1,26 @@
+import { Modal, PageHeader } from '@sourcegraph/wildcard'
+
+import { FilteredConnectionFilterValue } from '../../components/FilteredConnection'
+
+import {
+    AddPackageFilterModalContent,
+    AddPackageFilterModalContentProps,
+} from './modal-content/AddPackageFilterModalContent'
+
+import styles from './PackagesModal.module.scss'
+
+interface AddFilterModalProps extends AddPackageFilterModalContentProps {
+    onDismiss: () => void
+    filters: FilteredConnectionFilterValue[]
+}
+
+export const AddFilterModal: React.FunctionComponent<AddFilterModalProps> = props => (
+    <Modal aria-label="Add package filters" onDismiss={props.onDismiss} className={styles.modal}>
+        <PageHeader path={[{ text: 'Add package filter' }]} headingElement="h2" className={styles.header} />
+        <AddPackageFilterModalContent
+            node={'node' in props ? props.node : undefined}
+            filters={props.filters}
+            onDismiss={props.onDismiss}
+        />
+    </Modal>
+)
