@@ -25,12 +25,12 @@ var CoursierBinary = "coursier"
 
 var (
 	invocTimeout, _ = time.ParseDuration(env.Get("SRC_COURSIER_TIMEOUT", "2m", "Time limit per Coursier invocation, which is used to resolve JVM/Java dependencies."))
-	mkdirOnce        sync.Once
+	mkdirOnce       sync.Once
 )
 
 type CoursierHandle struct {
 	operations *operations
-	cacheDir string
+	cacheDir   string
 }
 
 func NewCoursierHandle(obsctx *observation.Context, cacheDir string) *CoursierHandle {
@@ -44,7 +44,7 @@ func NewCoursierHandle(obsctx *observation.Context, cacheDir string) *CoursierHa
 	})
 	return &CoursierHandle{
 		operations: newOperations(obsctx),
-		cacheDir: cacheDir,
+		cacheDir:   cacheDir,
 	}
 }
 

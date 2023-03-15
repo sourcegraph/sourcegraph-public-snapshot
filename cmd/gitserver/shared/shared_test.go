@@ -152,6 +152,7 @@ func TestGetVCSSyncer(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+	tempCoursierCacheDir := filepath.Join(tempReposDir, "coursier")
 
 	repo := api.RepoName("foo/bar")
 	extsvcStore := database.NewMockExternalServiceStore()
@@ -181,7 +182,7 @@ func TestGetVCSSyncer(t *testing.T) {
 		}, nil
 	})
 
-	s, err := getVCSSyncer(context.Background(), extsvcStore, repoStore, depsSvc, repo, tempReposDir)
+	s, err := getVCSSyncer(context.Background(), extsvcStore, repoStore, depsSvc, repo, tempReposDir, tempCoursierCacheDir)
 	if err != nil {
 		t.Fatal(err)
 	}
