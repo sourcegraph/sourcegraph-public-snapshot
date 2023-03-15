@@ -628,11 +628,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		IDs:    map[int32]struct{}{},
 	}
 
-	unifiedResult := &database.SetPermissionsResult{
-		Added:   0,
-		Found:   0,
-		Removed: 0,
-	}
+	unifiedResult := &database.SetPermissionsResult{}
 	for acctID, repoIDs := range results.repoPerms {
 		// write to new user_repo_permissions table by default
 		stats, err := s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
