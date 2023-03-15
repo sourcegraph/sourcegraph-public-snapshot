@@ -39,6 +39,16 @@ export const newStatusMessageMock = (
     result: {
         data: {
             statusMessages: messages,
+            repositoryStats: {
+                __typename: 'RepositoryStats',
+                cloned: 7,
+                cloning: 0,
+                corrupted: 0,
+                failedFetch: 0,
+                indexed: 7,
+                notCloned: 0,
+                total: 7,
+            },
         },
     },
 })
