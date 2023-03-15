@@ -17,8 +17,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "sgconf_test",
+    timeout = "short",
     srcs = ["config_test.go"],
     embed = [":sgconf"],
     deps = [

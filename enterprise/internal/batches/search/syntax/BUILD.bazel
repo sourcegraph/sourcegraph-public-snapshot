@@ -15,8 +15,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "syntax_test",
+    timeout = "short",
     srcs = [
         "parse_tree_test.go",
         "parser_test.go",

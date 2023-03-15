@@ -34,8 +34,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "migration_test",
+    timeout = "short",
     srcs = ["util_test.go"],
     embed = [":migration"],
     deps = [

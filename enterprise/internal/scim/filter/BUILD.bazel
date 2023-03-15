@@ -24,8 +24,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "filter_test",
+    timeout = "short",
     srcs = [
         "filter_test.go",
         "op_boolean_test.go",

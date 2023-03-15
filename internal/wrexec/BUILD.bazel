@@ -15,8 +15,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "wrexec_test",
+    timeout = "short",
     srcs = [
         "cmd_test.go",
         "recording_cmd_test.go",

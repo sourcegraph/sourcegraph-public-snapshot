@@ -8,8 +8,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "streamio_test",
+    timeout = "short",
     srcs = ["streamio_test.go"],
     embed = [":streamio"],
     deps = ["@com_github_stretchr_testify//require"],

@@ -40,8 +40,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "codenav_test",
+    timeout = "short",
     srcs = [
         "gittree_translator_test.go",
         "mocks_test.go",
