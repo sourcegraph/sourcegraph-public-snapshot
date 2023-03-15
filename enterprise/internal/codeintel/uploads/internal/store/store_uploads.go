@@ -424,6 +424,20 @@ func (s *store) GetRecentUploadsSummary(ctx context.Context, repositoryID int) (
 	return groupedUploads[1:], nil
 }
 
+const sanitizedIndexerExpression = `
+(
+    split_part(
+        split_part(
+            CASE
+                -- Strip sourcegraph/ prefix if it exists
+                WHEN strpos(indexer, 'sourcegraph/') = 1 THEN substr(indexer, length('sourcegraph/') + 1)
+                ELSE indexer
+            END,
+        '@', 1), -- strip off @sha256:...
+    ':', 1) -- strip off tag
+)
+`
+
 const recentUploadsSummaryQuery = `
 WITH ranked_completed AS (
 	SELECT
@@ -431,7 +445,7 @@ WITH ranked_completed AS (
 		u.root,
 		u.indexer,
 		u.finished_at,
-		RANK() OVER (PARTITION BY root, sanitized_indexer ORDER BY finished_at DESC) AS rank
+		RANK() OVER (PARTITION BY root, ` + sanitizedIndexerExpression + ` ORDER BY finished_at DESC) AS rank
 	FROM lsif_uploads u
 	WHERE
 		u.repository_id = %s AND

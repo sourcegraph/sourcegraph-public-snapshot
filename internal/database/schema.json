@@ -13858,19 +13858,6 @@
           "Comment": "The working directory of the indexer image relative to the repository root."
         },
         {
-          "Name": "sanitized_indexer",
-          "Index": 26,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "ALWAYS",
-          "GenerationExpression": "split_part(split_part(\nCASE\n    WHEN (strpos(indexer, 'sourcegraph/'::text) = 1) THEN substr(indexer, (length('sourcegraph/'::text) + 1))\n    ELSE indexer\nEND, '@'::text, 1), ':'::text, 1)",
-          "Comment": ""
-        },
-        {
           "Name": "should_reindex",
           "Index": 24,
           "TypeName": "boolean",
@@ -14925,19 +14912,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The path for which the index can resolve code intelligence relative to the repository root."
-        },
-        {
-          "Name": "sanitized_indexer",
-          "Index": 36,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "ALWAYS",
-          "GenerationExpression": "split_part(split_part(\nCASE\n    WHEN (strpos(indexer, 'sourcegraph/'::text) = 1) THEN substr(indexer, (length('sourcegraph/'::text) + 1))\n    ELSE indexer\nEND, '@'::text, 1), ':'::text, 1)",
-          "Comment": ""
         },
         {
           "Name": "should_reindex",
