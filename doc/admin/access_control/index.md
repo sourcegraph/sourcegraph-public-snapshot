@@ -35,6 +35,10 @@ To create a new role, click the **+ Create role** button. Give the role a unique
 
 With the exception of the **Site Administrator** role, all role permissions can be modified. To edit the permissions granted to a role, click the role to expand it, then select the new set of permissions you want to grant to it. Then click **Update** to save your changes.
 
+You can read about the specific permission types available for each RBAC-enabled product area below:
+
+- [Batch Changes](./batch_changes.md)
+
 ### Deleting a role
 
 With the exception of system roles, all roles can be deleted. To delete a role, click the **Delete** button on it. You will be prompted to confirm your choice. Once deleted, any user previously assigned that role will lose any permissions associated with it that are not also granted by their other roles.

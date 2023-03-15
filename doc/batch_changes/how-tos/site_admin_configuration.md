@@ -4,6 +4,8 @@
 
 1. Using Batch Changes requires a [code host connection](../../admin/external_services/index.md) to a supported code host (currently GitHub, Bitbucket Server / Bitbucket Data Center, GitLab, and Bitbucket Cloud).
 
+1. (Optional) [Configure which users have access to Batch Changes](../../admin/access_control/batch-changes.md). By default, all users can create and view batch changes.
+
 1. (Optional) [Configure repository permissions](../../admin/permissions/index.md), which Batch Changes will respect.
 
 1. [Configure credentials](configuring_credentials.md).
