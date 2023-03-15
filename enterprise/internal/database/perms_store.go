@@ -1934,6 +1934,7 @@ func (s *permsStore) getCutoffClause(age time.Duration) *sqlf.Query {
 const usersWithOldestPermsQuery = `
 WITH us AS (
 	SELECT DISTINCT ON(user_id) user_id, finished_at FROM permission_sync_jobs
+	INNER JOIN users ON users.id = user_id AND users.deleted_at IS NULL
 		WHERE user_id IS NOT NULL
 	ORDER BY user_id ASC, finished_at DESC
 )
@@ -1953,6 +1954,7 @@ func (s *permsStore) UserIDsWithOldestPerms(ctx context.Context, limit int, age 
 const reposWithOldestPermsQuery = `
 WITH us AS (
 	SELECT DISTINCT ON(repository_id) repository_id, finished_at FROM permission_sync_jobs
+	INNER JOIN repo ON repo.id = repository_id AND repo.deleted_at IS NULL
 		WHERE repository_id IS NOT NULL
 	ORDER BY repository_id ASC, finished_at DESC
 )
