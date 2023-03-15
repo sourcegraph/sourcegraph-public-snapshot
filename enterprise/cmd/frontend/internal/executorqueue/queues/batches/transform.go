@@ -185,7 +185,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		RedactedValues: redactedEnvVars,
 	}
 
-	if true {
+	if job.Version == 2 {
 		helperImage := fmt.Sprintf("%s:%s", conf.ExecutorsBatcheshelperImage(), conf.ExecutorsBatcheshelperImageTag())
 
 		// Find the step to start with.
