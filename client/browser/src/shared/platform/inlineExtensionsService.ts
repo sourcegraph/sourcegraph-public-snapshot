@@ -40,9 +40,9 @@ function getURLsForInlineExtension(
     }
 
     /**
-     *  In a native integration environment if SOURCEGRAPH_ASSETS_URL is not defined,
-     *  we assume that native integration has code-intel extensions bundled during the {@link copyIntegrationAssets} step.
-     *  (e.g. BitBucket, see [sourcegraph-bitbucket.js](https://sourcegraph.com/github.com/sourcegraph/bitbucket-server-plugin@97fc6d39f406b100359ee5e22cc3bee9d1453df8/-/blob/src/main/resources/js/sourcegraph-bitbucket.js)).
+     * In a native integration environment if SOURCEGRAPH_ASSETS_URL is not defined,
+     * we assume that native integration has code-intel extensions bundled during the {@link copyIntegrationAssets} step.
+     * (e.g. BitBucket, see [sourcegraph-bitbucket.js](https://sourcegraph.com/github.com/sourcegraph/bitbucket-server-plugin@97fc6d39f406b100359ee5e22cc3bee9d1453df8/-/blob/src/main/resources/js/sourcegraph-bitbucket.js)).
      */
     return {
         manifestURL: new URL(`.assets/extension/${manifestPath}`, sourcegraphURL).toString(),
