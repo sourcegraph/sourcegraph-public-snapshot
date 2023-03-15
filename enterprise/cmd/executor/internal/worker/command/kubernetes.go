@@ -22,45 +22,46 @@ import (
 )
 
 const (
-	containerName         = "job-container"
-	mountPath             = "/data"
-	namespace             = "default"
-	nodeName              = "job-node"
-	persistenceVolumeName = "executor-pvc"
-	volumeName            = "job-volume"
+	containerName = "job-container"
+	mountPath     = "/data"
+	volumeName    = "job-volume"
 )
 
 // KubernetesContainerOptions contains options for the Kubernetes Job containers.
 type KubernetesContainerOptions struct {
-	NodeName        string
-	ResourceLimit   KubernetesResource
-	ResourceRequest KubernetesResource
+	Namespace             string
+	NodeName              string
+	PersistenceVolumeName string
+	ResourceLimit         KubernetesResource
+	ResourceRequest       KubernetesResource
 }
 
+// KubernetesResource contains the CPU and memory resources for a Kubernetes Job.
 type KubernetesResource struct {
 	CPU    resource.Quantity
 	Memory resource.Quantity
 }
 
+// KubernetesCommand interacts with the Kubernetes API.
 type KubernetesCommand struct {
 	Logger    log.Logger
-	Clientset *kubernetes.Clientset
+	Clientset kubernetes.Interface
 }
 
 // CreateJob creates a Kubernetes job with the given name and command.
-func (c *KubernetesCommand) CreateJob(ctx context.Context, job *batchv1.Job) (*batchv1.Job, error) {
+func (c *KubernetesCommand) CreateJob(ctx context.Context, job *batchv1.Job, namespace string) (*batchv1.Job, error) {
 	return c.Clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 }
 
 // DeleteJob deletes the Kubernetes job with the given name.
-func (c *KubernetesCommand) DeleteJob(ctx context.Context, jobName string) error {
+func (c *KubernetesCommand) DeleteJob(ctx context.Context, jobName string, namespace string) error {
 	return c.Clientset.BatchV1().Jobs(namespace).Delete(ctx, jobName, metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
 }
 
 var propagationPolicy = metav1.DeletePropagationBackground
 
 // ReadLogs reads the logs of the given pod and writes them to the logger.
-func (c *KubernetesCommand) ReadLogs(ctx context.Context, podName string, cmdLogger Logger, key string, command []string) error {
+func (c *KubernetesCommand) ReadLogs(ctx context.Context, podName string, cmdLogger Logger, key string, command []string, namespace string) error {
 	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{Container: containerName})
 	stream, err := req.Stream(ctx)
 	if err != nil {
@@ -98,7 +99,7 @@ func readProcessPipe(w io.WriteCloser, stdout io.Reader) *errgroup.Group {
 }
 
 // WaitForPodToStart waits for the pod with the given name to start.
-func (c *KubernetesCommand) WaitForPodToStart(ctx context.Context, name string) (string, error) {
+func (c *KubernetesCommand) WaitForPodToStart(ctx context.Context, name string, namespace string) (string, error) {
 	var podName string
 	return podName, retry.OnError(backoff, func(error) bool {
 		return true
@@ -106,9 +107,9 @@ func (c *KubernetesCommand) WaitForPodToStart(ctx context.Context, name string) 
 		var pod *corev1.Pod
 		var err error
 		if len(podName) == 0 {
-			pod, err = c.FindPod(ctx, name)
+			pod, err = c.FindPod(ctx, name, namespace)
 		} else {
-			pod, err = c.getPod(ctx, podName)
+			pod, err = c.getPod(ctx, podName, namespace)
 		}
 		if err != nil {
 			return err
@@ -136,9 +137,10 @@ func (c *KubernetesCommand) WaitForPodToStart(ctx context.Context, name string) 
 	})
 }
 
-func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, name string) error {
+// WaitForJobToComplete waits for the job with the given name to complete.
+func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, name string, namespace string) error {
 	for {
-		job, err := c.getJob(ctx, name)
+		job, err := c.getJob(ctx, name, namespace)
 		if err != nil {
 			return errors.Wrap(err, "retrieving job")
 		}
@@ -152,7 +154,7 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, name strin
 	}
 }
 
-func (c *KubernetesCommand) getJob(ctx context.Context, name string) (*batchv1.Job, error) {
+func (c *KubernetesCommand) getJob(ctx context.Context, name string, namespace string) (*batchv1.Job, error) {
 	job, err := c.Clientset.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -160,7 +162,8 @@ func (c *KubernetesCommand) getJob(ctx context.Context, name string) (*batchv1.J
 	return job, nil
 }
 
-func (c *KubernetesCommand) FindPod(ctx context.Context, name string) (*corev1.Pod, error) {
+// FindPod finds the pod for the given job name.
+func (c *KubernetesCommand) FindPod(ctx context.Context, name string, namespace string) (*corev1.Pod, error) {
 	list, err := c.Clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "job-name=" + name})
 	if err != nil {
 		return nil, err
@@ -171,7 +174,7 @@ func (c *KubernetesCommand) FindPod(ctx context.Context, name string) (*corev1.P
 	return &list.Items[0], nil
 }
 
-func (c *KubernetesCommand) getPod(ctx context.Context, name string) (*corev1.Pod, error) {
+func (c *KubernetesCommand) getPod(ctx context.Context, name string, namespace string) (*corev1.Pod, error) {
 	pod, err := c.Clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -205,7 +208,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 	if config.IsKubernetes() {
 		volumeMount.SubPath = path
 		volumeSource.PersistentVolumeClaim = &corev1.PersistentVolumeClaimVolumeSource{
-			ClaimName: persistenceVolumeName,
+			ClaimName: options.PersistenceVolumeName,
 		}
 	} else {
 		volumeSource.HostPath = &corev1.HostPathVolumeSource{

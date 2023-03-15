@@ -176,7 +176,9 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 	return runner.KubernetesOptions{
 		ConfigPath: c.KubernetesConfigPath,
 		ContainerOptions: command.KubernetesContainerOptions{
-			NodeName: c.KubernetesNodeName,
+			NodeName:              c.KubernetesNodeName,
+			Namespace:             c.KubernetesNamespace,
+			PersistenceVolumeName: c.KubernetesPersistenceVolumeName,
 			ResourceLimit: command.KubernetesResource{
 				CPU:    resource.MustParse(c.KubernetesResourceLimitCPU),
 				Memory: resource.MustParse(c.KubernetesResourceLimitMemory),
