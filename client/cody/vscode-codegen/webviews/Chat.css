@@ -185,11 +185,11 @@
 
 .context-files-toggle-icon {
     cursor: pointer;
-    margin-right: 1em;
+    margin-right: 0.5em;
 }
 
 .context-files-toggle-icon > i {
-    font-size: var(--vscode-editor-font-size) !important;
+    font-size: cal(var(--vscode-editor-font-size) * 0.5) !important;
 }
 
 .context-files-list-title {
@@ -203,15 +203,16 @@
 
 .context-files-collapsed .context-files-toggle-icon {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    padding-top: 0.2rem;
 }
 
 .context-files-collapsed-text {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     font-style: italic;
 }
 
 .context-file {
-    padding: 4px;
+    padding: 0.1rem;
 }

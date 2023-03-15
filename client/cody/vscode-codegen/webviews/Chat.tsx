@@ -170,7 +170,7 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
         return (
             <p className="context-files-expanded">
                 <span className="context-files-toggle-icon" onClick={() => setIsExpanded(false)}>
-                    <i className="codicon codicon-triangle-up" slot="start" />
+                    <i className="codicon codicon-triangle-down" slot="start" />
                 </span>
                 <div>
                     <div className="context-files-list-title" onClick={() => setIsExpanded(false)}>
