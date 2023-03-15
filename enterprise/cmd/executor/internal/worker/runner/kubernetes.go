@@ -30,6 +30,7 @@ type kubernetesRunner struct {
 
 var _ Runner = &kubernetesRunner{}
 
+// NewKubernetesRunner creates a new Kubernetes runner.
 func NewKubernetesRunner(
 	cmd *command.KubernetesCommand,
 	commandLogger command.Logger,
@@ -87,7 +88,7 @@ func (r *kubernetesRunner) Teardown(ctx context.Context) error {
 		)
 	}
 	for _, name := range r.jobNames {
-		if err := r.cmd.DeleteJob(ctx, name); err != nil {
+		if err := r.cmd.DeleteJob(ctx, name, r.options.Namespace); err != nil {
 			r.internalLogger.Error(
 				"Failed to delete kubernetes job",
 				log.String("jobName", name),
@@ -107,21 +108,21 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 		r.dir,
 		r.options,
 	)
-	if _, err := r.cmd.CreateJob(ctx, job); err != nil {
+	if _, err := r.cmd.CreateJob(ctx, job, r.options.Namespace); err != nil {
 		return errors.Wrap(err, "creating job")
 	}
 	r.jobNames = append(r.jobNames, job.Name)
 
-	if err := r.cmd.WaitForJobToComplete(ctx, job.Name); err != nil {
+	if err := r.cmd.WaitForJobToComplete(ctx, job.Name, r.options.Namespace); err != nil {
 		return errors.Wrap(err, "waiting for job to complete")
 	}
 
-	pod, err := r.cmd.FindPod(ctx, job.Name)
+	pod, err := r.cmd.FindPod(ctx, job.Name, r.options.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "finding pod")
 	}
 
-	if err = r.cmd.ReadLogs(ctx, pod.Name, r.commandLogger, spec.CommandSpec.Key, spec.CommandSpec.Command); err != nil {
+	if err = r.cmd.ReadLogs(ctx, pod.Name, r.commandLogger, spec.CommandSpec.Key, spec.CommandSpec.Command, r.options.Namespace); err != nil {
 		return errors.Wrap(err, "reading logs")
 	}
 
