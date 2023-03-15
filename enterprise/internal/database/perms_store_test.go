@@ -310,65 +310,71 @@ func TestPermsStore_LoadRepoPermissions(t *testing.T) {
 	})
 }
 
-func testPermsStore_FetchReposByUserAndExternalService(db database.DB) func(*testing.T) {
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		t.Run("found matching", func(t *testing.T) {
-			logger := logtest.Scoped(t)
-			ctx := context.Background()
-			s := perms(logger, db, clock)
-			if _, err := db.ExecContext(ctx, `INSERT into repo (name, external_service_type, external_service_id) values ('github.com/test/test', 'github', 'https://github.com/')`); err != nil {
-				t.Fatal(err)
-			}
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-				cleanupUsersTable(t, s)
-				cleanupReposTable(t, s)
-			})
-
-			rp := &authz.RepoPermissions{
-				RepoID:  1,
-				Perm:    authz.Read,
-				UserIDs: toMapset(2),
-			}
-
-			if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-				t.Fatal(err)
-			}
-
-			repos, err := s.FetchReposByUserAndExternalService(ctx, 2, "github", "https://github.com/")
-			if err != nil {
-				t.Fatal(err)
-			}
-			equal(t, "repos", []api.RepoID{1}, repos)
-		})
-		t.Run("skips non matching", func(t *testing.T) {
-			ctx := context.Background()
-			s := perms(logger, db, clock)
-			if _, err := db.ExecContext(ctx, `INSERT into repo (name, external_service_type, external_service_id) values ('github.com/test/test', 'github', 'https://github.com/')`); err != nil {
-				t.Fatal(err)
-			}
-			t.Cleanup(func() {
-				cleanupReposTable(t, s)
-				cleanupPermsTables(t, s)
-			})
-
-			rp := &authz.RepoPermissions{
-				RepoID:  1,
-				Perm:    authz.Read,
-				UserIDs: toMapset(2),
-			}
-			if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-				t.Fatal(err)
-			}
-
-			repos, err := s.FetchReposByUserAndExternalService(ctx, 2, "gitlab", "https://gitlab.com/")
-			if err != nil {
-				t.Fatal(err)
-			}
-			equal(t, "repos", 0, len(repos))
-		})
+func TestPermsStore_FetchReposByUserAndExternalService(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
+
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+
+	t.Run("found matching", func(t *testing.T) {
+		logger := logtest.Scoped(t)
+		ctx := context.Background()
+		s := perms(logger, db, clock)
+		if _, err := db.ExecContext(ctx, `INSERT into repo (name, external_service_type, external_service_id) values ('github.com/test/test', 'github', 'https://github.com/')`); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+			cleanupUsersTable(t, s)
+			cleanupReposTable(t, s)
+		})
+
+		rp := &authz.RepoPermissions{
+			RepoID:  1,
+			Perm:    authz.Read,
+			UserIDs: toMapset(2),
+		}
+
+		if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+
+		repos, err := s.FetchReposByUserAndExternalService(ctx, 2, "github", "https://github.com/")
+		if err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "repos", []api.RepoID{1}, repos)
+	})
+	t.Run("skips non matching", func(t *testing.T) {
+		ctx := context.Background()
+		s := perms(logger, db, clock)
+		if _, err := db.ExecContext(ctx, `INSERT into repo (name, external_service_type, external_service_id) values ('github.com/test/test', 'github', 'https://github.com/')`); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			cleanupReposTable(t, s)
+			cleanupPermsTables(t, s)
+		})
+
+		rp := &authz.RepoPermissions{
+			RepoID:  1,
+			Perm:    authz.Read,
+			UserIDs: toMapset(2),
+		}
+		if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+
+		repos, err := s.FetchReposByUserAndExternalService(ctx, 2, "gitlab", "https://gitlab.com/")
+		if err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "repos", 0, len(repos))
+	})
 }
 
 func checkRegularPermsTable(s *permsStore, sql string, expects map[int32][]uint32) error {
@@ -798,12 +804,14 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 		permissions         []authz.Permission
 		expectedPermissions []authz.Permission
 		entity              authz.PermissionEntity
+		expectedResult      *database.SetPermissionsResult
 	}{
 		{
 			name:                "empty",
 			permissions:         []authz.Permission{},
 			expectedPermissions: []authz.Permission{},
 			entity:              authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			expectedResult:      &database.SetPermissionsResult{Added: 0, Removed: 0, Found: 0},
 		},
 		{
 			name: "add",
@@ -817,7 +825,8 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: source},
 				{UserID: 1, ExternalAccountID: 1, RepoID: 3, Source: source},
 			},
-			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			expectedResult: &database.SetPermissionsResult{Added: 3, Removed: 0, Found: 3},
 		},
 		{
 			name: "add, update and remove",
@@ -834,7 +843,8 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: source},
 				{UserID: 1, ExternalAccountID: 1, RepoID: 4, Source: source},
 			},
-			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 2},
 		},
 		{
 			name: "remove only",
@@ -846,6 +856,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 			permissions:         []authz.Permission{},
 			expectedPermissions: []authz.Permission{},
 			entity:              authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			expectedResult:      &database.SetPermissionsResult{Added: 0, Removed: 3, Found: 0},
 		},
 		{
 			name: "does not touch explicit permissions when source is sync",
@@ -861,7 +872,8 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceAPI},
 				{UserID: 1, ExternalAccountID: 1, RepoID: 4, Source: source},
 			},
-			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 1},
 		},
 	}
 
@@ -888,16 +900,18 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 					}
 				}
 
-				err := s.setUserRepoPermissions(ctx, syncedPermissions, test.entity, source)
+				_, err := s.setUserRepoPermissions(ctx, syncedPermissions, test.entity, source)
 				require.NoError(t, err)
-				err = s.setUserRepoPermissions(ctx, explicitPermissions, test.entity, authz.SourceAPI)
+				_, err = s.setUserRepoPermissions(ctx, explicitPermissions, test.entity, authz.SourceAPI)
 				require.NoError(t, err)
 			}
 
 			if len(test.permissions) > 0 {
 				setupPermsRelatedEntities(t, s, test.permissions)
 			}
-			if err := s.setUserRepoPermissions(ctx, test.permissions, test.entity, source); err != nil {
+			var stats *database.SetPermissionsResult
+			var err error
+			if stats, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, source); err != nil {
 				t.Fatal("testing user repo permissions", err)
 			}
 
@@ -906,6 +920,8 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 			} else if test.entity.RepoID > 0 {
 				checkUserRepoPermissions(t, s, sqlf.Sprintf("repo_id = %d", test.entity.RepoID), test.expectedPermissions)
 			}
+
+			require.Equal(t, test.expectedResult, stats)
 		})
 	}
 }
@@ -926,6 +942,7 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 		origSyncedPermissions   []authz.Permission
 		permissions             []authz.Permission
 		expectedPermissions     []authz.Permission
+		expectedResult          *database.SetPermissionsResult
 		entity                  authz.PermissionEntity
 		source                  authz.PermsSource
 	}{
@@ -943,8 +960,9 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceUserSync},
 				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceUserSync},
 			},
-			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			source: authz.SourceAPI,
+			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 0, Found: 1},
+			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			source:         authz.SourceAPI,
 		},
 		{
 			name: "add synced permissions when explicit are already there",
@@ -960,8 +978,9 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 				{UserID: 1, RepoID: 3, Source: authz.SourceAPI},
 				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceUserSync},
 			},
-			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			source: authz.SourceUserSync,
+			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 0, Found: 1},
+			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			source:         authz.SourceUserSync,
 		},
 		{
 			name: "add, update and remove synced permissions, when explicit are already there",
@@ -983,8 +1002,9 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 				{UserID: 1, ExternalAccountID: 1, RepoID: 3, Source: authz.SourceUserSync},
 				{UserID: 1, ExternalAccountID: 1, RepoID: 5, Source: authz.SourceUserSync},
 			},
-			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			source: authz.SourceUserSync,
+			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 1, Found: 2},
+			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			source:         authz.SourceUserSync,
 		},
 		{
 			name: "add synced permission to same entity as explicit permission adds new row",
@@ -998,8 +1018,9 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 				{UserID: 1, RepoID: 1, Source: authz.SourceAPI},
 				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceUserSync},
 			},
-			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			source: authz.SourceUserSync,
+			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 0, Found: 1},
+			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			source:         authz.SourceUserSync,
 		},
 	}
 
@@ -1016,19 +1037,22 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 
 			if len(test.origExplicitPermissions) > 0 {
 				setupPermsRelatedEntities(t, s, test.origExplicitPermissions)
-				err := s.setUserRepoPermissions(ctx, test.origExplicitPermissions, test.entity, authz.SourceAPI)
+				_, err := s.setUserRepoPermissions(ctx, test.origExplicitPermissions, test.entity, authz.SourceAPI)
 				require.NoError(t, err)
 			}
 			if len(test.origSyncedPermissions) > 0 {
 				setupPermsRelatedEntities(t, s, test.origSyncedPermissions)
-				err := s.setUserRepoPermissions(ctx, test.origSyncedPermissions, test.entity, authz.SourceUserSync)
+				_, err := s.setUserRepoPermissions(ctx, test.origSyncedPermissions, test.entity, authz.SourceUserSync)
 				require.NoError(t, err)
 			}
 
 			if len(test.permissions) > 0 {
 				setupPermsRelatedEntities(t, s, test.permissions)
 			}
-			if err := s.setUserRepoPermissions(ctx, test.permissions, test.entity, test.source); err != nil {
+
+			var stats *database.SetPermissionsResult
+			var err error
+			if stats, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, test.source); err != nil {
 				t.Fatal("testing user repo permissions", err)
 			}
 
@@ -1037,11 +1061,22 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 			} else if test.entity.RepoID > 0 {
 				checkUserRepoPermissions(t, s, sqlf.Sprintf("repo_id = %d", test.entity.RepoID), test.expectedPermissions)
 			}
+
+			require.Equal(t, test.expectedResult, stats)
 		})
 	}
 }
 
-func testPermsStore_FetchReposByExternalAccount(db database.DB) func(*testing.T) {
+func TestPermsStore_FetchReposByExternalAccount(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+
 	source := authz.SourceRepoSync
 
 	tests := []struct {
@@ -1098,36 +1133,32 @@ func testPermsStore_FetchReposByExternalAccount(db database.DB) func(*testing.T)
 			},
 		},
 	}
+	ctx := actor.WithInternalActor(context.Background())
 
-	return func(t *testing.T) {
-		ctx := actor.WithInternalActor(context.Background())
-		logger := logtest.Scoped(t)
-
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				s := perms(logger, db, clock)
-				t.Cleanup(func() {
-					cleanupPermsTables(t, s)
-					cleanupUsersTable(t, s)
-					cleanupReposTable(t, s)
-				})
-
-				if test.origPermissions != nil && len(test.origPermissions) > 0 {
-					setupPermsRelatedEntities(t, s, test.origPermissions)
-					err := s.setUserRepoPermissions(ctx, test.origPermissions, authz.PermissionEntity{UserID: 42}, source)
-					if err != nil {
-						t.Fatal("setup test permissions before actual test", err)
-					}
-				}
-
-				ids, err := s.FetchReposByExternalAccount(ctx, test.externalAccountID)
-				if err != nil {
-					t.Fatal("testing fetch repos by user and external account", err)
-				}
-
-				assert.Equal(t, test.expected, ids, "no match found for repo IDs")
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			s := perms(logger, db, clock)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+				cleanupUsersTable(t, s)
+				cleanupReposTable(t, s)
 			})
-		}
+
+			if test.origPermissions != nil && len(test.origPermissions) > 0 {
+				setupPermsRelatedEntities(t, s, test.origPermissions)
+				_, err := s.setUserRepoPermissions(ctx, test.origPermissions, authz.PermissionEntity{UserID: 42}, source)
+				if err != nil {
+					t.Fatal("setup test permissions before actual test", err)
+				}
+			}
+
+			ids, err := s.FetchReposByExternalAccount(ctx, test.externalAccountID)
+			if err != nil {
+				t.Fatal("testing fetch repos by user and external account", err)
+			}
+
+			assert.Equal(t, test.expected, ids, "no match found for repo IDs")
+		})
 	}
 }
 
