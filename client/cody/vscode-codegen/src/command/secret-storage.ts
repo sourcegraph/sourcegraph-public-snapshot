@@ -1,26 +1,25 @@
 import * as vscode from 'vscode'
 
 export interface SecretStorage {
-    get(key: string): Promise<string | undefined>
-    store(key: string, value: string): Promise<void>
-    delete(key: string): Promise<void>
+    get(key: string): Thenable<string | undefined>
+    store(key: string, value: string): Thenable<void>
+    delete(key: string): Thenable<void>
     onDidChange(callback: (key: string) => void): vscode.Disposable
 }
 
 export class VSCodeSecretStorage implements SecretStorage {
     constructor(private secretStorage: vscode.SecretStorage) {}
 
-    async get(key: string): Promise<string | undefined> {
-        const value = await this.secretStorage.get(key)
-        return value
+    get(key: string): Thenable<string | undefined> {
+        return this.secretStorage.get(key)
     }
 
-    async store(key: string, value: string): Promise<void> {
-        await this.secretStorage.store(key, value)
+    store(key: string, value: string): Thenable<void> {
+        return this.secretStorage.store(key, value)
     }
 
-    async delete(key: string): Promise<void> {
-        await this.secretStorage.delete(key)
+    delete(key: string): Thenable<void> {
+        return this.secretStorage.delete(key)
     }
 
     onDidChange(callback: (key: string) => void): vscode.Disposable {
@@ -37,24 +36,28 @@ export class InMemorySecretStorage implements SecretStorage {
         this.callbacks = []
     }
 
-    async get(key: string): Promise<string | undefined> {
-        return this.storage.get(key)
+    get(key: string): Thenable<string | undefined> {
+        return Promise.resolve(this.storage.get(key))
     }
 
-    async store(key: string, value: string): Promise<void> {
+    store(key: string, value: string): Thenable<void> {
         this.storage.set(key, value)
 
         for (const cb of this.callbacks) {
             cb(key)
         }
+
+        return Promise.resolve()
     }
 
-    async delete(key: string): Promise<void> {
+    delete(key: string): Thenable<void> {
         this.storage.delete(key)
 
         for (const cb of this.callbacks) {
             cb(key)
         }
+
+        return Promise.resolve()
     }
 
     onDidChange(callback: (key: string) => void): vscode.Disposable {
