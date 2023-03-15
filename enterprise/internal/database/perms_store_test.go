@@ -3452,9 +3452,12 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 	// mark sync jobs as completed for users 1 and 2
 	user1UpdatedAt := clock().Add(-15 * time.Minute)
 	user2UpdatedAt := clock().Add(-5 * time.Minute)
+	user3UpdatedAt := clock().Add(-10 * time.Minute)
 	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, user1UpdatedAt, database.ReasonUserOutdatedPermissions)
 	execQuery(t, ctx, s, q)
 	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, user2UpdatedAt, database.ReasonUserOutdatedPermissions)
+	execQuery(t, ctx, s, q)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, user3UpdatedAt, database.ReasonUserOutdatedPermissions)
 	execQuery(t, ctx, s, q)
 
 	t.Run("One result when limit is 1", func(t *testing.T) {
@@ -3483,14 +3486,14 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 		}
 	})
 
-	t.Run("Both users are returned when limit is 10 and age is 1 minute", func(t *testing.T) {
+	t.Run("Both users are returned when limit is 10 and age is 1 minute, and deleted user is ignored", func(t *testing.T) {
 		// Should get both users, since the limit is 10 and age is 1 minute only
-		results, err := s.UserIDsWithOldestPerms(ctx, 1, 1*time.Minute)
+		results, err := s.UserIDsWithOldestPerms(ctx, 10, 1*time.Minute)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		wantResults := map[int32]time.Time{1: user1UpdatedAt}
+		wantResults := map[int32]time.Time{1: user1UpdatedAt, 2: user2UpdatedAt}
 		if diff := cmp.Diff(wantResults, results); diff != "" {
 			t.Fatal(diff)
 		}
