@@ -77,3 +77,20 @@ Searches at specific commits will return any CODEOWNERS data that exists at that
 Read more on how to [manually ingest CODEOWNERS data](codeowners_ingestion.md) into your Sourcegraph instance.
 
 The docs detail how to use the UI or `src-cli` to upload CODEOWNERS files to Sourcegraph.
+
+## Browsing ownership
+
+The ownership information is available for browsing once ownership data is available through [a CODEOWNERS file](#code-ownership).
+
+When displaying a source file, there is a bar above the file contents.
+
+*   On the left hand side, it displays the most recent change to the file.
+*   On the right hand side it displays the Own bar with at most 2 file owners.
+
+![File view showing own bar on the right hand side above the file contents](https://storage.googleapis.com/sourcegraph-assets/docs/own/blob-view.png)
+
+After clicking on the Own bar, a bottom panel appears listing all the owners.
+
+![File view with the ownership tab selected in the bottom panel](https://storage.googleapis.com/sourcegraph-assets/docs/own/blob-view-panel.png)
+
+There is always a single rule in a CODEOWNERS file that determines ownership (if any). Next to each of the owners listed in the bottom panel, there is a description: _Owner is associated with a rule in a CODEOWNERS file_. This description links to the line containing the responsible rule in the CODEOWNERS file.
