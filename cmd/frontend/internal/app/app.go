@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/sourcegraph/log"
@@ -16,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
+
+var AppHandleSiteInit func(ctx context.Context, email, username, password string) error
 
 // NewHandler returns a new app handler that uses the app router.
 //
@@ -64,6 +67,9 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 	r.Get(router.ResetPasswordInit).Handler(trace.Route(userpasswd.HandleResetPasswordInit(logger, db)))
 	r.Get(router.ResetPasswordCode).Handler(trace.Route(userpasswd.HandleResetPasswordCode(logger, db)))
 	r.Get(router.VerifyEmail).Handler(trace.Route(serveVerifyEmail(db)))
+	AppHandleSiteInit = func(ctx context.Context, email, username, password string) error {
+		return userpasswd.AppSiteInit(ctx, logger, db, email, username, password)
+	}
 
 	r.Get(router.CheckUsernameTaken).Handler(trace.Route(userpasswd.HandleCheckUsernameTaken(logger, db)))
 
