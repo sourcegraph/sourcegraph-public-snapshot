@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 
-import { mdiCog, mdiClose, mdiFileDocumentOutline, mdiBrain } from '@mdi/js'
+import { mdiCog, mdiClose, mdiFileDocumentOutline, mdiBrain, mdiDotsHorizontal } from '@mdi/js'
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import {
@@ -9,10 +10,8 @@ import {
     Badge,
     Button,
     Icon,
-    Link,
     H4,
     LoadingSpinner,
-    Tooltip,
     LinkOrSpan,
     PopoverTrigger,
     PopoverContent,
@@ -20,6 +19,10 @@ import {
     Popover,
     Position,
     MenuDivider,
+    MenuButton,
+    MenuList,
+    MenuItem,
+    Menu,
 } from '@sourcegraph/wildcard'
 
 import { SiteAdminRepositoryFields } from '../graphql-operations'
@@ -51,9 +54,29 @@ interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
+// const useOnClickDetector = (
+//     reference: React.RefObject<HTMLDivElement>
+// ): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
+//     const [onClick, setOnClick] = useState(false)
+//
+//     useEffect(() => {
+//         function handleToggleOpen(): void {
+//             if (reference.current) {
+//                 setOnClick(false)
+//             }
+//         }
+//         document.addEventListener('mouseup', handleToggleOpen)
+//         return () => {
+//             document.removeEventListener('mouseup', handleToggleOpen)
+//         }
+//     }, [reference, setOnClick])
+//
+//     return [onClick, setOnClick]
+// }
+
 export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-
+    const navigate = useNavigate()
     return (
         <li
             className="repository-node list-group-item px-0 py-2"
@@ -61,7 +84,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
             data-test-cloned={node.mirrorInfo.cloned}
         >
             <div className="d-flex align-items-center justify-content-between">
-                <div className="d-flex col-7 pl-0">
+                <div className="d-flex col-10 pl-0">
                     <div className={classNames('col-2 px-0 my-auto h-100', styles.badgeWrapper)}>
                         <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
                         {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
@@ -83,26 +106,37 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                             <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                         </Button>
                     )}{' '} */}
-                    {!window.location.pathname.includes('/setup') && (
-                        <Tooltip content="Repository code graph data">
-                            <Button
-                                to={`/${node.name}/-/code-graph`}
-                                variant="secondary"
-                                size="sm"
-                                className="mr-1"
-                                as={Link}
+                    <Menu>
+                        <MenuButton outline={true} aria-label="Repository action">
+                            <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true} />
+                        </MenuButton>
+                        <MenuList position={Position.bottomEnd}>
+                            <MenuItem
+                                as={Button}
+                                disabled={window.location.pathname.includes('/setup')}
+                                onSelect={() => navigate(`/${node.name}/-/code-graph`)}
+                                className="p-2"
                             >
-                                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph data
-                            </Button>
-                        </Tooltip>
-                    )}
-                    {node.mirrorInfo.cloned && !node.mirrorInfo.lastError && !node.mirrorInfo.cloneInProgress && (
-                        <Tooltip content="Repository settings">
-                            <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
-                                <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
-                            </Button>
-                        </Tooltip>
-                    )}
+                                <Icon aria-hidden={true} svgPath={mdiBrain} className="mr-1" />
+                                Code graph data
+                            </MenuItem>
+                            <MenuItem
+                                as={Button}
+                                disabled={
+                                    !(
+                                        node.mirrorInfo.cloned &&
+                                        !node.mirrorInfo.lastError &&
+                                        !node.mirrorInfo.cloneInProgress
+                                    )
+                                }
+                                onSelect={() => navigate(`/${node.name}/-/settings`)}
+                                className="p-2"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiCog} className="mr-1" />
+                                Settings
+                            </MenuItem>
+                        </MenuList>
+                    </Menu>
                     {node.mirrorInfo.lastError && (
                         <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
                             <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
