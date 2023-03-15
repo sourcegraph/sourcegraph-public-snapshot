@@ -438,6 +438,9 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                             </ul>
                         </ul>
                     </li>
+                    <li>
+                        Histogram of cloned repository sizes
+                    </li>
                 </ul>
                 {updatesDisabled ? (
                     <Text>All telemetry is disabled.</Text>
