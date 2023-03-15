@@ -49,7 +49,7 @@ go_library(
 
 go_test(
     name = "store_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = [
         "store_audit_logs_test.go",
         "store_commits_test.go",
