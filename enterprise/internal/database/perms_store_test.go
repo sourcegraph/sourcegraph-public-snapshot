@@ -3449,10 +3449,10 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 		execQuery(t, ctx, s, q)
 	}
 
-	// mark sync jobs as completed for users 1 and 2
+	// mark sync jobs as completed for users 1, 2 and 3
 	user1UpdatedAt := clock().Add(-15 * time.Minute)
 	user2UpdatedAt := clock().Add(-5 * time.Minute)
-	user3UpdatedAt := clock().Add(-10 * time.Minute)
+	user3UpdatedAt := clock().Add(-11 * time.Minute)
 	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, user1UpdatedAt, database.ReasonUserOutdatedPermissions)
 	execQuery(t, ctx, s, q)
 	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, user2UpdatedAt, database.ReasonUserOutdatedPermissions)
@@ -3475,7 +3475,7 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 
 	t.Run("One result when limit is 10 and age is 10 minutes", func(t *testing.T) {
 		// Should only get user 1 back, because age is 10 minutes
-		results, err := s.UserIDsWithOldestPerms(ctx, 1, 10*time.Minute)
+		results, err := s.UserIDsWithOldestPerms(ctx, 10, 10*time.Minute)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -3499,9 +3499,9 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 		}
 	})
 
-	t.Run("Both users are returned when limit is 10 and age is 0", func(t *testing.T) {
+	t.Run("Both users are returned when limit is 10 and age is 0. Deleted users are ignored", func(t *testing.T) {
 		// Should get both users, since the limit is 10 and age is 0
-		results, err := s.UserIDsWithOldestPerms(ctx, 1, 0)
+		results, err := s.UserIDsWithOldestPerms(ctx, 10, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -3578,7 +3578,7 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 
 	t.Run("One result when limit is 10 and age is 10 minutes", func(t *testing.T) {
 		// Should only get private_repo_1 back, because age is 10 minutes
-		results, err := s.ReposIDsWithOldestPerms(ctx, 1, 10*time.Minute)
+		results, err := s.ReposIDsWithOldestPerms(ctx, 10, 10*time.Minute)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -3589,9 +3589,9 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 		}
 	})
 
-	t.Run("Both users are returned when limit is 10 and age is 1 minute", func(t *testing.T) {
+	t.Run("Both repos are returned when limit is 10 and age is 1 minute", func(t *testing.T) {
 		// Should get both private_repo_1 and private_repo_2, since the limit is 10 and age is 1 minute only
-		results, err := s.ReposIDsWithOldestPerms(ctx, 1, 1*time.Minute)
+		results, err := s.ReposIDsWithOldestPerms(ctx, 10, 1*time.Minute)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -3602,7 +3602,7 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 		}
 	})
 
-	t.Run("Both users are returned when limit is 10 and age is 0 and deleted repos are ignored", func(t *testing.T) {
+	t.Run("Both repos are returned when limit is 10 and age is 0 and deleted repos are ignored", func(t *testing.T) {
 		// Should get both private_repo_1 and private_repo_2, since the limit is 10 and age is 0
 		results, err := s.ReposIDsWithOldestPerms(ctx, 10, 0)
 		if err != nil {
