@@ -60,8 +60,8 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
             data-test-repository={node.name}
             data-test-cloned={node.mirrorInfo.cloned}
         >
-            <div className="d-flex align-items-center justify-content-between">
-                <div className="d-flex col-7 pl-0">
+            <div className="d-flex align-items-center justify-content-between overflow-auto">
+                <div className={classNames('d-flex col-9 col-md-7 pl-0', styles.repoDescription)}>
                     <div className={classNames('col-2 px-0 my-auto h-100', styles.badgeWrapper)}>
                         <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
                         {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}

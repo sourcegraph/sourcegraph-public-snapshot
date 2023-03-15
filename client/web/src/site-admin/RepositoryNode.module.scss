@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .alert-wrapper {
     margin-top: 1rem;
     overflow-y: auto;
@@ -30,6 +32,13 @@
 
 .error-content {
     max-width: 600px;
+}
+
+.repo-description {
+    min-width: 310px;
+    @media (--xs-breakpoint-down) {
+        overflow: hidden;
+    }
 }
 
 .alert-overflow {
