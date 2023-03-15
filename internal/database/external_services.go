@@ -505,7 +505,7 @@ func validatePerforceConnection(perforceValidators []func(*schema.PerforceConnec
 // disablePermsSyncingForExternalService removes "authorization" or
 // "enforcePermissions" fields from the external service config
 // when present on the external service config.
-func disablePermsSyncingForExternalService(kind, config string) (string, error) {
+func disablePermsSyncingForExternalService(config string) (string, error) {
 	withoutEnforcePermissions, err := jsonc.Remove(config, "enforcePermissions")
 	// in case removing "enforcePermissions" fails, we try to remove "authorization" anyway
 	if err != nil {
@@ -533,7 +533,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	// Cloud, we always want to disable repository permissions to prevent
 	// permission syncing from trying to sync permissions from public code.
 	if envvar.SourcegraphDotComMode() {
-		rawConfig, err = disablePermsSyncingForExternalService(es.Kind, rawConfig)
+		rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
 		if err != nil {
 			return err
 		}
@@ -618,7 +618,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		// Cloud, we always want to disable repository permissions to prevent
 		// permission syncing from trying to sync permissions from public code.
 		if envvar.SourcegraphDotComMode() {
-			rawConfig, err = disablePermsSyncingForExternalService(s.Kind, rawConfig)
+			rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
 			if err != nil {
 				return err
 			}
@@ -844,7 +844,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		// Cloud, we always want to disable repository permissions to prevent
 		// permission syncing from trying to sync permissions from public code.
 		if envvar.SourcegraphDotComMode() {
-			unredactedConfig, err = disablePermsSyncingForExternalService(externalService.Kind, unredactedConfig)
+			unredactedConfig, err = disablePermsSyncingForExternalService(unredactedConfig)
 			if err != nil {
 				return err
 			}
