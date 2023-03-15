@@ -9,11 +9,14 @@ import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './componen
 
 import styles from './GaConfirmationModal.module.scss'
 
-export const GaConfirmationModal: FC = () => {
+interface Props {
+    isSourcegraphApp: boolean
+}
+export const GaConfirmationModal: FC<Props> = props => {
     const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaExpiredAccepted', false)
     const { licensed } = useUiFeatures()
 
-    const showConfirmationModal = !licensed && isGaAccepted === false
+    const showConfirmationModal = !licensed && isGaAccepted === false && !props.isSourcegraphApp
 
     if (!showConfirmationModal) {
         return null

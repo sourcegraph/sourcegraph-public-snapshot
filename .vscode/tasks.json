@@ -17,6 +17,15 @@
       "args": ["--build", "tsconfig.all.json", "--watch", "--incremental"]
     },
     {
+      "label": "Build cody",
+      "detail": "Build cody.",
+      "type": "npm",
+      "script": "build:dev",
+      "problemMatcher": "$tsc-watch",
+      "options": { "cwd": "client/cody/vscode-codegen" },
+      "isBackground": true
+    },
+    {
       "label": "Watch web app",
       "detail": "Watch files and build the JavaScript bundle (no development server).",
       "type": "npm",

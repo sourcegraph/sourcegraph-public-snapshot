@@ -3,9 +3,12 @@ import React from 'react'
 import { Page } from '../../../../components/Page'
 import { useUiFeatures } from '../../hooks'
 
+import { CodeInsightsLimitedAccessAppBanner } from './limit-access-banner/CodeInsightsLimitAccessAppBanner'
 import { CodeInsightsLimitAccessBanner } from './limit-access-banner/CodeInsightsLimitAccessBanner'
 
-interface CodeInsightsPageProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface CodeInsightsPageProps extends React.HTMLAttributes<HTMLDivElement> {
+    isSourcegraphApp: boolean
+}
 
 /**
  * Shared common component for creation a typical code insights pages. Contains common styles
@@ -16,7 +19,8 @@ export const CodeInsightsPage: React.FunctionComponent<React.PropsWithChildren<C
 
     return (
         <Page {...props}>
-            {!licensed && <CodeInsightsLimitAccessBanner className="mb-4" />}
+            {props.isSourcegraphApp && <CodeInsightsLimitedAccessAppBanner authenticatedUser={null} />}
+            {!licensed && !props.isSourcegraphApp && <CodeInsightsLimitAccessBanner className="mb-4" />}
             {props.children}
         </Page>
     )
