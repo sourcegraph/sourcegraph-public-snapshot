@@ -13,6 +13,7 @@ import (
 	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -21,6 +22,9 @@ import (
 
 type DependenciesService interface {
 	InsertPackageRepoRefs(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
+	IsPackageRepoAllowed(ctx context.Context, scheme string, pkg reposource.PackageName) (allowed bool, err error)
+	IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error)
+	ListPackageRepoFilters(ctx context.Context, opts dependencies.ListPackageRepoRefFiltersOpts) (_ []dependencies.PackageRepoFilter, hasMore bool, err error)
 }
 
 type GitserverRepoStore interface {

@@ -37,7 +37,7 @@ func TestCrateSyncer(t *testing.T) {
 	// dont need any functionality for this
 	autoindexSvc := NewMockAutoIndexingService()
 
-	refs := make(map[reposource.PackageName][]string)
+	refs := make(map[reposource.PackageName][]shared.MinimalPackageRepoRefVersion)
 	dependenciesSvc := NewMockDependenciesService()
 	dependenciesSvc.InsertPackageRepoRefsFunc.SetDefaultHook(func(ctx context.Context, refList []shared.MinimalPackageRepoRef) (newRef []shared.PackageRepoReference, newV []shared.PackageRepoRefVersion, err error) {
 		for _, r := range refList {
@@ -45,13 +45,13 @@ func TestCrateSyncer(t *testing.T) {
 				refs[r.Name] = append(versions, r.Versions...)
 				for _, v := range r.Versions {
 					if slices.Contains(versions, v) {
-						newV = append(newV, shared.PackageRepoRefVersion{Version: v})
+						newV = append(newV, shared.PackageRepoRefVersion{Version: v.Version})
 					}
 				}
 			} else {
 				newRef = append(newRef, shared.PackageRepoReference{Name: r.Name})
 				for _, v := range r.Versions {
-					newV = append(newV, shared.PackageRepoRefVersion{Version: v})
+					newV = append(newV, shared.PackageRepoRefVersion{Version: v.Version})
 				}
 				refs[r.Name] = r.Versions
 			}

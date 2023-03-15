@@ -24,9 +24,17 @@ type PackageRepoRefVersion struct {
 }
 
 type MinimalPackageRepoRef struct {
-	Scheme   string
-	Name     reposource.PackageName
-	Versions []string
+	Scheme        string
+	Name          reposource.PackageName
+	Versions      []MinimalPackageRepoRefVersion
+	Blocked       bool
+	LastCheckedAt *time.Time
+}
+
+type MinimalPackageRepoRefVersion struct {
+	Version       string
+	Blocked       bool
+	LastCheckedAt *time.Time
 }
 
 type MinimialVersionedPackageRepo struct {
