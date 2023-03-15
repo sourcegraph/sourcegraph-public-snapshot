@@ -66,15 +66,16 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
-    ]+ select({
-        "//:bundle_dist": ["//ui/assets:assets_dist_enterprise"],
+    ] + select({
+        "//:bundle_dist_enterprise": ["//ui/assets:assets_dist_enterprise"],
+        "//:bundle_dist_oss": ["//ui/assets:assets_dist_oss"],
         "//conditions:default": ["//ui/assets:assets"],
     }),
 )
 
 go_test(
-    timeout = "short",
     name = "ui_test",
+    timeout = "short",
     srcs = [
         "handlers_test.go",
         "help_test.go",
@@ -104,8 +105,7 @@ go_test(
         "//internal/search/result",
         "//internal/types",
         "//internal/version",
-        "//ui/assets",
         "@com_github_gorilla_mux//:mux",
         "@com_github_stretchr_testify//assert",
-    ]
+    ],
 )

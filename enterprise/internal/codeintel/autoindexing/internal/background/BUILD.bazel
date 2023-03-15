@@ -58,8 +58,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "background_test",
+    timeout = "short",
     srcs = [
         "job_cleanup_test.go",
         "job_dependency_indexing_scheduler_test.go",

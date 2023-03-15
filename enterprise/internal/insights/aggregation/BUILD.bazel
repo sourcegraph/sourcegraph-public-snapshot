@@ -26,8 +26,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "aggregation_test",
+    timeout = "short",
     srcs = [
         "aggregation_test.go",
         "limited_aggregator_test.go",

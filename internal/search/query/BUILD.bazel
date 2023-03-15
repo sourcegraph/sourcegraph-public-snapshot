@@ -36,8 +36,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "query_test",
+    timeout = "short",
     srcs = [
         "date_format_test.go",
         "mapper_test.go",

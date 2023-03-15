@@ -14,9 +14,10 @@ go_library(
 go_binary(
     name = "frontend",
     embed = [":frontend_lib"],
-    visibility = ["//visibility:public"],
     gotags = select({
-        "//:bundle_dist": ["dist"],
+        "//:bundle_dist_oss": ["dist"],
+        "//:bundle_dist_enterprise": ["dist"],
         "//conditions:default": [],
     }),
+    visibility = ["//visibility:public"],
 )

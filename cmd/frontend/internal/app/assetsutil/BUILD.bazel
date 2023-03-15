@@ -13,7 +13,8 @@ go_library(
         "//internal/env",
         "@com_github_shurcool_httpgzip//:httpgzip",
     ] + select({
-        "//:bundle_dist": ["//ui/assets:assets_dist_enterprise"],
+        "//:bundle_dist_enterprise": ["//ui/assets:assets_dist_enterprise"],
+        "//:bundle_dist_oss": ["//ui/assets:assets_dist_oss"],
         "//conditions:default": ["//ui/assets:assets"],
     }),
 )

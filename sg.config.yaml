@@ -894,7 +894,7 @@ bazelCommands:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
       # frontend processes need this to be so that the paths to the assets are rendered correctly
-      WEBPACK_DEV_SERVER: 1
+      WEBPACK_DEV_SERVER: 0
   oss-worker:
     target: //cmd/worker
   oss-repo-updater:
@@ -1009,7 +1009,7 @@ commandsets:
       - redis
       - postgres
       - git
-      - bazel
+      # - bazel
       - ibazel
     bazelCommands:
       - oss-frontend
@@ -1021,7 +1021,7 @@ commandsets:
       - github-proxy
       - searcher
     commands:
-      - oss-web
+      # - oss-web
       - caddy
       - syntax-highlighter
       - zoekt-index-0

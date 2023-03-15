@@ -11,8 +11,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "limiter_test",
+    timeout = "short",
     srcs = [
         "limiter_test.go",
         "mutable_test.go",

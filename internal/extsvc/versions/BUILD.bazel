@@ -29,8 +29,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "versions_test",
+    timeout = "short",
     srcs = ["sync_test.go"],
     embed = [":versions"],
     deps = [

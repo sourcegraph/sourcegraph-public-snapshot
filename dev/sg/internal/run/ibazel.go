@@ -25,6 +25,7 @@ func newIBazel(pwd string, targets ...string) *IBazel {
 
 func (ib *IBazel) Start(ctx context.Context, dir string) error {
 	args := append([]string{"build"}, ib.targets...)
+	args = append(args, "--//:assets_bundle_type=oss")
 	ctx, ib.cancel = context.WithCancel(ctx)
 	cmd := exec.CommandContext(ctx, "ibazel", args...)
 

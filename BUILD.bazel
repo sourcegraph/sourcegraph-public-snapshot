@@ -214,20 +214,30 @@ nogo(
 
 exports_files(["go.mod"])
 
-
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 
-string_flag(name = "assets_bundle_type", build_setting_default = "dev")
+string_flag(
+    name = "assets_bundle_type",
+    build_setting_default = "dev",
+)
 
 config_setting(
     name = "bundle_dev",
     flag_values = {
         ":assets_bundle_type": "dev",
-    }
+    },
 )
+
 config_setting(
-    name = "bundle_dist",
+    name = "bundle_dist_oss",
     flag_values = {
-        ":assets_bundle_type": "dist",
-    }
+        ":assets_bundle_type": "oss",
+    },
+)
+
+config_setting(
+    name = "bundle_dist_enterprise",
+    flag_values = {
+        ":assets_bundle_type": "enterprise",
+    },
 )

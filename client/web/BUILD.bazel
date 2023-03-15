@@ -537,6 +537,7 @@ ts_project(
         "src/enterprise/codeintel/configuration/components/inference-form/auto-index-to-form-job.ts",
         "src/enterprise/codeintel/configuration/components/inference-form/form-data-to-schema.ts",
         "src/enterprise/codeintel/configuration/components/inference-form/types.ts",
+        "src/enterprise/codeintel/configuration/components/inference-form/util.ts",
         "src/enterprise/codeintel/configuration/components/inference-script/InferenceScriptEditor.tsx",
         "src/enterprise/codeintel/configuration/components/inference-script/InferenceScriptPreview.tsx",
         "src/enterprise/codeintel/configuration/hooks/queryPolicies.tsx",
@@ -1909,6 +1910,7 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
         output_dir = True,
         webpack_config = "webpack.bazel.config.js",
         deps = WEBPACK_CONFIG_DEPS,
+        visibility = ["//ui/assets:__subpackages__"],
     )
     for prod in [
         True,
@@ -1930,9 +1932,9 @@ webpack_bundle(
         "NODE_ENV": "production",
     },
     output_dir = True,
+    visibility = ["//ui/assets:__subpackages__"],
     webpack_config = "webpack.bazel.config.js",
     deps = WEBPACK_CONFIG_DEPS,
-    visibility = ["//ui/assets:__subpackages__"],
 )
 
 webpack_devserver(

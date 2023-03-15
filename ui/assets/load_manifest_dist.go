@@ -22,7 +22,7 @@ var (
 // details.
 func LoadWebpackManifest() (*WebpackManifest, error) {
 	webpackManifestOnce.Do(func() {
-		manifestContent, err := assetsFS.ReadFile("webpack.manifest.json")
+		manifestContent, err := assetsFS.ReadFile("dist/webpack.manifest.json")
 		if err != nil {
 			webpackManifestErr = errors.Wrap(err, "read manifest file")
 			return

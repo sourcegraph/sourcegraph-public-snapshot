@@ -30,8 +30,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "command_test",
+    timeout = "short",
     srcs = [
         "docker_test.go",
         "firecracker_test.go",
