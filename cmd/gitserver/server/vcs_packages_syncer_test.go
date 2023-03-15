@@ -207,6 +207,12 @@ type fakeDepsService struct {
 }
 
 func (s *fakeDepsService) InsertPackageRepoRefs(ctx context.Context, depsToAdd []dependencies.MinimalPackageRepoRef) (newRepos []dependencies.PackageRepoReference, newVersions []dependencies.PackageRepoRefVersion, _ error) {
+	for i := range depsToAdd {
+		depsToAdd[i].LastCheckedAt = nil
+		for j := range depsToAdd[i].Versions {
+			depsToAdd[i].Versions[j].LastCheckedAt = nil
+		}
+	}
 	s.upsertedDeps = append(s.upsertedDeps, depsToAdd...)
 	for _, depToAdd := range depsToAdd {
 		if existingDep, exists := s.deps[depToAdd.Name]; exists {
