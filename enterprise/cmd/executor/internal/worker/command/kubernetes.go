@@ -158,11 +158,7 @@ func (c *KubernetesCommand) FindPod(ctx context.Context, namespace string, name 
 }
 
 func (c *KubernetesCommand) getPod(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
-	pod, err := c.Clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return pod, nil
+	return c.Clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
 // WaitForJobToComplete waits for the job with the given name to complete.

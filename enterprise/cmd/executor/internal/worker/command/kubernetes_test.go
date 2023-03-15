@@ -67,6 +67,137 @@ func TestKubernetesCommand_DeleteJob(t *testing.T) {
 	assert.Equal(t, "my-job", mockJobInterface.DeleteFunc.History()[0].Arg1)
 }
 
+func TestKubernetesCommand_WaitForPodToStart(t *testing.T) {
+	tests := []struct {
+		name            string
+		mockFunc        func(podInterface *command.MockPodInterface)
+		mockAssertFunc  func(t *testing.T, podInterface *command.MockPodInterface)
+		expectedPodName string
+		expectedErr     error
+	}{
+		{
+			name: "Pod running",
+			mockFunc: func(podInterface *command.MockPodInterface) {
+				podInterface.ListFunc.PushReturn(&corev1.PodList{Items: []corev1.Pod{{
+					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
+					Status:     corev1.PodStatus{Phase: corev1.PodRunning},
+				}}}, nil)
+			},
+			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface) {
+				require.Len(t, podInterface.ListFunc.History(), 1)
+				assert.Equal(t, metav1.ListOptions{LabelSelector: "job-name=my-pod"}, podInterface.ListFunc.History()[0].Arg1)
+				require.Len(t, podInterface.GetFunc.History(), 0)
+			},
+			expectedPodName: "my-pod",
+		},
+		{
+			name: "Pod succeeded",
+			mockFunc: func(podInterface *command.MockPodInterface) {
+				podInterface.ListFunc.PushReturn(&corev1.PodList{Items: []corev1.Pod{{
+					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
+					Status:     corev1.PodStatus{Phase: corev1.PodSucceeded},
+				}}}, nil)
+			},
+			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface) {
+				require.Len(t, podInterface.ListFunc.History(), 1)
+			},
+			expectedPodName: "my-pod",
+		},
+		{
+			name: "Pod Failed",
+			mockFunc: func(podInterface *command.MockPodInterface) {
+				podInterface.ListFunc.PushReturn(&corev1.PodList{Items: []corev1.Pod{{
+					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
+					Status:     corev1.PodStatus{Phase: corev1.PodFailed},
+				}}}, nil)
+			},
+			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface) {
+				require.Len(t, podInterface.ListFunc.History(), 1)
+			},
+			expectedPodName: "my-pod",
+		},
+		{
+			name: "Pod container running",
+			mockFunc: func(podInterface *command.MockPodInterface) {
+				podInterface.ListFunc.PushReturn(&corev1.PodList{Items: []corev1.Pod{{
+					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodPending,
+						ContainerStatuses: []corev1.ContainerStatus{{
+							State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}},
+						}},
+					},
+				}}}, nil)
+			},
+			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface) {
+				require.Len(t, podInterface.ListFunc.History(), 1)
+			},
+			expectedPodName: "my-pod",
+		},
+		{
+			name: "Pod container waiting then running",
+			mockFunc: func(podInterface *command.MockPodInterface) {
+				podInterface.ListFunc.PushReturn(&corev1.PodList{Items: []corev1.Pod{{
+					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodPending,
+						ContainerStatuses: []corev1.ContainerStatus{{
+							State: corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{}},
+						}},
+					},
+				}}}, nil)
+				podInterface.GetFunc.PushReturn(&corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodPending,
+						ContainerStatuses: []corev1.ContainerStatus{{
+							State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}},
+						}},
+					},
+				}, nil)
+			},
+			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface) {
+				require.Len(t, podInterface.ListFunc.History(), 1)
+				require.Len(t, podInterface.GetFunc.History(), 1)
+				assert.Equal(t, "my-pod", podInterface.GetFunc.History()[0].Arg1)
+			},
+			expectedPodName: "my-pod",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockKubeInterface := command.NewMockInterface()
+			mockCoreV1Interface := command.NewMockCoreV1Interface()
+			mockPodInterface := command.NewMockPodInterface()
+
+			mockKubeInterface.CoreV1Func.SetDefaultReturn(mockCoreV1Interface)
+			mockCoreV1Interface.PodsFunc.SetDefaultReturn(mockPodInterface)
+
+			if test.mockFunc != nil {
+				test.mockFunc(mockPodInterface)
+			}
+
+			cmd := &command.KubernetesCommand{
+				Logger:    logtest.Scoped(t),
+				Clientset: mockKubeInterface,
+			}
+
+			name, err := cmd.WaitForPodToStart(context.Background(), "my-namespace", "my-pod")
+			if test.expectedErr != nil {
+				require.Error(t, err)
+				assert.EqualError(t, err, test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, test.expectedPodName, name)
+			}
+
+			if test.mockAssertFunc != nil {
+				test.mockAssertFunc(t, mockPodInterface)
+			}
+		})
+	}
+}
+
 func TestKubernetesCommand_FindPod(t *testing.T) {
 	tests := []struct {
 		name           string
