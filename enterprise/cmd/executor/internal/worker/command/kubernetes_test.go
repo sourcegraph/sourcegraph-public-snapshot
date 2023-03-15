@@ -2,7 +2,10 @@ package command_test
 
 import (
 	"context"
+	"io"
+	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -12,6 +15,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/rest/fake"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -65,6 +71,91 @@ func TestKubernetesCommand_DeleteJob(t *testing.T) {
 	require.Len(t, mockJobInterface.DeleteFunc.History(), 1)
 	assert.NotNil(t, mockJobInterface.DeleteFunc.History()[0].Arg0)
 	assert.Equal(t, "my-job", mockJobInterface.DeleteFunc.History()[0].Arg1)
+}
+
+func TestKubernetesCommand_ReadLogs(t *testing.T) {
+	tests := []struct {
+		name           string
+		mockFunc       func(podInterface *command.MockPodInterface, logger *command.MockLogger)
+		mockAssertFunc func(t *testing.T, podInterface *command.MockPodInterface, logger *command.MockLogger)
+		expectedErr    error
+	}{
+		{
+			name: "Logs read",
+			mockFunc: func(podInterface *command.MockPodInterface, logger *command.MockLogger) {
+				podInterface.GetLogsFunc.PushReturn(fakeRequest(http.StatusOK, "hello"))
+
+				logEntry := command.NewMockLogEntry()
+				logger.LogEntryFunc.PushReturn(logEntry)
+			},
+			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface, logger *command.MockLogger) {
+				require.Len(t, podInterface.GetLogsFunc.History(), 1)
+				assert.Equal(t, "my-pod", podInterface.GetLogsFunc.History()[0].Arg0)
+				require.Len(t, logger.LogEntryFunc.History(), 1)
+				assert.Equal(t, "my-key", logger.LogEntryFunc.History()[0].Arg0)
+				assert.Equal(t, []string{"echo", "hello"}, logger.LogEntryFunc.History()[0].Arg1)
+			},
+		},
+		{
+			name: "Failed to get logs",
+			mockFunc: func(podInterface *command.MockPodInterface, logger *command.MockLogger) {
+				podInterface.GetLogsFunc.PushReturn(fakeRequest(http.StatusInternalServerError, "failed"))
+
+				logEntry := command.NewMockLogEntry()
+				logger.LogEntryFunc.PushReturn(logEntry)
+			},
+			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface, logger *command.MockLogger) {
+				require.Len(t, podInterface.GetLogsFunc.History(), 1)
+			},
+			expectedErr: errors.New("an error on the server (\"failed\") has prevented the request from succeeding"),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockKubeInterface := command.NewMockInterface()
+			mockCoreV1Interface := command.NewMockCoreV1Interface()
+			mockPodInterface := command.NewMockPodInterface()
+			logger := command.NewMockLogger()
+
+			mockKubeInterface.CoreV1Func.SetDefaultReturn(mockCoreV1Interface)
+			mockCoreV1Interface.PodsFunc.SetDefaultReturn(mockPodInterface)
+
+			if test.mockFunc != nil {
+				test.mockFunc(mockPodInterface, logger)
+			}
+
+			cmd := &command.KubernetesCommand{
+				Logger:    logtest.Scoped(t),
+				Clientset: mockKubeInterface,
+			}
+
+			err := cmd.ReadLogs(context.Background(), "my-namespace", "my-pod", logger, "my-key", []string{"echo", "hello"})
+			if test.expectedErr != nil {
+				require.Error(t, err)
+				assert.EqualError(t, err, test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
+			if test.mockAssertFunc != nil {
+				test.mockAssertFunc(t, mockPodInterface, logger)
+			}
+		})
+	}
+}
+
+func fakeRequest(status int, body string) *rest.Request {
+	fakeClient := &fake.RESTClient{
+		Client: fake.CreateHTTPClient(func(request *http.Request) (*http.Response, error) {
+			resp := &http.Response{
+				StatusCode: status,
+				Body:       io.NopCloser(strings.NewReader(body)),
+			}
+			return resp, nil
+		}),
+		NegotiatedSerializer: scheme.Codecs.WithoutConversion(),
+	}
+	return fakeClient.Request()
 }
 
 func TestKubernetesCommand_WaitForPodToStart(t *testing.T) {
