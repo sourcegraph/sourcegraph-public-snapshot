@@ -18,8 +18,7 @@ If you wish to control how frequently repositories are discovered or how frequen
   - [GitLab](../external_service/gitlab.md#internal-rate-limits)
   - [Bitucket Server](../external_service/bitbucket_server.md#internal-rate-limits)
   - [Bitbucket Cloud](../external_service/bitbucket_cloud.md#internal-rate-limits) 
-  
-- All other code hosts that don't support explicitly setting the rate limit in the configuration, default to a rate limit of: [defaultRateLimit](../config/site_config.md#defaultRateLimit) requests per hour.
+  - All other code hosts that don't support explicitly setting the rate limit in the configuration, default to a rate limit of: [defaultRateLimit](../config/site_config.md#defaultRateLimit) requests per hour.
 
 - Site configuration: [repoListUpdateInterval](../config/site_config.md#repoListUpdateInterval) controls how frequently we check the code host _for new repositories_ in minutes.
 
