@@ -17,6 +17,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "promql_test",
     srcs = ["promql_test.go"],
     embed = [":promql"],

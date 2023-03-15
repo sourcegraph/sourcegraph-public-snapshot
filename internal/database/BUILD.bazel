@@ -144,6 +144,7 @@ go_library(
 
 go_test(
     name = "database_test",
+    size = "large",
     srcs = [
         "access_requests_test.go",
         "access_tokens_test.go",
@@ -254,5 +255,4 @@ go_test(
         "@org_golang_x_exp//maps",
         "@org_golang_x_sync//errgroup",
     ],
-    size = "large",
 )

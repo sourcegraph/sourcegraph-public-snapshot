@@ -8,6 +8,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "ignite_test",
     srcs = ["list_test.go"],
     embed = [":ignite"],

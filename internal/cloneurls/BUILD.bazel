@@ -19,6 +19,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "cloneurls_test",
     srcs = ["clone_urls_test.go"],
     embed = [":cloneurls"],

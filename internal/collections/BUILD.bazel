@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "collections_test",
     srcs = ["slice_utils_test.go"],
     embed = [":collections"],

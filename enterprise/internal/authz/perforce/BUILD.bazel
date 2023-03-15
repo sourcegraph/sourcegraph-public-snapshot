@@ -28,6 +28,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "perforce_test",
     srcs = [
         "main_test.go",

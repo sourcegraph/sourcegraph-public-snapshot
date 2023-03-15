@@ -46,6 +46,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "uploads_test",
     srcs = ["mocks_test.go"],
     embed = [":uploads"],

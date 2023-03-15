@@ -87,6 +87,7 @@ ts_project(
 
 jest_test(
     name = "test",
+    timeout = "short",
     data = [
         ":observability-client_tests",
     ],

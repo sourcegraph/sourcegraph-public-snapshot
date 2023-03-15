@@ -49,6 +49,7 @@ go_library(
 
 go_test(
     name = "store_test",
+    size = "large",
     srcs = [
         "store_audit_logs_test.go",
         "store_commits_test.go",
@@ -86,5 +87,4 @@ go_test(
         "@com_github_lib_pq//:pq",
         "@com_github_sourcegraph_log//logtest",
     ],
-    size = "large",
 )

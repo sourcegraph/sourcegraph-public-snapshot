@@ -40,6 +40,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "webhooks_test",
     srcs = [
         "bitbucketcloud_test.go",

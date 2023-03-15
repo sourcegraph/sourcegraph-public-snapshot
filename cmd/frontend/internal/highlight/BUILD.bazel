@@ -41,6 +41,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "highlight_test",
     srcs = [
         "highlight_test.go",

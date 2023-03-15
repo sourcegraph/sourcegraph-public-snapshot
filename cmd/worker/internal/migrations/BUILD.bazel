@@ -22,6 +22,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "migrations_test",
     srcs = ["init_test.go"],
     embed = [":migrations"],

@@ -13,6 +13,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "libs_test",
     srcs = ["paths_test.go"],
     embed = [":libs"],

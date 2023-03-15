@@ -19,6 +19,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "routevar_test",
     srcs = [
         "def_test.go",

@@ -18,6 +18,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "build_test",
     srcs = ["build_test.go"],
     embed = [":build"],

@@ -28,6 +28,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "session_test",
     srcs = ["session_test.go"],
     embed = [":session"],

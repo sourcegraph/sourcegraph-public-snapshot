@@ -17,6 +17,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "lsifuploadstore_test",
     srcs = ["config_test.go"],
     embed = [":lsifuploadstore"],
