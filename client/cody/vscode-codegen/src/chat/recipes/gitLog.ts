@@ -1,8 +1,7 @@
 import { execFile } from 'child_process'
 import * as path from 'path'
 
-import * as vscode from 'vscode'
-
+import { Editor } from '../../editor'
 import { truncateText } from '../prompt'
 
 import { Recipe, RecipePrompt } from './recipe'
@@ -12,12 +11,12 @@ export class GitHistory implements Recipe {
         return 'gitHistory'
     }
 
-    public async getPrompt(maxTokens: number): Promise<RecipePrompt | null> {
-        const fsPath = vscode.window.activeTextEditor?.document.uri.fsPath
-        if (!fsPath) {
+    public async getPrompt(maxTokens: number, editor: Editor): Promise<RecipePrompt | null> {
+        const activeEditor = editor.getActiveTextEditor()
+        if (!activeEditor) {
             return null
         }
-        const dirPath = path.dirname(fsPath)
+        const dirPath = path.dirname(activeEditor.filePath)
 
         const items = [
             {
@@ -36,7 +35,7 @@ export class GitHistory implements Recipe {
                 displayText: 'What changed in my codebase in the last week?',
             },
         ]
-        const selectedLabel = await vscode.window.showQuickPick(items.map(e => e.label))
+        const selectedLabel = await editor.showQuickPick(items.map(e => e.label))
         if (!selectedLabel) {
             return null
         }
@@ -65,7 +64,7 @@ export class GitHistory implements Recipe {
                 Math.floor(maxTokens * 3.25) - messageTextTempl.length + '{gitlogStr}'.length
             )
             messageText = messageTextTempl.replace('{gitlogStr}', truncatedGitLog)
-            void vscode.window.showWarningMessage('Truncated extra long git log output, so summary may be incomplete')
+            void editor.showWarningMessage('Truncated extra long git log output, so summary may be incomplete')
         }
 
         return {

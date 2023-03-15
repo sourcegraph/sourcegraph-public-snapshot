@@ -1,10 +1,11 @@
 import { Message } from '@sourcegraph/cody-common'
 
+import { Editor } from '../../editor'
 import { ContextSearchOptions } from '../context-search-options'
 import { getContextMessageWithResponse, populateCodeContextTemplate, truncateText, truncateTextStart } from '../prompt'
 
 import { getFileExtension } from './generateTest'
-import { MARKDOWN_FORMAT_PROMPT, getNormalizedLanguageName, getActiveEditorSelection } from './helpers'
+import { MARKDOWN_FORMAT_PROMPT, getNormalizedLanguageName } from './helpers'
 import { Recipe, RecipePrompt } from './recipe'
 
 export class ImproveVariableNames implements Recipe {
@@ -13,13 +14,14 @@ export class ImproveVariableNames implements Recipe {
     }
     public async getPrompt(
         maxTokens: number,
+        editor: Editor,
         getEmbeddingsContextMessages: (query: string, options: ContextSearchOptions) => Promise<Message[]>
     ): Promise<RecipePrompt | null> {
         const maxInputTokens = Math.round(0.8 * maxTokens)
         const maxSurroundingTokens = Math.round(0.2 * maxTokens)
 
         // Inputs
-        const selection = getActiveEditorSelection()
+        const selection = editor.getActiveTextEditorSelection()
         if (!selection) {
             return null
         }
