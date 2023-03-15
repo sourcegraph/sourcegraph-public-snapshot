@@ -129,8 +129,9 @@ func TestNoMaliciousFiles(t *testing.T) {
 	extractPath := path.Join(dir, "extracted")
 	assert.Nil(t, os.Mkdir(extractPath, os.ModePerm))
 
+	cacheDir := filepath.Join(dir, "cache")
 	s := jvmPackagesSyncer{
-		coursier: coursier.NewCoursierHandle(&observation.TestContext),
+		coursier: coursier.NewCoursierHandle(&observation.TestContext, cacheDir),
 		config:   &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
 		fetch: func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error) {
 			jarPath := path.Join(dir, "sampletext.zip")
