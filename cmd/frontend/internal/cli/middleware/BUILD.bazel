@@ -27,8 +27,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "middleware_test",
+    timeout = "short",
     srcs = ["goimportpath_test.go"],
     deps = [":middleware"],
 )

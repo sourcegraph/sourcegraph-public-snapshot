@@ -19,8 +19,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "casetransform_test",
+    timeout = "short",
     srcs = [
         "lower_regexp_test.go",
         "lower_test.go",

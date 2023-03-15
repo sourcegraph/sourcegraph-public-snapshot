@@ -20,8 +20,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "resolvers_test",
+    timeout = "short",
     srcs = ["resolvers_test.go"],
     embed = [":resolvers"],
     deps = [

@@ -41,8 +41,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "autoindexing_test",
+    timeout = "short",
     srcs = [
         "mocks_test.go",
         "service_test.go",

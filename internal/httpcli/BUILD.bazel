@@ -36,8 +36,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "httpcli_test",
+    timeout = "short",
     srcs = [
         "client_test.go",
         "redis_logger_middleware_test.go",

@@ -15,8 +15,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "notify_test",
+    timeout = "short",
     srcs = ["slack_test.go"],
     embed = [":notify"],
     deps = ["@com_github_hexops_autogold_v2//:autogold"],
