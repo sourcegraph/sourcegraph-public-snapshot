@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "license_test",
     srcs = ["license_test.go"],
     embed = [":license"],

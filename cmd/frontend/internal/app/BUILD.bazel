@@ -63,6 +63,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "app_test",
     srcs = [
         "app_test.go",

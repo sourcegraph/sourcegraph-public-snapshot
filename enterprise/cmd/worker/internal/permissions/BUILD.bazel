@@ -39,6 +39,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "permissions_test",
     srcs = [
         "bitbucket_projects_test.go",

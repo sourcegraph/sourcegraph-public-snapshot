@@ -20,6 +20,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "accessrequest_test",
     srcs = ["handlers_test.go"],
     embed = [":accessrequest"],

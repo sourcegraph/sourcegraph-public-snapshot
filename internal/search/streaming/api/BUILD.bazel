@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "api_test",
     srcs = ["progress_test.go"],
     data = glob(["testdata/**"]),

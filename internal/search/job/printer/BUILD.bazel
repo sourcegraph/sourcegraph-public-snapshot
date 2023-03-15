@@ -17,6 +17,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "printer_test",
     srcs = [
         "json_test.go",

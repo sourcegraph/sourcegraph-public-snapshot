@@ -13,6 +13,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "root_test",
     srcs = ["root_test.go"],
     embed = [":root"],

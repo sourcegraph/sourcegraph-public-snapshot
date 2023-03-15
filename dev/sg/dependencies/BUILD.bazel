@@ -29,6 +29,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "dependencies_test",
     srcs = [
         "dependencies_test.go",

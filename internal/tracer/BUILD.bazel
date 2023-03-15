@@ -39,6 +39,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "tracer_test",
     srcs = ["watch_test.go"],
     embed = [":tracer"],

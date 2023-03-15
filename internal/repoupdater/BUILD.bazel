@@ -28,6 +28,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "repoupdater_test",
     srcs = ["client_test.go"],
     embed = [":repoupdater"],

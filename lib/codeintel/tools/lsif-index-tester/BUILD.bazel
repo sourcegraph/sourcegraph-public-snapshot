@@ -27,6 +27,7 @@ go_binary(
 )
 
 go_test(
+    timeout = "short",
     name = "lsif-index-tester_test",
     srcs = ["range_differ_test.go"],
     embed = [":lsif-index-tester_lib"],

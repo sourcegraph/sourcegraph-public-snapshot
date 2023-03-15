@@ -55,6 +55,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "shared_test",
     srcs = ["shared_test.go"],
     embed = [":shared"],

@@ -9,6 +9,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "gqlutil_test",
     srcs = ["datetime_test.go"],
     embed = [":gqlutil"],

@@ -23,6 +23,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "repo_test",
     srcs = ["store_test.go"],
     embed = [":repo"],
