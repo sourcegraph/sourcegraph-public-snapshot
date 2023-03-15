@@ -344,7 +344,13 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
     {
         key: 'Status',
         header: 'Status',
-        render: ({ state }: PermissionsSyncJob) => <PermissionsSyncJobStatusBadge state={state} />,
+        render: ({ state, cancellationReason, failureMessage }: PermissionsSyncJob) => (
+            <PermissionsSyncJobStatusBadge
+                state={state}
+                cancellationReason={cancellationReason}
+                failureMessage={failureMessage}
+            />
+        ),
     },
     {
         key: 'Name',
@@ -375,7 +381,7 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
         header: 'Total',
         align: 'right',
         render: ({ permissionsFound }: PermissionsSyncJob) => (
-            <div className="text-secondary text-right mr-2">
+            <div className="text-muted text-right mr-2">
                 <b>{permissionsFound}</b>
             </div>
         ),
@@ -539,6 +545,7 @@ const CodeHostStatesTableColumns: IColumn<CodeHostState>[] = [
 
 const renderModal = (job: PermissionsSyncJob, hideModal: () => void): React.ReactNode => (
     <Modal onDismiss={hideModal} aria-labelledby="permissions-sync-job-modal">
+        {job.cancellationReason && <Alert variant="info">Cancellation reason: {job.cancellationReason}</Alert>}
         {job.failureMessage && <Alert variant="danger">{job.failureMessage}</Alert>}
         <div className={classNames(styles.modalGrid, 'mb-2')}>
             <Text className="mb-0" weight="bold">
