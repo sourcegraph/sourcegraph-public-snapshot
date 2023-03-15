@@ -10,13 +10,17 @@ build --disk_cache=/home/buildkite/diskcache
 
 # We need /usr/local/bin
 # TODO(DevX) we should be narrower here.
-test --action_env=PATH
+build --test_env=PATH
 
 # Needed for DB in CI
-test --action_env=PGUSER
-test --action_env=PGSSLMODE
-test --action_env=PGDATABASE
+build --test_env=PGUSER
+build --test_env=PGSSLMODE
+build --test_env=PGDATABASE
 
 # Allow tests to understand they're running in CI, which forces dbtest to drop database even in case of failures.
 # TODO(JH) we should instead wipe all templates after a job finishes.
-test --action_env=CI
+build --test_env=CI
+
+# Ensure we're not exhausting database connections.
+build --test_env=GOMAXPROCS=10
+build --test_env=TESTDB_MAXOPENCONNS=15
