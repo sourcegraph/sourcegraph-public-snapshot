@@ -1,17 +1,7 @@
-import { FunctionComponent, useState, useCallback } from 'react'
+import { FunctionComponent, useState } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    ErrorAlert,
-    Link,
-    LoadingSpinner,
-    PageHeader,
-    Tab,
-    TabList,
-    TabPanel,
-    TabPanels,
-    Tabs,
-} from '@sourcegraph/wildcard'
+import { ErrorAlert, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'
@@ -29,15 +19,9 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
     authenticatedUser,
     ...props
 }) => {
-    const [activeTabIndex, setActiveTabIndex] = useState<number>(0)
     const { inferenceScript, loadingScript, fetchError } = useInferenceScript()
     const [previewScript, setPreviewScript] = useState<string | null>(null)
-    const setTab = useCallback((index: number) => {
-        setActiveTabIndex(index)
-    }, [])
-
     const inferencePreview = previewScript !== null ? previewScript : inferenceScript
-    const previewDisabled = inferencePreview === ''
 
     return (
         <>
@@ -71,33 +55,15 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
             />
             {fetchError && <ErrorAlert prefix="Error fetching inference script" error={fetchError} />}
             {loadingScript && <LoadingSpinner />}
-            <Tabs size="large" index={activeTabIndex} onChange={setTab}>
-                <TabList>
-                    <Tab key="script">Script</Tab>
-                    <Tab key="preview" disabled={previewDisabled}>
-                        Preview
-                    </Tab>
-                </TabList>
-                <TabPanels>
-                    <TabPanel>
-                        <InferenceScriptEditor
-                            script={inferenceScript}
-                            authenticatedUser={authenticatedUser}
-                            setPreviewScript={setPreviewScript}
-                            previewDisabled={previewDisabled}
-                            setTab={setTab}
-                            {...props}
-                        />
-                    </TabPanel>
-                    <TabPanel>
-                        <InferenceScriptPreview
-                            active={activeTabIndex === 1}
-                            script={inferencePreview}
-                            setTab={setTab}
-                        />
-                    </TabPanel>
-                </TabPanels>
-            </Tabs>
+
+            <InferenceScriptEditor
+                script={inferenceScript}
+                authenticatedUser={authenticatedUser}
+                setPreviewScript={setPreviewScript}
+                {...props}
+            />
+
+            <InferenceScriptPreview script={inferencePreview} />
         </>
     )
 }
