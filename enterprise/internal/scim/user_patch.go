@@ -366,8 +366,8 @@ func azureMultiValueReplaceNotFoundStrategy(multiValueAttribute []interface{},
 	switch v := filterExpression.(type) {
 	case *filter.AttributeExpression:
 		if v.Operator != filter.EQ {
-			// There is nothing we can do in this case because the expected behavior is that an object will be created using the
-			// the left and right side of the operator as a property and value
+			// There is nothing we can do in this case because the expected behavior is to create
+			// an object using the left and right side of the operator as a property and value.
 			return nil, scimerrors.ScimErrorNoTarget
 		}
 		newItem := map[string]interface{}{v.AttributePath.AttributeName: v.CompareValue, propertyToSet: value}
