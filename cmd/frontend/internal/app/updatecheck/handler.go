@@ -339,6 +339,7 @@ type pingPayload struct {
 	HomepagePanels                json.RawMessage `json:"homepage_panels"`
 	RetentionStatistics           json.RawMessage `json:"retention_statistics"`
 	Repositories                  json.RawMessage `json:"repositories"`
+	RepositorySizeHistogram       json.RawMessage `json:"repository_size_histogram"`
 	SearchOnboarding              json.RawMessage `json:"search_onboarding"`
 	DependencyVersions            json.RawMessage `json:"dependency_versions"`
 	ExtensionsUsage               json.RawMessage `json:"extensions_usage"`
@@ -435,6 +436,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		HomepagePanels:                pr.HomepagePanels,
 		RetentionStatistics:           pr.RetentionStatistics,
 		Repositories:                  pr.Repositories,
+		RepositorySizeHistogram:       pr.RepositorySizeHistogram,
 		SearchOnboarding:              pr.SearchOnboarding,
 		InstallerEmail:                pr.InitialAdminEmail,
 		DependencyVersions:            pr.DependencyVersions,

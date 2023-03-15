@@ -42,10 +42,13 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
      * Whenever the user click on cancel button
      */
     onCancel: () => void
+
+    isSourcegraphApp: boolean
 }
 
 export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = props => {
-    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation, isSourcegraphApp } =
+        props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -88,7 +91,7 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
     }, [telemetryService, setLocalStorageFormValues, onCancel])
 
     return (
-        <CodeInsightsPage>
+        <CodeInsightsPage isSourcegraphApp={isSourcegraphApp}>
             <PageTitle title="Create track changes insight - Code Insights" />
 
             <PageHeader

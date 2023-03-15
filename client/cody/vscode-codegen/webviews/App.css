@@ -44,27 +44,3 @@
 	overflow: auto;
 	flex: 1;
 }
-
-.debug-container-placeholder {
-	padding: 1rem;
-}
-
-.debug-message {
-	padding: 1rem;
-	margin: 1rem;
-	background-color: var(--human-bubble-color);
-	border-radius: 1rem;
-}
-
-.debug-message > pre {
-	white-space: pre-wrap;
-	margin: 0;
-}
-
-.debug-message:last-child {
-	border-bottom: 0;
-}
-
-.debug-tab-hidden {
-	display: none;
-}

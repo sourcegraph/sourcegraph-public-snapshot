@@ -1553,6 +1553,7 @@ ts_project(
     tsconfig = ":tsconfig",
     # TODO(bazel): type-only #keep imports
     deps = [
+        ":code_intel_schema",  #keep
         ":graphql_operations",
         ":module_style_typings",
         ":node_modules/@sourcegraph/branded",

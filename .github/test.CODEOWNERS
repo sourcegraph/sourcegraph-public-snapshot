@@ -238,3 +238,8 @@
 /monitoring/**/* @bobheadxi @slimsag @sourcegraph/delivery
 /monitoring/frontend.go @efritz
 /monitoring/precise_code_intel_* @efritz @sourcegraph/code-intelligence
+
+/enterprise/internal/own/ @sourcegraph/own
+/client/web/src/repo/blob/own/ @sourcegraph/own
+/cmd/frontend/graphqlbackend/own* @sourcegraph/own
+/internal/usagestats/own.go @sourcegraph/own 

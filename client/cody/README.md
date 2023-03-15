@@ -77,9 +77,9 @@ Run the embeddings API:
    "cody.debug": true,
    ```
 
-2. Run `pnpm install && pnpm prebuild` from the root of this repository
-3. Select `Launch Cody (Dev) Extension` from the dropdown menu in the `RUN AND DEBUG` sidebar
-   1. Remove `node_modeules` if the start up failed
+2. Run `pnpm install` from the root of this repository
+3. Select `Launch Cody Extension` from the dropdown menu in the `RUN AND DEBUG` sidebar
+   1. Remove `node_modeules` and rerun `pnpm install` if the start up failed
 4. Refresh the extension to see updated changes
 
 #### File structure
@@ -95,9 +95,6 @@ Run the embeddings API:
 - `vscode-codegen/index.html`: the entry file that Vite looks for to build
   the webviews. The extension host reads this file at run time and replace
   the variables inside the file with webview specific uri and info
-- `vscode-codegen/webpack.config.js`: config file for bundling the code for
-  the extension, excluding the webviews. The output will be sent to the
-  /dist folder where the webviews output can also be found
 
 ### Testing the [VS Code extension](vscode-codegen/)
 
