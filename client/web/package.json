@@ -20,7 +20,7 @@
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "dev": "pnpm task:gulp dev",
     "unsafeDev": "pnpm task:gulp unsafeDev",
-    "build": "NODE_ENV=production pnpm task:gulp build",
+    "build": "pnpm task:gulp build",
     "watch": "pnpm task:gulp watch",
     "watch-webpack": "pnpm task:gulp watchWebpack",
     "webpack": "pnpm task:gulp webpack",
