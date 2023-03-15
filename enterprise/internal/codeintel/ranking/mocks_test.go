@@ -46,6 +46,9 @@ type MockStore struct {
 	// InsertInitialPathCountsFunc is an instance of a mock function object
 	// controlling the behavior of the method InsertInitialPathCounts.
 	InsertInitialPathCountsFunc *StoreInsertInitialPathCountsFunc
+	// InsertInitialPathRanksFunc is an instance of a mock function object
+	// controlling the behavior of the method InsertInitialPathRanks.
+	InsertInitialPathRanksFunc *StoreInsertInitialPathRanksFunc
 	// InsertPathCountInputsFunc is an instance of a mock function object
 	// controlling the behavior of the method InsertPathCountInputs.
 	InsertPathCountInputsFunc *StoreInsertPathCountInputsFunc
@@ -118,6 +121,11 @@ func NewMockStore() *MockStore {
 			},
 		},
 		InsertInitialPathCountsFunc: &StoreInsertInitialPathCountsFunc{
+			defaultHook: func(context.Context, string, int) (r0 int, r1 int, r2 error) {
+				return
+			},
+		},
+		InsertInitialPathRanksFunc: &StoreInsertInitialPathRanksFunc{
 			defaultHook: func(context.Context, int, []string, string) (r0 error) {
 				return
 			},
@@ -215,8 +223,13 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		InsertInitialPathCountsFunc: &StoreInsertInitialPathCountsFunc{
-			defaultHook: func(context.Context, int, []string, string) error {
+			defaultHook: func(context.Context, string, int) (int, int, error) {
 				panic("unexpected invocation of MockStore.InsertInitialPathCounts")
+			},
+		},
+		InsertInitialPathRanksFunc: &StoreInsertInitialPathRanksFunc{
+			defaultHook: func(context.Context, int, []string, string) error {
+				panic("unexpected invocation of MockStore.InsertInitialPathRanks")
 			},
 		},
 		InsertPathCountInputsFunc: &StoreInsertPathCountInputsFunc{
@@ -301,6 +314,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		InsertInitialPathCountsFunc: &StoreInsertInitialPathCountsFunc{
 			defaultHook: i.InsertInitialPathCounts,
+		},
+		InsertInitialPathRanksFunc: &StoreInsertInitialPathRanksFunc{
+			defaultHook: i.InsertInitialPathRanks,
 		},
 		InsertPathCountInputsFunc: &StoreInsertPathCountInputsFunc{
 			defaultHook: i.InsertPathCountInputs,
@@ -997,24 +1013,24 @@ func (c StoreInsertDefinitionsForRankingFuncCall) Results() []interface{} {
 // InsertInitialPathCounts method of the parent MockStore instance is
 // invoked.
 type StoreInsertInitialPathCountsFunc struct {
-	defaultHook func(context.Context, int, []string, string) error
-	hooks       []func(context.Context, int, []string, string) error
+	defaultHook func(context.Context, string, int) (int, int, error)
+	hooks       []func(context.Context, string, int) (int, int, error)
 	history     []StoreInsertInitialPathCountsFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertInitialPathCounts delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockStore) InsertInitialPathCounts(v0 context.Context, v1 int, v2 []string, v3 string) error {
-	r0 := m.InsertInitialPathCountsFunc.nextHook()(v0, v1, v2, v3)
-	m.InsertInitialPathCountsFunc.appendCall(StoreInsertInitialPathCountsFuncCall{v0, v1, v2, v3, r0})
-	return r0
+func (m *MockStore) InsertInitialPathCounts(v0 context.Context, v1 string, v2 int) (int, int, error) {
+	r0, r1, r2 := m.InsertInitialPathCountsFunc.nextHook()(v0, v1, v2)
+	m.InsertInitialPathCountsFunc.appendCall(StoreInsertInitialPathCountsFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // InsertInitialPathCounts method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreInsertInitialPathCountsFunc) SetDefaultHook(hook func(context.Context, int, []string, string) error) {
+func (f *StoreInsertInitialPathCountsFunc) SetDefaultHook(hook func(context.Context, string, int) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1022,7 +1038,7 @@ func (f *StoreInsertInitialPathCountsFunc) SetDefaultHook(hook func(context.Cont
 // InsertInitialPathCounts method of the parent MockStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *StoreInsertInitialPathCountsFunc) PushHook(hook func(context.Context, int, []string, string) error) {
+func (f *StoreInsertInitialPathCountsFunc) PushHook(hook func(context.Context, string, int) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1030,20 +1046,20 @@ func (f *StoreInsertInitialPathCountsFunc) PushHook(hook func(context.Context, i
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreInsertInitialPathCountsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, []string, string) error {
-		return r0
+func (f *StoreInsertInitialPathCountsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, int) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreInsertInitialPathCountsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, []string, string) error {
-		return r0
+func (f *StoreInsertInitialPathCountsFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, string, int) (int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreInsertInitialPathCountsFunc) nextHook() func(context.Context, int, []string, string) error {
+func (f *StoreInsertInitialPathCountsFunc) nextHook() func(context.Context, string, int) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1081,6 +1097,121 @@ type StoreInsertInitialPathCountsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreInsertInitialPathCountsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreInsertInitialPathCountsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// StoreInsertInitialPathRanksFunc describes the behavior when the
+// InsertInitialPathRanks method of the parent MockStore instance is
+// invoked.
+type StoreInsertInitialPathRanksFunc struct {
+	defaultHook func(context.Context, int, []string, string) error
+	hooks       []func(context.Context, int, []string, string) error
+	history     []StoreInsertInitialPathRanksFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertInitialPathRanks delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) InsertInitialPathRanks(v0 context.Context, v1 int, v2 []string, v3 string) error {
+	r0 := m.InsertInitialPathRanksFunc.nextHook()(v0, v1, v2, v3)
+	m.InsertInitialPathRanksFunc.appendCall(StoreInsertInitialPathRanksFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// InsertInitialPathRanks method of the parent MockStore instance is invoked
+// and the hook queue is empty.
+func (f *StoreInsertInitialPathRanksFunc) SetDefaultHook(hook func(context.Context, int, []string, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertInitialPathRanks method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreInsertInitialPathRanksFunc) PushHook(hook func(context.Context, int, []string, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreInsertInitialPathRanksFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, []string, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreInsertInitialPathRanksFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, []string, string) error {
+		return r0
+	})
+}
+
+func (f *StoreInsertInitialPathRanksFunc) nextHook() func(context.Context, int, []string, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreInsertInitialPathRanksFunc) appendCall(r0 StoreInsertInitialPathRanksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreInsertInitialPathRanksFuncCall objects
+// describing the invocations of this function.
+func (f *StoreInsertInitialPathRanksFunc) History() []StoreInsertInitialPathRanksFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreInsertInitialPathRanksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreInsertInitialPathRanksFuncCall is an object that describes an
+// invocation of method InsertInitialPathRanks on an instance of MockStore.
+type StoreInsertInitialPathRanksFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
@@ -1095,13 +1226,13 @@ type StoreInsertInitialPathCountsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreInsertInitialPathCountsFuncCall) Args() []interface{} {
+func (c StoreInsertInitialPathRanksFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreInsertInitialPathCountsFuncCall) Results() []interface{} {
+func (c StoreInsertInitialPathRanksFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

@@ -825,6 +825,36 @@ Maps commits within a repository to the commit date as reported by gitserver.
 
 Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.
 
+# Table "public.codeintel_initial_path_ranks"
+```
+    Column     |  Type   | Collation | Nullable |                         Default                          
+---------------+---------+-----------+----------+----------------------------------------------------------
+ id            | bigint  |           | not null | nextval('codeintel_initial_path_ranks_id_seq'::regclass)
+ repository_id | integer |           | not null | 
+ document_path | text    |           | not null | 
+ graph_key     | text    |           | not null | 
+Indexes:
+    "codeintel_initial_path_ranks_pkey" PRIMARY KEY, btree (id)
+    "codeintel_initial_path_ranks_graph_key_and_repository_id" btree (graph_key, repository_id)
+Referenced by:
+    TABLE "codeintel_initial_path_ranks_processed" CONSTRAINT "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
+
+```
+
+# Table "public.codeintel_initial_path_ranks_processed"
+```
+             Column              |  Type  | Collation | Nullable |                              Default                               
+---------------------------------+--------+-----------+----------+--------------------------------------------------------------------
+ id                              | bigint |           | not null | nextval('codeintel_initial_path_ranks_processed_id_seq'::regclass)
+ graph_key                       | text   |           | not null | 
+ codeintel_initial_path_ranks_id | bigint |           | not null | 
+Indexes:
+    "codeintel_initial_path_ranks_processed_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
+
+```
+
 # Table "public.codeintel_langugage_support_requests"
 ```
    Column    |  Type   | Collation | Nullable |                             Default                              

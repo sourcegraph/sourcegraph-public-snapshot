@@ -169,7 +169,7 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 }
 
-func TestInsertInitialPathCounts(t *testing.T) {
+func TestInsertInitialPathRanks(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -182,7 +182,7 @@ func TestInsertInitialPathCounts(t *testing.T) {
 	mockRepoID := 1
 	mockPathNames := []string{"foo.go", "bar.go", "baz.go"}
 
-	if err := store.InsertInitialPathCounts(ctx, mockRepoID, mockPathNames, mockRankingGraphKey); err != nil {
+	if err := store.InsertInitialPathRanks(ctx, mockRepoID, mockPathNames, mockRankingGraphKey); err != nil {
 		t.Fatalf("unexpected error inserting initial path counts: %s", err)
 	}
 

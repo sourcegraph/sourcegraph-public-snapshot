@@ -57,7 +57,7 @@ func exportRankingGraph(
 			return 0, 0, 0, err
 		}
 
-		if err := store.InsertInitialPathCounts(ctx, upload.RepoID, documentPaths, graphKey); err != nil {
+		if err := store.InsertInitialPathRanks(ctx, upload.RepoID, documentPaths, graphKey); err != nil {
 			logger.Error(
 				"Failed to insert initial path counts",
 				log.Int("id", upload.ID),
@@ -181,6 +181,26 @@ func mapRankingGraph(
 	}
 
 	return store.InsertPathCountInputs(
+		ctx,
+		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
+		batchSize,
+	)
+}
+
+func mapInitializerRankingGraph(
+	ctx context.Context,
+	store store.Store,
+	batchSize int,
+) (
+	numInitialPathsProcessed int,
+	numInitialPathRanksInserted int,
+	err error,
+) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, 0, nil
+	}
+
+	return store.InsertInitialPathCounts(
 		ctx,
 		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
 		batchSize,

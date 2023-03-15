@@ -289,8 +289,95 @@ SELECT
 	(SELECT COUNT(*) FROM ins)
 `
 
-func (s *store) InsertInitialPathCounts(ctx context.Context, repositoryID int, documentPath []string, derivativeGraphKey string) (err error) {
-	ctx, _, endObservation := s.operations.insertPathRanks.With(
+func (s *store) InsertInitialPathCounts(
+	ctx context.Context,
+	derivativeGraphKey string,
+	batchSize int,
+) (
+	numInitialPathsProcessed int,
+	numInitialPathRanksInserted int,
+	err error,
+) {
+	ctx, _, endObservation := s.operations.insertInitialPathCounts.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	if !ok {
+		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
+	}
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
+		insertInitialPathCountsInputsQuery,
+		graphKey,
+		derivativeGraphKey,
+		batchSize,
+		derivativeGraphKey,
+		derivativeGraphKey,
+	))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&numInitialPathsProcessed,
+			&numInitialPathRanksInserted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return numInitialPathsProcessed, numInitialPathRanksInserted, nil
+}
+
+const insertInitialPathCountsInputsQuery = `
+WITH
+unprocessed_path_counts AS (
+	SELECT
+		ipr.repository_id,
+		ipr.document_path,
+		ipr.graph_key
+	FROM codeintel_initial_path_ranks ipr
+	WHERE
+		irp.graph_key = %s AND
+		NOT EXISTS (
+			SELECT 1
+			FROM codeintel_initial_path_ranks_processed prp
+			WHERE
+				prp.graph_key = %s AND
+				prp.codeintel_initial_path_rank_id = ipr.id
+		)
+	ORDER BY ipr.id
+	LIMIT %s
+),
+locked_path_counts AS (
+	INSERT INTO codeintel_initial_path_ranks_processed (graph_key, codeintel_initial_path_rank_id)
+	SELECT
+		%s,
+		upc.id
+	FROM unprocessed_path_counts upc
+	ON CONFLICT DO NOTHING
+	RETURNING codeintel_initial_path_rank_id
+),
+ins AS (
+	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
+	SELECT
+		upc.repository_id,
+		upc.document_path,
+		0,
+		%s
+	FROM locked_path_counts lpc
+	JOIN unprocessed_path_counts upc on upc.id = lpc.codeintel_initial_path_rank_id
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM locked_path_counts),
+	(SELECT COUNT(*) FROM ins)
+`
+
+func (s *store) InsertInitialPathRanks(ctx context.Context, repositoryID int, documentPath []string, derivativeGraphKey string) (err error) {
+	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(
 		ctx,
 		&err,
 		observation.Args{LogFields: []otlog.Field{
@@ -322,11 +409,9 @@ func (s *store) InsertInitialPathCounts(ctx context.Context, repositoryID int, d
 	if err := batch.WithInserter(
 		ctx,
 		tx.Handle(),
-		"t_codeintel_ranking_path_counts_inputs",
+		"t_codeintel_initial_path_ranks",
 		batch.MaxNumPostgresParameters,
-		[]string{
-			"document_path",
-		},
+		[]string{"document_path"},
 		inserter,
 	); err != nil {
 		return err
@@ -340,20 +425,19 @@ func (s *store) InsertInitialPathCounts(ctx context.Context, repositoryID int, d
 }
 
 const createInitialPathTemporaryTableQuery = `
-CREATE TEMPORARY TABLE IF NOT EXISTS t_codeintel_ranking_path_counts_inputs (
+CREATE TEMPORARY TABLE IF NOT EXISTS t_codeintel_initial_path_ranks (
 	document_path text NOT NULL
 )
 ON COMMIT DROP
 `
 
 const insertInitialPathRankCountsQuery = `
-INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
+INSERT INTO codeintel_initial_path_ranks (repository_id, document_path, graph_key)
 	SELECT
 		%s,
 		document_path,
-		0,
 		%s
-	FROM t_codeintel_ranking_path_counts_inputs
+	FROM t_codeintel_initial_path_ranks
 `
 
 func (s *store) InsertPathRanks(

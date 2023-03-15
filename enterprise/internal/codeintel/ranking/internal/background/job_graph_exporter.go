@@ -134,6 +134,14 @@ func NewMapper(
 		Metrics:     background.NewPipelineMetrics(observationCtx, name, recordTypeName),
 		ProcessFunc: func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered background.TaggedCounts, err error) {
 			numReferencesScanned, nuPathCountInputsInserted, err := mapRankingGraph(ctx, store, batchSize)
+			if err != nil {
+				return 0, nil, err
+			}
+			_, _, err = mapInitializerRankingGraph(ctx, store, batchSize)
+			if err != nil {
+				return 0, nil, err
+			}
+
 			return numReferencesScanned, background.NewSingleCount(nuPathCountInputsInserted), err
 		},
 	})
