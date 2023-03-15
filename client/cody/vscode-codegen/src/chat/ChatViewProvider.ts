@@ -9,7 +9,6 @@ import { VSCodeEditor } from '../editor/vscode-editor'
 import { EmbeddingsClient } from '../embeddings/client'
 import { LLMIntentDetector } from '../intent-detector/llm-intent-detector'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
-import { getRgPath } from '../rg'
 import { TestSupport } from '../test-support'
 
 import { renderMarkdown } from './markdown'
@@ -36,7 +35,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     private wsclient: Promise<WSChatClient | null>
     private embeddingsClient: EmbeddingsClient | null
-    private rgPath = 'rg'
 
     private mode: 'development' | 'production'
     private tosVersion = 0
@@ -57,10 +55,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
         this.mode = this.debug ? 'development' : 'production'
 
-        this.findRgPath()
-            .then(path => (this.rgPath = path))
-            .catch(error => console.error(error))
-
         this.wsclient = this.makeWSChatClient()
         this.embeddingsClient = this.makeEmbeddingClient()
 
@@ -68,13 +62,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             this.contextType,
             this.embeddingsClient,
             new LLMIntentDetector(this.serverUrl, this.accessToken),
-            new LocalKeywordContextFetcher(this.rgPath),
+            new LocalKeywordContextFetcher(),
             new VSCodeEditor()
         )
-    }
-
-    private async findRgPath(): Promise<string> {
-        return await getRgPath(this.extensionPath)
     }
 
     private async onDidReceiveMessage(message: any, webview: vscode.Webview): Promise<void> {

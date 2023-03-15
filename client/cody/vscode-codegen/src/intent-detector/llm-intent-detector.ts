@@ -8,10 +8,14 @@ export class LLMIntentDetector implements IntentDetector {
     constructor(private serverUrl: string, private accessToken: string) {}
 
     public async detect(text: string): Promise<QueryInfo> {
-        const resp = await fetch(`${this.serverUrl}/info?q=${encodeURIComponent(text)}`, {
+        const uri = new URL('/info', this.serverUrl)
+        const searchParameters = new URLSearchParams()
+        searchParameters.set('q', text)
+        uri.search = searchParameters.toString()
+        const resp = await fetch(uri.href, {
             method: 'GET',
             headers: {
-                Authorization: 'Bearer ' + this.accessToken,
+                Authorization: `Bearer ${this.accessToken}`,
             },
         })
         const respJSON = await resp.json()

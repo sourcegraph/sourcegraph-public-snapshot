@@ -82,37 +82,28 @@ export class Transcript {
         if (this.transcript.length > 0) {
             return []
         }
-
-        let contextMessages: Message[] | undefined
-
-        const fetchEmbeddingsMessages = (): Promise<Message[]> =>
-            this.getEmbeddingsContextMessages(query, {
-                numCodeResults: 8,
-                numMarkdownResults: 2,
-            })
+        const options = {
+            numCodeResults: 8,
+            numMarkdownResults: 2,
+        }
 
         switch (this.contextType) {
             case 'blended':
-                if (this.embeddings) {
-                    contextMessages = await fetchEmbeddingsMessages()
-                    if (needsCodebaseContext && !contextMessages.length) {
-                        contextMessages = await this.keywords.getContextMessages(query)
-                    }
-                } else {
-                    contextMessages = await this.keywords.getContextMessages(query)
-                }
-                break
+                const embeddingMsgs = await this.getEmbeddingsContextMessages(query, options)
+                // Use keyword context if embedding client is not available
+                return this.embeddings && embeddingMsgs.length
+                    ? embeddingMsgs
+                    : needsCodebaseContext
+                    ? await this.keywords.getContextMessages(query)
+                    : []
             case 'embeddings':
-                contextMessages = await fetchEmbeddingsMessages()
-                break
+                return await this.getEmbeddingsContextMessages(query, options)
             case 'keyword':
-                contextMessages = await this.keywords.getContextMessages(query)
-                break
+                return await this.keywords.getContextMessages(query)
             case 'none':
             default:
-                contextMessages = []
+                return []
         }
-        return contextMessages
     }
 
     // We split the context into multiple messages instead of joining them into a single giant message.
