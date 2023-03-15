@@ -30,6 +30,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "gitserver_test",
     srcs = ["repo_test.go"],
     embed = [":gitserver"],

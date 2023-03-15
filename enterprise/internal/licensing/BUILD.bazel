@@ -29,6 +29,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "licensing_test",
     srcs = [
         "features_test.go",

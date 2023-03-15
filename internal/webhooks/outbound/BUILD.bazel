@@ -20,6 +20,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "outbound_test",
     srcs = ["outbound_test.go"],
     embed = [":outbound"],

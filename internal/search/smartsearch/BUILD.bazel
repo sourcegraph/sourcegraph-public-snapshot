@@ -26,6 +26,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "smartsearch_test",
     srcs = [
         "generator_test.go",

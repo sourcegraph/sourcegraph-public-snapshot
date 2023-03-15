@@ -89,6 +89,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "cli_test",
     srcs = ["config_test.go"],
     embed = [":cli"],

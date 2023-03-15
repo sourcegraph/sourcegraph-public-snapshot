@@ -16,6 +16,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "gosrc_test",
     srcs = ["import_path_test.go"],
     embed = [":gosrc"],

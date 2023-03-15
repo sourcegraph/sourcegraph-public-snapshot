@@ -9,6 +9,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "split_test",
     srcs = ["split_test.go"],
     data = glob(["testdata/**"]),

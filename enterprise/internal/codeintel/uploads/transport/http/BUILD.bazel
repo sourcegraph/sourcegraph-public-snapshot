@@ -33,6 +33,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "http_test",
     srcs = [
         "handler_test.go",

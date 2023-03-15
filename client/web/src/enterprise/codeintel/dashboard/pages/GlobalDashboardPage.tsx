@@ -5,7 +5,7 @@ import { mdiChevronRight, mdiCircleOffOutline } from '@mdi/js'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Badge, Container, ErrorAlert, H3, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, Container, ErrorAlert, H3, Icon, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import {
     DashboardRepoFields,
@@ -167,6 +167,11 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                         <div className={styles.details}>
                             <H3 className="px-3">Repositories with errors</H3>
 
+                            <Text className="px-3 text-muted">
+                                The following repositories have failures on the most recent attempt to automatically
+                                index or process precise code intelligence index.
+                            </Text>
+
                             <ul className={styles.detailsList}>
                                 {data.codeIntelSummary.repositoriesWithErrors.nodes.map(({ repository, count }) => (
                                     <DashboardNode
@@ -185,6 +190,16 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                     data.codeIntelSummary.repositoriesWithConfiguration.nodes.length > 0 && (
                         <div className={styles.details}>
                             <H3 className="px-3">Repositories with suggestions</H3>
+
+                            <Text className="px-3 text-muted">
+                                We have inferred auto-indexing jobs for the following repositories.
+                            </Text>
+
+                            <Text className="px-3 text-muted">
+                                The repositories in this list are ordered by their <strong>searched-based</strong> code
+                                navigation activity (and increasing precise coverage on these repositories will have the
+                                biggest impact on current users).
+                            </Text>
 
                             <ul className={styles.detailsList}>
                                 {data.codeIntelSummary.repositoriesWithConfiguration.nodes.map(

@@ -16,6 +16,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "rds_test",
     srcs = ["rds_test.go"],
     embed = [":rds"],

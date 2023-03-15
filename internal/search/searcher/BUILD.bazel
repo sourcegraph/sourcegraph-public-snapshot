@@ -47,6 +47,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "searcher_test",
     srcs = ["symbol_search_job_test.go"],
     embed = [":searcher"],

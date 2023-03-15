@@ -15,6 +15,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "errors_test",
     srcs = [
         "errors_test.go",

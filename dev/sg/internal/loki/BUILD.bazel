@@ -13,6 +13,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "loki_test",
     srcs = ["loki_test.go"],
     embed = [":loki"],

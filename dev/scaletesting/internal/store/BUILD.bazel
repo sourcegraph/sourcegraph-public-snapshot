@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "store_test",
     srcs = ["store_test.go"],
     embed = [":store"],

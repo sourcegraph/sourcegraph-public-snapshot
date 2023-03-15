@@ -21,6 +21,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "blobstore_test",
     srcs = ["blobstore_test.go"],
     data = glob(["testdata/**"]),
