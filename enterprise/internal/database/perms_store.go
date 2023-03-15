@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"sort"
 	"strings"
 	"time"
 
@@ -664,10 +663,12 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	}
 
 	added, removed := computeDiff(oldIDs, p.IDs)
+	addedIDs := len(added)
+	removedIDs := len(removed)
 
 	// Iterating over maps doesn't guarantee order so we sort the slices to avoid doing unnecessary DB updates.
-	sort.Slice(added, func(i, j int) bool { return added[i] < added[j] })
-	sort.Slice(removed, func(i, j int) bool { return removed[i] < removed[j] })
+	slices.Sort(added)
+	slices.Sort(removed)
 
 	updatedAt := txs.clock()
 	if len(added) != 0 || len(removed) != 0 {
@@ -703,8 +704,8 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	}
 
 	return &database.SetPermissionsResult{
-		Added:   len(added),
-		Removed: len(removed),
+		Added:   addedIDs,
+		Removed: removedIDs,
 		Found:   len(p.IDs),
 	}, nil
 }
@@ -778,10 +779,12 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	}
 
 	added, removed := computeDiff(oldIDs, p.UserIDs)
+	addedIDs := len(added)
+	removedIDs := len(removed)
 
 	// Iterating over maps doesn't guarantee order, so we sort the slices to avoid doing unnecessary DB updates.
-	sort.Slice(added, func(i, j int) bool { return added[i] < added[j] })
-	sort.Slice(removed, func(i, j int) bool { return removed[i] < removed[j] })
+	slices.Sort(added)
+	slices.Sort(removed)
 
 	updatedAt := txs.clock()
 	if len(added) != 0 || len(removed) != 0 {
@@ -804,8 +807,8 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	}
 
 	return &database.SetPermissionsResult{
-		Added:   len(added),
-		Removed: len(removed),
+		Added:   addedIDs,
+		Removed: removedIDs,
 		Found:   len(p.UserIDs),
 	}, nil
 }

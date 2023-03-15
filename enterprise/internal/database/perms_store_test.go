@@ -647,6 +647,17 @@ func TestPermsStore_SetUserPermissions(t *testing.T) {
 				}
 				return repos
 			}(),
+			expectedResult: func() []*database.SetPermissionsResult {
+				result := make([]*database.SetPermissionsResult, countToExceedParameterLimit)
+				for i := 0; i < countToExceedParameterLimit; i++ {
+					result[i] = &database.SetPermissionsResult{
+						Added:   1,
+						Removed: 0,
+						Found:   1,
+					}
+				}
+				return result
+			}(),
 		},
 	}
 
@@ -663,7 +674,15 @@ func TestPermsStore_SetUserPermissions(t *testing.T) {
 			Type:   authz.PermRepos,
 			IDs:    toMapset(1),
 		}
-		if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
+		expectedResult := &database.SetPermissionsResult{
+			Added:   1,
+			Removed: 0,
+			Found:   1,
+		}
+
+		var stats *database.SetPermissionsResult
+		var err error
+		if stats, err = s.SetUserPermissions(context.Background(), up); err != nil {
 			t.Fatal(err)
 		}
 
@@ -675,6 +694,7 @@ func TestPermsStore_SetUserPermissions(t *testing.T) {
 		}
 
 		equal(t, "up.IDs", []int32{1}, gotIDs)
+		equal(t, "stats", expectedResult, stats)
 	})
 
 	for _, test := range tests {
@@ -705,14 +725,8 @@ func TestPermsStore_SetUserPermissions(t *testing.T) {
 					tmp.IDs = p.IDs
 				}
 				result, err := s.SetUserPermissions(context.Background(), tmp)
-
-				if diff := cmp.Diff(test.expectedResult[index], result); diff != "" {
-					t.Fatal(diff)
-				}
-
-				if err != nil {
-					t.Fatal(err)
-				}
+				require.NoError(t, err)
+				equal(t, "result", test.expectedResult[index], result)
 			}
 
 			err := checkRegularPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
