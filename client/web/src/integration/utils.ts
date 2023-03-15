@@ -395,6 +395,12 @@ export const withSearchQueryInput = (callback: (config: SearchQueryInputAPI) => 
     }
 }
 
+/**
+ * This helper function removes any context:... filter in the query (via regular expression)
+ * to make it easier to compare query inputs when the context doesn't amtter.
+ */
+export const removeContextFromQuery = (input: string): string => input.replace(/\s*context:\S*\s*/, '')
+
 export const isElementDisabled = (driver: Driver, query: string): Promise<boolean> =>
     driver.page.evaluate((query: string) => {
         const element = document.querySelector<HTMLButtonElement>(query)
