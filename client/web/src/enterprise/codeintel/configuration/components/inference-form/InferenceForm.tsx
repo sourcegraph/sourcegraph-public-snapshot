@@ -206,7 +206,7 @@ export const InferenceForm: React.FunctionComponent<InferenceFormProps> = ({
                 </div>
 
                 {filteredJobs.length < formData.index_jobs.length && (
-                    <div className="mb-4 px-4 text-muted">
+                    <div className="mb-2 px-2 text-muted">
                         {formData.index_jobs.length} total jobs, showing only {filteredJobs.length} matching jobs.
                     </div>
                 )}
