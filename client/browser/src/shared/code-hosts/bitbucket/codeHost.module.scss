@@ -80,6 +80,18 @@
     }
 }
 
+.hover-overlay {
+    // HoverOverlay max-width is defined in rem (https://sourcegraph.com/github.com/sourcegraph/sourcegraph@0a7bfc6c389b71484615e788a62b9ef262823726/-/blob/client/shared/src/hover/HoverOverlay.module.scss?L15).
+    // Rem on Bitbucket equals to 14px vs 16px on Sourcegraph.
+    // Set value in pixels to ensure content fits container.
+    max-width: 544px !important; // 34rem * 16px in Sourcegraph web app
+}
+
+.hover-actions {
+    display: flex;
+    gap: 5px;
+}
+
 /* Hover overlay buttons */
 .hover-action-item {
     margin: 0 !important;
@@ -90,11 +102,6 @@
 
     &:first-child {
         border-left: none !important;
-    }
-
-    /* Add margin between buttons. Important is required to override the rule above. */
-    & + & {
-        margin-left: 0.25rem !important;
     }
 }
 
