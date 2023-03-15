@@ -401,7 +401,21 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 					var response any
 					switch r.URL.Path {
-					case "/solar/system/_apis/git/repositories":
+					case "/_apis/accounts":
+						response = azuredevops.ListAuthorizedUserOrgsResponse{
+							Count: 2,
+							Value: []azuredevops.Org{
+								{
+									ID:   "1",
+									Name: "solarsystem",
+								},
+								{
+									ID:   "2",
+									Name: "solar",
+								},
+							},
+						}
+					case "/solar/_apis/git/repositories":
 						response = azuredevops.ListRepositoriesResponse{
 							Value: []azuredevops.Repository{
 								{
@@ -409,13 +423,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 									Name: "one",
 									Project: azuredevops.Project{
 										ID:   "1",
-										Name: "mercury",
+										Name: "system",
 									},
 								},
 							},
 							Count: 1,
 						}
-
 					default:
 						panic(fmt.Sprintf("request received in unexpected URL path: %q", r.URL.Path))
 					}
@@ -426,7 +439,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})),
 			},
 			output: output{
-				serverInvokedCount: 1,
+				serverInvokedCount: 2,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1"},
 				},
@@ -438,7 +451,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			input: input{
 				connection: &schema.AzureDevOpsConnection{
 					EnforcePermissions: true,
-					Orgs:               []string{"solarsystem", "milkyway"},
+					Orgs:               []string{"solarsystem", "milkyway", "solar"},
 					Projects:           []string{"solar/system"},
 				},
 				account: account,
@@ -449,11 +462,15 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					switch r.URL.Path {
 					case "/_apis/accounts":
 						response = azuredevops.ListAuthorizedUserOrgsResponse{
-							Count: 1,
+							Count: 2,
 							Value: []azuredevops.Org{
 								{
 									ID:   "1",
 									Name: "solarsystem",
+								},
+								{
+									ID:   "2",
+									Name: "solar",
 								},
 							},
 						}
@@ -471,7 +488,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 								},
 							},
 						}
-					case "/solar/system/_apis/git/repositories":
+					case "/solar/_apis/git/repositories":
 						response = azuredevops.ListRepositoriesResponse{
 							Count: 1,
 							Value: []azuredevops.Repository{
@@ -480,7 +497,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 									Name: "two",
 									Project: azuredevops.Project{
 										ID:   "2",
-										Name: "venus",
+										Name: "system",
 									},
 								},
 							},
@@ -527,14 +544,18 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 								},
 								{
 									ID:   "2",
-									Name: "simulate-401",
+									Name: "solar",
 								},
 								{
 									ID:   "3",
-									Name: "simulate-403",
+									Name: "simulate-401",
 								},
 								{
 									ID:   "4",
+									Name: "simulate-403",
+								},
+								{
+									ID:   "5",
 									Name: "simulate-404",
 								},
 							},
@@ -553,7 +574,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 								},
 							},
 						}
-					case "/solar/system/_apis/git/repositories":
+					case "/solar/_apis/git/repositories":
 						response = azuredevops.ListRepositoriesResponse{
 							Count: 1,
 							Value: []azuredevops.Repository{
@@ -562,16 +583,16 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 									Name: "two",
 									Project: azuredevops.Project{
 										ID:   "2",
-										Name: "venus",
+										Name: "system",
 									},
 								},
 							},
 						}
-					case "/simulate-401/_apis/git/repositories", "/testorg/simulate-401/_apis/git/repositories":
+					case "/simulate-401/_apis/git/repositories":
 						w.WriteHeader(http.StatusUnauthorized)
-					case "/simulate-403/_apis/git/repositories", "/testorg/simulate-403/_apis/git/repositories":
+					case "/simulate-403/_apis/git/repositories":
 						w.WriteHeader(http.StatusForbidden)
-					case "/simulate-404/_apis/git/repositories", "/testorg/simulate-404/_apis/git/repositories":
+					case "/simulate-404/_apis/git/repositories":
 						w.WriteHeader(http.StatusNotFound)
 					default:
 						panic(fmt.Sprintf("request received in unexpected URL path: %q", r.URL.Path))
@@ -584,7 +605,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})),
 			},
 			output: output{
-				serverInvokedCount: 9,
+				serverInvokedCount: 6,
 				permissions: &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1", "2"},
 				},
@@ -730,6 +751,14 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 							ID:   "2",
 							Name: "milkyway",
 						},
+						{
+							ID:   "3",
+							Name: "solar",
+						},
+						{
+							ID:   "4",
+							Name: "milky",
+						},
 					},
 				}
 			case "/solarsystem/_apis/git/repositories":
@@ -746,7 +775,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 						},
 					},
 				}
-			case "/solar/system/_apis/git/repositories":
+			case "/solar/_apis/git/repositories":
 				response = azuredevops.ListRepositoriesResponse{
 					Count: 1,
 					Value: []azuredevops.Repository{
@@ -774,7 +803,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 						},
 					},
 				}
-			case "/milky/way/_apis/git/repositories":
+			case "/milky/_apis/git/repositories":
 				response = azuredevops.ListRepositoriesResponse{
 					Count: 1,
 					Value: []azuredevops.Repository{
@@ -823,7 +852,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			t.Fatalf("Unexpected error, (-want, +got)\n%s", err)
 		}
 
-		// 1 request for list user orgs. 2 requests to list repos of 2 orgs and 2 projects each.
+		// 1 request for list user orgs. 4 requests to list repos of each of the 4 orgs.
 		if serverInvokedCount != 5 {
 			t.Fatalf("External list repos API should have been called only 5 times, but got called %d times", serverInvokedCount)
 		}
