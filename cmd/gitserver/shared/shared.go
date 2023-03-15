@@ -78,10 +78,17 @@ type Config struct {
 	env.BaseConfig
 
 	ReposDir string
+	CoursierCacheDir string
 }
 
 func (c *Config) Load() {
 	c.ReposDir = c.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+
+	// if COURSIER_CACHE_DIR is set, try create that dir and use it. If not set, use the SRC_REPOS_DIR value (or default).
+	c.CoursierCacheDir = env.Get("COURSIER_CACHE_DIR", "", "Directory in which coursier data is cached for JVM package repos.")
+	if c.CoursierCacheDir == "" && c.ReposDir != "" {
+		c.CoursierCacheDir = filepath.Join(c.ReposDir, "coursier")
+	}
 }
 
 func LoadConfig() *Config {
@@ -137,7 +144,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir, config.CoursierCacheDir)
 		},
 		Hostname:                externalAddress(),
 		DB:                      db,
@@ -421,6 +428,7 @@ func getVCSSyncer(
 	depsSvc *dependencies.Service,
 	repo api.RepoName,
 	reposDir string,
+	coursierCacheDir string,
 ) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
@@ -476,7 +484,7 @@ func getVCSSyncer(
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return server.NewJVMPackagesSyncer(&c, depsSvc), nil
+		return server.NewJVMPackagesSyncer(&c, depsSvc, coursierCacheDir), nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
