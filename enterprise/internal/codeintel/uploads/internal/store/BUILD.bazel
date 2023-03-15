@@ -87,4 +87,5 @@ go_test(
         "@com_github_lib_pq//:pq",
         "@com_github_sourcegraph_log//logtest",
     ],
+    size = "large",
 )

@@ -255,4 +255,5 @@ go_test(
         "@org_golang_x_exp//maps",
         "@org_golang_x_sync//errgroup",
     ],
+    size = "large",
 )
