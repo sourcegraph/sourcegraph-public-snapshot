@@ -176,6 +176,11 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
 		return nil, nil
 	})
+	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, _ authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+		wantIDs := []int32{1, 2, 3, 4}
+		assert.Equal(t, wantIDs, repoIDs)
+		return &database.SetPermissionsResult{}, nil
+	})
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 
@@ -252,6 +257,10 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 		wantIDs := []int32{1, 2, 3, 4, 5}
 		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
 		return nil, nil
+	})
+	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+		assert.Equal(t, []int32{1, 2, 3, 4, 5}, repoIDs)
+		return &database.SetPermissionsResult{}, nil
 	})
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
@@ -338,6 +347,10 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
 		return nil, nil
 	})
+	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+		assert.Equal(t, []int32{}, repoIDs)
+		return &database.SetPermissionsResult{}, nil
+	})
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 
@@ -391,7 +404,13 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 
 	userEmails := database.NewMockUserEmailsStore()
 	externalAccounts := database.NewMockUserExternalAccountsStore()
-	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
+	// return only non expired accounts
+	externalAccounts.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+		if opts.ExcludeExpired {
+			return []*extsvc.Account{&extAccount}, nil
+		}
+		return nil, nil
+	})
 
 	featureFlags := database.NewMockFeatureFlagStore()
 
@@ -414,6 +433,11 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		assert.Equal(t, int32(1), p.UserID)
 		assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
 		return nil, nil
+	})
+	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+		assert.Equal(t, int32(1), user.UserID)
+		assert.Equal(t, []int32{1}, repoIDs)
+		return &database.SetPermissionsResult{}, nil
 	})
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
@@ -606,6 +630,8 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 
 	perms := edb.NewMockPermsStore()
 
+	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
+
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
@@ -683,6 +709,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
 
 	perms := edb.NewMockPermsStore()
+	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 
