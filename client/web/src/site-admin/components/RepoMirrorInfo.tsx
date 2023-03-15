@@ -14,12 +14,12 @@ export const RepoMirrorInfo: React.FunctionComponent<
     <>
         <Text className="mb-0 text-muted">
             <small>
-                {mirrorInfo.updatedAt === null || mirrorInfo.due === null? (
+                {mirrorInfo.updatedAt === null ?(
                     <>Not yet synced from code host.</>
                 ) : (
                     <>
                         Last synced <Timestamp date={mirrorInfo.updatedAt} />.{' '}
-                        Next sync <Timestamp date={mirrorInfo.due} />. Size:{' '}
+                        Next sync time: {mirrorInfo.due === null ? <>N/A</> : <Timestamp date={mirrorInfo.due} />}. Size:{' '}
                         {prettyBytesBigint(BigInt(mirrorInfo.byteSize))}.
                         {mirrorInfo.shard !== null && <> Shard: {mirrorInfo.shard}</>}
                         {mirrorInfo.shard === null && (
