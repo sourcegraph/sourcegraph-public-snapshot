@@ -102,8 +102,8 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
         <td class="indexer-implemented-y">✓</td> <!-- Code Search -->
-        <td class="indexer-implemented-y">✗</td> <!-- Code Monitors -->
-        <td class="indexer-implemented-y">✗</td> <!-- Code Insights -->
+        <td class="indexer-implemented-y">✓</td> <!-- Code Monitors -->
+        <td class="indexer-implemented-y">✓</td> <!-- Code Insights -->
         <td class="indexer-implemented-y">✗</td> <!-- Batch Changes -->
       </tr>
       <tr>
@@ -113,8 +113,8 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
         <td class="indexer-implemented-y">✓</td> <!-- Code Search -->
-        <td class="indexer-implemented-y">✗</td> <!-- Code Monitors -->
-        <td class="indexer-implemented-y">✗</td> <!-- Code Insights -->
+        <td class="indexer-implemented-y">✓</td> <!-- Code Monitors -->
+        <td class="indexer-implemented-y">✓</td> <!-- Code Insights -->
         <td class="indexer-implemented-y">✓</td> <!-- Batch Changes -->
       </tr>
       <tr>
