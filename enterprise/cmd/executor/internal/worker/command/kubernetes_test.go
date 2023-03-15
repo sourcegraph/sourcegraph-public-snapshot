@@ -136,6 +136,81 @@ func TestKubernetesCommand_FindPod(t *testing.T) {
 	}
 }
 
+func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
+	tests := []struct {
+		name           string
+		mockFunc       func(jobInterface *command.MockJobInterface)
+		mockAssertFunc func(t *testing.T, jobInterface *command.MockJobInterface)
+		expectedErr    error
+	}{
+		{
+			name: "Job succeeded",
+			mockFunc: func(jobInterface *command.MockJobInterface) {
+				jobInterface.GetFunc.PushReturn(&batchv1.Job{Status: batchv1.JobStatus{Active: 0, Succeeded: 1}}, nil)
+			},
+			mockAssertFunc: func(t *testing.T, jobInterface *command.MockJobInterface) {
+				require.Len(t, jobInterface.GetFunc.History(), 1)
+				assert.Equal(t, "my-job", jobInterface.GetFunc.History()[0].Arg1)
+			},
+		},
+		{
+			name: "Job failed",
+			mockFunc: func(jobInterface *command.MockJobInterface) {
+				jobInterface.GetFunc.PushReturn(&batchv1.Job{Status: batchv1.JobStatus{Failed: 1}}, nil)
+			},
+			expectedErr: errors.New("job my-job failed"),
+		},
+		{
+			name: "Error occurred",
+			mockFunc: func(jobInterface *command.MockJobInterface) {
+				jobInterface.GetFunc.PushReturn(nil, errors.New("failed"))
+			},
+			expectedErr: errors.New("retrieving job: failed"),
+		},
+		{
+			name: "Job succeeded second try",
+			mockFunc: func(jobInterface *command.MockJobInterface) {
+				jobInterface.GetFunc.PushReturn(&batchv1.Job{Status: batchv1.JobStatus{Active: 0, Succeeded: 0}}, nil)
+				jobInterface.GetFunc.PushReturn(&batchv1.Job{Status: batchv1.JobStatus{Active: 0, Succeeded: 1}}, nil)
+			},
+			mockAssertFunc: func(t *testing.T, jobInterface *command.MockJobInterface) {
+				require.Len(t, jobInterface.GetFunc.History(), 2)
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockKubeInterface := command.NewMockInterface()
+			mockBatchInterface := command.NewMockBatchV1Interface()
+			mockJobInterface := command.NewMockJobInterface()
+
+			mockKubeInterface.BatchV1Func.SetDefaultReturn(mockBatchInterface)
+			mockBatchInterface.JobsFunc.SetDefaultReturn(mockJobInterface)
+
+			if test.mockFunc != nil {
+				test.mockFunc(mockJobInterface)
+			}
+
+			cmd := &command.KubernetesCommand{
+				Logger:    logtest.Scoped(t),
+				Clientset: mockKubeInterface,
+			}
+
+			err := cmd.WaitForJobToComplete(context.Background(), "my-namespace", "my-job")
+			if test.expectedErr != nil {
+				require.Error(t, err)
+				assert.EqualError(t, err, test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
+			if test.mockAssertFunc != nil {
+				test.mockAssertFunc(t, mockJobInterface)
+			}
+		})
+	}
+}
+
 func TestNewKubernetesJob(t *testing.T) {
 	err := os.Setenv("KUBERNETES_SERVICE_HOST", "http://localhost")
 	require.NoError(t, err)

@@ -169,7 +169,7 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace 
 		} else if job.Status.Failed > 0 {
 			return errors.Newf("job %s failed", name)
 		} else {
-			time.Sleep(1 * time.Second)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 }
