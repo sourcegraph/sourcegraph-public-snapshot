@@ -2,12 +2,7 @@ import expect from 'expect'
 import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
-import {
-    NotAvailableReasonType,
-    SearchAggregationMode,
-    SharedGraphQlOperations,
-    SymbolKind,
-} from '@sourcegraph/shared/src/graphql-operations'
+import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import {
     commitHighlightResult,
     commitSearchStreamEvents,
@@ -64,19 +59,6 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     ...commonWebGraphQlResults,
     IsSearchContextAvailable: () => ({
         isSearchContextAvailable: true,
-    }),
-    GetSearchAggregation: () => ({
-        __typename: 'Query',
-        searchQueryAggregate: {
-            __typename: 'SearchQueryAggregate',
-            aggregations: {
-                __typename: 'SearchAggregationNotAvailable',
-                mode: SearchAggregationMode.REPO,
-                reason: '...',
-                reasonType: NotAvailableReasonType.OTHER_ERROR,
-            },
-            modeAvailability: [],
-        },
     }),
     SuggestionsRepo: () => ({
         __typename: 'Query',
@@ -285,7 +267,9 @@ describe('Search', () => {
                     const editor = await waitForInput(driver, queryInputSelector)
                     await editor.waitForIt()
                     await driver.page.waitForSelector('[data-testid="results-info-bar"]')
-                    expect(await editor.getValue()).toStrictEqual('foo')
+                    expect(await editor.getValue()).toStrictEqual(
+                        name === 'experimental-search-input' ? 'context:global foo' : 'foo'
+                    )
                     // Field value is cleared when navigating to a non search-related page
                     await driver.page.waitForSelector('a[href="/notebooks"]')
                     await driver.page.click('a[href="/notebooks"]')
@@ -295,7 +279,9 @@ describe('Search', () => {
                     await driver.page.goBack()
                     await editor.waitForIt()
                     await driver.page.waitForSelector('[data-testid="results-info-bar"]')
-                    expect(await editor.getValue()).toStrictEqual('foo')
+                    expect(await editor.getValue()).toStrictEqual(
+                        name === 'experimental-search-input' ? 'context:global foo' : 'foo'
+                    )
                 })
 
                 test('Normalizes input with line breaks', async () => {
@@ -303,7 +289,9 @@ describe('Search', () => {
                     const editor = await waitForInput(driver, queryInputSelector)
                     await editor.focus()
                     await driver.paste('foo\n\n\n\n\nbar')
-                    expect(await editor.getValue()).toBe('foo bar')
+                    expect(await editor.getValue()).toBe(
+                        name === 'experimental-search-input' ? 'context:global foo bar' : 'foo bar'
+                    )
                 })
             })
         })
