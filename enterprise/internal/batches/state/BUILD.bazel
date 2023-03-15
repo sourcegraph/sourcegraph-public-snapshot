@@ -34,6 +34,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "state_test",
     srcs = [
         "counts_test.go",

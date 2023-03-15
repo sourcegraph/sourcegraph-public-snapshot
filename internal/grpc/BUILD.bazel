@@ -22,6 +22,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "grpc_test",
     srcs = [
         "grpc_test.go",

@@ -26,6 +26,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "gitlab_test",
     srcs = [
         "common_test.go",

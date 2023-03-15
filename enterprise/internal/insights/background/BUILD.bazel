@@ -47,6 +47,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "background_test",
     srcs = [
         "data_prune_test.go",

@@ -28,6 +28,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "pipeline_test",
     srcs = ["backfill_test.go"],
     embed = [":pipeline"],

@@ -29,6 +29,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "insights_test",
     srcs = ["migrator_test.go"],
     data = glob(["testdata/**"]),

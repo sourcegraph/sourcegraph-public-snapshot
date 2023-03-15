@@ -30,6 +30,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "observation_test",
     srcs = [
         "snakecase_test.go",

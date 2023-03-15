@@ -19,6 +19,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "backfillv2_test",
     srcs = ["migrator_test.go"],
     embed = [":backfillv2"],

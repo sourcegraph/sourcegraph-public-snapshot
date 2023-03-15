@@ -17,6 +17,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "pypi_test",
     srcs = ["client_test.go"],
     data = glob(["testdata/**"]),

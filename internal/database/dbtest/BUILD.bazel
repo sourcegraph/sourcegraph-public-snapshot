@@ -18,6 +18,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "dbtest_test",
     srcs = ["dsn_test.go"],
     embed = [":dbtest"],

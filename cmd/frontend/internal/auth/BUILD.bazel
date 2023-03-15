@@ -15,6 +15,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "auth_test",
     srcs = [
         "config_test.go",

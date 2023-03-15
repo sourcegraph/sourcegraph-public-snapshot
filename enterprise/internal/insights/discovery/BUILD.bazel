@@ -26,6 +26,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "discovery_test",
     srcs = [
         "all_repos_iterator_test.go",

@@ -24,5 +24,6 @@ go_library(
 
 buf_lint_test(
     name = "v1_proto_lint",
+    timeout = "short",
     targets = [":v1_proto"],
 )

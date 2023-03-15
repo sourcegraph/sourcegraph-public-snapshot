@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "git_test",
     srcs = ["changes_test.go"],
     embed = [":git"],

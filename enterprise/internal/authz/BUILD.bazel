@@ -26,6 +26,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "authz_test",
     srcs = [
         "authz_test.go",

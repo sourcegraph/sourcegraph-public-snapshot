@@ -8,6 +8,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "streamio_test",
     srcs = ["streamio_test.go"],
     embed = [":streamio"],

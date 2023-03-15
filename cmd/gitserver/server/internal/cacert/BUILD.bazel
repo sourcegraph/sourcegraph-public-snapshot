@@ -14,6 +14,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "cacert_test",
     srcs = ["cacert_test.go"],
     deps = [":cacert"],

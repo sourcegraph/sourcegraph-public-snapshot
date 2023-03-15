@@ -20,6 +20,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "janitor_test",
     srcs = ["orphaned_vms_test.go"],
     embed = [":janitor"],

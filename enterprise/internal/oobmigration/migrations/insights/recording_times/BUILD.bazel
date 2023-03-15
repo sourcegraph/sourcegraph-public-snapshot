@@ -18,6 +18,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "recording_times_test",
     srcs = [
         "calculate_test.go",

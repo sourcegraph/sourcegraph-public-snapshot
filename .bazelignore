@@ -40,4 +40,3 @@ cmd/sitemap
 
 # temporary ignores
 internal/cmd/progress-bot
-client/cody

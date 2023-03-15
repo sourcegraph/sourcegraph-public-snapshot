@@ -15,6 +15,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "metrics_test",
     srcs = ["metrics_test.go"],
     embed = [":metrics"],

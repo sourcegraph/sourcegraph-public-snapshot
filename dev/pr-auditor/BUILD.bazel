@@ -25,6 +25,7 @@ go_binary(
 )
 
 go_test(
+    timeout = "short",
     name = "pr-auditor_test",
     srcs = [
         "check_test.go",
