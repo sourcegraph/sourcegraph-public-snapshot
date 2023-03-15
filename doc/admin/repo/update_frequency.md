@@ -11,19 +11,24 @@ After Sourcegraph has updated a repository's Git data, the global search index w
 ## Rate Limiting
 If you wish to control how frequently repositories are discovered or how frequently Sourcegraph polls your code host for updates, the following options are available:
 
-### Code host API requests
+### Limiting the number of Code host API requests
 
-- Code host config: Sourcegraph uses a configurable internal rate limiter for API requests made from Sourcegraph to [GitHub](../external_service/github.md#internal-rate-limits), [GitLab](../external_service/gitlab.md#internal-rate-limits), [Bitucket Server](../external_service/bitbucket_server.md#internal-rate-limits) and [Bitbucket Cloud](../external_service/bitbucket_cloud.md#internal-rate-limits). 
-All other code hosts that don't support explicitly setting the rate limit in the configuration, default to a rate limit of: [defaultRateLimit](../config/site_config.md#defaultRateLimit) requests per hour.
+- Code host configuration: Sourcegraph uses a configurable internal rate limiter for API requests made from Sourcegraph to:
+  - [GitHub](../external_service/github.md#internal-rate-limits)
+  - [GitLab](../external_service/gitlab.md#internal-rate-limits)
+  - [Bitucket Server](../external_service/bitbucket_server.md#internal-rate-limits)
+  - [Bitbucket Cloud](../external_service/bitbucket_cloud.md#internal-rate-limits) 
+  
+- All other code hosts that don't support explicitly setting the rate limit in the configuration, default to a rate limit of: [defaultRateLimit](../config/site_config.md#defaultRateLimit) requests per hour.
 
-- Site config: [repoListUpdateInterval](../config/site_config.md#repoListUpdateInterval) controls how frequently we check the code host _for new repositories_ in minutes.
+- Site configuration: [repoListUpdateInterval](../config/site_config.md#repoListUpdateInterval) controls how frequently we check the code host _for new repositories_ in minutes.
 
-**NOTE** Internal rate limiting is currently only enforced for syncing changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
+> NOTE: Internal rate limiting is currently only enforced for HTTP requests to code hosts. That means it's used when, for example, syncing changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
 
-### Code host SSH requests
+### Limiting the number of Code host Git requests
 
-- [gitMaxCodehostRequestsPerSecond](../config/site_config.md#gitMaxCodehostRequestsPerSecond) controls how many code host git operations can be run per second, per gitserver.
-- [gitMaxConcurrentClones](../config/site_config.md#gitMaxConcurrentClones) controls the maximum number of _concurrent_ cloning / pulling operations per gitserver that Sourcegraph will perform.
+- [gitMaxCodehostRequestsPerSecond](../config/site_config.md#gitMaxCodehostRequestsPerSecond) controls how many code host git operations can be run against a code host per second, per gitserver.
+- [gitMaxConcurrentClones](../config/site_config.md#gitMaxConcurrentClones) controls the maximum number of _concurrent_ cloning/pulling operations per gitserver that Sourcegraph will perform.
 
 You may also choose to disable automatic Git updates entirely and instead [configure repository webhooks](webhooks.md).
 
