@@ -12,6 +12,64 @@ import (
 
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
+	v119 "k8s.io/api/batch/v1"
+	v121 "k8s.io/api/core/v1"
+	v122 "k8s.io/api/policy/v1"
+	v1beta117 "k8s.io/api/policy/v1beta1"
+	v118 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types1 "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	v117 "k8s.io/client-go/applyconfigurations/batch/v1"
+	v120 "k8s.io/client-go/applyconfigurations/core/v1"
+	discovery "k8s.io/client-go/discovery"
+	kubernetes "k8s.io/client-go/kubernetes"
+	v1 "k8s.io/client-go/kubernetes/typed/admissionregistration/v1"
+	v1beta1 "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
+	v1alpha11 "k8s.io/client-go/kubernetes/typed/apiserverinternal/v1alpha1"
+	v11 "k8s.io/client-go/kubernetes/typed/apps/v1"
+	v1beta11 "k8s.io/client-go/kubernetes/typed/apps/v1beta1"
+	v1beta2 "k8s.io/client-go/kubernetes/typed/apps/v1beta2"
+	v12 "k8s.io/client-go/kubernetes/typed/authentication/v1"
+	v1beta12 "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
+	v13 "k8s.io/client-go/kubernetes/typed/authorization/v1"
+	v1beta13 "k8s.io/client-go/kubernetes/typed/authorization/v1beta1"
+	v14 "k8s.io/client-go/kubernetes/typed/autoscaling/v1"
+	v2 "k8s.io/client-go/kubernetes/typed/autoscaling/v2"
+	v2beta1 "k8s.io/client-go/kubernetes/typed/autoscaling/v2beta1"
+	v2beta2 "k8s.io/client-go/kubernetes/typed/autoscaling/v2beta2"
+	v15 "k8s.io/client-go/kubernetes/typed/batch/v1"
+	v1beta14 "k8s.io/client-go/kubernetes/typed/batch/v1beta1"
+	v16 "k8s.io/client-go/kubernetes/typed/certificates/v1"
+	v1beta15 "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
+	v17 "k8s.io/client-go/kubernetes/typed/coordination/v1"
+	v1beta16 "k8s.io/client-go/kubernetes/typed/coordination/v1beta1"
+	v18 "k8s.io/client-go/kubernetes/typed/core/v1"
+	v19 "k8s.io/client-go/kubernetes/typed/discovery/v1"
+	v1beta17 "k8s.io/client-go/kubernetes/typed/discovery/v1beta1"
+	v110 "k8s.io/client-go/kubernetes/typed/events/v1"
+	v1beta18 "k8s.io/client-go/kubernetes/typed/events/v1beta1"
+	v1beta19 "k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
+	v1alpha1 "k8s.io/client-go/kubernetes/typed/flowcontrol/v1alpha1"
+	v1beta110 "k8s.io/client-go/kubernetes/typed/flowcontrol/v1beta1"
+	v1beta21 "k8s.io/client-go/kubernetes/typed/flowcontrol/v1beta2"
+	v111 "k8s.io/client-go/kubernetes/typed/networking/v1"
+	v1alpha12 "k8s.io/client-go/kubernetes/typed/networking/v1alpha1"
+	v1beta111 "k8s.io/client-go/kubernetes/typed/networking/v1beta1"
+	v112 "k8s.io/client-go/kubernetes/typed/node/v1"
+	v1alpha13 "k8s.io/client-go/kubernetes/typed/node/v1alpha1"
+	v1beta112 "k8s.io/client-go/kubernetes/typed/node/v1beta1"
+	v113 "k8s.io/client-go/kubernetes/typed/policy/v1"
+	v1beta113 "k8s.io/client-go/kubernetes/typed/policy/v1beta1"
+	v114 "k8s.io/client-go/kubernetes/typed/rbac/v1"
+	v1alpha14 "k8s.io/client-go/kubernetes/typed/rbac/v1alpha1"
+	v1beta114 "k8s.io/client-go/kubernetes/typed/rbac/v1beta1"
+	v115 "k8s.io/client-go/kubernetes/typed/scheduling/v1"
+	v1alpha15 "k8s.io/client-go/kubernetes/typed/scheduling/v1alpha1"
+	v1beta115 "k8s.io/client-go/kubernetes/typed/scheduling/v1beta1"
+	v116 "k8s.io/client-go/kubernetes/typed/storage/v1"
+	v1alpha16 "k8s.io/client-go/kubernetes/typed/storage/v1alpha1"
+	v1beta116 "k8s.io/client-go/kubernetes/typed/storage/v1beta1"
+	rest "k8s.io/client-go/rest"
 )
 
 // MockCommand is a mock implementation of the Command interface (from the
@@ -1209,4 +1267,11581 @@ func (c LoggerLogEntryFuncCall) Args() []interface{} {
 // invocation.
 func (c LoggerLogEntryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// MockInterface is a mock implementation of the Interface interface (from
+// the package k8s.io/client-go/kubernetes) used for unit testing.
+type MockInterface struct {
+	// AdmissionregistrationV1Func is an instance of a mock function object
+	// controlling the behavior of the method AdmissionregistrationV1.
+	AdmissionregistrationV1Func *InterfaceAdmissionregistrationV1Func
+	// AdmissionregistrationV1beta1Func is an instance of a mock function
+	// object controlling the behavior of the method
+	// AdmissionregistrationV1beta1.
+	AdmissionregistrationV1beta1Func *InterfaceAdmissionregistrationV1beta1Func
+	// AppsV1Func is an instance of a mock function object controlling the
+	// behavior of the method AppsV1.
+	AppsV1Func *InterfaceAppsV1Func
+	// AppsV1beta1Func is an instance of a mock function object controlling
+	// the behavior of the method AppsV1beta1.
+	AppsV1beta1Func *InterfaceAppsV1beta1Func
+	// AppsV1beta2Func is an instance of a mock function object controlling
+	// the behavior of the method AppsV1beta2.
+	AppsV1beta2Func *InterfaceAppsV1beta2Func
+	// AuthenticationV1Func is an instance of a mock function object
+	// controlling the behavior of the method AuthenticationV1.
+	AuthenticationV1Func *InterfaceAuthenticationV1Func
+	// AuthenticationV1beta1Func is an instance of a mock function object
+	// controlling the behavior of the method AuthenticationV1beta1.
+	AuthenticationV1beta1Func *InterfaceAuthenticationV1beta1Func
+	// AuthorizationV1Func is an instance of a mock function object
+	// controlling the behavior of the method AuthorizationV1.
+	AuthorizationV1Func *InterfaceAuthorizationV1Func
+	// AuthorizationV1beta1Func is an instance of a mock function object
+	// controlling the behavior of the method AuthorizationV1beta1.
+	AuthorizationV1beta1Func *InterfaceAuthorizationV1beta1Func
+	// AutoscalingV1Func is an instance of a mock function object
+	// controlling the behavior of the method AutoscalingV1.
+	AutoscalingV1Func *InterfaceAutoscalingV1Func
+	// AutoscalingV2Func is an instance of a mock function object
+	// controlling the behavior of the method AutoscalingV2.
+	AutoscalingV2Func *InterfaceAutoscalingV2Func
+	// AutoscalingV2beta1Func is an instance of a mock function object
+	// controlling the behavior of the method AutoscalingV2beta1.
+	AutoscalingV2beta1Func *InterfaceAutoscalingV2beta1Func
+	// AutoscalingV2beta2Func is an instance of a mock function object
+	// controlling the behavior of the method AutoscalingV2beta2.
+	AutoscalingV2beta2Func *InterfaceAutoscalingV2beta2Func
+	// BatchV1Func is an instance of a mock function object controlling the
+	// behavior of the method BatchV1.
+	BatchV1Func *InterfaceBatchV1Func
+	// BatchV1beta1Func is an instance of a mock function object controlling
+	// the behavior of the method BatchV1beta1.
+	BatchV1beta1Func *InterfaceBatchV1beta1Func
+	// CertificatesV1Func is an instance of a mock function object
+	// controlling the behavior of the method CertificatesV1.
+	CertificatesV1Func *InterfaceCertificatesV1Func
+	// CertificatesV1beta1Func is an instance of a mock function object
+	// controlling the behavior of the method CertificatesV1beta1.
+	CertificatesV1beta1Func *InterfaceCertificatesV1beta1Func
+	// CoordinationV1Func is an instance of a mock function object
+	// controlling the behavior of the method CoordinationV1.
+	CoordinationV1Func *InterfaceCoordinationV1Func
+	// CoordinationV1beta1Func is an instance of a mock function object
+	// controlling the behavior of the method CoordinationV1beta1.
+	CoordinationV1beta1Func *InterfaceCoordinationV1beta1Func
+	// CoreV1Func is an instance of a mock function object controlling the
+	// behavior of the method CoreV1.
+	CoreV1Func *InterfaceCoreV1Func
+	// DiscoveryFunc is an instance of a mock function object controlling
+	// the behavior of the method Discovery.
+	DiscoveryFunc *InterfaceDiscoveryFunc
+	// DiscoveryV1Func is an instance of a mock function object controlling
+	// the behavior of the method DiscoveryV1.
+	DiscoveryV1Func *InterfaceDiscoveryV1Func
+	// DiscoveryV1beta1Func is an instance of a mock function object
+	// controlling the behavior of the method DiscoveryV1beta1.
+	DiscoveryV1beta1Func *InterfaceDiscoveryV1beta1Func
+	// EventsV1Func is an instance of a mock function object controlling the
+	// behavior of the method EventsV1.
+	EventsV1Func *InterfaceEventsV1Func
+	// EventsV1beta1Func is an instance of a mock function object
+	// controlling the behavior of the method EventsV1beta1.
+	EventsV1beta1Func *InterfaceEventsV1beta1Func
+	// ExtensionsV1beta1Func is an instance of a mock function object
+	// controlling the behavior of the method ExtensionsV1beta1.
+	ExtensionsV1beta1Func *InterfaceExtensionsV1beta1Func
+	// FlowcontrolV1alpha1Func is an instance of a mock function object
+	// controlling the behavior of the method FlowcontrolV1alpha1.
+	FlowcontrolV1alpha1Func *InterfaceFlowcontrolV1alpha1Func
+	// FlowcontrolV1beta1Func is an instance of a mock function object
+	// controlling the behavior of the method FlowcontrolV1beta1.
+	FlowcontrolV1beta1Func *InterfaceFlowcontrolV1beta1Func
+	// FlowcontrolV1beta2Func is an instance of a mock function object
+	// controlling the behavior of the method FlowcontrolV1beta2.
+	FlowcontrolV1beta2Func *InterfaceFlowcontrolV1beta2Func
+	// InternalV1alpha1Func is an instance of a mock function object
+	// controlling the behavior of the method InternalV1alpha1.
+	InternalV1alpha1Func *InterfaceInternalV1alpha1Func
+	// NetworkingV1Func is an instance of a mock function object controlling
+	// the behavior of the method NetworkingV1.
+	NetworkingV1Func *InterfaceNetworkingV1Func
+	// NetworkingV1alpha1Func is an instance of a mock function object
+	// controlling the behavior of the method NetworkingV1alpha1.
+	NetworkingV1alpha1Func *InterfaceNetworkingV1alpha1Func
+	// NetworkingV1beta1Func is an instance of a mock function object
+	// controlling the behavior of the method NetworkingV1beta1.
+	NetworkingV1beta1Func *InterfaceNetworkingV1beta1Func
+	// NodeV1Func is an instance of a mock function object controlling the
+	// behavior of the method NodeV1.
+	NodeV1Func *InterfaceNodeV1Func
+	// NodeV1alpha1Func is an instance of a mock function object controlling
+	// the behavior of the method NodeV1alpha1.
+	NodeV1alpha1Func *InterfaceNodeV1alpha1Func
+	// NodeV1beta1Func is an instance of a mock function object controlling
+	// the behavior of the method NodeV1beta1.
+	NodeV1beta1Func *InterfaceNodeV1beta1Func
+	// PolicyV1Func is an instance of a mock function object controlling the
+	// behavior of the method PolicyV1.
+	PolicyV1Func *InterfacePolicyV1Func
+	// PolicyV1beta1Func is an instance of a mock function object
+	// controlling the behavior of the method PolicyV1beta1.
+	PolicyV1beta1Func *InterfacePolicyV1beta1Func
+	// RbacV1Func is an instance of a mock function object controlling the
+	// behavior of the method RbacV1.
+	RbacV1Func *InterfaceRbacV1Func
+	// RbacV1alpha1Func is an instance of a mock function object controlling
+	// the behavior of the method RbacV1alpha1.
+	RbacV1alpha1Func *InterfaceRbacV1alpha1Func
+	// RbacV1beta1Func is an instance of a mock function object controlling
+	// the behavior of the method RbacV1beta1.
+	RbacV1beta1Func *InterfaceRbacV1beta1Func
+	// SchedulingV1Func is an instance of a mock function object controlling
+	// the behavior of the method SchedulingV1.
+	SchedulingV1Func *InterfaceSchedulingV1Func
+	// SchedulingV1alpha1Func is an instance of a mock function object
+	// controlling the behavior of the method SchedulingV1alpha1.
+	SchedulingV1alpha1Func *InterfaceSchedulingV1alpha1Func
+	// SchedulingV1beta1Func is an instance of a mock function object
+	// controlling the behavior of the method SchedulingV1beta1.
+	SchedulingV1beta1Func *InterfaceSchedulingV1beta1Func
+	// StorageV1Func is an instance of a mock function object controlling
+	// the behavior of the method StorageV1.
+	StorageV1Func *InterfaceStorageV1Func
+	// StorageV1alpha1Func is an instance of a mock function object
+	// controlling the behavior of the method StorageV1alpha1.
+	StorageV1alpha1Func *InterfaceStorageV1alpha1Func
+	// StorageV1beta1Func is an instance of a mock function object
+	// controlling the behavior of the method StorageV1beta1.
+	StorageV1beta1Func *InterfaceStorageV1beta1Func
+}
+
+// NewMockInterface creates a new mock of the Interface interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockInterface() *MockInterface {
+	return &MockInterface{
+		AdmissionregistrationV1Func: &InterfaceAdmissionregistrationV1Func{
+			defaultHook: func() (r0 v1.AdmissionregistrationV1Interface) {
+				return
+			},
+		},
+		AdmissionregistrationV1beta1Func: &InterfaceAdmissionregistrationV1beta1Func{
+			defaultHook: func() (r0 v1beta1.AdmissionregistrationV1beta1Interface) {
+				return
+			},
+		},
+		AppsV1Func: &InterfaceAppsV1Func{
+			defaultHook: func() (r0 v11.AppsV1Interface) {
+				return
+			},
+		},
+		AppsV1beta1Func: &InterfaceAppsV1beta1Func{
+			defaultHook: func() (r0 v1beta11.AppsV1beta1Interface) {
+				return
+			},
+		},
+		AppsV1beta2Func: &InterfaceAppsV1beta2Func{
+			defaultHook: func() (r0 v1beta2.AppsV1beta2Interface) {
+				return
+			},
+		},
+		AuthenticationV1Func: &InterfaceAuthenticationV1Func{
+			defaultHook: func() (r0 v12.AuthenticationV1Interface) {
+				return
+			},
+		},
+		AuthenticationV1beta1Func: &InterfaceAuthenticationV1beta1Func{
+			defaultHook: func() (r0 v1beta12.AuthenticationV1beta1Interface) {
+				return
+			},
+		},
+		AuthorizationV1Func: &InterfaceAuthorizationV1Func{
+			defaultHook: func() (r0 v13.AuthorizationV1Interface) {
+				return
+			},
+		},
+		AuthorizationV1beta1Func: &InterfaceAuthorizationV1beta1Func{
+			defaultHook: func() (r0 v1beta13.AuthorizationV1beta1Interface) {
+				return
+			},
+		},
+		AutoscalingV1Func: &InterfaceAutoscalingV1Func{
+			defaultHook: func() (r0 v14.AutoscalingV1Interface) {
+				return
+			},
+		},
+		AutoscalingV2Func: &InterfaceAutoscalingV2Func{
+			defaultHook: func() (r0 v2.AutoscalingV2Interface) {
+				return
+			},
+		},
+		AutoscalingV2beta1Func: &InterfaceAutoscalingV2beta1Func{
+			defaultHook: func() (r0 v2beta1.AutoscalingV2beta1Interface) {
+				return
+			},
+		},
+		AutoscalingV2beta2Func: &InterfaceAutoscalingV2beta2Func{
+			defaultHook: func() (r0 v2beta2.AutoscalingV2beta2Interface) {
+				return
+			},
+		},
+		BatchV1Func: &InterfaceBatchV1Func{
+			defaultHook: func() (r0 v15.BatchV1Interface) {
+				return
+			},
+		},
+		BatchV1beta1Func: &InterfaceBatchV1beta1Func{
+			defaultHook: func() (r0 v1beta14.BatchV1beta1Interface) {
+				return
+			},
+		},
+		CertificatesV1Func: &InterfaceCertificatesV1Func{
+			defaultHook: func() (r0 v16.CertificatesV1Interface) {
+				return
+			},
+		},
+		CertificatesV1beta1Func: &InterfaceCertificatesV1beta1Func{
+			defaultHook: func() (r0 v1beta15.CertificatesV1beta1Interface) {
+				return
+			},
+		},
+		CoordinationV1Func: &InterfaceCoordinationV1Func{
+			defaultHook: func() (r0 v17.CoordinationV1Interface) {
+				return
+			},
+		},
+		CoordinationV1beta1Func: &InterfaceCoordinationV1beta1Func{
+			defaultHook: func() (r0 v1beta16.CoordinationV1beta1Interface) {
+				return
+			},
+		},
+		CoreV1Func: &InterfaceCoreV1Func{
+			defaultHook: func() (r0 v18.CoreV1Interface) {
+				return
+			},
+		},
+		DiscoveryFunc: &InterfaceDiscoveryFunc{
+			defaultHook: func() (r0 discovery.DiscoveryInterface) {
+				return
+			},
+		},
+		DiscoveryV1Func: &InterfaceDiscoveryV1Func{
+			defaultHook: func() (r0 v19.DiscoveryV1Interface) {
+				return
+			},
+		},
+		DiscoveryV1beta1Func: &InterfaceDiscoveryV1beta1Func{
+			defaultHook: func() (r0 v1beta17.DiscoveryV1beta1Interface) {
+				return
+			},
+		},
+		EventsV1Func: &InterfaceEventsV1Func{
+			defaultHook: func() (r0 v110.EventsV1Interface) {
+				return
+			},
+		},
+		EventsV1beta1Func: &InterfaceEventsV1beta1Func{
+			defaultHook: func() (r0 v1beta18.EventsV1beta1Interface) {
+				return
+			},
+		},
+		ExtensionsV1beta1Func: &InterfaceExtensionsV1beta1Func{
+			defaultHook: func() (r0 v1beta19.ExtensionsV1beta1Interface) {
+				return
+			},
+		},
+		FlowcontrolV1alpha1Func: &InterfaceFlowcontrolV1alpha1Func{
+			defaultHook: func() (r0 v1alpha1.FlowcontrolV1alpha1Interface) {
+				return
+			},
+		},
+		FlowcontrolV1beta1Func: &InterfaceFlowcontrolV1beta1Func{
+			defaultHook: func() (r0 v1beta110.FlowcontrolV1beta1Interface) {
+				return
+			},
+		},
+		FlowcontrolV1beta2Func: &InterfaceFlowcontrolV1beta2Func{
+			defaultHook: func() (r0 v1beta21.FlowcontrolV1beta2Interface) {
+				return
+			},
+		},
+		InternalV1alpha1Func: &InterfaceInternalV1alpha1Func{
+			defaultHook: func() (r0 v1alpha11.InternalV1alpha1Interface) {
+				return
+			},
+		},
+		NetworkingV1Func: &InterfaceNetworkingV1Func{
+			defaultHook: func() (r0 v111.NetworkingV1Interface) {
+				return
+			},
+		},
+		NetworkingV1alpha1Func: &InterfaceNetworkingV1alpha1Func{
+			defaultHook: func() (r0 v1alpha12.NetworkingV1alpha1Interface) {
+				return
+			},
+		},
+		NetworkingV1beta1Func: &InterfaceNetworkingV1beta1Func{
+			defaultHook: func() (r0 v1beta111.NetworkingV1beta1Interface) {
+				return
+			},
+		},
+		NodeV1Func: &InterfaceNodeV1Func{
+			defaultHook: func() (r0 v112.NodeV1Interface) {
+				return
+			},
+		},
+		NodeV1alpha1Func: &InterfaceNodeV1alpha1Func{
+			defaultHook: func() (r0 v1alpha13.NodeV1alpha1Interface) {
+				return
+			},
+		},
+		NodeV1beta1Func: &InterfaceNodeV1beta1Func{
+			defaultHook: func() (r0 v1beta112.NodeV1beta1Interface) {
+				return
+			},
+		},
+		PolicyV1Func: &InterfacePolicyV1Func{
+			defaultHook: func() (r0 v113.PolicyV1Interface) {
+				return
+			},
+		},
+		PolicyV1beta1Func: &InterfacePolicyV1beta1Func{
+			defaultHook: func() (r0 v1beta113.PolicyV1beta1Interface) {
+				return
+			},
+		},
+		RbacV1Func: &InterfaceRbacV1Func{
+			defaultHook: func() (r0 v114.RbacV1Interface) {
+				return
+			},
+		},
+		RbacV1alpha1Func: &InterfaceRbacV1alpha1Func{
+			defaultHook: func() (r0 v1alpha14.RbacV1alpha1Interface) {
+				return
+			},
+		},
+		RbacV1beta1Func: &InterfaceRbacV1beta1Func{
+			defaultHook: func() (r0 v1beta114.RbacV1beta1Interface) {
+				return
+			},
+		},
+		SchedulingV1Func: &InterfaceSchedulingV1Func{
+			defaultHook: func() (r0 v115.SchedulingV1Interface) {
+				return
+			},
+		},
+		SchedulingV1alpha1Func: &InterfaceSchedulingV1alpha1Func{
+			defaultHook: func() (r0 v1alpha15.SchedulingV1alpha1Interface) {
+				return
+			},
+		},
+		SchedulingV1beta1Func: &InterfaceSchedulingV1beta1Func{
+			defaultHook: func() (r0 v1beta115.SchedulingV1beta1Interface) {
+				return
+			},
+		},
+		StorageV1Func: &InterfaceStorageV1Func{
+			defaultHook: func() (r0 v116.StorageV1Interface) {
+				return
+			},
+		},
+		StorageV1alpha1Func: &InterfaceStorageV1alpha1Func{
+			defaultHook: func() (r0 v1alpha16.StorageV1alpha1Interface) {
+				return
+			},
+		},
+		StorageV1beta1Func: &InterfaceStorageV1beta1Func{
+			defaultHook: func() (r0 v1beta116.StorageV1beta1Interface) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockInterface creates a new mock of the Interface interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockInterface() *MockInterface {
+	return &MockInterface{
+		AdmissionregistrationV1Func: &InterfaceAdmissionregistrationV1Func{
+			defaultHook: func() v1.AdmissionregistrationV1Interface {
+				panic("unexpected invocation of MockInterface.AdmissionregistrationV1")
+			},
+		},
+		AdmissionregistrationV1beta1Func: &InterfaceAdmissionregistrationV1beta1Func{
+			defaultHook: func() v1beta1.AdmissionregistrationV1beta1Interface {
+				panic("unexpected invocation of MockInterface.AdmissionregistrationV1beta1")
+			},
+		},
+		AppsV1Func: &InterfaceAppsV1Func{
+			defaultHook: func() v11.AppsV1Interface {
+				panic("unexpected invocation of MockInterface.AppsV1")
+			},
+		},
+		AppsV1beta1Func: &InterfaceAppsV1beta1Func{
+			defaultHook: func() v1beta11.AppsV1beta1Interface {
+				panic("unexpected invocation of MockInterface.AppsV1beta1")
+			},
+		},
+		AppsV1beta2Func: &InterfaceAppsV1beta2Func{
+			defaultHook: func() v1beta2.AppsV1beta2Interface {
+				panic("unexpected invocation of MockInterface.AppsV1beta2")
+			},
+		},
+		AuthenticationV1Func: &InterfaceAuthenticationV1Func{
+			defaultHook: func() v12.AuthenticationV1Interface {
+				panic("unexpected invocation of MockInterface.AuthenticationV1")
+			},
+		},
+		AuthenticationV1beta1Func: &InterfaceAuthenticationV1beta1Func{
+			defaultHook: func() v1beta12.AuthenticationV1beta1Interface {
+				panic("unexpected invocation of MockInterface.AuthenticationV1beta1")
+			},
+		},
+		AuthorizationV1Func: &InterfaceAuthorizationV1Func{
+			defaultHook: func() v13.AuthorizationV1Interface {
+				panic("unexpected invocation of MockInterface.AuthorizationV1")
+			},
+		},
+		AuthorizationV1beta1Func: &InterfaceAuthorizationV1beta1Func{
+			defaultHook: func() v1beta13.AuthorizationV1beta1Interface {
+				panic("unexpected invocation of MockInterface.AuthorizationV1beta1")
+			},
+		},
+		AutoscalingV1Func: &InterfaceAutoscalingV1Func{
+			defaultHook: func() v14.AutoscalingV1Interface {
+				panic("unexpected invocation of MockInterface.AutoscalingV1")
+			},
+		},
+		AutoscalingV2Func: &InterfaceAutoscalingV2Func{
+			defaultHook: func() v2.AutoscalingV2Interface {
+				panic("unexpected invocation of MockInterface.AutoscalingV2")
+			},
+		},
+		AutoscalingV2beta1Func: &InterfaceAutoscalingV2beta1Func{
+			defaultHook: func() v2beta1.AutoscalingV2beta1Interface {
+				panic("unexpected invocation of MockInterface.AutoscalingV2beta1")
+			},
+		},
+		AutoscalingV2beta2Func: &InterfaceAutoscalingV2beta2Func{
+			defaultHook: func() v2beta2.AutoscalingV2beta2Interface {
+				panic("unexpected invocation of MockInterface.AutoscalingV2beta2")
+			},
+		},
+		BatchV1Func: &InterfaceBatchV1Func{
+			defaultHook: func() v15.BatchV1Interface {
+				panic("unexpected invocation of MockInterface.BatchV1")
+			},
+		},
+		BatchV1beta1Func: &InterfaceBatchV1beta1Func{
+			defaultHook: func() v1beta14.BatchV1beta1Interface {
+				panic("unexpected invocation of MockInterface.BatchV1beta1")
+			},
+		},
+		CertificatesV1Func: &InterfaceCertificatesV1Func{
+			defaultHook: func() v16.CertificatesV1Interface {
+				panic("unexpected invocation of MockInterface.CertificatesV1")
+			},
+		},
+		CertificatesV1beta1Func: &InterfaceCertificatesV1beta1Func{
+			defaultHook: func() v1beta15.CertificatesV1beta1Interface {
+				panic("unexpected invocation of MockInterface.CertificatesV1beta1")
+			},
+		},
+		CoordinationV1Func: &InterfaceCoordinationV1Func{
+			defaultHook: func() v17.CoordinationV1Interface {
+				panic("unexpected invocation of MockInterface.CoordinationV1")
+			},
+		},
+		CoordinationV1beta1Func: &InterfaceCoordinationV1beta1Func{
+			defaultHook: func() v1beta16.CoordinationV1beta1Interface {
+				panic("unexpected invocation of MockInterface.CoordinationV1beta1")
+			},
+		},
+		CoreV1Func: &InterfaceCoreV1Func{
+			defaultHook: func() v18.CoreV1Interface {
+				panic("unexpected invocation of MockInterface.CoreV1")
+			},
+		},
+		DiscoveryFunc: &InterfaceDiscoveryFunc{
+			defaultHook: func() discovery.DiscoveryInterface {
+				panic("unexpected invocation of MockInterface.Discovery")
+			},
+		},
+		DiscoveryV1Func: &InterfaceDiscoveryV1Func{
+			defaultHook: func() v19.DiscoveryV1Interface {
+				panic("unexpected invocation of MockInterface.DiscoveryV1")
+			},
+		},
+		DiscoveryV1beta1Func: &InterfaceDiscoveryV1beta1Func{
+			defaultHook: func() v1beta17.DiscoveryV1beta1Interface {
+				panic("unexpected invocation of MockInterface.DiscoveryV1beta1")
+			},
+		},
+		EventsV1Func: &InterfaceEventsV1Func{
+			defaultHook: func() v110.EventsV1Interface {
+				panic("unexpected invocation of MockInterface.EventsV1")
+			},
+		},
+		EventsV1beta1Func: &InterfaceEventsV1beta1Func{
+			defaultHook: func() v1beta18.EventsV1beta1Interface {
+				panic("unexpected invocation of MockInterface.EventsV1beta1")
+			},
+		},
+		ExtensionsV1beta1Func: &InterfaceExtensionsV1beta1Func{
+			defaultHook: func() v1beta19.ExtensionsV1beta1Interface {
+				panic("unexpected invocation of MockInterface.ExtensionsV1beta1")
+			},
+		},
+		FlowcontrolV1alpha1Func: &InterfaceFlowcontrolV1alpha1Func{
+			defaultHook: func() v1alpha1.FlowcontrolV1alpha1Interface {
+				panic("unexpected invocation of MockInterface.FlowcontrolV1alpha1")
+			},
+		},
+		FlowcontrolV1beta1Func: &InterfaceFlowcontrolV1beta1Func{
+			defaultHook: func() v1beta110.FlowcontrolV1beta1Interface {
+				panic("unexpected invocation of MockInterface.FlowcontrolV1beta1")
+			},
+		},
+		FlowcontrolV1beta2Func: &InterfaceFlowcontrolV1beta2Func{
+			defaultHook: func() v1beta21.FlowcontrolV1beta2Interface {
+				panic("unexpected invocation of MockInterface.FlowcontrolV1beta2")
+			},
+		},
+		InternalV1alpha1Func: &InterfaceInternalV1alpha1Func{
+			defaultHook: func() v1alpha11.InternalV1alpha1Interface {
+				panic("unexpected invocation of MockInterface.InternalV1alpha1")
+			},
+		},
+		NetworkingV1Func: &InterfaceNetworkingV1Func{
+			defaultHook: func() v111.NetworkingV1Interface {
+				panic("unexpected invocation of MockInterface.NetworkingV1")
+			},
+		},
+		NetworkingV1alpha1Func: &InterfaceNetworkingV1alpha1Func{
+			defaultHook: func() v1alpha12.NetworkingV1alpha1Interface {
+				panic("unexpected invocation of MockInterface.NetworkingV1alpha1")
+			},
+		},
+		NetworkingV1beta1Func: &InterfaceNetworkingV1beta1Func{
+			defaultHook: func() v1beta111.NetworkingV1beta1Interface {
+				panic("unexpected invocation of MockInterface.NetworkingV1beta1")
+			},
+		},
+		NodeV1Func: &InterfaceNodeV1Func{
+			defaultHook: func() v112.NodeV1Interface {
+				panic("unexpected invocation of MockInterface.NodeV1")
+			},
+		},
+		NodeV1alpha1Func: &InterfaceNodeV1alpha1Func{
+			defaultHook: func() v1alpha13.NodeV1alpha1Interface {
+				panic("unexpected invocation of MockInterface.NodeV1alpha1")
+			},
+		},
+		NodeV1beta1Func: &InterfaceNodeV1beta1Func{
+			defaultHook: func() v1beta112.NodeV1beta1Interface {
+				panic("unexpected invocation of MockInterface.NodeV1beta1")
+			},
+		},
+		PolicyV1Func: &InterfacePolicyV1Func{
+			defaultHook: func() v113.PolicyV1Interface {
+				panic("unexpected invocation of MockInterface.PolicyV1")
+			},
+		},
+		PolicyV1beta1Func: &InterfacePolicyV1beta1Func{
+			defaultHook: func() v1beta113.PolicyV1beta1Interface {
+				panic("unexpected invocation of MockInterface.PolicyV1beta1")
+			},
+		},
+		RbacV1Func: &InterfaceRbacV1Func{
+			defaultHook: func() v114.RbacV1Interface {
+				panic("unexpected invocation of MockInterface.RbacV1")
+			},
+		},
+		RbacV1alpha1Func: &InterfaceRbacV1alpha1Func{
+			defaultHook: func() v1alpha14.RbacV1alpha1Interface {
+				panic("unexpected invocation of MockInterface.RbacV1alpha1")
+			},
+		},
+		RbacV1beta1Func: &InterfaceRbacV1beta1Func{
+			defaultHook: func() v1beta114.RbacV1beta1Interface {
+				panic("unexpected invocation of MockInterface.RbacV1beta1")
+			},
+		},
+		SchedulingV1Func: &InterfaceSchedulingV1Func{
+			defaultHook: func() v115.SchedulingV1Interface {
+				panic("unexpected invocation of MockInterface.SchedulingV1")
+			},
+		},
+		SchedulingV1alpha1Func: &InterfaceSchedulingV1alpha1Func{
+			defaultHook: func() v1alpha15.SchedulingV1alpha1Interface {
+				panic("unexpected invocation of MockInterface.SchedulingV1alpha1")
+			},
+		},
+		SchedulingV1beta1Func: &InterfaceSchedulingV1beta1Func{
+			defaultHook: func() v1beta115.SchedulingV1beta1Interface {
+				panic("unexpected invocation of MockInterface.SchedulingV1beta1")
+			},
+		},
+		StorageV1Func: &InterfaceStorageV1Func{
+			defaultHook: func() v116.StorageV1Interface {
+				panic("unexpected invocation of MockInterface.StorageV1")
+			},
+		},
+		StorageV1alpha1Func: &InterfaceStorageV1alpha1Func{
+			defaultHook: func() v1alpha16.StorageV1alpha1Interface {
+				panic("unexpected invocation of MockInterface.StorageV1alpha1")
+			},
+		},
+		StorageV1beta1Func: &InterfaceStorageV1beta1Func{
+			defaultHook: func() v1beta116.StorageV1beta1Interface {
+				panic("unexpected invocation of MockInterface.StorageV1beta1")
+			},
+		},
+	}
+}
+
+// NewMockInterfaceFrom creates a new mock of the MockInterface interface.
+// All methods delegate to the given implementation, unless overwritten.
+func NewMockInterfaceFrom(i kubernetes.Interface) *MockInterface {
+	return &MockInterface{
+		AdmissionregistrationV1Func: &InterfaceAdmissionregistrationV1Func{
+			defaultHook: i.AdmissionregistrationV1,
+		},
+		AdmissionregistrationV1beta1Func: &InterfaceAdmissionregistrationV1beta1Func{
+			defaultHook: i.AdmissionregistrationV1beta1,
+		},
+		AppsV1Func: &InterfaceAppsV1Func{
+			defaultHook: i.AppsV1,
+		},
+		AppsV1beta1Func: &InterfaceAppsV1beta1Func{
+			defaultHook: i.AppsV1beta1,
+		},
+		AppsV1beta2Func: &InterfaceAppsV1beta2Func{
+			defaultHook: i.AppsV1beta2,
+		},
+		AuthenticationV1Func: &InterfaceAuthenticationV1Func{
+			defaultHook: i.AuthenticationV1,
+		},
+		AuthenticationV1beta1Func: &InterfaceAuthenticationV1beta1Func{
+			defaultHook: i.AuthenticationV1beta1,
+		},
+		AuthorizationV1Func: &InterfaceAuthorizationV1Func{
+			defaultHook: i.AuthorizationV1,
+		},
+		AuthorizationV1beta1Func: &InterfaceAuthorizationV1beta1Func{
+			defaultHook: i.AuthorizationV1beta1,
+		},
+		AutoscalingV1Func: &InterfaceAutoscalingV1Func{
+			defaultHook: i.AutoscalingV1,
+		},
+		AutoscalingV2Func: &InterfaceAutoscalingV2Func{
+			defaultHook: i.AutoscalingV2,
+		},
+		AutoscalingV2beta1Func: &InterfaceAutoscalingV2beta1Func{
+			defaultHook: i.AutoscalingV2beta1,
+		},
+		AutoscalingV2beta2Func: &InterfaceAutoscalingV2beta2Func{
+			defaultHook: i.AutoscalingV2beta2,
+		},
+		BatchV1Func: &InterfaceBatchV1Func{
+			defaultHook: i.BatchV1,
+		},
+		BatchV1beta1Func: &InterfaceBatchV1beta1Func{
+			defaultHook: i.BatchV1beta1,
+		},
+		CertificatesV1Func: &InterfaceCertificatesV1Func{
+			defaultHook: i.CertificatesV1,
+		},
+		CertificatesV1beta1Func: &InterfaceCertificatesV1beta1Func{
+			defaultHook: i.CertificatesV1beta1,
+		},
+		CoordinationV1Func: &InterfaceCoordinationV1Func{
+			defaultHook: i.CoordinationV1,
+		},
+		CoordinationV1beta1Func: &InterfaceCoordinationV1beta1Func{
+			defaultHook: i.CoordinationV1beta1,
+		},
+		CoreV1Func: &InterfaceCoreV1Func{
+			defaultHook: i.CoreV1,
+		},
+		DiscoveryFunc: &InterfaceDiscoveryFunc{
+			defaultHook: i.Discovery,
+		},
+		DiscoveryV1Func: &InterfaceDiscoveryV1Func{
+			defaultHook: i.DiscoveryV1,
+		},
+		DiscoveryV1beta1Func: &InterfaceDiscoveryV1beta1Func{
+			defaultHook: i.DiscoveryV1beta1,
+		},
+		EventsV1Func: &InterfaceEventsV1Func{
+			defaultHook: i.EventsV1,
+		},
+		EventsV1beta1Func: &InterfaceEventsV1beta1Func{
+			defaultHook: i.EventsV1beta1,
+		},
+		ExtensionsV1beta1Func: &InterfaceExtensionsV1beta1Func{
+			defaultHook: i.ExtensionsV1beta1,
+		},
+		FlowcontrolV1alpha1Func: &InterfaceFlowcontrolV1alpha1Func{
+			defaultHook: i.FlowcontrolV1alpha1,
+		},
+		FlowcontrolV1beta1Func: &InterfaceFlowcontrolV1beta1Func{
+			defaultHook: i.FlowcontrolV1beta1,
+		},
+		FlowcontrolV1beta2Func: &InterfaceFlowcontrolV1beta2Func{
+			defaultHook: i.FlowcontrolV1beta2,
+		},
+		InternalV1alpha1Func: &InterfaceInternalV1alpha1Func{
+			defaultHook: i.InternalV1alpha1,
+		},
+		NetworkingV1Func: &InterfaceNetworkingV1Func{
+			defaultHook: i.NetworkingV1,
+		},
+		NetworkingV1alpha1Func: &InterfaceNetworkingV1alpha1Func{
+			defaultHook: i.NetworkingV1alpha1,
+		},
+		NetworkingV1beta1Func: &InterfaceNetworkingV1beta1Func{
+			defaultHook: i.NetworkingV1beta1,
+		},
+		NodeV1Func: &InterfaceNodeV1Func{
+			defaultHook: i.NodeV1,
+		},
+		NodeV1alpha1Func: &InterfaceNodeV1alpha1Func{
+			defaultHook: i.NodeV1alpha1,
+		},
+		NodeV1beta1Func: &InterfaceNodeV1beta1Func{
+			defaultHook: i.NodeV1beta1,
+		},
+		PolicyV1Func: &InterfacePolicyV1Func{
+			defaultHook: i.PolicyV1,
+		},
+		PolicyV1beta1Func: &InterfacePolicyV1beta1Func{
+			defaultHook: i.PolicyV1beta1,
+		},
+		RbacV1Func: &InterfaceRbacV1Func{
+			defaultHook: i.RbacV1,
+		},
+		RbacV1alpha1Func: &InterfaceRbacV1alpha1Func{
+			defaultHook: i.RbacV1alpha1,
+		},
+		RbacV1beta1Func: &InterfaceRbacV1beta1Func{
+			defaultHook: i.RbacV1beta1,
+		},
+		SchedulingV1Func: &InterfaceSchedulingV1Func{
+			defaultHook: i.SchedulingV1,
+		},
+		SchedulingV1alpha1Func: &InterfaceSchedulingV1alpha1Func{
+			defaultHook: i.SchedulingV1alpha1,
+		},
+		SchedulingV1beta1Func: &InterfaceSchedulingV1beta1Func{
+			defaultHook: i.SchedulingV1beta1,
+		},
+		StorageV1Func: &InterfaceStorageV1Func{
+			defaultHook: i.StorageV1,
+		},
+		StorageV1alpha1Func: &InterfaceStorageV1alpha1Func{
+			defaultHook: i.StorageV1alpha1,
+		},
+		StorageV1beta1Func: &InterfaceStorageV1beta1Func{
+			defaultHook: i.StorageV1beta1,
+		},
+	}
+}
+
+// InterfaceAdmissionregistrationV1Func describes the behavior when the
+// AdmissionregistrationV1 method of the parent MockInterface instance is
+// invoked.
+type InterfaceAdmissionregistrationV1Func struct {
+	defaultHook func() v1.AdmissionregistrationV1Interface
+	hooks       []func() v1.AdmissionregistrationV1Interface
+	history     []InterfaceAdmissionregistrationV1FuncCall
+	mutex       sync.Mutex
+}
+
+// AdmissionregistrationV1 delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockInterface) AdmissionregistrationV1() v1.AdmissionregistrationV1Interface {
+	r0 := m.AdmissionregistrationV1Func.nextHook()()
+	m.AdmissionregistrationV1Func.appendCall(InterfaceAdmissionregistrationV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// AdmissionregistrationV1 method of the parent MockInterface instance is
+// invoked and the hook queue is empty.
+func (f *InterfaceAdmissionregistrationV1Func) SetDefaultHook(hook func() v1.AdmissionregistrationV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AdmissionregistrationV1 method of the parent MockInterface instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *InterfaceAdmissionregistrationV1Func) PushHook(hook func() v1.AdmissionregistrationV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAdmissionregistrationV1Func) SetDefaultReturn(r0 v1.AdmissionregistrationV1Interface) {
+	f.SetDefaultHook(func() v1.AdmissionregistrationV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAdmissionregistrationV1Func) PushReturn(r0 v1.AdmissionregistrationV1Interface) {
+	f.PushHook(func() v1.AdmissionregistrationV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAdmissionregistrationV1Func) nextHook() func() v1.AdmissionregistrationV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAdmissionregistrationV1Func) appendCall(r0 InterfaceAdmissionregistrationV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceAdmissionregistrationV1FuncCall
+// objects describing the invocations of this function.
+func (f *InterfaceAdmissionregistrationV1Func) History() []InterfaceAdmissionregistrationV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAdmissionregistrationV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAdmissionregistrationV1FuncCall is an object that describes an
+// invocation of method AdmissionregistrationV1 on an instance of
+// MockInterface.
+type InterfaceAdmissionregistrationV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1.AdmissionregistrationV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAdmissionregistrationV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAdmissionregistrationV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceAdmissionregistrationV1beta1Func describes the behavior when the
+// AdmissionregistrationV1beta1 method of the parent MockInterface instance
+// is invoked.
+type InterfaceAdmissionregistrationV1beta1Func struct {
+	defaultHook func() v1beta1.AdmissionregistrationV1beta1Interface
+	hooks       []func() v1beta1.AdmissionregistrationV1beta1Interface
+	history     []InterfaceAdmissionregistrationV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// AdmissionregistrationV1beta1 delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockInterface) AdmissionregistrationV1beta1() v1beta1.AdmissionregistrationV1beta1Interface {
+	r0 := m.AdmissionregistrationV1beta1Func.nextHook()()
+	m.AdmissionregistrationV1beta1Func.appendCall(InterfaceAdmissionregistrationV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// AdmissionregistrationV1beta1 method of the parent MockInterface instance
+// is invoked and the hook queue is empty.
+func (f *InterfaceAdmissionregistrationV1beta1Func) SetDefaultHook(hook func() v1beta1.AdmissionregistrationV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AdmissionregistrationV1beta1 method of the parent MockInterface instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *InterfaceAdmissionregistrationV1beta1Func) PushHook(hook func() v1beta1.AdmissionregistrationV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAdmissionregistrationV1beta1Func) SetDefaultReturn(r0 v1beta1.AdmissionregistrationV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta1.AdmissionregistrationV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAdmissionregistrationV1beta1Func) PushReturn(r0 v1beta1.AdmissionregistrationV1beta1Interface) {
+	f.PushHook(func() v1beta1.AdmissionregistrationV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAdmissionregistrationV1beta1Func) nextHook() func() v1beta1.AdmissionregistrationV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAdmissionregistrationV1beta1Func) appendCall(r0 InterfaceAdmissionregistrationV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// InterfaceAdmissionregistrationV1beta1FuncCall objects describing the
+// invocations of this function.
+func (f *InterfaceAdmissionregistrationV1beta1Func) History() []InterfaceAdmissionregistrationV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAdmissionregistrationV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAdmissionregistrationV1beta1FuncCall is an object that describes
+// an invocation of method AdmissionregistrationV1beta1 on an instance of
+// MockInterface.
+type InterfaceAdmissionregistrationV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta1.AdmissionregistrationV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAdmissionregistrationV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAdmissionregistrationV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceAppsV1Func describes the behavior when the AppsV1 method of the
+// parent MockInterface instance is invoked.
+type InterfaceAppsV1Func struct {
+	defaultHook func() v11.AppsV1Interface
+	hooks       []func() v11.AppsV1Interface
+	history     []InterfaceAppsV1FuncCall
+	mutex       sync.Mutex
+}
+
+// AppsV1 delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockInterface) AppsV1() v11.AppsV1Interface {
+	r0 := m.AppsV1Func.nextHook()()
+	m.AppsV1Func.appendCall(InterfaceAppsV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AppsV1 method of the
+// parent MockInterface instance is invoked and the hook queue is empty.
+func (f *InterfaceAppsV1Func) SetDefaultHook(hook func() v11.AppsV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AppsV1 method of the parent MockInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceAppsV1Func) PushHook(hook func() v11.AppsV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAppsV1Func) SetDefaultReturn(r0 v11.AppsV1Interface) {
+	f.SetDefaultHook(func() v11.AppsV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAppsV1Func) PushReturn(r0 v11.AppsV1Interface) {
+	f.PushHook(func() v11.AppsV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAppsV1Func) nextHook() func() v11.AppsV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAppsV1Func) appendCall(r0 InterfaceAppsV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceAppsV1FuncCall objects describing
+// the invocations of this function.
+func (f *InterfaceAppsV1Func) History() []InterfaceAppsV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAppsV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAppsV1FuncCall is an object that describes an invocation of
+// method AppsV1 on an instance of MockInterface.
+type InterfaceAppsV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v11.AppsV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAppsV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAppsV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceAppsV1beta1Func describes the behavior when the AppsV1beta1
+// method of the parent MockInterface instance is invoked.
+type InterfaceAppsV1beta1Func struct {
+	defaultHook func() v1beta11.AppsV1beta1Interface
+	hooks       []func() v1beta11.AppsV1beta1Interface
+	history     []InterfaceAppsV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// AppsV1beta1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) AppsV1beta1() v1beta11.AppsV1beta1Interface {
+	r0 := m.AppsV1beta1Func.nextHook()()
+	m.AppsV1beta1Func.appendCall(InterfaceAppsV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AppsV1beta1 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceAppsV1beta1Func) SetDefaultHook(hook func() v1beta11.AppsV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AppsV1beta1 method of the parent MockInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceAppsV1beta1Func) PushHook(hook func() v1beta11.AppsV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAppsV1beta1Func) SetDefaultReturn(r0 v1beta11.AppsV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta11.AppsV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAppsV1beta1Func) PushReturn(r0 v1beta11.AppsV1beta1Interface) {
+	f.PushHook(func() v1beta11.AppsV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAppsV1beta1Func) nextHook() func() v1beta11.AppsV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAppsV1beta1Func) appendCall(r0 InterfaceAppsV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceAppsV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceAppsV1beta1Func) History() []InterfaceAppsV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAppsV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAppsV1beta1FuncCall is an object that describes an invocation of
+// method AppsV1beta1 on an instance of MockInterface.
+type InterfaceAppsV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta11.AppsV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAppsV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAppsV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceAppsV1beta2Func describes the behavior when the AppsV1beta2
+// method of the parent MockInterface instance is invoked.
+type InterfaceAppsV1beta2Func struct {
+	defaultHook func() v1beta2.AppsV1beta2Interface
+	hooks       []func() v1beta2.AppsV1beta2Interface
+	history     []InterfaceAppsV1beta2FuncCall
+	mutex       sync.Mutex
+}
+
+// AppsV1beta2 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) AppsV1beta2() v1beta2.AppsV1beta2Interface {
+	r0 := m.AppsV1beta2Func.nextHook()()
+	m.AppsV1beta2Func.appendCall(InterfaceAppsV1beta2FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AppsV1beta2 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceAppsV1beta2Func) SetDefaultHook(hook func() v1beta2.AppsV1beta2Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AppsV1beta2 method of the parent MockInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceAppsV1beta2Func) PushHook(hook func() v1beta2.AppsV1beta2Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAppsV1beta2Func) SetDefaultReturn(r0 v1beta2.AppsV1beta2Interface) {
+	f.SetDefaultHook(func() v1beta2.AppsV1beta2Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAppsV1beta2Func) PushReturn(r0 v1beta2.AppsV1beta2Interface) {
+	f.PushHook(func() v1beta2.AppsV1beta2Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAppsV1beta2Func) nextHook() func() v1beta2.AppsV1beta2Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAppsV1beta2Func) appendCall(r0 InterfaceAppsV1beta2FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceAppsV1beta2FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceAppsV1beta2Func) History() []InterfaceAppsV1beta2FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAppsV1beta2FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAppsV1beta2FuncCall is an object that describes an invocation of
+// method AppsV1beta2 on an instance of MockInterface.
+type InterfaceAppsV1beta2FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta2.AppsV1beta2Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAppsV1beta2FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAppsV1beta2FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceAuthenticationV1Func describes the behavior when the
+// AuthenticationV1 method of the parent MockInterface instance is invoked.
+type InterfaceAuthenticationV1Func struct {
+	defaultHook func() v12.AuthenticationV1Interface
+	hooks       []func() v12.AuthenticationV1Interface
+	history     []InterfaceAuthenticationV1FuncCall
+	mutex       sync.Mutex
+}
+
+// AuthenticationV1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) AuthenticationV1() v12.AuthenticationV1Interface {
+	r0 := m.AuthenticationV1Func.nextHook()()
+	m.AuthenticationV1Func.appendCall(InterfaceAuthenticationV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AuthenticationV1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceAuthenticationV1Func) SetDefaultHook(hook func() v12.AuthenticationV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AuthenticationV1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceAuthenticationV1Func) PushHook(hook func() v12.AuthenticationV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAuthenticationV1Func) SetDefaultReturn(r0 v12.AuthenticationV1Interface) {
+	f.SetDefaultHook(func() v12.AuthenticationV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAuthenticationV1Func) PushReturn(r0 v12.AuthenticationV1Interface) {
+	f.PushHook(func() v12.AuthenticationV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAuthenticationV1Func) nextHook() func() v12.AuthenticationV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAuthenticationV1Func) appendCall(r0 InterfaceAuthenticationV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceAuthenticationV1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceAuthenticationV1Func) History() []InterfaceAuthenticationV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAuthenticationV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAuthenticationV1FuncCall is an object that describes an
+// invocation of method AuthenticationV1 on an instance of MockInterface.
+type InterfaceAuthenticationV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v12.AuthenticationV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAuthenticationV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAuthenticationV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceAuthenticationV1beta1Func describes the behavior when the
+// AuthenticationV1beta1 method of the parent MockInterface instance is
+// invoked.
+type InterfaceAuthenticationV1beta1Func struct {
+	defaultHook func() v1beta12.AuthenticationV1beta1Interface
+	hooks       []func() v1beta12.AuthenticationV1beta1Interface
+	history     []InterfaceAuthenticationV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// AuthenticationV1beta1 delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockInterface) AuthenticationV1beta1() v1beta12.AuthenticationV1beta1Interface {
+	r0 := m.AuthenticationV1beta1Func.nextHook()()
+	m.AuthenticationV1beta1Func.appendCall(InterfaceAuthenticationV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// AuthenticationV1beta1 method of the parent MockInterface instance is
+// invoked and the hook queue is empty.
+func (f *InterfaceAuthenticationV1beta1Func) SetDefaultHook(hook func() v1beta12.AuthenticationV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AuthenticationV1beta1 method of the parent MockInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *InterfaceAuthenticationV1beta1Func) PushHook(hook func() v1beta12.AuthenticationV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAuthenticationV1beta1Func) SetDefaultReturn(r0 v1beta12.AuthenticationV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta12.AuthenticationV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAuthenticationV1beta1Func) PushReturn(r0 v1beta12.AuthenticationV1beta1Interface) {
+	f.PushHook(func() v1beta12.AuthenticationV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAuthenticationV1beta1Func) nextHook() func() v1beta12.AuthenticationV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAuthenticationV1beta1Func) appendCall(r0 InterfaceAuthenticationV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceAuthenticationV1beta1FuncCall
+// objects describing the invocations of this function.
+func (f *InterfaceAuthenticationV1beta1Func) History() []InterfaceAuthenticationV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAuthenticationV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAuthenticationV1beta1FuncCall is an object that describes an
+// invocation of method AuthenticationV1beta1 on an instance of
+// MockInterface.
+type InterfaceAuthenticationV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta12.AuthenticationV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAuthenticationV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAuthenticationV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceAuthorizationV1Func describes the behavior when the
+// AuthorizationV1 method of the parent MockInterface instance is invoked.
+type InterfaceAuthorizationV1Func struct {
+	defaultHook func() v13.AuthorizationV1Interface
+	hooks       []func() v13.AuthorizationV1Interface
+	history     []InterfaceAuthorizationV1FuncCall
+	mutex       sync.Mutex
+}
+
+// AuthorizationV1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) AuthorizationV1() v13.AuthorizationV1Interface {
+	r0 := m.AuthorizationV1Func.nextHook()()
+	m.AuthorizationV1Func.appendCall(InterfaceAuthorizationV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AuthorizationV1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceAuthorizationV1Func) SetDefaultHook(hook func() v13.AuthorizationV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AuthorizationV1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceAuthorizationV1Func) PushHook(hook func() v13.AuthorizationV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAuthorizationV1Func) SetDefaultReturn(r0 v13.AuthorizationV1Interface) {
+	f.SetDefaultHook(func() v13.AuthorizationV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAuthorizationV1Func) PushReturn(r0 v13.AuthorizationV1Interface) {
+	f.PushHook(func() v13.AuthorizationV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAuthorizationV1Func) nextHook() func() v13.AuthorizationV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAuthorizationV1Func) appendCall(r0 InterfaceAuthorizationV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceAuthorizationV1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceAuthorizationV1Func) History() []InterfaceAuthorizationV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAuthorizationV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAuthorizationV1FuncCall is an object that describes an
+// invocation of method AuthorizationV1 on an instance of MockInterface.
+type InterfaceAuthorizationV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v13.AuthorizationV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAuthorizationV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAuthorizationV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceAuthorizationV1beta1Func describes the behavior when the
+// AuthorizationV1beta1 method of the parent MockInterface instance is
+// invoked.
+type InterfaceAuthorizationV1beta1Func struct {
+	defaultHook func() v1beta13.AuthorizationV1beta1Interface
+	hooks       []func() v1beta13.AuthorizationV1beta1Interface
+	history     []InterfaceAuthorizationV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// AuthorizationV1beta1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) AuthorizationV1beta1() v1beta13.AuthorizationV1beta1Interface {
+	r0 := m.AuthorizationV1beta1Func.nextHook()()
+	m.AuthorizationV1beta1Func.appendCall(InterfaceAuthorizationV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AuthorizationV1beta1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceAuthorizationV1beta1Func) SetDefaultHook(hook func() v1beta13.AuthorizationV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AuthorizationV1beta1 method of the parent MockInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *InterfaceAuthorizationV1beta1Func) PushHook(hook func() v1beta13.AuthorizationV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAuthorizationV1beta1Func) SetDefaultReturn(r0 v1beta13.AuthorizationV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta13.AuthorizationV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAuthorizationV1beta1Func) PushReturn(r0 v1beta13.AuthorizationV1beta1Interface) {
+	f.PushHook(func() v1beta13.AuthorizationV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAuthorizationV1beta1Func) nextHook() func() v1beta13.AuthorizationV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAuthorizationV1beta1Func) appendCall(r0 InterfaceAuthorizationV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceAuthorizationV1beta1FuncCall
+// objects describing the invocations of this function.
+func (f *InterfaceAuthorizationV1beta1Func) History() []InterfaceAuthorizationV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAuthorizationV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAuthorizationV1beta1FuncCall is an object that describes an
+// invocation of method AuthorizationV1beta1 on an instance of
+// MockInterface.
+type InterfaceAuthorizationV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta13.AuthorizationV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAuthorizationV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAuthorizationV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceAutoscalingV1Func describes the behavior when the AutoscalingV1
+// method of the parent MockInterface instance is invoked.
+type InterfaceAutoscalingV1Func struct {
+	defaultHook func() v14.AutoscalingV1Interface
+	hooks       []func() v14.AutoscalingV1Interface
+	history     []InterfaceAutoscalingV1FuncCall
+	mutex       sync.Mutex
+}
+
+// AutoscalingV1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) AutoscalingV1() v14.AutoscalingV1Interface {
+	r0 := m.AutoscalingV1Func.nextHook()()
+	m.AutoscalingV1Func.appendCall(InterfaceAutoscalingV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AutoscalingV1 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceAutoscalingV1Func) SetDefaultHook(hook func() v14.AutoscalingV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AutoscalingV1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceAutoscalingV1Func) PushHook(hook func() v14.AutoscalingV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAutoscalingV1Func) SetDefaultReturn(r0 v14.AutoscalingV1Interface) {
+	f.SetDefaultHook(func() v14.AutoscalingV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAutoscalingV1Func) PushReturn(r0 v14.AutoscalingV1Interface) {
+	f.PushHook(func() v14.AutoscalingV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAutoscalingV1Func) nextHook() func() v14.AutoscalingV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAutoscalingV1Func) appendCall(r0 InterfaceAutoscalingV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceAutoscalingV1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceAutoscalingV1Func) History() []InterfaceAutoscalingV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAutoscalingV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAutoscalingV1FuncCall is an object that describes an invocation
+// of method AutoscalingV1 on an instance of MockInterface.
+type InterfaceAutoscalingV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v14.AutoscalingV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAutoscalingV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAutoscalingV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceAutoscalingV2Func describes the behavior when the AutoscalingV2
+// method of the parent MockInterface instance is invoked.
+type InterfaceAutoscalingV2Func struct {
+	defaultHook func() v2.AutoscalingV2Interface
+	hooks       []func() v2.AutoscalingV2Interface
+	history     []InterfaceAutoscalingV2FuncCall
+	mutex       sync.Mutex
+}
+
+// AutoscalingV2 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) AutoscalingV2() v2.AutoscalingV2Interface {
+	r0 := m.AutoscalingV2Func.nextHook()()
+	m.AutoscalingV2Func.appendCall(InterfaceAutoscalingV2FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AutoscalingV2 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceAutoscalingV2Func) SetDefaultHook(hook func() v2.AutoscalingV2Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AutoscalingV2 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceAutoscalingV2Func) PushHook(hook func() v2.AutoscalingV2Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAutoscalingV2Func) SetDefaultReturn(r0 v2.AutoscalingV2Interface) {
+	f.SetDefaultHook(func() v2.AutoscalingV2Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAutoscalingV2Func) PushReturn(r0 v2.AutoscalingV2Interface) {
+	f.PushHook(func() v2.AutoscalingV2Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAutoscalingV2Func) nextHook() func() v2.AutoscalingV2Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAutoscalingV2Func) appendCall(r0 InterfaceAutoscalingV2FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceAutoscalingV2FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceAutoscalingV2Func) History() []InterfaceAutoscalingV2FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAutoscalingV2FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAutoscalingV2FuncCall is an object that describes an invocation
+// of method AutoscalingV2 on an instance of MockInterface.
+type InterfaceAutoscalingV2FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v2.AutoscalingV2Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAutoscalingV2FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAutoscalingV2FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceAutoscalingV2beta1Func describes the behavior when the
+// AutoscalingV2beta1 method of the parent MockInterface instance is
+// invoked.
+type InterfaceAutoscalingV2beta1Func struct {
+	defaultHook func() v2beta1.AutoscalingV2beta1Interface
+	hooks       []func() v2beta1.AutoscalingV2beta1Interface
+	history     []InterfaceAutoscalingV2beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// AutoscalingV2beta1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) AutoscalingV2beta1() v2beta1.AutoscalingV2beta1Interface {
+	r0 := m.AutoscalingV2beta1Func.nextHook()()
+	m.AutoscalingV2beta1Func.appendCall(InterfaceAutoscalingV2beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AutoscalingV2beta1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceAutoscalingV2beta1Func) SetDefaultHook(hook func() v2beta1.AutoscalingV2beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AutoscalingV2beta1 method of the parent MockInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *InterfaceAutoscalingV2beta1Func) PushHook(hook func() v2beta1.AutoscalingV2beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAutoscalingV2beta1Func) SetDefaultReturn(r0 v2beta1.AutoscalingV2beta1Interface) {
+	f.SetDefaultHook(func() v2beta1.AutoscalingV2beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAutoscalingV2beta1Func) PushReturn(r0 v2beta1.AutoscalingV2beta1Interface) {
+	f.PushHook(func() v2beta1.AutoscalingV2beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAutoscalingV2beta1Func) nextHook() func() v2beta1.AutoscalingV2beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAutoscalingV2beta1Func) appendCall(r0 InterfaceAutoscalingV2beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceAutoscalingV2beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceAutoscalingV2beta1Func) History() []InterfaceAutoscalingV2beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAutoscalingV2beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAutoscalingV2beta1FuncCall is an object that describes an
+// invocation of method AutoscalingV2beta1 on an instance of MockInterface.
+type InterfaceAutoscalingV2beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v2beta1.AutoscalingV2beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAutoscalingV2beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAutoscalingV2beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceAutoscalingV2beta2Func describes the behavior when the
+// AutoscalingV2beta2 method of the parent MockInterface instance is
+// invoked.
+type InterfaceAutoscalingV2beta2Func struct {
+	defaultHook func() v2beta2.AutoscalingV2beta2Interface
+	hooks       []func() v2beta2.AutoscalingV2beta2Interface
+	history     []InterfaceAutoscalingV2beta2FuncCall
+	mutex       sync.Mutex
+}
+
+// AutoscalingV2beta2 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) AutoscalingV2beta2() v2beta2.AutoscalingV2beta2Interface {
+	r0 := m.AutoscalingV2beta2Func.nextHook()()
+	m.AutoscalingV2beta2Func.appendCall(InterfaceAutoscalingV2beta2FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AutoscalingV2beta2
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceAutoscalingV2beta2Func) SetDefaultHook(hook func() v2beta2.AutoscalingV2beta2Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AutoscalingV2beta2 method of the parent MockInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *InterfaceAutoscalingV2beta2Func) PushHook(hook func() v2beta2.AutoscalingV2beta2Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceAutoscalingV2beta2Func) SetDefaultReturn(r0 v2beta2.AutoscalingV2beta2Interface) {
+	f.SetDefaultHook(func() v2beta2.AutoscalingV2beta2Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceAutoscalingV2beta2Func) PushReturn(r0 v2beta2.AutoscalingV2beta2Interface) {
+	f.PushHook(func() v2beta2.AutoscalingV2beta2Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceAutoscalingV2beta2Func) nextHook() func() v2beta2.AutoscalingV2beta2Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceAutoscalingV2beta2Func) appendCall(r0 InterfaceAutoscalingV2beta2FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceAutoscalingV2beta2FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceAutoscalingV2beta2Func) History() []InterfaceAutoscalingV2beta2FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceAutoscalingV2beta2FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceAutoscalingV2beta2FuncCall is an object that describes an
+// invocation of method AutoscalingV2beta2 on an instance of MockInterface.
+type InterfaceAutoscalingV2beta2FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v2beta2.AutoscalingV2beta2Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceAutoscalingV2beta2FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceAutoscalingV2beta2FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceBatchV1Func describes the behavior when the BatchV1 method of
+// the parent MockInterface instance is invoked.
+type InterfaceBatchV1Func struct {
+	defaultHook func() v15.BatchV1Interface
+	hooks       []func() v15.BatchV1Interface
+	history     []InterfaceBatchV1FuncCall
+	mutex       sync.Mutex
+}
+
+// BatchV1 delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockInterface) BatchV1() v15.BatchV1Interface {
+	r0 := m.BatchV1Func.nextHook()()
+	m.BatchV1Func.appendCall(InterfaceBatchV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the BatchV1 method of
+// the parent MockInterface instance is invoked and the hook queue is empty.
+func (f *InterfaceBatchV1Func) SetDefaultHook(hook func() v15.BatchV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BatchV1 method of the parent MockInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceBatchV1Func) PushHook(hook func() v15.BatchV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceBatchV1Func) SetDefaultReturn(r0 v15.BatchV1Interface) {
+	f.SetDefaultHook(func() v15.BatchV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceBatchV1Func) PushReturn(r0 v15.BatchV1Interface) {
+	f.PushHook(func() v15.BatchV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceBatchV1Func) nextHook() func() v15.BatchV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceBatchV1Func) appendCall(r0 InterfaceBatchV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceBatchV1FuncCall objects describing
+// the invocations of this function.
+func (f *InterfaceBatchV1Func) History() []InterfaceBatchV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceBatchV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceBatchV1FuncCall is an object that describes an invocation of
+// method BatchV1 on an instance of MockInterface.
+type InterfaceBatchV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v15.BatchV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceBatchV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceBatchV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceBatchV1beta1Func describes the behavior when the BatchV1beta1
+// method of the parent MockInterface instance is invoked.
+type InterfaceBatchV1beta1Func struct {
+	defaultHook func() v1beta14.BatchV1beta1Interface
+	hooks       []func() v1beta14.BatchV1beta1Interface
+	history     []InterfaceBatchV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// BatchV1beta1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) BatchV1beta1() v1beta14.BatchV1beta1Interface {
+	r0 := m.BatchV1beta1Func.nextHook()()
+	m.BatchV1beta1Func.appendCall(InterfaceBatchV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the BatchV1beta1 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceBatchV1beta1Func) SetDefaultHook(hook func() v1beta14.BatchV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BatchV1beta1 method of the parent MockInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceBatchV1beta1Func) PushHook(hook func() v1beta14.BatchV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceBatchV1beta1Func) SetDefaultReturn(r0 v1beta14.BatchV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta14.BatchV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceBatchV1beta1Func) PushReturn(r0 v1beta14.BatchV1beta1Interface) {
+	f.PushHook(func() v1beta14.BatchV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceBatchV1beta1Func) nextHook() func() v1beta14.BatchV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceBatchV1beta1Func) appendCall(r0 InterfaceBatchV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceBatchV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceBatchV1beta1Func) History() []InterfaceBatchV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceBatchV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceBatchV1beta1FuncCall is an object that describes an invocation
+// of method BatchV1beta1 on an instance of MockInterface.
+type InterfaceBatchV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta14.BatchV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceBatchV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceBatchV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceCertificatesV1Func describes the behavior when the
+// CertificatesV1 method of the parent MockInterface instance is invoked.
+type InterfaceCertificatesV1Func struct {
+	defaultHook func() v16.CertificatesV1Interface
+	hooks       []func() v16.CertificatesV1Interface
+	history     []InterfaceCertificatesV1FuncCall
+	mutex       sync.Mutex
+}
+
+// CertificatesV1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) CertificatesV1() v16.CertificatesV1Interface {
+	r0 := m.CertificatesV1Func.nextHook()()
+	m.CertificatesV1Func.appendCall(InterfaceCertificatesV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CertificatesV1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceCertificatesV1Func) SetDefaultHook(hook func() v16.CertificatesV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CertificatesV1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceCertificatesV1Func) PushHook(hook func() v16.CertificatesV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceCertificatesV1Func) SetDefaultReturn(r0 v16.CertificatesV1Interface) {
+	f.SetDefaultHook(func() v16.CertificatesV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceCertificatesV1Func) PushReturn(r0 v16.CertificatesV1Interface) {
+	f.PushHook(func() v16.CertificatesV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceCertificatesV1Func) nextHook() func() v16.CertificatesV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceCertificatesV1Func) appendCall(r0 InterfaceCertificatesV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceCertificatesV1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceCertificatesV1Func) History() []InterfaceCertificatesV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceCertificatesV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceCertificatesV1FuncCall is an object that describes an invocation
+// of method CertificatesV1 on an instance of MockInterface.
+type InterfaceCertificatesV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v16.CertificatesV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceCertificatesV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceCertificatesV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceCertificatesV1beta1Func describes the behavior when the
+// CertificatesV1beta1 method of the parent MockInterface instance is
+// invoked.
+type InterfaceCertificatesV1beta1Func struct {
+	defaultHook func() v1beta15.CertificatesV1beta1Interface
+	hooks       []func() v1beta15.CertificatesV1beta1Interface
+	history     []InterfaceCertificatesV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// CertificatesV1beta1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) CertificatesV1beta1() v1beta15.CertificatesV1beta1Interface {
+	r0 := m.CertificatesV1beta1Func.nextHook()()
+	m.CertificatesV1beta1Func.appendCall(InterfaceCertificatesV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CertificatesV1beta1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceCertificatesV1beta1Func) SetDefaultHook(hook func() v1beta15.CertificatesV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CertificatesV1beta1 method of the parent MockInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *InterfaceCertificatesV1beta1Func) PushHook(hook func() v1beta15.CertificatesV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceCertificatesV1beta1Func) SetDefaultReturn(r0 v1beta15.CertificatesV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta15.CertificatesV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceCertificatesV1beta1Func) PushReturn(r0 v1beta15.CertificatesV1beta1Interface) {
+	f.PushHook(func() v1beta15.CertificatesV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceCertificatesV1beta1Func) nextHook() func() v1beta15.CertificatesV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceCertificatesV1beta1Func) appendCall(r0 InterfaceCertificatesV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceCertificatesV1beta1FuncCall
+// objects describing the invocations of this function.
+func (f *InterfaceCertificatesV1beta1Func) History() []InterfaceCertificatesV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceCertificatesV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceCertificatesV1beta1FuncCall is an object that describes an
+// invocation of method CertificatesV1beta1 on an instance of MockInterface.
+type InterfaceCertificatesV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta15.CertificatesV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceCertificatesV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceCertificatesV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceCoordinationV1Func describes the behavior when the
+// CoordinationV1 method of the parent MockInterface instance is invoked.
+type InterfaceCoordinationV1Func struct {
+	defaultHook func() v17.CoordinationV1Interface
+	hooks       []func() v17.CoordinationV1Interface
+	history     []InterfaceCoordinationV1FuncCall
+	mutex       sync.Mutex
+}
+
+// CoordinationV1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) CoordinationV1() v17.CoordinationV1Interface {
+	r0 := m.CoordinationV1Func.nextHook()()
+	m.CoordinationV1Func.appendCall(InterfaceCoordinationV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CoordinationV1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceCoordinationV1Func) SetDefaultHook(hook func() v17.CoordinationV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CoordinationV1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceCoordinationV1Func) PushHook(hook func() v17.CoordinationV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceCoordinationV1Func) SetDefaultReturn(r0 v17.CoordinationV1Interface) {
+	f.SetDefaultHook(func() v17.CoordinationV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceCoordinationV1Func) PushReturn(r0 v17.CoordinationV1Interface) {
+	f.PushHook(func() v17.CoordinationV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceCoordinationV1Func) nextHook() func() v17.CoordinationV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceCoordinationV1Func) appendCall(r0 InterfaceCoordinationV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceCoordinationV1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceCoordinationV1Func) History() []InterfaceCoordinationV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceCoordinationV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceCoordinationV1FuncCall is an object that describes an invocation
+// of method CoordinationV1 on an instance of MockInterface.
+type InterfaceCoordinationV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v17.CoordinationV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceCoordinationV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceCoordinationV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceCoordinationV1beta1Func describes the behavior when the
+// CoordinationV1beta1 method of the parent MockInterface instance is
+// invoked.
+type InterfaceCoordinationV1beta1Func struct {
+	defaultHook func() v1beta16.CoordinationV1beta1Interface
+	hooks       []func() v1beta16.CoordinationV1beta1Interface
+	history     []InterfaceCoordinationV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// CoordinationV1beta1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) CoordinationV1beta1() v1beta16.CoordinationV1beta1Interface {
+	r0 := m.CoordinationV1beta1Func.nextHook()()
+	m.CoordinationV1beta1Func.appendCall(InterfaceCoordinationV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CoordinationV1beta1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceCoordinationV1beta1Func) SetDefaultHook(hook func() v1beta16.CoordinationV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CoordinationV1beta1 method of the parent MockInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *InterfaceCoordinationV1beta1Func) PushHook(hook func() v1beta16.CoordinationV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceCoordinationV1beta1Func) SetDefaultReturn(r0 v1beta16.CoordinationV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta16.CoordinationV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceCoordinationV1beta1Func) PushReturn(r0 v1beta16.CoordinationV1beta1Interface) {
+	f.PushHook(func() v1beta16.CoordinationV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceCoordinationV1beta1Func) nextHook() func() v1beta16.CoordinationV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceCoordinationV1beta1Func) appendCall(r0 InterfaceCoordinationV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceCoordinationV1beta1FuncCall
+// objects describing the invocations of this function.
+func (f *InterfaceCoordinationV1beta1Func) History() []InterfaceCoordinationV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceCoordinationV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceCoordinationV1beta1FuncCall is an object that describes an
+// invocation of method CoordinationV1beta1 on an instance of MockInterface.
+type InterfaceCoordinationV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta16.CoordinationV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceCoordinationV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceCoordinationV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceCoreV1Func describes the behavior when the CoreV1 method of the
+// parent MockInterface instance is invoked.
+type InterfaceCoreV1Func struct {
+	defaultHook func() v18.CoreV1Interface
+	hooks       []func() v18.CoreV1Interface
+	history     []InterfaceCoreV1FuncCall
+	mutex       sync.Mutex
+}
+
+// CoreV1 delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockInterface) CoreV1() v18.CoreV1Interface {
+	r0 := m.CoreV1Func.nextHook()()
+	m.CoreV1Func.appendCall(InterfaceCoreV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CoreV1 method of the
+// parent MockInterface instance is invoked and the hook queue is empty.
+func (f *InterfaceCoreV1Func) SetDefaultHook(hook func() v18.CoreV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CoreV1 method of the parent MockInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceCoreV1Func) PushHook(hook func() v18.CoreV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceCoreV1Func) SetDefaultReturn(r0 v18.CoreV1Interface) {
+	f.SetDefaultHook(func() v18.CoreV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceCoreV1Func) PushReturn(r0 v18.CoreV1Interface) {
+	f.PushHook(func() v18.CoreV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceCoreV1Func) nextHook() func() v18.CoreV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceCoreV1Func) appendCall(r0 InterfaceCoreV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceCoreV1FuncCall objects describing
+// the invocations of this function.
+func (f *InterfaceCoreV1Func) History() []InterfaceCoreV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceCoreV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceCoreV1FuncCall is an object that describes an invocation of
+// method CoreV1 on an instance of MockInterface.
+type InterfaceCoreV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.CoreV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceCoreV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceCoreV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceDiscoveryFunc describes the behavior when the Discovery method
+// of the parent MockInterface instance is invoked.
+type InterfaceDiscoveryFunc struct {
+	defaultHook func() discovery.DiscoveryInterface
+	hooks       []func() discovery.DiscoveryInterface
+	history     []InterfaceDiscoveryFuncCall
+	mutex       sync.Mutex
+}
+
+// Discovery delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockInterface) Discovery() discovery.DiscoveryInterface {
+	r0 := m.DiscoveryFunc.nextHook()()
+	m.DiscoveryFunc.appendCall(InterfaceDiscoveryFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Discovery method of
+// the parent MockInterface instance is invoked and the hook queue is empty.
+func (f *InterfaceDiscoveryFunc) SetDefaultHook(hook func() discovery.DiscoveryInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Discovery method of the parent MockInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceDiscoveryFunc) PushHook(hook func() discovery.DiscoveryInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceDiscoveryFunc) SetDefaultReturn(r0 discovery.DiscoveryInterface) {
+	f.SetDefaultHook(func() discovery.DiscoveryInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceDiscoveryFunc) PushReturn(r0 discovery.DiscoveryInterface) {
+	f.PushHook(func() discovery.DiscoveryInterface {
+		return r0
+	})
+}
+
+func (f *InterfaceDiscoveryFunc) nextHook() func() discovery.DiscoveryInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceDiscoveryFunc) appendCall(r0 InterfaceDiscoveryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceDiscoveryFuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceDiscoveryFunc) History() []InterfaceDiscoveryFuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceDiscoveryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceDiscoveryFuncCall is an object that describes an invocation of
+// method Discovery on an instance of MockInterface.
+type InterfaceDiscoveryFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 discovery.DiscoveryInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceDiscoveryFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceDiscoveryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceDiscoveryV1Func describes the behavior when the DiscoveryV1
+// method of the parent MockInterface instance is invoked.
+type InterfaceDiscoveryV1Func struct {
+	defaultHook func() v19.DiscoveryV1Interface
+	hooks       []func() v19.DiscoveryV1Interface
+	history     []InterfaceDiscoveryV1FuncCall
+	mutex       sync.Mutex
+}
+
+// DiscoveryV1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) DiscoveryV1() v19.DiscoveryV1Interface {
+	r0 := m.DiscoveryV1Func.nextHook()()
+	m.DiscoveryV1Func.appendCall(InterfaceDiscoveryV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DiscoveryV1 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceDiscoveryV1Func) SetDefaultHook(hook func() v19.DiscoveryV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DiscoveryV1 method of the parent MockInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceDiscoveryV1Func) PushHook(hook func() v19.DiscoveryV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceDiscoveryV1Func) SetDefaultReturn(r0 v19.DiscoveryV1Interface) {
+	f.SetDefaultHook(func() v19.DiscoveryV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceDiscoveryV1Func) PushReturn(r0 v19.DiscoveryV1Interface) {
+	f.PushHook(func() v19.DiscoveryV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceDiscoveryV1Func) nextHook() func() v19.DiscoveryV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceDiscoveryV1Func) appendCall(r0 InterfaceDiscoveryV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceDiscoveryV1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceDiscoveryV1Func) History() []InterfaceDiscoveryV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceDiscoveryV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceDiscoveryV1FuncCall is an object that describes an invocation of
+// method DiscoveryV1 on an instance of MockInterface.
+type InterfaceDiscoveryV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v19.DiscoveryV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceDiscoveryV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceDiscoveryV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceDiscoveryV1beta1Func describes the behavior when the
+// DiscoveryV1beta1 method of the parent MockInterface instance is invoked.
+type InterfaceDiscoveryV1beta1Func struct {
+	defaultHook func() v1beta17.DiscoveryV1beta1Interface
+	hooks       []func() v1beta17.DiscoveryV1beta1Interface
+	history     []InterfaceDiscoveryV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// DiscoveryV1beta1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) DiscoveryV1beta1() v1beta17.DiscoveryV1beta1Interface {
+	r0 := m.DiscoveryV1beta1Func.nextHook()()
+	m.DiscoveryV1beta1Func.appendCall(InterfaceDiscoveryV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DiscoveryV1beta1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceDiscoveryV1beta1Func) SetDefaultHook(hook func() v1beta17.DiscoveryV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DiscoveryV1beta1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceDiscoveryV1beta1Func) PushHook(hook func() v1beta17.DiscoveryV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceDiscoveryV1beta1Func) SetDefaultReturn(r0 v1beta17.DiscoveryV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta17.DiscoveryV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceDiscoveryV1beta1Func) PushReturn(r0 v1beta17.DiscoveryV1beta1Interface) {
+	f.PushHook(func() v1beta17.DiscoveryV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceDiscoveryV1beta1Func) nextHook() func() v1beta17.DiscoveryV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceDiscoveryV1beta1Func) appendCall(r0 InterfaceDiscoveryV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceDiscoveryV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceDiscoveryV1beta1Func) History() []InterfaceDiscoveryV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceDiscoveryV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceDiscoveryV1beta1FuncCall is an object that describes an
+// invocation of method DiscoveryV1beta1 on an instance of MockInterface.
+type InterfaceDiscoveryV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta17.DiscoveryV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceDiscoveryV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceDiscoveryV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceEventsV1Func describes the behavior when the EventsV1 method of
+// the parent MockInterface instance is invoked.
+type InterfaceEventsV1Func struct {
+	defaultHook func() v110.EventsV1Interface
+	hooks       []func() v110.EventsV1Interface
+	history     []InterfaceEventsV1FuncCall
+	mutex       sync.Mutex
+}
+
+// EventsV1 delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockInterface) EventsV1() v110.EventsV1Interface {
+	r0 := m.EventsV1Func.nextHook()()
+	m.EventsV1Func.appendCall(InterfaceEventsV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the EventsV1 method of
+// the parent MockInterface instance is invoked and the hook queue is empty.
+func (f *InterfaceEventsV1Func) SetDefaultHook(hook func() v110.EventsV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EventsV1 method of the parent MockInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceEventsV1Func) PushHook(hook func() v110.EventsV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceEventsV1Func) SetDefaultReturn(r0 v110.EventsV1Interface) {
+	f.SetDefaultHook(func() v110.EventsV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceEventsV1Func) PushReturn(r0 v110.EventsV1Interface) {
+	f.PushHook(func() v110.EventsV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceEventsV1Func) nextHook() func() v110.EventsV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceEventsV1Func) appendCall(r0 InterfaceEventsV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceEventsV1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceEventsV1Func) History() []InterfaceEventsV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceEventsV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceEventsV1FuncCall is an object that describes an invocation of
+// method EventsV1 on an instance of MockInterface.
+type InterfaceEventsV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v110.EventsV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceEventsV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceEventsV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceEventsV1beta1Func describes the behavior when the EventsV1beta1
+// method of the parent MockInterface instance is invoked.
+type InterfaceEventsV1beta1Func struct {
+	defaultHook func() v1beta18.EventsV1beta1Interface
+	hooks       []func() v1beta18.EventsV1beta1Interface
+	history     []InterfaceEventsV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// EventsV1beta1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) EventsV1beta1() v1beta18.EventsV1beta1Interface {
+	r0 := m.EventsV1beta1Func.nextHook()()
+	m.EventsV1beta1Func.appendCall(InterfaceEventsV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the EventsV1beta1 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceEventsV1beta1Func) SetDefaultHook(hook func() v1beta18.EventsV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EventsV1beta1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceEventsV1beta1Func) PushHook(hook func() v1beta18.EventsV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceEventsV1beta1Func) SetDefaultReturn(r0 v1beta18.EventsV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta18.EventsV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceEventsV1beta1Func) PushReturn(r0 v1beta18.EventsV1beta1Interface) {
+	f.PushHook(func() v1beta18.EventsV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceEventsV1beta1Func) nextHook() func() v1beta18.EventsV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceEventsV1beta1Func) appendCall(r0 InterfaceEventsV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceEventsV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceEventsV1beta1Func) History() []InterfaceEventsV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceEventsV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceEventsV1beta1FuncCall is an object that describes an invocation
+// of method EventsV1beta1 on an instance of MockInterface.
+type InterfaceEventsV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta18.EventsV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceEventsV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceEventsV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceExtensionsV1beta1Func describes the behavior when the
+// ExtensionsV1beta1 method of the parent MockInterface instance is invoked.
+type InterfaceExtensionsV1beta1Func struct {
+	defaultHook func() v1beta19.ExtensionsV1beta1Interface
+	hooks       []func() v1beta19.ExtensionsV1beta1Interface
+	history     []InterfaceExtensionsV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// ExtensionsV1beta1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) ExtensionsV1beta1() v1beta19.ExtensionsV1beta1Interface {
+	r0 := m.ExtensionsV1beta1Func.nextHook()()
+	m.ExtensionsV1beta1Func.appendCall(InterfaceExtensionsV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ExtensionsV1beta1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceExtensionsV1beta1Func) SetDefaultHook(hook func() v1beta19.ExtensionsV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ExtensionsV1beta1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceExtensionsV1beta1Func) PushHook(hook func() v1beta19.ExtensionsV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceExtensionsV1beta1Func) SetDefaultReturn(r0 v1beta19.ExtensionsV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta19.ExtensionsV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceExtensionsV1beta1Func) PushReturn(r0 v1beta19.ExtensionsV1beta1Interface) {
+	f.PushHook(func() v1beta19.ExtensionsV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceExtensionsV1beta1Func) nextHook() func() v1beta19.ExtensionsV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceExtensionsV1beta1Func) appendCall(r0 InterfaceExtensionsV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceExtensionsV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceExtensionsV1beta1Func) History() []InterfaceExtensionsV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceExtensionsV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceExtensionsV1beta1FuncCall is an object that describes an
+// invocation of method ExtensionsV1beta1 on an instance of MockInterface.
+type InterfaceExtensionsV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta19.ExtensionsV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceExtensionsV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceExtensionsV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceFlowcontrolV1alpha1Func describes the behavior when the
+// FlowcontrolV1alpha1 method of the parent MockInterface instance is
+// invoked.
+type InterfaceFlowcontrolV1alpha1Func struct {
+	defaultHook func() v1alpha1.FlowcontrolV1alpha1Interface
+	hooks       []func() v1alpha1.FlowcontrolV1alpha1Interface
+	history     []InterfaceFlowcontrolV1alpha1FuncCall
+	mutex       sync.Mutex
+}
+
+// FlowcontrolV1alpha1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) FlowcontrolV1alpha1() v1alpha1.FlowcontrolV1alpha1Interface {
+	r0 := m.FlowcontrolV1alpha1Func.nextHook()()
+	m.FlowcontrolV1alpha1Func.appendCall(InterfaceFlowcontrolV1alpha1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the FlowcontrolV1alpha1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceFlowcontrolV1alpha1Func) SetDefaultHook(hook func() v1alpha1.FlowcontrolV1alpha1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FlowcontrolV1alpha1 method of the parent MockInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *InterfaceFlowcontrolV1alpha1Func) PushHook(hook func() v1alpha1.FlowcontrolV1alpha1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceFlowcontrolV1alpha1Func) SetDefaultReturn(r0 v1alpha1.FlowcontrolV1alpha1Interface) {
+	f.SetDefaultHook(func() v1alpha1.FlowcontrolV1alpha1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceFlowcontrolV1alpha1Func) PushReturn(r0 v1alpha1.FlowcontrolV1alpha1Interface) {
+	f.PushHook(func() v1alpha1.FlowcontrolV1alpha1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceFlowcontrolV1alpha1Func) nextHook() func() v1alpha1.FlowcontrolV1alpha1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceFlowcontrolV1alpha1Func) appendCall(r0 InterfaceFlowcontrolV1alpha1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceFlowcontrolV1alpha1FuncCall
+// objects describing the invocations of this function.
+func (f *InterfaceFlowcontrolV1alpha1Func) History() []InterfaceFlowcontrolV1alpha1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceFlowcontrolV1alpha1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceFlowcontrolV1alpha1FuncCall is an object that describes an
+// invocation of method FlowcontrolV1alpha1 on an instance of MockInterface.
+type InterfaceFlowcontrolV1alpha1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1alpha1.FlowcontrolV1alpha1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceFlowcontrolV1alpha1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceFlowcontrolV1alpha1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceFlowcontrolV1beta1Func describes the behavior when the
+// FlowcontrolV1beta1 method of the parent MockInterface instance is
+// invoked.
+type InterfaceFlowcontrolV1beta1Func struct {
+	defaultHook func() v1beta110.FlowcontrolV1beta1Interface
+	hooks       []func() v1beta110.FlowcontrolV1beta1Interface
+	history     []InterfaceFlowcontrolV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// FlowcontrolV1beta1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) FlowcontrolV1beta1() v1beta110.FlowcontrolV1beta1Interface {
+	r0 := m.FlowcontrolV1beta1Func.nextHook()()
+	m.FlowcontrolV1beta1Func.appendCall(InterfaceFlowcontrolV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the FlowcontrolV1beta1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceFlowcontrolV1beta1Func) SetDefaultHook(hook func() v1beta110.FlowcontrolV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FlowcontrolV1beta1 method of the parent MockInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *InterfaceFlowcontrolV1beta1Func) PushHook(hook func() v1beta110.FlowcontrolV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceFlowcontrolV1beta1Func) SetDefaultReturn(r0 v1beta110.FlowcontrolV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta110.FlowcontrolV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceFlowcontrolV1beta1Func) PushReturn(r0 v1beta110.FlowcontrolV1beta1Interface) {
+	f.PushHook(func() v1beta110.FlowcontrolV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceFlowcontrolV1beta1Func) nextHook() func() v1beta110.FlowcontrolV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceFlowcontrolV1beta1Func) appendCall(r0 InterfaceFlowcontrolV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceFlowcontrolV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceFlowcontrolV1beta1Func) History() []InterfaceFlowcontrolV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceFlowcontrolV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceFlowcontrolV1beta1FuncCall is an object that describes an
+// invocation of method FlowcontrolV1beta1 on an instance of MockInterface.
+type InterfaceFlowcontrolV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta110.FlowcontrolV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceFlowcontrolV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceFlowcontrolV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceFlowcontrolV1beta2Func describes the behavior when the
+// FlowcontrolV1beta2 method of the parent MockInterface instance is
+// invoked.
+type InterfaceFlowcontrolV1beta2Func struct {
+	defaultHook func() v1beta21.FlowcontrolV1beta2Interface
+	hooks       []func() v1beta21.FlowcontrolV1beta2Interface
+	history     []InterfaceFlowcontrolV1beta2FuncCall
+	mutex       sync.Mutex
+}
+
+// FlowcontrolV1beta2 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) FlowcontrolV1beta2() v1beta21.FlowcontrolV1beta2Interface {
+	r0 := m.FlowcontrolV1beta2Func.nextHook()()
+	m.FlowcontrolV1beta2Func.appendCall(InterfaceFlowcontrolV1beta2FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the FlowcontrolV1beta2
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceFlowcontrolV1beta2Func) SetDefaultHook(hook func() v1beta21.FlowcontrolV1beta2Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FlowcontrolV1beta2 method of the parent MockInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *InterfaceFlowcontrolV1beta2Func) PushHook(hook func() v1beta21.FlowcontrolV1beta2Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceFlowcontrolV1beta2Func) SetDefaultReturn(r0 v1beta21.FlowcontrolV1beta2Interface) {
+	f.SetDefaultHook(func() v1beta21.FlowcontrolV1beta2Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceFlowcontrolV1beta2Func) PushReturn(r0 v1beta21.FlowcontrolV1beta2Interface) {
+	f.PushHook(func() v1beta21.FlowcontrolV1beta2Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceFlowcontrolV1beta2Func) nextHook() func() v1beta21.FlowcontrolV1beta2Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceFlowcontrolV1beta2Func) appendCall(r0 InterfaceFlowcontrolV1beta2FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceFlowcontrolV1beta2FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceFlowcontrolV1beta2Func) History() []InterfaceFlowcontrolV1beta2FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceFlowcontrolV1beta2FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceFlowcontrolV1beta2FuncCall is an object that describes an
+// invocation of method FlowcontrolV1beta2 on an instance of MockInterface.
+type InterfaceFlowcontrolV1beta2FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta21.FlowcontrolV1beta2Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceFlowcontrolV1beta2FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceFlowcontrolV1beta2FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceInternalV1alpha1Func describes the behavior when the
+// InternalV1alpha1 method of the parent MockInterface instance is invoked.
+type InterfaceInternalV1alpha1Func struct {
+	defaultHook func() v1alpha11.InternalV1alpha1Interface
+	hooks       []func() v1alpha11.InternalV1alpha1Interface
+	history     []InterfaceInternalV1alpha1FuncCall
+	mutex       sync.Mutex
+}
+
+// InternalV1alpha1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) InternalV1alpha1() v1alpha11.InternalV1alpha1Interface {
+	r0 := m.InternalV1alpha1Func.nextHook()()
+	m.InternalV1alpha1Func.appendCall(InterfaceInternalV1alpha1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the InternalV1alpha1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceInternalV1alpha1Func) SetDefaultHook(hook func() v1alpha11.InternalV1alpha1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InternalV1alpha1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceInternalV1alpha1Func) PushHook(hook func() v1alpha11.InternalV1alpha1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceInternalV1alpha1Func) SetDefaultReturn(r0 v1alpha11.InternalV1alpha1Interface) {
+	f.SetDefaultHook(func() v1alpha11.InternalV1alpha1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceInternalV1alpha1Func) PushReturn(r0 v1alpha11.InternalV1alpha1Interface) {
+	f.PushHook(func() v1alpha11.InternalV1alpha1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceInternalV1alpha1Func) nextHook() func() v1alpha11.InternalV1alpha1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceInternalV1alpha1Func) appendCall(r0 InterfaceInternalV1alpha1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceInternalV1alpha1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceInternalV1alpha1Func) History() []InterfaceInternalV1alpha1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceInternalV1alpha1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceInternalV1alpha1FuncCall is an object that describes an
+// invocation of method InternalV1alpha1 on an instance of MockInterface.
+type InterfaceInternalV1alpha1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1alpha11.InternalV1alpha1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceInternalV1alpha1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceInternalV1alpha1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceNetworkingV1Func describes the behavior when the NetworkingV1
+// method of the parent MockInterface instance is invoked.
+type InterfaceNetworkingV1Func struct {
+	defaultHook func() v111.NetworkingV1Interface
+	hooks       []func() v111.NetworkingV1Interface
+	history     []InterfaceNetworkingV1FuncCall
+	mutex       sync.Mutex
+}
+
+// NetworkingV1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) NetworkingV1() v111.NetworkingV1Interface {
+	r0 := m.NetworkingV1Func.nextHook()()
+	m.NetworkingV1Func.appendCall(InterfaceNetworkingV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NetworkingV1 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceNetworkingV1Func) SetDefaultHook(hook func() v111.NetworkingV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NetworkingV1 method of the parent MockInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceNetworkingV1Func) PushHook(hook func() v111.NetworkingV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceNetworkingV1Func) SetDefaultReturn(r0 v111.NetworkingV1Interface) {
+	f.SetDefaultHook(func() v111.NetworkingV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceNetworkingV1Func) PushReturn(r0 v111.NetworkingV1Interface) {
+	f.PushHook(func() v111.NetworkingV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceNetworkingV1Func) nextHook() func() v111.NetworkingV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceNetworkingV1Func) appendCall(r0 InterfaceNetworkingV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceNetworkingV1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceNetworkingV1Func) History() []InterfaceNetworkingV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceNetworkingV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceNetworkingV1FuncCall is an object that describes an invocation
+// of method NetworkingV1 on an instance of MockInterface.
+type InterfaceNetworkingV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v111.NetworkingV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceNetworkingV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceNetworkingV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceNetworkingV1alpha1Func describes the behavior when the
+// NetworkingV1alpha1 method of the parent MockInterface instance is
+// invoked.
+type InterfaceNetworkingV1alpha1Func struct {
+	defaultHook func() v1alpha12.NetworkingV1alpha1Interface
+	hooks       []func() v1alpha12.NetworkingV1alpha1Interface
+	history     []InterfaceNetworkingV1alpha1FuncCall
+	mutex       sync.Mutex
+}
+
+// NetworkingV1alpha1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) NetworkingV1alpha1() v1alpha12.NetworkingV1alpha1Interface {
+	r0 := m.NetworkingV1alpha1Func.nextHook()()
+	m.NetworkingV1alpha1Func.appendCall(InterfaceNetworkingV1alpha1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NetworkingV1alpha1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceNetworkingV1alpha1Func) SetDefaultHook(hook func() v1alpha12.NetworkingV1alpha1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NetworkingV1alpha1 method of the parent MockInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *InterfaceNetworkingV1alpha1Func) PushHook(hook func() v1alpha12.NetworkingV1alpha1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceNetworkingV1alpha1Func) SetDefaultReturn(r0 v1alpha12.NetworkingV1alpha1Interface) {
+	f.SetDefaultHook(func() v1alpha12.NetworkingV1alpha1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceNetworkingV1alpha1Func) PushReturn(r0 v1alpha12.NetworkingV1alpha1Interface) {
+	f.PushHook(func() v1alpha12.NetworkingV1alpha1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceNetworkingV1alpha1Func) nextHook() func() v1alpha12.NetworkingV1alpha1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceNetworkingV1alpha1Func) appendCall(r0 InterfaceNetworkingV1alpha1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceNetworkingV1alpha1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceNetworkingV1alpha1Func) History() []InterfaceNetworkingV1alpha1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceNetworkingV1alpha1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceNetworkingV1alpha1FuncCall is an object that describes an
+// invocation of method NetworkingV1alpha1 on an instance of MockInterface.
+type InterfaceNetworkingV1alpha1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1alpha12.NetworkingV1alpha1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceNetworkingV1alpha1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceNetworkingV1alpha1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceNetworkingV1beta1Func describes the behavior when the
+// NetworkingV1beta1 method of the parent MockInterface instance is invoked.
+type InterfaceNetworkingV1beta1Func struct {
+	defaultHook func() v1beta111.NetworkingV1beta1Interface
+	hooks       []func() v1beta111.NetworkingV1beta1Interface
+	history     []InterfaceNetworkingV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// NetworkingV1beta1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) NetworkingV1beta1() v1beta111.NetworkingV1beta1Interface {
+	r0 := m.NetworkingV1beta1Func.nextHook()()
+	m.NetworkingV1beta1Func.appendCall(InterfaceNetworkingV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NetworkingV1beta1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceNetworkingV1beta1Func) SetDefaultHook(hook func() v1beta111.NetworkingV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NetworkingV1beta1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceNetworkingV1beta1Func) PushHook(hook func() v1beta111.NetworkingV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceNetworkingV1beta1Func) SetDefaultReturn(r0 v1beta111.NetworkingV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta111.NetworkingV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceNetworkingV1beta1Func) PushReturn(r0 v1beta111.NetworkingV1beta1Interface) {
+	f.PushHook(func() v1beta111.NetworkingV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceNetworkingV1beta1Func) nextHook() func() v1beta111.NetworkingV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceNetworkingV1beta1Func) appendCall(r0 InterfaceNetworkingV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceNetworkingV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceNetworkingV1beta1Func) History() []InterfaceNetworkingV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceNetworkingV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceNetworkingV1beta1FuncCall is an object that describes an
+// invocation of method NetworkingV1beta1 on an instance of MockInterface.
+type InterfaceNetworkingV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta111.NetworkingV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceNetworkingV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceNetworkingV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceNodeV1Func describes the behavior when the NodeV1 method of the
+// parent MockInterface instance is invoked.
+type InterfaceNodeV1Func struct {
+	defaultHook func() v112.NodeV1Interface
+	hooks       []func() v112.NodeV1Interface
+	history     []InterfaceNodeV1FuncCall
+	mutex       sync.Mutex
+}
+
+// NodeV1 delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockInterface) NodeV1() v112.NodeV1Interface {
+	r0 := m.NodeV1Func.nextHook()()
+	m.NodeV1Func.appendCall(InterfaceNodeV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NodeV1 method of the
+// parent MockInterface instance is invoked and the hook queue is empty.
+func (f *InterfaceNodeV1Func) SetDefaultHook(hook func() v112.NodeV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NodeV1 method of the parent MockInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceNodeV1Func) PushHook(hook func() v112.NodeV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceNodeV1Func) SetDefaultReturn(r0 v112.NodeV1Interface) {
+	f.SetDefaultHook(func() v112.NodeV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceNodeV1Func) PushReturn(r0 v112.NodeV1Interface) {
+	f.PushHook(func() v112.NodeV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceNodeV1Func) nextHook() func() v112.NodeV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceNodeV1Func) appendCall(r0 InterfaceNodeV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceNodeV1FuncCall objects describing
+// the invocations of this function.
+func (f *InterfaceNodeV1Func) History() []InterfaceNodeV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceNodeV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceNodeV1FuncCall is an object that describes an invocation of
+// method NodeV1 on an instance of MockInterface.
+type InterfaceNodeV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v112.NodeV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceNodeV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceNodeV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceNodeV1alpha1Func describes the behavior when the NodeV1alpha1
+// method of the parent MockInterface instance is invoked.
+type InterfaceNodeV1alpha1Func struct {
+	defaultHook func() v1alpha13.NodeV1alpha1Interface
+	hooks       []func() v1alpha13.NodeV1alpha1Interface
+	history     []InterfaceNodeV1alpha1FuncCall
+	mutex       sync.Mutex
+}
+
+// NodeV1alpha1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) NodeV1alpha1() v1alpha13.NodeV1alpha1Interface {
+	r0 := m.NodeV1alpha1Func.nextHook()()
+	m.NodeV1alpha1Func.appendCall(InterfaceNodeV1alpha1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NodeV1alpha1 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceNodeV1alpha1Func) SetDefaultHook(hook func() v1alpha13.NodeV1alpha1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NodeV1alpha1 method of the parent MockInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceNodeV1alpha1Func) PushHook(hook func() v1alpha13.NodeV1alpha1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceNodeV1alpha1Func) SetDefaultReturn(r0 v1alpha13.NodeV1alpha1Interface) {
+	f.SetDefaultHook(func() v1alpha13.NodeV1alpha1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceNodeV1alpha1Func) PushReturn(r0 v1alpha13.NodeV1alpha1Interface) {
+	f.PushHook(func() v1alpha13.NodeV1alpha1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceNodeV1alpha1Func) nextHook() func() v1alpha13.NodeV1alpha1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceNodeV1alpha1Func) appendCall(r0 InterfaceNodeV1alpha1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceNodeV1alpha1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceNodeV1alpha1Func) History() []InterfaceNodeV1alpha1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceNodeV1alpha1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceNodeV1alpha1FuncCall is an object that describes an invocation
+// of method NodeV1alpha1 on an instance of MockInterface.
+type InterfaceNodeV1alpha1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1alpha13.NodeV1alpha1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceNodeV1alpha1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceNodeV1alpha1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceNodeV1beta1Func describes the behavior when the NodeV1beta1
+// method of the parent MockInterface instance is invoked.
+type InterfaceNodeV1beta1Func struct {
+	defaultHook func() v1beta112.NodeV1beta1Interface
+	hooks       []func() v1beta112.NodeV1beta1Interface
+	history     []InterfaceNodeV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// NodeV1beta1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) NodeV1beta1() v1beta112.NodeV1beta1Interface {
+	r0 := m.NodeV1beta1Func.nextHook()()
+	m.NodeV1beta1Func.appendCall(InterfaceNodeV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NodeV1beta1 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceNodeV1beta1Func) SetDefaultHook(hook func() v1beta112.NodeV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NodeV1beta1 method of the parent MockInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceNodeV1beta1Func) PushHook(hook func() v1beta112.NodeV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceNodeV1beta1Func) SetDefaultReturn(r0 v1beta112.NodeV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta112.NodeV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceNodeV1beta1Func) PushReturn(r0 v1beta112.NodeV1beta1Interface) {
+	f.PushHook(func() v1beta112.NodeV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceNodeV1beta1Func) nextHook() func() v1beta112.NodeV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceNodeV1beta1Func) appendCall(r0 InterfaceNodeV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceNodeV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceNodeV1beta1Func) History() []InterfaceNodeV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceNodeV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceNodeV1beta1FuncCall is an object that describes an invocation of
+// method NodeV1beta1 on an instance of MockInterface.
+type InterfaceNodeV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta112.NodeV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceNodeV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceNodeV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfacePolicyV1Func describes the behavior when the PolicyV1 method of
+// the parent MockInterface instance is invoked.
+type InterfacePolicyV1Func struct {
+	defaultHook func() v113.PolicyV1Interface
+	hooks       []func() v113.PolicyV1Interface
+	history     []InterfacePolicyV1FuncCall
+	mutex       sync.Mutex
+}
+
+// PolicyV1 delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockInterface) PolicyV1() v113.PolicyV1Interface {
+	r0 := m.PolicyV1Func.nextHook()()
+	m.PolicyV1Func.appendCall(InterfacePolicyV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the PolicyV1 method of
+// the parent MockInterface instance is invoked and the hook queue is empty.
+func (f *InterfacePolicyV1Func) SetDefaultHook(hook func() v113.PolicyV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PolicyV1 method of the parent MockInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfacePolicyV1Func) PushHook(hook func() v113.PolicyV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfacePolicyV1Func) SetDefaultReturn(r0 v113.PolicyV1Interface) {
+	f.SetDefaultHook(func() v113.PolicyV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfacePolicyV1Func) PushReturn(r0 v113.PolicyV1Interface) {
+	f.PushHook(func() v113.PolicyV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfacePolicyV1Func) nextHook() func() v113.PolicyV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfacePolicyV1Func) appendCall(r0 InterfacePolicyV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfacePolicyV1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfacePolicyV1Func) History() []InterfacePolicyV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfacePolicyV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfacePolicyV1FuncCall is an object that describes an invocation of
+// method PolicyV1 on an instance of MockInterface.
+type InterfacePolicyV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v113.PolicyV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfacePolicyV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfacePolicyV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfacePolicyV1beta1Func describes the behavior when the PolicyV1beta1
+// method of the parent MockInterface instance is invoked.
+type InterfacePolicyV1beta1Func struct {
+	defaultHook func() v1beta113.PolicyV1beta1Interface
+	hooks       []func() v1beta113.PolicyV1beta1Interface
+	history     []InterfacePolicyV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// PolicyV1beta1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) PolicyV1beta1() v1beta113.PolicyV1beta1Interface {
+	r0 := m.PolicyV1beta1Func.nextHook()()
+	m.PolicyV1beta1Func.appendCall(InterfacePolicyV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the PolicyV1beta1 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfacePolicyV1beta1Func) SetDefaultHook(hook func() v1beta113.PolicyV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PolicyV1beta1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfacePolicyV1beta1Func) PushHook(hook func() v1beta113.PolicyV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfacePolicyV1beta1Func) SetDefaultReturn(r0 v1beta113.PolicyV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta113.PolicyV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfacePolicyV1beta1Func) PushReturn(r0 v1beta113.PolicyV1beta1Interface) {
+	f.PushHook(func() v1beta113.PolicyV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfacePolicyV1beta1Func) nextHook() func() v1beta113.PolicyV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfacePolicyV1beta1Func) appendCall(r0 InterfacePolicyV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfacePolicyV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfacePolicyV1beta1Func) History() []InterfacePolicyV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfacePolicyV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfacePolicyV1beta1FuncCall is an object that describes an invocation
+// of method PolicyV1beta1 on an instance of MockInterface.
+type InterfacePolicyV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta113.PolicyV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfacePolicyV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfacePolicyV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceRbacV1Func describes the behavior when the RbacV1 method of the
+// parent MockInterface instance is invoked.
+type InterfaceRbacV1Func struct {
+	defaultHook func() v114.RbacV1Interface
+	hooks       []func() v114.RbacV1Interface
+	history     []InterfaceRbacV1FuncCall
+	mutex       sync.Mutex
+}
+
+// RbacV1 delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockInterface) RbacV1() v114.RbacV1Interface {
+	r0 := m.RbacV1Func.nextHook()()
+	m.RbacV1Func.appendCall(InterfaceRbacV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RbacV1 method of the
+// parent MockInterface instance is invoked and the hook queue is empty.
+func (f *InterfaceRbacV1Func) SetDefaultHook(hook func() v114.RbacV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RbacV1 method of the parent MockInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceRbacV1Func) PushHook(hook func() v114.RbacV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceRbacV1Func) SetDefaultReturn(r0 v114.RbacV1Interface) {
+	f.SetDefaultHook(func() v114.RbacV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceRbacV1Func) PushReturn(r0 v114.RbacV1Interface) {
+	f.PushHook(func() v114.RbacV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceRbacV1Func) nextHook() func() v114.RbacV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceRbacV1Func) appendCall(r0 InterfaceRbacV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceRbacV1FuncCall objects describing
+// the invocations of this function.
+func (f *InterfaceRbacV1Func) History() []InterfaceRbacV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceRbacV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceRbacV1FuncCall is an object that describes an invocation of
+// method RbacV1 on an instance of MockInterface.
+type InterfaceRbacV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v114.RbacV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceRbacV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceRbacV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceRbacV1alpha1Func describes the behavior when the RbacV1alpha1
+// method of the parent MockInterface instance is invoked.
+type InterfaceRbacV1alpha1Func struct {
+	defaultHook func() v1alpha14.RbacV1alpha1Interface
+	hooks       []func() v1alpha14.RbacV1alpha1Interface
+	history     []InterfaceRbacV1alpha1FuncCall
+	mutex       sync.Mutex
+}
+
+// RbacV1alpha1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) RbacV1alpha1() v1alpha14.RbacV1alpha1Interface {
+	r0 := m.RbacV1alpha1Func.nextHook()()
+	m.RbacV1alpha1Func.appendCall(InterfaceRbacV1alpha1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RbacV1alpha1 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceRbacV1alpha1Func) SetDefaultHook(hook func() v1alpha14.RbacV1alpha1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RbacV1alpha1 method of the parent MockInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceRbacV1alpha1Func) PushHook(hook func() v1alpha14.RbacV1alpha1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceRbacV1alpha1Func) SetDefaultReturn(r0 v1alpha14.RbacV1alpha1Interface) {
+	f.SetDefaultHook(func() v1alpha14.RbacV1alpha1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceRbacV1alpha1Func) PushReturn(r0 v1alpha14.RbacV1alpha1Interface) {
+	f.PushHook(func() v1alpha14.RbacV1alpha1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceRbacV1alpha1Func) nextHook() func() v1alpha14.RbacV1alpha1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceRbacV1alpha1Func) appendCall(r0 InterfaceRbacV1alpha1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceRbacV1alpha1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceRbacV1alpha1Func) History() []InterfaceRbacV1alpha1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceRbacV1alpha1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceRbacV1alpha1FuncCall is an object that describes an invocation
+// of method RbacV1alpha1 on an instance of MockInterface.
+type InterfaceRbacV1alpha1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1alpha14.RbacV1alpha1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceRbacV1alpha1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceRbacV1alpha1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceRbacV1beta1Func describes the behavior when the RbacV1beta1
+// method of the parent MockInterface instance is invoked.
+type InterfaceRbacV1beta1Func struct {
+	defaultHook func() v1beta114.RbacV1beta1Interface
+	hooks       []func() v1beta114.RbacV1beta1Interface
+	history     []InterfaceRbacV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// RbacV1beta1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) RbacV1beta1() v1beta114.RbacV1beta1Interface {
+	r0 := m.RbacV1beta1Func.nextHook()()
+	m.RbacV1beta1Func.appendCall(InterfaceRbacV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RbacV1beta1 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceRbacV1beta1Func) SetDefaultHook(hook func() v1beta114.RbacV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RbacV1beta1 method of the parent MockInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceRbacV1beta1Func) PushHook(hook func() v1beta114.RbacV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceRbacV1beta1Func) SetDefaultReturn(r0 v1beta114.RbacV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta114.RbacV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceRbacV1beta1Func) PushReturn(r0 v1beta114.RbacV1beta1Interface) {
+	f.PushHook(func() v1beta114.RbacV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceRbacV1beta1Func) nextHook() func() v1beta114.RbacV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceRbacV1beta1Func) appendCall(r0 InterfaceRbacV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceRbacV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceRbacV1beta1Func) History() []InterfaceRbacV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceRbacV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceRbacV1beta1FuncCall is an object that describes an invocation of
+// method RbacV1beta1 on an instance of MockInterface.
+type InterfaceRbacV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta114.RbacV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceRbacV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceRbacV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceSchedulingV1Func describes the behavior when the SchedulingV1
+// method of the parent MockInterface instance is invoked.
+type InterfaceSchedulingV1Func struct {
+	defaultHook func() v115.SchedulingV1Interface
+	hooks       []func() v115.SchedulingV1Interface
+	history     []InterfaceSchedulingV1FuncCall
+	mutex       sync.Mutex
+}
+
+// SchedulingV1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockInterface) SchedulingV1() v115.SchedulingV1Interface {
+	r0 := m.SchedulingV1Func.nextHook()()
+	m.SchedulingV1Func.appendCall(InterfaceSchedulingV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SchedulingV1 method
+// of the parent MockInterface instance is invoked and the hook queue is
+// empty.
+func (f *InterfaceSchedulingV1Func) SetDefaultHook(hook func() v115.SchedulingV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SchedulingV1 method of the parent MockInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceSchedulingV1Func) PushHook(hook func() v115.SchedulingV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceSchedulingV1Func) SetDefaultReturn(r0 v115.SchedulingV1Interface) {
+	f.SetDefaultHook(func() v115.SchedulingV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceSchedulingV1Func) PushReturn(r0 v115.SchedulingV1Interface) {
+	f.PushHook(func() v115.SchedulingV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceSchedulingV1Func) nextHook() func() v115.SchedulingV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceSchedulingV1Func) appendCall(r0 InterfaceSchedulingV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceSchedulingV1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceSchedulingV1Func) History() []InterfaceSchedulingV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceSchedulingV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceSchedulingV1FuncCall is an object that describes an invocation
+// of method SchedulingV1 on an instance of MockInterface.
+type InterfaceSchedulingV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v115.SchedulingV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceSchedulingV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceSchedulingV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceSchedulingV1alpha1Func describes the behavior when the
+// SchedulingV1alpha1 method of the parent MockInterface instance is
+// invoked.
+type InterfaceSchedulingV1alpha1Func struct {
+	defaultHook func() v1alpha15.SchedulingV1alpha1Interface
+	hooks       []func() v1alpha15.SchedulingV1alpha1Interface
+	history     []InterfaceSchedulingV1alpha1FuncCall
+	mutex       sync.Mutex
+}
+
+// SchedulingV1alpha1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) SchedulingV1alpha1() v1alpha15.SchedulingV1alpha1Interface {
+	r0 := m.SchedulingV1alpha1Func.nextHook()()
+	m.SchedulingV1alpha1Func.appendCall(InterfaceSchedulingV1alpha1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SchedulingV1alpha1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceSchedulingV1alpha1Func) SetDefaultHook(hook func() v1alpha15.SchedulingV1alpha1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SchedulingV1alpha1 method of the parent MockInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *InterfaceSchedulingV1alpha1Func) PushHook(hook func() v1alpha15.SchedulingV1alpha1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceSchedulingV1alpha1Func) SetDefaultReturn(r0 v1alpha15.SchedulingV1alpha1Interface) {
+	f.SetDefaultHook(func() v1alpha15.SchedulingV1alpha1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceSchedulingV1alpha1Func) PushReturn(r0 v1alpha15.SchedulingV1alpha1Interface) {
+	f.PushHook(func() v1alpha15.SchedulingV1alpha1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceSchedulingV1alpha1Func) nextHook() func() v1alpha15.SchedulingV1alpha1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceSchedulingV1alpha1Func) appendCall(r0 InterfaceSchedulingV1alpha1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceSchedulingV1alpha1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceSchedulingV1alpha1Func) History() []InterfaceSchedulingV1alpha1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceSchedulingV1alpha1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceSchedulingV1alpha1FuncCall is an object that describes an
+// invocation of method SchedulingV1alpha1 on an instance of MockInterface.
+type InterfaceSchedulingV1alpha1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1alpha15.SchedulingV1alpha1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceSchedulingV1alpha1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceSchedulingV1alpha1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceSchedulingV1beta1Func describes the behavior when the
+// SchedulingV1beta1 method of the parent MockInterface instance is invoked.
+type InterfaceSchedulingV1beta1Func struct {
+	defaultHook func() v1beta115.SchedulingV1beta1Interface
+	hooks       []func() v1beta115.SchedulingV1beta1Interface
+	history     []InterfaceSchedulingV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// SchedulingV1beta1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) SchedulingV1beta1() v1beta115.SchedulingV1beta1Interface {
+	r0 := m.SchedulingV1beta1Func.nextHook()()
+	m.SchedulingV1beta1Func.appendCall(InterfaceSchedulingV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SchedulingV1beta1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceSchedulingV1beta1Func) SetDefaultHook(hook func() v1beta115.SchedulingV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SchedulingV1beta1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceSchedulingV1beta1Func) PushHook(hook func() v1beta115.SchedulingV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceSchedulingV1beta1Func) SetDefaultReturn(r0 v1beta115.SchedulingV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta115.SchedulingV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceSchedulingV1beta1Func) PushReturn(r0 v1beta115.SchedulingV1beta1Interface) {
+	f.PushHook(func() v1beta115.SchedulingV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceSchedulingV1beta1Func) nextHook() func() v1beta115.SchedulingV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceSchedulingV1beta1Func) appendCall(r0 InterfaceSchedulingV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceSchedulingV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceSchedulingV1beta1Func) History() []InterfaceSchedulingV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceSchedulingV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceSchedulingV1beta1FuncCall is an object that describes an
+// invocation of method SchedulingV1beta1 on an instance of MockInterface.
+type InterfaceSchedulingV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta115.SchedulingV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceSchedulingV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceSchedulingV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceStorageV1Func describes the behavior when the StorageV1 method
+// of the parent MockInterface instance is invoked.
+type InterfaceStorageV1Func struct {
+	defaultHook func() v116.StorageV1Interface
+	hooks       []func() v116.StorageV1Interface
+	history     []InterfaceStorageV1FuncCall
+	mutex       sync.Mutex
+}
+
+// StorageV1 delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockInterface) StorageV1() v116.StorageV1Interface {
+	r0 := m.StorageV1Func.nextHook()()
+	m.StorageV1Func.appendCall(InterfaceStorageV1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the StorageV1 method of
+// the parent MockInterface instance is invoked and the hook queue is empty.
+func (f *InterfaceStorageV1Func) SetDefaultHook(hook func() v116.StorageV1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// StorageV1 method of the parent MockInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceStorageV1Func) PushHook(hook func() v116.StorageV1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceStorageV1Func) SetDefaultReturn(r0 v116.StorageV1Interface) {
+	f.SetDefaultHook(func() v116.StorageV1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceStorageV1Func) PushReturn(r0 v116.StorageV1Interface) {
+	f.PushHook(func() v116.StorageV1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceStorageV1Func) nextHook() func() v116.StorageV1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceStorageV1Func) appendCall(r0 InterfaceStorageV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceStorageV1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceStorageV1Func) History() []InterfaceStorageV1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceStorageV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceStorageV1FuncCall is an object that describes an invocation of
+// method StorageV1 on an instance of MockInterface.
+type InterfaceStorageV1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v116.StorageV1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceStorageV1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceStorageV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceStorageV1alpha1Func describes the behavior when the
+// StorageV1alpha1 method of the parent MockInterface instance is invoked.
+type InterfaceStorageV1alpha1Func struct {
+	defaultHook func() v1alpha16.StorageV1alpha1Interface
+	hooks       []func() v1alpha16.StorageV1alpha1Interface
+	history     []InterfaceStorageV1alpha1FuncCall
+	mutex       sync.Mutex
+}
+
+// StorageV1alpha1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) StorageV1alpha1() v1alpha16.StorageV1alpha1Interface {
+	r0 := m.StorageV1alpha1Func.nextHook()()
+	m.StorageV1alpha1Func.appendCall(InterfaceStorageV1alpha1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the StorageV1alpha1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceStorageV1alpha1Func) SetDefaultHook(hook func() v1alpha16.StorageV1alpha1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// StorageV1alpha1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceStorageV1alpha1Func) PushHook(hook func() v1alpha16.StorageV1alpha1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceStorageV1alpha1Func) SetDefaultReturn(r0 v1alpha16.StorageV1alpha1Interface) {
+	f.SetDefaultHook(func() v1alpha16.StorageV1alpha1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceStorageV1alpha1Func) PushReturn(r0 v1alpha16.StorageV1alpha1Interface) {
+	f.PushHook(func() v1alpha16.StorageV1alpha1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceStorageV1alpha1Func) nextHook() func() v1alpha16.StorageV1alpha1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceStorageV1alpha1Func) appendCall(r0 InterfaceStorageV1alpha1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceStorageV1alpha1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceStorageV1alpha1Func) History() []InterfaceStorageV1alpha1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceStorageV1alpha1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceStorageV1alpha1FuncCall is an object that describes an
+// invocation of method StorageV1alpha1 on an instance of MockInterface.
+type InterfaceStorageV1alpha1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1alpha16.StorageV1alpha1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceStorageV1alpha1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceStorageV1alpha1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// InterfaceStorageV1beta1Func describes the behavior when the
+// StorageV1beta1 method of the parent MockInterface instance is invoked.
+type InterfaceStorageV1beta1Func struct {
+	defaultHook func() v1beta116.StorageV1beta1Interface
+	hooks       []func() v1beta116.StorageV1beta1Interface
+	history     []InterfaceStorageV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// StorageV1beta1 delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) StorageV1beta1() v1beta116.StorageV1beta1Interface {
+	r0 := m.StorageV1beta1Func.nextHook()()
+	m.StorageV1beta1Func.appendCall(InterfaceStorageV1beta1FuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the StorageV1beta1
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceStorageV1beta1Func) SetDefaultHook(hook func() v1beta116.StorageV1beta1Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// StorageV1beta1 method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceStorageV1beta1Func) PushHook(hook func() v1beta116.StorageV1beta1Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceStorageV1beta1Func) SetDefaultReturn(r0 v1beta116.StorageV1beta1Interface) {
+	f.SetDefaultHook(func() v1beta116.StorageV1beta1Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceStorageV1beta1Func) PushReturn(r0 v1beta116.StorageV1beta1Interface) {
+	f.PushHook(func() v1beta116.StorageV1beta1Interface {
+		return r0
+	})
+}
+
+func (f *InterfaceStorageV1beta1Func) nextHook() func() v1beta116.StorageV1beta1Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceStorageV1beta1Func) appendCall(r0 InterfaceStorageV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceStorageV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceStorageV1beta1Func) History() []InterfaceStorageV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceStorageV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceStorageV1beta1FuncCall is an object that describes an invocation
+// of method StorageV1beta1 on an instance of MockInterface.
+type InterfaceStorageV1beta1FuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1beta116.StorageV1beta1Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceStorageV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceStorageV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockBatchV1Interface is a mock implementation of the BatchV1Interface
+// interface (from the package k8s.io/client-go/kubernetes/typed/batch/v1)
+// used for unit testing.
+type MockBatchV1Interface struct {
+	// CronJobsFunc is an instance of a mock function object controlling the
+	// behavior of the method CronJobs.
+	CronJobsFunc *BatchV1InterfaceCronJobsFunc
+	// JobsFunc is an instance of a mock function object controlling the
+	// behavior of the method Jobs.
+	JobsFunc *BatchV1InterfaceJobsFunc
+	// RESTClientFunc is an instance of a mock function object controlling
+	// the behavior of the method RESTClient.
+	RESTClientFunc *BatchV1InterfaceRESTClientFunc
+}
+
+// NewMockBatchV1Interface creates a new mock of the BatchV1Interface
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockBatchV1Interface() *MockBatchV1Interface {
+	return &MockBatchV1Interface{
+		CronJobsFunc: &BatchV1InterfaceCronJobsFunc{
+			defaultHook: func(string) (r0 v15.CronJobInterface) {
+				return
+			},
+		},
+		JobsFunc: &BatchV1InterfaceJobsFunc{
+			defaultHook: func(string) (r0 v15.JobInterface) {
+				return
+			},
+		},
+		RESTClientFunc: &BatchV1InterfaceRESTClientFunc{
+			defaultHook: func() (r0 rest.Interface) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockBatchV1Interface creates a new mock of the BatchV1Interface
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockBatchV1Interface() *MockBatchV1Interface {
+	return &MockBatchV1Interface{
+		CronJobsFunc: &BatchV1InterfaceCronJobsFunc{
+			defaultHook: func(string) v15.CronJobInterface {
+				panic("unexpected invocation of MockBatchV1Interface.CronJobs")
+			},
+		},
+		JobsFunc: &BatchV1InterfaceJobsFunc{
+			defaultHook: func(string) v15.JobInterface {
+				panic("unexpected invocation of MockBatchV1Interface.Jobs")
+			},
+		},
+		RESTClientFunc: &BatchV1InterfaceRESTClientFunc{
+			defaultHook: func() rest.Interface {
+				panic("unexpected invocation of MockBatchV1Interface.RESTClient")
+			},
+		},
+	}
+}
+
+// NewMockBatchV1InterfaceFrom creates a new mock of the
+// MockBatchV1Interface interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockBatchV1InterfaceFrom(i v15.BatchV1Interface) *MockBatchV1Interface {
+	return &MockBatchV1Interface{
+		CronJobsFunc: &BatchV1InterfaceCronJobsFunc{
+			defaultHook: i.CronJobs,
+		},
+		JobsFunc: &BatchV1InterfaceJobsFunc{
+			defaultHook: i.Jobs,
+		},
+		RESTClientFunc: &BatchV1InterfaceRESTClientFunc{
+			defaultHook: i.RESTClient,
+		},
+	}
+}
+
+// BatchV1InterfaceCronJobsFunc describes the behavior when the CronJobs
+// method of the parent MockBatchV1Interface instance is invoked.
+type BatchV1InterfaceCronJobsFunc struct {
+	defaultHook func(string) v15.CronJobInterface
+	hooks       []func(string) v15.CronJobInterface
+	history     []BatchV1InterfaceCronJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// CronJobs delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBatchV1Interface) CronJobs(v0 string) v15.CronJobInterface {
+	r0 := m.CronJobsFunc.nextHook()(v0)
+	m.CronJobsFunc.appendCall(BatchV1InterfaceCronJobsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CronJobs method of
+// the parent MockBatchV1Interface instance is invoked and the hook queue is
+// empty.
+func (f *BatchV1InterfaceCronJobsFunc) SetDefaultHook(hook func(string) v15.CronJobInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CronJobs method of the parent MockBatchV1Interface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *BatchV1InterfaceCronJobsFunc) PushHook(hook func(string) v15.CronJobInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BatchV1InterfaceCronJobsFunc) SetDefaultReturn(r0 v15.CronJobInterface) {
+	f.SetDefaultHook(func(string) v15.CronJobInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BatchV1InterfaceCronJobsFunc) PushReturn(r0 v15.CronJobInterface) {
+	f.PushHook(func(string) v15.CronJobInterface {
+		return r0
+	})
+}
+
+func (f *BatchV1InterfaceCronJobsFunc) nextHook() func(string) v15.CronJobInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BatchV1InterfaceCronJobsFunc) appendCall(r0 BatchV1InterfaceCronJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BatchV1InterfaceCronJobsFuncCall objects
+// describing the invocations of this function.
+func (f *BatchV1InterfaceCronJobsFunc) History() []BatchV1InterfaceCronJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]BatchV1InterfaceCronJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BatchV1InterfaceCronJobsFuncCall is an object that describes an
+// invocation of method CronJobs on an instance of MockBatchV1Interface.
+type BatchV1InterfaceCronJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v15.CronJobInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BatchV1InterfaceCronJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BatchV1InterfaceCronJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BatchV1InterfaceJobsFunc describes the behavior when the Jobs method of
+// the parent MockBatchV1Interface instance is invoked.
+type BatchV1InterfaceJobsFunc struct {
+	defaultHook func(string) v15.JobInterface
+	hooks       []func(string) v15.JobInterface
+	history     []BatchV1InterfaceJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// Jobs delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBatchV1Interface) Jobs(v0 string) v15.JobInterface {
+	r0 := m.JobsFunc.nextHook()(v0)
+	m.JobsFunc.appendCall(BatchV1InterfaceJobsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Jobs method of the
+// parent MockBatchV1Interface instance is invoked and the hook queue is
+// empty.
+func (f *BatchV1InterfaceJobsFunc) SetDefaultHook(hook func(string) v15.JobInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Jobs method of the parent MockBatchV1Interface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *BatchV1InterfaceJobsFunc) PushHook(hook func(string) v15.JobInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BatchV1InterfaceJobsFunc) SetDefaultReturn(r0 v15.JobInterface) {
+	f.SetDefaultHook(func(string) v15.JobInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BatchV1InterfaceJobsFunc) PushReturn(r0 v15.JobInterface) {
+	f.PushHook(func(string) v15.JobInterface {
+		return r0
+	})
+}
+
+func (f *BatchV1InterfaceJobsFunc) nextHook() func(string) v15.JobInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BatchV1InterfaceJobsFunc) appendCall(r0 BatchV1InterfaceJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BatchV1InterfaceJobsFuncCall objects
+// describing the invocations of this function.
+func (f *BatchV1InterfaceJobsFunc) History() []BatchV1InterfaceJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]BatchV1InterfaceJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BatchV1InterfaceJobsFuncCall is an object that describes an invocation of
+// method Jobs on an instance of MockBatchV1Interface.
+type BatchV1InterfaceJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v15.JobInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BatchV1InterfaceJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BatchV1InterfaceJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BatchV1InterfaceRESTClientFunc describes the behavior when the RESTClient
+// method of the parent MockBatchV1Interface instance is invoked.
+type BatchV1InterfaceRESTClientFunc struct {
+	defaultHook func() rest.Interface
+	hooks       []func() rest.Interface
+	history     []BatchV1InterfaceRESTClientFuncCall
+	mutex       sync.Mutex
+}
+
+// RESTClient delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockBatchV1Interface) RESTClient() rest.Interface {
+	r0 := m.RESTClientFunc.nextHook()()
+	m.RESTClientFunc.appendCall(BatchV1InterfaceRESTClientFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RESTClient method of
+// the parent MockBatchV1Interface instance is invoked and the hook queue is
+// empty.
+func (f *BatchV1InterfaceRESTClientFunc) SetDefaultHook(hook func() rest.Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RESTClient method of the parent MockBatchV1Interface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *BatchV1InterfaceRESTClientFunc) PushHook(hook func() rest.Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BatchV1InterfaceRESTClientFunc) SetDefaultReturn(r0 rest.Interface) {
+	f.SetDefaultHook(func() rest.Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BatchV1InterfaceRESTClientFunc) PushReturn(r0 rest.Interface) {
+	f.PushHook(func() rest.Interface {
+		return r0
+	})
+}
+
+func (f *BatchV1InterfaceRESTClientFunc) nextHook() func() rest.Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BatchV1InterfaceRESTClientFunc) appendCall(r0 BatchV1InterfaceRESTClientFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BatchV1InterfaceRESTClientFuncCall objects
+// describing the invocations of this function.
+func (f *BatchV1InterfaceRESTClientFunc) History() []BatchV1InterfaceRESTClientFuncCall {
+	f.mutex.Lock()
+	history := make([]BatchV1InterfaceRESTClientFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BatchV1InterfaceRESTClientFuncCall is an object that describes an
+// invocation of method RESTClient on an instance of MockBatchV1Interface.
+type BatchV1InterfaceRESTClientFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 rest.Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BatchV1InterfaceRESTClientFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BatchV1InterfaceRESTClientFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockJobInterface is a mock implementation of the JobInterface interface
+// (from the package k8s.io/client-go/kubernetes/typed/batch/v1) used for
+// unit testing.
+type MockJobInterface struct {
+	// ApplyFunc is an instance of a mock function object controlling the
+	// behavior of the method Apply.
+	ApplyFunc *JobInterfaceApplyFunc
+	// ApplyStatusFunc is an instance of a mock function object controlling
+	// the behavior of the method ApplyStatus.
+	ApplyStatusFunc *JobInterfaceApplyStatusFunc
+	// CreateFunc is an instance of a mock function object controlling the
+	// behavior of the method Create.
+	CreateFunc *JobInterfaceCreateFunc
+	// DeleteFunc is an instance of a mock function object controlling the
+	// behavior of the method Delete.
+	DeleteFunc *JobInterfaceDeleteFunc
+	// DeleteCollectionFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteCollection.
+	DeleteCollectionFunc *JobInterfaceDeleteCollectionFunc
+	// GetFunc is an instance of a mock function object controlling the
+	// behavior of the method Get.
+	GetFunc *JobInterfaceGetFunc
+	// ListFunc is an instance of a mock function object controlling the
+	// behavior of the method List.
+	ListFunc *JobInterfaceListFunc
+	// PatchFunc is an instance of a mock function object controlling the
+	// behavior of the method Patch.
+	PatchFunc *JobInterfacePatchFunc
+	// UpdateFunc is an instance of a mock function object controlling the
+	// behavior of the method Update.
+	UpdateFunc *JobInterfaceUpdateFunc
+	// UpdateStatusFunc is an instance of a mock function object controlling
+	// the behavior of the method UpdateStatus.
+	UpdateStatusFunc *JobInterfaceUpdateStatusFunc
+	// WatchFunc is an instance of a mock function object controlling the
+	// behavior of the method Watch.
+	WatchFunc *JobInterfaceWatchFunc
+}
+
+// NewMockJobInterface creates a new mock of the JobInterface interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockJobInterface() *MockJobInterface {
+	return &MockJobInterface{
+		ApplyFunc: &JobInterfaceApplyFunc{
+			defaultHook: func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (r0 *v119.Job, r1 error) {
+				return
+			},
+		},
+		ApplyStatusFunc: &JobInterfaceApplyStatusFunc{
+			defaultHook: func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (r0 *v119.Job, r1 error) {
+				return
+			},
+		},
+		CreateFunc: &JobInterfaceCreateFunc{
+			defaultHook: func(context.Context, *v119.Job, v118.CreateOptions) (r0 *v119.Job, r1 error) {
+				return
+			},
+		},
+		DeleteFunc: &JobInterfaceDeleteFunc{
+			defaultHook: func(context.Context, string, v118.DeleteOptions) (r0 error) {
+				return
+			},
+		},
+		DeleteCollectionFunc: &JobInterfaceDeleteCollectionFunc{
+			defaultHook: func(context.Context, v118.DeleteOptions, v118.ListOptions) (r0 error) {
+				return
+			},
+		},
+		GetFunc: &JobInterfaceGetFunc{
+			defaultHook: func(context.Context, string, v118.GetOptions) (r0 *v119.Job, r1 error) {
+				return
+			},
+		},
+		ListFunc: &JobInterfaceListFunc{
+			defaultHook: func(context.Context, v118.ListOptions) (r0 *v119.JobList, r1 error) {
+				return
+			},
+		},
+		PatchFunc: &JobInterfacePatchFunc{
+			defaultHook: func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (r0 *v119.Job, r1 error) {
+				return
+			},
+		},
+		UpdateFunc: &JobInterfaceUpdateFunc{
+			defaultHook: func(context.Context, *v119.Job, v118.UpdateOptions) (r0 *v119.Job, r1 error) {
+				return
+			},
+		},
+		UpdateStatusFunc: &JobInterfaceUpdateStatusFunc{
+			defaultHook: func(context.Context, *v119.Job, v118.UpdateOptions) (r0 *v119.Job, r1 error) {
+				return
+			},
+		},
+		WatchFunc: &JobInterfaceWatchFunc{
+			defaultHook: func(context.Context, v118.ListOptions) (r0 watch.Interface, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockJobInterface creates a new mock of the JobInterface
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockJobInterface() *MockJobInterface {
+	return &MockJobInterface{
+		ApplyFunc: &JobInterfaceApplyFunc{
+			defaultHook: func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error) {
+				panic("unexpected invocation of MockJobInterface.Apply")
+			},
+		},
+		ApplyStatusFunc: &JobInterfaceApplyStatusFunc{
+			defaultHook: func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error) {
+				panic("unexpected invocation of MockJobInterface.ApplyStatus")
+			},
+		},
+		CreateFunc: &JobInterfaceCreateFunc{
+			defaultHook: func(context.Context, *v119.Job, v118.CreateOptions) (*v119.Job, error) {
+				panic("unexpected invocation of MockJobInterface.Create")
+			},
+		},
+		DeleteFunc: &JobInterfaceDeleteFunc{
+			defaultHook: func(context.Context, string, v118.DeleteOptions) error {
+				panic("unexpected invocation of MockJobInterface.Delete")
+			},
+		},
+		DeleteCollectionFunc: &JobInterfaceDeleteCollectionFunc{
+			defaultHook: func(context.Context, v118.DeleteOptions, v118.ListOptions) error {
+				panic("unexpected invocation of MockJobInterface.DeleteCollection")
+			},
+		},
+		GetFunc: &JobInterfaceGetFunc{
+			defaultHook: func(context.Context, string, v118.GetOptions) (*v119.Job, error) {
+				panic("unexpected invocation of MockJobInterface.Get")
+			},
+		},
+		ListFunc: &JobInterfaceListFunc{
+			defaultHook: func(context.Context, v118.ListOptions) (*v119.JobList, error) {
+				panic("unexpected invocation of MockJobInterface.List")
+			},
+		},
+		PatchFunc: &JobInterfacePatchFunc{
+			defaultHook: func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v119.Job, error) {
+				panic("unexpected invocation of MockJobInterface.Patch")
+			},
+		},
+		UpdateFunc: &JobInterfaceUpdateFunc{
+			defaultHook: func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error) {
+				panic("unexpected invocation of MockJobInterface.Update")
+			},
+		},
+		UpdateStatusFunc: &JobInterfaceUpdateStatusFunc{
+			defaultHook: func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error) {
+				panic("unexpected invocation of MockJobInterface.UpdateStatus")
+			},
+		},
+		WatchFunc: &JobInterfaceWatchFunc{
+			defaultHook: func(context.Context, v118.ListOptions) (watch.Interface, error) {
+				panic("unexpected invocation of MockJobInterface.Watch")
+			},
+		},
+	}
+}
+
+// NewMockJobInterfaceFrom creates a new mock of the MockJobInterface
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockJobInterfaceFrom(i v15.JobInterface) *MockJobInterface {
+	return &MockJobInterface{
+		ApplyFunc: &JobInterfaceApplyFunc{
+			defaultHook: i.Apply,
+		},
+		ApplyStatusFunc: &JobInterfaceApplyStatusFunc{
+			defaultHook: i.ApplyStatus,
+		},
+		CreateFunc: &JobInterfaceCreateFunc{
+			defaultHook: i.Create,
+		},
+		DeleteFunc: &JobInterfaceDeleteFunc{
+			defaultHook: i.Delete,
+		},
+		DeleteCollectionFunc: &JobInterfaceDeleteCollectionFunc{
+			defaultHook: i.DeleteCollection,
+		},
+		GetFunc: &JobInterfaceGetFunc{
+			defaultHook: i.Get,
+		},
+		ListFunc: &JobInterfaceListFunc{
+			defaultHook: i.List,
+		},
+		PatchFunc: &JobInterfacePatchFunc{
+			defaultHook: i.Patch,
+		},
+		UpdateFunc: &JobInterfaceUpdateFunc{
+			defaultHook: i.Update,
+		},
+		UpdateStatusFunc: &JobInterfaceUpdateStatusFunc{
+			defaultHook: i.UpdateStatus,
+		},
+		WatchFunc: &JobInterfaceWatchFunc{
+			defaultHook: i.Watch,
+		},
+	}
+}
+
+// JobInterfaceApplyFunc describes the behavior when the Apply method of the
+// parent MockJobInterface instance is invoked.
+type JobInterfaceApplyFunc struct {
+	defaultHook func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error)
+	hooks       []func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error)
+	history     []JobInterfaceApplyFuncCall
+	mutex       sync.Mutex
+}
+
+// Apply delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJobInterface) Apply(v0 context.Context, v1 *v117.JobApplyConfiguration, v2 v118.ApplyOptions) (*v119.Job, error) {
+	r0, r1 := m.ApplyFunc.nextHook()(v0, v1, v2)
+	m.ApplyFunc.appendCall(JobInterfaceApplyFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Apply method of the
+// parent MockJobInterface instance is invoked and the hook queue is empty.
+func (f *JobInterfaceApplyFunc) SetDefaultHook(hook func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Apply method of the parent MockJobInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *JobInterfaceApplyFunc) PushHook(hook func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobInterfaceApplyFunc) SetDefaultReturn(r0 *v119.Job, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobInterfaceApplyFunc) PushReturn(r0 *v119.Job, r1 error) {
+	f.PushHook(func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+func (f *JobInterfaceApplyFunc) nextHook() func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobInterfaceApplyFunc) appendCall(r0 JobInterfaceApplyFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobInterfaceApplyFuncCall objects
+// describing the invocations of this function.
+func (f *JobInterfaceApplyFunc) History() []JobInterfaceApplyFuncCall {
+	f.mutex.Lock()
+	history := make([]JobInterfaceApplyFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobInterfaceApplyFuncCall is an object that describes an invocation of
+// method Apply on an instance of MockJobInterface.
+type JobInterfaceApplyFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v117.JobApplyConfiguration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.ApplyOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v119.Job
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobInterfaceApplyFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobInterfaceApplyFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// JobInterfaceApplyStatusFunc describes the behavior when the ApplyStatus
+// method of the parent MockJobInterface instance is invoked.
+type JobInterfaceApplyStatusFunc struct {
+	defaultHook func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error)
+	hooks       []func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error)
+	history     []JobInterfaceApplyStatusFuncCall
+	mutex       sync.Mutex
+}
+
+// ApplyStatus delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockJobInterface) ApplyStatus(v0 context.Context, v1 *v117.JobApplyConfiguration, v2 v118.ApplyOptions) (*v119.Job, error) {
+	r0, r1 := m.ApplyStatusFunc.nextHook()(v0, v1, v2)
+	m.ApplyStatusFunc.appendCall(JobInterfaceApplyStatusFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ApplyStatus method
+// of the parent MockJobInterface instance is invoked and the hook queue is
+// empty.
+func (f *JobInterfaceApplyStatusFunc) SetDefaultHook(hook func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ApplyStatus method of the parent MockJobInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *JobInterfaceApplyStatusFunc) PushHook(hook func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobInterfaceApplyStatusFunc) SetDefaultReturn(r0 *v119.Job, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobInterfaceApplyStatusFunc) PushReturn(r0 *v119.Job, r1 error) {
+	f.PushHook(func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+func (f *JobInterfaceApplyStatusFunc) nextHook() func(context.Context, *v117.JobApplyConfiguration, v118.ApplyOptions) (*v119.Job, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobInterfaceApplyStatusFunc) appendCall(r0 JobInterfaceApplyStatusFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobInterfaceApplyStatusFuncCall objects
+// describing the invocations of this function.
+func (f *JobInterfaceApplyStatusFunc) History() []JobInterfaceApplyStatusFuncCall {
+	f.mutex.Lock()
+	history := make([]JobInterfaceApplyStatusFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobInterfaceApplyStatusFuncCall is an object that describes an invocation
+// of method ApplyStatus on an instance of MockJobInterface.
+type JobInterfaceApplyStatusFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v117.JobApplyConfiguration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.ApplyOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v119.Job
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobInterfaceApplyStatusFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobInterfaceApplyStatusFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// JobInterfaceCreateFunc describes the behavior when the Create method of
+// the parent MockJobInterface instance is invoked.
+type JobInterfaceCreateFunc struct {
+	defaultHook func(context.Context, *v119.Job, v118.CreateOptions) (*v119.Job, error)
+	hooks       []func(context.Context, *v119.Job, v118.CreateOptions) (*v119.Job, error)
+	history     []JobInterfaceCreateFuncCall
+	mutex       sync.Mutex
+}
+
+// Create delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJobInterface) Create(v0 context.Context, v1 *v119.Job, v2 v118.CreateOptions) (*v119.Job, error) {
+	r0, r1 := m.CreateFunc.nextHook()(v0, v1, v2)
+	m.CreateFunc.appendCall(JobInterfaceCreateFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Create method of the
+// parent MockJobInterface instance is invoked and the hook queue is empty.
+func (f *JobInterfaceCreateFunc) SetDefaultHook(hook func(context.Context, *v119.Job, v118.CreateOptions) (*v119.Job, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Create method of the parent MockJobInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *JobInterfaceCreateFunc) PushHook(hook func(context.Context, *v119.Job, v118.CreateOptions) (*v119.Job, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobInterfaceCreateFunc) SetDefaultReturn(r0 *v119.Job, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v119.Job, v118.CreateOptions) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobInterfaceCreateFunc) PushReturn(r0 *v119.Job, r1 error) {
+	f.PushHook(func(context.Context, *v119.Job, v118.CreateOptions) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+func (f *JobInterfaceCreateFunc) nextHook() func(context.Context, *v119.Job, v118.CreateOptions) (*v119.Job, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobInterfaceCreateFunc) appendCall(r0 JobInterfaceCreateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobInterfaceCreateFuncCall objects
+// describing the invocations of this function.
+func (f *JobInterfaceCreateFunc) History() []JobInterfaceCreateFuncCall {
+	f.mutex.Lock()
+	history := make([]JobInterfaceCreateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobInterfaceCreateFuncCall is an object that describes an invocation of
+// method Create on an instance of MockJobInterface.
+type JobInterfaceCreateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v119.Job
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.CreateOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v119.Job
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobInterfaceCreateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobInterfaceCreateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// JobInterfaceDeleteFunc describes the behavior when the Delete method of
+// the parent MockJobInterface instance is invoked.
+type JobInterfaceDeleteFunc struct {
+	defaultHook func(context.Context, string, v118.DeleteOptions) error
+	hooks       []func(context.Context, string, v118.DeleteOptions) error
+	history     []JobInterfaceDeleteFuncCall
+	mutex       sync.Mutex
+}
+
+// Delete delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJobInterface) Delete(v0 context.Context, v1 string, v2 v118.DeleteOptions) error {
+	r0 := m.DeleteFunc.nextHook()(v0, v1, v2)
+	m.DeleteFunc.appendCall(JobInterfaceDeleteFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Delete method of the
+// parent MockJobInterface instance is invoked and the hook queue is empty.
+func (f *JobInterfaceDeleteFunc) SetDefaultHook(hook func(context.Context, string, v118.DeleteOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Delete method of the parent MockJobInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *JobInterfaceDeleteFunc) PushHook(hook func(context.Context, string, v118.DeleteOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobInterfaceDeleteFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, v118.DeleteOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobInterfaceDeleteFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, v118.DeleteOptions) error {
+		return r0
+	})
+}
+
+func (f *JobInterfaceDeleteFunc) nextHook() func(context.Context, string, v118.DeleteOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobInterfaceDeleteFunc) appendCall(r0 JobInterfaceDeleteFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobInterfaceDeleteFuncCall objects
+// describing the invocations of this function.
+func (f *JobInterfaceDeleteFunc) History() []JobInterfaceDeleteFuncCall {
+	f.mutex.Lock()
+	history := make([]JobInterfaceDeleteFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobInterfaceDeleteFuncCall is an object that describes an invocation of
+// method Delete on an instance of MockJobInterface.
+type JobInterfaceDeleteFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.DeleteOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobInterfaceDeleteFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobInterfaceDeleteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// JobInterfaceDeleteCollectionFunc describes the behavior when the
+// DeleteCollection method of the parent MockJobInterface instance is
+// invoked.
+type JobInterfaceDeleteCollectionFunc struct {
+	defaultHook func(context.Context, v118.DeleteOptions, v118.ListOptions) error
+	hooks       []func(context.Context, v118.DeleteOptions, v118.ListOptions) error
+	history     []JobInterfaceDeleteCollectionFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteCollection delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockJobInterface) DeleteCollection(v0 context.Context, v1 v118.DeleteOptions, v2 v118.ListOptions) error {
+	r0 := m.DeleteCollectionFunc.nextHook()(v0, v1, v2)
+	m.DeleteCollectionFunc.appendCall(JobInterfaceDeleteCollectionFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteCollection
+// method of the parent MockJobInterface instance is invoked and the hook
+// queue is empty.
+func (f *JobInterfaceDeleteCollectionFunc) SetDefaultHook(hook func(context.Context, v118.DeleteOptions, v118.ListOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteCollection method of the parent MockJobInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *JobInterfaceDeleteCollectionFunc) PushHook(hook func(context.Context, v118.DeleteOptions, v118.ListOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobInterfaceDeleteCollectionFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, v118.DeleteOptions, v118.ListOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobInterfaceDeleteCollectionFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, v118.DeleteOptions, v118.ListOptions) error {
+		return r0
+	})
+}
+
+func (f *JobInterfaceDeleteCollectionFunc) nextHook() func(context.Context, v118.DeleteOptions, v118.ListOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobInterfaceDeleteCollectionFunc) appendCall(r0 JobInterfaceDeleteCollectionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobInterfaceDeleteCollectionFuncCall
+// objects describing the invocations of this function.
+func (f *JobInterfaceDeleteCollectionFunc) History() []JobInterfaceDeleteCollectionFuncCall {
+	f.mutex.Lock()
+	history := make([]JobInterfaceDeleteCollectionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobInterfaceDeleteCollectionFuncCall is an object that describes an
+// invocation of method DeleteCollection on an instance of MockJobInterface.
+type JobInterfaceDeleteCollectionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 v118.DeleteOptions
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.ListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobInterfaceDeleteCollectionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobInterfaceDeleteCollectionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// JobInterfaceGetFunc describes the behavior when the Get method of the
+// parent MockJobInterface instance is invoked.
+type JobInterfaceGetFunc struct {
+	defaultHook func(context.Context, string, v118.GetOptions) (*v119.Job, error)
+	hooks       []func(context.Context, string, v118.GetOptions) (*v119.Job, error)
+	history     []JobInterfaceGetFuncCall
+	mutex       sync.Mutex
+}
+
+// Get delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJobInterface) Get(v0 context.Context, v1 string, v2 v118.GetOptions) (*v119.Job, error) {
+	r0, r1 := m.GetFunc.nextHook()(v0, v1, v2)
+	m.GetFunc.appendCall(JobInterfaceGetFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Get method of the
+// parent MockJobInterface instance is invoked and the hook queue is empty.
+func (f *JobInterfaceGetFunc) SetDefaultHook(hook func(context.Context, string, v118.GetOptions) (*v119.Job, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Get method of the parent MockJobInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *JobInterfaceGetFunc) PushHook(hook func(context.Context, string, v118.GetOptions) (*v119.Job, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobInterfaceGetFunc) SetDefaultReturn(r0 *v119.Job, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, v118.GetOptions) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobInterfaceGetFunc) PushReturn(r0 *v119.Job, r1 error) {
+	f.PushHook(func(context.Context, string, v118.GetOptions) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+func (f *JobInterfaceGetFunc) nextHook() func(context.Context, string, v118.GetOptions) (*v119.Job, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobInterfaceGetFunc) appendCall(r0 JobInterfaceGetFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobInterfaceGetFuncCall objects describing
+// the invocations of this function.
+func (f *JobInterfaceGetFunc) History() []JobInterfaceGetFuncCall {
+	f.mutex.Lock()
+	history := make([]JobInterfaceGetFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobInterfaceGetFuncCall is an object that describes an invocation of
+// method Get on an instance of MockJobInterface.
+type JobInterfaceGetFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.GetOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v119.Job
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobInterfaceGetFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobInterfaceGetFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// JobInterfaceListFunc describes the behavior when the List method of the
+// parent MockJobInterface instance is invoked.
+type JobInterfaceListFunc struct {
+	defaultHook func(context.Context, v118.ListOptions) (*v119.JobList, error)
+	hooks       []func(context.Context, v118.ListOptions) (*v119.JobList, error)
+	history     []JobInterfaceListFuncCall
+	mutex       sync.Mutex
+}
+
+// List delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJobInterface) List(v0 context.Context, v1 v118.ListOptions) (*v119.JobList, error) {
+	r0, r1 := m.ListFunc.nextHook()(v0, v1)
+	m.ListFunc.appendCall(JobInterfaceListFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the List method of the
+// parent MockJobInterface instance is invoked and the hook queue is empty.
+func (f *JobInterfaceListFunc) SetDefaultHook(hook func(context.Context, v118.ListOptions) (*v119.JobList, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// List method of the parent MockJobInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *JobInterfaceListFunc) PushHook(hook func(context.Context, v118.ListOptions) (*v119.JobList, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobInterfaceListFunc) SetDefaultReturn(r0 *v119.JobList, r1 error) {
+	f.SetDefaultHook(func(context.Context, v118.ListOptions) (*v119.JobList, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobInterfaceListFunc) PushReturn(r0 *v119.JobList, r1 error) {
+	f.PushHook(func(context.Context, v118.ListOptions) (*v119.JobList, error) {
+		return r0, r1
+	})
+}
+
+func (f *JobInterfaceListFunc) nextHook() func(context.Context, v118.ListOptions) (*v119.JobList, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobInterfaceListFunc) appendCall(r0 JobInterfaceListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobInterfaceListFuncCall objects describing
+// the invocations of this function.
+func (f *JobInterfaceListFunc) History() []JobInterfaceListFuncCall {
+	f.mutex.Lock()
+	history := make([]JobInterfaceListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobInterfaceListFuncCall is an object that describes an invocation of
+// method List on an instance of MockJobInterface.
+type JobInterfaceListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 v118.ListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v119.JobList
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobInterfaceListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobInterfaceListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// JobInterfacePatchFunc describes the behavior when the Patch method of the
+// parent MockJobInterface instance is invoked.
+type JobInterfacePatchFunc struct {
+	defaultHook func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v119.Job, error)
+	hooks       []func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v119.Job, error)
+	history     []JobInterfacePatchFuncCall
+	mutex       sync.Mutex
+}
+
+// Patch delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJobInterface) Patch(v0 context.Context, v1 string, v2 types1.PatchType, v3 []byte, v4 v118.PatchOptions, v5 ...string) (*v119.Job, error) {
+	r0, r1 := m.PatchFunc.nextHook()(v0, v1, v2, v3, v4, v5...)
+	m.PatchFunc.appendCall(JobInterfacePatchFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Patch method of the
+// parent MockJobInterface instance is invoked and the hook queue is empty.
+func (f *JobInterfacePatchFunc) SetDefaultHook(hook func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v119.Job, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Patch method of the parent MockJobInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *JobInterfacePatchFunc) PushHook(hook func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v119.Job, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobInterfacePatchFunc) SetDefaultReturn(r0 *v119.Job, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobInterfacePatchFunc) PushReturn(r0 *v119.Job, r1 error) {
+	f.PushHook(func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+func (f *JobInterfacePatchFunc) nextHook() func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v119.Job, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobInterfacePatchFunc) appendCall(r0 JobInterfacePatchFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobInterfacePatchFuncCall objects
+// describing the invocations of this function.
+func (f *JobInterfacePatchFunc) History() []JobInterfacePatchFuncCall {
+	f.mutex.Lock()
+	history := make([]JobInterfacePatchFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobInterfacePatchFuncCall is an object that describes an invocation of
+// method Patch on an instance of MockJobInterface.
+type JobInterfacePatchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 types1.PatchType
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []byte
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 v118.PatchOptions
+	// Arg5 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg5 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v119.Job
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c JobInterfacePatchFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg5 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobInterfacePatchFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// JobInterfaceUpdateFunc describes the behavior when the Update method of
+// the parent MockJobInterface instance is invoked.
+type JobInterfaceUpdateFunc struct {
+	defaultHook func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error)
+	hooks       []func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error)
+	history     []JobInterfaceUpdateFuncCall
+	mutex       sync.Mutex
+}
+
+// Update delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJobInterface) Update(v0 context.Context, v1 *v119.Job, v2 v118.UpdateOptions) (*v119.Job, error) {
+	r0, r1 := m.UpdateFunc.nextHook()(v0, v1, v2)
+	m.UpdateFunc.appendCall(JobInterfaceUpdateFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Update method of the
+// parent MockJobInterface instance is invoked and the hook queue is empty.
+func (f *JobInterfaceUpdateFunc) SetDefaultHook(hook func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Update method of the parent MockJobInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *JobInterfaceUpdateFunc) PushHook(hook func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobInterfaceUpdateFunc) SetDefaultReturn(r0 *v119.Job, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobInterfaceUpdateFunc) PushReturn(r0 *v119.Job, r1 error) {
+	f.PushHook(func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+func (f *JobInterfaceUpdateFunc) nextHook() func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobInterfaceUpdateFunc) appendCall(r0 JobInterfaceUpdateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobInterfaceUpdateFuncCall objects
+// describing the invocations of this function.
+func (f *JobInterfaceUpdateFunc) History() []JobInterfaceUpdateFuncCall {
+	f.mutex.Lock()
+	history := make([]JobInterfaceUpdateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobInterfaceUpdateFuncCall is an object that describes an invocation of
+// method Update on an instance of MockJobInterface.
+type JobInterfaceUpdateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v119.Job
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.UpdateOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v119.Job
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobInterfaceUpdateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobInterfaceUpdateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// JobInterfaceUpdateStatusFunc describes the behavior when the UpdateStatus
+// method of the parent MockJobInterface instance is invoked.
+type JobInterfaceUpdateStatusFunc struct {
+	defaultHook func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error)
+	hooks       []func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error)
+	history     []JobInterfaceUpdateStatusFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateStatus delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockJobInterface) UpdateStatus(v0 context.Context, v1 *v119.Job, v2 v118.UpdateOptions) (*v119.Job, error) {
+	r0, r1 := m.UpdateStatusFunc.nextHook()(v0, v1, v2)
+	m.UpdateStatusFunc.appendCall(JobInterfaceUpdateStatusFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdateStatus method
+// of the parent MockJobInterface instance is invoked and the hook queue is
+// empty.
+func (f *JobInterfaceUpdateStatusFunc) SetDefaultHook(hook func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateStatus method of the parent MockJobInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *JobInterfaceUpdateStatusFunc) PushHook(hook func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobInterfaceUpdateStatusFunc) SetDefaultReturn(r0 *v119.Job, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobInterfaceUpdateStatusFunc) PushReturn(r0 *v119.Job, r1 error) {
+	f.PushHook(func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error) {
+		return r0, r1
+	})
+}
+
+func (f *JobInterfaceUpdateStatusFunc) nextHook() func(context.Context, *v119.Job, v118.UpdateOptions) (*v119.Job, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobInterfaceUpdateStatusFunc) appendCall(r0 JobInterfaceUpdateStatusFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobInterfaceUpdateStatusFuncCall objects
+// describing the invocations of this function.
+func (f *JobInterfaceUpdateStatusFunc) History() []JobInterfaceUpdateStatusFuncCall {
+	f.mutex.Lock()
+	history := make([]JobInterfaceUpdateStatusFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobInterfaceUpdateStatusFuncCall is an object that describes an
+// invocation of method UpdateStatus on an instance of MockJobInterface.
+type JobInterfaceUpdateStatusFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v119.Job
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.UpdateOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v119.Job
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobInterfaceUpdateStatusFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobInterfaceUpdateStatusFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// JobInterfaceWatchFunc describes the behavior when the Watch method of the
+// parent MockJobInterface instance is invoked.
+type JobInterfaceWatchFunc struct {
+	defaultHook func(context.Context, v118.ListOptions) (watch.Interface, error)
+	hooks       []func(context.Context, v118.ListOptions) (watch.Interface, error)
+	history     []JobInterfaceWatchFuncCall
+	mutex       sync.Mutex
+}
+
+// Watch delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJobInterface) Watch(v0 context.Context, v1 v118.ListOptions) (watch.Interface, error) {
+	r0, r1 := m.WatchFunc.nextHook()(v0, v1)
+	m.WatchFunc.appendCall(JobInterfaceWatchFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Watch method of the
+// parent MockJobInterface instance is invoked and the hook queue is empty.
+func (f *JobInterfaceWatchFunc) SetDefaultHook(hook func(context.Context, v118.ListOptions) (watch.Interface, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Watch method of the parent MockJobInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *JobInterfaceWatchFunc) PushHook(hook func(context.Context, v118.ListOptions) (watch.Interface, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobInterfaceWatchFunc) SetDefaultReturn(r0 watch.Interface, r1 error) {
+	f.SetDefaultHook(func(context.Context, v118.ListOptions) (watch.Interface, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobInterfaceWatchFunc) PushReturn(r0 watch.Interface, r1 error) {
+	f.PushHook(func(context.Context, v118.ListOptions) (watch.Interface, error) {
+		return r0, r1
+	})
+}
+
+func (f *JobInterfaceWatchFunc) nextHook() func(context.Context, v118.ListOptions) (watch.Interface, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobInterfaceWatchFunc) appendCall(r0 JobInterfaceWatchFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobInterfaceWatchFuncCall objects
+// describing the invocations of this function.
+func (f *JobInterfaceWatchFunc) History() []JobInterfaceWatchFuncCall {
+	f.mutex.Lock()
+	history := make([]JobInterfaceWatchFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobInterfaceWatchFuncCall is an object that describes an invocation of
+// method Watch on an instance of MockJobInterface.
+type JobInterfaceWatchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 v118.ListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 watch.Interface
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobInterfaceWatchFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobInterfaceWatchFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockCoreV1Interface is a mock implementation of the CoreV1Interface
+// interface (from the package k8s.io/client-go/kubernetes/typed/core/v1)
+// used for unit testing.
+type MockCoreV1Interface struct {
+	// ComponentStatusesFunc is an instance of a mock function object
+	// controlling the behavior of the method ComponentStatuses.
+	ComponentStatusesFunc *CoreV1InterfaceComponentStatusesFunc
+	// ConfigMapsFunc is an instance of a mock function object controlling
+	// the behavior of the method ConfigMaps.
+	ConfigMapsFunc *CoreV1InterfaceConfigMapsFunc
+	// EndpointsFunc is an instance of a mock function object controlling
+	// the behavior of the method Endpoints.
+	EndpointsFunc *CoreV1InterfaceEndpointsFunc
+	// EventsFunc is an instance of a mock function object controlling the
+	// behavior of the method Events.
+	EventsFunc *CoreV1InterfaceEventsFunc
+	// LimitRangesFunc is an instance of a mock function object controlling
+	// the behavior of the method LimitRanges.
+	LimitRangesFunc *CoreV1InterfaceLimitRangesFunc
+	// NamespacesFunc is an instance of a mock function object controlling
+	// the behavior of the method Namespaces.
+	NamespacesFunc *CoreV1InterfaceNamespacesFunc
+	// NodesFunc is an instance of a mock function object controlling the
+	// behavior of the method Nodes.
+	NodesFunc *CoreV1InterfaceNodesFunc
+	// PersistentVolumeClaimsFunc is an instance of a mock function object
+	// controlling the behavior of the method PersistentVolumeClaims.
+	PersistentVolumeClaimsFunc *CoreV1InterfacePersistentVolumeClaimsFunc
+	// PersistentVolumesFunc is an instance of a mock function object
+	// controlling the behavior of the method PersistentVolumes.
+	PersistentVolumesFunc *CoreV1InterfacePersistentVolumesFunc
+	// PodTemplatesFunc is an instance of a mock function object controlling
+	// the behavior of the method PodTemplates.
+	PodTemplatesFunc *CoreV1InterfacePodTemplatesFunc
+	// PodsFunc is an instance of a mock function object controlling the
+	// behavior of the method Pods.
+	PodsFunc *CoreV1InterfacePodsFunc
+	// RESTClientFunc is an instance of a mock function object controlling
+	// the behavior of the method RESTClient.
+	RESTClientFunc *CoreV1InterfaceRESTClientFunc
+	// ReplicationControllersFunc is an instance of a mock function object
+	// controlling the behavior of the method ReplicationControllers.
+	ReplicationControllersFunc *CoreV1InterfaceReplicationControllersFunc
+	// ResourceQuotasFunc is an instance of a mock function object
+	// controlling the behavior of the method ResourceQuotas.
+	ResourceQuotasFunc *CoreV1InterfaceResourceQuotasFunc
+	// SecretsFunc is an instance of a mock function object controlling the
+	// behavior of the method Secrets.
+	SecretsFunc *CoreV1InterfaceSecretsFunc
+	// ServiceAccountsFunc is an instance of a mock function object
+	// controlling the behavior of the method ServiceAccounts.
+	ServiceAccountsFunc *CoreV1InterfaceServiceAccountsFunc
+	// ServicesFunc is an instance of a mock function object controlling the
+	// behavior of the method Services.
+	ServicesFunc *CoreV1InterfaceServicesFunc
+}
+
+// NewMockCoreV1Interface creates a new mock of the CoreV1Interface
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockCoreV1Interface() *MockCoreV1Interface {
+	return &MockCoreV1Interface{
+		ComponentStatusesFunc: &CoreV1InterfaceComponentStatusesFunc{
+			defaultHook: func() (r0 v18.ComponentStatusInterface) {
+				return
+			},
+		},
+		ConfigMapsFunc: &CoreV1InterfaceConfigMapsFunc{
+			defaultHook: func(string) (r0 v18.ConfigMapInterface) {
+				return
+			},
+		},
+		EndpointsFunc: &CoreV1InterfaceEndpointsFunc{
+			defaultHook: func(string) (r0 v18.EndpointsInterface) {
+				return
+			},
+		},
+		EventsFunc: &CoreV1InterfaceEventsFunc{
+			defaultHook: func(string) (r0 v18.EventInterface) {
+				return
+			},
+		},
+		LimitRangesFunc: &CoreV1InterfaceLimitRangesFunc{
+			defaultHook: func(string) (r0 v18.LimitRangeInterface) {
+				return
+			},
+		},
+		NamespacesFunc: &CoreV1InterfaceNamespacesFunc{
+			defaultHook: func() (r0 v18.NamespaceInterface) {
+				return
+			},
+		},
+		NodesFunc: &CoreV1InterfaceNodesFunc{
+			defaultHook: func() (r0 v18.NodeInterface) {
+				return
+			},
+		},
+		PersistentVolumeClaimsFunc: &CoreV1InterfacePersistentVolumeClaimsFunc{
+			defaultHook: func(string) (r0 v18.PersistentVolumeClaimInterface) {
+				return
+			},
+		},
+		PersistentVolumesFunc: &CoreV1InterfacePersistentVolumesFunc{
+			defaultHook: func() (r0 v18.PersistentVolumeInterface) {
+				return
+			},
+		},
+		PodTemplatesFunc: &CoreV1InterfacePodTemplatesFunc{
+			defaultHook: func(string) (r0 v18.PodTemplateInterface) {
+				return
+			},
+		},
+		PodsFunc: &CoreV1InterfacePodsFunc{
+			defaultHook: func(string) (r0 v18.PodInterface) {
+				return
+			},
+		},
+		RESTClientFunc: &CoreV1InterfaceRESTClientFunc{
+			defaultHook: func() (r0 rest.Interface) {
+				return
+			},
+		},
+		ReplicationControllersFunc: &CoreV1InterfaceReplicationControllersFunc{
+			defaultHook: func(string) (r0 v18.ReplicationControllerInterface) {
+				return
+			},
+		},
+		ResourceQuotasFunc: &CoreV1InterfaceResourceQuotasFunc{
+			defaultHook: func(string) (r0 v18.ResourceQuotaInterface) {
+				return
+			},
+		},
+		SecretsFunc: &CoreV1InterfaceSecretsFunc{
+			defaultHook: func(string) (r0 v18.SecretInterface) {
+				return
+			},
+		},
+		ServiceAccountsFunc: &CoreV1InterfaceServiceAccountsFunc{
+			defaultHook: func(string) (r0 v18.ServiceAccountInterface) {
+				return
+			},
+		},
+		ServicesFunc: &CoreV1InterfaceServicesFunc{
+			defaultHook: func(string) (r0 v18.ServiceInterface) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockCoreV1Interface creates a new mock of the CoreV1Interface
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockCoreV1Interface() *MockCoreV1Interface {
+	return &MockCoreV1Interface{
+		ComponentStatusesFunc: &CoreV1InterfaceComponentStatusesFunc{
+			defaultHook: func() v18.ComponentStatusInterface {
+				panic("unexpected invocation of MockCoreV1Interface.ComponentStatuses")
+			},
+		},
+		ConfigMapsFunc: &CoreV1InterfaceConfigMapsFunc{
+			defaultHook: func(string) v18.ConfigMapInterface {
+				panic("unexpected invocation of MockCoreV1Interface.ConfigMaps")
+			},
+		},
+		EndpointsFunc: &CoreV1InterfaceEndpointsFunc{
+			defaultHook: func(string) v18.EndpointsInterface {
+				panic("unexpected invocation of MockCoreV1Interface.Endpoints")
+			},
+		},
+		EventsFunc: &CoreV1InterfaceEventsFunc{
+			defaultHook: func(string) v18.EventInterface {
+				panic("unexpected invocation of MockCoreV1Interface.Events")
+			},
+		},
+		LimitRangesFunc: &CoreV1InterfaceLimitRangesFunc{
+			defaultHook: func(string) v18.LimitRangeInterface {
+				panic("unexpected invocation of MockCoreV1Interface.LimitRanges")
+			},
+		},
+		NamespacesFunc: &CoreV1InterfaceNamespacesFunc{
+			defaultHook: func() v18.NamespaceInterface {
+				panic("unexpected invocation of MockCoreV1Interface.Namespaces")
+			},
+		},
+		NodesFunc: &CoreV1InterfaceNodesFunc{
+			defaultHook: func() v18.NodeInterface {
+				panic("unexpected invocation of MockCoreV1Interface.Nodes")
+			},
+		},
+		PersistentVolumeClaimsFunc: &CoreV1InterfacePersistentVolumeClaimsFunc{
+			defaultHook: func(string) v18.PersistentVolumeClaimInterface {
+				panic("unexpected invocation of MockCoreV1Interface.PersistentVolumeClaims")
+			},
+		},
+		PersistentVolumesFunc: &CoreV1InterfacePersistentVolumesFunc{
+			defaultHook: func() v18.PersistentVolumeInterface {
+				panic("unexpected invocation of MockCoreV1Interface.PersistentVolumes")
+			},
+		},
+		PodTemplatesFunc: &CoreV1InterfacePodTemplatesFunc{
+			defaultHook: func(string) v18.PodTemplateInterface {
+				panic("unexpected invocation of MockCoreV1Interface.PodTemplates")
+			},
+		},
+		PodsFunc: &CoreV1InterfacePodsFunc{
+			defaultHook: func(string) v18.PodInterface {
+				panic("unexpected invocation of MockCoreV1Interface.Pods")
+			},
+		},
+		RESTClientFunc: &CoreV1InterfaceRESTClientFunc{
+			defaultHook: func() rest.Interface {
+				panic("unexpected invocation of MockCoreV1Interface.RESTClient")
+			},
+		},
+		ReplicationControllersFunc: &CoreV1InterfaceReplicationControllersFunc{
+			defaultHook: func(string) v18.ReplicationControllerInterface {
+				panic("unexpected invocation of MockCoreV1Interface.ReplicationControllers")
+			},
+		},
+		ResourceQuotasFunc: &CoreV1InterfaceResourceQuotasFunc{
+			defaultHook: func(string) v18.ResourceQuotaInterface {
+				panic("unexpected invocation of MockCoreV1Interface.ResourceQuotas")
+			},
+		},
+		SecretsFunc: &CoreV1InterfaceSecretsFunc{
+			defaultHook: func(string) v18.SecretInterface {
+				panic("unexpected invocation of MockCoreV1Interface.Secrets")
+			},
+		},
+		ServiceAccountsFunc: &CoreV1InterfaceServiceAccountsFunc{
+			defaultHook: func(string) v18.ServiceAccountInterface {
+				panic("unexpected invocation of MockCoreV1Interface.ServiceAccounts")
+			},
+		},
+		ServicesFunc: &CoreV1InterfaceServicesFunc{
+			defaultHook: func(string) v18.ServiceInterface {
+				panic("unexpected invocation of MockCoreV1Interface.Services")
+			},
+		},
+	}
+}
+
+// NewMockCoreV1InterfaceFrom creates a new mock of the MockCoreV1Interface
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockCoreV1InterfaceFrom(i v18.CoreV1Interface) *MockCoreV1Interface {
+	return &MockCoreV1Interface{
+		ComponentStatusesFunc: &CoreV1InterfaceComponentStatusesFunc{
+			defaultHook: i.ComponentStatuses,
+		},
+		ConfigMapsFunc: &CoreV1InterfaceConfigMapsFunc{
+			defaultHook: i.ConfigMaps,
+		},
+		EndpointsFunc: &CoreV1InterfaceEndpointsFunc{
+			defaultHook: i.Endpoints,
+		},
+		EventsFunc: &CoreV1InterfaceEventsFunc{
+			defaultHook: i.Events,
+		},
+		LimitRangesFunc: &CoreV1InterfaceLimitRangesFunc{
+			defaultHook: i.LimitRanges,
+		},
+		NamespacesFunc: &CoreV1InterfaceNamespacesFunc{
+			defaultHook: i.Namespaces,
+		},
+		NodesFunc: &CoreV1InterfaceNodesFunc{
+			defaultHook: i.Nodes,
+		},
+		PersistentVolumeClaimsFunc: &CoreV1InterfacePersistentVolumeClaimsFunc{
+			defaultHook: i.PersistentVolumeClaims,
+		},
+		PersistentVolumesFunc: &CoreV1InterfacePersistentVolumesFunc{
+			defaultHook: i.PersistentVolumes,
+		},
+		PodTemplatesFunc: &CoreV1InterfacePodTemplatesFunc{
+			defaultHook: i.PodTemplates,
+		},
+		PodsFunc: &CoreV1InterfacePodsFunc{
+			defaultHook: i.Pods,
+		},
+		RESTClientFunc: &CoreV1InterfaceRESTClientFunc{
+			defaultHook: i.RESTClient,
+		},
+		ReplicationControllersFunc: &CoreV1InterfaceReplicationControllersFunc{
+			defaultHook: i.ReplicationControllers,
+		},
+		ResourceQuotasFunc: &CoreV1InterfaceResourceQuotasFunc{
+			defaultHook: i.ResourceQuotas,
+		},
+		SecretsFunc: &CoreV1InterfaceSecretsFunc{
+			defaultHook: i.Secrets,
+		},
+		ServiceAccountsFunc: &CoreV1InterfaceServiceAccountsFunc{
+			defaultHook: i.ServiceAccounts,
+		},
+		ServicesFunc: &CoreV1InterfaceServicesFunc{
+			defaultHook: i.Services,
+		},
+	}
+}
+
+// CoreV1InterfaceComponentStatusesFunc describes the behavior when the
+// ComponentStatuses method of the parent MockCoreV1Interface instance is
+// invoked.
+type CoreV1InterfaceComponentStatusesFunc struct {
+	defaultHook func() v18.ComponentStatusInterface
+	hooks       []func() v18.ComponentStatusInterface
+	history     []CoreV1InterfaceComponentStatusesFuncCall
+	mutex       sync.Mutex
+}
+
+// ComponentStatuses delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCoreV1Interface) ComponentStatuses() v18.ComponentStatusInterface {
+	r0 := m.ComponentStatusesFunc.nextHook()()
+	m.ComponentStatusesFunc.appendCall(CoreV1InterfaceComponentStatusesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ComponentStatuses
+// method of the parent MockCoreV1Interface instance is invoked and the hook
+// queue is empty.
+func (f *CoreV1InterfaceComponentStatusesFunc) SetDefaultHook(hook func() v18.ComponentStatusInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ComponentStatuses method of the parent MockCoreV1Interface instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CoreV1InterfaceComponentStatusesFunc) PushHook(hook func() v18.ComponentStatusInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceComponentStatusesFunc) SetDefaultReturn(r0 v18.ComponentStatusInterface) {
+	f.SetDefaultHook(func() v18.ComponentStatusInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceComponentStatusesFunc) PushReturn(r0 v18.ComponentStatusInterface) {
+	f.PushHook(func() v18.ComponentStatusInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceComponentStatusesFunc) nextHook() func() v18.ComponentStatusInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceComponentStatusesFunc) appendCall(r0 CoreV1InterfaceComponentStatusesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfaceComponentStatusesFuncCall
+// objects describing the invocations of this function.
+func (f *CoreV1InterfaceComponentStatusesFunc) History() []CoreV1InterfaceComponentStatusesFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceComponentStatusesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceComponentStatusesFuncCall is an object that describes an
+// invocation of method ComponentStatuses on an instance of
+// MockCoreV1Interface.
+type CoreV1InterfaceComponentStatusesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.ComponentStatusInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceComponentStatusesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceComponentStatusesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfaceConfigMapsFunc describes the behavior when the ConfigMaps
+// method of the parent MockCoreV1Interface instance is invoked.
+type CoreV1InterfaceConfigMapsFunc struct {
+	defaultHook func(string) v18.ConfigMapInterface
+	hooks       []func(string) v18.ConfigMapInterface
+	history     []CoreV1InterfaceConfigMapsFuncCall
+	mutex       sync.Mutex
+}
+
+// ConfigMaps delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCoreV1Interface) ConfigMaps(v0 string) v18.ConfigMapInterface {
+	r0 := m.ConfigMapsFunc.nextHook()(v0)
+	m.ConfigMapsFunc.appendCall(CoreV1InterfaceConfigMapsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ConfigMaps method of
+// the parent MockCoreV1Interface instance is invoked and the hook queue is
+// empty.
+func (f *CoreV1InterfaceConfigMapsFunc) SetDefaultHook(hook func(string) v18.ConfigMapInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ConfigMaps method of the parent MockCoreV1Interface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CoreV1InterfaceConfigMapsFunc) PushHook(hook func(string) v18.ConfigMapInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceConfigMapsFunc) SetDefaultReturn(r0 v18.ConfigMapInterface) {
+	f.SetDefaultHook(func(string) v18.ConfigMapInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceConfigMapsFunc) PushReturn(r0 v18.ConfigMapInterface) {
+	f.PushHook(func(string) v18.ConfigMapInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceConfigMapsFunc) nextHook() func(string) v18.ConfigMapInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceConfigMapsFunc) appendCall(r0 CoreV1InterfaceConfigMapsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfaceConfigMapsFuncCall objects
+// describing the invocations of this function.
+func (f *CoreV1InterfaceConfigMapsFunc) History() []CoreV1InterfaceConfigMapsFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceConfigMapsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceConfigMapsFuncCall is an object that describes an
+// invocation of method ConfigMaps on an instance of MockCoreV1Interface.
+type CoreV1InterfaceConfigMapsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.ConfigMapInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceConfigMapsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceConfigMapsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfaceEndpointsFunc describes the behavior when the Endpoints
+// method of the parent MockCoreV1Interface instance is invoked.
+type CoreV1InterfaceEndpointsFunc struct {
+	defaultHook func(string) v18.EndpointsInterface
+	hooks       []func(string) v18.EndpointsInterface
+	history     []CoreV1InterfaceEndpointsFuncCall
+	mutex       sync.Mutex
+}
+
+// Endpoints delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCoreV1Interface) Endpoints(v0 string) v18.EndpointsInterface {
+	r0 := m.EndpointsFunc.nextHook()(v0)
+	m.EndpointsFunc.appendCall(CoreV1InterfaceEndpointsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Endpoints method of
+// the parent MockCoreV1Interface instance is invoked and the hook queue is
+// empty.
+func (f *CoreV1InterfaceEndpointsFunc) SetDefaultHook(hook func(string) v18.EndpointsInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Endpoints method of the parent MockCoreV1Interface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CoreV1InterfaceEndpointsFunc) PushHook(hook func(string) v18.EndpointsInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceEndpointsFunc) SetDefaultReturn(r0 v18.EndpointsInterface) {
+	f.SetDefaultHook(func(string) v18.EndpointsInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceEndpointsFunc) PushReturn(r0 v18.EndpointsInterface) {
+	f.PushHook(func(string) v18.EndpointsInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceEndpointsFunc) nextHook() func(string) v18.EndpointsInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceEndpointsFunc) appendCall(r0 CoreV1InterfaceEndpointsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfaceEndpointsFuncCall objects
+// describing the invocations of this function.
+func (f *CoreV1InterfaceEndpointsFunc) History() []CoreV1InterfaceEndpointsFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceEndpointsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceEndpointsFuncCall is an object that describes an
+// invocation of method Endpoints on an instance of MockCoreV1Interface.
+type CoreV1InterfaceEndpointsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.EndpointsInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceEndpointsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceEndpointsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfaceEventsFunc describes the behavior when the Events method
+// of the parent MockCoreV1Interface instance is invoked.
+type CoreV1InterfaceEventsFunc struct {
+	defaultHook func(string) v18.EventInterface
+	hooks       []func(string) v18.EventInterface
+	history     []CoreV1InterfaceEventsFuncCall
+	mutex       sync.Mutex
+}
+
+// Events delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCoreV1Interface) Events(v0 string) v18.EventInterface {
+	r0 := m.EventsFunc.nextHook()(v0)
+	m.EventsFunc.appendCall(CoreV1InterfaceEventsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Events method of the
+// parent MockCoreV1Interface instance is invoked and the hook queue is
+// empty.
+func (f *CoreV1InterfaceEventsFunc) SetDefaultHook(hook func(string) v18.EventInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Events method of the parent MockCoreV1Interface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CoreV1InterfaceEventsFunc) PushHook(hook func(string) v18.EventInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceEventsFunc) SetDefaultReturn(r0 v18.EventInterface) {
+	f.SetDefaultHook(func(string) v18.EventInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceEventsFunc) PushReturn(r0 v18.EventInterface) {
+	f.PushHook(func(string) v18.EventInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceEventsFunc) nextHook() func(string) v18.EventInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceEventsFunc) appendCall(r0 CoreV1InterfaceEventsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfaceEventsFuncCall objects
+// describing the invocations of this function.
+func (f *CoreV1InterfaceEventsFunc) History() []CoreV1InterfaceEventsFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceEventsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceEventsFuncCall is an object that describes an invocation
+// of method Events on an instance of MockCoreV1Interface.
+type CoreV1InterfaceEventsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.EventInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceEventsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceEventsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfaceLimitRangesFunc describes the behavior when the
+// LimitRanges method of the parent MockCoreV1Interface instance is invoked.
+type CoreV1InterfaceLimitRangesFunc struct {
+	defaultHook func(string) v18.LimitRangeInterface
+	hooks       []func(string) v18.LimitRangeInterface
+	history     []CoreV1InterfaceLimitRangesFuncCall
+	mutex       sync.Mutex
+}
+
+// LimitRanges delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCoreV1Interface) LimitRanges(v0 string) v18.LimitRangeInterface {
+	r0 := m.LimitRangesFunc.nextHook()(v0)
+	m.LimitRangesFunc.appendCall(CoreV1InterfaceLimitRangesFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the LimitRanges method
+// of the parent MockCoreV1Interface instance is invoked and the hook queue
+// is empty.
+func (f *CoreV1InterfaceLimitRangesFunc) SetDefaultHook(hook func(string) v18.LimitRangeInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LimitRanges method of the parent MockCoreV1Interface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CoreV1InterfaceLimitRangesFunc) PushHook(hook func(string) v18.LimitRangeInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceLimitRangesFunc) SetDefaultReturn(r0 v18.LimitRangeInterface) {
+	f.SetDefaultHook(func(string) v18.LimitRangeInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceLimitRangesFunc) PushReturn(r0 v18.LimitRangeInterface) {
+	f.PushHook(func(string) v18.LimitRangeInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceLimitRangesFunc) nextHook() func(string) v18.LimitRangeInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceLimitRangesFunc) appendCall(r0 CoreV1InterfaceLimitRangesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfaceLimitRangesFuncCall objects
+// describing the invocations of this function.
+func (f *CoreV1InterfaceLimitRangesFunc) History() []CoreV1InterfaceLimitRangesFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceLimitRangesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceLimitRangesFuncCall is an object that describes an
+// invocation of method LimitRanges on an instance of MockCoreV1Interface.
+type CoreV1InterfaceLimitRangesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.LimitRangeInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceLimitRangesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceLimitRangesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfaceNamespacesFunc describes the behavior when the Namespaces
+// method of the parent MockCoreV1Interface instance is invoked.
+type CoreV1InterfaceNamespacesFunc struct {
+	defaultHook func() v18.NamespaceInterface
+	hooks       []func() v18.NamespaceInterface
+	history     []CoreV1InterfaceNamespacesFuncCall
+	mutex       sync.Mutex
+}
+
+// Namespaces delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCoreV1Interface) Namespaces() v18.NamespaceInterface {
+	r0 := m.NamespacesFunc.nextHook()()
+	m.NamespacesFunc.appendCall(CoreV1InterfaceNamespacesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Namespaces method of
+// the parent MockCoreV1Interface instance is invoked and the hook queue is
+// empty.
+func (f *CoreV1InterfaceNamespacesFunc) SetDefaultHook(hook func() v18.NamespaceInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Namespaces method of the parent MockCoreV1Interface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CoreV1InterfaceNamespacesFunc) PushHook(hook func() v18.NamespaceInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceNamespacesFunc) SetDefaultReturn(r0 v18.NamespaceInterface) {
+	f.SetDefaultHook(func() v18.NamespaceInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceNamespacesFunc) PushReturn(r0 v18.NamespaceInterface) {
+	f.PushHook(func() v18.NamespaceInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceNamespacesFunc) nextHook() func() v18.NamespaceInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceNamespacesFunc) appendCall(r0 CoreV1InterfaceNamespacesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfaceNamespacesFuncCall objects
+// describing the invocations of this function.
+func (f *CoreV1InterfaceNamespacesFunc) History() []CoreV1InterfaceNamespacesFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceNamespacesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceNamespacesFuncCall is an object that describes an
+// invocation of method Namespaces on an instance of MockCoreV1Interface.
+type CoreV1InterfaceNamespacesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.NamespaceInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceNamespacesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceNamespacesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfaceNodesFunc describes the behavior when the Nodes method of
+// the parent MockCoreV1Interface instance is invoked.
+type CoreV1InterfaceNodesFunc struct {
+	defaultHook func() v18.NodeInterface
+	hooks       []func() v18.NodeInterface
+	history     []CoreV1InterfaceNodesFuncCall
+	mutex       sync.Mutex
+}
+
+// Nodes delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCoreV1Interface) Nodes() v18.NodeInterface {
+	r0 := m.NodesFunc.nextHook()()
+	m.NodesFunc.appendCall(CoreV1InterfaceNodesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Nodes method of the
+// parent MockCoreV1Interface instance is invoked and the hook queue is
+// empty.
+func (f *CoreV1InterfaceNodesFunc) SetDefaultHook(hook func() v18.NodeInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Nodes method of the parent MockCoreV1Interface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CoreV1InterfaceNodesFunc) PushHook(hook func() v18.NodeInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceNodesFunc) SetDefaultReturn(r0 v18.NodeInterface) {
+	f.SetDefaultHook(func() v18.NodeInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceNodesFunc) PushReturn(r0 v18.NodeInterface) {
+	f.PushHook(func() v18.NodeInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceNodesFunc) nextHook() func() v18.NodeInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceNodesFunc) appendCall(r0 CoreV1InterfaceNodesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfaceNodesFuncCall objects
+// describing the invocations of this function.
+func (f *CoreV1InterfaceNodesFunc) History() []CoreV1InterfaceNodesFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceNodesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceNodesFuncCall is an object that describes an invocation of
+// method Nodes on an instance of MockCoreV1Interface.
+type CoreV1InterfaceNodesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.NodeInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceNodesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceNodesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfacePersistentVolumeClaimsFunc describes the behavior when the
+// PersistentVolumeClaims method of the parent MockCoreV1Interface instance
+// is invoked.
+type CoreV1InterfacePersistentVolumeClaimsFunc struct {
+	defaultHook func(string) v18.PersistentVolumeClaimInterface
+	hooks       []func(string) v18.PersistentVolumeClaimInterface
+	history     []CoreV1InterfacePersistentVolumeClaimsFuncCall
+	mutex       sync.Mutex
+}
+
+// PersistentVolumeClaims delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCoreV1Interface) PersistentVolumeClaims(v0 string) v18.PersistentVolumeClaimInterface {
+	r0 := m.PersistentVolumeClaimsFunc.nextHook()(v0)
+	m.PersistentVolumeClaimsFunc.appendCall(CoreV1InterfacePersistentVolumeClaimsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// PersistentVolumeClaims method of the parent MockCoreV1Interface instance
+// is invoked and the hook queue is empty.
+func (f *CoreV1InterfacePersistentVolumeClaimsFunc) SetDefaultHook(hook func(string) v18.PersistentVolumeClaimInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PersistentVolumeClaims method of the parent MockCoreV1Interface instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CoreV1InterfacePersistentVolumeClaimsFunc) PushHook(hook func(string) v18.PersistentVolumeClaimInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfacePersistentVolumeClaimsFunc) SetDefaultReturn(r0 v18.PersistentVolumeClaimInterface) {
+	f.SetDefaultHook(func(string) v18.PersistentVolumeClaimInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfacePersistentVolumeClaimsFunc) PushReturn(r0 v18.PersistentVolumeClaimInterface) {
+	f.PushHook(func(string) v18.PersistentVolumeClaimInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfacePersistentVolumeClaimsFunc) nextHook() func(string) v18.PersistentVolumeClaimInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfacePersistentVolumeClaimsFunc) appendCall(r0 CoreV1InterfacePersistentVolumeClaimsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CoreV1InterfacePersistentVolumeClaimsFuncCall objects describing the
+// invocations of this function.
+func (f *CoreV1InterfacePersistentVolumeClaimsFunc) History() []CoreV1InterfacePersistentVolumeClaimsFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfacePersistentVolumeClaimsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfacePersistentVolumeClaimsFuncCall is an object that describes
+// an invocation of method PersistentVolumeClaims on an instance of
+// MockCoreV1Interface.
+type CoreV1InterfacePersistentVolumeClaimsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.PersistentVolumeClaimInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfacePersistentVolumeClaimsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfacePersistentVolumeClaimsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfacePersistentVolumesFunc describes the behavior when the
+// PersistentVolumes method of the parent MockCoreV1Interface instance is
+// invoked.
+type CoreV1InterfacePersistentVolumesFunc struct {
+	defaultHook func() v18.PersistentVolumeInterface
+	hooks       []func() v18.PersistentVolumeInterface
+	history     []CoreV1InterfacePersistentVolumesFuncCall
+	mutex       sync.Mutex
+}
+
+// PersistentVolumes delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCoreV1Interface) PersistentVolumes() v18.PersistentVolumeInterface {
+	r0 := m.PersistentVolumesFunc.nextHook()()
+	m.PersistentVolumesFunc.appendCall(CoreV1InterfacePersistentVolumesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the PersistentVolumes
+// method of the parent MockCoreV1Interface instance is invoked and the hook
+// queue is empty.
+func (f *CoreV1InterfacePersistentVolumesFunc) SetDefaultHook(hook func() v18.PersistentVolumeInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PersistentVolumes method of the parent MockCoreV1Interface instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CoreV1InterfacePersistentVolumesFunc) PushHook(hook func() v18.PersistentVolumeInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfacePersistentVolumesFunc) SetDefaultReturn(r0 v18.PersistentVolumeInterface) {
+	f.SetDefaultHook(func() v18.PersistentVolumeInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfacePersistentVolumesFunc) PushReturn(r0 v18.PersistentVolumeInterface) {
+	f.PushHook(func() v18.PersistentVolumeInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfacePersistentVolumesFunc) nextHook() func() v18.PersistentVolumeInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfacePersistentVolumesFunc) appendCall(r0 CoreV1InterfacePersistentVolumesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfacePersistentVolumesFuncCall
+// objects describing the invocations of this function.
+func (f *CoreV1InterfacePersistentVolumesFunc) History() []CoreV1InterfacePersistentVolumesFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfacePersistentVolumesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfacePersistentVolumesFuncCall is an object that describes an
+// invocation of method PersistentVolumes on an instance of
+// MockCoreV1Interface.
+type CoreV1InterfacePersistentVolumesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.PersistentVolumeInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfacePersistentVolumesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfacePersistentVolumesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfacePodTemplatesFunc describes the behavior when the
+// PodTemplates method of the parent MockCoreV1Interface instance is
+// invoked.
+type CoreV1InterfacePodTemplatesFunc struct {
+	defaultHook func(string) v18.PodTemplateInterface
+	hooks       []func(string) v18.PodTemplateInterface
+	history     []CoreV1InterfacePodTemplatesFuncCall
+	mutex       sync.Mutex
+}
+
+// PodTemplates delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCoreV1Interface) PodTemplates(v0 string) v18.PodTemplateInterface {
+	r0 := m.PodTemplatesFunc.nextHook()(v0)
+	m.PodTemplatesFunc.appendCall(CoreV1InterfacePodTemplatesFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the PodTemplates method
+// of the parent MockCoreV1Interface instance is invoked and the hook queue
+// is empty.
+func (f *CoreV1InterfacePodTemplatesFunc) SetDefaultHook(hook func(string) v18.PodTemplateInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PodTemplates method of the parent MockCoreV1Interface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CoreV1InterfacePodTemplatesFunc) PushHook(hook func(string) v18.PodTemplateInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfacePodTemplatesFunc) SetDefaultReturn(r0 v18.PodTemplateInterface) {
+	f.SetDefaultHook(func(string) v18.PodTemplateInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfacePodTemplatesFunc) PushReturn(r0 v18.PodTemplateInterface) {
+	f.PushHook(func(string) v18.PodTemplateInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfacePodTemplatesFunc) nextHook() func(string) v18.PodTemplateInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfacePodTemplatesFunc) appendCall(r0 CoreV1InterfacePodTemplatesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfacePodTemplatesFuncCall objects
+// describing the invocations of this function.
+func (f *CoreV1InterfacePodTemplatesFunc) History() []CoreV1InterfacePodTemplatesFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfacePodTemplatesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfacePodTemplatesFuncCall is an object that describes an
+// invocation of method PodTemplates on an instance of MockCoreV1Interface.
+type CoreV1InterfacePodTemplatesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.PodTemplateInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfacePodTemplatesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfacePodTemplatesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfacePodsFunc describes the behavior when the Pods method of
+// the parent MockCoreV1Interface instance is invoked.
+type CoreV1InterfacePodsFunc struct {
+	defaultHook func(string) v18.PodInterface
+	hooks       []func(string) v18.PodInterface
+	history     []CoreV1InterfacePodsFuncCall
+	mutex       sync.Mutex
+}
+
+// Pods delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCoreV1Interface) Pods(v0 string) v18.PodInterface {
+	r0 := m.PodsFunc.nextHook()(v0)
+	m.PodsFunc.appendCall(CoreV1InterfacePodsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Pods method of the
+// parent MockCoreV1Interface instance is invoked and the hook queue is
+// empty.
+func (f *CoreV1InterfacePodsFunc) SetDefaultHook(hook func(string) v18.PodInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Pods method of the parent MockCoreV1Interface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CoreV1InterfacePodsFunc) PushHook(hook func(string) v18.PodInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfacePodsFunc) SetDefaultReturn(r0 v18.PodInterface) {
+	f.SetDefaultHook(func(string) v18.PodInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfacePodsFunc) PushReturn(r0 v18.PodInterface) {
+	f.PushHook(func(string) v18.PodInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfacePodsFunc) nextHook() func(string) v18.PodInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfacePodsFunc) appendCall(r0 CoreV1InterfacePodsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfacePodsFuncCall objects
+// describing the invocations of this function.
+func (f *CoreV1InterfacePodsFunc) History() []CoreV1InterfacePodsFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfacePodsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfacePodsFuncCall is an object that describes an invocation of
+// method Pods on an instance of MockCoreV1Interface.
+type CoreV1InterfacePodsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.PodInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfacePodsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfacePodsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfaceRESTClientFunc describes the behavior when the RESTClient
+// method of the parent MockCoreV1Interface instance is invoked.
+type CoreV1InterfaceRESTClientFunc struct {
+	defaultHook func() rest.Interface
+	hooks       []func() rest.Interface
+	history     []CoreV1InterfaceRESTClientFuncCall
+	mutex       sync.Mutex
+}
+
+// RESTClient delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCoreV1Interface) RESTClient() rest.Interface {
+	r0 := m.RESTClientFunc.nextHook()()
+	m.RESTClientFunc.appendCall(CoreV1InterfaceRESTClientFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RESTClient method of
+// the parent MockCoreV1Interface instance is invoked and the hook queue is
+// empty.
+func (f *CoreV1InterfaceRESTClientFunc) SetDefaultHook(hook func() rest.Interface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RESTClient method of the parent MockCoreV1Interface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CoreV1InterfaceRESTClientFunc) PushHook(hook func() rest.Interface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceRESTClientFunc) SetDefaultReturn(r0 rest.Interface) {
+	f.SetDefaultHook(func() rest.Interface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceRESTClientFunc) PushReturn(r0 rest.Interface) {
+	f.PushHook(func() rest.Interface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceRESTClientFunc) nextHook() func() rest.Interface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceRESTClientFunc) appendCall(r0 CoreV1InterfaceRESTClientFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfaceRESTClientFuncCall objects
+// describing the invocations of this function.
+func (f *CoreV1InterfaceRESTClientFunc) History() []CoreV1InterfaceRESTClientFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceRESTClientFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceRESTClientFuncCall is an object that describes an
+// invocation of method RESTClient on an instance of MockCoreV1Interface.
+type CoreV1InterfaceRESTClientFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 rest.Interface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceRESTClientFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceRESTClientFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfaceReplicationControllersFunc describes the behavior when the
+// ReplicationControllers method of the parent MockCoreV1Interface instance
+// is invoked.
+type CoreV1InterfaceReplicationControllersFunc struct {
+	defaultHook func(string) v18.ReplicationControllerInterface
+	hooks       []func(string) v18.ReplicationControllerInterface
+	history     []CoreV1InterfaceReplicationControllersFuncCall
+	mutex       sync.Mutex
+}
+
+// ReplicationControllers delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCoreV1Interface) ReplicationControllers(v0 string) v18.ReplicationControllerInterface {
+	r0 := m.ReplicationControllersFunc.nextHook()(v0)
+	m.ReplicationControllersFunc.appendCall(CoreV1InterfaceReplicationControllersFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// ReplicationControllers method of the parent MockCoreV1Interface instance
+// is invoked and the hook queue is empty.
+func (f *CoreV1InterfaceReplicationControllersFunc) SetDefaultHook(hook func(string) v18.ReplicationControllerInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReplicationControllers method of the parent MockCoreV1Interface instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CoreV1InterfaceReplicationControllersFunc) PushHook(hook func(string) v18.ReplicationControllerInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceReplicationControllersFunc) SetDefaultReturn(r0 v18.ReplicationControllerInterface) {
+	f.SetDefaultHook(func(string) v18.ReplicationControllerInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceReplicationControllersFunc) PushReturn(r0 v18.ReplicationControllerInterface) {
+	f.PushHook(func(string) v18.ReplicationControllerInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceReplicationControllersFunc) nextHook() func(string) v18.ReplicationControllerInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceReplicationControllersFunc) appendCall(r0 CoreV1InterfaceReplicationControllersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CoreV1InterfaceReplicationControllersFuncCall objects describing the
+// invocations of this function.
+func (f *CoreV1InterfaceReplicationControllersFunc) History() []CoreV1InterfaceReplicationControllersFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceReplicationControllersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceReplicationControllersFuncCall is an object that describes
+// an invocation of method ReplicationControllers on an instance of
+// MockCoreV1Interface.
+type CoreV1InterfaceReplicationControllersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.ReplicationControllerInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceReplicationControllersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceReplicationControllersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfaceResourceQuotasFunc describes the behavior when the
+// ResourceQuotas method of the parent MockCoreV1Interface instance is
+// invoked.
+type CoreV1InterfaceResourceQuotasFunc struct {
+	defaultHook func(string) v18.ResourceQuotaInterface
+	hooks       []func(string) v18.ResourceQuotaInterface
+	history     []CoreV1InterfaceResourceQuotasFuncCall
+	mutex       sync.Mutex
+}
+
+// ResourceQuotas delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCoreV1Interface) ResourceQuotas(v0 string) v18.ResourceQuotaInterface {
+	r0 := m.ResourceQuotasFunc.nextHook()(v0)
+	m.ResourceQuotasFunc.appendCall(CoreV1InterfaceResourceQuotasFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ResourceQuotas
+// method of the parent MockCoreV1Interface instance is invoked and the hook
+// queue is empty.
+func (f *CoreV1InterfaceResourceQuotasFunc) SetDefaultHook(hook func(string) v18.ResourceQuotaInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ResourceQuotas method of the parent MockCoreV1Interface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CoreV1InterfaceResourceQuotasFunc) PushHook(hook func(string) v18.ResourceQuotaInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceResourceQuotasFunc) SetDefaultReturn(r0 v18.ResourceQuotaInterface) {
+	f.SetDefaultHook(func(string) v18.ResourceQuotaInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceResourceQuotasFunc) PushReturn(r0 v18.ResourceQuotaInterface) {
+	f.PushHook(func(string) v18.ResourceQuotaInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceResourceQuotasFunc) nextHook() func(string) v18.ResourceQuotaInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceResourceQuotasFunc) appendCall(r0 CoreV1InterfaceResourceQuotasFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfaceResourceQuotasFuncCall
+// objects describing the invocations of this function.
+func (f *CoreV1InterfaceResourceQuotasFunc) History() []CoreV1InterfaceResourceQuotasFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceResourceQuotasFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceResourceQuotasFuncCall is an object that describes an
+// invocation of method ResourceQuotas on an instance of
+// MockCoreV1Interface.
+type CoreV1InterfaceResourceQuotasFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.ResourceQuotaInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceResourceQuotasFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceResourceQuotasFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfaceSecretsFunc describes the behavior when the Secrets method
+// of the parent MockCoreV1Interface instance is invoked.
+type CoreV1InterfaceSecretsFunc struct {
+	defaultHook func(string) v18.SecretInterface
+	hooks       []func(string) v18.SecretInterface
+	history     []CoreV1InterfaceSecretsFuncCall
+	mutex       sync.Mutex
+}
+
+// Secrets delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCoreV1Interface) Secrets(v0 string) v18.SecretInterface {
+	r0 := m.SecretsFunc.nextHook()(v0)
+	m.SecretsFunc.appendCall(CoreV1InterfaceSecretsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Secrets method of
+// the parent MockCoreV1Interface instance is invoked and the hook queue is
+// empty.
+func (f *CoreV1InterfaceSecretsFunc) SetDefaultHook(hook func(string) v18.SecretInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Secrets method of the parent MockCoreV1Interface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CoreV1InterfaceSecretsFunc) PushHook(hook func(string) v18.SecretInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceSecretsFunc) SetDefaultReturn(r0 v18.SecretInterface) {
+	f.SetDefaultHook(func(string) v18.SecretInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceSecretsFunc) PushReturn(r0 v18.SecretInterface) {
+	f.PushHook(func(string) v18.SecretInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceSecretsFunc) nextHook() func(string) v18.SecretInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceSecretsFunc) appendCall(r0 CoreV1InterfaceSecretsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfaceSecretsFuncCall objects
+// describing the invocations of this function.
+func (f *CoreV1InterfaceSecretsFunc) History() []CoreV1InterfaceSecretsFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceSecretsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceSecretsFuncCall is an object that describes an invocation
+// of method Secrets on an instance of MockCoreV1Interface.
+type CoreV1InterfaceSecretsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.SecretInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceSecretsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceSecretsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfaceServiceAccountsFunc describes the behavior when the
+// ServiceAccounts method of the parent MockCoreV1Interface instance is
+// invoked.
+type CoreV1InterfaceServiceAccountsFunc struct {
+	defaultHook func(string) v18.ServiceAccountInterface
+	hooks       []func(string) v18.ServiceAccountInterface
+	history     []CoreV1InterfaceServiceAccountsFuncCall
+	mutex       sync.Mutex
+}
+
+// ServiceAccounts delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCoreV1Interface) ServiceAccounts(v0 string) v18.ServiceAccountInterface {
+	r0 := m.ServiceAccountsFunc.nextHook()(v0)
+	m.ServiceAccountsFunc.appendCall(CoreV1InterfaceServiceAccountsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ServiceAccounts
+// method of the parent MockCoreV1Interface instance is invoked and the hook
+// queue is empty.
+func (f *CoreV1InterfaceServiceAccountsFunc) SetDefaultHook(hook func(string) v18.ServiceAccountInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ServiceAccounts method of the parent MockCoreV1Interface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CoreV1InterfaceServiceAccountsFunc) PushHook(hook func(string) v18.ServiceAccountInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceServiceAccountsFunc) SetDefaultReturn(r0 v18.ServiceAccountInterface) {
+	f.SetDefaultHook(func(string) v18.ServiceAccountInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceServiceAccountsFunc) PushReturn(r0 v18.ServiceAccountInterface) {
+	f.PushHook(func(string) v18.ServiceAccountInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceServiceAccountsFunc) nextHook() func(string) v18.ServiceAccountInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceServiceAccountsFunc) appendCall(r0 CoreV1InterfaceServiceAccountsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfaceServiceAccountsFuncCall
+// objects describing the invocations of this function.
+func (f *CoreV1InterfaceServiceAccountsFunc) History() []CoreV1InterfaceServiceAccountsFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceServiceAccountsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceServiceAccountsFuncCall is an object that describes an
+// invocation of method ServiceAccounts on an instance of
+// MockCoreV1Interface.
+type CoreV1InterfaceServiceAccountsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.ServiceAccountInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceServiceAccountsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceServiceAccountsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CoreV1InterfaceServicesFunc describes the behavior when the Services
+// method of the parent MockCoreV1Interface instance is invoked.
+type CoreV1InterfaceServicesFunc struct {
+	defaultHook func(string) v18.ServiceInterface
+	hooks       []func(string) v18.ServiceInterface
+	history     []CoreV1InterfaceServicesFuncCall
+	mutex       sync.Mutex
+}
+
+// Services delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCoreV1Interface) Services(v0 string) v18.ServiceInterface {
+	r0 := m.ServicesFunc.nextHook()(v0)
+	m.ServicesFunc.appendCall(CoreV1InterfaceServicesFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Services method of
+// the parent MockCoreV1Interface instance is invoked and the hook queue is
+// empty.
+func (f *CoreV1InterfaceServicesFunc) SetDefaultHook(hook func(string) v18.ServiceInterface) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Services method of the parent MockCoreV1Interface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CoreV1InterfaceServicesFunc) PushHook(hook func(string) v18.ServiceInterface) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CoreV1InterfaceServicesFunc) SetDefaultReturn(r0 v18.ServiceInterface) {
+	f.SetDefaultHook(func(string) v18.ServiceInterface {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CoreV1InterfaceServicesFunc) PushReturn(r0 v18.ServiceInterface) {
+	f.PushHook(func(string) v18.ServiceInterface {
+		return r0
+	})
+}
+
+func (f *CoreV1InterfaceServicesFunc) nextHook() func(string) v18.ServiceInterface {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CoreV1InterfaceServicesFunc) appendCall(r0 CoreV1InterfaceServicesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CoreV1InterfaceServicesFuncCall objects
+// describing the invocations of this function.
+func (f *CoreV1InterfaceServicesFunc) History() []CoreV1InterfaceServicesFuncCall {
+	f.mutex.Lock()
+	history := make([]CoreV1InterfaceServicesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CoreV1InterfaceServicesFuncCall is an object that describes an invocation
+// of method Services on an instance of MockCoreV1Interface.
+type CoreV1InterfaceServicesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v18.ServiceInterface
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CoreV1InterfaceServicesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CoreV1InterfaceServicesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockPodInterface is a mock implementation of the PodInterface interface
+// (from the package k8s.io/client-go/kubernetes/typed/core/v1) used for
+// unit testing.
+type MockPodInterface struct {
+	// ApplyFunc is an instance of a mock function object controlling the
+	// behavior of the method Apply.
+	ApplyFunc *PodInterfaceApplyFunc
+	// ApplyStatusFunc is an instance of a mock function object controlling
+	// the behavior of the method ApplyStatus.
+	ApplyStatusFunc *PodInterfaceApplyStatusFunc
+	// BindFunc is an instance of a mock function object controlling the
+	// behavior of the method Bind.
+	BindFunc *PodInterfaceBindFunc
+	// CreateFunc is an instance of a mock function object controlling the
+	// behavior of the method Create.
+	CreateFunc *PodInterfaceCreateFunc
+	// DeleteFunc is an instance of a mock function object controlling the
+	// behavior of the method Delete.
+	DeleteFunc *PodInterfaceDeleteFunc
+	// DeleteCollectionFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteCollection.
+	DeleteCollectionFunc *PodInterfaceDeleteCollectionFunc
+	// EvictFunc is an instance of a mock function object controlling the
+	// behavior of the method Evict.
+	EvictFunc *PodInterfaceEvictFunc
+	// EvictV1Func is an instance of a mock function object controlling the
+	// behavior of the method EvictV1.
+	EvictV1Func *PodInterfaceEvictV1Func
+	// EvictV1beta1Func is an instance of a mock function object controlling
+	// the behavior of the method EvictV1beta1.
+	EvictV1beta1Func *PodInterfaceEvictV1beta1Func
+	// GetFunc is an instance of a mock function object controlling the
+	// behavior of the method Get.
+	GetFunc *PodInterfaceGetFunc
+	// GetLogsFunc is an instance of a mock function object controlling the
+	// behavior of the method GetLogs.
+	GetLogsFunc *PodInterfaceGetLogsFunc
+	// ListFunc is an instance of a mock function object controlling the
+	// behavior of the method List.
+	ListFunc *PodInterfaceListFunc
+	// PatchFunc is an instance of a mock function object controlling the
+	// behavior of the method Patch.
+	PatchFunc *PodInterfacePatchFunc
+	// ProxyGetFunc is an instance of a mock function object controlling the
+	// behavior of the method ProxyGet.
+	ProxyGetFunc *PodInterfaceProxyGetFunc
+	// UpdateFunc is an instance of a mock function object controlling the
+	// behavior of the method Update.
+	UpdateFunc *PodInterfaceUpdateFunc
+	// UpdateEphemeralContainersFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// UpdateEphemeralContainers.
+	UpdateEphemeralContainersFunc *PodInterfaceUpdateEphemeralContainersFunc
+	// UpdateStatusFunc is an instance of a mock function object controlling
+	// the behavior of the method UpdateStatus.
+	UpdateStatusFunc *PodInterfaceUpdateStatusFunc
+	// WatchFunc is an instance of a mock function object controlling the
+	// behavior of the method Watch.
+	WatchFunc *PodInterfaceWatchFunc
+}
+
+// NewMockPodInterface creates a new mock of the PodInterface interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockPodInterface() *MockPodInterface {
+	return &MockPodInterface{
+		ApplyFunc: &PodInterfaceApplyFunc{
+			defaultHook: func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (r0 *v121.Pod, r1 error) {
+				return
+			},
+		},
+		ApplyStatusFunc: &PodInterfaceApplyStatusFunc{
+			defaultHook: func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (r0 *v121.Pod, r1 error) {
+				return
+			},
+		},
+		BindFunc: &PodInterfaceBindFunc{
+			defaultHook: func(context.Context, *v121.Binding, v118.CreateOptions) (r0 error) {
+				return
+			},
+		},
+		CreateFunc: &PodInterfaceCreateFunc{
+			defaultHook: func(context.Context, *v121.Pod, v118.CreateOptions) (r0 *v121.Pod, r1 error) {
+				return
+			},
+		},
+		DeleteFunc: &PodInterfaceDeleteFunc{
+			defaultHook: func(context.Context, string, v118.DeleteOptions) (r0 error) {
+				return
+			},
+		},
+		DeleteCollectionFunc: &PodInterfaceDeleteCollectionFunc{
+			defaultHook: func(context.Context, v118.DeleteOptions, v118.ListOptions) (r0 error) {
+				return
+			},
+		},
+		EvictFunc: &PodInterfaceEvictFunc{
+			defaultHook: func(context.Context, *v1beta117.Eviction) (r0 error) {
+				return
+			},
+		},
+		EvictV1Func: &PodInterfaceEvictV1Func{
+			defaultHook: func(context.Context, *v122.Eviction) (r0 error) {
+				return
+			},
+		},
+		EvictV1beta1Func: &PodInterfaceEvictV1beta1Func{
+			defaultHook: func(context.Context, *v1beta117.Eviction) (r0 error) {
+				return
+			},
+		},
+		GetFunc: &PodInterfaceGetFunc{
+			defaultHook: func(context.Context, string, v118.GetOptions) (r0 *v121.Pod, r1 error) {
+				return
+			},
+		},
+		GetLogsFunc: &PodInterfaceGetLogsFunc{
+			defaultHook: func(string, *v121.PodLogOptions) (r0 *rest.Request) {
+				return
+			},
+		},
+		ListFunc: &PodInterfaceListFunc{
+			defaultHook: func(context.Context, v118.ListOptions) (r0 *v121.PodList, r1 error) {
+				return
+			},
+		},
+		PatchFunc: &PodInterfacePatchFunc{
+			defaultHook: func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (r0 *v121.Pod, r1 error) {
+				return
+			},
+		},
+		ProxyGetFunc: &PodInterfaceProxyGetFunc{
+			defaultHook: func(string, string, string, string, map[string]string) (r0 rest.ResponseWrapper) {
+				return
+			},
+		},
+		UpdateFunc: &PodInterfaceUpdateFunc{
+			defaultHook: func(context.Context, *v121.Pod, v118.UpdateOptions) (r0 *v121.Pod, r1 error) {
+				return
+			},
+		},
+		UpdateEphemeralContainersFunc: &PodInterfaceUpdateEphemeralContainersFunc{
+			defaultHook: func(context.Context, string, *v121.Pod, v118.UpdateOptions) (r0 *v121.Pod, r1 error) {
+				return
+			},
+		},
+		UpdateStatusFunc: &PodInterfaceUpdateStatusFunc{
+			defaultHook: func(context.Context, *v121.Pod, v118.UpdateOptions) (r0 *v121.Pod, r1 error) {
+				return
+			},
+		},
+		WatchFunc: &PodInterfaceWatchFunc{
+			defaultHook: func(context.Context, v118.ListOptions) (r0 watch.Interface, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockPodInterface creates a new mock of the PodInterface
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockPodInterface() *MockPodInterface {
+	return &MockPodInterface{
+		ApplyFunc: &PodInterfaceApplyFunc{
+			defaultHook: func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error) {
+				panic("unexpected invocation of MockPodInterface.Apply")
+			},
+		},
+		ApplyStatusFunc: &PodInterfaceApplyStatusFunc{
+			defaultHook: func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error) {
+				panic("unexpected invocation of MockPodInterface.ApplyStatus")
+			},
+		},
+		BindFunc: &PodInterfaceBindFunc{
+			defaultHook: func(context.Context, *v121.Binding, v118.CreateOptions) error {
+				panic("unexpected invocation of MockPodInterface.Bind")
+			},
+		},
+		CreateFunc: &PodInterfaceCreateFunc{
+			defaultHook: func(context.Context, *v121.Pod, v118.CreateOptions) (*v121.Pod, error) {
+				panic("unexpected invocation of MockPodInterface.Create")
+			},
+		},
+		DeleteFunc: &PodInterfaceDeleteFunc{
+			defaultHook: func(context.Context, string, v118.DeleteOptions) error {
+				panic("unexpected invocation of MockPodInterface.Delete")
+			},
+		},
+		DeleteCollectionFunc: &PodInterfaceDeleteCollectionFunc{
+			defaultHook: func(context.Context, v118.DeleteOptions, v118.ListOptions) error {
+				panic("unexpected invocation of MockPodInterface.DeleteCollection")
+			},
+		},
+		EvictFunc: &PodInterfaceEvictFunc{
+			defaultHook: func(context.Context, *v1beta117.Eviction) error {
+				panic("unexpected invocation of MockPodInterface.Evict")
+			},
+		},
+		EvictV1Func: &PodInterfaceEvictV1Func{
+			defaultHook: func(context.Context, *v122.Eviction) error {
+				panic("unexpected invocation of MockPodInterface.EvictV1")
+			},
+		},
+		EvictV1beta1Func: &PodInterfaceEvictV1beta1Func{
+			defaultHook: func(context.Context, *v1beta117.Eviction) error {
+				panic("unexpected invocation of MockPodInterface.EvictV1beta1")
+			},
+		},
+		GetFunc: &PodInterfaceGetFunc{
+			defaultHook: func(context.Context, string, v118.GetOptions) (*v121.Pod, error) {
+				panic("unexpected invocation of MockPodInterface.Get")
+			},
+		},
+		GetLogsFunc: &PodInterfaceGetLogsFunc{
+			defaultHook: func(string, *v121.PodLogOptions) *rest.Request {
+				panic("unexpected invocation of MockPodInterface.GetLogs")
+			},
+		},
+		ListFunc: &PodInterfaceListFunc{
+			defaultHook: func(context.Context, v118.ListOptions) (*v121.PodList, error) {
+				panic("unexpected invocation of MockPodInterface.List")
+			},
+		},
+		PatchFunc: &PodInterfacePatchFunc{
+			defaultHook: func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v121.Pod, error) {
+				panic("unexpected invocation of MockPodInterface.Patch")
+			},
+		},
+		ProxyGetFunc: &PodInterfaceProxyGetFunc{
+			defaultHook: func(string, string, string, string, map[string]string) rest.ResponseWrapper {
+				panic("unexpected invocation of MockPodInterface.ProxyGet")
+			},
+		},
+		UpdateFunc: &PodInterfaceUpdateFunc{
+			defaultHook: func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error) {
+				panic("unexpected invocation of MockPodInterface.Update")
+			},
+		},
+		UpdateEphemeralContainersFunc: &PodInterfaceUpdateEphemeralContainersFunc{
+			defaultHook: func(context.Context, string, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error) {
+				panic("unexpected invocation of MockPodInterface.UpdateEphemeralContainers")
+			},
+		},
+		UpdateStatusFunc: &PodInterfaceUpdateStatusFunc{
+			defaultHook: func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error) {
+				panic("unexpected invocation of MockPodInterface.UpdateStatus")
+			},
+		},
+		WatchFunc: &PodInterfaceWatchFunc{
+			defaultHook: func(context.Context, v118.ListOptions) (watch.Interface, error) {
+				panic("unexpected invocation of MockPodInterface.Watch")
+			},
+		},
+	}
+}
+
+// NewMockPodInterfaceFrom creates a new mock of the MockPodInterface
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockPodInterfaceFrom(i v18.PodInterface) *MockPodInterface {
+	return &MockPodInterface{
+		ApplyFunc: &PodInterfaceApplyFunc{
+			defaultHook: i.Apply,
+		},
+		ApplyStatusFunc: &PodInterfaceApplyStatusFunc{
+			defaultHook: i.ApplyStatus,
+		},
+		BindFunc: &PodInterfaceBindFunc{
+			defaultHook: i.Bind,
+		},
+		CreateFunc: &PodInterfaceCreateFunc{
+			defaultHook: i.Create,
+		},
+		DeleteFunc: &PodInterfaceDeleteFunc{
+			defaultHook: i.Delete,
+		},
+		DeleteCollectionFunc: &PodInterfaceDeleteCollectionFunc{
+			defaultHook: i.DeleteCollection,
+		},
+		EvictFunc: &PodInterfaceEvictFunc{
+			defaultHook: i.Evict,
+		},
+		EvictV1Func: &PodInterfaceEvictV1Func{
+			defaultHook: i.EvictV1,
+		},
+		EvictV1beta1Func: &PodInterfaceEvictV1beta1Func{
+			defaultHook: i.EvictV1beta1,
+		},
+		GetFunc: &PodInterfaceGetFunc{
+			defaultHook: i.Get,
+		},
+		GetLogsFunc: &PodInterfaceGetLogsFunc{
+			defaultHook: i.GetLogs,
+		},
+		ListFunc: &PodInterfaceListFunc{
+			defaultHook: i.List,
+		},
+		PatchFunc: &PodInterfacePatchFunc{
+			defaultHook: i.Patch,
+		},
+		ProxyGetFunc: &PodInterfaceProxyGetFunc{
+			defaultHook: i.ProxyGet,
+		},
+		UpdateFunc: &PodInterfaceUpdateFunc{
+			defaultHook: i.Update,
+		},
+		UpdateEphemeralContainersFunc: &PodInterfaceUpdateEphemeralContainersFunc{
+			defaultHook: i.UpdateEphemeralContainers,
+		},
+		UpdateStatusFunc: &PodInterfaceUpdateStatusFunc{
+			defaultHook: i.UpdateStatus,
+		},
+		WatchFunc: &PodInterfaceWatchFunc{
+			defaultHook: i.Watch,
+		},
+	}
+}
+
+// PodInterfaceApplyFunc describes the behavior when the Apply method of the
+// parent MockPodInterface instance is invoked.
+type PodInterfaceApplyFunc struct {
+	defaultHook func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error)
+	hooks       []func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error)
+	history     []PodInterfaceApplyFuncCall
+	mutex       sync.Mutex
+}
+
+// Apply delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) Apply(v0 context.Context, v1 *v120.PodApplyConfiguration, v2 v118.ApplyOptions) (*v121.Pod, error) {
+	r0, r1 := m.ApplyFunc.nextHook()(v0, v1, v2)
+	m.ApplyFunc.appendCall(PodInterfaceApplyFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Apply method of the
+// parent MockPodInterface instance is invoked and the hook queue is empty.
+func (f *PodInterfaceApplyFunc) SetDefaultHook(hook func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Apply method of the parent MockPodInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfaceApplyFunc) PushHook(hook func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceApplyFunc) SetDefaultReturn(r0 *v121.Pod, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceApplyFunc) PushReturn(r0 *v121.Pod, r1 error) {
+	f.PushHook(func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+func (f *PodInterfaceApplyFunc) nextHook() func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceApplyFunc) appendCall(r0 PodInterfaceApplyFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceApplyFuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfaceApplyFunc) History() []PodInterfaceApplyFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceApplyFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceApplyFuncCall is an object that describes an invocation of
+// method Apply on an instance of MockPodInterface.
+type PodInterfaceApplyFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v120.PodApplyConfiguration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.ApplyOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v121.Pod
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceApplyFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceApplyFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PodInterfaceApplyStatusFunc describes the behavior when the ApplyStatus
+// method of the parent MockPodInterface instance is invoked.
+type PodInterfaceApplyStatusFunc struct {
+	defaultHook func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error)
+	hooks       []func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error)
+	history     []PodInterfaceApplyStatusFuncCall
+	mutex       sync.Mutex
+}
+
+// ApplyStatus delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockPodInterface) ApplyStatus(v0 context.Context, v1 *v120.PodApplyConfiguration, v2 v118.ApplyOptions) (*v121.Pod, error) {
+	r0, r1 := m.ApplyStatusFunc.nextHook()(v0, v1, v2)
+	m.ApplyStatusFunc.appendCall(PodInterfaceApplyStatusFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ApplyStatus method
+// of the parent MockPodInterface instance is invoked and the hook queue is
+// empty.
+func (f *PodInterfaceApplyStatusFunc) SetDefaultHook(hook func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ApplyStatus method of the parent MockPodInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *PodInterfaceApplyStatusFunc) PushHook(hook func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceApplyStatusFunc) SetDefaultReturn(r0 *v121.Pod, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceApplyStatusFunc) PushReturn(r0 *v121.Pod, r1 error) {
+	f.PushHook(func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+func (f *PodInterfaceApplyStatusFunc) nextHook() func(context.Context, *v120.PodApplyConfiguration, v118.ApplyOptions) (*v121.Pod, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceApplyStatusFunc) appendCall(r0 PodInterfaceApplyStatusFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceApplyStatusFuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfaceApplyStatusFunc) History() []PodInterfaceApplyStatusFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceApplyStatusFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceApplyStatusFuncCall is an object that describes an invocation
+// of method ApplyStatus on an instance of MockPodInterface.
+type PodInterfaceApplyStatusFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v120.PodApplyConfiguration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.ApplyOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v121.Pod
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceApplyStatusFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceApplyStatusFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PodInterfaceBindFunc describes the behavior when the Bind method of the
+// parent MockPodInterface instance is invoked.
+type PodInterfaceBindFunc struct {
+	defaultHook func(context.Context, *v121.Binding, v118.CreateOptions) error
+	hooks       []func(context.Context, *v121.Binding, v118.CreateOptions) error
+	history     []PodInterfaceBindFuncCall
+	mutex       sync.Mutex
+}
+
+// Bind delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) Bind(v0 context.Context, v1 *v121.Binding, v2 v118.CreateOptions) error {
+	r0 := m.BindFunc.nextHook()(v0, v1, v2)
+	m.BindFunc.appendCall(PodInterfaceBindFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Bind method of the
+// parent MockPodInterface instance is invoked and the hook queue is empty.
+func (f *PodInterfaceBindFunc) SetDefaultHook(hook func(context.Context, *v121.Binding, v118.CreateOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Bind method of the parent MockPodInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfaceBindFunc) PushHook(hook func(context.Context, *v121.Binding, v118.CreateOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceBindFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *v121.Binding, v118.CreateOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceBindFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *v121.Binding, v118.CreateOptions) error {
+		return r0
+	})
+}
+
+func (f *PodInterfaceBindFunc) nextHook() func(context.Context, *v121.Binding, v118.CreateOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceBindFunc) appendCall(r0 PodInterfaceBindFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceBindFuncCall objects describing
+// the invocations of this function.
+func (f *PodInterfaceBindFunc) History() []PodInterfaceBindFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceBindFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceBindFuncCall is an object that describes an invocation of
+// method Bind on an instance of MockPodInterface.
+type PodInterfaceBindFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v121.Binding
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.CreateOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceBindFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceBindFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PodInterfaceCreateFunc describes the behavior when the Create method of
+// the parent MockPodInterface instance is invoked.
+type PodInterfaceCreateFunc struct {
+	defaultHook func(context.Context, *v121.Pod, v118.CreateOptions) (*v121.Pod, error)
+	hooks       []func(context.Context, *v121.Pod, v118.CreateOptions) (*v121.Pod, error)
+	history     []PodInterfaceCreateFuncCall
+	mutex       sync.Mutex
+}
+
+// Create delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) Create(v0 context.Context, v1 *v121.Pod, v2 v118.CreateOptions) (*v121.Pod, error) {
+	r0, r1 := m.CreateFunc.nextHook()(v0, v1, v2)
+	m.CreateFunc.appendCall(PodInterfaceCreateFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Create method of the
+// parent MockPodInterface instance is invoked and the hook queue is empty.
+func (f *PodInterfaceCreateFunc) SetDefaultHook(hook func(context.Context, *v121.Pod, v118.CreateOptions) (*v121.Pod, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Create method of the parent MockPodInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfaceCreateFunc) PushHook(hook func(context.Context, *v121.Pod, v118.CreateOptions) (*v121.Pod, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceCreateFunc) SetDefaultReturn(r0 *v121.Pod, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v121.Pod, v118.CreateOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceCreateFunc) PushReturn(r0 *v121.Pod, r1 error) {
+	f.PushHook(func(context.Context, *v121.Pod, v118.CreateOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+func (f *PodInterfaceCreateFunc) nextHook() func(context.Context, *v121.Pod, v118.CreateOptions) (*v121.Pod, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceCreateFunc) appendCall(r0 PodInterfaceCreateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceCreateFuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfaceCreateFunc) History() []PodInterfaceCreateFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceCreateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceCreateFuncCall is an object that describes an invocation of
+// method Create on an instance of MockPodInterface.
+type PodInterfaceCreateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v121.Pod
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.CreateOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v121.Pod
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceCreateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceCreateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PodInterfaceDeleteFunc describes the behavior when the Delete method of
+// the parent MockPodInterface instance is invoked.
+type PodInterfaceDeleteFunc struct {
+	defaultHook func(context.Context, string, v118.DeleteOptions) error
+	hooks       []func(context.Context, string, v118.DeleteOptions) error
+	history     []PodInterfaceDeleteFuncCall
+	mutex       sync.Mutex
+}
+
+// Delete delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) Delete(v0 context.Context, v1 string, v2 v118.DeleteOptions) error {
+	r0 := m.DeleteFunc.nextHook()(v0, v1, v2)
+	m.DeleteFunc.appendCall(PodInterfaceDeleteFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Delete method of the
+// parent MockPodInterface instance is invoked and the hook queue is empty.
+func (f *PodInterfaceDeleteFunc) SetDefaultHook(hook func(context.Context, string, v118.DeleteOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Delete method of the parent MockPodInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfaceDeleteFunc) PushHook(hook func(context.Context, string, v118.DeleteOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceDeleteFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, v118.DeleteOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceDeleteFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, v118.DeleteOptions) error {
+		return r0
+	})
+}
+
+func (f *PodInterfaceDeleteFunc) nextHook() func(context.Context, string, v118.DeleteOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceDeleteFunc) appendCall(r0 PodInterfaceDeleteFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceDeleteFuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfaceDeleteFunc) History() []PodInterfaceDeleteFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceDeleteFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceDeleteFuncCall is an object that describes an invocation of
+// method Delete on an instance of MockPodInterface.
+type PodInterfaceDeleteFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.DeleteOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceDeleteFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceDeleteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PodInterfaceDeleteCollectionFunc describes the behavior when the
+// DeleteCollection method of the parent MockPodInterface instance is
+// invoked.
+type PodInterfaceDeleteCollectionFunc struct {
+	defaultHook func(context.Context, v118.DeleteOptions, v118.ListOptions) error
+	hooks       []func(context.Context, v118.DeleteOptions, v118.ListOptions) error
+	history     []PodInterfaceDeleteCollectionFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteCollection delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPodInterface) DeleteCollection(v0 context.Context, v1 v118.DeleteOptions, v2 v118.ListOptions) error {
+	r0 := m.DeleteCollectionFunc.nextHook()(v0, v1, v2)
+	m.DeleteCollectionFunc.appendCall(PodInterfaceDeleteCollectionFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteCollection
+// method of the parent MockPodInterface instance is invoked and the hook
+// queue is empty.
+func (f *PodInterfaceDeleteCollectionFunc) SetDefaultHook(hook func(context.Context, v118.DeleteOptions, v118.ListOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteCollection method of the parent MockPodInterface instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PodInterfaceDeleteCollectionFunc) PushHook(hook func(context.Context, v118.DeleteOptions, v118.ListOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceDeleteCollectionFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, v118.DeleteOptions, v118.ListOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceDeleteCollectionFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, v118.DeleteOptions, v118.ListOptions) error {
+		return r0
+	})
+}
+
+func (f *PodInterfaceDeleteCollectionFunc) nextHook() func(context.Context, v118.DeleteOptions, v118.ListOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceDeleteCollectionFunc) appendCall(r0 PodInterfaceDeleteCollectionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceDeleteCollectionFuncCall
+// objects describing the invocations of this function.
+func (f *PodInterfaceDeleteCollectionFunc) History() []PodInterfaceDeleteCollectionFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceDeleteCollectionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceDeleteCollectionFuncCall is an object that describes an
+// invocation of method DeleteCollection on an instance of MockPodInterface.
+type PodInterfaceDeleteCollectionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 v118.DeleteOptions
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.ListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceDeleteCollectionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceDeleteCollectionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PodInterfaceEvictFunc describes the behavior when the Evict method of the
+// parent MockPodInterface instance is invoked.
+type PodInterfaceEvictFunc struct {
+	defaultHook func(context.Context, *v1beta117.Eviction) error
+	hooks       []func(context.Context, *v1beta117.Eviction) error
+	history     []PodInterfaceEvictFuncCall
+	mutex       sync.Mutex
+}
+
+// Evict delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) Evict(v0 context.Context, v1 *v1beta117.Eviction) error {
+	r0 := m.EvictFunc.nextHook()(v0, v1)
+	m.EvictFunc.appendCall(PodInterfaceEvictFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Evict method of the
+// parent MockPodInterface instance is invoked and the hook queue is empty.
+func (f *PodInterfaceEvictFunc) SetDefaultHook(hook func(context.Context, *v1beta117.Eviction) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Evict method of the parent MockPodInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfaceEvictFunc) PushHook(hook func(context.Context, *v1beta117.Eviction) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceEvictFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *v1beta117.Eviction) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceEvictFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *v1beta117.Eviction) error {
+		return r0
+	})
+}
+
+func (f *PodInterfaceEvictFunc) nextHook() func(context.Context, *v1beta117.Eviction) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceEvictFunc) appendCall(r0 PodInterfaceEvictFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceEvictFuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfaceEvictFunc) History() []PodInterfaceEvictFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceEvictFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceEvictFuncCall is an object that describes an invocation of
+// method Evict on an instance of MockPodInterface.
+type PodInterfaceEvictFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1beta117.Eviction
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceEvictFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceEvictFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PodInterfaceEvictV1Func describes the behavior when the EvictV1 method of
+// the parent MockPodInterface instance is invoked.
+type PodInterfaceEvictV1Func struct {
+	defaultHook func(context.Context, *v122.Eviction) error
+	hooks       []func(context.Context, *v122.Eviction) error
+	history     []PodInterfaceEvictV1FuncCall
+	mutex       sync.Mutex
+}
+
+// EvictV1 delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) EvictV1(v0 context.Context, v1 *v122.Eviction) error {
+	r0 := m.EvictV1Func.nextHook()(v0, v1)
+	m.EvictV1Func.appendCall(PodInterfaceEvictV1FuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the EvictV1 method of
+// the parent MockPodInterface instance is invoked and the hook queue is
+// empty.
+func (f *PodInterfaceEvictV1Func) SetDefaultHook(hook func(context.Context, *v122.Eviction) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EvictV1 method of the parent MockPodInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfaceEvictV1Func) PushHook(hook func(context.Context, *v122.Eviction) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceEvictV1Func) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *v122.Eviction) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceEvictV1Func) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *v122.Eviction) error {
+		return r0
+	})
+}
+
+func (f *PodInterfaceEvictV1Func) nextHook() func(context.Context, *v122.Eviction) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceEvictV1Func) appendCall(r0 PodInterfaceEvictV1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceEvictV1FuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfaceEvictV1Func) History() []PodInterfaceEvictV1FuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceEvictV1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceEvictV1FuncCall is an object that describes an invocation of
+// method EvictV1 on an instance of MockPodInterface.
+type PodInterfaceEvictV1FuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v122.Eviction
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceEvictV1FuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceEvictV1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PodInterfaceEvictV1beta1Func describes the behavior when the EvictV1beta1
+// method of the parent MockPodInterface instance is invoked.
+type PodInterfaceEvictV1beta1Func struct {
+	defaultHook func(context.Context, *v1beta117.Eviction) error
+	hooks       []func(context.Context, *v1beta117.Eviction) error
+	history     []PodInterfaceEvictV1beta1FuncCall
+	mutex       sync.Mutex
+}
+
+// EvictV1beta1 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockPodInterface) EvictV1beta1(v0 context.Context, v1 *v1beta117.Eviction) error {
+	r0 := m.EvictV1beta1Func.nextHook()(v0, v1)
+	m.EvictV1beta1Func.appendCall(PodInterfaceEvictV1beta1FuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the EvictV1beta1 method
+// of the parent MockPodInterface instance is invoked and the hook queue is
+// empty.
+func (f *PodInterfaceEvictV1beta1Func) SetDefaultHook(hook func(context.Context, *v1beta117.Eviction) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EvictV1beta1 method of the parent MockPodInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *PodInterfaceEvictV1beta1Func) PushHook(hook func(context.Context, *v1beta117.Eviction) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceEvictV1beta1Func) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *v1beta117.Eviction) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceEvictV1beta1Func) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *v1beta117.Eviction) error {
+		return r0
+	})
+}
+
+func (f *PodInterfaceEvictV1beta1Func) nextHook() func(context.Context, *v1beta117.Eviction) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceEvictV1beta1Func) appendCall(r0 PodInterfaceEvictV1beta1FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceEvictV1beta1FuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfaceEvictV1beta1Func) History() []PodInterfaceEvictV1beta1FuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceEvictV1beta1FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceEvictV1beta1FuncCall is an object that describes an
+// invocation of method EvictV1beta1 on an instance of MockPodInterface.
+type PodInterfaceEvictV1beta1FuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1beta117.Eviction
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceEvictV1beta1FuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceEvictV1beta1FuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PodInterfaceGetFunc describes the behavior when the Get method of the
+// parent MockPodInterface instance is invoked.
+type PodInterfaceGetFunc struct {
+	defaultHook func(context.Context, string, v118.GetOptions) (*v121.Pod, error)
+	hooks       []func(context.Context, string, v118.GetOptions) (*v121.Pod, error)
+	history     []PodInterfaceGetFuncCall
+	mutex       sync.Mutex
+}
+
+// Get delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) Get(v0 context.Context, v1 string, v2 v118.GetOptions) (*v121.Pod, error) {
+	r0, r1 := m.GetFunc.nextHook()(v0, v1, v2)
+	m.GetFunc.appendCall(PodInterfaceGetFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Get method of the
+// parent MockPodInterface instance is invoked and the hook queue is empty.
+func (f *PodInterfaceGetFunc) SetDefaultHook(hook func(context.Context, string, v118.GetOptions) (*v121.Pod, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Get method of the parent MockPodInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfaceGetFunc) PushHook(hook func(context.Context, string, v118.GetOptions) (*v121.Pod, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceGetFunc) SetDefaultReturn(r0 *v121.Pod, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, v118.GetOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceGetFunc) PushReturn(r0 *v121.Pod, r1 error) {
+	f.PushHook(func(context.Context, string, v118.GetOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+func (f *PodInterfaceGetFunc) nextHook() func(context.Context, string, v118.GetOptions) (*v121.Pod, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceGetFunc) appendCall(r0 PodInterfaceGetFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceGetFuncCall objects describing
+// the invocations of this function.
+func (f *PodInterfaceGetFunc) History() []PodInterfaceGetFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceGetFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceGetFuncCall is an object that describes an invocation of
+// method Get on an instance of MockPodInterface.
+type PodInterfaceGetFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.GetOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v121.Pod
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceGetFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceGetFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PodInterfaceGetLogsFunc describes the behavior when the GetLogs method of
+// the parent MockPodInterface instance is invoked.
+type PodInterfaceGetLogsFunc struct {
+	defaultHook func(string, *v121.PodLogOptions) *rest.Request
+	hooks       []func(string, *v121.PodLogOptions) *rest.Request
+	history     []PodInterfaceGetLogsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLogs delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) GetLogs(v0 string, v1 *v121.PodLogOptions) *rest.Request {
+	r0 := m.GetLogsFunc.nextHook()(v0, v1)
+	m.GetLogsFunc.appendCall(PodInterfaceGetLogsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GetLogs method of
+// the parent MockPodInterface instance is invoked and the hook queue is
+// empty.
+func (f *PodInterfaceGetLogsFunc) SetDefaultHook(hook func(string, *v121.PodLogOptions) *rest.Request) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLogs method of the parent MockPodInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfaceGetLogsFunc) PushHook(hook func(string, *v121.PodLogOptions) *rest.Request) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceGetLogsFunc) SetDefaultReturn(r0 *rest.Request) {
+	f.SetDefaultHook(func(string, *v121.PodLogOptions) *rest.Request {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceGetLogsFunc) PushReturn(r0 *rest.Request) {
+	f.PushHook(func(string, *v121.PodLogOptions) *rest.Request {
+		return r0
+	})
+}
+
+func (f *PodInterfaceGetLogsFunc) nextHook() func(string, *v121.PodLogOptions) *rest.Request {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceGetLogsFunc) appendCall(r0 PodInterfaceGetLogsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceGetLogsFuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfaceGetLogsFunc) History() []PodInterfaceGetLogsFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceGetLogsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceGetLogsFuncCall is an object that describes an invocation of
+// method GetLogs on an instance of MockPodInterface.
+type PodInterfaceGetLogsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v121.PodLogOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *rest.Request
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceGetLogsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceGetLogsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PodInterfaceListFunc describes the behavior when the List method of the
+// parent MockPodInterface instance is invoked.
+type PodInterfaceListFunc struct {
+	defaultHook func(context.Context, v118.ListOptions) (*v121.PodList, error)
+	hooks       []func(context.Context, v118.ListOptions) (*v121.PodList, error)
+	history     []PodInterfaceListFuncCall
+	mutex       sync.Mutex
+}
+
+// List delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) List(v0 context.Context, v1 v118.ListOptions) (*v121.PodList, error) {
+	r0, r1 := m.ListFunc.nextHook()(v0, v1)
+	m.ListFunc.appendCall(PodInterfaceListFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the List method of the
+// parent MockPodInterface instance is invoked and the hook queue is empty.
+func (f *PodInterfaceListFunc) SetDefaultHook(hook func(context.Context, v118.ListOptions) (*v121.PodList, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// List method of the parent MockPodInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfaceListFunc) PushHook(hook func(context.Context, v118.ListOptions) (*v121.PodList, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceListFunc) SetDefaultReturn(r0 *v121.PodList, r1 error) {
+	f.SetDefaultHook(func(context.Context, v118.ListOptions) (*v121.PodList, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceListFunc) PushReturn(r0 *v121.PodList, r1 error) {
+	f.PushHook(func(context.Context, v118.ListOptions) (*v121.PodList, error) {
+		return r0, r1
+	})
+}
+
+func (f *PodInterfaceListFunc) nextHook() func(context.Context, v118.ListOptions) (*v121.PodList, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceListFunc) appendCall(r0 PodInterfaceListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceListFuncCall objects describing
+// the invocations of this function.
+func (f *PodInterfaceListFunc) History() []PodInterfaceListFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceListFuncCall is an object that describes an invocation of
+// method List on an instance of MockPodInterface.
+type PodInterfaceListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 v118.ListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v121.PodList
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PodInterfacePatchFunc describes the behavior when the Patch method of the
+// parent MockPodInterface instance is invoked.
+type PodInterfacePatchFunc struct {
+	defaultHook func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v121.Pod, error)
+	hooks       []func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v121.Pod, error)
+	history     []PodInterfacePatchFuncCall
+	mutex       sync.Mutex
+}
+
+// Patch delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) Patch(v0 context.Context, v1 string, v2 types1.PatchType, v3 []byte, v4 v118.PatchOptions, v5 ...string) (*v121.Pod, error) {
+	r0, r1 := m.PatchFunc.nextHook()(v0, v1, v2, v3, v4, v5...)
+	m.PatchFunc.appendCall(PodInterfacePatchFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Patch method of the
+// parent MockPodInterface instance is invoked and the hook queue is empty.
+func (f *PodInterfacePatchFunc) SetDefaultHook(hook func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v121.Pod, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Patch method of the parent MockPodInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfacePatchFunc) PushHook(hook func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v121.Pod, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfacePatchFunc) SetDefaultReturn(r0 *v121.Pod, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfacePatchFunc) PushReturn(r0 *v121.Pod, r1 error) {
+	f.PushHook(func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+func (f *PodInterfacePatchFunc) nextHook() func(context.Context, string, types1.PatchType, []byte, v118.PatchOptions, ...string) (*v121.Pod, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfacePatchFunc) appendCall(r0 PodInterfacePatchFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfacePatchFuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfacePatchFunc) History() []PodInterfacePatchFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfacePatchFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfacePatchFuncCall is an object that describes an invocation of
+// method Patch on an instance of MockPodInterface.
+type PodInterfacePatchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 types1.PatchType
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []byte
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 v118.PatchOptions
+	// Arg5 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg5 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v121.Pod
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c PodInterfacePatchFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg5 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfacePatchFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PodInterfaceProxyGetFunc describes the behavior when the ProxyGet method
+// of the parent MockPodInterface instance is invoked.
+type PodInterfaceProxyGetFunc struct {
+	defaultHook func(string, string, string, string, map[string]string) rest.ResponseWrapper
+	hooks       []func(string, string, string, string, map[string]string) rest.ResponseWrapper
+	history     []PodInterfaceProxyGetFuncCall
+	mutex       sync.Mutex
+}
+
+// ProxyGet delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) ProxyGet(v0 string, v1 string, v2 string, v3 string, v4 map[string]string) rest.ResponseWrapper {
+	r0 := m.ProxyGetFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.ProxyGetFunc.appendCall(PodInterfaceProxyGetFuncCall{v0, v1, v2, v3, v4, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ProxyGet method of
+// the parent MockPodInterface instance is invoked and the hook queue is
+// empty.
+func (f *PodInterfaceProxyGetFunc) SetDefaultHook(hook func(string, string, string, string, map[string]string) rest.ResponseWrapper) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ProxyGet method of the parent MockPodInterface instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfaceProxyGetFunc) PushHook(hook func(string, string, string, string, map[string]string) rest.ResponseWrapper) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceProxyGetFunc) SetDefaultReturn(r0 rest.ResponseWrapper) {
+	f.SetDefaultHook(func(string, string, string, string, map[string]string) rest.ResponseWrapper {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceProxyGetFunc) PushReturn(r0 rest.ResponseWrapper) {
+	f.PushHook(func(string, string, string, string, map[string]string) rest.ResponseWrapper {
+		return r0
+	})
+}
+
+func (f *PodInterfaceProxyGetFunc) nextHook() func(string, string, string, string, map[string]string) rest.ResponseWrapper {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceProxyGetFunc) appendCall(r0 PodInterfaceProxyGetFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceProxyGetFuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfaceProxyGetFunc) History() []PodInterfaceProxyGetFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceProxyGetFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceProxyGetFuncCall is an object that describes an invocation of
+// method ProxyGet on an instance of MockPodInterface.
+type PodInterfaceProxyGetFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 map[string]string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 rest.ResponseWrapper
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceProxyGetFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceProxyGetFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PodInterfaceUpdateFunc describes the behavior when the Update method of
+// the parent MockPodInterface instance is invoked.
+type PodInterfaceUpdateFunc struct {
+	defaultHook func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error)
+	hooks       []func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error)
+	history     []PodInterfaceUpdateFuncCall
+	mutex       sync.Mutex
+}
+
+// Update delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) Update(v0 context.Context, v1 *v121.Pod, v2 v118.UpdateOptions) (*v121.Pod, error) {
+	r0, r1 := m.UpdateFunc.nextHook()(v0, v1, v2)
+	m.UpdateFunc.appendCall(PodInterfaceUpdateFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Update method of the
+// parent MockPodInterface instance is invoked and the hook queue is empty.
+func (f *PodInterfaceUpdateFunc) SetDefaultHook(hook func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Update method of the parent MockPodInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfaceUpdateFunc) PushHook(hook func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceUpdateFunc) SetDefaultReturn(r0 *v121.Pod, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceUpdateFunc) PushReturn(r0 *v121.Pod, r1 error) {
+	f.PushHook(func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+func (f *PodInterfaceUpdateFunc) nextHook() func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceUpdateFunc) appendCall(r0 PodInterfaceUpdateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceUpdateFuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfaceUpdateFunc) History() []PodInterfaceUpdateFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceUpdateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceUpdateFuncCall is an object that describes an invocation of
+// method Update on an instance of MockPodInterface.
+type PodInterfaceUpdateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v121.Pod
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.UpdateOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v121.Pod
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceUpdateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceUpdateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PodInterfaceUpdateEphemeralContainersFunc describes the behavior when the
+// UpdateEphemeralContainers method of the parent MockPodInterface instance
+// is invoked.
+type PodInterfaceUpdateEphemeralContainersFunc struct {
+	defaultHook func(context.Context, string, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error)
+	hooks       []func(context.Context, string, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error)
+	history     []PodInterfaceUpdateEphemeralContainersFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateEphemeralContainers delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockPodInterface) UpdateEphemeralContainers(v0 context.Context, v1 string, v2 *v121.Pod, v3 v118.UpdateOptions) (*v121.Pod, error) {
+	r0, r1 := m.UpdateEphemeralContainersFunc.nextHook()(v0, v1, v2, v3)
+	m.UpdateEphemeralContainersFunc.appendCall(PodInterfaceUpdateEphemeralContainersFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateEphemeralContainers method of the parent MockPodInterface instance
+// is invoked and the hook queue is empty.
+func (f *PodInterfaceUpdateEphemeralContainersFunc) SetDefaultHook(hook func(context.Context, string, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateEphemeralContainers method of the parent MockPodInterface instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PodInterfaceUpdateEphemeralContainersFunc) PushHook(hook func(context.Context, string, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceUpdateEphemeralContainersFunc) SetDefaultReturn(r0 *v121.Pod, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceUpdateEphemeralContainersFunc) PushReturn(r0 *v121.Pod, r1 error) {
+	f.PushHook(func(context.Context, string, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+func (f *PodInterfaceUpdateEphemeralContainersFunc) nextHook() func(context.Context, string, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceUpdateEphemeralContainersFunc) appendCall(r0 PodInterfaceUpdateEphemeralContainersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PodInterfaceUpdateEphemeralContainersFuncCall objects describing the
+// invocations of this function.
+func (f *PodInterfaceUpdateEphemeralContainersFunc) History() []PodInterfaceUpdateEphemeralContainersFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceUpdateEphemeralContainersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceUpdateEphemeralContainersFuncCall is an object that describes
+// an invocation of method UpdateEphemeralContainers on an instance of
+// MockPodInterface.
+type PodInterfaceUpdateEphemeralContainersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *v121.Pod
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 v118.UpdateOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v121.Pod
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceUpdateEphemeralContainersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceUpdateEphemeralContainersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PodInterfaceUpdateStatusFunc describes the behavior when the UpdateStatus
+// method of the parent MockPodInterface instance is invoked.
+type PodInterfaceUpdateStatusFunc struct {
+	defaultHook func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error)
+	hooks       []func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error)
+	history     []PodInterfaceUpdateStatusFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateStatus delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockPodInterface) UpdateStatus(v0 context.Context, v1 *v121.Pod, v2 v118.UpdateOptions) (*v121.Pod, error) {
+	r0, r1 := m.UpdateStatusFunc.nextHook()(v0, v1, v2)
+	m.UpdateStatusFunc.appendCall(PodInterfaceUpdateStatusFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdateStatus method
+// of the parent MockPodInterface instance is invoked and the hook queue is
+// empty.
+func (f *PodInterfaceUpdateStatusFunc) SetDefaultHook(hook func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateStatus method of the parent MockPodInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *PodInterfaceUpdateStatusFunc) PushHook(hook func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceUpdateStatusFunc) SetDefaultReturn(r0 *v121.Pod, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceUpdateStatusFunc) PushReturn(r0 *v121.Pod, r1 error) {
+	f.PushHook(func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error) {
+		return r0, r1
+	})
+}
+
+func (f *PodInterfaceUpdateStatusFunc) nextHook() func(context.Context, *v121.Pod, v118.UpdateOptions) (*v121.Pod, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceUpdateStatusFunc) appendCall(r0 PodInterfaceUpdateStatusFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceUpdateStatusFuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfaceUpdateStatusFunc) History() []PodInterfaceUpdateStatusFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceUpdateStatusFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceUpdateStatusFuncCall is an object that describes an
+// invocation of method UpdateStatus on an instance of MockPodInterface.
+type PodInterfaceUpdateStatusFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v121.Pod
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 v118.UpdateOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v121.Pod
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceUpdateStatusFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceUpdateStatusFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PodInterfaceWatchFunc describes the behavior when the Watch method of the
+// parent MockPodInterface instance is invoked.
+type PodInterfaceWatchFunc struct {
+	defaultHook func(context.Context, v118.ListOptions) (watch.Interface, error)
+	hooks       []func(context.Context, v118.ListOptions) (watch.Interface, error)
+	history     []PodInterfaceWatchFuncCall
+	mutex       sync.Mutex
+}
+
+// Watch delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPodInterface) Watch(v0 context.Context, v1 v118.ListOptions) (watch.Interface, error) {
+	r0, r1 := m.WatchFunc.nextHook()(v0, v1)
+	m.WatchFunc.appendCall(PodInterfaceWatchFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Watch method of the
+// parent MockPodInterface instance is invoked and the hook queue is empty.
+func (f *PodInterfaceWatchFunc) SetDefaultHook(hook func(context.Context, v118.ListOptions) (watch.Interface, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Watch method of the parent MockPodInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PodInterfaceWatchFunc) PushHook(hook func(context.Context, v118.ListOptions) (watch.Interface, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PodInterfaceWatchFunc) SetDefaultReturn(r0 watch.Interface, r1 error) {
+	f.SetDefaultHook(func(context.Context, v118.ListOptions) (watch.Interface, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PodInterfaceWatchFunc) PushReturn(r0 watch.Interface, r1 error) {
+	f.PushHook(func(context.Context, v118.ListOptions) (watch.Interface, error) {
+		return r0, r1
+	})
+}
+
+func (f *PodInterfaceWatchFunc) nextHook() func(context.Context, v118.ListOptions) (watch.Interface, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PodInterfaceWatchFunc) appendCall(r0 PodInterfaceWatchFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PodInterfaceWatchFuncCall objects
+// describing the invocations of this function.
+func (f *PodInterfaceWatchFunc) History() []PodInterfaceWatchFuncCall {
+	f.mutex.Lock()
+	history := make([]PodInterfaceWatchFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PodInterfaceWatchFuncCall is an object that describes an invocation of
+// method Watch on an instance of MockPodInterface.
+type PodInterfaceWatchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 v118.ListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 watch.Interface
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PodInterfaceWatchFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PodInterfaceWatchFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }

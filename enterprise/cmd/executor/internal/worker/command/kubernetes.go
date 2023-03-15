@@ -49,19 +49,19 @@ type KubernetesCommand struct {
 }
 
 // CreateJob creates a Kubernetes job with the given name and command.
-func (c *KubernetesCommand) CreateJob(ctx context.Context, job *batchv1.Job, namespace string) (*batchv1.Job, error) {
+func (c *KubernetesCommand) CreateJob(ctx context.Context, namespace string, job *batchv1.Job) (*batchv1.Job, error) {
 	return c.Clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 }
 
 // DeleteJob deletes the Kubernetes job with the given name.
-func (c *KubernetesCommand) DeleteJob(ctx context.Context, jobName string, namespace string) error {
+func (c *KubernetesCommand) DeleteJob(ctx context.Context, namespace string, jobName string) error {
 	return c.Clientset.BatchV1().Jobs(namespace).Delete(ctx, jobName, metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
 }
 
 var propagationPolicy = metav1.DeletePropagationBackground
 
 // ReadLogs reads the logs of the given pod and writes them to the logger.
-func (c *KubernetesCommand) ReadLogs(ctx context.Context, podName string, cmdLogger Logger, key string, command []string, namespace string) error {
+func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podName string, cmdLogger Logger, key string, command []string) error {
 	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{Container: containerName})
 	stream, err := req.Stream(ctx)
 	if err != nil {
@@ -99,7 +99,7 @@ func readProcessPipe(w io.WriteCloser, stdout io.Reader) *errgroup.Group {
 }
 
 // WaitForPodToStart waits for the pod with the given name to start.
-func (c *KubernetesCommand) WaitForPodToStart(ctx context.Context, name string, namespace string) (string, error) {
+func (c *KubernetesCommand) WaitForPodToStart(ctx context.Context, namespace string, name string) (string, error) {
 	var podName string
 	return podName, retry.OnError(backoff, func(error) bool {
 		return true
@@ -107,9 +107,9 @@ func (c *KubernetesCommand) WaitForPodToStart(ctx context.Context, name string, 
 		var pod *corev1.Pod
 		var err error
 		if len(podName) == 0 {
-			pod, err = c.FindPod(ctx, name, namespace)
+			pod, err = c.FindPod(ctx, namespace, name)
 		} else {
-			pod, err = c.getPod(ctx, podName, namespace)
+			pod, err = c.getPod(ctx, namespace, podName)
 		}
 		if err != nil {
 			return err
@@ -137,10 +137,30 @@ func (c *KubernetesCommand) WaitForPodToStart(ctx context.Context, name string, 
 	})
 }
 
+// FindPod finds the pod for the given job name.
+func (c *KubernetesCommand) FindPod(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
+	list, err := c.Clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "job-name=" + name})
+	if err != nil {
+		return nil, err
+	}
+	if len(list.Items) == 0 {
+		return nil, errors.Newf("no pods found for job %s", name)
+	}
+	return &list.Items[0], nil
+}
+
+func (c *KubernetesCommand) getPod(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
+	pod, err := c.Clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return pod, nil
+}
+
 // WaitForJobToComplete waits for the job with the given name to complete.
-func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, name string, namespace string) error {
+func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string) error {
 	for {
-		job, err := c.getJob(ctx, name, namespace)
+		job, err := c.getJob(ctx, namespace, name)
 		if err != nil {
 			return errors.Wrap(err, "retrieving job")
 		}
@@ -154,32 +174,8 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, name strin
 	}
 }
 
-func (c *KubernetesCommand) getJob(ctx context.Context, name string, namespace string) (*batchv1.Job, error) {
-	job, err := c.Clientset.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return job, nil
-}
-
-// FindPod finds the pod for the given job name.
-func (c *KubernetesCommand) FindPod(ctx context.Context, name string, namespace string) (*corev1.Pod, error) {
-	list, err := c.Clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "job-name=" + name})
-	if err != nil {
-		return nil, err
-	}
-	if len(list.Items) == 0 {
-		return nil, errors.Newf("no pods found for job %s", name)
-	}
-	return &list.Items[0], nil
-}
-
-func (c *KubernetesCommand) getPod(ctx context.Context, name string, namespace string) (*corev1.Pod, error) {
-	pod, err := c.Clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return pod, nil
+func (c *KubernetesCommand) getJob(ctx context.Context, namespace string, name string) (*batchv1.Job, error) {
+	return c.Clientset.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
 // backoff is a slight modification to retry.DefaultBackoff.

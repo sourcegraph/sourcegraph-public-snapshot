@@ -42,6 +42,17 @@
         - Logger
         - LogEntry
         - ExecutionLogEntryStore
+    - path: k8s.io/client-go/kubernetes
+      interfaces:
+        - Interface
+    - path: k8s.io/client-go/kubernetes/typed/batch/v1
+      interfaces:
+        - BatchV1Interface
+        - JobInterface
+    - path: k8s.io/client-go/kubernetes/typed/core/v1
+      interfaces:
+        - CoreV1Interface
+        - PodInterface
 - filename: enterprise/cmd/executor/internal/worker/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
