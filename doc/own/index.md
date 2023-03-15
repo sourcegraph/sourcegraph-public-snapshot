@@ -63,9 +63,11 @@ The following snippet shows an example of a valid CODEOWNERS file.
 /cmd/**/test @qa-team @user
 ```
 
-- Asterisk * is a wildcard that matches any single token
-- Double ** asterisk matches any sub-path
-- Starting a pattern with / anchors matches at the repository root
+- Asterisk * is a wildcard that matches N tokens in a path segment. Example: `doc/*/own` will match `doc/ref/own` and `doc/tutorial/own`, but not `doc/a/b/own`
+- Double ** asterisk matches any sub-path. Example: `doc/**/own` will match `doc/ref/own` and `doc/a/b/own`
+- Starting a pattern with / anchors matches at the repository root. Example: `/docs/*` matches `/docs/a.md` and `/docs/b.md` but not `/src/docs/a.md`.
+- Trailing slash / matches any file within the directory tree (so it is equivalent to trailing /**). `Example: `docs/` matches `/testing/docs/foo` and `/docs/foo/bar`, but does not match `/docs` or `/testing/docs`.
+
 
 The rules are considered independently and in order. Rules farther down the file take precedence. Only **one** rule matches.
 
