@@ -5,7 +5,10 @@ import { ChatMetadata, Feedback, Message } from '@sourcegraph/cody-common'
 
 import { SecretStorage } from '../command/secret-storage'
 import { CODY_ACCESS_TOKEN_SECRET, updateConfiguration } from '../configuration'
-import { EmbeddingsClient } from '../embeddings-client'
+import { VSCodeEditor } from '../editor/vscode-editor'
+import { EmbeddingsClient } from '../embeddings/client'
+import { LLMIntentDetector } from '../intent-detector/llm-intent-detector'
+import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 import { getRgPath } from '../rg'
 import { TestSupport } from '../test-support'
 
@@ -62,11 +65,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.embeddingsClient = this.makeEmbeddingClient()
 
         this.prompt = new Transcript(
-            this.embeddingsClient,
             this.contextType,
-            this.serverUrl,
-            this.accessToken,
-            this.rgPath
+            this.embeddingsClient,
+            new LLMIntentDetector(this.serverUrl, this.accessToken),
+            new LocalKeywordContextFetcher(this.rgPath),
+            new VSCodeEditor()
         )
     }
 

@@ -1,9 +1,10 @@
 import { Message } from '@sourcegraph/cody-common'
 
+import { Editor } from '../../editor'
 import { ContextSearchOptions } from '../context-search-options'
 import { getContextMessageWithResponse, populateCodeContextTemplate, truncateText, truncateTextStart } from '../prompt'
 
-import { MARKDOWN_FORMAT_PROMPT, getNormalizedLanguageName, getActiveEditorSelection } from './helpers'
+import { MARKDOWN_FORMAT_PROMPT, getNormalizedLanguageName } from './helpers'
 import { Recipe, RecipePrompt } from './recipe'
 
 export class ExplainCodeDetailed implements Recipe {
@@ -13,13 +14,14 @@ export class ExplainCodeDetailed implements Recipe {
 
     public async getPrompt(
         maxTokens: number,
+        editor: Editor,
         getEmbeddingsContextMessages: (query: string, options: ContextSearchOptions) => Promise<Message[]>
     ): Promise<RecipePrompt | null> {
         const maxInputTokens = Math.round(0.8 * maxTokens)
         const maxSurroundingTokens = Math.round(0.2 * maxTokens)
 
         // Inputs
-        const selection = await getActiveEditorSelection()
+        const selection = editor.getActiveTextEditorSelection()
         if (!selection) {
             return null
         }
@@ -63,13 +65,14 @@ export class ExplainCodeHighLevel implements Recipe {
 
     public async getPrompt(
         maxTokens: number,
+        editor: Editor,
         getEmbeddingsContextMessages: (query: string, options: ContextSearchOptions) => Promise<Message[]>
     ): Promise<RecipePrompt | null> {
         const maxInputTokens = Math.round(0.8 * maxTokens)
         const maxSurroundingTokens = Math.round(0.2 * maxTokens)
 
         // Inputs
-        const selection = await getActiveEditorSelection()
+        const selection = editor.getActiveTextEditorSelection()
         if (!selection) {
             return null
         }

@@ -1,18 +1,8 @@
 import fetch, { Response } from 'node-fetch'
 
-export interface EmbeddingSearchResult {
-    filePath: string
-    start: number
-    end: number
-    text: string
-}
+import { Embeddings, EmbeddingSearchResults } from '.'
 
-export interface EmbeddingSearchResults {
-    codeResults: EmbeddingSearchResult[]
-    markdownResults: EmbeddingSearchResult[]
-}
-
-export class EmbeddingsClient {
+export class EmbeddingsClient implements Embeddings {
     private headers: { authorization: string }
 
     constructor(private embeddingsUrl: string, private accessToken: string, private codebaseId: string) {

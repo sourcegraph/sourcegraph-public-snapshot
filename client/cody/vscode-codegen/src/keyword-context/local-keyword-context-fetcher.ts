@@ -7,11 +7,13 @@ import * as vscode from 'vscode'
 
 import { Message } from '@sourcegraph/cody-common'
 
-import { getContextMessageWithResponse, populateCodeContextTemplate } from './prompt'
+import { getContextMessageWithResponse, populateCodeContextTemplate } from '../chat/prompt'
+
+import { KeywordContextFetcher } from '.'
 
 const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock']
 
-export class LocalKeywordFetcher {
+export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     constructor(private rgPath: string) {}
 
     public async getContextMessages(query: string): Promise<Message[]> {
@@ -34,7 +36,7 @@ export class LocalKeywordFetcher {
         return messagePairs.reverse().flat()
     }
 
-    public async fetchFileStats(
+    private async fetchFileStats(
         keywords: string[],
         rootPath: string
     ): Promise<{ [filename: string]: { bytesSearched: number } }> {
@@ -76,7 +78,7 @@ export class LocalKeywordFetcher {
         return fileTermCounts
     }
 
-    public async fetchFileMatches(
+    private async fetchFileMatches(
         keywords: string[],
         rootPath: string
     ): Promise<{
@@ -161,7 +163,7 @@ export class LocalKeywordFetcher {
         }
     }
 
-    public async fetchKeywordFiles(rootPath: string, query: string): Promise<{ filename: string; score: number }[]> {
+    private async fetchKeywordFiles(rootPath: string, query: string): Promise<{ filename: string; score: number }[]> {
         const terms = query.split(/\W+/)
         // TODO: Stemming using the `natural` package was introducing failing licensing checks. Find a replacement stemming package.
         const stemmedTerms = terms.map(term => escapeRegex(term))

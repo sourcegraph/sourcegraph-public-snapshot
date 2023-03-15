@@ -1,10 +1,9 @@
 import path from 'path'
 
-import * as vscode from 'vscode'
-
 import { Message } from '@sourcegraph/cody-common'
 
-import { getActiveEditorSelection } from './helpers'
+import { Editor } from '../../editor'
+
 import { languageMarkdownID, languageNames } from './langs'
 import { Recipe, RecipePrompt } from './recipe'
 
@@ -12,30 +11,17 @@ export class TranslateToLanguage implements Recipe {
     getID(): string {
         return 'translateToLanguage'
     }
-    async getPrompt(maxTokens: number): Promise<RecipePrompt | null> {
+
+    async getPrompt(maxTokens: number, editor: Editor): Promise<RecipePrompt | null> {
         // Inputs
-        const selection = await getActiveEditorSelection()
+        const selection = editor.getActiveTextEditorSelection()
         if (!selection) {
             return null
         }
 
-        const qp = await vscode.window.createQuickPick()
-        const origItems = languageNames.map(l => ({ label: l }))
-        qp.title = 'Select a language to translate to'
-        qp.items = origItems
-        qp.show()
-        const toLanguage = await new Promise<string | undefined>(async resolve => {
-            qp.onDidChangeValue(() => {
-                if (!languageNames.map(lang => lang.toLocaleLowerCase()).includes(qp.value)) {
-                    qp.items = [{ label: qp.value }, ...origItems]
-                } else {
-                    qp.items = origItems
-                }
-            })
-            qp.onDidChangeSelection(s => resolve(s[0].label))
-        })
+        const toLanguage = await editor.showQuickPick(languageNames)
         if (!toLanguage) {
-            vscode.window.showErrorMessage('Must pick a language to translate to')
+            void editor.showWarningMessage('Must pick a language to translate to')
             return null
         }
 

@@ -12,7 +12,7 @@ export function run(): Promise<void> {
     // To debug tests interactively, extend this timeout.
     mocha.timeout(2000)
 
-    const testsRoot = path.resolve(__dirname, '..')
+    const testsRoot = __dirname
 
     return new Promise((resolve, reject) => {
         glob('**/**.test.js', { cwd: testsRoot }, (err, files) => {
