@@ -557,7 +557,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	}
 }
 
-func TestUpsertAuthorizationToExternalService(t *testing.T) {
+func TestDisablePermsSyncingForExternalService(t *testing.T) {
 	tests := []struct {
 		name   string
 		kind   string
@@ -580,8 +580,7 @@ func TestUpsertAuthorizationToExternalService(t *testing.T) {
   // Useful comments
   "url": "https://github.com",
   "repositoryQuery": ["none"],
-  "token": "def",
-  "authorization": {}
+  "token": "def"
 }`,
 		},
 		{
@@ -599,61 +598,50 @@ func TestUpsertAuthorizationToExternalService(t *testing.T) {
   // Useful comments
   "url": "https://github.com",
   "repositoryQuery": ["none"],
-  "token": "def",
-  "authorization": {}
+  "token": "def"
 }`,
 		},
 		{
-			name: "gitlab with authorization",
-			kind: extsvc.KindGitLab,
+			name: "azure devops with enforce permissions",
+			kind: extsvc.KindAzureDevOps,
 			config: `
 {
   // Useful comments
-  "url": "https://gitlab.com",
-  "projectQuery": ["none"],
+  "url": "https://dev.azure.com",
+  "username": "horse",
   "token": "abc",
-  "authorization": {}
+  "enforcePermissions": true
 }`,
 			want: `
 {
   // Useful comments
-  "url": "https://gitlab.com",
-  "projectQuery": ["none"],
-  "token": "abc",
-  "authorization": {
-    "identityProvider": {
-      "type": "oauth"
-    }
-  }
+  "url": "https://dev.azure.com",
+  "username": "horse",
+  "token": "abc"
 }`,
 		},
 		{
-			name: "gitlab without authorization",
-			kind: extsvc.KindGitLab,
+			name: "azure devops without enforce permissions",
+			kind: extsvc.KindAzureDevOps,
 			config: `
 {
   // Useful comments
-  "url": "https://gitlab.com",
-  "projectQuery": ["none"],
+  "url": "https://dev.azure.com",
+  "username": "horse",
   "token": "abc"
 }`,
 			want: `
 {
   // Useful comments
-  "url": "https://gitlab.com",
-  "projectQuery": ["none"],
-  "token": "abc",
-  "authorization": {
-    "identityProvider": {
-      "type": "oauth"
-    }
-  }
+  "url": "https://dev.azure.com",
+  "username": "horse",
+  "token": "abc"
 }`,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := upsertAuthorizationToExternalService(test.kind, test.config)
+			got, err := disablePermsSyncingForExternalService(test.kind, test.config)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -502,25 +502,16 @@ func validatePerforceConnection(perforceValidators []func(*schema.PerforceConnec
 	return err
 }
 
-// upsertAuthorizationToExternalService adds "authorization" field to the
-// external service config when not yet present for GitHub and GitLab.
-func upsertAuthorizationToExternalService(kind, config string) (string, error) {
-	switch kind {
-	case extsvc.KindGitHub:
-		return jsonc.Edit(config, &schema.GitHubAuthorization{}, "authorization")
-
-	case extsvc.KindGitLab:
-		return jsonc.Edit(config,
-			&schema.GitLabAuthorization{
-				IdentityProvider: schema.IdentityProvider{
-					Oauth: &schema.OAuthIdentity{
-						Type: "oauth",
-					},
-				},
-			},
-			"authorization")
+// disablePermsSyncingForExternalService removes "authorization" or
+// "enforcePermissions" fields from the external service config
+// when present on the external service config.
+func disablePermsSyncingForExternalService(kind, config string) (string, error) {
+	withoutEnforcePermissions, err := jsonc.Remove(config, "enforcePermissions")
+	// in case removing "enforcePermissions" fails, we try to remove "authorization" anyway
+	if err != nil {
+		withoutEnforcePermissions = config
 	}
-	return config, nil
+	return jsonc.Remove(withoutEnforcePermissions, "authorization")
 }
 
 func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
@@ -538,11 +529,11 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
-	// Cloud, we always want to enforce repository permissions using OAuth to
-	// prevent unexpected resource leaking.
+	// 🚨 SECURITY: For all code host connections on Sourcegraph
+	// Cloud, we always want to disable repository permissions to prevent
+	// permission syncing from trying to sync permissions from public code.
 	if envvar.SourcegraphDotComMode() {
-		rawConfig, err = upsertAuthorizationToExternalService(es.Kind, rawConfig)
+		rawConfig, err = disablePermsSyncingForExternalService(es.Kind, rawConfig)
 		if err != nil {
 			return err
 		}
@@ -623,11 +614,11 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
 		}
 
-		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
-		// Cloud, we always want to enforce repository permissions using OAuth to
-		// prevent unexpected resource leaking.
+		// 🚨 SECURITY: For all code host connections on Sourcegraph
+		// Cloud, we always want to disable repository permissions to prevent
+		// permission syncing from trying to sync permissions from public code.
 		if envvar.SourcegraphDotComMode() {
-			rawConfig, err = upsertAuthorizationToExternalService(s.Kind, rawConfig)
+			rawConfig, err = disablePermsSyncingForExternalService(s.Kind, rawConfig)
 			if err != nil {
 				return err
 			}
@@ -849,11 +840,11 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			return err
 		}
 
-		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
-		// Cloud, we always want to enforce repository permissions using OAuth to
-		// prevent unexpected resource leaking.
+		// 🚨 SECURITY: For all code host connections on Sourcegraph
+		// Cloud, we always want to disable repository permissions to prevent
+		// permission syncing from trying to sync permissions from public code.
 		if envvar.SourcegraphDotComMode() {
-			unredactedConfig, err = upsertAuthorizationToExternalService(externalService.Kind, unredactedConfig)
+			unredactedConfig, err = disablePermsSyncingForExternalService(externalService.Kind, unredactedConfig)
 			if err != nil {
 				return err
 			}
