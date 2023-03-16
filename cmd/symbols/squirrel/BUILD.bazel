@@ -41,6 +41,7 @@ go_library(
 
 go_test(
     name = "squirrel_test",
+    timeout = "short",
     srcs = [
         "hover_test.go",
         "local_code_intel_test.go",

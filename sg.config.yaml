@@ -1009,7 +1009,7 @@ commandsets:
       - redis
       - postgres
       - git
-      - bazel
+      - bazelisk
       - ibazel
     bazelCommands:
       - oss-frontend
@@ -1062,7 +1062,7 @@ commandsets:
       - redis
       - postgres
       - git
-      - bazel
+      - bazelisk
       - ibazel
     bazelCommands:
       - frontend
@@ -1128,7 +1128,7 @@ commandsets:
       - redis
       - postgres
       - git
-      - bazel
+      - bazelisk
       - ibazel
     bazelCommands:
       - frontend
@@ -1381,6 +1381,8 @@ commandsets:
       - docsite
       - web
       - caddy
+    env:
+      DISABLE_CODE_INSIGHTS: false
 
 tests:
   # These can be run with `sg test [name]`

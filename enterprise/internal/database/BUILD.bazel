@@ -66,6 +66,7 @@ go_library(
 
 go_test(
     name = "database_test",
+    timeout = "long",
     srcs = [
         "authz_test.go",
         "code_monitor_action_jobs_test.go",
@@ -98,6 +99,7 @@ go_test(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/collections",
         "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",

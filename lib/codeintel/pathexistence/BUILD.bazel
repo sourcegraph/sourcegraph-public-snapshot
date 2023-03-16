@@ -16,6 +16,7 @@ go_library(
 
 go_test(
     name = "pathexistence_test",
+    timeout = "short",
     srcs = [
         "directory_contents_test.go",
         "dirtree_test.go",

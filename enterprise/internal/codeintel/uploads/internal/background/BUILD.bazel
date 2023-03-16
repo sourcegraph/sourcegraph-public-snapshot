@@ -57,6 +57,7 @@ go_library(
 
 go_test(
     name = "background_test",
+    timeout = "short",
     srcs = [
         "job_backfill_test.go",
         "job_cleanup_test.go",

@@ -26,6 +26,7 @@ go_library(
 
 go_test(
     name = "basestore_test",
+    timeout = "short",
     srcs = [
         "mocks_test.go",
         "scan_collections_test.go",

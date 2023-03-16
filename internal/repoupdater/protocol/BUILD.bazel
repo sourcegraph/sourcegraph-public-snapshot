@@ -23,6 +23,7 @@ go_library(
 
 go_test(
     name = "protocol_test",
+    timeout = "short",
     srcs = ["repoupdater_test.go"],
     embed = [":protocol"],
 )

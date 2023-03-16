@@ -14396,12 +14396,12 @@ func NewMockPermsStore() *MockPermsStore {
 			},
 		},
 		SetRepoPermsFunc: &PermsStoreSetRepoPermsFunc{
-			defaultHook: func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (r0 error) {
+			defaultHook: func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (r0 *database.SetPermissionsResult, r1 error) {
 				return
 			},
 		},
 		SetUserExternalAccountPermsFunc: &PermsStoreSetUserExternalAccountPermsFunc{
-			defaultHook: func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (r0 error) {
+			defaultHook: func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (r0 *database.SetPermissionsResult, r1 error) {
 				return
 			},
 		},
@@ -14548,12 +14548,12 @@ func NewStrictMockPermsStore() *MockPermsStore {
 			},
 		},
 		SetRepoPermsFunc: &PermsStoreSetRepoPermsFunc{
-			defaultHook: func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) error {
+			defaultHook: func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*database.SetPermissionsResult, error) {
 				panic("unexpected invocation of MockPermsStore.SetRepoPerms")
 			},
 		},
 		SetUserExternalAccountPermsFunc: &PermsStoreSetUserExternalAccountPermsFunc{
-			defaultHook: func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) error {
+			defaultHook: func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*database.SetPermissionsResult, error) {
 				panic("unexpected invocation of MockPermsStore.SetUserExternalAccountPerms")
 			},
 		},
@@ -17094,24 +17094,24 @@ func (c PermsStoreSetRepoPermissionsUnrestrictedFuncCall) Results() []interface{
 // PermsStoreSetRepoPermsFunc describes the behavior when the SetRepoPerms
 // method of the parent MockPermsStore instance is invoked.
 type PermsStoreSetRepoPermsFunc struct {
-	defaultHook func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) error
-	hooks       []func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) error
+	defaultHook func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*database.SetPermissionsResult, error)
+	hooks       []func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*database.SetPermissionsResult, error)
 	history     []PermsStoreSetRepoPermsFuncCall
 	mutex       sync.Mutex
 }
 
 // SetRepoPerms delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockPermsStore) SetRepoPerms(v0 context.Context, v1 int32, v2 []authz.UserIDWithExternalAccountID, v3 authz.PermsSource) error {
-	r0 := m.SetRepoPermsFunc.nextHook()(v0, v1, v2, v3)
-	m.SetRepoPermsFunc.appendCall(PermsStoreSetRepoPermsFuncCall{v0, v1, v2, v3, r0})
-	return r0
+func (m *MockPermsStore) SetRepoPerms(v0 context.Context, v1 int32, v2 []authz.UserIDWithExternalAccountID, v3 authz.PermsSource) (*database.SetPermissionsResult, error) {
+	r0, r1 := m.SetRepoPermsFunc.nextHook()(v0, v1, v2, v3)
+	m.SetRepoPermsFunc.appendCall(PermsStoreSetRepoPermsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the SetRepoPerms method
 // of the parent MockPermsStore instance is invoked and the hook queue is
 // empty.
-func (f *PermsStoreSetRepoPermsFunc) SetDefaultHook(hook func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) error) {
+func (f *PermsStoreSetRepoPermsFunc) SetDefaultHook(hook func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*database.SetPermissionsResult, error)) {
 	f.defaultHook = hook
 }
 
@@ -17119,7 +17119,7 @@ func (f *PermsStoreSetRepoPermsFunc) SetDefaultHook(hook func(context.Context, i
 // SetRepoPerms method of the parent MockPermsStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *PermsStoreSetRepoPermsFunc) PushHook(hook func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) error) {
+func (f *PermsStoreSetRepoPermsFunc) PushHook(hook func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*database.SetPermissionsResult, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -17127,20 +17127,20 @@ func (f *PermsStoreSetRepoPermsFunc) PushHook(hook func(context.Context, int32, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PermsStoreSetRepoPermsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) error {
-		return r0
+func (f *PermsStoreSetRepoPermsFunc) SetDefaultReturn(r0 *database.SetPermissionsResult, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*database.SetPermissionsResult, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreSetRepoPermsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) error {
-		return r0
+func (f *PermsStoreSetRepoPermsFunc) PushReturn(r0 *database.SetPermissionsResult, r1 error) {
+	f.PushHook(func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*database.SetPermissionsResult, error) {
+		return r0, r1
 	})
 }
 
-func (f *PermsStoreSetRepoPermsFunc) nextHook() func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) error {
+func (f *PermsStoreSetRepoPermsFunc) nextHook() func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*database.SetPermissionsResult, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -17187,7 +17187,10 @@ type PermsStoreSetRepoPermsFuncCall struct {
 	Arg3 authz.PermsSource
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 *database.SetPermissionsResult
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -17199,31 +17202,31 @@ func (c PermsStoreSetRepoPermsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermsStoreSetRepoPermsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // PermsStoreSetUserExternalAccountPermsFunc describes the behavior when the
 // SetUserExternalAccountPerms method of the parent MockPermsStore instance
 // is invoked.
 type PermsStoreSetUserExternalAccountPermsFunc struct {
-	defaultHook func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) error
-	hooks       []func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) error
+	defaultHook func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*database.SetPermissionsResult, error)
+	hooks       []func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*database.SetPermissionsResult, error)
 	history     []PermsStoreSetUserExternalAccountPermsFuncCall
 	mutex       sync.Mutex
 }
 
 // SetUserExternalAccountPerms delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockPermsStore) SetUserExternalAccountPerms(v0 context.Context, v1 authz.UserIDWithExternalAccountID, v2 []int32, v3 authz.PermsSource) error {
-	r0 := m.SetUserExternalAccountPermsFunc.nextHook()(v0, v1, v2, v3)
-	m.SetUserExternalAccountPermsFunc.appendCall(PermsStoreSetUserExternalAccountPermsFuncCall{v0, v1, v2, v3, r0})
-	return r0
+func (m *MockPermsStore) SetUserExternalAccountPerms(v0 context.Context, v1 authz.UserIDWithExternalAccountID, v2 []int32, v3 authz.PermsSource) (*database.SetPermissionsResult, error) {
+	r0, r1 := m.SetUserExternalAccountPermsFunc.nextHook()(v0, v1, v2, v3)
+	m.SetUserExternalAccountPermsFunc.appendCall(PermsStoreSetUserExternalAccountPermsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // SetUserExternalAccountPerms method of the parent MockPermsStore instance
 // is invoked and the hook queue is empty.
-func (f *PermsStoreSetUserExternalAccountPermsFunc) SetDefaultHook(hook func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) error) {
+func (f *PermsStoreSetUserExternalAccountPermsFunc) SetDefaultHook(hook func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*database.SetPermissionsResult, error)) {
 	f.defaultHook = hook
 }
 
@@ -17232,7 +17235,7 @@ func (f *PermsStoreSetUserExternalAccountPermsFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PermsStoreSetUserExternalAccountPermsFunc) PushHook(hook func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) error) {
+func (f *PermsStoreSetUserExternalAccountPermsFunc) PushHook(hook func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*database.SetPermissionsResult, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -17240,20 +17243,20 @@ func (f *PermsStoreSetUserExternalAccountPermsFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PermsStoreSetUserExternalAccountPermsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) error {
-		return r0
+func (f *PermsStoreSetUserExternalAccountPermsFunc) SetDefaultReturn(r0 *database.SetPermissionsResult, r1 error) {
+	f.SetDefaultHook(func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*database.SetPermissionsResult, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreSetUserExternalAccountPermsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) error {
-		return r0
+func (f *PermsStoreSetUserExternalAccountPermsFunc) PushReturn(r0 *database.SetPermissionsResult, r1 error) {
+	f.PushHook(func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*database.SetPermissionsResult, error) {
+		return r0, r1
 	})
 }
 
-func (f *PermsStoreSetUserExternalAccountPermsFunc) nextHook() func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) error {
+func (f *PermsStoreSetUserExternalAccountPermsFunc) nextHook() func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*database.SetPermissionsResult, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -17302,7 +17305,10 @@ type PermsStoreSetUserExternalAccountPermsFuncCall struct {
 	Arg3 authz.PermsSource
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 *database.SetPermissionsResult
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -17314,7 +17320,7 @@ func (c PermsStoreSetUserExternalAccountPermsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermsStoreSetUserExternalAccountPermsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // PermsStoreSetUserPermissionsFunc describes the behavior when the

@@ -42,6 +42,7 @@ go_library(
 
 go_test(
     name = "updatecheck_test",
+    timeout = "short",
     srcs = [
         "build_test.go",
         "client_test.go",

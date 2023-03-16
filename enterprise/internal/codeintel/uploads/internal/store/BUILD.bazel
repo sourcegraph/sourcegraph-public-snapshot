@@ -49,6 +49,7 @@ go_library(
 
 go_test(
     name = "store_test",
+    size = "large",
     srcs = [
         "store_audit_logs_test.go",
         "store_commits_test.go",

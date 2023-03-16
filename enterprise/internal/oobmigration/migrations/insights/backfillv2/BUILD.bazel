@@ -20,6 +20,7 @@ go_library(
 
 go_test(
     name = "backfillv2_test",
+    timeout = "short",
     srcs = ["migrator_test.go"],
     embed = [":backfillv2"],
     tags = [

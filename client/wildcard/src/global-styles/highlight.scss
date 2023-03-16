@@ -535,7 +535,7 @@
     }
     .hl-typed-IdentifierModule,
     .hl-typed-IdentifierNamespace {
-        color: var(--hl-blue);
+        color: var(--hl-orange); // Same as IdentifierType
     }
     .hl-typed-IdentifierFunction {
         color: var(--hl-yellow);
@@ -960,7 +960,7 @@
     }
     .hl-typed-IdentifierModule,
     .hl-typed-IdentifierNamespace {
-        color: var(--hl-blue);
+        color: var(--hl-gray-1); // Same as IdentifierType
     }
     .hl-typed-IdentifierFunctionDefinition {
         color: var(--hl-yellow);

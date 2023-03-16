@@ -12,6 +12,7 @@ import (
 	"golang.org/x/sync/singleflight"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -609,6 +610,14 @@ func (s *Syncer) SyncExternalService(
 		}
 
 		sourced := res.Repo
+
+		if envvar.SourcegraphDotComMode() && sourced.Private {
+			err := errors.Newf("%s is private, but dotcom does not support private repositories.", sourced.Name)
+			syncProgress.Errors++
+			logger.Error("failed to sync private repo", log.String("repo", string(sourced.Name)), log.Error(err))
+			errs = errors.Append(errs, err)
+			continue
+		}
 
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {

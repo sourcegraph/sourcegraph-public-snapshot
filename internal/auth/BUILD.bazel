@@ -20,6 +20,7 @@ go_library(
 
 go_test(
     name = "auth_test",
+    timeout = "short",
     srcs = ["site_admin_test.go"],
     embed = [":auth"],
     deps = [
