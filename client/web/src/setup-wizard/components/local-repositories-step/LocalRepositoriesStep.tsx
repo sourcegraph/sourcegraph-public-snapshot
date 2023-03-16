@@ -84,7 +84,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         if (localService) {
             // We do have local service already so run update mutation
             updateLocalCodeHost({
-                refetchQueries: ['GetLocalCodeHosts', 'RepositoryStats', 'StatusMessages'],
+                refetchQueries: ['GetLocalCodeHosts', 'StatusAndRepoStats'],
                 variables: {
                     input: {
                         id: localService.id,
@@ -96,7 +96,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         } else {
             // We don't have any local external service yet, so call create mutation
             addLocalCodeHost({
-                refetchQueries: ['GetLocalCodeHosts', 'RepositoryStats', 'StatusMessages'],
+                refetchQueries: ['GetLocalCodeHosts', 'StatusAndRepoStats'],
                 variables: {
                     input: {
                         displayName: 'Local repositories service',
