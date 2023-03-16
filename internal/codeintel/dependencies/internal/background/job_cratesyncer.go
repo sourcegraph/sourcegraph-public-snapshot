@@ -224,7 +224,7 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 				if err := j.autoindexingSvc.QueueIndexesForPackage(clientCtx, shared.MinimialVersionedPackageRepo{
 					Scheme:  pkg.Scheme,
 					Name:    pkg.Name,
-					Version: version,
+					Version: version.Version,
 				}, true); err != nil {
 					queueErrs = errors.Append(queueErrs, err)
 				}
@@ -314,6 +314,8 @@ func singleRustExternalService(ctx context.Context, store ExternalServiceStore) 
 func parseCrateInformation(contents []byte) ([]shared.MinimalPackageRepoRef, error) {
 	result := make([]shared.MinimalPackageRepoRef, 0, 1)
 
+	instant := time.Now()
+
 	for _, line := range bytes.Split(contents, []byte("\n")) {
 		if len(line) == 0 {
 			continue
@@ -331,9 +333,12 @@ func parseCrateInformation(contents []byte) ([]shared.MinimalPackageRepoRef, err
 
 		name := reposource.PackageName(info.Name)
 		result = append(result, shared.MinimalPackageRepoRef{
-			Scheme:   shared.RustPackagesScheme,
-			Name:     name,
-			Versions: []string{info.Version},
+			Scheme: shared.RustPackagesScheme,
+			Name:   name,
+			// doing a bit of a dot-com specific assumption here, that all these packages are resolvable
+			// and not covered by a filter.
+			Versions:      []shared.MinimalPackageRepoRefVersion{{Version: info.Version, LastCheckedAt: &instant}},
+			LastCheckedAt: &instant,
 		})
 	}
 

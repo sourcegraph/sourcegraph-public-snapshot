@@ -1,8 +1,8 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
-    timeout = "short",
     name = "integration_tests_test",
+    timeout = "short",
     srcs = [
         "commits_test.go",
         "tree_test.go",

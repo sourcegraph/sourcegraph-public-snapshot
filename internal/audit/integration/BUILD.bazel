@@ -1,8 +1,8 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
-    timeout = "short",
     name = "integration_test",
+    timeout = "short",
     srcs = ["integration_test.go"],
     deps = [
         "@com_github_sourcegraph_run//:run",

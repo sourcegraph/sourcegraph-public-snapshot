@@ -15,8 +15,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "config_test",
+    timeout = "short",
     srcs = ["config_test.go"],
     embed = [":config"],
     deps = ["//schema"],

@@ -23,8 +23,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "txemail_test",
+    timeout = "short",
     srcs = [
         "siteconfig_test.go",
         "template_test.go",

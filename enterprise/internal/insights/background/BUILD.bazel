@@ -47,8 +47,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "background_test",
+    timeout = "short",
     srcs = [
         "data_prune_test.go",
         "insight_enqueuer_test.go",

@@ -99,6 +99,7 @@ go_test(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/collections",
         "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",

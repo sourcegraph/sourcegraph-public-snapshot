@@ -35,8 +35,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "bitbucketcloud_test",
+    timeout = "short",
     srcs = [
         "client_test.go",
         "events_test.go",

@@ -15,8 +15,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "process_test",
+    timeout = "short",
     srcs = ["pipe_test.go"],
     embed = [":process"],
 )

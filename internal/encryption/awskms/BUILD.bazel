@@ -17,8 +17,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "awskms_test",
+    timeout = "short",
     srcs = ["aws_kms_test.go"],
     data = glob(["testdata/**"]),
     embed = [":awskms"],
