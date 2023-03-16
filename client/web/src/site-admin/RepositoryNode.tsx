@@ -5,7 +5,7 @@ import {
     mdiClose,
     mdiFileDocumentOutline,
     mdiBrain,
-    mdiDotsHorizontal,
+    mdiDotsVertical,
     mdiDatabaseRefresh,
     mdiRefresh,
 } from '@mdi/js'
@@ -175,7 +175,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                     )}
                     <Menu>
                         <MenuButton outline={true} aria-label="Repository action">
-                            <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true} />
+                            <Icon svgPath={mdiDotsVertical} inline={false} aria-hidden={true} />
                         </MenuButton>
                         <MenuList position={Position.bottomEnd}>
                             <MenuItem
