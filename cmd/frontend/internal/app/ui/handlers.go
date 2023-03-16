@@ -363,8 +363,10 @@ func serveSignIn(db database.DB) handlerFunc {
 			if err := userpasswd.AppSignIn(w, r, db, nonce); err != nil {
 				return err
 			}
-			r.URL.Path = "/search"
-			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
+			url := r.URL
+			url.RawQuery = ""
+			url.Path = "/search"
+			http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
 		}
 
 		return renderTemplate(w, "app.html", common)
