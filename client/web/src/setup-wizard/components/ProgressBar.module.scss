@@ -6,6 +6,8 @@
     // progress bar and user sees nothing but white background)
     z-index: 1;
     display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
     align-items: center;
 }
 

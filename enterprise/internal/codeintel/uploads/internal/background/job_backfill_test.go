@@ -9,12 +9,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func TestBackfillCommittedAtBatch(t *testing.T) {
 	ctx := context.Background()
 	store := NewMockStore()
-	gitserverClient := NewMockGitserverClient()
+	gitserverClient := gitserver.NewMockClient()
 	svc := &backfiller{
 		store:           store,
 		gitserverClient: gitserverClient,
@@ -31,9 +34,9 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 		expectedCommitDates[fmt.Sprintf("%040d", i)] = t0.Add(time.Second * time.Duration(i))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error) {
-		date, ok := expectedCommitDates[commit]
-		return commit, date, ok, nil
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error) {
+		date, ok := expectedCommitDates[string(commit)]
+		return string(commit), date, ok, nil
 	})
 
 	pageSize := 50
@@ -89,7 +92,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 	ctx := context.Background()
 	store := NewMockStore()
-	gitserverClient := NewMockGitserverClient()
+	gitserverClient := gitserver.NewMockClient()
 	svc := &backfiller{
 		store:           store,
 		gitserverClient: gitserverClient,
@@ -111,9 +114,9 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 		expectedCommitDates[fmt.Sprintf("%040d", i)] = t0.Add(time.Second * time.Duration(i))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error) {
-		date, ok := expectedCommitDates[commit]
-		return commit, date, ok, nil
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error) {
+		date, ok := expectedCommitDates[string(commit)]
+		return string(commit), date, ok, nil
 	})
 
 	pageSize := 50

@@ -224,7 +224,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                 <ul className={styles.list}>
                     {foundRepositories.map(codeHost => (
                         <li key={codeHost.path} className={classNames('d-flex')}>
-                            <Icon svgPath={mdiGit} aria-hidden={true} className="mt-1 mr-3" />
+                            <Icon svgPath={mdiGit} size="md" aria-hidden={true} className="mt-1 mr-3" />
                             <div className="d-flex flex-column">
                                 <Text weight="medium" className="mb-0">
                                     {codeHost.name}

@@ -9,6 +9,7 @@ import (
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -16,6 +17,7 @@ type rootResolver struct {
 	uploadSvc               UploadService
 	autoindexSvc            AutoIndexingService
 	policySvc               PolicyService
+	gitserverClient         gitserver.Client
 	operations              *operations
 	siteAdminChecker        sharedresolvers.SiteAdminChecker
 	repoStore               database.RepoStore
@@ -23,11 +25,11 @@ type rootResolver struct {
 	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory
 }
 
-func NewRootResolver(observationCtx *observation.Context, uploadSvc UploadService, autoindexSvc AutoIndexingService, policySvc PolicyService, siteAdminChecker sharedresolvers.SiteAdminChecker, repoStore database.RepoStore, prefetcherFactory *sharedresolvers.PrefetcherFactory, locationResolverFactory *sharedresolvers.CachedLocationResolverFactory) resolverstubs.UploadsServiceResolver {
+func NewRootResolver(observationCtx *observation.Context, uploadSvc UploadService, policySvc PolicyService, gitserverClient gitserver.Client, siteAdminChecker sharedresolvers.SiteAdminChecker, repoStore database.RepoStore, prefetcherFactory *sharedresolvers.PrefetcherFactory, locationResolverFactory *sharedresolvers.CachedLocationResolverFactory) resolverstubs.UploadsServiceResolver {
 	return &rootResolver{
 		uploadSvc:               uploadSvc,
-		autoindexSvc:            autoindexSvc,
 		policySvc:               policySvc,
+		gitserverClient:         gitserverClient,
 		operations:              newOperations(observationCtx),
 		siteAdminChecker:        siteAdminChecker,
 		repoStore:               repoStore,
@@ -77,7 +79,7 @@ func (r *rootResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ res
 		return nil, err
 	}
 
-	return sharedresolvers.NewUploadResolver(r.uploadSvc, r.autoindexSvc, r.policySvc, r.siteAdminChecker, r.repoStore, upload, prefetcher, r.locationResolverFactory.Create(), traceErrs), nil
+	return sharedresolvers.NewUploadResolver(r.uploadSvc, r.policySvc, r.gitserverClient, r.siteAdminChecker, r.repoStore, upload, prefetcher, r.locationResolverFactory.Create(), traceErrs), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploads
@@ -101,7 +103,7 @@ func (r *rootResolver) LSIFUploadsByRepo(ctx context.Context, args *resolverstub
 
 	uploadsResolver := sharedresolvers.NewUploadsResolver(r.uploadSvc, opts)
 
-	return sharedresolvers.NewUploadConnectionResolver(r.uploadSvc, r.autoindexSvc, r.policySvc, r.siteAdminChecker, r.repoStore, uploadsResolver, r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), traceErrs), nil
+	return sharedresolvers.NewUploadConnectionResolver(r.uploadSvc, r.policySvc, r.gitserverClient, r.siteAdminChecker, r.repoStore, uploadsResolver, r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data

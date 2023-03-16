@@ -31,7 +31,7 @@ type Store interface {
 		minimumTimeSinceLastCheck time.Duration,
 		commitResolverMaximumCommitLag time.Duration,
 		limit int,
-		f func(ctx context.Context, repositoryID int, commit string) (bool, error),
+		f func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
 		now time.Time,
 	) (_, _ int, err error)
 	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error)
@@ -43,7 +43,7 @@ type Store interface {
 	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
 	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 	SetRepositoryAsDirty(ctx context.Context, repositoryID int) (err error)
-	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
+	GetDirtyRepositories(ctx context.Context) (_ []shared.DirtyRepository, err error)
 	RepoName(ctx context.Context, repositoryID int) (_ string, err error)              // TODO(numbers88s): renaming this after I remove dbStore from gitserver init.
 	RepoNames(ctx context.Context, repositoryIDs ...int) (_ map[int]string, err error) // TODO(numbers88s): renaming this after I remove dbStore from gitserver init.
 	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
