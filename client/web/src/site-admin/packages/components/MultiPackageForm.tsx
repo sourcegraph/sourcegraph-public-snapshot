@@ -48,10 +48,7 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
     onDismiss,
     onSave,
 }) => {
-    const [blockState, setBlockState] = useState<MultiPackageState>({
-        nameFilter: initialState.nameFilter,
-        ecosystem: initialState.ecosystem,
-    })
+    const [blockState, setBlockState] = useState<MultiPackageState>(initialState)
     const query = useDebounce(blockState.nameFilter, 200)
 
     const isValid = useCallback((): boolean => {

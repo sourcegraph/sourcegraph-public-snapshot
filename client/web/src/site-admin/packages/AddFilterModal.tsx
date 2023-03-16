@@ -17,10 +17,6 @@ interface AddFilterModalProps extends AddPackageFilterModalContentProps {
 export const AddFilterModal: React.FunctionComponent<AddFilterModalProps> = props => (
     <Modal aria-label="Add package filters" onDismiss={props.onDismiss} className={styles.modal}>
         <PageHeader path={[{ text: 'Add package filter' }]} headingElement="h2" className={styles.header} />
-        <AddPackageFilterModalContent
-            node={'node' in props ? props.node : undefined}
-            filters={props.filters}
-            onDismiss={props.onDismiss}
-        />
+        <AddPackageFilterModalContent node={props.node} filters={props.filters} onDismiss={props.onDismiss} />
     </Modal>
 )

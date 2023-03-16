@@ -43,24 +43,14 @@ interface SinglePackageFormProps {
     onSave: (state: SinglePackageState) => Promise<unknown>
 }
 
-const DEFAULT_INITIAL_STATE: SinglePackageState = {
-    name: '',
-    versionFilter: '*',
-    ecosystem: PackageRepoReferenceKind.NPMPACKAGES, // TODO: Fix
-}
-
 export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> = ({
-    initialState = DEFAULT_INITIAL_STATE,
+    initialState,
     filters,
     setType,
     onDismiss,
     onSave,
 }) => {
-    const [blockState, setBlockState] = useState<SinglePackageState>({
-        name: initialState.name,
-        versionFilter: initialState.versionFilter,
-        ecosystem: initialState.ecosystem,
-    })
+    const [blockState, setBlockState] = useState<SinglePackageState>(initialState)
 
     const nameQuery = useDebounce(blockState.name, 200)
     const versionQuery = useDebounce(blockState.versionFilter, 200)
@@ -179,14 +169,17 @@ const VersionFilterSummary: React.FunctionComponent<VersionFilterSummaryProps> =
 }) => {
     const [versionFetchLimit, setVersionFetchLimit] = useState(15)
     const { versions, totalCount, loading, error } = useMatchingVersions({
-        kind: blockState.ecosystem,
-        filter: {
-            versionFilter: {
-                packageName: nameQuery,
-                versionGlob: versionQuery,
+        variables: {
+            kind: blockState.ecosystem,
+            filter: {
+                versionFilter: {
+                    packageName: nameQuery,
+                    versionGlob: versionQuery,
+                },
             },
+            first: versionFetchLimit,
         },
-        first: versionFetchLimit,
+        skip: !node,
     })
 
     // Limit fetching more than 1000 versions
@@ -205,13 +198,15 @@ const VersionFilterSummary: React.FunctionComponent<VersionFilterSummaryProps> =
             <Label className="mb-2">Summary</Label>
             <div className="d-flex justify-content-between text-muted">
                 <span>
-                    {totalCount === 1 ? (
-                        <>{totalCount} package currently matches</>
+                    {!node ? (
+                        <>No package currently matches this filter</>
                     ) : (
-                        <>{totalCount} packages currently match</>
-                    )}{' '}
-                    this filter
-                    {versions.length < totalCount && <> (showing only {versions.length})</>}
+                        <>
+                            1 package currently matches this filter, across{' '}
+                            {totalCount === 1 ? <>{totalCount} version</> : <>{totalCount} versions</>}
+                            {versions.length < totalCount && <> (showing only {versions.length})</>}
+                        </>
+                    )}
                 </span>
                 {versions.length < totalCount && (
                     <Button variant="link" className="p-0 mr-3" onClick={() => setVersionFetchLimit(nextFetchLimit)}>
@@ -232,13 +227,13 @@ const VersionFilterSummary: React.FunctionComponent<VersionFilterSummaryProps> =
                                         })}
                                     >
                                         <Badge className="px-2 py-0" as="code">
-                                            {node.name}@{version}
+                                            {node.name}@v{version}
                                         </Badge>
                                     </Link>
                                 </div>
                             ) : (
                                 <Badge className="px-2 py-0" as="code">
-                                    {node.name}@{version}
+                                    {node.name}@v{version}
                                 </Badge>
                             )}
                         </li>

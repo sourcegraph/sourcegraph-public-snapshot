@@ -48,7 +48,7 @@ export const AddPackageFilterModalContent: React.FunctionComponent<AddPackageFil
                         initialState={{
                             name: node?.name ?? '',
                             versionFilter: '*',
-                            ecosystem: node?.kind ?? PackageRepoReferenceKind.NPMPACKAGES, // TOOD: Fix
+                            ecosystem: node?.kind ?? (filters[0].value as PackageRepoReferenceKind),
                         }}
                         filters={filters}
                         setType={setBlockType}
@@ -72,7 +72,7 @@ export const AddPackageFilterModalContent: React.FunctionComponent<AddPackageFil
                     <MultiPackageForm
                         initialState={{
                             nameFilter: '*',
-                            ecosystem: node?.kind ?? PackageRepoReferenceKind.NPMPACKAGES, // TOOD: Fix
+                            ecosystem: node?.kind ?? (filters[0].value as PackageRepoReferenceKind),
                         }}
                         filters={filters}
                         setType={setBlockType}
