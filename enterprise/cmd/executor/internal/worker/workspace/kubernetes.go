@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
@@ -33,16 +31,8 @@ func NewKubernetesWorkspace(
 	var path string
 	var workspaceDir string
 	var err error
-	if config.IsKubernetes() {
-		path = fmt.Sprintf("job-%d", job.ID)
-		workspaceDir = filepath.Join(mountPath, path)
-	} else {
-		workspaceDir, err = makeTemporaryDirectory("workspace-" + strconv.Itoa(job.ID))
-		if err != nil {
-			return nil, err
-		}
-		path = workspaceDir
-	}
+	path = fmt.Sprintf("job-%d", job.ID)
+	workspaceDir = filepath.Join(mountPath, path)
 
 	if job.RepositoryName != "" {
 		if err = cloneRepo(ctx, workspaceDir, job, cmd, logger, cloneOpts, operations); err != nil {

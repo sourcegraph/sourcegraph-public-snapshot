@@ -17,7 +17,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -200,21 +199,6 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 			Value: parts[1],
 		}
 	}
-	volumeMount := corev1.VolumeMount{
-		Name:      kubernetesVolumeName,
-		MountPath: KubernetesMountPath,
-	}
-	volumeSource := corev1.VolumeSource{}
-	if config.IsKubernetes() {
-		volumeMount.SubPath = path
-		volumeSource.PersistentVolumeClaim = &corev1.PersistentVolumeClaimVolumeSource{
-			ClaimName: options.PersistenceVolumeName,
-		}
-	} else {
-		volumeSource.HostPath = &corev1.HostPathVolumeSource{
-			Path: path,
-		}
-	}
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -242,14 +226,22 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
-								volumeMount,
+								{
+									Name:      kubernetesVolumeName,
+									MountPath: KubernetesMountPath,
+									SubPath:   path,
+								},
 							},
 						},
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name:         kubernetesVolumeName,
-							VolumeSource: volumeSource,
+							Name: kubernetesVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: options.PersistenceVolumeName,
+								},
+							},
 						},
 					},
 				},

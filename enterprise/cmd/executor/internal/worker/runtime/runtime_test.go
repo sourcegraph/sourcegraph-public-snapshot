@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
@@ -16,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestNewRuntime(t *testing.T) {
+func TestNew(t *testing.T) {
 	tests := []struct {
 		name           string
 		runnerOpts     runner.Options
@@ -207,7 +208,54 @@ func TestNewRuntime(t *testing.T) {
 				assert.Equal(t, test.expectedName, r.Name())
 			}
 
-			test.assertMockFunc(t, cmdRunner)
+			if test.assertMockFunc != nil {
+				test.assertMockFunc(t, cmdRunner)
+			}
 		})
 	}
+}
+
+func TestNew_Kubernetes(t *testing.T) {
+	err := os.Setenv("KUBERNETES_SERVICE_HOST", "http://localhost")
+	require.NoError(t, err)
+	defer os.Unsetenv("KUBERNETES_SERVICE_HOST")
+
+	tempFile, err := os.CreateTemp("", "kubeconfig")
+	require.NoError(t, err)
+	defer os.Remove(tempFile.Name())
+	content := `
+apiVersion: v1
+clusters:
+- cluster:
+    server: https://localhost:8080
+  name: foo-cluster
+contexts:
+- context:
+    cluster: foo-cluster
+    user: foo-user
+    namespace: bar
+  name: foo-context
+current-context: foo-context
+kind: Config
+`
+	err = os.WriteFile(tempFile.Name(), []byte(content), 0644)
+	require.NoError(t, err)
+
+	r, err := runtime.New(
+		logtest.Scoped(t),
+		nil,
+		nil,
+		workspace.CloneOptions{},
+		runner.Options{
+			KubernetesOptions: runner.KubernetesOptions{
+				ConfigPath:       tempFile.Name(),
+				ContainerOptions: command.KubernetesContainerOptions{},
+			},
+		},
+		runtime.NewMockCmdRunner(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	assert.Equal(t, runtime.NameKubernetes, r.Name())
 }
