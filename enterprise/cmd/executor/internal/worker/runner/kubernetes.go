@@ -53,25 +53,6 @@ func (r *kubernetesRunner) Setup(ctx context.Context) error {
 	}
 	r.tmpDir = dir
 
-	// TODO: figure out private registry stuff
-	// If docker auth config is present, write it.
-	//if len(r.dockerAuthConfig.Auths) > 0 {
-	//	d, err := json.Marshal(r.dockerAuthConfig)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	dockerConfigPath, err := os.MkdirTemp(r.tmpDir, "docker_auth")
-	//	if err != nil {
-	//		return err
-	//	}
-	//	r.options.ConfigPath = dockerConfigPath
-	//
-	//	if err = os.WriteFile(filepath.Join(r.options.ConfigPath, "config.json"), d, os.ModePerm); err != nil {
-	//		return err
-	//	}
-	//}
-
 	return nil
 }
 
