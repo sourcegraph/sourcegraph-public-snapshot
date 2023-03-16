@@ -17,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const appUsername = "admin"
+
 // AppNonce stores the nonce used by Sourcegraph App to enable passworldless
 // login from the console.
 var AppNonce Nonce
@@ -91,7 +93,7 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 		}
 
 		// Admin should always be UID=0, but just in case we query it.
-		user, err := getByEmailOrUsername(r.Context(), db, "admin")
+		user, err := getByEmailOrUsername(r.Context(), db, appUsername)
 		if err != nil {
 			return errors.Wrap(err, "Failed to find admin account")
 		}
@@ -122,13 +124,10 @@ func AppSiteInit(ctx context.Context, logger log.Logger, db database.DB) error {
 		return errors.Wrap(err, "failed to generate site admin password")
 	}
 
-	email := "app@sourcegraph.com"
-	username := "admin"
-
 	failIfNewUserIsNotInitialSiteAdmin := true
 	err, _, _ = unsafeSignUp(ctx, logger, db, credentials{
-		Email:    email,
-		Username: username,
+		Email:    "app@sourcegraph.com",
+		Username: appUsername,
 		Password: password,
 	}, failIfNewUserIsNotInitialSiteAdmin)
 	if err != nil {
