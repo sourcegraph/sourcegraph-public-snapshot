@@ -136,8 +136,8 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         for (const term of terms) {
             const ct = termCounts[term] || 0
             // Assume terms with both upper and lower letters are symbols
-            // and symbols should have higher priority than non-symbols
-            const termScore = term.match(/([a-z])*[A-Z]([a-z])*/) ? 10 : 1
+            // as symbols should have higher priority than non-symbols
+            const termScore = term.match(/^(?=.*[a-z])(?=.*[A-Z])/) ? 10 : 1
             const logScore = ct === 0 ? 0 : Math.log10(ct) + termScore
             const idfLogScore = (idfDict[term] || 1) * logScore
             score += idfLogScore
