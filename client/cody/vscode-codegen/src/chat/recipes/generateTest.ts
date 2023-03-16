@@ -1,8 +1,7 @@
 import path from 'path'
 
-import { Message } from '@sourcegraph/cody-common'
-
 import { Editor } from '../../editor'
+import { Message } from '../../sourcegraph-api'
 import { ContextSearchOptions } from '../context-search-options'
 import { getContextMessageWithResponse, populateCodeContextTemplate, truncateText, truncateTextStart } from '../prompt'
 
@@ -34,7 +33,7 @@ export class GenerateTest implements Recipe {
         const contextQuery = truncateText(selection.selectedText, maxInputTokens)
         const contextMessages = await getEmbeddingsContextMessages(contextQuery, {
             numCodeResults: 8,
-            numMarkdownResults: 0,
+            numTextResults: 0,
         })
         contextMessages.push(
             ...[
@@ -46,7 +45,7 @@ export class GenerateTest implements Recipe {
         // Get query message
         const languageName = getNormalizedLanguageName(selection.fileName)
         const promptMessage: Message = {
-            speaker: 'you',
+            speaker: 'human',
             text: `Generate a unit test in ${languageName} for the following code:\n\`\`\`\n${selection.selectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`,
         }
 

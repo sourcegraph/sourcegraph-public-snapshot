@@ -1,8 +1,7 @@
 import path from 'path'
 
-import { Message } from '@sourcegraph/cody-common'
-
 import { Editor } from '../../editor'
+import { Message } from '../../sourcegraph-api'
 import { ContextSearchOptions } from '../context-search-options'
 import { getContextMessageWithResponse, populateCodeContextTemplate, truncateText, truncateTextStart } from '../prompt'
 
@@ -34,7 +33,7 @@ export class GenerateDocstring implements Recipe {
         const contextQuery = truncateText(selection.selectedText, maxInputTokens)
         const contextMessages = await getEmbeddingsContextMessages(contextQuery, {
             numCodeResults: 4,
-            numMarkdownResults: 0,
+            numTextResults: 0,
         })
         contextMessages.push(
             ...[
@@ -54,7 +53,7 @@ export class GenerateDocstring implements Recipe {
             additionalInstructions = 'Use a Python docstring to generate a Python multi-line string.'
         }
         const promptMessage: Message = {
-            speaker: 'you',
+            speaker: 'human',
             text: `${promptPrefix}\n\`\`\`\n${selection.selectedText}\n\`\`\`\n Only generate the documentation, do not generate the code. ${additionalInstructions} ${MARKDOWN_FORMAT_PROMPT}`,
         }
 

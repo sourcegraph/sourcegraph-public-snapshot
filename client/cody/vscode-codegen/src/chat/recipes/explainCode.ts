@@ -1,6 +1,5 @@
-import { Message } from '@sourcegraph/cody-common'
-
 import { Editor } from '../../editor'
+import { Message } from '../../sourcegraph-api'
 import { ContextSearchOptions } from '../context-search-options'
 import { getContextMessageWithResponse, populateCodeContextTemplate, truncateText, truncateTextStart } from '../prompt'
 
@@ -30,7 +29,7 @@ export class ExplainCodeDetailed implements Recipe {
         const contextQuery = truncateText(selection.selectedText, maxInputTokens)
         const contextMessages = await getEmbeddingsContextMessages(contextQuery, {
             numCodeResults: 4,
-            numMarkdownResults: 0,
+            numTextResults: 0,
         })
         contextMessages.push(
             ...[
@@ -42,7 +41,7 @@ export class ExplainCodeDetailed implements Recipe {
         // Get query message
         const languageName = getNormalizedLanguageName(selection.fileName)
         const promptMessage: Message = {
-            speaker: 'you',
+            speaker: 'human',
             text: `Please explain the following ${languageName} code. Be very detailed and specific, and indicate when it is not clear to you what is going on. Format your response as an ordered list.\n\`\`\`\n${selection.selectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`,
         }
 
@@ -81,7 +80,7 @@ export class ExplainCodeHighLevel implements Recipe {
         const contextQuery = truncateText(selection.selectedText, maxInputTokens)
         const contextMessages = await getEmbeddingsContextMessages(contextQuery, {
             numCodeResults: 4,
-            numMarkdownResults: 0,
+            numTextResults: 0,
         })
         contextMessages.push(
             ...[
@@ -94,7 +93,7 @@ export class ExplainCodeHighLevel implements Recipe {
         const languageName = getNormalizedLanguageName(selection.fileName)
 
         const promptMessage: Message = {
-            speaker: 'you',
+            speaker: 'human',
             text: `Explain the following ${languageName} code at a high level. Only include details that are essential to an overal understanding of what's happening in the code.\n\`\`\`\n${selection.selectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`,
         }
 

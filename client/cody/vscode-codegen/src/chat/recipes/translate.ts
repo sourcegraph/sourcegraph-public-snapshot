@@ -1,8 +1,7 @@
 import path from 'path'
 
-import { Message } from '@sourcegraph/cody-common'
-
 import { Editor } from '../../editor'
+import { Message } from '../../sourcegraph-api'
 
 import { languageMarkdownID, languageNames } from './langs'
 import { Recipe, RecipePrompt } from './recipe'
@@ -30,7 +29,7 @@ export class TranslateToLanguage implements Recipe {
 
         // Get query message
         const promptMessage: Message = {
-            speaker: 'you',
+            speaker: 'human',
             text: `Translate the following code into ${toLanguage}\n\`\`\`\n${selection.selectedText}\n\`\`\``,
         }
 
