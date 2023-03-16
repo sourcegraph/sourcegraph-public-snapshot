@@ -63,7 +63,7 @@ func generateTSConstants(output *os.File, permissions []types.Permission) {
 	for _, permission := range permissions {
 		fmt.Fprintln(output)
 		dn := permission.DisplayName()
-		fmt.Fprintln(output, fmt.Sprintf("export const %sPermission = \"%s\"", sentencizePermission(dn), dn))
+		fmt.Fprintln(output, fmt.Sprintf("export const %sPermission = '%s'", sentencizePermission(dn), dn))
 	}
 }
 
