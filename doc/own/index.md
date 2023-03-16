@@ -25,10 +25,12 @@ As an experimental feature, Sourcegraph Own is disabled by default. If you like 
 
 **Owner**: An owner is defined as a person or a team in Sourcegraph.
 
-A person can be ...
+A _person_ can be:
+- a Sourcegraph user which we were able to resolve from the `CODEOWNERS` handle or email, in which case we link to their profile.
+- an unknown user for which we were unable to resolve a profile, in which case we will return the `CODEOWNERS` data we have.
 
-A team is ... 
-For team owners, we added a new feature to [manage teams in Sourcegraph](../admin/teams). See the docs on how to set them up.
+A _team_ is a group of Sourcegraph users represented by a common handle, which is a new feature that we added. 
+[Read more about how to manage teams in Sourcegraph](../admin/teams).
 
 ## Code ownership
 
@@ -37,16 +39,37 @@ To define rulesets for codeownership, we make use of the CODEOWNERS format.
 
 ### The CODEOWNERS format
 
+`CODEOWNERS` files contain a sequence of matching rules - a glob pattern and zero or more owners. 
+A repository has at most one CODEOWNERS file. 
+
+#### Specifying Owner information 
+
 Owners can be defined by a username/team name or an email address. 
 
 Using email addresses is generally recommended, as email addresses are most likely the same across different platforms, and are independent of a user having registered yet. 
 In Sourcegraph, a user can add multiple email addresses to their profile. All of those would match to the same user.
 
-For committed CODEOWNERS files, the usernames are usually the username **on the code host**, so they don't necessarily match with the Sourcegraph username. This is a known limitation, and in the future we will provide ways to map external code host names to Sourcegraph users. For now, you can search for a user by their code host username, or switch to using emails in the codeowners files, which will work across both Sourcegraph and the code host.
+For committed CODEOWNERS files, the usernames are usually the username **on the code host**, so they don't necessarily match with the Sourcegraph username. 
+This is a known limitation, and in the future we will provide ways to map external code host names to Sourcegraph users. 
+For now, you can search for a user by their code host username, or switch to using emails in the codeowners files, which will work across both Sourcegraph and the code host.
+
+#### File format
+
+The following snippet shows an example of a valid CODEOWNERS file. 
 
 ```
-TODO: DESCRIBE CODEOWNERS FORMAT HERE.
+*.txt @text-team
+/build/logs/ alice@sourcegraph.com 
+/cmd/**/test @qa-team @user
 ```
+
+- Asterisk * is a wildcard that matches N tokens in a path segment. Example: `doc/*/own` will match `doc/ref/own` and `doc/tutorial/own`, but not `doc/a/b/own`
+- Double ** asterisk matches any sub-path. Example: `doc/**/own` will match `doc/ref/own` and `doc/a/b/own`
+- Starting a pattern with / anchors matches at the repository root. Example: `/docs/*` matches `/docs/a.md` and `/docs/b.md` but not `/src/docs/a.md`.
+- Trailing slash / matches any file within the directory tree (so it is equivalent to trailing /**). `Example: `docs/` matches `/testing/docs/foo` and `/docs/foo/bar`, but does not match `/docs` or `/testing/docs`.
+
+
+The rules are considered independently and in order. Rules farther down the file take precedence. Only **one** rule matches.
 
 #### Limitations
 
@@ -77,6 +100,11 @@ Searches at specific commits will return any CODEOWNERS data that exists at that
 Read more on how to [manually ingest CODEOWNERS data](codeowners_ingestion.md) into your Sourcegraph instance.
 
 The docs detail how to use the UI or `src-cli` to upload CODEOWNERS files to Sourcegraph.
+
+## Limitations
+
+- Sourcegraph Own is being released as an MVP for 5.0. In the future of the product we intend to infer ownership beyond CODEOWNERS data.
+- The feature has not been fully validated to work well on large repositories or large CODEOWNERS rulesets. This is a future area of improvement, but please contact us if you run into issues.
 
 ## Browsing ownership
 

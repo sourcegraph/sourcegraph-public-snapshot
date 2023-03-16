@@ -17,8 +17,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "config_test",
+    timeout = "short",
     srcs = [
         "json_test.go",
         "types_test.go",

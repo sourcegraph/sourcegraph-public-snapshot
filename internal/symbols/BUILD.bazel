@@ -35,8 +35,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "symbols_test",
+    timeout = "short",
     srcs = ["client_test.go"],
     embed = [":symbols"],
     deps = [

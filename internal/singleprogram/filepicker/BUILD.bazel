@@ -13,8 +13,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "filepicker_test",
+    timeout = "short",
     srcs = ["filepicker_test.go"],
     deps = [
         ":filepicker",

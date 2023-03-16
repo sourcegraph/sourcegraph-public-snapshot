@@ -127,7 +127,7 @@ export function createPlatformContext(
         },
         sourcegraphURL,
         clientApplication: 'other',
-        getStaticExtensions: () => getInlineExtensions(),
+        getStaticExtensions: () => getInlineExtensions(assetsURL),
     }
     return context
 }

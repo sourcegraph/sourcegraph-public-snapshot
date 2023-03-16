@@ -13,8 +13,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "cloud_test",
+    timeout = "short",
     srcs = ["site_config_test.go"],
     embed = [":cloud"],
     deps = [

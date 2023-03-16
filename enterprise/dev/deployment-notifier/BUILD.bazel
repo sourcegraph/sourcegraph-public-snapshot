@@ -32,8 +32,8 @@ go_binary(
 )
 
 go_test(
-    timeout = "short",
     name = "deployment-notifier_test",
+    timeout = "short",
     srcs = [
         "deployment_notifier_test.go",
         "manifest_differ_test.go",

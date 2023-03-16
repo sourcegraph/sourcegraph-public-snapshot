@@ -4,12 +4,14 @@ import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { createPortal } from 'react-dom'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
+import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
     createActiveSpan,
@@ -33,6 +35,7 @@ import {
     ErrorMessage,
     Icon,
     LoadingSpinner,
+    Panel,
     Text,
     useEventObservable,
     useObservable,
@@ -53,7 +56,7 @@ import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { SearchStreamingProps } from '../../search'
 import { useNotepad } from '../../stores'
 import { basename } from '../../util/path'
-import { toTreeURL } from '../../util/url'
+import { parseBrowserRepoURL, toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
@@ -579,6 +582,24 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     />
                 </TraceSpanProvider>
             )}
+            {parseQueryAndHash(location.search, location.hash).viewState &&
+                createPortal(
+                    <Panel
+                        className={styles.panel}
+                        position="bottom"
+                        defaultSize={350}
+                        storageKey="panel-size"
+                        ariaLabel="References panel"
+                        id="references-panel"
+                    >
+                        <TabbedPanelContent
+                            {...props}
+                            repoName={`git://${parseBrowserRepoURL(location.pathname).repoName}`}
+                            fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+                        />
+                    </Panel>,
+                    document.querySelector('#references-panel-react-portal')!
+                )}
         </div>
     )
 }

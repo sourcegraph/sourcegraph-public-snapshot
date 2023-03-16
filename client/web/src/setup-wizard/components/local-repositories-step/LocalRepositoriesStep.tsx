@@ -18,6 +18,7 @@ import {
     LoaderInput,
     Text,
     useDebounce,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -83,7 +84,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         if (localService) {
             // We do have local service already so run update mutation
             updateLocalCodeHost({
-                refetchQueries: ['GetLocalCodeHosts', 'RepositoryStats', 'StatusMessages'],
+                refetchQueries: ['GetLocalCodeHosts', 'StatusAndRepoStats'],
                 variables: {
                     input: {
                         id: localService.id,
@@ -95,7 +96,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         } else {
             // We don't have any local external service yet, so call create mutation
             addLocalCodeHost({
-                refetchQueries: ['GetLocalCodeHosts', 'RepositoryStats', 'StatusMessages'],
+                refetchQueries: ['GetLocalCodeHosts', 'StatusAndRepoStats'],
                 variables: {
                     input: {
                         displayName: 'Local repositories service',
@@ -206,7 +207,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                     as={InputWitActions}
                     value={path}
                     label="Directory path"
-                    disabled={isFilePickerAvailable}
+                    isFilePickerMode={isFilePickerAvailable}
                     placeholder="/Users/user-name/Projects/"
                     message="Pick a git directory or folder that contains multiple git folders"
                     isProcessing={loading}
@@ -262,27 +263,38 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
 }
 
 interface InputWithActionsProps extends InputHTMLAttributes<HTMLInputElement> {
+    isFilePickerMode: boolean
     isProcessing: boolean
     onPickPath: () => void
     onPathReset: () => void
 }
 
+/**
+ * Renders either file picker input (non-editable but clickable and with "pick a path" action button or
+ * simple input where user can input path manually.
+ */
 const InputWitActions = forwardRef<HTMLInputElement, InputWithActionsProps>((props, ref) => {
-    const { isProcessing, onPickPath, onPathReset, className, disabled, ...attributes } = props
+    const { isFilePickerMode, isProcessing, onPickPath, onPathReset, className, value, ...attributes } = props
 
     return (
         <div className={styles.inputRoot}>
-            <LoaderInput loading={isProcessing} className="flex-grow-1">
-                {/* eslint-disable-next-line react/forbid-elements */}
-                <input
-                    {...attributes}
-                    ref={ref}
-                    disabled={disabled}
-                    className={classNames(className, styles.input, { [styles.inputWithAction]: disabled })}
-                />
-            </LoaderInput>
-
-            {disabled && (
+            <Tooltip content={isFilePickerMode ? value : undefined}>
+                <LoaderInput
+                    loading={isProcessing}
+                    className={styles.inputLoader}
+                    onClick={isFilePickerMode ? onPickPath : undefined}
+                >
+                    {/* eslint-disable-next-line react/forbid-elements */}
+                    <input
+                        {...attributes}
+                        ref={ref}
+                        value={value}
+                        disabled={isFilePickerMode}
+                        className={classNames(className, styles.input, { [styles.inputWithAction]: isFilePickerMode })}
+                    />
+                </LoaderInput>
+            </Tooltip>
+            {isFilePickerMode && (
                 <Button size="sm" type="button" variant="primary" className={styles.pickPath} onClick={onPickPath}>
                     Pick a path
                 </Button>
