@@ -160,7 +160,7 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*gqlutil.
 	return &gqlutil.DateTime{Time: info.LastFetched}, nil
 }
 
-func (r *repositoryMirrorInfoResolver) Due(ctx context.Context) (*gqlutil.DateTime, error) {
+func (r *repositoryMirrorInfoResolver) NextSyncAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	info, err := r.repoUpdateSchedulerInfo(ctx)
 	if err != nil {
 		return nil, err

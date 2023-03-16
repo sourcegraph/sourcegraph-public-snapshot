@@ -4017,7 +4017,7 @@ type MirrorRepositoryInfo {
     """
     When the repository is next scheduled to be updated from the remote source repository.
     """
-    due: DateTime
+    nextSyncAt: DateTime
     """
     The state of this repository in the update schedule.
     """

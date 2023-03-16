@@ -19,7 +19,7 @@ export const RepoMirrorInfo: React.FunctionComponent<
                 ) : (
                     <>
                         Last synced <Timestamp date={mirrorInfo.updatedAt} />. Next sync time:{' '}
-                        {mirrorInfo.due === null ? <>N/A</> : <Timestamp date={mirrorInfo.due} />}. Size:{' '}
+                        {mirrorInfo.nextSyncAt === null ? <>N/A</> : <Timestamp date={mirrorInfo.nextSyncAt} />}. Size:{' '}
                         {prettyBytesBigint(BigInt(mirrorInfo.byteSize))}.
                         {mirrorInfo.shard !== null && <> Shard: {mirrorInfo.shard}</>}
                         {mirrorInfo.shard === null && (

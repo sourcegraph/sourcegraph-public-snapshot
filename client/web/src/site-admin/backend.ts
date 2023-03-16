@@ -111,7 +111,7 @@ const mirrorRepositoryInfoFieldsFragment = gql`
         cloned
         cloneInProgress
         updatedAt
-        due
+        nextSyncAt
         isCorrupted
         corruptionLogs {
             timestamp
