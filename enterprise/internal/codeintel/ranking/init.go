@@ -47,6 +47,11 @@ func NewSymbolJanitor(observationCtx *observation.Context, rankingService *Servi
 			rankingService.store,
 			ConfigInst.SymbolExporterInterval,
 		),
+		background.NewSymbolInitialPathsJanitor(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
+		),
 		background.NewRankCountsJanitor(
 			observationCtx,
 			rankingService.store,
@@ -60,13 +65,21 @@ func NewSymbolJanitor(observationCtx *observation.Context, rankingService *Servi
 	}
 }
 
-func NewMapper(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
-	return background.NewMapper(
-		observationCtx,
-		rankingService.store,
-		ConfigInst.SymbolExporterInterval,
-		ConfigInst.MapperBatchSize,
-	)
+func NewMapper(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		background.NewMapper(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
+			ConfigInst.MapperBatchSize,
+		),
+		background.NewSeedMapper(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
+			ConfigInst.MapperBatchSize,
+		),
+	}
 }
 
 func NewReducer(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {

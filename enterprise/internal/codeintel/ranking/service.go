@@ -105,7 +105,11 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 
 	paths := map[string]float64{}
 	for path, rank := range documentRanks {
-		paths[path] = math.Log2(rank)
+		if rank == 0 {
+			paths[path] = 0
+		} else {
+			paths[path] = math.Log2(rank)
+		}
 	}
 
 	return types.RepoPathRanks{
