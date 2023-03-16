@@ -22,10 +22,12 @@ import (
 )
 
 const (
-	containerName = "job-container"
-	mountPath     = "/data"
-	volumeName    = "job-volume"
+	kubernetesContainerName = "job-container"
+	kubernetesVolumeName    = "job-volume"
 )
+
+// KubernetesMountPath is the path where the Kubernetes volume is mounted in the container.
+const KubernetesMountPath = "/data"
 
 // KubernetesContainerOptions contains options for the Kubernetes Job containers.
 type KubernetesContainerOptions struct {
@@ -62,7 +64,7 @@ var propagationPolicy = metav1.DeletePropagationBackground
 
 // ReadLogs reads the logs of the given pod and writes them to the logger.
 func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podName string, cmdLogger Logger, key string, command []string) error {
-	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{Container: containerName})
+	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{Container: kubernetesContainerName})
 	stream, err := req.Stream(ctx)
 	if err != nil {
 		return err
@@ -193,8 +195,8 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 		}
 	}
 	volumeMount := corev1.VolumeMount{
-		Name:      volumeName,
-		MountPath: mountPath,
+		Name:      kubernetesVolumeName,
+		MountPath: KubernetesMountPath,
 	}
 	volumeSource := corev1.VolumeSource{}
 	if config.IsKubernetes() {
@@ -218,10 +220,10 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
-							Name:       containerName,
+							Name:       kubernetesContainerName,
 							Image:      image,
 							Command:    spec.Command,
-							WorkingDir: filepath.Join(mountPath, spec.Dir),
+							WorkingDir: filepath.Join(KubernetesMountPath, spec.Dir),
 							Env:        jobEnvs,
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
@@ -240,7 +242,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name:         volumeName,
+							Name:         kubernetesVolumeName,
 							VolumeSource: volumeSource,
 						},
 					},
