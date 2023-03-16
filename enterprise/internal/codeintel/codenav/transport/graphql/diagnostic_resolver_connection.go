@@ -1,8 +1,6 @@
 package graphql
 
 import (
-	"context"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -22,18 +20,19 @@ func NewDiagnosticConnectionResolver(diagnostics []shared.DiagnosticAtUpload, to
 	}
 }
 
-func (r *diagnosticConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.DiagnosticResolver, error) {
+func (r *diagnosticConnectionResolver) Nodes() []resolverstubs.DiagnosticResolver {
 	resolvers := make([]resolverstubs.DiagnosticResolver, 0, len(r.diagnostics))
 	for i := range r.diagnostics {
 		resolvers = append(resolvers, NewDiagnosticResolver(r.diagnostics[i], r.locationResolver))
 	}
-	return resolvers, nil
+	return resolvers
 }
 
-func (r *diagnosticConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return int32(r.totalCount), nil
+func (r *diagnosticConnectionResolver) TotalCount() *int32 {
+	v := int32(r.totalCount)
+	return &v
 }
 
-func (r *diagnosticConnectionResolver) PageInfo(ctx context.Context) (resolverstubs.PageInfo, error) {
-	return HasNextPage(len(r.diagnostics) < r.totalCount), nil
+func (r *diagnosticConnectionResolver) PageInfo() resolverstubs.PageInfo {
+	return HasNextPage(len(r.diagnostics) < r.totalCount)
 }

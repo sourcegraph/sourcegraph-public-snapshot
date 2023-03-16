@@ -4806,7 +4806,7 @@ type DiagnosticConnection {
     """
     The total count of diagnostics (which may be larger than nodes.length if the connection is paginated).
     """
-    totalCount: Int!
+    totalCount: Int
 
     """
     Pagination information.
