@@ -34,62 +34,6 @@ func TestKubernetesRunner_TempDir(t *testing.T) {
 	assert.Empty(t, dir)
 }
 
-func TestKubernetesRunner_Run1(t *testing.T) {
-	clientset := fake.NewSimpleClientset()
-	cmd := &command.KubernetesCommand{
-		Logger:    logtest.Scoped(t),
-		Clientset: clientset,
-	}
-	clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-		return true, &batchv1.Job{Status: batchv1.JobStatus{Succeeded: 1}}, nil
-	})
-	clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-		return true, &corev1.PodList{Items: []corev1.Pod{
-			{ObjectMeta: metav1.ObjectMeta{
-				Name:   "my-pod",
-				Labels: map[string]string{"job-name": "job-some-queue-42-some-key"},
-			}}},
-		}, nil
-	})
-
-	logger := runner.NewMockLogger()
-	logEntry := runner.NewMockLogEntry()
-	logger.LogEntryFunc.PushReturn(logEntry)
-
-	dir := t.TempDir()
-	options := command.KubernetesContainerOptions{
-		Namespace:             "my-namespace",
-		NodeName:              "my-node",
-		PersistenceVolumeName: "my-pvc",
-		ResourceLimit: command.KubernetesResource{
-			CPU:    resource.MustParse("10"),
-			Memory: resource.MustParse("10Gi"),
-		},
-		ResourceRequest: command.KubernetesResource{
-			CPU:    resource.MustParse("1"),
-			Memory: resource.MustParse("1Gi"),
-		},
-	}
-
-	kubernetesRunner := runner.NewKubernetesRunner(cmd, logger, dir, options)
-
-	spec := runner.Spec{
-		Queue: "some-queue",
-		JobID: 42,
-		CommandSpec: command.Spec{
-			Key:     "some-key",
-			Command: []string{"echo", "hello"},
-			Dir:     "/workingdir",
-			Env:     []string{"FOO=bar"},
-		},
-		Image:      "alpine",
-		ScriptPath: "/some/script",
-	}
-
-	err := kubernetesRunner.Run(context.Background(), spec)
-	require.NoError(t, err)
-}
-
 func TestKubernetesRunner_Run(t *testing.T) {
 	tests := []struct {
 		name           string

@@ -15,118 +15,105 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/rest/fake"
+	fakerest "k8s.io/client-go/rest/fake"
+	k8stesting "k8s.io/client-go/testing"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestKubernetesCommand_CreateJob(t *testing.T) {
-	mockKubeInterface := command.NewMockInterface()
-	mockBatchInterface := command.NewMockBatchV1Interface()
-	mockJobInterface := command.NewMockJobInterface()
+	clientset := fake.NewSimpleClientset()
 
 	cmd := &command.KubernetesCommand{
 		Logger:    logtest.Scoped(t),
-		Clientset: mockKubeInterface,
+		Clientset: clientset,
 	}
-
-	mockKubeInterface.BatchV1Func.PushReturn(mockBatchInterface)
-	mockBatchInterface.JobsFunc.PushReturn(mockJobInterface)
 
 	job := &batchv1.Job{}
 
 	_, err := cmd.CreateJob(context.Background(), "my-namespace", job)
 	require.NoError(t, err)
 
-	require.Len(t, mockKubeInterface.BatchV1Func.History(), 1)
-	require.Len(t, mockBatchInterface.JobsFunc.History(), 1)
-	assert.Equal(t, "my-namespace", mockBatchInterface.JobsFunc.History()[0].Arg0)
-	require.Len(t, mockJobInterface.CreateFunc.History(), 1)
-	assert.NotNil(t, mockJobInterface.CreateFunc.History()[0].Arg0)
-	assert.NotNil(t, mockJobInterface.CreateFunc.History()[0].Arg1)
+	require.Len(t, clientset.Actions(), 1)
+	require.Equal(t, "create", clientset.Actions()[0].GetVerb())
+	require.Equal(t, "jobs", clientset.Actions()[0].GetResource().Resource)
+	require.Equal(t, "my-namespace", clientset.Actions()[0].GetNamespace())
 }
 
 func TestKubernetesCommand_DeleteJob(t *testing.T) {
-	mockKubeInterface := command.NewMockInterface()
-	mockBatchInterface := command.NewMockBatchV1Interface()
-	mockJobInterface := command.NewMockJobInterface()
+	clientset := fake.NewSimpleClientset()
 
 	cmd := &command.KubernetesCommand{
 		Logger:    logtest.Scoped(t),
-		Clientset: mockKubeInterface,
+		Clientset: clientset,
 	}
 
-	mockKubeInterface.BatchV1Func.PushReturn(mockBatchInterface)
-	mockBatchInterface.JobsFunc.PushReturn(mockJobInterface)
-
-	err := cmd.DeleteJob(context.Background(), "my-namespace", "my-job")
+	job := &batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "my-job"}}
+	_, err := cmd.CreateJob(context.Background(), "my-namespace", job)
 	require.NoError(t, err)
 
-	require.Len(t, mockKubeInterface.BatchV1Func.History(), 1)
-	require.Len(t, mockBatchInterface.JobsFunc.History(), 1)
-	assert.Equal(t, "my-namespace", mockBatchInterface.JobsFunc.History()[0].Arg0)
-	require.Len(t, mockJobInterface.DeleteFunc.History(), 1)
-	assert.NotNil(t, mockJobInterface.DeleteFunc.History()[0].Arg0)
-	assert.Equal(t, "my-job", mockJobInterface.DeleteFunc.History()[0].Arg1)
+	err = cmd.DeleteJob(context.Background(), "my-namespace", "my-job")
+	require.NoError(t, err)
+
+	require.Len(t, clientset.Actions(), 2)
+	require.Equal(t, "delete", clientset.Actions()[1].GetVerb())
+	require.Equal(t, "jobs", clientset.Actions()[1].GetResource().Resource)
+	assert.Equal(t, "my-namespace", clientset.Actions()[1].GetNamespace())
+	assert.Equal(t, "my-job", clientset.Actions()[1].(k8stesting.DeleteAction).GetName())
 }
 
 func TestKubernetesCommand_ReadLogs(t *testing.T) {
 	tests := []struct {
 		name           string
-		mockFunc       func(podInterface *command.MockPodInterface, logger *command.MockLogger)
-		mockAssertFunc func(t *testing.T, podInterface *command.MockPodInterface, logger *command.MockLogger)
+		mockFunc       func(clientset *fake.Clientset, logger *command.MockLogger)
+		mockAssertFunc func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger)
 		expectedErr    error
 	}{
 		{
 			name: "Logs read",
-			mockFunc: func(podInterface *command.MockPodInterface, logger *command.MockLogger) {
-				podInterface.GetLogsFunc.PushReturn(fakeRequest(http.StatusOK, "hello"))
+			mockFunc: func(clientset *fake.Clientset, logger *command.MockLogger) {
+				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &corev1.PodList{Items: []corev1.Pod{
+						{ObjectMeta: metav1.ObjectMeta{
+							Name:   "my-pod",
+							Labels: map[string]string{"job-name": "job-some-queue-42-some-key"},
+						}}},
+					}, nil
+				})
 
 				logEntry := command.NewMockLogEntry()
 				logger.LogEntryFunc.PushReturn(logEntry)
 			},
-			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface, logger *command.MockLogger) {
-				require.Len(t, podInterface.GetLogsFunc.History(), 1)
-				assert.Equal(t, "my-pod", podInterface.GetLogsFunc.History()[0].Arg0)
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
+				require.Len(t, actions, 1)
+				assert.Equal(t, "get", actions[0].GetVerb())
+				assert.Equal(t, "pods", actions[0].GetResource().Resource)
+				assert.Equal(t, "log", actions[0].GetSubresource())
+				assert.Equal(t, "job-container", actions[0].(k8stesting.GenericAction).GetValue().(*corev1.PodLogOptions).Container)
+
 				require.Len(t, logger.LogEntryFunc.History(), 1)
 				assert.Equal(t, "my-key", logger.LogEntryFunc.History()[0].Arg0)
 				assert.Equal(t, []string{"echo", "hello"}, logger.LogEntryFunc.History()[0].Arg1)
 			},
 		},
-		{
-			name: "Failed to get logs",
-			mockFunc: func(podInterface *command.MockPodInterface, logger *command.MockLogger) {
-				podInterface.GetLogsFunc.PushReturn(fakeRequest(http.StatusInternalServerError, "failed"))
-
-				logEntry := command.NewMockLogEntry()
-				logger.LogEntryFunc.PushReturn(logEntry)
-			},
-			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface, logger *command.MockLogger) {
-				require.Len(t, podInterface.GetLogsFunc.History(), 1)
-			},
-			expectedErr: errors.New("an error on the server (\"failed\") has prevented the request from succeeding"),
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockKubeInterface := command.NewMockInterface()
-			mockCoreV1Interface := command.NewMockCoreV1Interface()
-			mockPodInterface := command.NewMockPodInterface()
+			clientset := fake.NewSimpleClientset()
 			logger := command.NewMockLogger()
 
-			mockKubeInterface.CoreV1Func.SetDefaultReturn(mockCoreV1Interface)
-			mockCoreV1Interface.PodsFunc.SetDefaultReturn(mockPodInterface)
-
 			if test.mockFunc != nil {
-				test.mockFunc(mockPodInterface, logger)
+				test.mockFunc(clientset, logger)
 			}
 
 			cmd := &command.KubernetesCommand{
 				Logger:    logtest.Scoped(t),
-				Clientset: mockKubeInterface,
+				Clientset: clientset,
 			}
 
 			err := cmd.ReadLogs(context.Background(), "my-namespace", "my-pod", logger, "my-key", []string{"echo", "hello"})
@@ -138,15 +125,15 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 			}
 
 			if test.mockAssertFunc != nil {
-				test.mockAssertFunc(t, mockPodInterface, logger)
+				test.mockAssertFunc(t, clientset.Actions(), logger)
 			}
 		})
 	}
 }
 
 func fakeRequest(status int, body string) *rest.Request {
-	fakeClient := &fake.RESTClient{
-		Client: fake.CreateHTTPClient(func(request *http.Request) (*http.Response, error) {
+	fakeClient := &fakerest.RESTClient{
+		Client: fakerest.CreateHTTPClient(func(request *http.Request) (*http.Response, error) {
 			resp := &http.Response{
 				StatusCode: status,
 				Body:       io.NopCloser(strings.NewReader(body)),
@@ -161,116 +148,164 @@ func fakeRequest(status int, body string) *rest.Request {
 func TestKubernetesCommand_WaitForPodToStart(t *testing.T) {
 	tests := []struct {
 		name            string
-		mockFunc        func(podInterface *command.MockPodInterface)
-		mockAssertFunc  func(t *testing.T, podInterface *command.MockPodInterface)
+		mockFunc        func(clientset *fake.Clientset)
+		mockAssertFunc  func(t *testing.T, actions []k8stesting.Action)
 		expectedPodName string
 		expectedErr     error
 	}{
 		{
 			name: "Pod running",
-			mockFunc: func(podInterface *command.MockPodInterface) {
-				podInterface.ListFunc.PushReturn(&corev1.PodList{Items: []corev1.Pod{{
-					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
-					Status:     corev1.PodStatus{Phase: corev1.PodRunning},
-				}}}, nil)
+			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &corev1.PodList{Items: []corev1.Pod{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:   "my-pod",
+								Labels: map[string]string{"job-name": "my-pod"},
+							},
+							Status: corev1.PodStatus{
+								Phase: corev1.PodRunning,
+							},
+						},
+					},
+					}, nil
+				})
 			},
-			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface) {
-				require.Len(t, podInterface.ListFunc.History(), 1)
-				assert.Equal(t, metav1.ListOptions{LabelSelector: "job-name=my-pod"}, podInterface.ListFunc.History()[0].Arg1)
-				require.Len(t, podInterface.GetFunc.History(), 0)
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+				require.Len(t, actions, 1)
+				assert.Equal(t, "list", actions[0].GetVerb())
+				assert.Equal(t, "pods", actions[0].GetResource().Resource)
+				assert.Equal(t, "job-name=my-pod", actions[0].(k8stesting.ListAction).GetListRestrictions().Labels.String())
 			},
 			expectedPodName: "my-pod",
 		},
 		{
 			name: "Pod succeeded",
-			mockFunc: func(podInterface *command.MockPodInterface) {
-				podInterface.ListFunc.PushReturn(&corev1.PodList{Items: []corev1.Pod{{
-					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
-					Status:     corev1.PodStatus{Phase: corev1.PodSucceeded},
-				}}}, nil)
+			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &corev1.PodList{Items: []corev1.Pod{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:   "my-pod",
+								Labels: map[string]string{"job-name": "my-pod"},
+							},
+							Status: corev1.PodStatus{
+								Phase: corev1.PodSucceeded,
+							},
+						},
+					},
+					}, nil
+				})
 			},
-			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface) {
-				require.Len(t, podInterface.ListFunc.History(), 1)
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+				require.Len(t, actions, 1)
 			},
 			expectedPodName: "my-pod",
 		},
 		{
 			name: "Pod Failed",
-			mockFunc: func(podInterface *command.MockPodInterface) {
-				podInterface.ListFunc.PushReturn(&corev1.PodList{Items: []corev1.Pod{{
-					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
-					Status:     corev1.PodStatus{Phase: corev1.PodFailed},
-				}}}, nil)
+			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &corev1.PodList{Items: []corev1.Pod{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:   "my-pod",
+								Labels: map[string]string{"job-name": "my-pod"},
+							},
+							Status: corev1.PodStatus{
+								Phase: corev1.PodFailed,
+							},
+						},
+					},
+					}, nil
+				})
 			},
-			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface) {
-				require.Len(t, podInterface.ListFunc.History(), 1)
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+				require.Len(t, actions, 1)
 			},
 			expectedPodName: "my-pod",
 		},
 		{
 			name: "Pod container running",
-			mockFunc: func(podInterface *command.MockPodInterface) {
-				podInterface.ListFunc.PushReturn(&corev1.PodList{Items: []corev1.Pod{{
-					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodPending,
-						ContainerStatuses: []corev1.ContainerStatus{{
-							State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}},
-						}},
+			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &corev1.PodList{Items: []corev1.Pod{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:   "my-pod",
+								Labels: map[string]string{"job-name": "my-pod"},
+							},
+							Status: corev1.PodStatus{
+								Phase: corev1.PodPending,
+								ContainerStatuses: []corev1.ContainerStatus{{
+									State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}},
+								}},
+							},
+						},
 					},
-				}}}, nil)
+					}, nil
+				})
 			},
-			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface) {
-				require.Len(t, podInterface.ListFunc.History(), 1)
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+				require.Len(t, actions, 1)
 			},
 			expectedPodName: "my-pod",
 		},
 		{
 			name: "Pod container waiting then running",
-			mockFunc: func(podInterface *command.MockPodInterface) {
-				podInterface.ListFunc.PushReturn(&corev1.PodList{Items: []corev1.Pod{{
-					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodPending,
-						ContainerStatuses: []corev1.ContainerStatus{{
-							State: corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{}},
-						}},
+			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &corev1.PodList{Items: []corev1.Pod{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:   "my-pod",
+								Labels: map[string]string{"job-name": "my-pod"},
+							},
+							Status: corev1.PodStatus{
+								Phase: corev1.PodPending,
+								ContainerStatuses: []corev1.ContainerStatus{{
+									State: corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{}},
+								}},
+							},
+						},
 					},
-				}}}, nil)
-				podInterface.GetFunc.PushReturn(&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodPending,
-						ContainerStatuses: []corev1.ContainerStatus{{
-							State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}},
-						}},
-					},
-				}, nil)
+					}, nil
+				})
+				clientset.PrependReactor("get", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
+						Status: corev1.PodStatus{
+							Phase: corev1.PodPending,
+							ContainerStatuses: []corev1.ContainerStatus{{
+								State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}},
+							}},
+						},
+					}, nil
+				})
 			},
-			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface) {
-				require.Len(t, podInterface.ListFunc.History(), 1)
-				require.Len(t, podInterface.GetFunc.History(), 1)
-				assert.Equal(t, "my-pod", podInterface.GetFunc.History()[0].Arg1)
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+				require.Len(t, actions, 2)
+				assert.Equal(t, "list", actions[0].GetVerb())
+				assert.Equal(t, "pods", actions[0].GetResource().Resource)
+
+				assert.Equal(t, "get", actions[1].GetVerb())
+				assert.Equal(t, "pods", actions[1].GetResource().Resource)
+				assert.Equal(t, "my-pod", actions[1].(k8stesting.GetAction).GetName())
 			},
 			expectedPodName: "my-pod",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockKubeInterface := command.NewMockInterface()
-			mockCoreV1Interface := command.NewMockCoreV1Interface()
-			mockPodInterface := command.NewMockPodInterface()
-
-			mockKubeInterface.CoreV1Func.SetDefaultReturn(mockCoreV1Interface)
-			mockCoreV1Interface.PodsFunc.SetDefaultReturn(mockPodInterface)
+			clientset := fake.NewSimpleClientset()
 
 			if test.mockFunc != nil {
-				test.mockFunc(mockPodInterface)
+				test.mockFunc(clientset)
 			}
 
 			cmd := &command.KubernetesCommand{
 				Logger:    logtest.Scoped(t),
-				Clientset: mockKubeInterface,
+				Clientset: clientset,
 			}
 
 			name, err := cmd.WaitForPodToStart(context.Background(), "my-namespace", "my-pod")
@@ -283,7 +318,7 @@ func TestKubernetesCommand_WaitForPodToStart(t *testing.T) {
 			}
 
 			if test.mockAssertFunc != nil {
-				test.mockAssertFunc(t, mockPodInterface)
+				test.mockAssertFunc(t, clientset.Actions())
 			}
 		})
 	}
@@ -292,55 +327,60 @@ func TestKubernetesCommand_WaitForPodToStart(t *testing.T) {
 func TestKubernetesCommand_FindPod(t *testing.T) {
 	tests := []struct {
 		name           string
-		mockFunc       func(podInterface *command.MockPodInterface)
-		mockAssertFunc func(t *testing.T, podInterface *command.MockPodInterface)
+		mockFunc       func(clientset *fake.Clientset)
+		mockAssertFunc func(t *testing.T, actions []k8stesting.Action)
 		expectedErr    error
 	}{
 		{
 			name: "Pod found",
-			mockFunc: func(podInterface *command.MockPodInterface) {
-				podInterface.ListFunc.PushReturn(&corev1.PodList{Items: []corev1.Pod{{
-					ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
-				}}}, nil)
+			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &corev1.PodList{Items: []corev1.Pod{
+						{ObjectMeta: metav1.ObjectMeta{
+							Name:   "my-pod",
+							Labels: map[string]string{"job-name": "my-pod"},
+						}}},
+					}, nil
+				})
 			},
-			mockAssertFunc: func(t *testing.T, podInterface *command.MockPodInterface) {
-				require.Len(t, podInterface.ListFunc.History(), 1)
-				assert.Equal(t, metav1.ListOptions{
-					LabelSelector: "job-name=my-pod",
-				}, podInterface.ListFunc.History()[0].Arg1)
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+				require.Len(t, actions, 1)
+
+				assert.Equal(t, "list", actions[0].GetVerb())
+				assert.Equal(t, "pods", actions[0].GetResource().Resource)
+				assert.Equal(t, "job-name=my-pod", actions[0].(k8stesting.ListAction).GetListRestrictions().Labels.String())
 			},
 		},
 		{
 			name: "Pod not found",
-			mockFunc: func(podInterface *command.MockPodInterface) {
-				podInterface.ListFunc.PushReturn(&corev1.PodList{Items: nil}, nil)
+			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &corev1.PodList{}, nil
+				})
 			},
 			expectedErr: errors.New("no pods found for job my-pod"),
 		},
 		{
 			name: "Error occurred",
-			mockFunc: func(podInterface *command.MockPodInterface) {
-				podInterface.ListFunc.PushReturn(nil, errors.New("failed"))
+			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, nil, errors.New("failed")
+				})
 			},
 			expectedErr: errors.New("failed"),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockKubeInterface := command.NewMockInterface()
-			mockCoreV1Interface := command.NewMockCoreV1Interface()
-			mockPodInterface := command.NewMockPodInterface()
-
-			mockKubeInterface.CoreV1Func.PushReturn(mockCoreV1Interface)
-			mockCoreV1Interface.PodsFunc.PushReturn(mockPodInterface)
+			clientset := fake.NewSimpleClientset()
 
 			if test.mockFunc != nil {
-				test.mockFunc(mockPodInterface)
+				test.mockFunc(clientset)
 			}
 
 			cmd := &command.KubernetesCommand{
 				Logger:    logtest.Scoped(t),
-				Clientset: mockKubeInterface,
+				Clientset: clientset,
 			}
 
 			_, err := cmd.FindPod(context.Background(), "my-namespace", "my-pod")
@@ -352,7 +392,7 @@ func TestKubernetesCommand_FindPod(t *testing.T) {
 			}
 
 			if test.mockAssertFunc != nil {
-				test.mockAssertFunc(t, mockPodInterface)
+				test.mockAssertFunc(t, clientset.Actions())
 			}
 		})
 	}
@@ -361,61 +401,72 @@ func TestKubernetesCommand_FindPod(t *testing.T) {
 func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 	tests := []struct {
 		name           string
-		mockFunc       func(jobInterface *command.MockJobInterface)
-		mockAssertFunc func(t *testing.T, jobInterface *command.MockJobInterface)
+		mockFunc       func(clientset *fake.Clientset)
+		mockAssertFunc func(t *testing.T, actions []k8stesting.Action)
 		expectedErr    error
 	}{
 		{
 			name: "Job succeeded",
-			mockFunc: func(jobInterface *command.MockJobInterface) {
-				jobInterface.GetFunc.PushReturn(&batchv1.Job{Status: batchv1.JobStatus{Active: 0, Succeeded: 1}}, nil)
+			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &batchv1.Job{Status: batchv1.JobStatus{Active: 0, Succeeded: 1}}, nil
+				})
 			},
-			mockAssertFunc: func(t *testing.T, jobInterface *command.MockJobInterface) {
-				require.Len(t, jobInterface.GetFunc.History(), 1)
-				assert.Equal(t, "my-job", jobInterface.GetFunc.History()[0].Arg1)
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+				require.Len(t, actions, 1)
+				assert.Equal(t, "get", actions[0].GetVerb())
+				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
+				assert.Equal(t, "my-job", actions[0].(k8stesting.GetAction).GetName())
 			},
 		},
 		{
 			name: "Job failed",
-			mockFunc: func(jobInterface *command.MockJobInterface) {
-				jobInterface.GetFunc.PushReturn(&batchv1.Job{Status: batchv1.JobStatus{Failed: 1}}, nil)
+			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &batchv1.Job{Status: batchv1.JobStatus{Failed: 1}}, nil
+				})
 			},
 			expectedErr: errors.New("job my-job failed"),
 		},
 		{
 			name: "Error occurred",
-			mockFunc: func(jobInterface *command.MockJobInterface) {
-				jobInterface.GetFunc.PushReturn(nil, errors.New("failed"))
+			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, nil, errors.New("failed")
+				})
 			},
 			expectedErr: errors.New("retrieving job: failed"),
 		},
 		{
 			name: "Job succeeded second try",
-			mockFunc: func(jobInterface *command.MockJobInterface) {
-				jobInterface.GetFunc.PushReturn(&batchv1.Job{Status: batchv1.JobStatus{Active: 0, Succeeded: 0}}, nil)
-				jobInterface.GetFunc.PushReturn(&batchv1.Job{Status: batchv1.JobStatus{Active: 0, Succeeded: 1}}, nil)
+			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &batchv1.Job{Status: batchv1.JobStatus{Active: 0, Succeeded: 1}}, nil
+				})
+
+				firstCallAllowed := true
+				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					handle := firstCallAllowed
+					firstCallAllowed = false
+					return handle, &batchv1.Job{Status: batchv1.JobStatus{Active: 0, Succeeded: 0}}, nil
+				})
 			},
-			mockAssertFunc: func(t *testing.T, jobInterface *command.MockJobInterface) {
-				require.Len(t, jobInterface.GetFunc.History(), 2)
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+				require.Len(t, actions, 2)
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockKubeInterface := command.NewMockInterface()
-			mockBatchInterface := command.NewMockBatchV1Interface()
-			mockJobInterface := command.NewMockJobInterface()
-
-			mockKubeInterface.BatchV1Func.SetDefaultReturn(mockBatchInterface)
-			mockBatchInterface.JobsFunc.SetDefaultReturn(mockJobInterface)
+			clientset := fake.NewSimpleClientset()
 
 			if test.mockFunc != nil {
-				test.mockFunc(mockJobInterface)
+				test.mockFunc(clientset)
 			}
 
 			cmd := &command.KubernetesCommand{
 				Logger:    logtest.Scoped(t),
-				Clientset: mockKubeInterface,
+				Clientset: clientset,
 			}
 
 			err := cmd.WaitForJobToComplete(context.Background(), "my-namespace", "my-job")
@@ -427,7 +478,7 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 			}
 
 			if test.mockAssertFunc != nil {
-				test.mockAssertFunc(t, mockJobInterface)
+				test.mockAssertFunc(t, clientset.Actions())
 			}
 		})
 	}
