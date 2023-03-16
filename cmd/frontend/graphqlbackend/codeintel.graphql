@@ -242,6 +242,13 @@ extend type Query {
         dependentOf: ID
 
         """
+        When specified, merges the list of existing uploads with data from
+        uploads that have been deleted but for which audit logs still exist.
+        Only makes sense when state filter is unset or equal to 'DELETED'.
+        """
+        includeDeleted: Boolean
+
+        """
         If specified, this limits the number of results per request.
         """
         first: Int
