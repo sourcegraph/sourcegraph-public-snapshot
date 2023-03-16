@@ -557,16 +557,14 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	}
 }
 
-func TestUpsertAuthorizationToExternalService(t *testing.T) {
+func TestDisablePermsSyncingForExternalService(t *testing.T) {
 	tests := []struct {
 		name   string
-		kind   string
 		config string
 		want   string
 	}{
 		{
 			name: "github with authorization",
-			kind: extsvc.KindGitHub,
 			config: `
 {
   // Useful comments
@@ -580,13 +578,11 @@ func TestUpsertAuthorizationToExternalService(t *testing.T) {
   // Useful comments
   "url": "https://github.com",
   "repositoryQuery": ["none"],
-  "token": "def",
-  "authorization": {}
+  "token": "def"
 }`,
 		},
 		{
 			name: "github without authorization",
-			kind: extsvc.KindGitHub,
 			config: `
 {
   // Useful comments
@@ -599,61 +595,48 @@ func TestUpsertAuthorizationToExternalService(t *testing.T) {
   // Useful comments
   "url": "https://github.com",
   "repositoryQuery": ["none"],
-  "token": "def",
-  "authorization": {}
+  "token": "def"
 }`,
 		},
 		{
-			name: "gitlab with authorization",
-			kind: extsvc.KindGitLab,
+			name: "azure devops with enforce permissions",
 			config: `
 {
   // Useful comments
-  "url": "https://gitlab.com",
-  "projectQuery": ["none"],
+  "url": "https://dev.azure.com",
+  "username": "horse",
   "token": "abc",
-  "authorization": {}
+  "enforcePermissions": true
 }`,
 			want: `
 {
   // Useful comments
-  "url": "https://gitlab.com",
-  "projectQuery": ["none"],
-  "token": "abc",
-  "authorization": {
-    "identityProvider": {
-      "type": "oauth"
-    }
-  }
+  "url": "https://dev.azure.com",
+  "username": "horse",
+  "token": "abc"
 }`,
 		},
 		{
-			name: "gitlab without authorization",
-			kind: extsvc.KindGitLab,
+			name: "azure devops without enforce permissions",
 			config: `
 {
   // Useful comments
-  "url": "https://gitlab.com",
-  "projectQuery": ["none"],
+  "url": "https://dev.azure.com",
+  "username": "horse",
   "token": "abc"
 }`,
 			want: `
 {
   // Useful comments
-  "url": "https://gitlab.com",
-  "projectQuery": ["none"],
-  "token": "abc",
-  "authorization": {
-    "identityProvider": {
-      "type": "oauth"
-    }
-  }
+  "url": "https://dev.azure.com",
+  "username": "horse",
+  "token": "abc"
 }`,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := upsertAuthorizationToExternalService(test.kind, test.config)
+			got, err := disablePermsSyncingForExternalService(test.config)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -666,9 +649,9 @@ func TestUpsertAuthorizationToExternalService(t *testing.T) {
 }
 
 // This test ensures under Sourcegraph.com mode, every call of `Create`,
-// `Upsert` and `Update` has the "authorization" field presented in the external
+// `Upsert` and `Update` removes the "authorization" field in the external
 // service config automatically.
-func TestExternalServicesStore_upsertAuthorizationToExternalService(t *testing.T) {
+func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -688,7 +671,7 @@ func TestExternalServicesStore_upsertAuthorizationToExternalService(t *testing.T
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 	}
 	err := externalServices.Create(ctx, confGet, es)
 	require.NoError(t, err)
@@ -700,10 +683,10 @@ func TestExternalServicesStore_upsertAuthorizationToExternalService(t *testing.T
 		t.Fatal(err)
 	}
 	exists := gjson.Get(cfg, "authorization").Exists()
-	assert.True(t, exists, `"authorization" field exists`)
+	assert.False(t, exists, `"authorization" field exists, but should not`)
 
 	// Reset Config field and test Upsert method
-	es.Config.Set(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`)
+	es.Config.Set(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`)
 	err = externalServices.Upsert(ctx, es)
 	require.NoError(t, err)
 
@@ -714,10 +697,10 @@ func TestExternalServicesStore_upsertAuthorizationToExternalService(t *testing.T
 		t.Fatal(err)
 	}
 	exists = gjson.Get(cfg, "authorization").Exists()
-	assert.True(t, exists, `"authorization" field exists`)
+	assert.False(t, exists, `"authorization" field exists, but should not`)
 
 	// Reset Config field and test Update method
-	es.Config.Set(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`)
+	es.Config.Set(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`)
 	err = externalServices.Update(ctx,
 		conf.Get().AuthProviders,
 		es.ID,
@@ -734,7 +717,7 @@ func TestExternalServicesStore_upsertAuthorizationToExternalService(t *testing.T
 		t.Fatal(err)
 	}
 	exists = gjson.Get(cfg, "authorization").Exists()
-	assert.True(t, exists, `"authorization" field exists`)
+	assert.False(t, exists, `"authorization" field exists, but should not`)
 }
 
 func TestCountRepoCount(t *testing.T) {

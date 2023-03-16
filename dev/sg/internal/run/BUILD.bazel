@@ -35,8 +35,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "run_test",
+    timeout = "short",
     srcs = ["logger_test.go"],
     embed = [":run"],
     deps = ["@com_github_stretchr_testify//assert"],

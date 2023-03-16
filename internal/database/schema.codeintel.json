@@ -472,12 +472,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "codeintel_scip_documents_dereference_logs_last_removal_time_doc",
+          "Name": "codeintel_scip_documents_dereference_logs_last_removal_time_des",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_scip_documents_dereference_logs_last_removal_time_doc ON codeintel_scip_documents_dereference_logs USING btree (last_removal_time, document_id)",
+          "IndexDefinition": "CREATE INDEX codeintel_scip_documents_dereference_logs_last_removal_time_des ON codeintel_scip_documents_dereference_logs USING btree (last_removal_time DESC, document_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }

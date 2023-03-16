@@ -12,7 +12,7 @@ import (
 )
 
 var scanUploads = basestore.NewSliceScanner(func(s dbutil.Scanner) (u shared.ExportedUpload, _ error) {
-	err := s.Scan(&u.ID, &u.Repo, &u.Root, &u.ObjectPrefix)
+	err := s.Scan(&u.ID, &u.Repo, &u.RepoID, &u.Root, &u.ObjectPrefix)
 	return u, err
 })
 
@@ -69,6 +69,7 @@ inserted AS (
 SELECT
 	c.id,
 	c.repository_name,
+	c.repository_id,
 	c.root,
 	%s || '/' || c.id AS object_prefix
 FROM candidates c

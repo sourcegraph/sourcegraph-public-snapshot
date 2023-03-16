@@ -37,7 +37,7 @@ export const CodeHostDeleteModal: FC<CodeHostDeleteModalProps> = props => {
     const handleDeleteConfirm = async (): Promise<void> => {
         await deleteCode({
             variables: { id: codeHost.id },
-            refetchQueries: ['RepositoryStats', 'StatusMessages'],
+            refetchQueries: ['StatusAndRepoStats'],
         })
         navigate('/setup/remote-repositories')
 

@@ -40,6 +40,7 @@ go_library(
         "//internal/goroutine",
         "//internal/metrics",
         "//internal/observation",
+        "//internal/packagefilters",
         "//internal/repoupdater/protocol",
         "//internal/timeutil",
         "//internal/types",
@@ -58,8 +59,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "background_test",
+    timeout = "short",
     srcs = [
         "job_cleanup_test.go",
         "job_dependency_indexing_scheduler_test.go",

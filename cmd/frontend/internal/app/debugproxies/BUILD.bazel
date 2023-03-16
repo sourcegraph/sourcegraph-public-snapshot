@@ -26,8 +26,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "debugproxies_test",
+    timeout = "short",
     srcs = [
         "handler_test.go",
         "scanner_test.go",

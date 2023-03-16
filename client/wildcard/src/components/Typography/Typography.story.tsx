@@ -1,6 +1,6 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '../../stories/BrandedStory'
+import { BrandedStory } from '../../stories'
 import { Link } from '../Link'
 
 import { Code, Label, H1, H2, H3, H4, H5, H6, Text } from '.'
@@ -299,7 +299,7 @@ export const CrossingStyles: Story = () => (
     </>
 )
 
-const SEMANTIC_COLORS = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
+const SEMANTIC_COLORS = ['primary', 'success', 'danger', 'warning', 'info', 'merged'] as const
 export const Prose: Story = () => (
     <>
         <H2>Prose</H2>

@@ -24,8 +24,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "gitdomain_test",
+    timeout = "short",
     srcs = [
         "commit_graph_test.go",
         "common_test.go",

@@ -21,8 +21,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "codeowners_test",
+    timeout = "short",
     srcs = [
         "find_owners_test.go",
         "parse_test.go",

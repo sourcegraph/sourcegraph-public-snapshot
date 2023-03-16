@@ -24,7 +24,12 @@
   "isa"]
 @operator
 
+(regex_literal
+  (regex_start) @keyword
+  (regex_modifier)? @keyword) @string
+
 "=" @operator
+"=~" @operator
 (assignment_expression operator: (_) @operator)
 (binary_expression operator: (_) @operator)
 (equality_expression operator: (_) @operator)

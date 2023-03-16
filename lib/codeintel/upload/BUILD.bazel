@@ -24,8 +24,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "upload_test",
+    timeout = "short",
     srcs = [
         "indexer_name_test.go",
         "upload_test.go",

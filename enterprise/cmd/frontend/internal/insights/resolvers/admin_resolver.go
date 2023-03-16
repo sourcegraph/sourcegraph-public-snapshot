@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
 
@@ -313,12 +314,13 @@ type insightViewDebugResolver struct {
 func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 	type queueDebug struct {
 		types.InsightSeriesStatus
-		searchErrors []types.InsightSearchFailure
+		SearchErrors []types.InsightSearchFailure
 	}
 
 	type insightDebugInfo struct {
-		QueueStatus queueDebug
-		Backfills   []scheduler.SeriesBackfillDebug
+		QueueStatus    queueDebug
+		Backfills      []scheduler.SeriesBackfillDebug
+		SeriesMetadata json.RawMessage
 	}
 
 	ids := make([]string, 0, len(r.viewSeries))
@@ -367,12 +369,19 @@ func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 			return nil, err
 		}
 
+		var metadata json.RawMessage
+		row := r.backfillStore.QueryRow(ctx, sqlf.Sprintf("select row_to_json(insight_series) from insight_series where id = %s", series.InsightSeriesID))
+		if err = row.Scan(&metadata); err != nil {
+			return nil, err
+		}
+
 		seriesDebug := insightDebugInfo{
 			QueueStatus: queueDebug{
-				searchErrors:        seriesErrors,
+				SearchErrors:        seriesErrors,
 				InsightSeriesStatus: status,
 			},
-			Backfills: backfillDebugInfo,
+			Backfills:      backfillDebugInfo,
+			SeriesMetadata: metadata,
 		}
 		debugJson, err := json.Marshal(seriesDebug)
 		if err != nil {
@@ -610,6 +619,6 @@ func dbToOrderBy(dbField scheduler.BackfillQueueColumn) scheduler.BackfillQueueC
 	case scheduler.QueuePosition:
 		return "QUEUE_POSITION"
 	default:
-		return "STATE" //default
+		return "STATE" // default
 	}
 }
