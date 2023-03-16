@@ -217,8 +217,15 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 	// If the request doesn't expect a body, then including a content-type can
 	// actually cause errors on the Bitbucket side. So we need to pick apart the
 	// request just a touch to figure out if we should add the header.
+	var reqBody []byte
+	var err error
 	if req.Body != nil {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return err
+		}
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
 	}
 
 	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
@@ -230,16 +237,6 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return err
 	}
-
-	var err error
-	var reqBody []byte
-	if req.Body != nil {
-		reqBody, err = io.ReadAll(req.Body)
-		if err != nil {
-			return err
-		}
-	}
-	req.Body = io.NopCloser(bytes.NewReader(reqBody))
 
 	// Because we have no external rate limiting data for Bitbucket Cloud, we do an exponential
 	// back-off and retry for requests where we recieve a 429 Too Many Requests.
@@ -261,7 +258,9 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		if sleepTime.Seconds() > 160 {
 			break
 		}
-		req.Body = io.NopCloser(bytes.NewReader(reqBody))
+		if req.Body != nil {
+			req.Body = io.NopCloser(bytes.NewReader(reqBody))
+		}
 	}
 
 	defer resp.Body.Close()
