@@ -36,14 +36,13 @@ func main() {
 
 	schema := rbac.RBACSchema
 
-	var permissions = make([]types.Permission, len(schema.Namespaces))
-
-	for index, namespace := range schema.Namespaces {
+	var permissions = []types.Permission{}
+	for _, namespace := range schema.Namespaces {
 		for _, action := range namespace.Actions {
-			permissions[index] = types.Permission{
+			permissions = append(permissions, types.Permission{
 				Namespace: namespace.Name,
 				Action:    action,
-			}
+			})
 		}
 	}
 
