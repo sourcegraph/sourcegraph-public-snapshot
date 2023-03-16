@@ -24,7 +24,13 @@ go_library(
     name = "gitserver",
     embed = [":v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1",
-    visibility = ["//visibility:private"],
+    visibility = [
+        "//cmd/gitserver/server:__pkg__",
+        "//cmd/gitserver/shared:__pkg__",
+        "//internal/gitserver:__pkg__",
+        "//internal/gitserver/integration_tests:__pkg__",
+        "//internal/gitserver/protocol:__pkg__",
+    ],
 )
 
 write_proto_stubs_to_source(
