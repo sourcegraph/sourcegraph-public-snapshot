@@ -40,10 +40,6 @@ describe('overrideContextOnPaste', () => {
         expect(test('context:global|', 'bar context:foo')).toStrictEqual('bar context:foo')
     })
 
-    it('removes the new context: filter if the existing query is not "empty"', () => {
-        expect(test('context:global one |two| three', 'context:foo bar')).toStrictEqual('context:global one bar three')
-    })
-
     it('keeps the filter the query contains kewords', () => {
         expect(test('context:global foo |', 'OR context:foo bar')).toStrictEqual(
             'context:global foo OR context:foo bar'
@@ -72,8 +68,5 @@ describe('overrideContextOnPaste', () => {
     it('does not remove the filter if the new value somehow "breaks" the context filters', () => {
         expect(test('context:global|', 'context:foo bar')).toStrictEqual('context:globalcontext:foo bar')
         expect(test('|context:global ', 'context:foo bar')).toStrictEqual('context:foo barcontext:global ')
-        expect(test('context:global one| two', 'context:foo bar')).toStrictEqual(
-            'context:global onecontext:foo bar two'
-        )
     })
 })

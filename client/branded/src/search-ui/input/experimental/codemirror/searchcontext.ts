@@ -137,7 +137,7 @@ export const overrideContextOnPaste = EditorState.transactionFilter.of(transacti
         return transaction
     }
 
-    // Common situation: New query is pasted into "empty" input (only contains context: filter)
+    // New query is pasted into "empty" input (only contains context: filter)
     // We assume that the pasted query is always "complete" and clear the current input
     if (
         tokens(transaction.startState).every(
@@ -147,31 +147,5 @@ export const overrideContextOnPaste = EditorState.transactionFilter.of(transacti
         return [{ changes: { from: 0, to: transaction.startState.doc.length } }, transaction]
     }
 
-    // Less common situation: New query pasted into _non-empty_ query input. We assume that the existing query
-    // should be extended and remove the additionaly context filter.
-    // CAVEAT: It's valid to have multiple context: filters in different OR branches or to negate a context:
-    // filter via NOT. Detecting this properly is tricky and likely not useful in most cases. That's why
-    // we bail if the new query contains any keywords.
-
-    const scanResult = scanSearchQuery(newValue)
-    if (scanResult.type !== 'success' || scanResult.term.some(token => token.type === 'keyword')) {
-        return transaction
-    }
-
-    // Also unlikely: User pastes new query before the existing context: filter
-    const newRangeOfCurrentContextFilter = {
-        start: transaction.changes.mapPos(currentGlobalContext.filter.range.start, 0),
-        end: transaction.changes.mapPos(currentGlobalContext.filter.range.end),
-    }
-
-    const changes: ChangeSpec[] = []
-    for (const token of scanResult.term) {
-        if (isFilterType(token, FilterType.context) && token.range.start !== newRangeOfCurrentContextFilter.start) {
-            // Trim whitespace after context filter. range.end is exclusive so this is our starting point.
-            const match = newValue.slice(currentGlobalContext.filter.range.end).match(/\s+/)
-            changes.push({ from: token.range.start, to: token.range.end + (match?.[0].length ?? 0) })
-        }
-    }
-
-    return [transaction, { changes, sequential: true }]
+    return transaction
 })
