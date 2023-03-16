@@ -121,19 +121,21 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
         >
             <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex col-11 pl-0">
-                    <div className={classNames('col-1 px-0 my-auto h-100', styles.badgeWrapper)}>
-                        <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
-                        {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
-                    </div>
-
-                    <div className="col-9 d-flex flex-column ml-2">
-                        <div>
-                            <ExternalRepositoryIcon externalRepo={node.externalRepository} />
-                            <RepoLink repoName={node.name} to={node.url} />
+                    <div className="d-flex col-10 pl-0">
+                        <div className={classNames('px-0 my-auto h-100', styles.badgeWrapper)}>
+                            <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
+                            {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
                         </div>
-                        <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
+
+                        <div className="d-flex flex-column ml-2">
+                            <div>
+                                <ExternalRepositoryIcon externalRepo={node.externalRepository} />
+                                <RepoLink repoName={node.name} to={node.url} />
+                            </div>
+                            <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
+                        </div>
                     </div>
-                    <div className="col-2 d-flex align-items-center">
+                    <div className="d-flex col-2 pr-0 justify-content-end">
                         {node.name === 'dev.azure.com/sgtestazure/sgtestazure/mytest' && (
                             <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
                                 <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
@@ -173,7 +175,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                         )}
                     </div>
                 </div>
-                <div className="col-auto">
+                <div className="col-auto pr-0">
                     {!window.location.pathname.includes('/setup') && (
                         <Menu>
                             <MenuButton outline={true} aria-label="Repository action">
