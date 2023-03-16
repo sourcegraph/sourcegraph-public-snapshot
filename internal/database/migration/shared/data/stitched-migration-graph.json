@@ -1567,35 +1567,6 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
-			},
-			{
-				"ID": 1678898749,
-				"Name": "make unreferenced documents index usable",
-				"UpQuery": "-- Perform migration here.\n--\n-- See /migrations/README.md. Highlights:\n--  * Make migrations idempotent (use IF EXISTS)\n--  * Make migrations backwards-compatible (old readers/writers must continue to work)\n--  * If you are using CREATE INDEX CONCURRENTLY, then make sure that only one statement\n--    is defined per file, and that each such statement is NOT wrapped in a transaction.\n--    Each such migration must also declare \"createIndexConcurrently: true\" in their\n--    associated metadata.yaml file.\n--  * If you are modifying Postgres extensions, you must also declare \"privileged: true\"\n--    in the associated metadata.yaml file.\n\nCREATE INDEX CONCURRENTLY IF NOT EXISTS codeintel_scip_documents_dereference_logs_last_removal_time_desc_doc\nON codeintel_scip_documents_dereference_logs (last_removal_time DESC, document_id);",
-				"DownQuery": "-- Undo the changes made in the up migration\n\nDROP INDEX IF EXISTS codeintel_scip_documents_dereference_logs_last_removal_time_desc_doc;",
-				"Privileged": false,
-				"NonIdempotent": false,
-				"Parents": [
-					1678041507
-				],
-				"IsCreateIndexConcurrently": true,
-				"IndexMetadata": {
-					"TableName": "codeintel_scip_documents_dereference_logs",
-					"IndexName": "codeintel_scip_documents_dereference_logs_last_removal_time_desc_doc"
-				}
-			},
-			{
-				"ID": 1678899132,
-				"Name": "remove unused unreferenced documents index",
-				"UpQuery": "-- Perform migration here.\n--\n-- See /migrations/README.md. Highlights:\n--  * Make migrations idempotent (use IF EXISTS)\n--  * Make migrations backwards-compatible (old readers/writers must continue to work)\n--  * If you are using CREATE INDEX CONCURRENTLY, then make sure that only one statement\n--    is defined per file, and that each such statement is NOT wrapped in a transaction.\n--    Each such migration must also declare \"createIndexConcurrently: true\" in their\n--    associated metadata.yaml file.\n--  * If you are modifying Postgres extensions, you must also declare \"privileged: true\"\n--    in the associated metadata.yaml file.\n\nDROP INDEX IF EXISTS codeintel_scip_documents_dereference_logs_last_removal_time_doc;",
-				"DownQuery": "-- Undo the changes made in the up migration\n\nCREATE INDEX IF NOT EXISTS codeintel_scip_documents_dereference_logs_last_removal_time_doc\nON codeintel_scip_documents_dereference_logs (last_removal_time, document_id);",
-				"Privileged": false,
-				"NonIdempotent": false,
-				"Parents": [
-					1678898749
-				],
-				"IsCreateIndexConcurrently": false,
-				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -1808,7 +1779,7 @@
 			"v5.0.0": {
 				"RootID": 1000000033,
 				"LeafIDs": [
-					1678899132
+					1678041507
 				],
 				"PreCreation": false
 			}
@@ -9445,7 +9416,10 @@
 			"v3.42.0": {
 				"RootID": 1646027072,
 				"LeafIDs": [
-					1657635365
+					1654770608,
+					1658174103,
+					1658225452,
+					1657663493
 				],
 				"PreCreation": false
 			},
