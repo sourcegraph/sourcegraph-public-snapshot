@@ -52,7 +52,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
 
     copy_to_bin(
       name = "setup-display",
-      srcs = "ci/integration/setup-display.sh"
+      srcs = "ci/integration/setup-display.sh",
       visibility = ["//visibility:public"],
     )
 
