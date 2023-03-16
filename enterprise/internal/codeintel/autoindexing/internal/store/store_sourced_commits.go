@@ -16,7 +16,7 @@ func (s *store) ProcessStaleSourcedCommits(
 	minimumTimeSinceLastCheck time.Duration,
 	commitResolverBatchSize int,
 	_ time.Duration,
-	shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
+	shouldDelete func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
 ) (int, int, error) {
 	return s.processStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, commitResolverBatchSize, shouldDelete, time.Now())
 }
@@ -25,7 +25,7 @@ func (s *store) processStaleSourcedCommits(
 	ctx context.Context,
 	minimumTimeSinceLastCheck time.Duration,
 	commitResolverBatchSize int,
-	shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
+	shouldDelete func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
 	now time.Time,
 ) (totalScanned, totalDeleted int, err error) {
 	ctx, _, endObservation := s.operations.processStaleSourcedCommits.With(ctx, &err, observation.Args{})
@@ -57,7 +57,7 @@ func (s *store) processStaleSourcedCommits(
 		)
 
 		for _, commit := range sc.Commits {
-			if ok, err := shouldDelete(ctx, sc.RepositoryID, commit); err != nil {
+			if ok, err := shouldDelete(ctx, sc.RepositoryID, sc.RepositoryName, commit); err != nil {
 				return 0, 0, err
 			} else if ok {
 				remove = append(remove, commit)

@@ -17,9 +17,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,6 +31,7 @@ type rootResolver struct {
 	autoindexSvc            AutoIndexingService
 	uploadSvc               UploadsService
 	policySvc               PolicyService
+	gitserverClient         gitserver.Client
 	operations              *operations
 	siteAdminChecker        sharedresolvers.SiteAdminChecker
 	repoStore               database.RepoStore
@@ -37,6 +40,7 @@ type rootResolver struct {
 }
 
 func NewRootResolver(observationCtx *observation.Context, autoindexSvc AutoIndexingService, uploadSvc UploadsService, policySvc PolicyService,
+	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
 	prefetcherFactory *sharedresolvers.PrefetcherFactory,
@@ -46,6 +50,7 @@ func NewRootResolver(observationCtx *observation.Context, autoindexSvc AutoIndex
 		autoindexSvc:            autoindexSvc,
 		uploadSvc:               uploadSvc,
 		policySvc:               policySvc,
+		gitserverClient:         gitserverClient,
 		operations:              newOperations(observationCtx),
 		siteAdminChecker:        siteAdminChecker,
 		repoStore:               repoStore,
@@ -201,7 +206,7 @@ func (r *rootResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ reso
 		return nil, err
 	}
 
-	return sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, r.siteAdminChecker, r.repoStore, index, prefetcher, r.locationResolverFactory.Create(), traceErrs), nil
+	return sharedresolvers.NewIndexResolver(r.uploadSvc, r.policySvc, r.gitserverClient, r.siteAdminChecker, r.repoStore, index, prefetcher, r.locationResolverFactory.Create(), traceErrs), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexes
@@ -237,7 +242,7 @@ func (r *rootResolver) LSIFIndexesByRepo(ctx context.Context, args *resolverstub
 	// the same graphQL request, not across different request.
 	indexConnectionResolver := sharedresolvers.NewIndexesResolver(r.autoindexSvc, opts)
 
-	return sharedresolvers.NewIndexConnectionResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, r.siteAdminChecker, r.repoStore, indexConnectionResolver, r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), traceErrs), nil
+	return sharedresolvers.NewIndexConnectionResolver(r.uploadSvc, r.policySvc, r.gitserverClient, r.siteAdminChecker, r.repoStore, indexConnectionResolver, r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may infer auto-index jobs
@@ -354,7 +359,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 
 	lsifIndexResolvers := make([]resolverstubs.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
-		lsifIndexResolvers = append(lsifIndexResolvers, sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, r.siteAdminChecker, r.repoStore, indexes[i], r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), traceErrs))
+		lsifIndexResolvers = append(lsifIndexResolvers, sharedresolvers.NewIndexResolver(r.uploadSvc, r.policySvc, r.gitserverClient, r.siteAdminChecker, r.repoStore, indexes[i], r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), traceErrs))
 	}
 
 	return lsifIndexResolvers, nil
@@ -418,7 +423,7 @@ func (r *rootResolver) GitTreeCodeIntelInfo(ctx context.Context, args *resolvers
 		return nil, errors.Wrapf(err, "path '%s' caused invalid regex", args.Path)
 	}
 
-	files, err := r.autoindexSvc.ListFiles(ctx, int(args.Repo.ID), args.Commit, filesRegex)
+	files, err := r.gitserverClient.ListFiles(ctx, authz.DefaultSubRepoPermsChecker, args.Repo.Name, api.CommitID(args.Commit), filesRegex)
 	if err != nil {
 		return nil, errors.Wrapf(err, "gitserver.ListFiles: error listing files at %s for repo %d", args.Path, args.Repo.ID)
 	}
@@ -536,9 +541,9 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	}
 
 	return sharedresolvers.NewRepositorySummaryResolver(
-		r.autoindexSvc,
 		r.uploadSvc,
 		r.policySvc,
+		r.gitserverClient,
 		r.siteAdminChecker,
 		r.repoStore,
 		r.locationResolverFactory.Create(),

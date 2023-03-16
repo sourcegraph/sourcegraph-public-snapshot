@@ -10,7 +10,9 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -261,13 +263,18 @@ ON CONFLICT (repository_id) DO UPDATE SET
     END
 `
 
-// GetDirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
-// graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
-func (s *store) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
+var scanDirtyRepositories = basestore.NewSliceScanner(func(s dbutil.Scanner) (dr shared.DirtyRepository, _ error) {
+	err := s.Scan(&dr.RepositoryID, &dr.RepositoryName, &dr.DirtyToken)
+	return dr, err
+})
+
+// GetDirtyRepositories returns list of repositories whose commit graph is out of date. The dirty token should be
+// passed to CalculateVisibleUploads in order to unmark the repository.
+func (s *store) GetDirtyRepositories(ctx context.Context) (_ []shared.DirtyRepository, err error) {
 	ctx, trace, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	repositories, err := scanIntPairs(s.db.Query(ctx, sqlf.Sprintf(dirtyRepositoriesQuery)))
+	repositories, err := scanDirtyRepositories(s.db.Query(ctx, sqlf.Sprintf(dirtyRepositoriesQuery)))
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +284,7 @@ func (s *store) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err er
 }
 
 const dirtyRepositoriesQuery = `
-SELECT ldr.repository_id, ldr.dirty_token
+SELECT ldr.repository_id, repo.name, ldr.dirty_token
   FROM lsif_dirty_repositories ldr
     INNER JOIN repo ON repo.id = ldr.repository_id
   WHERE ldr.dirty_token > ldr.update_token

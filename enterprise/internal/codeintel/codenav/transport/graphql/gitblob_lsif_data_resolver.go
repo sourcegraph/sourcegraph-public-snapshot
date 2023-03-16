@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -25,9 +26,9 @@ import (
 // in the parent package.
 type gitBlobLSIFDataResolver struct {
 	codeNavSvc       CodeNavService
-	autoindexingSvc  AutoIndexingService
-	uploadSvc        UploadsService
+	uploadsSvc       UploadsService
 	policiesSvc      PolicyService
+	gitserverClient  gitserver.Client
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	repoStore        database.RepoStore
 	prefetcher       *sharedresolvers.Prefetcher
@@ -44,9 +45,9 @@ type gitBlobLSIFDataResolver struct {
 // to resolve all location-related values.
 func NewGitBlobLSIFDataResolver(
 	codeNavSvc CodeNavService,
-	autoindexSvc AutoIndexingService,
-	uploadSvc UploadsService,
+	uploadsSvc UploadsService,
 	policiesSvc PolicyService,
+	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
 	prefetcher *sharedresolvers.Prefetcher,
@@ -57,9 +58,9 @@ func NewGitBlobLSIFDataResolver(
 ) resolverstubs.GitBlobLSIFDataResolver {
 	return &gitBlobLSIFDataResolver{
 		codeNavSvc:       codeNavSvc,
-		autoindexingSvc:  autoindexSvc,
-		uploadSvc:        uploadSvc,
+		uploadsSvc:       uploadsSvc,
 		policiesSvc:      policiesSvc,
+		gitserverClient:  gitserverClient,
 		siteAdminChecker: siteAdminChecker,
 		repoStore:        repoStore,
 		prefetcher:       prefetcher,
@@ -297,7 +298,7 @@ func (r *gitBlobLSIFDataResolver) LSIFUploads(ctx context.Context) (_ []resolver
 
 	resolvers := make([]resolverstubs.LSIFUploadResolver, 0, len(uploads))
 	for _, upload := range dbUploads {
-		resolvers = append(resolvers, sharedresolvers.NewUploadResolver(r.uploadSvc, r.autoindexingSvc, r.policiesSvc, r.siteAdminChecker, r.repoStore, upload, r.prefetcher, r.locationResolver, r.errTracer))
+		resolvers = append(resolvers, sharedresolvers.NewUploadResolver(r.uploadsSvc, r.policiesSvc, r.gitserverClient, r.siteAdminChecker, r.repoStore, upload, r.prefetcher, r.locationResolver, r.errTracer))
 	}
 
 	return resolvers, nil

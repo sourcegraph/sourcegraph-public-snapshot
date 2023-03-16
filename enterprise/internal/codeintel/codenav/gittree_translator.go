@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -37,7 +38,7 @@ type GitTreeTranslator interface {
 }
 
 type gitTreeTranslator struct {
-	client           GitserverClient
+	client           gitserver.Client
 	localRequestArgs *requestArgs
 	hunkCache        HunkCache
 }
@@ -73,7 +74,7 @@ func NewHunkCache(size int) (HunkCache, error) {
 }
 
 // NewGitTreeTranslator creates a new GitTreeTranslator with the given repository and source commit.
-func NewGitTreeTranslator(client GitserverClient, args *requestArgs, hunkCache HunkCache) GitTreeTranslator {
+func NewGitTreeTranslator(client gitserver.Client, args *requestArgs, hunkCache HunkCache) GitTreeTranslator {
 	return &gitTreeTranslator{
 		client:           client,
 		hunkCache:        hunkCache,

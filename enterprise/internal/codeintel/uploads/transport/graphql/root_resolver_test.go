@@ -28,9 +28,8 @@ func TestDeleteLSIFUpload(t *testing.T) {
 
 	mockUploadService := NewMockUploadService()
 	mockPolicyService := NewMockPolicyService()
-	mockAutoIndexingService := NewMockAutoIndexingService()
 
-	rootResolver := NewRootResolver(&observation.TestContext, mockUploadService, mockAutoIndexingService, mockPolicyService, siteAdminChecker, nil, nil, nil)
+	rootResolver := NewRootResolver(&observation.TestContext, mockUploadService, mockPolicyService, nil, siteAdminChecker, nil, nil, nil)
 
 	if _, err := rootResolver.DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -53,9 +52,8 @@ func TestDeleteLSIFUploadUnauthenticated(t *testing.T) {
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFUpload:42")))
 	mockUploadService := NewMockUploadService()
 	mockPolicyService := NewMockPolicyService()
-	mockAutoIndexingService := NewMockAutoIndexingService()
 
-	rootResolver := NewRootResolver(&observation.TestContext, mockUploadService, mockAutoIndexingService, mockPolicyService, siteAdminChecker, nil, nil, nil)
+	rootResolver := NewRootResolver(&observation.TestContext, mockUploadService, mockPolicyService, nil, siteAdminChecker, nil, nil, nil)
 
 	if _, err := rootResolver.DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != auth.ErrNotAuthenticated {
 		t.Errorf("unexpected error. want=%q have=%q", auth.ErrNotAuthenticated, err)

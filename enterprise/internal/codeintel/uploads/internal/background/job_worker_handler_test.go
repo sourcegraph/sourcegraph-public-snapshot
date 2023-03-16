@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"os"
 	"sort"
@@ -20,9 +21,12 @@ import (
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -42,10 +46,10 @@ func TestHandle(t *testing.T) {
 
 	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
 	mockDBStore := NewMockStore()
-	mockRepoStore := NewMockRepoStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockLSIFStore := NewMockLsifStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
-	gitserverClient := NewMockGitserverClient()
+	gitserverClient := gitserver.NewMockClient()
 
 	// Set default transaction behavior
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
@@ -67,7 +71,7 @@ func TestHandle(t *testing.T) {
 	mockUploadStore.GetFunc.SetDefaultHook(copyTestDumpScip)
 
 	// Allowlist all files in dump
-	gitserverClient.DirectoryChildrenFunc.SetDefaultReturn(scipDirectoryChildren, nil)
+	gitserverClient.ListDirectoryChildrenFunc.SetDefaultReturn(scipDirectoryChildren, nil)
 
 	expectedCommitDate := time.Unix(1587396557, 0).UTC()
 	expectedCommitDateStr := expectedCommitDate.Format(time.RFC3339)
@@ -276,10 +280,10 @@ func TestHandleError(t *testing.T) {
 
 	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
 	mockDBStore := NewMockStore()
-	mockRepoStore := NewMockRepoStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockLSIFStore := NewMockLsifStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
-	gitserverClient := NewMockGitserverClient()
+	gitserverClient := gitserver.NewMockClient()
 
 	// Set default transaction behavior
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
@@ -341,9 +345,9 @@ func TestHandleCloneInProgress(t *testing.T) {
 
 	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
 	mockDBStore := NewMockStore()
-	mockRepoStore := NewMockRepoStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
-	gitserverClient := NewMockGitserverClient()
+	gitserverClient := gitserver.NewMockClient()
 
 	mockRepoStore.GetFunc.SetDefaultHook(func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
 		if repoID != api.RepoID(50) {
@@ -351,8 +355,8 @@ func TestHandleCloneInProgress(t *testing.T) {
 		}
 		return &types.Repo{ID: repoID}, nil
 	})
-	mockRepoStore.ResolveRevFunc.SetDefaultHook(func(ctx context.Context, repo *types.Repo, _ string) (api.CommitID, error) {
-		return "", &gitdomain.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		return "", &gitdomain.RepoNotExistError{Repo: repo, CloneInProgress: true}
 	})
 
 	svc := &handler{
@@ -425,4 +429,15 @@ func setupRepoMocks(t *testing.T) {
 		}
 		return "", nil
 	}
+}
+
+func defaultMockRepoStore() *database.MockRepoStore {
+	repoStore := database.NewMockRepoStore()
+	repoStore.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*internaltypes.Repo, error) {
+		return &internaltypes.Repo{
+			ID:   id,
+			Name: api.RepoName(fmt.Sprintf("r%d", id)),
+		}, nil
+	})
+	return repoStore
 }
