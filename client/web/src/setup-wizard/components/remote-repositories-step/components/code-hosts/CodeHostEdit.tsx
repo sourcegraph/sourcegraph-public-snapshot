@@ -144,7 +144,7 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
     const handleSubmit = async (values: CodeHostConnectFormFields): Promise<void> => {
         await updateRemoteCodeHost({
             variables: { input: { id: codeHostId, ...values } },
-            refetchQueries: ['RepositoryStats', 'StatusMessages'],
+            refetchQueries: ['StatusAndRepoStats'],
         })
 
         navigate('/setup/remote-repositories')
