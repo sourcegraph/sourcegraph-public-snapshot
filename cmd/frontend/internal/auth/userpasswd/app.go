@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -72,26 +73,47 @@ func (n *Nonce) Verify(clientNonce string) bool {
 	return true
 }
 
-func AppSignIn(w http.ResponseWriter, r *http.Request, db database.DB, userProvidedNonce string) error {
-	if !AppNonce.Verify(userProvidedNonce) {
-		return errors.New("Authentication failed")
+// AppSignInMiddleware will intercept any request containing a nonce query
+// parameter. If it is the correct nonce it will sign in and redirect to
+// search. Otherwise it will call the wrapped handler.
+func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *http.Request) error) func(w http.ResponseWriter, r *http.Request) error {
+	// This handler should only be used in App. Extra precaution to enforce
+	// that here.
+	if !deploy.IsApp() {
+		return handler
 	}
 
-	// Admin should always be UID=0, but just in case we query it.
-	user, err := getByEmailOrUsername(r.Context(), db, "admin")
-	if err != nil {
-		return errors.Wrap(err, "Failed to find admin account")
-	}
+	return func(w http.ResponseWriter, r *http.Request) error {
+		nonce := r.URL.Query().Get("nonce")
+		if nonce == "" {
+			return handler(w, r)
+		}
 
-	// Write the session cookie
-	actor := sgactor.Actor{
-		UID: user.ID,
-	}
-	if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
-		return errors.Wrap(err, "Could not create new user session")
-	}
+		if !AppNonce.Verify(nonce) {
+			return errors.New("Authentication failed")
+		}
 
-	return nil
+		// Admin should always be UID=0, but just in case we query it.
+		user, err := getByEmailOrUsername(r.Context(), db, "admin")
+		if err != nil {
+			return errors.Wrap(err, "Failed to find admin account")
+		}
+
+		// Write the session cookie
+		actor := sgactor.Actor{
+			UID: user.ID,
+		}
+		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
+			return errors.Wrap(err, "Could not create new user session")
+		}
+
+		// Success. Redirect to search
+		url := r.URL
+		url.RawQuery = ""
+		url.Path = "/search"
+		http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
+		return nil
+	}
 }
 
 // AppSiteInit is called in the case of Sourcegraph App to create the initial site admin account.

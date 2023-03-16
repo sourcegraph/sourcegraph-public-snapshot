@@ -348,7 +348,7 @@ func serveHome(db database.DB) handlerFunc {
 }
 
 func serveSignIn(db database.DB) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
+	handler := func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, db, "", index, serveError)
 		if err != nil {
 			return err
@@ -358,19 +358,16 @@ func serveSignIn(db database.DB) handlerFunc {
 		}
 		common.Title = brandNameSubtitle("Sign in")
 
-		nonce := r.URL.Query().Get("nonce")
-		if deploy.IsApp() && nonce != "" {
-			if err := userpasswd.AppSignIn(w, r, db, nonce); err != nil {
-				return err
-			}
-			url := r.URL
-			url.RawQuery = ""
-			url.Path = "/search"
-			http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
-		}
-
 		return renderTemplate(w, "app.html", common)
 	}
+
+	// For app we use an extra middleware to handle passwordless signin via a
+	// nonce.
+	if deploy.IsApp() {
+		return userpasswd.AppSignInMiddleware(db, handler)
+	}
+
+	return handler
 }
 
 func serveEmbed(db database.DB) handlerFunc {
