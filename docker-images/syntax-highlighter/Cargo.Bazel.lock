@@ -1,5 +1,5 @@
 {
-  "checksum": "4b1567945807f924be360c99ac543e2fa72b7eaee6913c33694e357332abc1c0",
+  "checksum": "93e17d247f9cc3972348a03470b5fa0796e3959d22c27908feb32b930c91467a",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -8143,7 +8143,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/scip",
           "commitish": {
-            "Rev": "f90a867eb194bf6dae2e2b176e4f8ec7928bf70b"
+            "Branch": "main"
           },
           "strip_prefix": "bindings/rust"
         }
@@ -8177,6 +8177,259 @@
         "version": "0.1.1"
       },
       "license": "Apache-2.0"
+    },
+    "scip-macros 0.1.0": {
+      "name": "scip-macros",
+      "version": "0.1.0",
+      "repository": null,
+      "targets": [
+        {
+          "ProcMacro": {
+            "crate_name": "scip_macros",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "scip_macros",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "quote 1.0.17",
+              "target": "quote"
+            },
+            {
+              "id": "syn 1.0.91",
+              "target": "syn"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.1.0"
+      },
+      "license": null
+    },
+    "scip-syntax 0.1.0": {
+      "name": "scip-syntax",
+      "version": "0.1.0",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "scip_syntax",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "scip_syntax",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "anyhow 1.0.69",
+              "target": "anyhow"
+            },
+            {
+              "id": "insta 1.28.0",
+              "target": "insta"
+            },
+            {
+              "id": "protobuf 3.2.0",
+              "target": "protobuf"
+            },
+            {
+              "id": "rustc-hash 1.1.0",
+              "target": "rustc_hash"
+            },
+            {
+              "id": "scip 0.1.1",
+              "target": "scip"
+            },
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "walkdir 2.3.2",
+              "target": "walkdir"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.1.0"
+      },
+      "license": null
+    },
+    "scip-treesitter 0.1.0": {
+      "name": "scip-treesitter",
+      "version": "0.1.0",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "scip_treesitter",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "scip_treesitter",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.1.0"
+      },
+      "license": null
+    },
+    "scip-treesitter-languages 0.1.0": {
+      "name": "scip-treesitter-languages",
+      "version": "0.1.0",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "scip_treesitter_languages",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "scip_treesitter_languages",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "lazy_static 1.4.0",
+              "target": "lazy_static"
+            },
+            {
+              "id": "scip 0.1.1",
+              "target": "scip"
+            },
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-c 0.20.2",
+              "target": "tree_sitter_c"
+            },
+            {
+              "id": "tree-sitter-c-sharp 0.20.0",
+              "target": "tree_sitter_c_sharp"
+            },
+            {
+              "id": "tree-sitter-cpp 0.20.0",
+              "target": "tree_sitter_cpp"
+            },
+            {
+              "id": "tree-sitter-go 0.19.1",
+              "target": "tree_sitter_go"
+            },
+            {
+              "id": "tree-sitter-highlight 0.20.1",
+              "target": "tree_sitter_highlight"
+            },
+            {
+              "id": "tree-sitter-java 0.20.0",
+              "target": "tree_sitter_java"
+            },
+            {
+              "id": "tree-sitter-javascript 0.20.0",
+              "target": "tree_sitter_javascript"
+            },
+            {
+              "id": "tree-sitter-jsonnet 0.0.1",
+              "target": "tree_sitter_jsonnet"
+            },
+            {
+              "id": "tree-sitter-nickel 0.0.1",
+              "target": "tree_sitter_nickel"
+            },
+            {
+              "id": "tree-sitter-perl 0.0.1",
+              "target": "tree_sitter_perl"
+            },
+            {
+              "id": "tree-sitter-pod 0.0.1",
+              "target": "tree_sitter_pod"
+            },
+            {
+              "id": "tree-sitter-python 0.20.2",
+              "target": "tree_sitter_python"
+            },
+            {
+              "id": "tree-sitter-ruby 0.20.0",
+              "target": "tree_sitter_ruby"
+            },
+            {
+              "id": "tree-sitter-rust 0.20.3",
+              "target": "tree_sitter_rust"
+            },
+            {
+              "id": "tree-sitter-scala 0.20.7",
+              "target": "tree_sitter_scala"
+            },
+            {
+              "id": "tree-sitter-sql 0.0.2",
+              "target": "tree_sitter_sql"
+            },
+            {
+              "id": "tree-sitter-typescript 0.20.2",
+              "target": "tree_sitter_typescript"
+            },
+            {
+              "id": "tree-sitter-xlsg 0.0.1",
+              "target": "tree_sitter_xlsg"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "proc_macro_deps": {
+          "common": [
+            {
+              "id": "paste 1.0.7",
+              "target": "paste"
+            }
+          ],
+          "selects": {}
+        },
+        "version": "0.1.0"
+      },
+      "license": null
     },
     "scoped-tls 1.0.0": {
       "name": "scoped-tls",

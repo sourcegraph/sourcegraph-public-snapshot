@@ -18,8 +18,8 @@ go_library(
         "//lib/errors",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_roaringbitmap_roaring//:roaring",
-        "@com_github_sourcegraph_zoekt//:go_default_library",
-        "@com_github_sourcegraph_zoekt//query:go_default_library",
+        "@com_github_sourcegraph_zoekt//:zoekt",
+        "@com_github_sourcegraph_zoekt//query",
     ],
 )
 
@@ -35,8 +35,8 @@ go_test(
         "//internal/search",
         "//internal/types",
         "//lib/errors",
-        "@com_github_sourcegraph_zoekt//:go_default_library",
-        "@com_github_sourcegraph_zoekt//query:go_default_library",
+        "@com_github_sourcegraph_zoekt//:zoekt",
+        "@com_github_sourcegraph_zoekt//query",
         "@com_github_stretchr_testify//assert",
     ],
 )

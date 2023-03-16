@@ -14,7 +14,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_sourcegraph_zoekt//query:go_default_library",
+        "@com_github_sourcegraph_zoekt//query",
     ],
 )
 
