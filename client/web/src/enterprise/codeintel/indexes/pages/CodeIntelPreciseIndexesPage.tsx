@@ -67,6 +67,7 @@ export interface CodeIntelPreciseIndexesPageProps extends TelemetryProps {
     useDeletePreciseIndexes?: typeof defaultUseDeletePreciseIndexes
     useReindexPreciseIndex?: typeof defaultUseReindexPreciseIndex
     useReindexPreciseIndexes?: typeof defaultUseReindexPreciseIndexes
+    indexingEnabled?: boolean
 }
 
 const STATE_FILTER: FilteredConnectionFilter = {
@@ -122,6 +123,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     useDeletePreciseIndexes = defaultUseDeletePreciseIndexes,
     useReindexPreciseIndex = defaultUseReindexPreciseIndex,
     useReindexPreciseIndexes = defaultUseReindexPreciseIndexes,
+    indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     telemetryService,
 }) => {
     const location = useLocation()
@@ -202,7 +204,13 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
             setArgs(stashArgs)
             setSelection(new Set())
 
-            return queryPreciseIndexes(stashArgs, apolloClient).pipe(
+            return queryPreciseIndexes(
+                {
+                    ...args,
+                    ...stashArgs,
+                },
+                apolloClient
+            ).pipe(
                 tap(connection => {
                     setTotalCount(connection.totalCount ?? undefined)
                 })
@@ -220,6 +228,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         repo: args.repo ?? null,
                         query: args.query ?? null,
                         states: typedStates.length > 0 ? typedStates : null,
+                        indexerKey: args.indexerKey ?? null,
                         isLatestForRepo: args.isLatestForRepo ?? null,
                     },
                     update: cache => cache.modify({ fields: { node: () => {} } }),
@@ -248,6 +257,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         repo: args.repo ?? null,
                         query: args.query ?? null,
                         states: typedStates.length > 0 ? typedStates : null,
+                        indexerKey: args.indexerKey ?? null,
                         isLatestForRepo: args.isLatestForRepo ?? null,
                     },
                     update: cache => cache.modify({ fields: { node: () => {} } }),
@@ -353,34 +363,38 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                           </Label>
 
                                           <div className="text-right">
-                                              <Tooltip
-                                                  content={`Allow Sourcegraph to re-index ${
-                                                      selection === 'all' || selection.size > 1
-                                                          ? 'these commits'
-                                                          : 'this commit'
-                                                  } in the future and replace this data.`}
-                                              >
-                                                  <Button
-                                                      className="mr-2"
-                                                      variant="secondary"
-                                                      disabled={selection !== 'all' && selection.size === 0}
-                                                      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                                                      onClick={onReindex}
+                                              {indexingEnabled && (
+                                                  <Tooltip
+                                                      content={`Allow Sourcegraph to re-index ${
+                                                          selection === 'all' || selection.size > 1
+                                                              ? 'these commits'
+                                                              : 'this commit'
+                                                      } in the future and replace this data.`}
                                                   >
-                                                      <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark{' '}
-                                                      {(selection === 'all' ? totalCount : selection.size) === 0 ? (
-                                                          ''
-                                                      ) : (
-                                                          <>
-                                                              {selection === 'all' ? totalCount : selection.size}{' '}
-                                                              {(selection === 'all' ? totalCount : selection.size) === 1
-                                                                  ? 'index'
-                                                                  : 'indexes'}
-                                                          </>
-                                                      )}{' '}
-                                                      as replaceable by auto-indexing
-                                                  </Button>
-                                              </Tooltip>
+                                                      <Button
+                                                          className="mr-2"
+                                                          variant="secondary"
+                                                          disabled={selection !== 'all' && selection.size === 0}
+                                                          // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                                                          onClick={onReindex}
+                                                      >
+                                                          <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark{' '}
+                                                          {(selection === 'all' ? totalCount : selection.size) === 0 ? (
+                                                              ''
+                                                          ) : (
+                                                              <>
+                                                                  {selection === 'all' ? totalCount : selection.size}{' '}
+                                                                  {(selection === 'all'
+                                                                      ? totalCount
+                                                                      : selection.size) === 1
+                                                                      ? 'index'
+                                                                      : 'indexes'}
+                                                              </>
+                                                          )}{' '}
+                                                          as replaceable by auto-indexing
+                                                      </Button>
+                                                  </Tooltip>
+                                              )}
                                               <Button
                                                   className="mr-2"
                                                   variant="danger"

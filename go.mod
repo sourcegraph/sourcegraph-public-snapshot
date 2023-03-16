@@ -114,7 +114,7 @@ require (
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rafaeljusto/redigomock v2.4.0+incompatible
 	github.com/rjeczalik/notify v0.9.3
-	github.com/russellhaering/gosaml2 v0.7.0
+	github.com/russellhaering/gosaml2 v0.9.0
 	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/schollz/progressbar/v3 v3.8.5
 	github.com/segmentio/fasthash v1.0.3
@@ -165,7 +165,6 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.13.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.13.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.13.0
-	go.opentelemetry.io/otel/exporters/prometheus v0.36.0
 	go.opentelemetry.io/otel/metric v0.36.0
 	go.opentelemetry.io/otel/sdk v1.13.0
 	go.opentelemetry.io/otel/sdk/metric v0.36.0
@@ -280,7 +279,7 @@ replace (
 	// We maintain a potentially long-term fork of embedded-postgres for
 	// Sourcegraph App. We add features like unix sockets. If this replace
 	// directive still exists in 2024, lets consider hard forking.
-	github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230222065424-1cc470c429e1
+	github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230313141935-8f62b6947f2c
 
 	// As of https://github.com/grpc-ecosystem/go-grpc-middleware/blob/7ac0846398432dee083fd8bc4ad7abacf8147ff2/providers/openmetrics/go.mod#L7,
 	// the latest release of the gRPC Prometheus middleware depends on a version of go-grpc-middleware that is two years old, and
@@ -290,10 +289,11 @@ replace (
 	// that they always use the current version of go-grpc-middleware that they're developing). Until this issue is fixed,
 	// we'll need to ensure that we explicitly depend on the latest version of go-grpc-middleware (v2.0.0-rc.3) as of this writing.
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 => github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
+
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20230303172250-3b0248719b12
+	github.com/sourcegraph/zoekt v0.0.0-20230310172732-250c2efdd564
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 
@@ -336,7 +336,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/certifi/gocertifi v0.0.0-20210507211836-431795d63e8d // indirect
 	github.com/charmbracelet/glamour v0.5.0 // indirect
-	github.com/cockroachdb/errors v1.9.1 // indirect
+	github.com/cockroachdb/errors v1.9.1
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.3
 	github.com/containerd/typeurl v1.0.2 // indirect

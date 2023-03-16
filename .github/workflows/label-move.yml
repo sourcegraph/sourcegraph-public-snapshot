@@ -17,7 +17,7 @@ jobs:
   code-intel-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: MDExOlByb2plY3ROZXh0NDI1MA== # https://github.com/orgs/sourcegraph/projects/211
+      PROJECT_ID: PVT_kwDOADy5QM0Qmg # https://github.com/orgs/sourcegraph/projects/211
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
       - name: Get issue if relevant
@@ -44,7 +44,7 @@ jobs:
   dev-experience-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: MDExOlByb2plY3ROZXh0NDI1Nw== # https://github.com/orgs/sourcegraph/projects/212
+      PROJECT_ID: PVT_kwDOADy5QM0QoQ # https://github.com/orgs/sourcegraph/projects/212
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
       - name: Get issue if relevant
@@ -71,7 +71,7 @@ jobs:
   integrations-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: MDExOlByb2plY3ROZXh0NDMyNg== # https://github.com/orgs/sourcegraph/projects/213
+      PROJECT_ID: PVT_kwDOADy5QM0Q5g # https://github.com/orgs/sourcegraph/projects/213
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
       - name: Get issue if relevant
@@ -98,7 +98,7 @@ jobs:
   batchers-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: PN_kwDOADy5QM0WXg== # https://github.com/orgs/sourcegraph/projects/216
+      PROJECT_ID: PVT_kwDOADy5QM0WXg # https://github.com/orgs/sourcegraph/projects/216
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
       - name: Get issue if relevant
@@ -125,7 +125,7 @@ jobs:
   frontend-platform-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: PN_kwDOADy5QM2FqQ== # https://github.com/orgs/sourcegraph/projects/222
+      PROJECT_ID: PVT_kwDOADy5QM2FqQ # https://github.com/orgs/sourcegraph/projects/222
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
       - name: Get issue if relevant
@@ -147,7 +147,7 @@ jobs:
   delivery-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: MDExOlByb2plY3ROZXh0Mzg2Mw== # https://github.com/orgs/sourcegraph/projects/316
+      PROJECT_ID: PVT_kwDOADy5QM4AK8nZ # https://github.com/orgs/sourcegraph/projects/316
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
       - name: Get issue if relevant
@@ -174,7 +174,7 @@ jobs:
   wcag-accessibility-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: PN_kwDOADy5QM4AAyDB # https://github.com/orgs/sourcegraph/projects/238
+      PROJECT_ID: PVT_kwDOADy5QM4AAyDB # https://github.com/orgs/sourcegraph/projects/238
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
       - name: Get issue if relevant
@@ -196,7 +196,7 @@ jobs:
   growth-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: PN_kwDOADy5QM4ABLw3 # https://github.com/orgs/sourcegraph/projects/253
+      PROJECT_ID: PVT_kwDOADy5QM4ABLw3 # https://github.com/orgs/sourcegraph/projects/253
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
       - name: Get issue if relevant
@@ -223,7 +223,7 @@ jobs:
   iam-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: PN_kwDOADy5QM4ABlJF # https://github.com/orgs/sourcegraph/projects/259
+      PROJECT_ID: PVT_kwDOADy5QM4ABlJF # https://github.com/orgs/sourcegraph/projects/259
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
       - name: Get issue if relevant
@@ -250,7 +250,7 @@ jobs:
   executors-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: PN_kwDOADy5QM4ADYmX # https://github.com/orgs/sourcegraph/projects/267
+      PROJECT_ID: PVT_kwDOADy5QM4ADYmX # https://github.com/orgs/sourcegraph/projects/267
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
       - name: Get issue if relevant

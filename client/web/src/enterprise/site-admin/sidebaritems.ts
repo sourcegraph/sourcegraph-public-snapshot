@@ -22,6 +22,8 @@ const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'License',
             to: '/site-admin/license',
+
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -33,6 +35,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code Insights jobs',
             to: '/site-admin/code-insights-jobs',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -81,7 +84,7 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/outbound-webhooks',
         },
     ],
-    condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+    condition: ({ batchChangesEnabled, isSourcegraphApp }) => batchChangesEnabled && !isSourcegraphApp,
 }
 
 const businessGroup: SiteAdminSideBarGroup = {
@@ -108,6 +111,7 @@ const businessGroup: SiteAdminSideBarGroup = {
 
 const codeIntelGroup: SiteAdminSideBarGroup = {
     header: { label: 'Code graph', icon: BrainIcon },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             to: '/site-admin/code-graph/dashboard',
@@ -124,6 +128,7 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/code-graph/inference-configuration',
             label: 'Inference',
+            condition: () => window.context?.codeIntelAutoIndexingEnabled,
         },
     ],
 }
@@ -135,6 +140,7 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
         {
             label: 'Incoming webhooks',
             to: '/site-admin/webhooks',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }

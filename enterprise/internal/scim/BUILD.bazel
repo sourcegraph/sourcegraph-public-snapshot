@@ -20,14 +20,19 @@ go_library(
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/enterprise",
+        "//cmd/frontend/globals",
         "//enterprise/internal/codeintel",
         "//enterprise/internal/scim/filter",
         "//internal/authz",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
+        "//internal/env",
         "//internal/extsvc",
+        "//internal/goroutine",
         "//internal/observation",
+        "//internal/txemail",
+        "//internal/txemail/txtypes",
         "//internal/types",
         "//lib/errors",
         "@com_github_elimity_com_scim//:scim",
@@ -35,10 +40,12 @@ go_library(
         "@com_github_elimity_com_scim//optional",
         "@com_github_elimity_com_scim//schema",
         "@com_github_scim2_filter_parser_v2//:filter-parser",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
 go_test(
+    timeout = "short",
     name = "scim_test",
     srcs = [
         "user_create_test.go",
@@ -48,9 +55,15 @@ go_test(
     ],
     embed = [":scim"],
     deps = [
+        "//internal/conf",
+        "//internal/database",
         "//internal/observation",
+        "//internal/txemail",
         "//internal/types",
+        "//lib/errors",
+        "//schema",
         "@com_github_elimity_com_scim//:scim",
+        "@com_github_elimity_com_scim//errors",
         "@com_github_scim2_filter_parser_v2//:filter-parser",
         "@com_github_stretchr_testify//assert",
     ],

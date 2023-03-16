@@ -38,6 +38,7 @@ export interface InsightsDashboardCreationContentProps {
     owners: InsightsDashboardOwner[]
     onSubmit: (values: DashboardCreationFields) => Promise<SubmissionErrors>
     children: (formAPI: FormAPI<DashboardCreationFields>) => ReactNode
+    isSourcegraphApp: boolean
 }
 
 /**
@@ -46,7 +47,7 @@ export interface InsightsDashboardCreationContentProps {
 export const InsightsDashboardCreationContent: React.FunctionComponent<
     InsightsDashboardCreationContentProps
 > = props => {
-    const { initialValues, owners, onSubmit, children } = props
+    const { initialValues, owners, onSubmit, children, isSourcegraphApp } = props
 
     const { licensed } = useUiFeatures()
 
@@ -149,10 +150,16 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<
                 <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} className="mt-2 mb-2" />
             )}
 
-            {!licensed && (
+            {!licensed && !isSourcegraphApp && (
                 <LimitedAccessLabel
                     className={classNames(styles.limitedBanner)}
                     message="Unlock Code Insights to create unlimited custom dashboards"
+                />
+            )}
+            {!licensed && isSourcegraphApp && (
+                <LimitedAccessLabel
+                    className={classNames(styles.limitedBanner)}
+                    message="Dashboards aren't available yet for the Sourcegraph app"
                 />
             )}
 

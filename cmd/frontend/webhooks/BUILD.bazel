@@ -38,6 +38,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "webhooks_test",
     srcs = [
         "github_webhooks_test.go",
@@ -45,6 +46,10 @@ go_test(
         "webhooks_test.go",
     ],
     embed = [":webhooks"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/database",

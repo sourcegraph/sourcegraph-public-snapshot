@@ -22,6 +22,7 @@ go_binary(
 )
 
 go_test(
+    timeout = "short",
     name = "scanprotects_test",
     srcs = ["main_test.go"],
     data = ["//enterprise/internal/authz/perforce/testdata:data"],

@@ -47,6 +47,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "background_test",
     srcs = [
         "data_prune_test.go",
@@ -56,6 +57,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":background"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//enterprise/internal/insights/background/queryrunner",

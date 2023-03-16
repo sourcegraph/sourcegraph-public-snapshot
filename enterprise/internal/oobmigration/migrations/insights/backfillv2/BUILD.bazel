@@ -19,9 +19,14 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "backfillv2_test",
     srcs = ["migrator_test.go"],
     embed = [":backfillv2"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//enterprise/internal/insights/timeseries",

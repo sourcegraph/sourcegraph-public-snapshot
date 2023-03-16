@@ -78,10 +78,11 @@ type UserExternalAccountsStore interface {
 	// CreateUserAndSave for that.
 	LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error)
 
-	// UpdateSCIMData updates the external account data for the given user's SCIM account.
+	// UpsertSCIMData updates the external account data for the given user's SCIM account.
 	// It looks up the existing user based on its ID, then sets its account ID and data.
 	// Account ID is the same as the external ID for SCIM.
-	UpdateSCIMData(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error)
+	// If the external account does not exist, it creates a new one.
+	UpsertSCIMData(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error)
 
 	// TouchExpired sets the given user external accounts to be expired now.
 	TouchExpired(ctx context.Context, ids ...int32) error
@@ -163,27 +164,42 @@ RETURNING user_id
 	return userID, err
 }
 
-func (s *userExternalAccountsStore) UpdateSCIMData(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error) {
+func (s *userExternalAccountsStore) UpsertSCIMData(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error) {
 	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
 	if err != nil {
 		return
 	}
 
-	_, err = s.Handle().ExecContext(ctx, `
+	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE user_external_accounts
 SET
-	account_id = $4,
-	auth_data = $5,
-	account_data = $6,
-	encryption_key_id = $7,
+	account_id = %s,
+	auth_data = %s,
+	account_data = %s,
+	encryption_key_id = %s,
 	updated_at = now(),
 	expired_at = NULL
 WHERE
-	user_id = $1
-AND service_type = $2
-AND service_id = $3
+	user_id = %s
+AND service_type = %s
+AND service_id = %s
 AND deleted_at IS NULL
-`, userID, "scim", "scim", accountID, encryptedAuthData, encryptedAccountData, keyID)
+`, accountID, encryptedAuthData, encryptedAccountData, keyID, userID, "scim", "scim"))
+	if err != nil {
+		return
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return
+	}
+
+	if rowsAffected == 0 {
+		return s.Insert(ctx, userID, extsvc.AccountSpec{ServiceType: "scim", ServiceID: "scim", AccountID: accountID}, data)
+	}
+
+	// This logs an audit event for account changes but only if they are initiated via SCIM
+	logAccountModifiedEvent(ctx, NewDBWith(s.logger, s), userID, "scim")
+
 	return
 }
 

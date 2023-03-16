@@ -1,29 +1,30 @@
-import { FC, HTMLAttributes, useState } from 'react'
+import { FC, HTMLAttributes, useState, useEffect } from 'react'
 
 import { useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import { Routes, Route, matchPath, useLocation } from 'react-router-dom'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, Text } from '@sourcegraph/wildcard'
 
 import { GetCodeHostsResult } from '../../../graphql-operations'
+import { CodeHostExternalServiceAlert } from '../CodeHostExternalServiceAlert'
 import { ProgressBar } from '../ProgressBar'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 
 import { CodeHostDeleteModal, CodeHostToDelete } from './components/code-host-delete-modal'
 import { CodeHostsPicker } from './components/code-host-picker'
 import { CodeHostCreation, CodeHostEdit } from './components/code-hosts'
-import { CodeHostExternalServiceAlert } from './components/CodeHostExternalServiceAlert'
 import { CodeHostsNavigation } from './components/navigation'
-import { isAnyConnectedCodeHosts } from './helpers'
+import { getNextButtonLabel, getNextButtonLogEvent, getRemoteCodeHostCount, isAnyConnectedCodeHosts } from './helpers'
 import { GET_CODE_HOSTS } from './queries'
 
 import styles from './RemoteRepositoriesStep.module.scss'
 
-interface RemoteRepositoriesStepProps extends HTMLAttributes<HTMLDivElement> {}
+interface RemoteRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTMLDivElement> {}
 
 export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => {
-    const { className, ...attributes } = props
+    const { className, telemetryService, ...attributes } = props
 
     const location = useLocation()
     const [codeHostToDelete, setCodeHostToDelete] = useState<CodeHostToDelete | null>(null)
@@ -37,6 +38,21 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
         // the current progress of repositories syncing
         pollInterval: 5000,
     })
+
+    useEffect(() => {
+        telemetryService.log('SetupWizardLandedAddRemoteCode')
+    }, [telemetryService])
+
+    const handleNextButtonClick = (): void => {
+        const logEvent = getNextButtonLogEvent(codeHostQueryResult.data)
+
+        if (logEvent) {
+            telemetryService.log(logEvent)
+        }
+    }
+
+    const hasCodeHostCountReachedLimit =
+        window.context.sourcegraphAppMode && getRemoteCodeHostCount(codeHostQueryResult.data) > 0
 
     return (
         <div {...attributes} className={classNames(className, styles.root)}>
@@ -57,11 +73,22 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
 
                 <Container className={styles.contentMain}>
                     <Routes>
-                        <Route index={true} element={<CodeHostsPicker />} />
-                        <Route path=":codeHostType/create" element={<CodeHostCreation />} />
+                        <Route
+                            index={true}
+                            element={<CodeHostsPicker isLimitReached={hasCodeHostCountReachedLimit} />}
+                        />
+                        <Route
+                            path=":codeHostType/create"
+                            element={<CodeHostCreation telemetryService={telemetryService} />}
+                        />
                         <Route
                             path=":codehostId/edit"
-                            element={<CodeHostEdit onCodeHostDelete={setCodeHostToDelete} />}
+                            element={
+                                <CodeHostEdit
+                                    telemetryService={telemetryService}
+                                    onCodeHostDelete={setCodeHostToDelete}
+                                />
+                            }
                         />
                     </Routes>
                 </Container>
@@ -72,13 +99,14 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
             </FooterWidget>
 
             <CustomNextButton
-                label="Next"
+                label={getNextButtonLabel(codeHostQueryResult.data)}
                 disabled={!isAnyConnectedCodeHosts(codeHostQueryResult.data)}
                 tooltip={
                     isAnyConnectedCodeHosts(codeHostQueryResult.data)
                         ? 'You can get back to this later'
                         : 'You have to connect at least one code host'
                 }
+                onClick={handleNextButtonClick}
             />
 
             {codeHostToDelete && (

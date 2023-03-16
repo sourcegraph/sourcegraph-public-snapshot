@@ -60,10 +60,10 @@ func LoadCtagsConfig(baseConfig env.BaseConfig) CtagsConfig {
 	}
 
 	ctagsCommandDefault := "universal-ctags"
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
+	if deploy.IsSingleBinary() {
 		ctagsCommandDefault = ""
 	}
+
 	return CtagsConfig{
 		Command:            baseConfig.Get("CTAGS_COMMAND", ctagsCommandDefault, "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)"),
 		PatternLengthLimit: baseConfig.GetInt("CTAGS_PATTERN_LENGTH_LIMIT", "250", "the maximum length of the patterns output by ctags"),

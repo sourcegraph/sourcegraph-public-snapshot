@@ -19,6 +19,7 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
+import { OwnConfigProps } from '../own/OwnConfigProps'
 import { SearchStreamingProps } from '../search'
 import { eventLogger } from '../tracking/eventLogger'
 import { RouteV6Descriptor } from '../util/contributions'
@@ -54,7 +55,8 @@ export interface RepoRevisionContainerContext
         BatchChangesProps,
         Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
         CodeInsightsProps,
-        NotebookProps {
+        NotebookProps,
+        OwnConfigProps {
     repo: RepositoryFields | undefined
     resolvedRevision: ResolvedRevision | undefined
 
@@ -85,7 +87,8 @@ interface RepoRevisionContainerProps
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        NotebookProps {
+        NotebookProps,
+        OwnConfigProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -149,6 +152,7 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
                     <RevisionsPopover
                         repoId={repo?.id}
                         repoName={repoName}
+                        repoServiceType={repo?.externalRepository?.serviceType}
                         defaultBranch={resolvedRevision?.defaultBranch}
                         currentRev={revision}
                         currentCommitID={resolvedRevision?.commitID}

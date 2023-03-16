@@ -12,6 +12,7 @@ import {
     MultiComboboxList,
     MultiComboboxOption,
     MultiComboboxOptionText,
+    useDebounce,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -20,6 +21,8 @@ import {
     GetGitHubRepositoriesResult,
     GetGitHubRepositoriesVariables,
 } from '../../../../../../graphql-operations'
+
+import styles from './GithubEntityPickers.module.scss'
 
 const GET_GITHUB_ORGANIZATIONS = gql`
     query GetGitHubOrganizations($id: ID, $token: String!) {
@@ -52,6 +55,11 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
         }
     )
 
+    const handleSelectedItemsChange = (orginaziations: string[]): void => {
+        setSearchTerm('')
+        onChange(orginaziations)
+    }
+
     const suggestions = (data?.externalServiceNamespaces?.nodes ?? []).map(item => item.name)
 
     // Render only non-selected organizations and orgs that match search term value
@@ -64,7 +72,7 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
             selectedItems={organizations}
             getItemKey={identity}
             getItemName={identity}
-            onSelectedItemsChange={onChange}
+            onSelectedItemsChange={handleSelectedItemsChange}
         >
             <MultiComboboxInput
                 value={searchTerm}
@@ -73,14 +81,14 @@ export const GithubOrganizationsPicker: FC<GithubOrganizationsPickerProps> = pro
                 status={loading ? 'loading' : 'initial'}
                 onChange={event => setSearchTerm(event.target.value)}
             />
-            <small className="text-muted pl-2">
+            <small className="d-block text-muted pl-2 mt-2">
                 Pick at least one organization and we clone all repositories that this organization has
             </small>
 
             <MultiComboboxList items={filteredSuggestions} className="mt-2">
                 {items =>
                     items.map((item, index) => (
-                        <MultiComboboxOption key={item} value={item} index={index}>
+                        <MultiComboboxOption key={item} value={item} index={index} className={styles.item}>
                             <Icon aria-hidden={true} svgPath={mdiGithub} /> <MultiComboboxOptionText />
                         </MultiComboboxOption>
                     ))
@@ -129,6 +137,7 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
     const { token, disabled, repositories, externalServiceId, onChange } = props
 
     const [searchTerm, setSearchTerm] = useState('')
+
     const {
         data: currentData,
         previousData,
@@ -140,11 +149,16 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
         variables: {
             token,
             first: 10,
-            query: searchTerm,
+            query: useDebounce(searchTerm, 500),
             id: externalServiceId ?? null,
             excludeRepositories: repositories,
         },
     })
+
+    const handleSelectedItemsChange = (repositories: string[]): void => {
+        setSearchTerm('')
+        onChange(repositories)
+    }
 
     const data = currentData ?? previousData
     const suggestions = (data?.externalServiceRepositories?.nodes ?? []).map(item => formatRepositoryName(item.name))
@@ -159,7 +173,7 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
             selectedItems={repositories}
             getItemKey={identity}
             getItemName={identity}
-            onSelectedItemsChange={onChange}
+            onSelectedItemsChange={handleSelectedItemsChange}
         >
             <MultiComboboxInput
                 value={searchTerm}
@@ -168,12 +182,16 @@ export const GithubRepositoriesPicker: FC<GithubRepositoriesPickerProps> = props
                 status={loading ? 'loading' : 'initial'}
                 onChange={event => setSearchTerm(event.target.value)}
             />
-            <small className="text-muted pl-2">Pick at least one repository</small>
+            <small className="d-block text-muted pl-2 mt-2">Pick at least one repository</small>
 
-            <MultiComboboxList items={filteredSuggestions} className="mt-2">
+            <MultiComboboxList
+                renderEmptyList={true}
+                items={filteredSuggestions}
+                className={styles.repositoriesSuggest}
+            >
                 {items =>
                     items.map((item, index) => (
-                        <MultiComboboxOption key={item} value={item} index={index}>
+                        <MultiComboboxOption key={item} value={item} index={index} className={styles.item}>
                             <Icon aria-hidden={true} svgPath={mdiGithub} /> <MultiComboboxOptionText />
                         </MultiComboboxOption>
                     ))

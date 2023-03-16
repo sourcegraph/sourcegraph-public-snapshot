@@ -50,7 +50,13 @@ export interface TemporarySettingsSchema {
         author: string
     }
     'search.results.collapseSmartSearch': boolean
+    'search.results.collapseUnownedResultsAlert': boolean
     'search.input.recentSearches': RecentSearch[]
+    /**
+     * Keeps track of which of the query examples shown as suggestions
+     * the user has used so that we don't suggest them anymore.
+     */
+    'search.input.usedExamples': string[]
     'search.input.usedInlineHistory': boolean
     // This is a temporary setting to allow users to easily switch
     // between  having search  results be ranked or not. It's only
@@ -68,10 +74,6 @@ export interface TemporarySettingsSchema {
     'repo.commitPage.diffMode': DiffMode
     'setup.activeStepId': string
     'own.panelExplanationHidden': boolean
-    // Sourcegraph App banners
-    'app.limitedAccessBannerDismissed.codeInsights': boolean
-    'app.limitedAccessBannerDismissed.batchChanges': boolean
-    'app.limitedAccessBannerDismissed.notebooks': boolean
 }
 
 /**

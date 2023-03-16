@@ -47,6 +47,12 @@ export const UserAreaGQLFragment = gql`
             email
             isPrimary
         }
+        roles @skip(if: $isSourcegraphDotCom) {
+            nodes {
+                name
+                system
+            }
+        }
     }
 `
 
@@ -215,7 +221,7 @@ export const UserArea: FC<UserAreaProps> = ({
                             />
                         )
                 )}
-                <Route element={<NotFoundPage pageType="user" />} />
+                <Route path="*" element={<NotFoundPage pageType="user" />} />
             </Routes>
         </Suspense>
     )

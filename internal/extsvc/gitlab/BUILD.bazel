@@ -49,6 +49,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "gitlab_test",
     srcs = [
         "auth_test.go",
@@ -65,6 +66,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":gitlab"],
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/errcode",

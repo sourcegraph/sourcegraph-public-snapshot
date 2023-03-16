@@ -61,6 +61,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "gitserver_test",
     srcs = [
         "addrs_test.go",
@@ -70,6 +71,9 @@ go_test(
         "internal_test.go",
     ],
     embed = [":gitserver"],
+    # This test loads coursier as a side effect, so we ensure the
+    # path is sandboxed properly.
+    env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
         "//cmd/gitserver/server",
         "//internal/actor",

@@ -13,6 +13,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "protocol_test",
     srcs = ["searcher_test.go"],
     deps = [

@@ -10,13 +10,13 @@ import { fromFetch } from 'rxjs/fetch'
 
 import { checkOk } from '@sourcegraph/http-client'
 import {
-    editorHeight,
-    useCodeMirror,
     defaultEditorTheme,
+    editorHeight,
     jsonHighlighting,
+    useCodeMirror,
 } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Container, LoadingSpinner, H3, PageHeader, Text, useObservable } from '@sourcegraph/wildcard'
+import { Container, H3, LoadingSpinner, PageHeader, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -415,8 +415,32 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                             </li>
                         </ul>
                     </li>
+                    <li>
+                        Sourcegraph Own usage data.
+                        <ul>
+                            <li>
+                                Whether the <pre>search-ownership</pre> feature flag is turned on.
+                            </li>
+                            <li>
+                                Number and ratio of repositories for which ownership data is available via CODEOWNERS
+                                file or the API.
+                            </li>
+                            <li>Aggregate monthly weekly and daily active users for the following activities:</li>
+                            <ul>
+                                <li>
+                                    Narrowing search results by owner using <pre>file:has.owners</pre> predicate.
+                                </li>
+                                <li>
+                                    Selecting owner search result through <pre>select:file.owners</pre>.
+                                </li>
+                                <li>Displaying ownership panel in file view.</li>
+                            </ul>
+                        </ul>
+                    </li>
                 </ul>
-                {updatesDisabled && <Text>All telemetry is disabled.</Text>}
+                {updatesDisabled && (
+                    <Text>All telemetry is disabled.</Text>
+                )}
             </Container>
         </div>
     )

@@ -77,6 +77,14 @@ http_archive(
     ],
 )
 
+http_archive(
+    name = "rules_rust",
+    sha256 = "d125fb75432dc3b20e9b5a19347b45ec607fabe75f98c6c4ba9badaab9c193ce",
+    # As of Mar 8 2023, the latest release is 0.18.0, but that release
+    # has a bug which triggers a compilation error in futures-util-0.3.21
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.17.0/rules_rust-v0.17.0.tar.gz"],
+)
+
 # rules_js setup ================================
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
@@ -204,7 +212,7 @@ go_rules_dependencies()
 
 go_register_toolchains(
     nogo = "@//:sg_nogo",
-    version = "1.19.3",
+    version = "1.19.6",
 )
 
 linter_dependencies()
@@ -214,3 +222,43 @@ gazelle_dependencies()
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
+
+# rust toolchain setup
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+rules_rust_dependencies()
+
+rust_register_toolchains(
+    edition = "2021",
+    # Keep in sync with docker-images/syntax-highlighter/Dockerfile
+    # and docker-images/syntax-highlighter/rust-toolchain.toml
+    versions = [
+        "1.68.0",
+    ],
+)
+
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
+
+crates_repository(
+    name = "crate_index",
+    cargo_config = "//docker-images/syntax-highlighter:.cargo/config.toml",
+    cargo_lockfile = "//docker-images/syntax-highlighter:Cargo.lock",
+    # this file has to be manually created and it will be filled when
+    # the target is ran.
+    # To regenerate this file run: CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
+    lockfile = "//docker-images/syntax-highlighter:Cargo.Bazel.lock",
+    # glob doesn't work in WORKSPACE files: https://github.com/bazelbuild/bazel/issues/11935
+    manifests = [
+        "//docker-images/syntax-highlighter:Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-macros/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-syntax/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-treesitter/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
+    ],
+)
+
+load("@crate_index//:defs.bzl", "crate_repositories")
+
+crate_repositories()

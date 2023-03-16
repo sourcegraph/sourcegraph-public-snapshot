@@ -19,6 +19,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "gerrit_test",
     srcs = ["client_test.go"],
     data = glob(["testdata/**"]),

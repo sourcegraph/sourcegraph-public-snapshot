@@ -1,9 +1,23 @@
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 
-import { mdiAccount } from '@mdi/js'
+import { mdiAccount, mdiChevronDown } from '@mdi/js'
+import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Badge, BADGE_VARIANTS, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Badge,
+    BADGE_VARIANTS,
+    Button,
+    Icon,
+    Link,
+    Popover,
+    PopoverContent,
+    PopoverOpenEvent,
+    PopoverTrigger,
+    Position,
+    Text,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import {
     PermissionsSyncJob,
@@ -12,6 +26,8 @@ import {
     PermissionsSyncJobState,
 } from '../../graphql-operations'
 import { ExternalRepositoryIcon } from '../components/ExternalRepositoryIcon'
+
+import styles from './styles.module.scss'
 
 export interface ChangesetCloseNodeProps {
     node: PermissionsSyncJob
@@ -49,7 +65,7 @@ const JOB_REASON_TO_READABLE_REASON: Record<PermissionsSyncJobReason, string> = 
     REASON_USER_REMOVED_FROM_ORG: 'User removed from organization',
 }
 
-const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStateMetadata> = {
+export const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStateMetadata> = {
     QUEUED: {
         badgeVariant: 'secondary',
         temporalWording: 'Queued',
@@ -82,69 +98,139 @@ const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStateMetada
     },
 }
 
-export const PermissionsSyncJobStatusBadge: React.FunctionComponent<{ state: PermissionsSyncJobState }> = ({
-    state,
-}) => <Badge variant={JOB_STATE_METADATA_MAPPING[state].badgeVariant}>{state}</Badge>
+interface PermissionsSyncJobStatusBadgeProps {
+    state: PermissionsSyncJobState
+    cancellationReason: string | null
+    failureMessage: string | null
+}
 
-export const PermissionsSyncJobSubject: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => (
-    <div>
-        <div>
-            {job.subject.__typename === 'Repository' ? (
-                <>
-                    <ExternalRepositoryIcon externalRepo={job.subject.externalRepository} /> {job.subject.name}
-                </>
-            ) : (
-                <>
-                    <Icon className="mr-2" aria-hidden={true} svgPath={mdiAccount} /> {job.subject.username}
-                </>
+export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsSyncJobStatusBadgeProps> = ({
+    state,
+    cancellationReason,
+    failureMessage,
+}) => (
+    <Badge
+        className={classNames(styles.statusContainer, 'mr-1')}
+        tooltip={cancellationReason ?? failureMessage ?? undefined}
+        variant={JOB_STATE_METADATA_MAPPING[state].badgeVariant}
+    >
+        {state}
+    </Badge>
+)
+
+export const PermissionsSyncJobSubject: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => {
+    const [isOpen, setIsOpen] = useState<boolean>(false)
+    const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
+        setIsOpen(event.isOpen)
+    }, [])
+
+    return (
+        <div className={classNames({ [styles.visibleActionsOnHover]: !isOpen })}>
+            <div className="d-flex align-items-center">
+                {job.subject.__typename === 'Repository' ? (
+                    <>
+                        <ExternalRepositoryIcon externalRepo={job.subject.externalRepository} />
+                        <Link to={job.subject.url} className="text-truncate">
+                            {job.subject.name}
+                        </Link>
+                        <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
+                            <PopoverTrigger
+                                as={Button}
+                                className={classNames('border-0 p-0', styles.actionsButton)}
+                                variant="secondary"
+                                outline={true}
+                            >
+                                <Icon aria-label="Show details" svgPath={mdiChevronDown} />
+                            </PopoverTrigger>
+                            <PopoverContent position={Position.bottom} focusLocked={false}>
+                                <div className="p-2">
+                                    <Text className="mb-0" weight="bold">
+                                        Name
+                                    </Text>
+                                    <Text className="mb-0">{job.subject.name}</Text>
+                                    <Text className="mb-0 mt-2" weight="bold">
+                                        External Service
+                                    </Text>
+                                    <div className="d-flex align-items-center">
+                                        <ExternalRepositoryIcon externalRepo={job.subject.externalRepository} />
+                                        <Text className="mb-0">{job.subject.externalRepository.serviceType}</Text>
+                                    </div>
+                                    <Text className="mb-0">{job.subject.externalRepository.serviceID}</Text>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    </>
+                ) : (
+                    <>
+                        <Icon className="mr-2" aria-hidden={true} svgPath={mdiAccount} />
+                        <Link to={`/users/${job.subject.username}`} className="text-truncate">
+                            {job.subject.username}
+                        </Link>
+                        {(job.subject.email || job.subject.displayName) && (
+                            <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
+                                <PopoverTrigger
+                                    as={Button}
+                                    className={classNames('border-0 p-0', styles.actionsButton)}
+                                    variant="secondary"
+                                    outline={true}
+                                >
+                                    <Icon aria-label="Show details" svgPath={mdiChevronDown} />
+                                </PopoverTrigger>
+                                <PopoverContent position={Position.bottom} focusLocked={false}>
+                                    <div className="p-2">
+                                        <Text className="mb-0" weight="bold">
+                                            {job.subject.displayName}
+                                        </Text>
+                                        <Text className="mb-0">{job.subject.email}</Text>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        )}
+                    </>
+                )}
+            </div>
+            {JOB_STATE_METADATA_MAPPING[job.state].timeGetter(job) !== '' && (
+                <Text className="mb-0 text-muted text-truncate">
+                    <small>
+                        {JOB_STATE_METADATA_MAPPING[job.state].temporalWording}{' '}
+                        <Timestamp date={JOB_STATE_METADATA_MAPPING[job.state].timeGetter(job)} />
+                    </small>
+                </Text>
             )}
         </div>
-        {JOB_STATE_METADATA_MAPPING[job.state].timeGetter(job) !== '' && (
-            <Text className="mb-0 text-muted">
-                <small>
-                    {JOB_STATE_METADATA_MAPPING[job.state].temporalWording}{' '}
-                    <Timestamp date={JOB_STATE_METADATA_MAPPING[job.state].timeGetter(job)} />
-                </small>
-            </Text>
-        )}
-    </div>
-)
+    )
+}
 
-export const PermissionsSyncJobReasonByline: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => (
-    <div>
-        <div>{job.reason.group}</div>
-        <Text className="mb-0 text-muted">
-            <small>
-                {job.reason.group === PermissionsSyncJobReasonGroup.MANUAL && job.triggeredByUser?.username
-                    ? `by ${job.triggeredByUser.username}`
-                    : JOB_REASON_TO_READABLE_REASON[job.reason.reason]}
-            </small>
-        </Text>
-    </div>
-)
+export const PermissionsSyncJobReasonByline: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => {
+    const message =
+        job.reason.group === PermissionsSyncJobReasonGroup.MANUAL && job.triggeredByUser?.username
+            ? `by ${job.triggeredByUser.username}`
+            : JOB_REASON_TO_READABLE_REASON[job.reason.reason]
+
+    return (
+        <Tooltip content={message}>
+            <div>
+                <Text className="mb-0" weight="medium">
+                    {job.reason.group}
+                </Text>
+                <Text className="mb-0 text-muted text-truncate">
+                    <small>{message}</small>
+                </Text>
+            </div>
+        </Tooltip>
+    )
+}
 
 export const PermissionsSyncJobNumbers: React.FunctionComponent<{ job: PermissionsSyncJob; added: boolean }> = ({
     job,
     added,
 }) =>
     added ? (
-        <Tooltip
-            content={`Added access for ${job.permissionsAdded} ${
-                job.subject.__typename === 'Repository' ? 'users' : 'repositories'
-            }.`}
-        >
-            <div className="text-success">
-                +<b>{job.permissionsAdded}</b>
-            </div>
-        </Tooltip>
+        <div className="text-success text-right mr-2">
+            +<b>{job.permissionsAdded}</b>
+        </div>
     ) : (
-        <Tooltip
-            content={`Removed access for ${job.permissionsRemoved} ${
-                job.subject.__typename === 'Repository' ? 'users' : 'repositories'
-            }.`}
-        >
-            <div className="text-danger">
-                -<b>{job.permissionsRemoved}</b>
-            </div>
-        </Tooltip>
+        <div className="text-danger text-right mr-2">
+            -<b>{job.permissionsRemoved}</b>
+        </div>
     )

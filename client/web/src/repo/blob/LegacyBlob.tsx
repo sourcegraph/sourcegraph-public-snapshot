@@ -97,7 +97,7 @@ const domFunctions = {
             throw new Error('Could not find closest row for codeCell')
         }
         const numberCell = row.querySelector<HTMLTableCellElement>('td.line')
-        if (!numberCell || !numberCell.dataset.line) {
+        if (!numberCell?.dataset?.line) {
             throw new Error('Could not find line number')
         }
         return parseInt(numberCell.dataset.line, 10)
@@ -196,10 +196,19 @@ export const LegacyBlob: FC<BlobProps> = props => {
         (lineOrPositionOrRange: LineOrPositionOrRange) => locationPositions.next(lineOrPositionOrRange),
         [locationPositions]
     )
-    const parsedHash = useMemo(
-        () => parseQueryAndHash(location.search, location.hash),
-        [location.search, location.hash]
-    )
+    const parsedHash = useMemo(() => {
+        // When an activeURL is passed, it takes presedence over the react
+        // router location API.
+        //
+        // This is needed to support the reference panel
+        if (props.activeURL) {
+            const url = new URL(props.activeURL, window.location.href)
+            return parseQueryAndHash(url.search, url.hash)
+        }
+
+        return parseQueryAndHash(location.search, location.hash)
+    }, [location.search, location.hash, props.activeURL])
+
     useDeepCompareEffect(() => {
         nextLocationPosition(parsedHash)
     }, [parsedHash])

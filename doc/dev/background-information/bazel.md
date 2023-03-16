@@ -2,6 +2,31 @@
 
 Sourcegraph is currently migrating to Bazel as its build system and this page is targeted for early adopters which are helping the [#job-fair-bazel](https://sourcegraph.slack.com/archives/C03LUEB7TJS) team to test their work.
 
+## Early adopters 
+
+If you are an early adopter, you can already get some benefits from Bazel, while we gradually roll it out.  
+
+:bulb: Please note that this is only applicable in PRs. For the `main` branch we need to ensure we use the same build steps for everyone until Bazel is fully rolled out. 
+
+- Before pushing, ensure your changes are refected in the build files (those `BUILD.bazel` files):
+  - If you changed anything to the `go.mod` file, you need to run: 
+    - `bazel run :update-gazelle-repos` 
+  - Run `bazel configure` to ensure the build files are also properly updated.
+- Run your tests locally, with `bazel test //[PATH]/...` where `PATH` refers to the package containing your changes. 
+  - If you changed things in too many places, you can always run `bazel test //...` which will test everything (or reused cached results if applicable). 
+- Include the updated build files in your commit! They are relevant to that commit after all. 
+- When commiting, add the `[force-bazel]` message flag in the description of your commit (not in the commit title, but in the description - it's nicer this way).
+  - If you commit again, remember to add that message flag again. Only the last commit is checked to determine if we want Bazel on that PR. 
+- Push your changes as usual. 
+- When browsing the CI (you can use `sg ci status --web` you'll see a `Bazel` set of jobs running both your tests and build. 
+
+You may find the build and tests to be slow, either locally or in CI. This is because to be efficient, Bazel cache needs to be warm. So inevitably, as early adopters, that will be less the case 
+than when more teammates will be using Bazel. 
+
+:warning: It's highly probable that the build files you updated will include changes that you were not responsible for. This is because not everyone is updating buildfiles. Just commit them anyway and move on. This will be get better over time. 
+
+:warning: If you find your tests to be passing normally with `go test` and on a normal CI build, but not when Bazel is enabled, please check the [FAQ](#faq) below. If you can't solve the problem, just reach us out on [#job-fair-bazel](https://sourcegraph.slack.com/archives/C03LUEB7TJS). 
+
 ## Why do we need a build system?
 
 Building Sourcegraph is a non-trivial task, as it not only ships a frontend and a backend, but also a variety of third parties and components that makes the building process complicated, not only locally but also in CI. Historically, this always have been solved with ad-hoc solutions, such as shell scripts, and caching in various point of the process.
@@ -123,7 +148,7 @@ Bazel ships with a tool named `Gazelle` whose purpose is to take a look at your 
 
 Gazelle and Go: It works almost transparently with Go, it will find all your Go code and infer your dependencies from inspecting your imports. Similarly, it will inspect the `go.mod` to lock down the third parties dependencies required. Because of how well Gazelle-go works, it means that most of the time, you can still rely on your normal Go commands to work. But it's recommended to use Bazel because that's what will be used in CI to build the app and ultimately have the final word in saying if yes or no a PR can be merged. See the [cheat sheet section](#bazel-cheat-sheet) for the commands.
 
-Gazelle and the frontend: TODO
+Gazelle and the frontend: see [Bazel for Web bundle](./bazel_web.md).
 
 ### Bazel cheat sheet
 
@@ -139,7 +164,7 @@ Gazelle and the frontend: TODO
   - ex `bazel build //lib/...` will build everything under the `/lib/...` folder in the Sourcegraph repository.
 - `bazel test [path-to-target]` tests a target.
   - ex `bazel test //lib/...` will run all tests under the `/lib/...` folder in the Sourcegraph repository.
-- `bazel run :gazelle` automatically inspect the source tree and update the buildfiles if needed.
+- `bazel configure` automatically inspect the source tree and update the buildfiles if needed.
 - `bazel run //:gazelle-update-repos` automatically inspect the `go.mod` and update the third parties dependencies if needed.
 
 #### Debugging buildfiles
@@ -178,10 +203,25 @@ So when a change is detected, `iBazel` will build the affected target and it wil
 
 ##### Caveats
 
-- You still need to run `bazel run :gazelle -- fix` if you add/remove files or packages.
+- You still need to run `bazel configure` if you add/remove files or packages.
 - Error handling is not perfect, so if a build fails, that might stop the whole thing. We'll improve this in the upcoming days, as we gather feedback.
 
 ## FAQ
+
+### General
+
+#### The analysis cache is being busted because of `--action_env` 
+
+Typically you'll see this (in CI or locally):
+
+```
+INFO: Build option --action_env has changed, discarding analysis cache.
+```
+
+- If you added a `build --action_env=VAR` to one of the `bazelrc`s, and `$VAR` is not stable across builds, it will break the analysis cache. You should never pass a variable that is not stable, otherwise, the cache being busted is totally expected and there is no way around it. 
+  - Use `build --action_env=VAR=123` instead to pin it down if it's not stable in your environment.
+- If you added a `test --action_env=VAR`, running `bazel build [...]` will have a different `--action_env` and because the analysis cache is the same for `build` and `test` that will automatically bust the cache. 
+  - Use `build --test_env=VAR` instead, so that env is used only in tests, and doesn't affect builds, while avoiding to bust the cache.
 
 ### Go
 
@@ -215,7 +255,7 @@ INFO: 36 processes: 2 internal, 34 darwin-sandbox.
 ```
 
 
-Solution: run `bazel run //:gazelle` to update the buildfiles automatically.
+Solution: run `bazel configure` to update the buildfiles automatically.
 
 
 #### My go tests complains about missing testdata
@@ -237,6 +277,62 @@ To retrieve these values:
 ```
 bazel run //.aspect/bazelrc:update_aspect_bazelrc_presets
 ```
+
+### Rust
+
+#### I'm getting `Error in path: Not a regular file: docker-images/syntax-highlighter/Cargo.Bazel.lock` when I try to build `syntax-highlighter`
+
+Below is a full example of this error:
+```
+ERROR: An error occurred during the fetch of repository 'crate_index':
+   Traceback (most recent call last):
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/crates_repository.bzl", line 34, column 30, in _crates_repository_impl
+                lockfiles = get_lockfiles(repository_ctx)
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/generate_utils.bzl", line 311, column 36, in get_lockfiles
+                bazel = repository_ctx.path(repository_ctx.attr.lockfile) if repository_ctx.attr.lockfile else None,
+Error in path: Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/Cargo.Bazel.lock
+ERROR: /Users/william/code/sourcegraph/WORKSPACE:197:18: fetching crates_repository rule //external:crate_index: Traceback (most recent call last):
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/crates_repository.bzl", line 34, column 30, in _crates_repository_impl
+                lockfiles = get_lockfiles(repository_ctx)
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/generate_utils.bzl", line 311, column 36, in get_lockfiles
+                bazel = repository_ctx.path(repository_ctx.attr.lockfile) if repository_ctx.attr.lockfile else None,
+Error in path: Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/fake.lock
+ERROR: Error computing the main repository mapping: no such package '@crate_index//': Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/Cargo.Bazel.lock
+```
+The error happens when the file specified in the lockfiles attribute of `crates_repository` (see WORKSPACE file for the definition) does not exist on disk. Currently this rule does not generate the file, instead it just generates the _content_ of the file. So to get passed this error you should create the file `touch docker-images/syntax-highlighter/Cargo.Bazel.lock`. With the file create it we can now populate `Cargo.Bazel.lock` with content using bazel by running `CARGO_BAZEL_REPIN=1 bazel sync --only=crates_index`.
+
+### When I build `syntax-highlighter` it complains that the current `lockfile` is out of date
+The error will look like this:
+```
+INFO: Repository crate_index instantiated at:
+  /Users/william/code/sourcegraph/WORKSPACE:197:18: in <toplevel>
+Repository rule crates_repository defined at:
+  /private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/crates_repository.bzl:106:36: in <toplevel>
+INFO: repository @crate_index' used the following cache hits instead of downloading the corresponding file.
+ * Hash 'dc2d47b42cbe92ebdb144555603dad08eae505fc459bae5e2503647919067ac8' for https://github.com/bazelbuild/rules_rust/releases/download/0.16.1/cargo-bazel-aarch64-apple-darwin
+If the definition of 'repository @crate_index' was updated, verify that the hashes were also updated.
+ERROR: An error occurred during the fetch of repository 'crate_index':
+   Traceback (most recent call last):
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/crates_repository.bzl", line 45, column 28, in _crates_repository_impl
+                repin = determine_repin(
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/generate_utils.bzl", line 374, column 13, in determine_repin
+                fail(("\n".join([
+Error in fail: Digests do not match: Digest("3e9e0f927c955efa39a58c472a2eac60e3f89a7f3eafc7452e9acf23adf8ce5a") != Digest("ef858ae49063d5c22e0ee0b7632a8ced4994315395b17fb3c61f3e6bfb6deb27")
+
+The current `lockfile` is out of date for 'crate_index'. Please re-run bazel using `CARGO_BAZEL_REPIN=true` if this is expected and the lockfile should be updated.
+ERROR: /Users/william/code/sourcegraph/WORKSPACE:197:18: fetching crates_repository rule //external:crate_index: Traceback (most recent call last):
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/crates_repository.bzl", line 45, column 28, in _crates_repository_impl
+                repin = determine_repin(
+        File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/generate_utils.bzl", line 374, column 13, in determine_repin
+                fail(("\n".join([
+Error in fail: Digests do not match: Digest("3e9e0f927c955efa39a58c472a2eac60e3f89a7f3eafc7452e9acf23adf8ce5a") != Digest("ef858ae49063d5c22e0ee0b7632a8ced4994315395b17fb3c61f3e6bfb6deb27")
+
+The current `lockfile` is out of date for 'crate_index'. Please re-run bazel using `CARGO_BAZEL_REPIN=true` if this is expected and the lockfile should be updated.
+ERROR: Error computing the main repository mapping: no such package '@crate_index//': Digests do not match: Digest("3e9e0f927c955efa39a58c472a2eac60e3f89a7f3eafc7452e9acf23adf8ce5a") != Digest("ef858ae49063d5c22e0ee0b7632a8ced4994315395b17fb3c61f3e6bfb6deb27")
+
+The current `lockfile` is out of date for 'crate_index'. Please re-run bazel using `CARGO_BAZEL_REPIN=true` if this is expected and the lockfile should be updated.
+```
+Bazel uses a separate lock file to keep track of the dependencies and needs to be updated. To update the `lockfile` run `CARGO_BAZEL_REPIN=1 bazel sync --only=crates_index`. This command takes a while to execute as it fetches all the dependencies specified in `Cargo.lock` and populates `Cargo.Bazel.lock`.
 
 ## Resources
 

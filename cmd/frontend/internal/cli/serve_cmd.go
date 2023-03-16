@@ -36,6 +36,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -49,7 +51,7 @@ import (
 )
 
 var (
-	printLogo = env.MustGetBool("LOGO", deploy.IsDeployTypeSingleProgram(deploy.Type()), "print Sourcegraph logo upon startup")
+	printLogo = env.MustGetBool("LOGO", deploy.IsApp(), "print Sourcegraph logo upon startup")
 
 	httpAddr = env.Get("SRC_HTTP_ADDR", func() string {
 		if env.InsecureDev {
@@ -203,7 +205,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
 
-	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+	if deploy.IsApp() {
 		enterpriseServices.OptionalResolver.AppResolver = graphqlbackend.NewAppResolver(logger, db)
 	}
 
@@ -248,7 +250,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// We only want to run this task once Sourcegraph is ready to serve user requests.
 	goroutine.Go(func() { bg.AppReady(logger) })
-
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil
 }
@@ -315,16 +316,21 @@ func makeInternalAPI(
 		return nil, err
 	}
 
+	grpcServer := defaults.NewServer(logger)
+
 	// The internal HTTP handler does not include the auth handlers.
 	internalHandler := newInternalHTTPHandler(
 		schema,
 		db,
+		grpcServer,
 		enterprise.EnterpriseSearchJobs,
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.RankingService,
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
 	)
+	internalHandler = internalgrpc.MultiplexHandlers(grpcServer, internalHandler)
+
 	httpServer := &http.Server{
 		Handler:     internalHandler,
 		ReadTimeout: 75 * time.Second,
@@ -389,4 +395,9 @@ func redispoolRegisterDB(db database.DB) error {
 			return f(tx)
 		})
 	})
+}
+
+// GetInternalAddr returns the address of the internal HTTP API server.
+func GetInternalAddr() string {
+	return httpAddrInternal
 }

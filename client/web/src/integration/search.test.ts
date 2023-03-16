@@ -77,6 +77,10 @@ const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedG
             builtinAuth: true,
             tags: [],
             createdAt: '2020-03-02T11:52:15Z',
+            roles: {
+                __typename: 'RoleConnection',
+                nodes: [],
+            },
         },
     }),
 }

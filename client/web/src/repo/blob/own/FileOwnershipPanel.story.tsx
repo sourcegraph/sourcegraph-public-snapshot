@@ -31,6 +31,11 @@ const response: FetchOwnershipResult = {
                                     __typename: 'CodeownersFileEntry',
                                     title: 'CodeOwner',
                                     description: 'This person is listed in the CODEOWNERS file',
+                                    codeownersFile: {
+                                        __typename: 'VirtualFile',
+                                        url: '/own',
+                                    },
+                                    ruleLineMatch: 10,
                                 },
                             ],
                         },
@@ -46,6 +51,10 @@ const response: FetchOwnershipResult = {
                                     displayName: 'Bob the Builder',
                                     url: '/users/bob',
                                     username: 'bob',
+                                    primaryEmail: {
+                                        __typename: 'UserEmail',
+                                        email: 'bob-primary@example.com',
+                                    },
                                 },
                             },
                             reasons: [
@@ -53,6 +62,11 @@ const response: FetchOwnershipResult = {
                                     __typename: 'CodeownersFileEntry',
                                     title: 'CodeOwner',
                                     description: 'This person is listed in the CODEOWNERS file',
+                                    codeownersFile: {
+                                        __typename: 'VirtualFile',
+                                        url: '/own',
+                                    },
+                                    ruleLineMatch: 10,
                                 },
                             ],
                         },
@@ -70,6 +84,11 @@ const response: FetchOwnershipResult = {
                                     __typename: 'CodeownersFileEntry',
                                     title: 'CodeOwner',
                                     description: 'This person is listed in the CODEOWNERS file',
+                                    codeownersFile: {
+                                        __typename: 'VirtualFile',
+                                        url: '/own',
+                                    },
+                                    ruleLineMatch: 10,
                                 },
                             ],
                         },
@@ -87,6 +106,11 @@ const response: FetchOwnershipResult = {
                                     __typename: 'CodeownersFileEntry',
                                     title: 'CodeOwner',
                                     description: 'This team is listed in the CODEOWNERS file',
+                                    codeownersFile: {
+                                        __typename: 'VirtualFile',
+                                        url: '/own',
+                                    },
+                                    ruleLineMatch: 10,
                                 },
                             ],
                         },

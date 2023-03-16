@@ -411,6 +411,14 @@ CREATE FUNCTION func_lsif_uploads_update() RETURNS trigger
     END;
 $$;
 
+CREATE FUNCTION func_package_repo_filters_updated_at() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.updated_at = statement_timestamp();
+    RETURN NEW;
+END $$;
+
 CREATE FUNCTION func_row_to_configuration_policies_transition_columns(rec record) RETURNS configuration_policies_transition_columns
     LANGUAGE plpgsql
     AS $$
@@ -815,12 +823,6 @@ BEGIN
     RETURN NEW;
 END $$;
 
-CREATE AGGREGATE sg_jsonb_concat_agg(jsonb) (
-    SFUNC = jsonb_concat,
-    STYPE = jsonb,
-    INITCOND = '{}'
-);
-
 CREATE AGGREGATE snapshot_transition_columns(hstore[]) (
     SFUNC = merge_audit_log_transitions,
     STYPE = hstore,
@@ -1193,6 +1195,7 @@ CREATE TABLE changesets (
     detached_at timestamp with time zone,
     computed_state text NOT NULL,
     external_fork_name citext,
+    previous_failure_message text,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -2560,7 +2563,9 @@ ALTER SEQUENCE lsif_dependency_indexing_jobs_id_seq1 OWNED BY lsif_dependency_in
 CREATE TABLE lsif_dependency_repos (
     id bigint NOT NULL,
     name text NOT NULL,
-    scheme text NOT NULL
+    scheme text NOT NULL,
+    blocked boolean DEFAULT false NOT NULL,
+    last_checked_at timestamp with time zone
 );
 
 CREATE SEQUENCE lsif_dependency_repos_id_seq
@@ -3398,10 +3403,34 @@ CREATE VIEW outbound_webhooks_with_event_types AS
           WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
    FROM outbound_webhooks;
 
+CREATE TABLE package_repo_filters (
+    id integer NOT NULL,
+    behaviour text NOT NULL,
+    scheme text NOT NULL,
+    matcher jsonb NOT NULL,
+    deleted_at timestamp with time zone,
+    updated_at timestamp with time zone DEFAULT statement_timestamp() NOT NULL,
+    CONSTRAINT package_repo_filters_behaviour_is_allow_or_block CHECK ((behaviour = ANY ('{BLOCK,ALLOW}'::text[]))),
+    CONSTRAINT package_repo_filters_is_pkgrepo_scheme CHECK ((scheme = ANY ('{semanticdb,npm,go,python,rust-analyzer,scip-ruby}'::text[]))),
+    CONSTRAINT package_repo_filters_valid_oneof_glob CHECK ((((matcher ? 'VersionGlob'::text) AND ((matcher ->> 'VersionGlob'::text) <> ''::text) AND ((matcher ->> 'PackageName'::text) <> ''::text) AND (NOT (matcher ? 'PackageGlob'::text))) OR ((matcher ? 'PackageGlob'::text) AND ((matcher ->> 'PackageGlob'::text) <> ''::text) AND (NOT (matcher ? 'VersionGlob'::text)))))
+);
+
+CREATE SEQUENCE package_repo_filters_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE package_repo_filters_id_seq OWNED BY package_repo_filters.id;
+
 CREATE TABLE package_repo_versions (
     id bigint NOT NULL,
     package_id bigint NOT NULL,
-    version text NOT NULL
+    version text NOT NULL,
+    blocked boolean DEFAULT false NOT NULL,
+    last_checked_at timestamp with time zone
 );
 
 CREATE SEQUENCE package_repo_versions_id_seq
@@ -3592,7 +3621,8 @@ CREATE VIEW reconciler_changesets AS
     c.last_heartbeat_at,
     c.external_fork_name,
     c.external_fork_namespace,
-    c.detached_at
+    c.detached_at,
+    c.previous_failure_message
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1
@@ -3744,13 +3774,10 @@ CREATE TABLE role_permissions (
 
 CREATE TABLE roles (
     id integer NOT NULL,
-    name text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     system boolean DEFAULT false NOT NULL,
-    CONSTRAINT name_not_blank CHECK ((name <> ''::text))
+    name citext NOT NULL
 );
-
-COMMENT ON COLUMN roles.name IS 'The uniquely identifying name of the role.';
 
 COMMENT ON COLUMN roles.system IS 'This is used to indicate whether a role is read-only or can be modified.';
 
@@ -4439,6 +4466,8 @@ ALTER TABLE ONLY outbound_webhook_logs ALTER COLUMN id SET DEFAULT nextval('outb
 
 ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound_webhooks_id_seq'::regclass);
 
+ALTER TABLE ONLY package_repo_filters ALTER COLUMN id SET DEFAULT nextval('package_repo_filters_id_seq'::regclass);
+
 ALTER TABLE ONLY package_repo_versions ALTER COLUMN id SET DEFAULT nextval('package_repo_versions_id_seq'::regclass);
 
 ALTER TABLE ONLY permission_sync_jobs ALTER COLUMN id SET DEFAULT nextval('permission_sync_jobs_id_seq'::regclass);
@@ -4805,6 +4834,9 @@ ALTER TABLE ONLY outbound_webhook_logs
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY package_repo_filters
+    ADD CONSTRAINT package_repo_filters_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY package_repo_versions
     ADD CONSTRAINT package_repo_versions_pkey PRIMARY KEY (id);
 
@@ -4855,9 +4887,6 @@ ALTER TABLE ONLY repo
 
 ALTER TABLE ONLY role_permissions
     ADD CONSTRAINT role_permissions_pkey PRIMARY KEY (permission_id, role_id);
-
-ALTER TABLE ONLY roles
-    ADD CONSTRAINT roles_name UNIQUE (name);
 
 ALTER TABLE ONLY roles
     ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
@@ -4994,8 +5023,6 @@ CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING 
 
 CREATE INDEX batch_spec_workspaces_id_batch_spec_id ON batch_spec_workspaces USING btree (id, batch_spec_id);
 
-CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id);
-
 CREATE UNIQUE INDEX batch_specs_unique_rand_id ON batch_specs USING btree (rand_id);
 
 CREATE INDEX cached_available_indexers_num_events ON cached_available_indexers USING btree (num_events DESC) WHERE ((available_indexers)::text <> '{}'::text);
@@ -5013,8 +5040,6 @@ CREATE INDEX changeset_specs_created_at ON changeset_specs USING btree (created_
 CREATE INDEX changeset_specs_external_id ON changeset_specs USING btree (external_id);
 
 CREATE INDEX changeset_specs_head_ref ON changeset_specs USING btree (head_ref);
-
-CREATE INDEX changeset_specs_rand_id ON changeset_specs USING btree (rand_id);
 
 CREATE INDEX changeset_specs_title ON changeset_specs USING btree (title);
 
@@ -5052,21 +5077,21 @@ CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_
 
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
 
+CREATE INDEX codeintel_path_ranks_graph_key ON codeintel_path_ranks USING btree (graph_key, updated_at NULLS FIRST, id);
+
 CREATE UNIQUE INDEX codeintel_path_ranks_repository_id ON codeintel_path_ranks USING btree (repository_id);
 
-CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id);
+CREATE INDEX codeintel_path_ranks_repository_id_updated_at_id ON codeintel_path_ranks USING btree (repository_id, updated_at NULLS FIRST, id);
 
 CREATE INDEX codeintel_ranking_definitions_graph_key_last_scanned_at_id ON codeintel_ranking_definitions USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 
-CREATE INDEX codeintel_ranking_definitions_symbol_name ON codeintel_ranking_definitions USING btree (symbol_name);
-
-CREATE INDEX codeintel_ranking_definitions_upload_id ON codeintel_ranking_definitions USING btree (upload_id);
+CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, upload_id, document_path);
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_and_repository_i ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id);
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) WHERE (NOT processed);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) INCLUDE (document_path) WHERE (NOT processed);
+CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_references USING btree (graph_key, id);
 
 CREATE INDEX codeintel_ranking_references_graph_key_last_scanned_at_id ON codeintel_ranking_references USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 
@@ -5103,8 +5128,6 @@ CREATE INDEX event_logs_source ON event_logs USING btree (source);
 CREATE INDEX event_logs_timestamp ON event_logs USING btree ("timestamp");
 
 CREATE INDEX event_logs_timestamp_at_utc ON event_logs USING btree (date(timezone('UTC'::text, "timestamp")));
-
-CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
 
 CREATE INDEX event_logs_user_id_name ON event_logs USING btree (user_id, name);
 
@@ -5166,6 +5189,10 @@ CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING 
 
 CREATE INDEX gitserver_repos_shard_id ON gitserver_repos USING btree (shard_id, repo_id);
 
+CREATE INDEX idx_repo_github_topics ON repo USING gin ((((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text))) WHERE (external_service_type = 'github'::text);
+
+COMMENT ON INDEX idx_repo_github_topics IS 'An index to speed up listing repos by topic. Intended to be used when TopicFilters are added to the RepoListOptions';
+
 CREATE INDEX insights_query_runner_jobs_cost_idx ON insights_query_runner_jobs USING btree (cost);
 
 CREATE INDEX insights_query_runner_jobs_dependencies_job_id_fk_idx ON insights_query_runner_jobs_dependencies USING btree (job_id);
@@ -5186,7 +5213,15 @@ CREATE INDEX lsif_dependency_indexing_jobs_state ON lsif_dependency_indexing_job
 
 CREATE INDEX lsif_dependency_indexing_jobs_upload_id ON lsif_dependency_syncing_jobs USING btree (upload_id);
 
-CREATE INDEX lsif_dependency_repos_name_idx ON lsif_dependency_repos USING btree (name);
+CREATE INDEX lsif_dependency_repos_blocked ON lsif_dependency_repos USING btree (blocked);
+
+CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at);
+
+CREATE INDEX lsif_dependency_repos_name_id ON lsif_dependency_repos USING btree (name, id);
+
+CREATE INDEX lsif_dependency_repos_scheme_id ON lsif_dependency_repos USING btree (scheme, id);
+
+CREATE UNIQUE INDEX lsif_dependency_repos_unique_scheme_name ON lsif_dependency_repos USING btree (scheme, name);
 
 CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs USING btree (state);
 
@@ -5266,7 +5301,11 @@ CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs
 
 CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code);
 
-CREATE INDEX package_repo_versions_fk_idx ON package_repo_versions USING btree (package_id);
+CREATE UNIQUE INDEX package_repo_filters_unique_matcher_per_scheme ON package_repo_filters USING btree (scheme, matcher);
+
+CREATE INDEX package_repo_versions_blocked ON package_repo_versions USING btree (blocked);
+
+CREATE INDEX package_repo_versions_last_checked_at ON package_repo_versions USING btree (last_checked_at);
 
 CREATE UNIQUE INDEX package_repo_versions_unique_version_per_package ON package_repo_versions USING btree (package_id, version);
 
@@ -5356,6 +5395,8 @@ CREATE UNIQUE INDEX teams_name ON teams USING btree (name);
 
 CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, user_id);
 
+CREATE UNIQUE INDEX unique_role_name ON roles USING btree (name);
+
 CREATE INDEX user_credentials_credential_idx ON user_credentials USING btree (((encryption_key_id = ANY (ARRAY[''::text, 'previously-migrated'::text]))));
 
 CREATE UNIQUE INDEX user_emails_user_id_is_primary_idx ON user_emails USING btree (user_id, is_primary) WHERE (is_primary = true);
@@ -5375,8 +5416,6 @@ CREATE INDEX user_repo_permissions_source_idx ON user_repo_permissions USING btr
 CREATE INDEX user_repo_permissions_updated_at_idx ON user_repo_permissions USING btree (updated_at);
 
 CREATE INDEX user_repo_permissions_user_external_account_id_idx ON user_repo_permissions USING btree (user_external_account_id);
-
-CREATE INDEX user_repo_permissions_user_id_idx ON user_repo_permissions USING btree (user_id);
 
 CREATE UNIQUE INDEX users_billing_customer_id ON users USING btree (billing_customer_id) WHERE (deleted_at IS NULL);
 
@@ -5451,6 +5490,8 @@ CREATE TRIGGER trigger_lsif_uploads_delete AFTER DELETE ON lsif_uploads REFERENC
 CREATE TRIGGER trigger_lsif_uploads_insert AFTER INSERT ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_insert();
 
 CREATE TRIGGER trigger_lsif_uploads_update BEFORE UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update();
+
+CREATE TRIGGER trigger_package_repo_filters_updated_at BEFORE UPDATE ON package_repo_filters FOR EACH ROW WHEN ((old.* IS DISTINCT FROM new.*)) EXECUTE FUNCTION func_package_repo_filters_updated_at();
 
 CREATE TRIGGER update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();
 
@@ -5965,7 +6006,7 @@ INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retenti
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
 
-INSERT INTO roles VALUES (1, 'USER', '2023-01-04 16:29:41.195966+00', true);
-INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', true);
+INSERT INTO roles VALUES (1, '2023-01-04 16:29:41.195966+00', true, 'USER');
+INSERT INTO roles VALUES (2, '2023-01-04 16:29:41.195966+00', true, 'SITE_ADMINISTRATOR');
 
 SELECT pg_catalog.setval('roles_id_seq', 3, true);

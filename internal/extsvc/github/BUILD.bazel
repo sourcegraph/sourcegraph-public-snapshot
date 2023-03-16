@@ -23,7 +23,6 @@ go_library(
         "//internal/metrics",
         "//internal/oauthutil",
         "//internal/ratelimit",
-        "//internal/timeutil",
         "//internal/trace/ot",
         "//lib/errors",
         "@com_github_golang_jwt_jwt_v4//:jwt",
@@ -40,6 +39,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "github_test",
     srcs = [
         "common_test.go",

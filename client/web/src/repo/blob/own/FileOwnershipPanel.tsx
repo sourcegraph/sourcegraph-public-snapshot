@@ -65,7 +65,13 @@ export const FileOwnershipPanel: React.FunctionComponent<
         return (
             <div className={styles.contents}>
                 <OwnExplanation />
-                <Accordion as="table" collapsible={true} multiple={true} className={styles.table}>
+                <Accordion
+                    as="table"
+                    collapsible={true}
+                    multiple={true}
+                    className={styles.table}
+                    onChange={() => telemetryService.log('filePage:ownershipPanel:viewOwnerDetail:clicked')}
+                >
                     <thead className="sr-only">
                         <tr>
                             <th>Show details</th>

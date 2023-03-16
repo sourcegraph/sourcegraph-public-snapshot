@@ -24,9 +24,8 @@ import classNames from 'classnames'
 
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
-
 import { blobPropsFacet } from './index'
+import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
 
 /**
  * Represents the currently selected line range. null means no lines are

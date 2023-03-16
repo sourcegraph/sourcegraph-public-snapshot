@@ -65,6 +65,16 @@ type ApiRatelimit struct {
 	// PerUser description: Limit granted per user per hour
 	PerUser int `json:"perUser"`
 }
+type AppNotifications struct {
+	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.
+	Key string `json:"key"`
+	// Message description: The Markdown message to display
+	Message string `json:"message"`
+	// VersionMax description: If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.
+	VersionMax string `json:"version.max,omitempty"`
+	// VersionMin description: If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.
+	VersionMin string `json:"version.min,omitempty"`
+}
 
 // AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 type AuditLog struct {
@@ -203,15 +213,15 @@ type AzureDevOpsAuthProvider struct {
 type AzureDevOpsConnection struct {
 	// EnforcePermissions description: A flag to enforce Azure DevOps repository access permissions
 	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
-	// Exclude description: A list of repositories to never mirror from this Azure DevOps Services/Server instance.
+	// Exclude description: A list of repositories to never mirror from Azure DevOps Services.
 	Exclude []*ExcludedAzureDevOpsServerRepo `json:"exclude,omitempty"`
 	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
-	// Projects description: An array of projects "org/project" strings specifying which Azure DevOps whose repositories should be mirrored on Sourcegraph.
+	// Projects description: An array of projects "org/project" strings specifying which Azure DevOps projects' repositories should be mirrored on Sourcegraph.
 	Projects []string `json:"projects,omitempty"`
 	// Token description: The Personal Access Token associated with the Azure DevOps username used for authentication.
 	Token string `json:"token"`
-	// Url description: URL of a Azure DevOps Services/Server instance, such as https://dev.azure.com.
+	// Url description: URL for Azure DevOps Services, set to https://dev.azure.com.
 	Url string `json:"url"`
 	// Username description: A username for authentication with the Azure DevOps code host.
 	Username string `json:"username"`
@@ -534,12 +544,6 @@ type CloudKMSEncryptionKey struct {
 	Keyname         string `json:"keyname"`
 	Type            string `json:"type"`
 }
-type CodeIntelRepositoryBadge struct {
-	// Enabled description: Show the code intelligence badge when viewing a repository.
-	Enabled bool `json:"enabled"`
-	// ForNerds description: Show entirely too much information.
-	ForNerds *bool `json:"forNerds,omitempty"`
-}
 
 // Completions description: Configuration for the completions service.
 type Completions struct {
@@ -569,6 +573,8 @@ type DebugLog struct {
 
 // Dotcom description: Configuration options for Sourcegraph.com only.
 type Dotcom struct {
+	// AppNotifications description: Notifications to display in the Sourcegraph app.
+	AppNotifications []*AppNotifications `json:"app.notifications,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
@@ -669,9 +675,9 @@ type ExcludedAWSCodeCommitRepo struct {
 	Name string `json:"name,omitempty"`
 }
 type ExcludedAzureDevOpsServerRepo struct {
-	// Name description: The name of an Azure DevOps Services/Server project and repository ("projectName/repositoryName") to exclude from mirroring.
+	// Name description: The name of an Azure DevOps Services organization, project, and repository ("orgName/projectName/repositoryName") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
-	// Pattern description: Regular expression which matches against the name of an Azure DevOps Services/Server repo.
+	// Pattern description: Regular expression which matches against the name of an Azure DevOps Services repo.
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedBitbucketCloudRepo struct {
@@ -741,8 +747,6 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// AccessRequestEnabled description: Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.
 	AccessRequestEnabled *bool `json:"accessRequest.enabled,omitempty"`
-	// AzureDevOps description: Allow adding Azure DevOps code host connections
-	AzureDevOps string `json:"azureDevOps,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
@@ -838,7 +842,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "accessRequest.enabled")
-	delete(m, "azureDevOps")
 	delete(m, "bitbucketServerFastPerm")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
@@ -1402,6 +1405,12 @@ type Notice struct {
 	// Message description: The message to display. Markdown formatting is supported.
 	Message string `json:"message"`
 }
+type Notifications struct {
+	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.
+	Key string `json:"key"`
+	// Message description: The Markdown message to display
+	Message string `json:"message"`
+}
 type Notifier struct {
 	Slack     *NotifierSlack
 	Pagerduty *NotifierPagerduty
@@ -1624,9 +1633,11 @@ type OtherExternalServiceConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	//
-	// Note: These patterns are ignored if using src-expose / src-serve.
+	// Note: These patterns are ignored if using src-expose / src-serve / src-serve-local.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	Url                   string `json:"url,omitempty"`
+	// Root description: The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Sourcegraph App and define the repos configuration property such as ["src-serve-local"].
+	Root string `json:"root,omitempty"`
+	Url  string `json:"url,omitempty"`
 }
 type OutputVariable struct {
 	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
@@ -2145,8 +2156,7 @@ type SettingsExperimentalFeatures struct {
 	// CodeInsightsLandingPage description: DEPRECATED: Enables code insights landing page layout.
 	CodeInsightsLandingPage *bool `json:"codeInsightsLandingPage,omitempty"`
 	// CodeInsightsRepoUI description: Specifies which (code insight repo) editor to use for repo query UI
-	CodeInsightsRepoUI       *string                   `json:"codeInsightsRepoUI,omitempty"`
-	CodeIntelRepositoryBadge *CodeIntelRepositoryBadge `json:"codeIntelRepositoryBadge,omitempty"`
+	CodeInsightsRepoUI *string `json:"codeInsightsRepoUI,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
 	CodeMonitoringWebHooks *bool `json:"codeMonitoringWebHooks,omitempty"`
 	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
@@ -2183,8 +2193,6 @@ type SettingsExperimentalFeatures struct {
 	SearchQueryInput *string `json:"searchQueryInput,omitempty"`
 	// SearchResultsAggregations description: Display aggregations for your search results on the search screen.
 	SearchResultsAggregations *bool `json:"searchResultsAggregations,omitempty"`
-	// SetupWizard description: Experimental setup wizard
-	SetupWizard *bool `json:"setupWizard,omitempty"`
 	// ShowCodeMonitoringLogs description: Shows code monitoring logs tab.
 	ShowCodeMonitoringLogs *bool `json:"showCodeMonitoringLogs,omitempty"`
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
@@ -2231,7 +2239,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeInsightsCompute")
 	delete(m, "codeInsightsLandingPage")
 	delete(m, "codeInsightsRepoUI")
-	delete(m, "codeIntelRepositoryBadge")
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "enableCodeMirrorFileView")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
@@ -2250,7 +2257,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "searchContextsQuery")
 	delete(m, "searchQueryInput")
 	delete(m, "searchResultsAggregations")
-	delete(m, "setupWizard")
 	delete(m, "showCodeMonitoringLogs")
 	delete(m, "showMultilineSearchConsole")
 	delete(m, "symbolKindTags")
@@ -2369,7 +2375,7 @@ type SiteConfiguration struct {
 	CodeIntelRankingDocumentReferenceCountsEnabled *bool `json:"codeIntelRanking.documentReferenceCountsEnabled,omitempty"`
 	// CodeIntelRankingDocumentReferenceCountsGraphKey description: An arbitrary identifier used to group calculated rankings from SCIP data (including the SCIP export).
 	CodeIntelRankingDocumentReferenceCountsGraphKey string `json:"codeIntelRanking.documentReferenceCountsGraphKey,omitempty"`
-	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 72hrs.
+	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 24hrs.
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
@@ -2474,6 +2480,8 @@ type SiteConfiguration struct {
 	LsifEnforceAuth bool `json:"lsifEnforceAuth,omitempty"`
 	// MaxReposToSearch description: DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
+	// Notifications description: Notifications recieved from Sourcegraph.com to display in Sourcegraph.
+	Notifications []*Notifications `json:"notifications,omitempty"`
 	// ObservabilityAlerts description: Configure notifications for Sourcegraph's built-in alerts.
 	ObservabilityAlerts []*ObservabilityAlerts `json:"observability.alerts,omitempty"`
 	// ObservabilityCaptureSlowGraphQLRequestsLimit description: (debug) Set a limit to the amount of captured slow GraphQL requests being stored for visualization. For defining the threshold for a slow GraphQL request, see observability.logSlowGraphQLRequests.
@@ -2492,6 +2500,8 @@ type SiteConfiguration struct {
 	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
 	// OutboundRequestLogLimit description: The maximum number of outbound requests to retain. This is a global limit across all outbound requests. If the limit is exceeded, older items will be deleted. If the limit is 0, no outbound requests are logged.
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit,omitempty"`
+	// OwnBestEffortTeamMatching description: The Own service will attempt to match a Team by the last part of its handle if it contains a slash and no match is found for its full handle.
+	OwnBestEffortTeamMatching *bool `json:"own.bestEffortTeamMatching,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
 	// PermissionsSyncJobCleanupInterval description: Time interval (in seconds) of how often cleanup worker should remove old jobs from permissions sync jobs table.
@@ -2524,6 +2534,8 @@ type SiteConfiguration struct {
 	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
 	// ScimAuthToken description: DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.
 	ScimAuthToken string `json:"scim.authToken,omitempty"`
+	// ScimIdentityProvider description: Identity provider used for SCIM support.  "STANDARD" should be used unless a more specific value is available
+	ScimIdentityProvider string `json:"scim.identityProvider,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
 	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.
@@ -2652,6 +2664,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "log")
 	delete(m, "lsifEnforceAuth")
 	delete(m, "maxReposToSearch")
+	delete(m, "notifications")
 	delete(m, "observability.alerts")
 	delete(m, "observability.captureSlowGraphQLRequestsLimit")
 	delete(m, "observability.client")
@@ -2661,6 +2674,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "observability.tracing")
 	delete(m, "organizationInvitations")
 	delete(m, "outboundRequestLogLimit")
+	delete(m, "own.bestEffortTeamMatching")
 	delete(m, "parentSourcegraph")
 	delete(m, "permissions.syncJobCleanupInterval")
 	delete(m, "permissions.syncJobsHistorySize")
@@ -2677,6 +2691,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "repoListUpdateInterval")
 	delete(m, "repoPurgeWorker")
 	delete(m, "scim.authToken")
+	delete(m, "scim.identityProvider")
 	delete(m, "search.index.symbols.enabled")
 	delete(m, "search.largeFiles")
 	delete(m, "search.limits")

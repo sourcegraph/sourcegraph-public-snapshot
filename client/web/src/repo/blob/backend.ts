@@ -114,7 +114,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
 export const usePrefetchBlobFormat = (): HighlightResponseFormat => {
     const { enableCodeMirror, enableLazyHighlighting } = useExperimentalFeatures(features => ({
         enableCodeMirror: features.enableCodeMirrorFileView ?? true,
-        enableLazyHighlighting: features.enableLazyBlobSyntaxHighlighting ?? false,
+        enableLazyHighlighting: features.enableLazyBlobSyntaxHighlighting ?? true,
     }))
 
     /**

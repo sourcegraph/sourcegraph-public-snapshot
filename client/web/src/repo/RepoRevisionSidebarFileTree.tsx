@@ -20,13 +20,14 @@ import {
     TreeNode as WildcardTreeNode,
     Link,
     LoadingSpinner,
-    Tree,
     Tooltip,
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 import { dirname } from '../util/path'
+
+import { FocusableTree, FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
 
@@ -75,7 +76,7 @@ type FileTreeEntry = Extract<
     { __typename?: 'GitTree' }
 >['entries'][number]
 
-interface Props {
+interface Props extends FocusableTreeProps {
     commitID: string
     initialFilePath: string
     initialFilePathIsDirectory: boolean
@@ -86,6 +87,7 @@ interface Props {
     revision: string
     telemetryService: TelemetryService
 }
+
 export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props => {
     const { telemetryService, onExpandParent } = props
 
@@ -355,7 +357,8 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     }
 
     return (
-        <Tree<TreeNode>
+        <FocusableTree<TreeNode>
+            focusKey={props.focusKey}
             data={treeData.nodes}
             aria-label="file tree"
             selectedIds={selectedIds}

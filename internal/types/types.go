@@ -825,6 +825,7 @@ type User struct {
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	Searchable            bool
+	SCIMControlled        bool
 }
 
 // UserForSCIM extends user with email addresses and SCIM external ID.
@@ -974,9 +975,10 @@ type UserDates struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type SiteUsageStatistics struct {
-	DAUs []*SiteActivityPeriod
-	WAUs []*SiteActivityPeriod
-	MAUs []*SiteActivityPeriod
+	DAUs  []*SiteActivityPeriod
+	WAUs  []*SiteActivityPeriod
+	MAUs  []*SiteActivityPeriod
+	RMAUs []*SiteActivityPeriod
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -1299,18 +1301,22 @@ type SearchEventLatencies struct {
 // SiteUsageSummary is an alternate view of SiteUsageStatistics which is
 // calculated in the database layer.
 type SiteUsageSummary struct {
-	Month                   time.Time
-	Week                    time.Time
-	Day                     time.Time
-	UniquesMonth            int32
-	UniquesWeek             int32
-	UniquesDay              int32
-	RegisteredUniquesMonth  int32
-	RegisteredUniquesWeek   int32
-	RegisteredUniquesDay    int32
-	IntegrationUniquesMonth int32
-	IntegrationUniquesWeek  int32
-	IntegrationUniquesDay   int32
+	RollingMonth                   time.Time
+	Month                          time.Time
+	Week                           time.Time
+	Day                            time.Time
+	UniquesRollingMonth            int32
+	UniquesMonth                   int32
+	UniquesWeek                    int32
+	UniquesDay                     int32
+	RegisteredUniquesRollingMonth  int32
+	RegisteredUniquesMonth         int32
+	RegisteredUniquesWeek          int32
+	RegisteredUniquesDay           int32
+	IntegrationUniquesRollingMonth int32
+	IntegrationUniquesMonth        int32
+	IntegrationUniquesWeek         int32
+	IntegrationUniquesDay          int32
 }
 
 // SearchAggregatedEvent represents the total events, unique users, and
@@ -1738,8 +1744,8 @@ type OwnershipUsageStatistics struct {
 	// `select:file.owners`.
 	SelectFileOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"select_file_owners_search,omitempty"`
 
-	// Activity of using a `file:has.owners` predicate in search.
-	FileHasOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owners_search,omitempty"`
+	// Activity of using a `file:has.owner` predicate in search.
+	FileHasOwnerSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owner_search,omitempty"`
 
 	// Opening ownership panel.
 	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`

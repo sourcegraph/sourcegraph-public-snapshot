@@ -21,7 +21,7 @@ import (
 func init() {
 	deployType := deploy.Type()
 	if !deploy.IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.SingleProgram, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.App, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
@@ -36,17 +36,16 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.DockerContainer
 	case deploy.IsDeployTypeKubernetes(deployType), deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return confdefaults.KubernetesOrDockerComposeOrPureDocker
-	case deploy.IsDeployTypeSingleProgram(deployType):
-		return confdefaults.SingleProgram
+	case deploy.IsDeployTypeApp(deployType):
+		return confdefaults.App
 	default:
 		panic("deploy type did not register default configuration")
 	}
 }
 
 func ExecutorsAccessToken() string {
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
-		return confdefaults.SingleProgramInMemoryExecutorPassword
+	if deploy.IsApp() {
+		return confdefaults.AppInMemoryExecutorPassword
 	}
 	return Get().ExecutorsAccessToken
 }
@@ -291,7 +290,7 @@ func CodeIntelRankingStaleResultAge() time.Duration {
 	if val := Get().CodeIntelRankingStaleResultsAge; val > 0 {
 		return time.Duration(val) * time.Hour
 	}
-	return 72 * time.Hour
+	return 24 * time.Hour
 }
 
 func EmbeddingsEnabled() bool {

@@ -439,7 +439,7 @@ function isOffsetInHoverRange(offset: number, range: { from: number; to: number 
 export const [pin, updatePin] = createUpdateableField<LineOrPositionOrRange | null>(null)
 
 const getPinnedOccurrence = (view: EditorView, pin: LineOrPositionOrRange | null): Occurrence | null => {
-    if (!pin || !pin.line || !pin.character) {
+    if (!pin?.line || !pin?.character) {
         return null
     }
     const offset = uiPositionToOffset(view.state.doc, { line: pin.line, character: pin.character })
@@ -552,9 +552,11 @@ export function codeIntelTooltipsExtension(): Extension {
 
         ViewPlugin.define(view => ({
             update(update: ViewUpdate) {
-                if (update.viewportChanged) {
+                if (update.selectionSet) {
                     /**
-                     * When the focused occurrence is outside the viewport, it is removed from the DOM and editor loses focus.
+                     * Selection change may result in the focused occurrence being outside the viewport
+                     * (e.g. selecting text from current position to the end of the document).
+                     * When focused occurrence is outside the viewport, it is removed from the DOM and editor loses focus.
                      * Ensure the editor remains focused when this happens for keyboard navigation to work.
                      * Ignore cases when viewport change is caused by navigating to next/previous search result
                      * (e.g., by clicking 'Enter' when the search input field is focused).

@@ -20,6 +20,7 @@ go_library(
         "ide_extensions.go",
         "migrated_extensions.go",
         "notebooks.go",
+        "own.go",
         "repositories.go",
         "retention.go",
         "saved_searches.go",
@@ -72,10 +73,15 @@ go_test(
         "main_test.go",
         "migrated_extensions_test.go",
         "notebooks_test.go",
+        "own_test.go",
         "retention_test.go",
         "usage_stats_test.go",
     ],
     embed = [":usagestats"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/api",
         "//internal/database",

@@ -59,7 +59,7 @@ export const NotebooksListPageHeader: React.FunctionComponent<
 
     const onFileLoad = useCallback(
         (event: ProgressEvent<FileReader>, fileName: string): void => {
-            if (!event.target || !event.target.result || typeof event.target.result !== 'string') {
+            if (typeof event.target?.result !== 'string') {
                 setImportState(INVALID_IMPORT_FILE_ERROR)
                 return
             }

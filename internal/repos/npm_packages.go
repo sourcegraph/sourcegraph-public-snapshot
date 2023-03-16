@@ -44,7 +44,6 @@ func NewNpmPackagesSource(ctx context.Context, svc *types.ExternalService, cf *h
 }
 
 var _ packagesSource = &npmPackagesSource{}
-var _ packagesDownloadSource = &npmPackagesSource{}
 
 type npmPackagesSource struct {
 	client npm.Client

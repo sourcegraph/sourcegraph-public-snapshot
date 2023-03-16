@@ -3,6 +3,8 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "rbac",
     srcs = [
+        "parser.go",
+        "permission.go",
         "permissions.go",
         "types.go",
     ],
@@ -10,21 +12,38 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/rbac",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/actor",
+        "//internal/auth",
         "//internal/database",
         "//internal/types",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
         "@in_gopkg_yaml_v3//:yaml_v3",
     ],
 )
 
 go_test(
+    timeout = "short",
     name = "rbac_test",
-    srcs = ["permissions_test.go"],
+    srcs = [
+        "parser_test.go",
+        "permission_test.go",
+        "permissions_test.go",
+    ],
     embed = [":rbac"],
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
     deps = [
+        "//internal/actor",
+        "//internal/auth",
         "//internal/database",
+        "//internal/database/dbtest",
         "//internal/types",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
-        "@com_github_stretchr_testify//assert",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
     ],
 )

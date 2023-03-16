@@ -30,6 +30,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "azuredevops_test",
     srcs = [
         "client_test.go",
@@ -47,8 +48,11 @@ go_test(
         "//internal/httpcli",
         "//internal/httptestutil",
         "//internal/lazyregexp",
+        "//internal/rcache",
         "//internal/testutil",
         "@com_github_dnaeon_go_vcr//cassette",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@tools_gotest//assert",
     ],
 )

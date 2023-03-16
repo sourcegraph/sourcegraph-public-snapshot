@@ -273,7 +273,7 @@ const getLsifData = ({
     const extractedData = dataOrThrowErrors(result)
 
     // If there weren't any errors and we just didn't receive any data
-    if (!extractedData || !extractedData.repository?.commit?.blob?.lsif) {
+    if (!extractedData?.repository?.commit?.blob?.lsif) {
         return undefined
     }
 

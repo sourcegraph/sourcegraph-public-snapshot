@@ -61,6 +61,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "jobutil_test",
     srcs = [
         "alert_test.go",

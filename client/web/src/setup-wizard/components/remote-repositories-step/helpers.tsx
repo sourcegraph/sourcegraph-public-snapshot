@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { mdiAws, mdiBitbucket, mdiGit, mdiGithub, mdiGitlab } from '@mdi/js'
+import { mdiAws, mdiBitbucket, mdiGit, mdiGithub, mdiGitlab, mdiMicrosoftAzure } from '@mdi/js'
 import { MdiReactIconComponentType } from 'mdi-react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -43,7 +43,7 @@ export const getCodeHostIconPath = (codeHostType: ExternalServiceKind | null): s
         case ExternalServiceKind.AWSCODECOMMIT:
             return mdiAws
         case ExternalServiceKind.AZUREDEVOPS:
-            return mdiGit
+            return mdiMicrosoftAzure
         default:
             // TODO: Add support for other code host
             return null
@@ -66,7 +66,8 @@ export const getCodeHostName = (codeHostType: ExternalServiceKind | null): strin
             return 'Gitolite'
         case ExternalServiceKind.GERRIT:
             return 'Gerrit'
-
+        case ExternalServiceKind.AZUREDEVOPS:
+            return 'Azure DevOps'
         default:
             // TODO: Add support for other code host
             return 'Unknown'
@@ -87,4 +88,62 @@ export const isAnyConnectedCodeHosts = (data?: GetCodeHostsResult): boolean => {
     }
 
     return data.externalServices.nodes.length > 0
+}
+
+export const getNextButtonLabel = (data?: GetCodeHostsResult): string => {
+    // Fallback for the state when we have no data,
+    // While we are loading data the next button is disabled
+    if (!data) {
+        return 'Loading'
+    }
+
+    const otherKindExternalServices = data.externalServices.nodes.filter(
+        service => service.kind === ExternalServiceKind.OTHER
+    )
+
+    const nonOtherExternalServices = data.externalServices.nodes.filter(
+        service => service.kind !== ExternalServiceKind.OTHER
+    )
+
+    // This means that we got some "Other" externals services (which are used for
+    // local repositories' setup) and have no common external services, meaning that we
+    // have no connected code host on remote code host step but got some repositories
+    // from local repositories step so next button should have "Skip" label
+    if (otherKindExternalServices.length > 0 && nonOtherExternalServices.length === 0) {
+        return 'Skip'
+    }
+
+    return 'Next'
+}
+
+export const getNextButtonLogEvent = (data?: GetCodeHostsResult): string | null => {
+    if (!data) {
+        return null
+    }
+
+    const otherKindExternalServices = data.externalServices.nodes.filter(
+        service => service.kind === ExternalServiceKind.OTHER
+    )
+
+    const nonOtherExternalServices = data.externalServices.nodes.filter(
+        service => service.kind !== ExternalServiceKind.OTHER
+    )
+
+    if (otherKindExternalServices.length > 0 && nonOtherExternalServices.length === 0) {
+        return 'SetupWizardSkippedAddRemoteCode'
+    }
+
+    return null
+}
+
+export const getRemoteCodeHostCount = (data?: GetCodeHostsResult): number => {
+    if (!data) {
+        return 0
+    }
+
+    const nonOtherExternalServices = data.externalServices.nodes.filter(
+        service => service.kind !== ExternalServiceKind.OTHER
+    )
+
+    return nonOtherExternalServices.length
 }

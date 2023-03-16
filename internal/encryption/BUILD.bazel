@@ -21,6 +21,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "encryption_test",
     srcs = [
         "encryptable_test.go",

@@ -42,7 +42,7 @@ func repoUpdaterURLDefault() string {
 		return u
 	}
 
-	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+	if deploy.IsApp() {
 		return "http://127.0.0.1:3182"
 	}
 
@@ -410,6 +410,20 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.Ex
 		return MockExternalServiceNamespaces(ctx, args)
 	}
 
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.grpcClient()
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := client.ExternalServiceNamespaces(ctx, args.ToProto())
+		if err != nil {
+			return nil, err
+		}
+
+		return protocol.ExternalServiceNamespacesResultFromProto(resp), nil
+	}
+
 	resp, err := c.httpPost(ctx, "external-service-namespaces", args)
 	if err != nil {
 		return nil, err
@@ -430,6 +444,20 @@ var MockExternalServiceRepositories func(ctx context.Context, args protocol.Exte
 func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (result *protocol.ExternalServiceRepositoriesResult, err error) {
 	if MockExternalServiceRepositories != nil {
 		return MockExternalServiceRepositories(ctx, args)
+	}
+
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.grpcClient()
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := client.ExternalServiceRepositories(ctx, args.ToProto())
+		if err != nil {
+			return nil, err
+		}
+
+		return protocol.ExternalServiceRepositoriesResultFromProto(resp), nil
 	}
 
 	resp, err := c.httpPost(ctx, "external-service-repositories", args)

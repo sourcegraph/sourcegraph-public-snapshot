@@ -17,11 +17,16 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "rcache_test",
     srcs = [
         "fifo_list_test.go",
         "rcache_test.go",
     ],
     embed = [":rcache"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = ["@com_github_stretchr_testify//assert"],
 )

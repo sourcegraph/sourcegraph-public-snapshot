@@ -63,6 +63,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "app_test",
     srcs = [
         "app_test.go",
@@ -75,6 +76,10 @@ go_test(
         "verify_email_test.go",
     ],
     embed = [":app"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/oneclickexport",

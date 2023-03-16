@@ -1467,8 +1467,7 @@ func ExternalRepoSpec(repo *Repository, baseURL *url.URL) api.ExternalRepoSpec {
 }
 
 func githubBaseURLDefault() string {
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
+	if deploy.IsSingleBinary() {
 		return ""
 	}
 	return "http://github-proxy"
@@ -1761,7 +1760,7 @@ type Repository struct {
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
 
 	// a list of topics the repository is tagged with
-	RepositoryTopics RepositoryTopics `json:",omitempty"`
+	RepositoryTopics RepositoryTopics
 
 	// Metadata retained for ranking
 	StargazerCount int `json:",omitempty"`
@@ -1774,15 +1773,15 @@ type Repository struct {
 }
 
 type RepositoryTopics struct {
-	Nodes []RepositoryTopic `json:",omitempty"`
+	Nodes []RepositoryTopic
 }
 
 type RepositoryTopic struct {
-	Topic Topic `json:",omitempty"`
+	Topic Topic
 }
 
 type Topic struct {
-	Name string `json:",omitempty"`
+	Name string
 }
 
 type restRepositoryPermissions struct {

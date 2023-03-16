@@ -28,7 +28,7 @@ export const IntroPageLicensed: Story = () => {
 
     return (
         <CodeInsightsBackendContext.Provider value={API}>
-            <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+            <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} isSourcegraphApp={false} />
         </CodeInsightsBackendContext.Provider>
     )
 }
@@ -38,7 +38,7 @@ export const IntroPageUnLicensed: Story = () => {
 
     return (
         <CodeInsightsBackendContext.Provider value={API}>
-            <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+            <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} isSourcegraphApp={false} />
         </CodeInsightsBackendContext.Provider>
     )
 }

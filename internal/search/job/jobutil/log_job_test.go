@@ -45,7 +45,7 @@ func (s *fakeEventLogStore) loggedEventNames() []string {
 
 func TestOwnSearchEventNames(t *testing.T) {
 	for literal, wantEventNames := range map[string][]string{
-		"file:has.owner(one@example.com)": {"FileHasOwnersSearch", "search.latencies.file"},
+		"file:has.owner(one@example.com)": {"FileHasOwnerSearch", "search.latencies.file"},
 		"select:file.owners":              {"SelectFileOwnersSearch", "search.latencies.repo"},
 	} {
 		t.Run(literal, func(t *testing.T) {

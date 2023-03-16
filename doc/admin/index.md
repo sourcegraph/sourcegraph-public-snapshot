@@ -13,8 +13,8 @@ Administration is usually handled by site administrators are the admins responsi
 - [PostgreSQL configuration](config/postgres-conf.md)
 - [Using external services (PostgreSQL, Redis, S3/GCS)](external_services/index.md)
 - <span class="badge badge-experimental">Experimental</span> [Validation](validation.md)
-- <span class="badge badge-beta">Beta</span> [Executors](executors.md)
-- <span class="badge badge-beta">Beta</span> [Deploy executors](deploy_executors.md)
+- <span class="badge badge-beta">Beta</span> [Executors](executors/index.md)
+- <span class="badge badge-beta">Beta</span> [Deploy executors](executors/deploy_executors.md)
 
 ## [Upgrade Sourcegraph](updates/index.md)
 
@@ -37,6 +37,7 @@ Administration is usually handled by site administrators are the admins responsi
   - [Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate](ssl_https_self_signed_cert_nginx.md)
 - [User authentication](auth/index.md)
   - [User data deletion](user_data_deletion.md)
+- <span class="badge badge-beta">Beta</span> [Provision users through SCIM](scim.md)
 - [Setting the URL for your instance](url.md)
 - [Repository permissions](permissions/index.md)
   - [Row-level security](repo/row_level_security.md)

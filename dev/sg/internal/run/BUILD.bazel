@@ -35,6 +35,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "run_test",
     srcs = ["logger_test.go"],
     embed = [":run"],

@@ -22,6 +22,7 @@ go_library(
         "//internal/database",
         "//internal/env",
         "//internal/lazyregexp",
+        "//internal/singleprogram/filepicker",
         "//internal/types",
         "//internal/version",
         "//schema",
@@ -31,6 +32,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "jscontext_test",
     srcs = ["jscontext_test.go"],
     embed = [":jscontext"],

@@ -11,9 +11,9 @@ import (
 	"io"
 	"sync"
 
-	regexp "github.com/grafana/regexp"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
+	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	luasandbox "github.com/sourcegraph/sourcegraph/internal/luasandbox"
 )
 
@@ -25,9 +25,9 @@ type MockGitService struct {
 	// ArchiveFunc is an instance of a mock function object controlling the
 	// behavior of the method Archive.
 	ArchiveFunc *GitServiceArchiveFunc
-	// ListFilesFunc is an instance of a mock function object controlling
-	// the behavior of the method ListFiles.
-	ListFilesFunc *GitServiceListFilesFunc
+	// LsFilesFunc is an instance of a mock function object controlling the
+	// behavior of the method LsFiles.
+	LsFilesFunc *GitServiceLsFilesFunc
 }
 
 // NewMockGitService creates a new mock of the GitService interface. All
@@ -39,8 +39,8 @@ func NewMockGitService() *MockGitService {
 				return
 			},
 		},
-		ListFilesFunc: &GitServiceListFilesFunc{
-			defaultHook: func(context.Context, api.RepoName, string, *regexp.Regexp) (r0 []string, r1 error) {
+		LsFilesFunc: &GitServiceLsFilesFunc{
+			defaultHook: func(context.Context, api.RepoName, string, ...gitdomain.Pathspec) (r0 []string, r1 error) {
 				return
 			},
 		},
@@ -56,9 +56,9 @@ func NewStrictMockGitService() *MockGitService {
 				panic("unexpected invocation of MockGitService.Archive")
 			},
 		},
-		ListFilesFunc: &GitServiceListFilesFunc{
-			defaultHook: func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error) {
-				panic("unexpected invocation of MockGitService.ListFiles")
+		LsFilesFunc: &GitServiceLsFilesFunc{
+			defaultHook: func(context.Context, api.RepoName, string, ...gitdomain.Pathspec) ([]string, error) {
+				panic("unexpected invocation of MockGitService.LsFiles")
 			},
 		},
 	}
@@ -71,8 +71,8 @@ func NewMockGitServiceFrom(i GitService) *MockGitService {
 		ArchiveFunc: &GitServiceArchiveFunc{
 			defaultHook: i.Archive,
 		},
-		ListFilesFunc: &GitServiceListFilesFunc{
-			defaultHook: i.ListFiles,
+		LsFilesFunc: &GitServiceLsFilesFunc{
+			defaultHook: i.LsFiles,
 		},
 	}
 }
@@ -188,35 +188,35 @@ func (c GitServiceArchiveFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitServiceListFilesFunc describes the behavior when the ListFiles method
-// of the parent MockGitService instance is invoked.
-type GitServiceListFilesFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error)
-	hooks       []func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error)
-	history     []GitServiceListFilesFuncCall
+// GitServiceLsFilesFunc describes the behavior when the LsFiles method of
+// the parent MockGitService instance is invoked.
+type GitServiceLsFilesFunc struct {
+	defaultHook func(context.Context, api.RepoName, string, ...gitdomain.Pathspec) ([]string, error)
+	hooks       []func(context.Context, api.RepoName, string, ...gitdomain.Pathspec) ([]string, error)
+	history     []GitServiceLsFilesFuncCall
 	mutex       sync.Mutex
 }
 
-// ListFiles delegates to the next hook function in the queue and stores the
+// LsFiles delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitService) ListFiles(v0 context.Context, v1 api.RepoName, v2 string, v3 *regexp.Regexp) ([]string, error) {
-	r0, r1 := m.ListFilesFunc.nextHook()(v0, v1, v2, v3)
-	m.ListFilesFunc.appendCall(GitServiceListFilesFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockGitService) LsFiles(v0 context.Context, v1 api.RepoName, v2 string, v3 ...gitdomain.Pathspec) ([]string, error) {
+	r0, r1 := m.LsFilesFunc.nextHook()(v0, v1, v2, v3...)
+	m.LsFilesFunc.appendCall(GitServiceLsFilesFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the ListFiles method of
+// SetDefaultHook sets function that is called when the LsFiles method of
 // the parent MockGitService instance is invoked and the hook queue is
 // empty.
-func (f *GitServiceListFilesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error)) {
+func (f *GitServiceLsFilesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, ...gitdomain.Pathspec) ([]string, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ListFiles method of the parent MockGitService instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
+// LsFiles method of the parent MockGitService instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GitServiceListFilesFunc) PushHook(hook func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error)) {
+func (f *GitServiceLsFilesFunc) PushHook(hook func(context.Context, api.RepoName, string, ...gitdomain.Pathspec) ([]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -224,20 +224,20 @@ func (f *GitServiceListFilesFunc) PushHook(hook func(context.Context, api.RepoNa
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitServiceListFilesFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error) {
+func (f *GitServiceLsFilesFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, ...gitdomain.Pathspec) ([]string, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitServiceListFilesFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error) {
+func (f *GitServiceLsFilesFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, string, ...gitdomain.Pathspec) ([]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitServiceListFilesFunc) nextHook() func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error) {
+func (f *GitServiceLsFilesFunc) nextHook() func(context.Context, api.RepoName, string, ...gitdomain.Pathspec) ([]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -250,26 +250,26 @@ func (f *GitServiceListFilesFunc) nextHook() func(context.Context, api.RepoName,
 	return hook
 }
 
-func (f *GitServiceListFilesFunc) appendCall(r0 GitServiceListFilesFuncCall) {
+func (f *GitServiceLsFilesFunc) appendCall(r0 GitServiceLsFilesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitServiceListFilesFuncCall objects
+// History returns a sequence of GitServiceLsFilesFuncCall objects
 // describing the invocations of this function.
-func (f *GitServiceListFilesFunc) History() []GitServiceListFilesFuncCall {
+func (f *GitServiceLsFilesFunc) History() []GitServiceLsFilesFuncCall {
 	f.mutex.Lock()
-	history := make([]GitServiceListFilesFuncCall, len(f.history))
+	history := make([]GitServiceLsFilesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitServiceListFilesFuncCall is an object that describes an invocation of
-// method ListFiles on an instance of MockGitService.
-type GitServiceListFilesFuncCall struct {
+// GitServiceLsFilesFuncCall is an object that describes an invocation of
+// method LsFiles on an instance of MockGitService.
+type GitServiceLsFilesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -279,9 +279,9 @@ type GitServiceListFilesFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 *regexp.Regexp
+	// Arg3 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg3 []gitdomain.Pathspec
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []string
@@ -291,14 +291,21 @@ type GitServiceListFilesFuncCall struct {
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitServiceListFilesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitServiceLsFilesFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg3 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1, c.Arg2}, trailing...)
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitServiceListFilesFuncCall) Results() []interface{} {
+func (c GitServiceLsFilesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

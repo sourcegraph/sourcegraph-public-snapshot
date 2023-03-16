@@ -17,6 +17,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "registry_test",
     srcs = ["http_api_test.go"],
     embed = [":registry"],

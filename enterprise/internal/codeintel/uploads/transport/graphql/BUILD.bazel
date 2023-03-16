@@ -27,6 +27,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "graphql_test",
     srcs = [
         "mocks_test.go",

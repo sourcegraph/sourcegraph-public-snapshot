@@ -12,6 +12,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "postgresdsn_test",
     srcs = ["postgresdsn_test.go"],
     embed = [":postgresdsn"],

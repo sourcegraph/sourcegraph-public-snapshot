@@ -21,6 +21,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "notebooks_test",
     srcs = [
         "main_test.go",
@@ -29,6 +30,10 @@ go_test(
         "validate_test.go",
     ],
     embed = [":notebooks"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/database",

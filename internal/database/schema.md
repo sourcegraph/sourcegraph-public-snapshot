@@ -294,7 +294,6 @@ Referenced by:
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_unique_rand_id" UNIQUE, btree (rand_id)
-    "batch_specs_rand_id" btree (rand_id)
 Check constraints:
     "batch_specs_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
@@ -419,7 +418,6 @@ Indexes:
     "changeset_specs_created_at" btree (created_at)
     "changeset_specs_external_id" btree (external_id)
     "changeset_specs_head_ref" btree (head_ref)
-    "changeset_specs_rand_id" btree (rand_id)
     "changeset_specs_title" btree (title)
 Check constraints:
     "changeset_specs_published_valid_values" CHECK (published = 'true'::text OR published = 'false'::text OR published = '"draft"'::text OR published IS NULL)
@@ -479,6 +477,7 @@ Referenced by:
  detached_at              | timestamp with time zone                     |           |          | 
  computed_state           | text                                         |           | not null | 
  external_fork_name       | citext                                       |           |          | 
+ previous_failure_message | text                                         |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -852,7 +851,8 @@ Indexes:
 Indexes:
     "codeintel_path_ranks_pkey" PRIMARY KEY, btree (id)
     "codeintel_path_ranks_repository_id" UNIQUE, btree (repository_id)
-    "codeintel_path_ranks_updated_at" btree (updated_at) INCLUDE (repository_id)
+    "codeintel_path_ranks_graph_key" btree (graph_key, updated_at NULLS FIRST, id)
+    "codeintel_path_ranks_repository_id_updated_at_id" btree (repository_id, updated_at NULLS FIRST, id)
 Triggers:
     insert_codeintel_path_ranks_statistics BEFORE INSERT ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()
     update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns()
@@ -873,8 +873,7 @@ Triggers:
 Indexes:
     "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_definitions_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
-    "codeintel_ranking_definitions_symbol_name" btree (symbol_name)
-    "codeintel_ranking_definitions_upload_id" btree (upload_id)
+    "codeintel_ranking_definitions_graph_key_symbol_search" btree (graph_key, symbol_name, upload_id, document_path)
 
 ```
 
@@ -907,8 +906,7 @@ Foreign-key constraints:
  repository_id | integer |           | not null | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
-    "codeintel_ranking_path_counts_inputs_graph_key_and_repository_i" btree (graph_key, repository_id)
-    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) INCLUDE (document_path) WHERE NOT processed
+    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) WHERE NOT processed
 
 ```
 
@@ -923,6 +921,7 @@ Indexes:
  last_scanned_at | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_references_graph_key_id" btree (graph_key, id)
     "codeintel_ranking_references_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
     "codeintel_ranking_references_upload_id" btree (upload_id)
 Referenced by:
@@ -1151,7 +1150,6 @@ Indexes:
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
     "event_logs_timestamp_at_utc" btree (date(timezone('UTC'::text, "timestamp")))
-    "event_logs_user_id" btree (user_id)
     "event_logs_user_id_name" btree (user_id, name)
     "event_logs_user_id_timestamp" btree (user_id, "timestamp")
 Check constraints:
@@ -1801,14 +1799,20 @@ Foreign-key constraints:
 
 # Table "public.lsif_dependency_repos"
 ```
- Column |  Type  | Collation | Nullable |                      Default                      
---------+--------+-----------+----------+---------------------------------------------------
- id     | bigint |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
- name   | text   |           | not null | 
- scheme | text   |           | not null | 
+     Column      |           Type           | Collation | Nullable |                      Default                      
+-----------------+--------------------------+-----------+----------+---------------------------------------------------
+ id              | bigint                   |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
+ name            | text                     |           | not null | 
+ scheme          | text                     |           | not null | 
+ blocked         | boolean                  |           | not null | false
+ last_checked_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
-    "lsif_dependency_repos_name_idx" btree (name)
+    "lsif_dependency_repos_unique_scheme_name" UNIQUE, btree (scheme, name)
+    "lsif_dependency_repos_blocked" btree (blocked)
+    "lsif_dependency_repos_last_checked_at" btree (last_checked_at)
+    "lsif_dependency_repos_name_id" btree (name, id)
+    "lsif_dependency_repos_scheme_id" btree (scheme, id)
 Referenced by:
     TABLE "package_repo_versions" CONSTRAINT "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
 
@@ -2701,17 +2705,42 @@ Referenced by:
 
 ```
 
+# Table "public.package_repo_filters"
+```
+   Column   |           Type           | Collation | Nullable |                     Default                      
+------------+--------------------------+-----------+----------+--------------------------------------------------
+ id         | integer                  |           | not null | nextval('package_repo_filters_id_seq'::regclass)
+ behaviour  | text                     |           | not null | 
+ scheme     | text                     |           | not null | 
+ matcher    | jsonb                    |           | not null | 
+ deleted_at | timestamp with time zone |           |          | 
+ updated_at | timestamp with time zone |           | not null | statement_timestamp()
+Indexes:
+    "package_repo_filters_pkey" PRIMARY KEY, btree (id)
+    "package_repo_filters_unique_matcher_per_scheme" UNIQUE, btree (scheme, matcher)
+Check constraints:
+    "package_repo_filters_behaviour_is_allow_or_block" CHECK (behaviour = ANY ('{BLOCK,ALLOW}'::text[]))
+    "package_repo_filters_is_pkgrepo_scheme" CHECK (scheme = ANY ('{semanticdb,npm,go,python,rust-analyzer,scip-ruby}'::text[]))
+    "package_repo_filters_valid_oneof_glob" CHECK (matcher ? 'VersionGlob'::text AND (matcher ->> 'VersionGlob'::text) <> ''::text AND (matcher ->> 'PackageName'::text) <> ''::text AND NOT matcher ? 'PackageGlob'::text OR matcher ? 'PackageGlob'::text AND (matcher ->> 'PackageGlob'::text) <> ''::text AND NOT matcher ? 'VersionGlob'::text)
+Triggers:
+    trigger_package_repo_filters_updated_at BEFORE UPDATE ON package_repo_filters FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE FUNCTION func_package_repo_filters_updated_at()
+
+```
+
 # Table "public.package_repo_versions"
 ```
-   Column   |  Type  | Collation | Nullable |                      Default                      
-------------+--------+-----------+----------+---------------------------------------------------
- id         | bigint |           | not null | nextval('package_repo_versions_id_seq'::regclass)
- package_id | bigint |           | not null | 
- version    | text   |           | not null | 
+     Column      |           Type           | Collation | Nullable |                      Default                      
+-----------------+--------------------------+-----------+----------+---------------------------------------------------
+ id              | bigint                   |           | not null | nextval('package_repo_versions_id_seq'::regclass)
+ package_id      | bigint                   |           | not null | 
+ version         | text                     |           | not null | 
+ blocked         | boolean                  |           | not null | false
+ last_checked_at | timestamp with time zone |           |          | 
 Indexes:
     "package_repo_versions_pkey" PRIMARY KEY, btree (id)
     "package_repo_versions_unique_version_per_package" UNIQUE, btree (package_id, version)
-    "package_repo_versions_fk_idx" btree (package_id)
+    "package_repo_versions_blocked" btree (blocked)
+    "package_repo_versions_last_checked_at" btree (last_checked_at)
 Foreign-key constraints:
     "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
 
@@ -2946,6 +2975,7 @@ Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
+    "idx_repo_github_topics" gin (((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text)) WHERE external_service_type = 'github'::text
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)
@@ -3110,21 +3140,17 @@ Foreign-key constraints:
    Column   |           Type           | Collation | Nullable |              Default              
 ------------+--------------------------+-----------+----------+-----------------------------------
  id         | integer                  |           | not null | nextval('roles_id_seq'::regclass)
- name       | text                     |           | not null | 
  created_at | timestamp with time zone |           | not null | now()
  system     | boolean                  |           | not null | false
+ name       | citext                   |           | not null | 
 Indexes:
     "roles_pkey" PRIMARY KEY, btree (id)
-    "roles_name" UNIQUE CONSTRAINT, btree (name)
-Check constraints:
-    "name_not_blank" CHECK (name <> ''::text)
+    "unique_role_name" UNIQUE, btree (name)
 Referenced by:
     TABLE "role_permissions" CONSTRAINT "role_permissions_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_roles" CONSTRAINT "user_roles_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
 
 ```
-
-**name**: The uniquely identifying name of the role.
 
 **system**: This is used to indicate whether a role is read-only or can be modified.
 
@@ -3552,7 +3578,6 @@ Indexes:
     "user_repo_permissions_source_idx" btree (source)
     "user_repo_permissions_updated_at_idx" btree (updated_at)
     "user_repo_permissions_user_external_account_id_idx" btree (user_external_account_id)
-    "user_repo_permissions_user_id_idx" btree (user_id)
 Foreign-key constraints:
     "user_repo_permissions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "user_repo_permissions_user_external_account_id_fkey" FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE
@@ -4178,7 +4203,8 @@ Foreign-key constraints:
     c.last_heartbeat_at,
     c.external_fork_name,
     c.external_fork_namespace,
-    c.detached_at
+    c.detached_at,
+    c.previous_failure_message
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1

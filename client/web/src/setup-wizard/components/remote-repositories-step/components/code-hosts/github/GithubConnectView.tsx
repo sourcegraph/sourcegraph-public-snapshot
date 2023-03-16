@@ -1,11 +1,11 @@
-import { FC, ReactNode, ReactElement, useCallback, useState, useMemo, ChangeEvent } from 'react'
+import { FC, ReactNode, ReactElement, useCallback, useState, useMemo, ChangeEvent, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
-import { noop } from 'lodash'
 
 import { modify } from '@sourcegraph/common'
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Tabs,
     Tab,
@@ -14,7 +14,6 @@ import {
     TabPanels,
     Input,
     Checkbox,
-    useLocalStorage,
     useField,
     useForm,
     FormInstance,
@@ -24,18 +23,18 @@ import {
     ErrorAlert,
     FORM_ERROR,
     AsyncValidator,
+    FormChangeEvent,
 } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID } from '../../../../../../components/externalServices/backend'
 import { codeHostExternalServices } from '../../../../../../components/externalServices/externalServices'
 import {
-    AddExternalServiceInput,
     ExternalServiceCheckConnectionByIdResult,
     ExternalServiceCheckConnectionByIdVariables,
-    ExternalServiceKind,
     ValidateAccessTokenResult,
     ValidateAccessTokenVariables,
 } from '../../../../../../graphql-operations'
+import { CodeHostRepositoriesAppLimitAlert } from '../../../../CodeHostExternalServiceAlert'
 import { CodeHostJSONFormContent, RadioGroupSection, CodeHostConnectFormFields, CodeHostJSONFormState } from '../common'
 
 import { GithubOrganizationsPicker, GithubRepositoriesPicker } from './GithubEntityPickers'
@@ -43,18 +42,8 @@ import { getAccessTokenValue, getRepositoriesSettings } from './helpers'
 
 import styles from './GithubConnectView.module.scss'
 
-const DEFAULT_FORM_VALUES: CodeHostConnectFormFields = {
-    displayName: codeHostExternalServices.github.defaultDisplayName,
-    config: `
-{
-    "url": "https://github.com",
-    "token": ""
-}
-`.trim(),
-}
-
-interface GithubConnectViewProps {
-    initialValues?: CodeHostConnectFormFields
+interface GithubConnectViewProps extends TelemetryProps {
+    initialValues: CodeHostConnectFormFields
     externalServiceId?: string
 
     /**
@@ -63,7 +52,8 @@ interface GithubConnectViewProps {
      * for all variations of this form (create, edit UI) but content is different
      */
     children: (state: CodeHostJSONFormState) => ReactNode
-    onSubmit: (input: AddExternalServiceInput) => Promise<any>
+    onSubmit: (values: CodeHostConnectFormFields) => Promise<any>
+    onChange?: (event: FormChangeEvent<CodeHostConnectFormFields>) => void
 }
 
 /**
@@ -72,30 +62,15 @@ interface GithubConnectViewProps {
  * storage
  */
 export const GithubConnectView: FC<GithubConnectViewProps> = props => {
-    const { initialValues, externalServiceId, children, onSubmit } = props
-    const [localValues, setInitialValues] = useLocalStorage('github-connection-form', DEFAULT_FORM_VALUES)
-
-    const handleSubmit = useCallback(
-        async (values: CodeHostConnectFormFields): Promise<void> => {
-            // Perform public API code host connection create action
-            await onSubmit({
-                kind: ExternalServiceKind.GITHUB,
-                displayName: values.displayName,
-                config: values.config,
-            })
-
-            // Reset initial values after successful connect action
-            setInitialValues(DEFAULT_FORM_VALUES)
-        },
-        [setInitialValues, onSubmit]
-    )
+    const { initialValues, externalServiceId, telemetryService, children, onChange, onSubmit } = props
 
     return (
         <GithubConnectForm
-            initialValues={initialValues ?? localValues}
+            initialValues={initialValues}
             externalServiceId={externalServiceId}
-            onChange={initialValues ? noop : setInitialValues}
-            onSubmit={handleSubmit}
+            telemetryService={telemetryService}
+            onChange={onChange}
+            onSubmit={onSubmit}
         >
             {children}
         </GithubConnectForm>
@@ -107,12 +82,12 @@ enum GithubConnectFormTab {
     JSONC,
 }
 
-interface GithubConnectFormProps {
+interface GithubConnectFormProps extends TelemetryProps {
     initialValues: CodeHostConnectFormFields
     externalServiceId?: string
     children: (state: CodeHostJSONFormState) => ReactNode
-    onChange: (values: CodeHostConnectFormFields) => void
     onSubmit: (values: CodeHostConnectFormFields) => void
+    onChange?: (event: FormChangeEvent<CodeHostConnectFormFields>) => void
 }
 
 /**
@@ -120,14 +95,14 @@ interface GithubConnectFormProps {
  * configuration UI.
  */
 export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
-    const { initialValues, externalServiceId, children, onChange, onSubmit } = props
+    const { initialValues, externalServiceId, telemetryService, children, onChange, onSubmit } = props
 
     const [activeTab, setActiveTab] = useState(GithubConnectFormTab.Form)
     const form = useForm<CodeHostConnectFormFields>({
         initialValues,
         touched: !!externalServiceId,
+        onChange,
         onSubmit,
-        onChange: event => onChange(event.values),
     })
 
     const displayName = useField({
@@ -140,6 +115,11 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
         formApi: form.formAPI,
         name: 'config',
     })
+
+    useEffect(() => {
+        const view = getViewKindByIndex(activeTab)
+        telemetryService.log('SetupWizardCreationTabView', { view }, { view })
+    }, [activeTab, telemetryService])
 
     return (
         <Tabs
@@ -161,6 +141,7 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
                     JSONC editor
                 </Tab>
             </TabList>
+
             <TabPanels className={styles.tabPanels}>
                 <TabPanel as="fieldset" tabIndex={-1} className={styles.formView}>
                     <GithubFormView
@@ -224,9 +205,12 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
         const reposQuery: string[] =
             typeof parsedConfiguration === 'object' ? [...(parsedConfiguration.reposQuery ?? [])] : []
 
+        const repoQueryWithNoAffiliated = reposQuery.filter(token => token !== 'affiliated')
         const nextReposQuery = event.target.checked
             ? [...reposQuery, 'affiliated']
-            : reposQuery.filter(token => token !== 'affiliated')
+            : repoQueryWithNoAffiliated.length > 0
+            ? repoQueryWithNoAffiliated
+            : undefined
 
         configurationField.input.onChange(modify(configurationField.input.value, ['repositoryQuery'], nextReposQuery))
     }
@@ -258,6 +242,8 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
     // Fragment to avoid nesting since it's rendered within TabPanel fieldset
     return (
         <>
+            <CodeHostRepositoriesAppLimitAlert className="mb-2" />
+
             <Input label="Display name" placeholder="Github (Personal)" {...getDefaultInputProps(displayNameField)} />
 
             <Input
@@ -409,4 +395,16 @@ function useAccessTokenValidator(input: useAccessTokenValidatorInput): AsyncVali
         },
         [checkExternalServiceConnection, checkNewAccessToken, externalServiceId]
     )
+}
+
+function getViewKindByIndex(index: number): string | null {
+    switch (index) {
+        case GithubConnectFormTab.Form:
+            return 'form-ui'
+        case GithubConnectFormTab.JSONC:
+            return 'json-editor'
+
+        default:
+            return null
+    }
 }

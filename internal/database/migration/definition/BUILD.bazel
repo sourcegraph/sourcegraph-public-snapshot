@@ -18,6 +18,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "definition_test",
     srcs = [
         "definition_test.go",

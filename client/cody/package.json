@@ -1,0 +1,14 @@
+{
+  "name": "@sourcegraph/cody",
+  "private": true,
+  "description": "Sourcegraph Cody",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph"
+  },
+    "scripts": {
+    "build:common": "cd common && pnpm exec tsc --build",
+    "vsce:package": "pnpm --filter kodj run vsce:package",
+    "vsce:watch": "pnpm --filter kodj run watch"
+  }
+}

@@ -12,8 +12,29 @@ type KEYBOARD_SHORTCUT_IDENTIFIERS =
     | 'fuzzyFinderSymbols'
     | 'fuzzyFinderFiles'
     | 'copyFullQuery'
+    | 'focusCodeEditor'
+    | 'focusFileTree'
+    | 'focusSymbols'
 
 export type KEYBOARD_SHORTCUT_MAPPING = Record<KEYBOARD_SHORTCUT_IDENTIFIERS, KeyboardShortcut>
+
+export const EXPERIMENTAL_BLOB_PAGE_SHORTCUTS: Record<
+    'focusCodeEditor' | 'focusFileTree' | 'focusSymbols',
+    KeyboardShortcut
+> = {
+    focusCodeEditor: {
+        title: 'Focus editor',
+        keybindings: [{ ordered: ['c'] }],
+    },
+    focusFileTree: {
+        title: 'Focus file tree',
+        keybindings: [{ ordered: ['f'] }],
+    },
+    focusSymbols: {
+        title: 'Focus symbols',
+        keybindings: [{ ordered: ['s'] }],
+    },
+}
 
 export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
     switchTheme: {
@@ -30,6 +51,7 @@ export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
         title: 'Focus search bar',
         keybindings: [{ ordered: ['/'] }],
     },
+    ...EXPERIMENTAL_BLOB_PAGE_SHORTCUTS,
     fuzzyFinder: {
         title: 'Fuzzy finder',
         keybindings: [{ held: ['Mod'], ordered: ['k'] }],

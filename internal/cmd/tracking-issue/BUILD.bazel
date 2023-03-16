@@ -37,6 +37,7 @@ go_binary(
 )
 
 go_test(
+    timeout = "short",
     name = "tracking-issue_test",
     srcs = ["main_test.go"],
     data = glob(["testdata/**"]),

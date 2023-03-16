@@ -11,6 +11,7 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "limiter_test",
     srcs = [
         "limiter_test.go",

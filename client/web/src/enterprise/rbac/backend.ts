@@ -1,23 +1,20 @@
 import { MutationTuple, QueryResult } from '@apollo/client'
 
-import { dataOrThrowErrors, gql, useMutation, useQuery } from '@sourcegraph/http-client'
+import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 
-import {
-    useShowMorePagination,
-    UseShowMorePaginationResult,
-} from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     DeleteRoleVariables,
     DeleteRoleResult,
     AllRolesVariables,
     AllRolesResult,
-    RoleFields,
     CreateRoleResult,
     CreateRoleVariables,
     AllPermissionsResult,
     AllPermissionsVariables,
     PermissionNamespace,
     PermissionFields,
+    SetPermissionsResult,
+    SetPermissionsVariables,
 } from '../../graphql-operations'
 
 export const DEFAULT_PAGE_LIMIT = 10
@@ -32,7 +29,7 @@ const permissionFragment = gql`
     }
 `
 
-const roleFragment = gql`
+export const roleFragment = gql`
     fragment RoleFields on Role {
         __typename
         id
@@ -49,8 +46,8 @@ const roleFragment = gql`
 `
 
 export const ROLES_QUERY = gql`
-    query AllRoles($first: Int, $after: String) {
-        roles(first: $first, after: $after) {
+    query AllRoles {
+        roles {
             __typename
             totalCount
             pageInfo {
@@ -96,20 +93,17 @@ export const ALL_PERMISSIONS = gql`
     ${permissionFragment}
 `
 
-export const useRolesConnection = (): UseShowMorePaginationResult<AllRolesResult, RoleFields> =>
-    useShowMorePagination<AllRolesResult, AllRolesVariables, RoleFields>({
-        query: ROLES_QUERY,
-        variables: {
-            first: DEFAULT_PAGE_LIMIT,
-            after: null,
-        },
-        options: {
-            fetchPolicy: 'no-cache',
-        },
-        getConnection: result => {
-            const { roles } = dataOrThrowErrors(result)
-            return roles
-        },
+export const SET_PERMISSIONS = gql`
+    mutation SetPermissions($role: ID!, $permissions: [ID!]!) {
+        setPermissions(role: $role, permissions: $permissions) {
+            alwaysNil
+        }
+    }
+`
+
+export const useRolesConnection = (): QueryResult<AllRolesResult, AllRolesVariables> =>
+    useQuery(ROLES_QUERY, {
+        fetchPolicy: 'no-cache',
     })
 
 export const usePermissions = (
@@ -120,12 +114,17 @@ export const usePermissions = (
         onCompleted,
     })
 
-export const useCreateRole = (): MutationTuple<CreateRoleResult, CreateRoleVariables> => useMutation(CREATE_ROLE)
+export const useCreateRole = (onCompleted: () => void): MutationTuple<CreateRoleResult, CreateRoleVariables> =>
+    useMutation(CREATE_ROLE, { onCompleted })
 
 export const useDeleteRole = (
     onCompleted: () => void,
     onError: () => void
 ): MutationTuple<DeleteRoleResult, DeleteRoleVariables> => useMutation(DELETE_ROLE, { onCompleted, onError })
+
+export const useSetPermissions = (
+    onCompleted: () => void
+): MutationTuple<SetPermissionsResult, SetPermissionsVariables> => useMutation(SET_PERMISSIONS, { onCompleted })
 
 export type PermissionsMap = Record<PermissionNamespace, PermissionFields[]>
 

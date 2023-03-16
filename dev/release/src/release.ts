@@ -6,6 +6,7 @@ import chalk from 'chalk'
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
 import execa from 'execa'
+import { DateTime } from 'luxon'
 import { SemVer } from 'semver'
 import semver from 'semver/preload'
 
@@ -23,6 +24,7 @@ import {
     getReleaseDefinition,
     deactivateAllReleases,
     setSrcCliVersion,
+    newRelease,
 } from './config'
 import { getCandidateTags, getPreviousVersion } from './git'
 import {
@@ -45,7 +47,7 @@ import {
 } from './github'
 import { calendarTime, ensureEvent, EventOptions, getClient } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import { bakeSrcCliSteps, batchChangesInAppChangelog, combyReplace } from './static-updates'
+import { bakeSrcCliSteps, batchChangesInAppChangelog, combyReplace, indexerUpdate } from './static-updates'
 import {
     cacheFolder,
     changelogURL,
@@ -106,6 +108,7 @@ export type StepID =
     | '_test:config'
     | '_test:dockerensure'
     | '_test:srccliensure'
+    | '_test:patch-dates'
     | '_test:release-guide-content'
     | '_test:release-guide-update'
 
@@ -196,6 +199,20 @@ const steps: Step[] = [
                 },
             ]
 
+            if (next.patches) {
+                // eslint-disable-next-line id-length
+                for (let i = 0; i < next.patches.length; i++) {
+                    events.push({
+                        title: `Scheduled Patch #${i + 1} Sourcegraph ${name}`,
+                        description: '(This is not an actual event to attend, just a calendar marker.)',
+                        anyoneCanAddSelf: true,
+                        attendees: [config.metadata.teamEmail],
+                        transparency: 'transparent',
+                        ...calendarTime(next.patches[i]),
+                    })
+                }
+            }
+
             if (!config.dryRun.calendar) {
                 const googleCalendar = await getClient()
                 for (const event of events) {
@@ -258,7 +275,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
             const upcoming = await getActiveRelease(config)
-            const srcCliNext = await nextSrcCliVersionInputWithAutodetect()
+            const srcCliNext = await nextSrcCliVersionInputWithAutodetect(config)
 
             const commitMessage = `changelog: cut sourcegraph@${upcoming.version.version}`
             const prBody = commitMessage + '\n\n ## Test plan\n\nN/A'
@@ -369,7 +386,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             let message: string
             // notify cs team on patch release cut
             if (release.version.patch !== 0) {
-                message = `:mega: *${release.version.version}* branch has been cut cc: @cs`
+                message = `:mega: *${release.version.version}* branch has been cut cc: @cs\nIf you need to include changes in the release, see instructions on how to backport: https://handbook.sourcegraph.com/departments/engineering/dev/tools/backport/#how-should-i-use-the-backporting-tool.`
             } else {
                 message = `:mega: *${release.version.version}* branch has been cut.`
             }
@@ -649,9 +666,9 @@ cc @${release.captainGitHubUsername}
                                 : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${release.version.version}"' doc/_resources/templates/document.html`,
 
                             // Update references to Sourcegraph deployment versions
-                            `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
-                            `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
-                            `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseKubernetesBuild = newPingResponse(":[1]")' "latestReleaseKubernetesBuild = newPingResponse(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseDockerServerImageBuild = newPingResponse(":[1]")' "latestReleaseDockerServerImageBuild = newPingResponse(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newPingResponse(":[1]")' "latestReleaseDockerComposeOrPureDocker = newPingResponse(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
 
                             // Support current release as the "previous release" going forward
                             notPatchRelease
@@ -1021,12 +1038,14 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 ...multiVersionSteps,
                 ...srcCliSteps,
                 ...batchChangesInAppChangelog(new SemVer(release.version.version).inc('minor'), true), // in the next main branch this will reflect the guessed next version
+                indexerUpdate(),
             ]
 
             const releaseBranchEdits: Edit[] = [
                 ...multiVersionSteps,
                 ...srcCliSteps,
                 ...batchChangesInAppChangelog(release.version, false),
+                indexerUpdate(),
             ]
 
             const prDetails = {
@@ -1079,7 +1098,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 revision: 'main',
                 revisionMustExist: true,
             })
-            const next = await nextSrcCliVersionInputWithAutodetect(workdir)
+            const next = await nextSrcCliVersionInputWithAutodetect(config, workdir)
             setSrcCliVersion(config, next.version)
 
             if (!config.dryRun.changesets) {
@@ -1133,6 +1152,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 console.log(chalk.green('All versions matched expected version!'))
             } else {
                 console.log(chalk.red('Failed to verify src-cli versions'))
+                exit(1)
             }
         },
     },
@@ -1259,6 +1279,13 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         run: async () => {
             ensureSrcCliEndpoint()
             await ensureSrcCliUpToDate()
+        },
+    },
+    {
+        id: '_test:patch-dates',
+        description: 'test patch dates',
+        run: () => {
+            console.log(newRelease(new SemVer('1.0.0'), DateTime.fromISO('2023-03-22'), 'test', 'test'))
         },
     },
 ]

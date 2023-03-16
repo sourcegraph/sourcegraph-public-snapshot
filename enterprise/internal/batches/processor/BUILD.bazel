@@ -24,9 +24,14 @@ go_library(
 )
 
 go_test(
+    timeout = "short",
     name = "processor_test",
     srcs = ["bulk_processor_test.go"],
     embed = [":processor"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/batches/global",
         "//enterprise/internal/batches/sources/testing",

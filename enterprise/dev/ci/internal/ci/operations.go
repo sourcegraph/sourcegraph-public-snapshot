@@ -31,6 +31,8 @@ type CoreTestOperationsOptions struct {
 	// for addWebApp
 	CacheBundleSize      bool
 	CreateBundleSizeDiff bool
+	// ForceBazel replaces vanilla jobs with Bazel ones if enabled.
+	ForceBazel bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -46,6 +48,10 @@ type CoreTestOperationsOptions struct {
 func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *operations.Set {
 	// Base set
 	ops := operations.NewSet()
+
+	if opts.ForceBazel {
+		ops.Merge(BazelOperations(false)) // non soft-failing
+	}
 
 	// Simple, fast-ish linter checks
 	linterOps := operations.NewNamedSet("Linters and static analysis")
@@ -79,7 +85,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(clientChecks)
 	}
 
-	if diff.Has(changed.Go | changed.GraphQL) {
+	if diff.Has(changed.Go|changed.GraphQL) && !opts.ForceBazel {
 		// If there are any Graphql changes, they are impacting the backend as well.
 		ops.Merge(operations.NewNamedSet("Go checks",
 			addGoTests,
@@ -346,7 +352,7 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 }
 
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
+	pipeline.AddStep(":java: Build (client/jetbrains)",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
