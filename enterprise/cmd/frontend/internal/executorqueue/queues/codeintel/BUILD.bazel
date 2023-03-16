@@ -26,6 +26,7 @@ go_library(
 
 go_test(
     name = "codeintel_test",
+    timeout = "short",
     srcs = ["transform_test.go"],
     embed = [":codeintel"],
     deps = [

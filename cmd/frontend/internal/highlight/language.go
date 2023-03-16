@@ -130,25 +130,8 @@ var engineConfig = syntaxEngineConfig{
 // Eventually, we will switch from having `Default` be EngineSyntect and move
 // to having it be EngineTreeSitter.
 var baseEngineConfig = syntaxEngineConfig{
-	Default: EngineSyntect,
+	Default: EngineTreeSitter,
 	Overrides: map[string]EngineType{
-		// Languages enabled for tree-sitter highlighting
-		"c":          EngineTreeSitter,
-		"c#":         EngineTreeSitter,
-		"c++":        EngineTreeSitter,
-		"cpp":        EngineTreeSitter,
-		"go":         EngineTreeSitter,
-		"java":       EngineTreeSitter,
-		"javascript": EngineTreeSitter,
-		"jsonnet":    EngineTreeSitter,
-		"jsx":        EngineTreeSitter,
-		"nickel":     EngineTreeSitter,
-		"rust":       EngineTreeSitter,
-		"scala":      EngineTreeSitter,
-		"tsx":        EngineTreeSitter,
-		"typescript": EngineTreeSitter,
-		"xlsg":       EngineTreeSitter,
-
 		// Languages enabled for advanced syntax features
 		"perl": EngineScipSyntax,
 	},

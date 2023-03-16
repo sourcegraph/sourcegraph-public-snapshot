@@ -21,6 +21,7 @@ go_library(
 
 go_test(
     name = "querybuilder_test",
+    timeout = "short",
     srcs = [
         "builder_test.go",
         "parser_test.go",

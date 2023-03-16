@@ -24,6 +24,7 @@ go_library(
 
 go_test(
     name = "rbac_test",
+    timeout = "short",
     srcs = [
         "parser_test.go",
         "permission_test.go",

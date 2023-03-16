@@ -20,6 +20,7 @@ go_library(
 
 go_test(
     name = "fastwalk_test",
+    timeout = "short",
     srcs = ["fastwalk_test.go"],
     deps = [":fastwalk"],
 )

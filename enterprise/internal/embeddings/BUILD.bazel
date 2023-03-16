@@ -29,6 +29,7 @@ go_library(
 
 go_test(
     name = "embeddings_test",
+    timeout = "short",
     srcs = [
         "index_storage_test.go",
         "similarity_search_test.go",

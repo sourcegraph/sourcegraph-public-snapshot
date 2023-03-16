@@ -33,6 +33,7 @@ go_library(
 
 go_test(
     name = "azureoauth_test",
+    timeout = "short",
     srcs = [
         "provider_test.go",
         "session_test.go",

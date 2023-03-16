@@ -10,7 +10,6 @@ import (
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -21,6 +20,7 @@ import (
 
 type DependenciesService interface {
 	InsertPackageRepoRefs(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
+	ListPackageRepoFilters(ctx context.Context, opts dependencies.ListPackageRepoRefFiltersOpts) (_ []dependencies.PackageRepoFilter, hasMore bool, err error)
 }
 
 type GitserverRepoStore interface {
@@ -72,5 +72,5 @@ type UploadService interface {
 	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
 	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
-	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []uploadshared.UploadsWithRepositoryNamespace, err error)
+	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
 }

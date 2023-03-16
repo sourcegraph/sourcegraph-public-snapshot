@@ -35,10 +35,14 @@ import {
 
 import styles from './EditDashboardPage.module.scss'
 
+interface Props {
+    isSourcegraphApp: boolean
+}
+
 /**
  * Displays the edit (configure) dashboard page.
  */
-export const EditDashboardPage: FC = () => {
+export const EditDashboardPage: FC<Props> = props => {
     const navigate = useNavigate()
     const { dashboardId } = useParams()
 
@@ -84,7 +88,7 @@ export const EditDashboardPage: FC = () => {
     const handleCancel = (): void => navigate(-1)
 
     return (
-        <CodeInsightsPage className={classNames('col-8', styles.page)}>
+        <CodeInsightsPage className={classNames('col-8', styles.page)} isSourcegraphApp={props.isSourcegraphApp}>
             <PageTitle title={`Configure ${dashboard.title} - Code Insights`} />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Configure dashboard' }]} />
@@ -101,6 +105,7 @@ export const EditDashboardPage: FC = () => {
                     initialValues={getDashboardInitialValues(dashboard, owners)}
                     owners={owners}
                     onSubmit={handleSubmit}
+                    isSourcegraphApp={props.isSourcegraphApp}
                 >
                     {formAPI => (
                         <>

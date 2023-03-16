@@ -37,6 +37,7 @@ go_library(
 
 go_test(
     name = "uploadstore_test",
+    timeout = "short",
     srcs = [
         "config_test.go",
         "gcs_client_test.go",

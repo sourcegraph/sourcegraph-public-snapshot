@@ -34,6 +34,7 @@ go_library(
 
 go_test(
     name = "codemonitors_test",
+    timeout = "short",
     srcs = ["search_test.go"],
     embed = [":codemonitors"],
     tags = [

@@ -32,6 +32,7 @@ go_library(
 
 buf_lint_test(
     name = "v1_proto_lint",
+    timeout = "short",
     config = "//internal:buf.yaml",
     targets = [":v1_proto"],
 )

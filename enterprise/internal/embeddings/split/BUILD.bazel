@@ -10,6 +10,7 @@ go_library(
 
 go_test(
     name = "split_test",
+    timeout = "short",
     srcs = ["split_test.go"],
     data = glob(["testdata/**"]),
     embed = [":split"],

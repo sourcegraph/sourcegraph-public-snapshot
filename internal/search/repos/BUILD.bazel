@@ -45,6 +45,7 @@ go_library(
 
 go_test(
     name = "repos_test",
+    timeout = "short",
     srcs = [
         "excluded_job_test.go",
         "mocks_test.go",

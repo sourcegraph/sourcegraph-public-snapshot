@@ -28,6 +28,7 @@ go_library(
 
 go_test(
     name = "search_test",
+    timeout = "short",
     srcs = [
         "diff_format_test.go",
         "diff_test.go",

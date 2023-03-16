@@ -28,6 +28,7 @@ go_library(
 
 go_test(
     name = "queue_test",
+    timeout = "short",
     srcs = ["client_test.go"],
     deps = [
         ":queue",

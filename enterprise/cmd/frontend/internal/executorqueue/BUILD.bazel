@@ -34,6 +34,7 @@ go_library(
 
 go_test(
     name = "executorqueue_test",
+    timeout = "short",
     srcs = [
         "gitserverproxy_test.go",
         "mocks_test.go",

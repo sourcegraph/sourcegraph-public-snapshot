@@ -64,6 +64,7 @@ go_library(
 
 go_test(
     name = "app_test",
+    timeout = "short",
     srcs = [
         "app_test.go",
         "debug_test.go",

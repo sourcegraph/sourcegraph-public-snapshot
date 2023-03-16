@@ -17,6 +17,7 @@ go_library(
 
 go_test(
     name = "audit_test",
+    timeout = "short",
     srcs = ["audit_test.go"],
     embed = [":audit"],
     deps = [

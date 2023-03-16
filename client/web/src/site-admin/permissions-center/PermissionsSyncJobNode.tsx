@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { mdiAccount, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,16 +7,16 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import {
     Badge,
     BADGE_VARIANTS,
-    Link,
-    Text,
-    Tooltip,
     Button,
     Icon,
-    PopoverTrigger,
-    PopoverContent,
+    Link,
     Popover,
-    Position,
+    PopoverContent,
     PopoverOpenEvent,
+    PopoverTrigger,
+    Position,
+    Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -98,10 +98,22 @@ export const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStat
     },
 }
 
-export const PermissionsSyncJobStatusBadge: React.FunctionComponent<{ state: PermissionsSyncJobState }> = ({
+interface PermissionsSyncJobStatusBadgeProps {
+    state: PermissionsSyncJobState
+    cancellationReason: string | null
+    failureMessage: string | null
+}
+
+export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsSyncJobStatusBadgeProps> = ({
     state,
+    cancellationReason,
+    failureMessage,
 }) => (
-    <Badge className="mr-2" variant={JOB_STATE_METADATA_MAPPING[state].badgeVariant}>
+    <Badge
+        className={classNames(styles.statusContainer, 'mr-1')}
+        tooltip={cancellationReason ?? failureMessage ?? undefined}
+        variant={JOB_STATE_METADATA_MAPPING[state].badgeVariant}
+    >
         {state}
     </Badge>
 )
@@ -136,7 +148,7 @@ export const PermissionsSyncJobSubject: React.FunctionComponent<{ job: Permissio
                                         Name
                                     </Text>
                                     <Text className="mb-0">{job.subject.name}</Text>
-                                    <Text className="mb-0" weight="bold">
+                                    <Text className="mb-0 mt-2" weight="bold">
                                         External Service
                                     </Text>
                                     <div className="d-flex align-items-center">
@@ -154,24 +166,26 @@ export const PermissionsSyncJobSubject: React.FunctionComponent<{ job: Permissio
                         <Link to={`/users/${job.subject.username}`} className="text-truncate">
                             {job.subject.username}
                         </Link>
-                        <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
-                            <PopoverTrigger
-                                as={Button}
-                                className={classNames('border-0 p-0', styles.actionsButton)}
-                                variant="secondary"
-                                outline={true}
-                            >
-                                <Icon aria-label="Show details" svgPath={mdiChevronDown} />
-                            </PopoverTrigger>
-                            <PopoverContent position={Position.bottom} focusLocked={false}>
-                                <div className="p-2">
-                                    <Text className="mb-0" weight="bold">
-                                        {job.subject.displayName}
-                                    </Text>
-                                    <Text className="mb-0">{job.subject.email}</Text>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                        {(job.subject.email || job.subject.displayName) && (
+                            <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
+                                <PopoverTrigger
+                                    as={Button}
+                                    className={classNames('border-0 p-0', styles.actionsButton)}
+                                    variant="secondary"
+                                    outline={true}
+                                >
+                                    <Icon aria-label="Show details" svgPath={mdiChevronDown} />
+                                </PopoverTrigger>
+                                <PopoverContent position={Position.bottom} focusLocked={false}>
+                                    <div className="p-2">
+                                        <Text className="mb-0" weight="bold">
+                                            {job.subject.displayName}
+                                        </Text>
+                                        <Text className="mb-0">{job.subject.email}</Text>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        )}
                     </>
                 )}
             </div>
@@ -212,23 +226,11 @@ export const PermissionsSyncJobNumbers: React.FunctionComponent<{ job: Permissio
     added,
 }) =>
     added ? (
-        <Tooltip
-            content={`Added access for ${job.permissionsAdded} ${
-                job.subject.__typename === 'Repository' ? 'users' : 'repositories'
-            }.`}
-        >
-            <div className="text-success">
-                +<b>{job.permissionsAdded}</b>
-            </div>
-        </Tooltip>
+        <div className="text-success text-right mr-2">
+            +<b>{job.permissionsAdded}</b>
+        </div>
     ) : (
-        <Tooltip
-            content={`Removed access for ${job.permissionsRemoved} ${
-                job.subject.__typename === 'Repository' ? 'users' : 'repositories'
-            }.`}
-        >
-            <div className="text-danger">
-                -<b>{job.permissionsRemoved}</b>
-            </div>
-        </Tooltip>
+        <div className="text-danger text-right mr-2">
+            -<b>{job.permissionsRemoved}</b>
+        </div>
     )

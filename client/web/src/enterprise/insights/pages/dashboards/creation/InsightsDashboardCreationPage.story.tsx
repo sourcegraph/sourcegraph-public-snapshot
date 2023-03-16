@@ -39,7 +39,7 @@ export const InsightsDashboardCreationLicensed: Story = () => {
 
     return (
         <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
-            <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+            <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} isSourcegraphApp={false} />
         </CodeInsightsBackendStoryMock>
     )
 }
@@ -49,7 +49,7 @@ export const InsightsDashboardCreationUnlicensed: Story = () => {
 
     return (
         <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
-            <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+            <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} isSourcegraphApp={false} />
         </CodeInsightsBackendStoryMock>
     )
 }

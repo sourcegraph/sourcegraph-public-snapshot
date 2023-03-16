@@ -19,6 +19,7 @@ go_library(
 
 go_test(
     name = "oneclickexport_test",
+    timeout = "short",
     srcs = ["export_test.go"],
     embed = [":oneclickexport"],
     deps = [

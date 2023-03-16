@@ -10,16 +10,13 @@ import {
 } from '@sourcegraph/shared/src/components/icons'
 import { Icon, Text } from '@sourcegraph/wildcard'
 
-import { RepositoryStatsResult, RepositoryStatsVariables, StatusMessagesResult } from '../../graphql-operations'
-import { STATUS_MESSAGES } from '../../nav/StatusMessagesNavItemQueries'
-import { REPOSITORY_STATS } from '../../site-admin/backend'
+import { StatusAndRepoStatsResult } from '../../graphql-operations'
+import { STATUS_AND_REPO_STATS } from '../../site-admin/backend'
 
 import styles from './ProgressBar.module.scss'
 
 export const ProgressBar: FC<{}> = () => {
-    const { data } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, { pollInterval: 2000 })
-
-    const { data: statusData } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
+    const { data } = useQuery<StatusAndRepoStatsResult>(STATUS_AND_REPO_STATS, {
         fetchPolicy: 'cache-and-network',
         pollInterval: 2000,
     })
@@ -63,14 +60,14 @@ export const ProgressBar: FC<{}> = () => {
         let codeHostMessage
         let iconProps
 
-        if (!statusData || statusData.statusMessages?.some(({ __typename: type }) => type === 'CloningProgress')) {
+        if (!data || data.statusMessages?.some(({ __typename: type }) => type === 'CloningProgress')) {
             codeHostMessage = 'Syncing'
             iconProps = { as: CloudSyncIconRefresh }
-        } else if (statusData.statusMessages?.some(({ __typename: type }) => type === 'IndexingProgress')) {
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'IndexingProgress')) {
             codeHostMessage = 'Indexing'
             iconProps = { as: CloudSyncIconRefresh }
         } else if (
-            statusData.statusMessages?.some(
+            data.statusMessages?.some(
                 ({ __typename: type }) =>
                     type === 'GitUpdatesDisabled' || type === 'ExternalServiceSyncError' || type === 'SyncError'
             )
@@ -97,14 +94,17 @@ export const ProgressBar: FC<{}> = () => {
                 </Text>
             </div>
         )
-    }, [statusData])
+    }, [data])
 
-    if (data?.repositoryStats.total === 0) {
+    const totalRepositories = data?.repositoryStats.total ?? 0
+
+    // If there is no repositories do not render progress bar UI
+    if (totalRepositories === 0) {
         return null
     }
 
     return (
-        <section className="d-flex align-items-center">
+        <section className={styles.root}>
             {statusMessage}
 
             {items.map(item => (

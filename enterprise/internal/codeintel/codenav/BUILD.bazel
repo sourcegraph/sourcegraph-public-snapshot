@@ -41,6 +41,7 @@ go_library(
 
 go_test(
     name = "codenav_test",
+    timeout = "short",
     srcs = [
         "gittree_translator_test.go",
         "mocks_test.go",

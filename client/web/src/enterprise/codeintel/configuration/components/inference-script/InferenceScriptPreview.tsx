@@ -31,12 +31,10 @@ interface InferenceScriptPreviewFormValues {
 }
 
 interface InferenceScriptPreviewProps {
-    active: boolean
     script: string
-    setTab: (index: number) => void
 }
 
-export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPreviewProps> = ({ active, script }) => {
+export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPreviewProps> = ({ script }) => {
     const [getRepoId, repoData] = useLazyQuery<GetRepoIdResult, GetRepoIdVariables>(GET_REPO_ID, {})
     const [inferJobs, { data, loading, error }] = useLazyQuery<
         InferAutoIndexJobsForRepoResult,
@@ -51,11 +49,11 @@ export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPrev
     useEffect(() => {
         const id = repoData?.data?.repository?.id
 
-        if (active && id) {
+        if (id) {
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             inferJobs({ variables: { repository: id, script, rev: null }, fetchPolicy: 'cache-first' })
         }
-    }, [active, inferJobs, repoData, script])
+    }, [inferJobs, repoData, script])
 
     const repository = useField({
         name: 'repository',
@@ -63,14 +61,13 @@ export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPrev
     })
 
     return (
-        <div className={styles.container}>
+        <div>
             <Form className={styles.actionContainer} ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>
                 <Label id="preview-label">Run your script against a repository</Label>
                 <div className="d-flex align-items-center">
                     <Input
                         as={RepositoryField}
                         required={true}
-                        autoFocus={true}
                         aria-label="Repository"
                         placeholder="Example: github.com/sourcegraph/sourcegraph"
                         {...getDefaultInputProps(repository)}

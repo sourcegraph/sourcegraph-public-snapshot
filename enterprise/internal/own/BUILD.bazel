@@ -22,6 +22,7 @@ go_library(
 
 go_test(
     name = "own_test",
+    timeout = "short",
     srcs = ["service_test.go"],
     embed = [":own"],
     deps = [

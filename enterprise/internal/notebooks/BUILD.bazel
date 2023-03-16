@@ -22,6 +22,7 @@ go_library(
 
 go_test(
     name = "notebooks_test",
+    timeout = "short",
     srcs = [
         "main_test.go",
         "store_test.go",

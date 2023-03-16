@@ -7,6 +7,9 @@ client/build-config/node_modules
 client/client-api/node_modules
 client/codeintellify/node_modules
 client/cody/node_modules
+client/cody/common/node_modules
+client/cody/server/node_modules
+client/cody/vscode-codegen/node_modules
 client/common/node_modules
 client/eslint-plugin-wildcard/node_modules
 client/extension-api/node_modules
@@ -33,8 +36,10 @@ client/backstage-frontend/node_modules
 cmd/symbols/squirrel/test_repos/starlark
 
 # generated and hosted in GCS bucket
+
 cmd/sitemap
 
 # temporary ignores
+
 internal/cmd/progress-bot
 client/cody
