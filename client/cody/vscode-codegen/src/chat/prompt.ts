@@ -88,19 +88,10 @@ export class Transcript {
         }
 
         switch (this.contextType) {
-            case 'blended':
-                const embeddingMsgs = await this.getEmbeddingsContextMessages(query, options)
-                // Use keyword context if embedding client is not available
-                return this.embeddings && embeddingMsgs.length
-                    ? embeddingMsgs
-                    : needsCodebaseContext
-                    ? await this.keywords.getContextMessages(query)
-                    : []
-            case 'embeddings':
-                return await this.getEmbeddingsContextMessages(query, options)
+            case 'blended' || 'embeddings':
+                return await this.getEmbeddingsContextMessages(query, options, needsCodebaseContext)
             case 'keyword':
                 return await this.keywords.getContextMessages(query)
-            case 'none':
             default:
                 return []
         }
@@ -111,11 +102,15 @@ export class Transcript {
     // when we run out of tokens.
     private async getEmbeddingsContextMessages(
         query: string,
-        options: ContextSearchOptions
+        options: ContextSearchOptions,
+        needsCodebaseContext: boolean = false
     ): Promise<ContextMessage[]> {
+        // Not falling back to keywords context if contextType is set to 'embeddings'
+        const fallbackToKeywords = this.contextType === 'blended' && needsCodebaseContext
         if (!this.embeddings) {
             console.log('no embeddings client for current codebase')
-            return []
+            // fallback to keyword context when embedding client not available but needs codebase context
+            return fallbackToKeywords ? await this.keywords.getContextMessages(query) : []
         }
         if (!(await this.embeddings.queryNeedsAdditionalContext(query))) {
             console.log('embeddings: no context needed')
@@ -133,6 +128,10 @@ export class Transcript {
         const combinedResults = embeddingsSearchResults.codeResults
             .concat(embeddingsSearchResults.markdownResults)
             .filter(filterFn)
+
+        if (!combinedResults.length && fallbackToKeywords) {
+            return await this.keywords.getContextMessages(query)
+        }
 
         return groupResultsByFile(combinedResults)
             .reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
