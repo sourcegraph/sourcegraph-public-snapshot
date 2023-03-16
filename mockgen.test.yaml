@@ -84,7 +84,6 @@
         - GitserverRepoStore
         - PolicyMatcher
         - RepoUpdaterClient
-        - GitserverClient
         - UploadService
         - IndexEnqueuer
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared
@@ -101,7 +100,6 @@
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background
       interfaces:
-        - GitserverClient
         - ExternalServiceStore
         - AutoIndexingService
         - DependenciesService
@@ -112,7 +110,6 @@
         - Store
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing
       interfaces:
-        - GitserverClient
         - RepoUpdaterClient
         - InferenceService
         - UploadService
@@ -129,7 +126,6 @@
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies
       interfaces:
         - UploadService
-        - GitserverClient
 - filename: enterprise/internal/codeintel/codenav/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store
@@ -142,7 +138,6 @@
       interfaces:
         - UploadService
         - GitTreeTranslator
-        - GitserverClient
 - filename: enterprise/internal/codeintel/uploads/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store
@@ -156,7 +151,6 @@
         - LSIFStore
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads
       interfaces:
-        - GitserverClient
         - PolicyService
         - PolicyMatcher
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
@@ -167,7 +161,6 @@
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background
       interfaces:
-        - GitserverClient
         - PolicyService
         - PolicyMatcher
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store
@@ -281,7 +274,6 @@
     - AutoIndexingService
     - UploadsService
     - PolicyService
-    - GitserverClient
     - CodeNavService
 - filename: enterprise/internal/insights/background/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background

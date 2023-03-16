@@ -2,6 +2,7 @@ package autoindexing
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 )
 
@@ -17,9 +18,10 @@ type ExternalServiceStore = background.ExternalServiceStore
 
 type PolicyMatcher = background.PolicyMatcher
 
-type RepoUpdaterClient = background.RepoUpdaterClient
-
-type GitserverClient = background.GitserverClient
+type RepoUpdaterClient interface {
+	background.RepoUpdaterClient
+	enqueuer.RepoUpdaterClient
+}
 
 type InferenceService = jobselector.InferenceService
 

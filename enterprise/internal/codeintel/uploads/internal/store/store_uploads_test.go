@@ -896,14 +896,14 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 	}
 
 	// Ensure repository was marked as dirty
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -1048,14 +1048,14 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	}
 
 	// Ensure repository was marked as dirty
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -1113,14 +1113,14 @@ func TestDeleteUploadByID(t *testing.T) {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -1151,14 +1151,14 @@ func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -1500,11 +1500,11 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 2, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
-	if len(repositoryIDs) == 0 {
+	if len(dirtyRepositories) == 0 {
 		t.Errorf("did not expect repository to be unmarked")
 	}
 
@@ -1512,11 +1512,11 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 3, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
-	repositoryIDs, err = store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err = store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
-	if len(repositoryIDs) != 0 {
+	if len(dirtyRepositories) != 0 {
 		t.Errorf("expected repository to be unmarked")
 	}
 

@@ -41,8 +41,8 @@ func TestDeleteLSIFIndex(t *testing.T) {
 	mockAutoIndexingService := NewMockAutoIndexingService()
 
 	siteAdminChecker := sharedresolvers.NewSiteAdminChecker(db)
-	locationResolverFactory := sharedresolvers.NewCachedLocationResolverFactory(nil, repos, gitserver.NewClient())
-	rootResolver := NewRootResolver(&observation.TestContext, mockAutoIndexingService, mockUploadsService, mockPolicyService, siteAdminChecker, nil, nil, locationResolverFactory)
+	locationResolverFactory := sharedresolvers.NewCachedLocationResolverFactory(nil, repos, gitserver.NewMockClient())
+	rootResolver := NewRootResolver(&observation.TestContext, mockAutoIndexingService, mockUploadsService, mockPolicyService, nil, siteAdminChecker, nil, nil, locationResolverFactory)
 
 	if _, err := rootResolver.DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -67,8 +67,8 @@ func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
 	mockAutoIndexingService := NewMockAutoIndexingService()
 
 	siteAdminChecker := sharedresolvers.NewSiteAdminChecker(db)
-	locationResolverFactory := sharedresolvers.NewCachedLocationResolverFactory(nil, repos, gitserver.NewClient())
-	rootResolver := NewRootResolver(&observation.TestContext, mockAutoIndexingService, mockUploadsService, mockPolicyService, siteAdminChecker, nil, nil, locationResolverFactory)
+	locationResolverFactory := sharedresolvers.NewCachedLocationResolverFactory(nil, repos, gitserver.NewMockClient())
+	rootResolver := NewRootResolver(&observation.TestContext, mockAutoIndexingService, mockUploadsService, mockPolicyService, nil, siteAdminChecker, nil, nil, locationResolverFactory)
 
 	if _, err := rootResolver.DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != auth.ErrNotAuthenticated {
 		t.Errorf("unexpected error. want=%q have=%q", auth.ErrNotAuthenticated, err)

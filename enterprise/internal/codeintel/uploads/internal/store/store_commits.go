@@ -22,7 +22,7 @@ func (s *store) ProcessSourcedCommits(
 	minimumTimeSinceLastCheck time.Duration,
 	commitResolverMaximumCommitLag time.Duration,
 	limit int,
-	f func(ctx context.Context, repositoryID int, commit string) (bool, error),
+	f func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
 	now time.Time,
 ) (_, _ int, err error) {
 	sourcedUploads, err := s.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
@@ -36,7 +36,7 @@ func (s *store) ProcessSourcedCommits(
 		for _, commit := range sc.Commits {
 			numCommits++
 
-			shouldDelete, err := f(ctx, sc.RepositoryID, commit)
+			shouldDelete, err := f(ctx, sc.RepositoryID, sc.RepositoryName, commit)
 			if err != nil {
 				return 0, 0, err
 			}

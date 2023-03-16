@@ -61,7 +61,7 @@ func TestCrateSyncer(t *testing.T) {
 		return
 	})
 
-	gitclient := NewMockGitserverClient()
+	gitclient := gitserver.NewMockClient()
 	gitclient.LsFilesFunc.SetDefaultReturn([]string{"petgraph", "percent"}, nil)
 	gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, sub authz.SubRepoPermissionChecker, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 		var archive io.ReadCloser
