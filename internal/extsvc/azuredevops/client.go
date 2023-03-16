@@ -113,7 +113,7 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 		req.Header.Set("Content-Type", "application/json")
 		reqBody, err = io.ReadAll(req.Body)
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 	}
 	req.Body = io.NopCloser(bytes.NewReader(reqBody))
