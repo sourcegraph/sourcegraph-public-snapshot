@@ -53,7 +53,10 @@ func appSignInURL() string {
 	if err != nil {
 		return externalURL
 	}
-	nonce := userpasswd.AppReadCurrentNonce()
+	nonce, err := userpasswd.AppNonce.Value()
+	if err != nil {
+		return externalURL
+	}
 	u.Path = "/sign-in"
 	query := u.Query()
 	query.Set("nonce", nonce)
