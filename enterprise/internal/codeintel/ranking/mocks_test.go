@@ -78,6 +78,9 @@ type MockStore struct {
 	// VacuumStaleGraphsFunc is an instance of a mock function object
 	// controlling the behavior of the method VacuumStaleGraphs.
 	VacuumStaleGraphsFunc *StoreVacuumStaleGraphsFunc
+	// VacuumStaleInitialPathsFunc is an instance of a mock function object
+	// controlling the behavior of the method VacuumStaleInitialPaths.
+	VacuumStaleInitialPathsFunc *StoreVacuumStaleInitialPathsFunc
 	// VacuumStaleRanksFunc is an instance of a mock function object
 	// controlling the behavior of the method VacuumStaleRanks.
 	VacuumStaleRanksFunc *StoreVacuumStaleRanksFunc
@@ -171,6 +174,11 @@ func NewMockStore() *MockStore {
 			},
 		},
 		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
+			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
+				return
+			},
+		},
+		VacuumStaleInitialPathsFunc: &StoreVacuumStaleInitialPathsFunc{
 			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
 				return
 			},
@@ -277,6 +285,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.VacuumStaleGraphs")
 			},
 		},
+		VacuumStaleInitialPathsFunc: &StoreVacuumStaleInitialPathsFunc{
+			defaultHook: func(context.Context, string) (int, int, error) {
+				panic("unexpected invocation of MockStore.VacuumStaleInitialPaths")
+			},
+		},
 		VacuumStaleRanksFunc: &StoreVacuumStaleRanksFunc{
 			defaultHook: func(context.Context, string) (int, int, error) {
 				panic("unexpected invocation of MockStore.VacuumStaleRanks")
@@ -344,6 +357,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
 			defaultHook: i.VacuumStaleGraphs,
+		},
+		VacuumStaleInitialPathsFunc: &StoreVacuumStaleInitialPathsFunc{
+			defaultHook: i.VacuumStaleInitialPaths,
 		},
 		VacuumStaleRanksFunc: &StoreVacuumStaleRanksFunc{
 			defaultHook: i.VacuumStaleRanks,
@@ -2233,6 +2249,118 @@ func (c StoreVacuumStaleGraphsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreVacuumStaleGraphsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// StoreVacuumStaleInitialPathsFunc describes the behavior when the
+// VacuumStaleInitialPaths method of the parent MockStore instance is
+// invoked.
+type StoreVacuumStaleInitialPathsFunc struct {
+	defaultHook func(context.Context, string) (int, int, error)
+	hooks       []func(context.Context, string) (int, int, error)
+	history     []StoreVacuumStaleInitialPathsFuncCall
+	mutex       sync.Mutex
+}
+
+// VacuumStaleInitialPaths delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) VacuumStaleInitialPaths(v0 context.Context, v1 string) (int, int, error) {
+	r0, r1, r2 := m.VacuumStaleInitialPathsFunc.nextHook()(v0, v1)
+	m.VacuumStaleInitialPathsFunc.appendCall(StoreVacuumStaleInitialPathsFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// VacuumStaleInitialPaths method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreVacuumStaleInitialPathsFunc) SetDefaultHook(hook func(context.Context, string) (int, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// VacuumStaleInitialPaths method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreVacuumStaleInitialPathsFunc) PushHook(hook func(context.Context, string) (int, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreVacuumStaleInitialPathsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, string) (int, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreVacuumStaleInitialPathsFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, string) (int, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreVacuumStaleInitialPathsFunc) nextHook() func(context.Context, string) (int, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreVacuumStaleInitialPathsFunc) appendCall(r0 StoreVacuumStaleInitialPathsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreVacuumStaleInitialPathsFuncCall
+// objects describing the invocations of this function.
+func (f *StoreVacuumStaleInitialPathsFunc) History() []StoreVacuumStaleInitialPathsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreVacuumStaleInitialPathsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreVacuumStaleInitialPathsFuncCall is an object that describes an
+// invocation of method VacuumStaleInitialPaths on an instance of MockStore.
+type StoreVacuumStaleInitialPathsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreVacuumStaleInitialPathsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreVacuumStaleInitialPathsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
