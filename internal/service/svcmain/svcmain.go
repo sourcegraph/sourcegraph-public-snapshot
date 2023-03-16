@@ -3,15 +3,16 @@ package svcmain
 
 import (
 	"context"
+	"flag"
 	"fmt"
+	golog "log"
 	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/hexops/cmder"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/output"
-	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -31,6 +32,37 @@ import (
 type Config struct {
 	AfterConfigure func() // run after all services' Configure hooks are called
 }
+
+var commands cmder.Commander
+
+func init() {
+	// Register the "sourcegraph version" command
+	flagSet := flag.NewFlagSet("version", flag.ExitOnError)
+	commands = append(commands, &cmder.Command{
+		FlagSet: flagSet,
+		Handler: func(args []string) error {
+			_ = flagSet.Parse(args)
+			fmt.Println(version.Version())
+			return nil
+		},
+		UsageFunc: func() {
+			fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'sourcegraph %s':\n", runFlagSet.Name())
+			flagSet.PrintDefaults()
+		},
+	})
+}
+
+var usageText = `sourcegraph makes searching & browsing code easy
+
+Usage:
+	sourcegraph <command> [arguments]
+
+The commands are:
+	run        start running Sourcegraph (default)
+	version    display the current Sourcegraph version
+
+Use "sourcegraph <command> -h" for more information about a command.
+`
 
 // Main is called from the `main` function of the `sourcegraph-oss` and
 // `sourcegraph` commands.
@@ -57,27 +89,31 @@ func Main(services []sgservice.Service, config Config, args []string) {
 		),
 	)
 
-	runCommand := &cli.Command{
-		Name:  "run",
-		Usage: "Run the Sourcegraph App",
-		Action: func(ctx *cli.Context) error {
+	// Register the "sourcegraph run" command
+	runFlagSet := flag.NewFlagSet("run", flag.ExitOnError)
+	commands = append(commands, &cmder.Command{
+		FlagSet: runFlagSet,
+		Handler: func(args []string) error {
+			_ = runFlagSet.Parse(args)
+
 			logger := log.Scoped("sourcegraph", "Sourcegraph")
 			singleprogram.Init(logger)
 			run(liblog, logger, services, config, true, true)
+
 			return nil
 		},
-	}
+		UsageFunc: func() {
+			fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'sourcegraph %s':\n", runFlagSet.Name())
+			runFlagSet.PrintDefaults()
+		},
+	})
 
-	app := cli.NewApp()
-	app.Name = filepath.Base(args[0])
-	app.Usage = "The Sourcegraph App"
-	app.Version = version.Version()
-	app.Action = runCommand.Action
-
-	if err := app.Run(args); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
+	if len(args) == 1 {
+		args = append(args, "run")
 	}
+	golog.SetFlags(0)
+	golog.SetPrefix("")
+	commands.Run(flag.CommandLine, "sourcegraph", usageText, args[1:])
 }
 
 // DeprecatedSingleServiceMain is called from the `main` function of a command to start a single

@@ -967,6 +967,8 @@ github.com/hexops/autogold v0.8.1/go.mod h1:97HLDXyG23akzAoRYJh/2OBs3kd80eHyKPvZ
 github.com/hexops/autogold v1.3.1 h1:YgxF9OHWbEIUjhDbpnLhgVsjUDsiHDTyDfy2lrfdlzo=
 github.com/hexops/autogold/v2 v2.1.0 h1:5s9J6CROngFPkgowSkV20bIflBrImSdDqIpoXJeZSkU=
 github.com/hexops/autogold/v2 v2.1.0/go.mod h1:cYVc0tJn6v9Uf9xMOHvmH6scuTxsVJSxGcKR/yOVPzY=
+github.com/hexops/cmder v1.0.2 h1:lNANYaWASSFP9jpq1lBqIfNoWBXvUMWXCp9v0GZhyf0=
+github.com/hexops/cmder v1.0.2/go.mod h1:7vsl5I9EK1NGtWYgBzQtOM4e13WReMsXpogtGhZWzAg=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
 github.com/hexops/valast v1.4.3 h1:oBoGERMJh6UZdRc6cduE1CTPK+VAdXA59Y1HFgu3sm0=
