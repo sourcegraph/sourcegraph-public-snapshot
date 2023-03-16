@@ -1,16 +1,6 @@
-export interface EmbeddingSearchResult {
-    filePath: string
-    start: number
-    end: number
-    text: string
-}
-
-export interface EmbeddingSearchResults {
-    codeResults: EmbeddingSearchResult[]
-    markdownResults: EmbeddingSearchResult[]
-}
+import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql/client'
 
 export interface Embeddings {
-    search(query: string, codeCount: number, markdownCount: number): Promise<EmbeddingSearchResults>
-    queryNeedsAdditionalContext(query: string): Promise<boolean>
+    search(query: string, codeResultsCount: number, textResultsCount: number): Promise<EmbeddingsSearchResults | Error>
+    isContextRequiredForQuery(query: string): Promise<boolean | Error>
 }

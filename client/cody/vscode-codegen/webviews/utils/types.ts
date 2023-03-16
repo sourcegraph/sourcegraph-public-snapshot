@@ -1,5 +1,5 @@
 export interface Message {
-    speaker: 'you' | 'bot'
+    speaker: 'human' | 'assistant'
     text: string
 }
 

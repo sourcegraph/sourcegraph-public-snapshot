@@ -70,7 +70,7 @@ export class GitHistory implements Recipe {
         return {
             displayText,
             promptMessage: {
-                speaker: 'you',
+                speaker: 'human',
                 text: messageText,
             },
             contextMessages: [],

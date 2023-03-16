@@ -15,7 +15,6 @@ async function enableCodyWithAccessToken(token: string): Promise<void> {
 async function setMockServerConfig(): Promise<void> {
     const config = vscode.workspace.getConfiguration()
     await config.update('cody.serverEndpoint', `http://localhost:${mockServer.SERVER_PORT}`)
-    await config.update('cody.embeddingsEndpoint', `http://localhost:${mockServer.EMBEDDING_PORT}`)
 }
 
 async function waitUntil(predicate: () => Promise<boolean>): Promise<void> {

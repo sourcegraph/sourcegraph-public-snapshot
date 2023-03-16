@@ -1,9 +1,8 @@
 import { removeStopwords } from 'stopword'
 import * as vscode from 'vscode'
 
-import { Message } from '@sourcegraph/cody-common'
-
 import { getContextMessageWithResponse, populateCodeContextTemplate } from '../chat/prompt'
+import { Message } from '../sourcegraph-api'
 
 import { getTermScore, KeywordContextFetcher } from '.'
 

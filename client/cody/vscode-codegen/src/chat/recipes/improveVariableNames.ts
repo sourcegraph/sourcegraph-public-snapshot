@@ -1,6 +1,5 @@
-import { Message } from '@sourcegraph/cody-common'
-
 import { Editor } from '../../editor'
+import { Message } from '../../sourcegraph-api'
 import { ContextSearchOptions } from '../context-search-options'
 import { getContextMessageWithResponse, populateCodeContextTemplate, truncateText, truncateTextStart } from '../prompt'
 
@@ -33,7 +32,7 @@ export class ImproveVariableNames implements Recipe {
         const contextQuery = truncateText(selection.selectedText, maxInputTokens)
         const contextMessages = await getEmbeddingsContextMessages(contextQuery, {
             numCodeResults: 8,
-            numMarkdownResults: 0,
+            numTextResults: 0,
         })
         contextMessages.push(
             ...[
@@ -45,7 +44,7 @@ export class ImproveVariableNames implements Recipe {
         // Get query message
         const languageName = getNormalizedLanguageName(selection.fileName)
         const promptMessage: Message = {
-            speaker: 'you',
+            speaker: 'human',
             text: `Improve the variable names in this ${languageName} code by replacing the variable names with new identifiers which succinctly capture the purpose of the variable. We want the new code to be a drop-in replacement, so do not change names bound outside the scope of this code, like function names or members defined elsewhere. Only change the names of local variables and parameters:\n\n\`\`\`\n${selection.selectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`,
         }
 

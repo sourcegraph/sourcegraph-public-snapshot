@@ -51,7 +51,11 @@ function App(): React.ReactElement {
                 return
             }
             // Create wsclient.
-            vscodeAPI.postMessage({ command: 'settings', serverURL: endpoint, accessToken: token } as WebviewMessage)
+            vscodeAPI.postMessage({
+                command: 'settings',
+                serverEndpoint: endpoint,
+                accessToken: token,
+            } as WebviewMessage)
             // Set token.
             vscodeAPI.postMessage({ command: 'setToken', value: token } as WebviewMessage)
             setView('chat')

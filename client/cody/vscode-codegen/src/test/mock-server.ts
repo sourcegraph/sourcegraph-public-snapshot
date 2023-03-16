@@ -1,39 +1,22 @@
-import * as http from 'http'
-
-import * as ws from 'ws'
+import express from 'express'
 
 export const SERVER_PORT = 49300
-export const EMBEDDING_PORT = 49301
 
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
-    // TODO: Extend these servers to support expectations.
-    const socketServer = new ws.WebSocketServer({
-        port: SERVER_PORT,
-    })
-    await new Promise(resolve => {
-        socketServer.on('connection', socket => {
-            socket.on('message', message => {
-                // eslint-disable-next-line @typescript-eslint/no-base-to-string
-                const req = JSON.parse(message.toString()) as { requestId: number }
-                socket.send(`{"requestId": ${req.requestId}, "kind": "response:complete", "message": "hello, world"}`)
-            })
-        })
-        socketServer.on('listening', resolve)
+    const app = express()
+    app.use(express.json())
+
+    app.post('/.api/completions/stream', (req, res) => {
+        res.send('event: completion\ndata: {"completion": "hello, world"}\n\nevent: done\ndata: {}\n\n')
     })
 
-    const embeddingServer = http.createServer()
-    embeddingServer.on('request', (request, response) => {
-        response.statusCode = 200
-        response.setHeader('content-type', 'text/plain')
-        response.write('hello, world')
-        response.end()
+    const server = app.listen(SERVER_PORT, () => {
+        console.log(`Mock server listening on port ${SERVER_PORT}`)
     })
-    embeddingServer.listen(EMBEDDING_PORT)
 
     const result = await around()
+    server.close()
 
-    socketServer.close()
-    embeddingServer.close()
     return result
 }
