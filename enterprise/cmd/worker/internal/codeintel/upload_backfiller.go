@@ -34,5 +34,5 @@ func (j *uploadBackfillerJob) Routines(_ context.Context, observationCtx *observ
 		return nil, err
 	}
 
-	return uploads.NewCommittedAtBackfillerJob(services.UploadsService), nil
+	return uploads.NewCommittedAtBackfillerJob(services.UploadsService, services.GitserverClient), nil
 }

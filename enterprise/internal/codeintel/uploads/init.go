@@ -29,12 +29,12 @@ func NewService(
 	observationCtx *observation.Context,
 	db database.DB,
 	codeIntelDB codeintelshared.CodeIntelDB,
-	gsc GitserverClient,
+	gitserverClient gitserver.Client,
 ) *Service {
 	store := uploadsstore.New(scopedContext("uploadsstore", observationCtx), db)
-	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient())
+	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserverClient)
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
-	policyMatcher := policies.NewMatcher(gsc, policies.RetentionExtractor, true, false)
+	policyMatcher := policies.NewMatcher(gitserverClient, policies.RetentionExtractor, true, false)
 	ciLocker := locker.NewWith(db, "codeintel")
 
 	rankingBucket := func() *storage.BucketHandle {
@@ -61,13 +61,13 @@ func NewService(
 		store,
 		repoStore,
 		lsifStore,
-		gsc,
+		gitserverClient,
 		rankingBucket,
 		nil, // written in circular fashion
 		policyMatcher,
 		ciLocker,
 	)
-	svc.policySvc = policies.NewService(observationCtx, db, svc, gsc)
+	svc.policySvc = policies.NewService(observationCtx, db, svc, gitserverClient)
 
 	return svc
 }
@@ -110,18 +110,18 @@ func NewUploadProcessorJob(
 	)
 }
 
-func NewCommittedAtBackfillerJob(uploadSvc *Service) []goroutine.BackgroundRoutine {
+func NewCommittedAtBackfillerJob(uploadSvc *Service, gitserverClient gitserver.Client) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewCommittedAtBackfiller(
 			uploadSvc.store,
-			uploadSvc.gitserverClient,
+			gitserverClient,
 			ConfigCommittedAtBackfillInst.Interval,
 			ConfigCommittedAtBackfillInst.BatchSize,
 		),
 	}
 }
 
-func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserverClient GitserverClient) []goroutine.BackgroundRoutine {
+func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserverClient gitserver.Client) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewDeletedRepositoryJanitor(
 			uploadSvc.store,
@@ -211,12 +211,12 @@ func NewResetters(observationCtx *observation.Context, db database.DB) []gorouti
 	}
 }
 
-func NewCommitGraphUpdater(uploadSvc *Service) []goroutine.BackgroundRoutine {
+func NewCommitGraphUpdater(uploadSvc *Service, gitserverClient gitserver.Client) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewCommitGraphUpdater(
 			uploadSvc.store,
 			uploadSvc.locker,
-			uploadSvc.gitserverClient,
+			gitserverClient,
 			ConfigCommitGraphInst.CommitGraphUpdateTaskInterval,
 			ConfigCommitGraphInst.MaxAgeForNonStaleBranches,
 			ConfigCommitGraphInst.MaxAgeForNonStaleTags,
@@ -224,11 +224,12 @@ func NewCommitGraphUpdater(uploadSvc *Service) []goroutine.BackgroundRoutine {
 	}
 }
 
-func NewExpirationTasks(observationCtx *observation.Context, uploadSvc *Service) []goroutine.BackgroundRoutine {
+func NewExpirationTasks(observationCtx *observation.Context, uploadSvc *Service, repoStore database.RepoStore) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewUploadExpirer(
 			observationCtx,
 			uploadSvc.store,
+			repoStore,
 			uploadSvc.policySvc,
 			uploadSvc.policyMatcher,
 			ConfigExpirationInst.ExpirerInterval,

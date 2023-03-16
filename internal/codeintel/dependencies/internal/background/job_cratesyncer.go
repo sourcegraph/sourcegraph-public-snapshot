@@ -33,7 +33,7 @@ type crateSyncerJob struct {
 	archiveWindowSize int
 	autoindexingSvc   AutoIndexingService
 	dependenciesSvc   DependenciesService
-	gitClient         GitserverClient
+	gitClient         gitserver.Client
 	extSvcStore       ExternalServiceStore
 	clock             glock.Clock
 	operations        *operations
@@ -43,7 +43,7 @@ func NewCrateSyncer(
 	observationCtx *observation.Context,
 	autoindexingSvc AutoIndexingService,
 	dependenciesSvc DependenciesService,
-	gitClient GitserverClient,
+	gitClient gitserver.Client,
 	extSvcStore ExternalServiceStore,
 ) goroutine.BackgroundRoutine {
 	// By default, sync crates every 12h, but the user can customize this interval
