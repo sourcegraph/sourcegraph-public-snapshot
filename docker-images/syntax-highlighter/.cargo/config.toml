@@ -8,6 +8,7 @@ rustflags = ["-Ctarget-feature=-crt-static"]
 default = "crates-io"
 
 [registries.crates-io]
+index = "https://crates.io"
 protocol = "sparse"
 # The sparse protocol cuts down on registry + crate fetching
 # time from about 1m30s to 21s.
