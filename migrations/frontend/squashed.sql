@@ -5265,7 +5265,7 @@ CREATE INDEX lsif_dependency_indexing_jobs_upload_id ON lsif_dependency_syncing_
 
 CREATE INDEX lsif_dependency_repos_blocked ON lsif_dependency_repos USING btree (blocked);
 
-CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at);
+CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at NULLS FIRST);
 
 CREATE INDEX lsif_dependency_repos_name_id ON lsif_dependency_repos USING btree (name, id);
 
@@ -5355,7 +5355,7 @@ CREATE UNIQUE INDEX package_repo_filters_unique_matcher_per_scheme ON package_re
 
 CREATE INDEX package_repo_versions_blocked ON package_repo_versions USING btree (blocked);
 
-CREATE INDEX package_repo_versions_last_checked_at ON package_repo_versions USING btree (last_checked_at);
+CREATE INDEX package_repo_versions_last_checked_at ON package_repo_versions USING btree (last_checked_at NULLS FIRST);
 
 CREATE UNIQUE INDEX package_repo_versions_unique_version_per_package ON package_repo_versions USING btree (package_id, version);
 
