@@ -17,7 +17,9 @@ import { Standalone404Insight } from './components/standalone-404-insight/Standa
 
 import styles from './CodeInsightIndependentPage.module.scss'
 
-interface CodeInsightIndependentPage extends TelemetryProps {}
+interface CodeInsightIndependentPage extends TelemetryProps {
+    isSourcegraphApp: boolean
+}
 
 export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependentPage> = props => {
     const { telemetryService } = props
@@ -40,7 +42,7 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
     }
 
     return (
-        <CodeInsightsPage className={styles.root}>
+        <CodeInsightsPage isSourcegraphApp={props.isSourcegraphApp} className={styles.root}>
             <PageTitle title={`${insight.title} - Code Insights`} />
             <PageHeader
                 path={[{ to: '/insights/all', icon: CodeInsightsIcon }, { text: insight.title }]}

@@ -29,14 +29,14 @@ func (h *UserResourceHandler) Delete(r *http.Request, id string) error {
 		return nil
 	}
 
-	// Save username, verified emails, and external accounts to be used for revoking user permissions after deletion
-	revokeUserPermissionsArgsList, err := getRevokeUserPermissionArgs(r.Context(), user, h.db)
-	if err != nil {
-		return err
-	}
-
 	// Delete user and revoke user permissions
 	err = h.db.WithTransact(r.Context(), func(tx database.DB) error {
+		// Save username, verified emails, and external accounts to be used for revoking user permissions after deletion
+		revokeUserPermissionsArgsList, err := getRevokeUserPermissionArgs(r.Context(), user, h.db)
+		if err != nil {
+			return err
+		}
+
 		if err := tx.Users().HardDelete(r.Context(), int32(idInt)); err != nil {
 			return err
 		}
@@ -65,7 +65,7 @@ func findUser(ctx context.Context, db database.DB, id int) (types.UserForSCIM, e
 		return types.UserForSCIM{}, nil
 	}
 	if users[0].SCIMAccountData == "" {
-		return types.UserForSCIM{}, errors.New("cannot delete user because it doesn't seem to be SCIM-enabled")
+		return types.UserForSCIM{}, errors.New("cannot delete user because it doesn't seem to be SCIM-controlled")
 	}
 	user := *users[0]
 	return user, nil

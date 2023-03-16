@@ -42,6 +42,7 @@ type client interface {
 
 	GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error)
 	WithAuthenticator(auther auth.Authenticator) client
+	SetWaitForRateLimit(wait bool)
 }
 
 var _ client = (*ClientAdapter)(nil)

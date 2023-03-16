@@ -4,26 +4,24 @@ use protobuf::Message;
 use rocket::serde::json::{json, Value as JsonValue};
 use serde::Deserialize;
 use sg_treesitter::jsonify_err;
-use syntect::html::{highlighted_html_for_string, ClassStyle};
 use syntect::{
     highlighting::ThemeSet,
+    html::{highlighted_html_for_string, ClassStyle},
     parsing::{SyntaxReference, SyntaxSet},
 };
 
 mod sg_treesitter;
-pub use sg_treesitter::dump_document;
-pub use sg_treesitter::dump_document_range;
-pub use sg_treesitter::index_language as treesitter_index;
-pub use sg_treesitter::index_language_with_config as treesitter_index_with_config;
-pub use sg_treesitter::lsif_highlight;
-pub use sg_treesitter::make_highlight_config;
-pub use sg_treesitter::FileRange as DocumentFileRange;
-pub use sg_treesitter::PackedRange as LsifPackedRange;
+pub use sg_treesitter::{
+    dump_document, dump_document_range, index_language as treesitter_index,
+    index_language_with_config as treesitter_index_with_config, lsif_highlight,
+    FileRange as DocumentFileRange, PackedRange as LsifPackedRange,
+};
 
 mod sg_syntect;
-use crate::sg_treesitter::treesitter_language;
 use sg_syntect::ClassedTableGenerator;
 use tree_sitter_highlight::Error;
+
+use crate::sg_treesitter::treesitter_language;
 
 mod sg_sciptect;
 
@@ -71,7 +69,8 @@ pub struct SourcegraphQuery {
     pub theme: String,
 }
 
-#[derive(Deserialize, Default, Debug)]
+// NOTE: Keep in sync: internal/gosyntect/gosyntect.go
+#[derive(Deserialize, Default, Debug, PartialEq, Eq)]
 pub enum SyntaxEngine {
     #[default]
     #[serde(rename = "syntect")]
@@ -79,6 +78,9 @@ pub enum SyntaxEngine {
 
     #[serde(rename = "tree-sitter")]
     TreeSitter,
+
+    #[serde(rename = "scip-syntax")]
+    TreeSitterSyntax,
 }
 
 #[derive(Deserialize, Default, Debug)]
@@ -106,6 +108,14 @@ pub fn determine_filetype(q: &SourcegraphQuery) -> String {
         Ok(language) => language.name.clone(),
         Err(_) => "".to_owned(),
     });
+
+    if filetype.is_empty() || filetype.to_lowercase() == "plain text" {
+        #[allow(clippy::single_match)]
+        match q.extension.as_str() {
+            "ncl" => return "nickel".to_string(),
+            _ => {}
+        };
+    }
 
     // Normalize all the filenames here
     match filetype.as_str() {
@@ -275,7 +285,7 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
 
 pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
     match q.engine {
-        crate::SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
+        SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
             let sg_query = SourcegraphQuery {
                 extension: "".to_string(),
                 filepath: q.filepath.clone(),
@@ -295,19 +305,21 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
             )
             .generate();
             let encoded = document.write_to_bytes().map_err(jsonify_err)?;
-            Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
+            Ok(json!({"scip": base64::encode(encoded), "plaintext": false}))
         }),
-        crate::SyntaxEngine::TreeSitter => {
+        SyntaxEngine::TreeSitter | SyntaxEngine::TreeSitterSyntax => {
             let language = q
                 .filetype
                 .ok_or_else(|| json!({"error": "Must pass a language for /scip" }))?
                 .to_lowercase();
 
-            match treesitter_index(treesitter_language(&language), &q.code) {
+            let include_locals = q.engine == SyntaxEngine::TreeSitterSyntax;
+
+            match treesitter_index(treesitter_language(&language), &q.code, include_locals) {
                 Ok(document) => {
                     let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 
-                    Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
+                    Ok(json!({"scip": base64::encode(encoded), "plaintext": false}))
                 }
                 Err(Error::InvalidLanguage) => Err(json!({
                     "error": format!("{} is not a valid filetype for treesitter", language)
@@ -320,9 +332,9 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use syntect::parsing::SyntaxSet;
+
+    use super::*;
 
     #[test]
     fn cls_tex() {

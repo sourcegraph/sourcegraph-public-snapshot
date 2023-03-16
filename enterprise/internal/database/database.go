@@ -41,7 +41,7 @@ func (edb *enterpriseDB) CodeMonitors() CodeMonitorStore {
 }
 
 func (edb *enterpriseDB) Perms() PermsStore {
-	return &permsStore{Store: basestore.NewWithHandle(edb.Handle()), clock: time.Now}
+	return &permsStore{Store: basestore.NewWithHandle(edb.Handle()), clock: time.Now, ossDB: edb.DB}
 }
 
 func (edb *enterpriseDB) SubRepoPerms() SubRepoPermsStore {

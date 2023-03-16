@@ -46,13 +46,13 @@ ORDER BY u.sequence
 `
 
 // DeleteOldAuditLogs removes lsif_upload audit log records older than the given max age.
-func (s *store) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
+func (s *store) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (_, _ int, err error) {
 	ctx, _, endObservation := s.operations.deleteOldAuditLogs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	query := sqlf.Sprintf(deleteOldAuditLogsQuery, now, int(maxAge/time.Second))
-	count, _, err = basestore.ScanFirstInt(s.db.Query(ctx, query))
-	return count, err
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, query))
+	return count, count, err
 }
 
 const deleteOldAuditLogsQuery = `

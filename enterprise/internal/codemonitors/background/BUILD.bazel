@@ -32,6 +32,7 @@ go_library(
         "//internal/goroutine",
         "//internal/httpcli",
         "//internal/observation",
+        "//internal/search/job/jobutil",
         "//internal/search/result",
         "//internal/txemail",
         "//internal/txemail/txtypes",
@@ -50,6 +51,7 @@ go_library(
 
 go_test(
     name = "background_test",
+    timeout = "short",
     srcs = [
         "email_test.go",
         "slack_test.go",
@@ -58,6 +60,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":background"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//internal/database",

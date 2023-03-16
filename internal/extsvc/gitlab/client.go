@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -150,7 +151,7 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 		return c
 	}
 
-	c := p.newClient(a)
+	c := p.NewClient(a)
 	p.gitlabClients[key] = c
 	return c
 }
@@ -172,24 +173,22 @@ type Client struct {
 	// The URN of the external service that the client is derived from.
 	urn string
 
-	baseURL          *url.URL
-	httpClient       httpcli.Doer
-	projCache        *rcache.Cache
-	Auth             auth.Authenticator
-	rateLimitMonitor *ratelimit.Monitor
-	rateLimiter      *ratelimit.InstrumentedLimiter // Our internal rate limiter
+	baseURL             *url.URL
+	httpClient          httpcli.Doer
+	projCache           *rcache.Cache
+	Auth                auth.Authenticator
+	externalRateLimiter *ratelimit.Monitor
+	internalRateLimiter *ratelimit.InstrumentedLimiter
+	waitForRateLimit    bool
+	maxRateLimitRetries int
 }
 
-// newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
+// NewClient creates a new GitLab API client with an optional personal access token to authenticate requests.
 //
 // The URL must point to the base URL of the GitLab instance. This is https://gitlab.com for GitLab.com and
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) newClient(a auth.Authenticator) *Client {
-	return p.NewClient(a)
-}
-
 func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
@@ -210,13 +209,15 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
 	return &Client{
-		urn:              p.urn,
-		baseURL:          p.baseURL,
-		httpClient:       p.httpClient,
-		projCache:        projCache,
-		Auth:             a,
-		rateLimiter:      rl,
-		rateLimitMonitor: rlm,
+		urn:                 p.urn,
+		baseURL:             p.baseURL,
+		httpClient:          p.httpClient,
+		projCache:           projCache,
+		Auth:                a,
+		internalRateLimiter: rl,
+		externalRateLimiter: rlm,
+		waitForRateLimit:    true,
+		maxRateLimitRetries: 2,
 	}
 }
 
@@ -232,8 +233,45 @@ func (c *Client) Urn() string {
 // do is the default method for making API requests and will prepare the correct
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
+	if c.internalRateLimiter != nil {
+		err = c.internalRateLimiter.Wait(ctx)
+		if err != nil {
+			return nil, 0, errors.Wrap(err, "rate limit")
+		}
+	}
+
+	if c.waitForRateLimit {
+		// We don't care whether this happens or not as it is a preventative measure.
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+	}
+
+	var reqBody []byte
+	if req.Body != nil {
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, 0, err
+		}
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
+	}
 	req.URL = c.baseURL.ResolveReference(req.URL)
-	return c.doWithBaseURL(ctx, req, result)
+	respHeader, respCode, err := c.doWithBaseURL(ctx, req, result)
+
+	// GitLab responds with a 429 Too Many Requests if rate limits are exceeded
+	numRetries := 0
+	for c.waitForRateLimit && numRetries < c.maxRateLimitRetries && respCode == http.StatusTooManyRequests {
+		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
+			if req.Body != nil {
+				req.Body = io.NopCloser(bytes.NewReader(reqBody))
+			}
+			respHeader, respCode, err = c.doWithBaseURL(ctx, req, result)
+			numRetries += 1
+		} else {
+			// We did not wait because of rate limiting, so we break the loop
+			break
+		}
+	}
+
+	return respHeader, respCode, err
 }
 
 // doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is
@@ -254,19 +292,15 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 		span.Finish()
 	}()
 
-	if c.rateLimiter != nil {
-		err = c.rateLimiter.Wait(ctx)
-		if err != nil {
-			return nil, 0, errors.Wrap(err, "rate limit")
-		}
-	}
-
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	// Prevent the CachedTransportOpt from caching client side, but still use ETags
 	// to cache server-side
 	req.Header.Set("Cache-Control", "max-age=0")
 
 	resp, err = oauthutil.DoRequest(ctx, log.Scoped("gitlab client", "do request"), c.httpClient, req, c.Auth)
+	if resp != nil {
+		c.externalRateLimiter.Update(resp.Header)
+	}
 	if err != nil {
 		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
 		return nil, 0, errors.Wrap(err, "request failed")
@@ -286,17 +320,17 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	return resp.Header, resp.StatusCode, json.Unmarshal(body, result)
 }
 
-// RateLimitMonitor exposes the rate limit monitor.
-func (c *Client) RateLimitMonitor() *ratelimit.Monitor {
-	return c.rateLimitMonitor
+// ExternalRateLimiter exposes the rate limit monitor.
+func (c *Client) ExternalRateLimiter() *ratelimit.Monitor {
+	return c.externalRateLimiter
 }
 
 func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	tokenHash := a.Hash()
 
 	cc := *c
-	cc.rateLimiter = ratelimit.DefaultRegistry.Get(c.urn)
-	cc.rateLimitMonitor = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
+	cc.internalRateLimiter = ratelimit.DefaultRegistry.Get(c.urn)
+	cc.externalRateLimiter = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 	cc.Auth = a
 
 	return &cc

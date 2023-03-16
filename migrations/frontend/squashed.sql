@@ -65,24 +65,6 @@ CREATE TYPE feature_flag_type AS ENUM (
     'rollout'
 );
 
-CREATE TYPE lsif_index_state AS ENUM (
-    'queued',
-    'processing',
-    'completed',
-    'errored',
-    'failed'
-);
-
-CREATE TYPE lsif_upload_state AS ENUM (
-    'uploading',
-    'queued',
-    'processing',
-    'completed',
-    'errored',
-    'deleted',
-    'failed'
-);
-
 CREATE TYPE lsif_uploads_transition_columns AS (
 	state text,
 	expired boolean,
@@ -428,6 +410,14 @@ CREATE FUNCTION func_lsif_uploads_update() RETURNS trigger
         RETURN NEW;
     END;
 $$;
+
+CREATE FUNCTION func_package_repo_filters_updated_at() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.updated_at = statement_timestamp();
+    RETURN NEW;
+END $$;
 
 CREATE FUNCTION func_row_to_configuration_policies_transition_columns(rec record) RETURNS configuration_policies_transition_columns
     LANGUAGE plpgsql
@@ -797,6 +787,26 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION update_codeintel_path_ranks_statistics_columns() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    SELECT
+        COUNT(r.v) AS num_paths,
+        SUM(LOG(2, r.v::int + 1)) AS refcount_logsum
+    INTO
+        NEW.num_paths,
+        NEW.refcount_logsum
+    FROM jsonb_each(
+        CASE WHEN NEW.payload::text = 'null'
+            THEN '{}'::jsonb
+            ELSE COALESCE(NEW.payload, '{}'::jsonb)
+        END
+    ) r(k, v);
+
+    RETURN NEW;
+END;
+$$;
+
 CREATE FUNCTION update_codeintel_path_ranks_updated_at_column() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
@@ -813,12 +823,6 @@ BEGIN
     RETURN NEW;
 END $$;
 
-CREATE AGGREGATE sg_jsonb_concat_agg(jsonb) (
-    SFUNC = jsonb_concat,
-    STYPE = jsonb,
-    INITCOND = '{}'
-);
-
 CREATE AGGREGATE snapshot_transition_columns(hstore[]) (
     SFUNC = merge_audit_log_transitions,
     STYPE = hstore,
@@ -832,7 +836,8 @@ CREATE TABLE access_requests (
     name text NOT NULL,
     email text NOT NULL,
     additional_info text,
-    status text NOT NULL
+    status text NOT NULL,
+    decision_by_user_id integer
 );
 
 CREATE SEQUENCE access_requests_id_seq
@@ -1190,6 +1195,7 @@ CREATE TABLE changesets (
     detached_at timestamp with time zone,
     computed_state text NOT NULL,
     external_fork_name citext,
+    previous_failure_message text,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -1600,6 +1606,38 @@ CREATE TABLE codeintel_inference_scripts (
 
 COMMENT ON TABLE codeintel_inference_scripts IS 'Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.';
 
+CREATE TABLE codeintel_initial_path_ranks (
+    id bigint NOT NULL,
+    upload_id integer NOT NULL,
+    document_path text NOT NULL,
+    graph_key text NOT NULL,
+    last_scanned_at timestamp with time zone
+);
+
+CREATE SEQUENCE codeintel_initial_path_ranks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_initial_path_ranks_id_seq OWNED BY codeintel_initial_path_ranks.id;
+
+CREATE TABLE codeintel_initial_path_ranks_processed (
+    id bigint NOT NULL,
+    graph_key text NOT NULL,
+    codeintel_initial_path_ranks_id bigint NOT NULL
+);
+
+CREATE SEQUENCE codeintel_initial_path_ranks_processed_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_initial_path_ranks_processed_id_seq OWNED BY codeintel_initial_path_ranks_processed.id;
+
 CREATE TABLE codeintel_langugage_support_requests (
     id integer NOT NULL,
     user_id integer NOT NULL,
@@ -1616,127 +1654,29 @@ CREATE SEQUENCE codeintel_langugage_support_requests_id_seq
 
 ALTER SEQUENCE codeintel_langugage_support_requests_id_seq OWNED BY codeintel_langugage_support_requests.id;
 
-CREATE TABLE codeintel_lockfile_references (
-    id integer NOT NULL,
-    repository_name text NOT NULL,
-    revspec text NOT NULL,
-    package_scheme text NOT NULL,
-    package_name text NOT NULL,
-    package_version text NOT NULL,
-    repository_id integer,
-    commit_bytea bytea,
-    last_check_at timestamp with time zone,
-    depends_on integer[] DEFAULT '{}'::integer[],
-    resolution_lockfile text,
-    resolution_repository_id integer,
-    resolution_commit_bytea bytea
-);
-
-COMMENT ON TABLE codeintel_lockfile_references IS 'Tracks a lockfile dependency that might be resolvable to a specific repository-commit pair.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.repository_name IS 'Encodes `reposource.PackageDependency.RepoName`. A name that is "globally unique" for a Sourcegraph instance. Used in `repo:...` queries.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.revspec IS 'Encodes `reposource.PackageDependency.GitTagFromVersion`. Returns the git tag associated with the given dependency version, used in `rev:` or `repo:foo@rev` queries.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.package_scheme IS 'Encodes `reposource.PackageDependency.Scheme`. The scheme of the dependency (e.g., semanticdb, npm).';
-
-COMMENT ON COLUMN codeintel_lockfile_references.package_name IS 'Encodes `reposource.PackageDependency.PackageSyntax`. The name of the dependency as used by the package manager, excluding version information.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.package_version IS 'Encodes `reposource.PackageDependency.PackageVersion`. The version of the package.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.repository_id IS 'The identifier of the repo that resolves the associated name, if it is resolvable on this instance.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.commit_bytea IS 'The resolved 40-char revhash of the associated revspec, if it is resolvable on this instance.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.last_check_at IS 'Timestamp when background job last checked this row for repository resolution';
-
-COMMENT ON COLUMN codeintel_lockfile_references.depends_on IS 'IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.resolution_lockfile IS 'Relative path of lockfile in which this package was referenced. Corresponds to `codeintel_lockfiles.lockfile`.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.resolution_repository_id IS 'ID of the repository in which lockfile was resolved. Corresponds to `codeintel_lockfiles.repository_id`.';
-
-COMMENT ON COLUMN codeintel_lockfile_references.resolution_commit_bytea IS 'Commit at which lockfile was resolved. Corresponds to `codeintel_lockfiles.commit_bytea`.';
-
-CREATE SEQUENCE codeintel_lockfile_references_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE codeintel_lockfile_references_id_seq OWNED BY codeintel_lockfile_references.id;
-
-CREATE TABLE codeintel_lockfiles (
-    id integer NOT NULL,
-    repository_id integer NOT NULL,
-    commit_bytea bytea NOT NULL,
-    codeintel_lockfile_reference_ids integer[] NOT NULL,
-    lockfile text,
-    fidelity text DEFAULT 'flat'::text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-COMMENT ON TABLE codeintel_lockfiles IS 'Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.';
-
-COMMENT ON COLUMN codeintel_lockfiles.commit_bytea IS 'A 40-char revhash. Note that this commit may not be resolvable in the future.';
-
-COMMENT ON COLUMN codeintel_lockfiles.codeintel_lockfile_reference_ids IS 'A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.';
-
-COMMENT ON COLUMN codeintel_lockfiles.lockfile IS 'Relative path of a lockfile in the given repository and the given commit.';
-
-COMMENT ON COLUMN codeintel_lockfiles.fidelity IS 'Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...';
-
-COMMENT ON COLUMN codeintel_lockfiles.created_at IS 'Time when lockfile was indexed';
-
-COMMENT ON COLUMN codeintel_lockfiles.updated_at IS 'Time when lockfile index was updated';
-
-CREATE SEQUENCE codeintel_lockfiles_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE codeintel_lockfiles_id_seq OWNED BY codeintel_lockfiles.id;
-
-CREATE TABLE codeintel_path_rank_inputs (
-    id bigint NOT NULL,
-    graph_key text NOT NULL,
-    input_filename text NOT NULL,
-    repository_name text NOT NULL,
-    payload jsonb NOT NULL,
-    processed boolean DEFAULT false NOT NULL,
-    "precision" double precision NOT NULL
-);
-
-COMMENT ON TABLE codeintel_path_rank_inputs IS 'Sharded inputs from Spark jobs that will subsequently be written into `codeintel_path_ranks`.';
-
-CREATE SEQUENCE codeintel_path_rank_inputs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE codeintel_path_rank_inputs_id_seq OWNED BY codeintel_path_rank_inputs.id;
-
 CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
     payload jsonb NOT NULL,
-    "precision" double precision NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    graph_key text
+    graph_key text,
+    num_paths integer,
+    refcount_logsum double precision,
+    id bigint NOT NULL
 );
+
+CREATE SEQUENCE codeintel_path_ranks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_path_ranks_id_seq OWNED BY codeintel_path_ranks.id;
 
 CREATE TABLE codeintel_ranking_definitions (
     id bigint NOT NULL,
     upload_id integer NOT NULL,
     symbol_name text NOT NULL,
-    repository text NOT NULL,
     document_path text NOT NULL,
     graph_key text NOT NULL,
     last_scanned_at timestamp with time zone
@@ -1771,11 +1711,11 @@ ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_expor
 
 CREATE TABLE codeintel_ranking_path_counts_inputs (
     id bigint NOT NULL,
-    repository text NOT NULL,
     document_path text NOT NULL,
     count integer NOT NULL,
     graph_key text NOT NULL,
-    processed boolean DEFAULT false NOT NULL
+    processed boolean DEFAULT false NOT NULL,
+    repository_id integer NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_path_counts_inputs_id_seq
@@ -2525,15 +2465,6 @@ CREATE SEQUENCE insights_settings_migration_jobs_id_seq
 
 ALTER SEQUENCE insights_settings_migration_jobs_id_seq OWNED BY insights_settings_migration_jobs.id;
 
-CREATE TABLE last_lockfile_scan (
-    repository_id integer NOT NULL,
-    last_lockfile_scan_at timestamp with time zone NOT NULL
-);
-
-COMMENT ON TABLE last_lockfile_scan IS 'Tracks the last time repository was checked for lockfile indexing.';
-
-COMMENT ON COLUMN last_lockfile_scan.last_lockfile_scan_at IS 'The last time this repository was considered for lockfile indexing.';
-
 CREATE TABLE lsif_configuration_policies (
     id integer NOT NULL,
     repository_id integer,
@@ -2664,7 +2595,9 @@ ALTER SEQUENCE lsif_dependency_indexing_jobs_id_seq1 OWNED BY lsif_dependency_in
 CREATE TABLE lsif_dependency_repos (
     id bigint NOT NULL,
     name text NOT NULL,
-    scheme text NOT NULL
+    scheme text NOT NULL,
+    blocked boolean DEFAULT false NOT NULL,
+    last_checked_at timestamp with time zone
 );
 
 CREATE SEQUENCE lsif_dependency_repos_id_seq
@@ -3123,6 +3056,21 @@ COMMENT ON COLUMN lsif_uploads_visible_at_tip.branch_or_tag_name IS 'The name of
 
 COMMENT ON COLUMN lsif_uploads_visible_at_tip.is_default_branch IS 'Whether the specified branch is the default of the repository. Always false for tags.';
 
+CREATE TABLE lsif_uploads_vulnerability_scan (
+    id bigint NOT NULL,
+    upload_id integer NOT NULL,
+    last_scanned_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE lsif_uploads_vulnerability_scan_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE lsif_uploads_vulnerability_scan_id_seq OWNED BY lsif_uploads_vulnerability_scan.id;
+
 CREATE VIEW lsif_uploads_with_repository_name AS
  SELECT u.id,
     u.commit,
@@ -3487,10 +3435,34 @@ CREATE VIEW outbound_webhooks_with_event_types AS
           WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
    FROM outbound_webhooks;
 
+CREATE TABLE package_repo_filters (
+    id integer NOT NULL,
+    behaviour text NOT NULL,
+    scheme text NOT NULL,
+    matcher jsonb NOT NULL,
+    deleted_at timestamp with time zone,
+    updated_at timestamp with time zone DEFAULT statement_timestamp() NOT NULL,
+    CONSTRAINT package_repo_filters_behaviour_is_allow_or_block CHECK ((behaviour = ANY ('{BLOCK,ALLOW}'::text[]))),
+    CONSTRAINT package_repo_filters_is_pkgrepo_scheme CHECK ((scheme = ANY ('{semanticdb,npm,go,python,rust-analyzer,scip-ruby}'::text[]))),
+    CONSTRAINT package_repo_filters_valid_oneof_glob CHECK ((((matcher ? 'VersionGlob'::text) AND ((matcher ->> 'VersionGlob'::text) <> ''::text) AND ((matcher ->> 'PackageName'::text) <> ''::text) AND (NOT (matcher ? 'PackageGlob'::text))) OR ((matcher ? 'PackageGlob'::text) AND ((matcher ->> 'PackageGlob'::text) <> ''::text) AND (NOT (matcher ? 'VersionGlob'::text)))))
+);
+
+CREATE SEQUENCE package_repo_filters_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE package_repo_filters_id_seq OWNED BY package_repo_filters.id;
+
 CREATE TABLE package_repo_versions (
     id bigint NOT NULL,
     package_id bigint NOT NULL,
-    version text NOT NULL
+    version text NOT NULL,
+    blocked boolean DEFAULT false NOT NULL,
+    last_checked_at timestamp with time zone
 );
 
 CREATE SEQUENCE package_repo_versions_id_seq
@@ -3681,7 +3653,8 @@ CREATE VIEW reconciler_changesets AS
     c.last_heartbeat_at,
     c.external_fork_name,
     c.external_fork_namespace,
-    c.detached_at
+    c.detached_at,
+    c.previous_failure_message
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1
@@ -3833,13 +3806,10 @@ CREATE TABLE role_permissions (
 
 CREATE TABLE roles (
     id integer NOT NULL,
-    name text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     system boolean DEFAULT false NOT NULL,
-    CONSTRAINT name_not_blank CHECK ((name <> ''::text))
+    name citext NOT NULL
 );
-
-COMMENT ON COLUMN roles.name IS 'The uniquely identifying name of the role.';
 
 COMMENT ON COLUMN roles.system IS 'This is used to indicate whether a role is read-only or can be modified.';
 
@@ -4036,7 +4006,7 @@ CREATE TABLE teams (
     display_name text,
     readonly boolean DEFAULT false NOT NULL,
     parent_team_id integer,
-    creator_id integer NOT NULL,
+    creator_id integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT teams_display_name_max_length CHECK ((char_length(display_name) <= 255)),
@@ -4178,7 +4148,8 @@ CREATE TABLE user_permissions (
     object_type text NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     synced_at timestamp with time zone,
-    object_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL
+    object_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL,
+    migrated boolean DEFAULT true
 );
 
 CREATE TABLE user_public_repos (
@@ -4226,8 +4197,92 @@ CREATE TABLE versions (
     service text NOT NULL,
     version text NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    first_version text NOT NULL
+    first_version text NOT NULL,
+    auto_upgrade boolean DEFAULT false NOT NULL
 );
+
+CREATE TABLE vulnerabilities (
+    id integer NOT NULL,
+    source_id text NOT NULL,
+    summary text NOT NULL,
+    details text NOT NULL,
+    cpes text[] NOT NULL,
+    cwes text[] NOT NULL,
+    aliases text[] NOT NULL,
+    related text[] NOT NULL,
+    data_source text NOT NULL,
+    urls text[] NOT NULL,
+    severity text NOT NULL,
+    cvss_vector text NOT NULL,
+    cvss_score text NOT NULL,
+    published_at timestamp with time zone NOT NULL,
+    modified_at timestamp with time zone,
+    withdrawn_at timestamp with time zone
+);
+
+CREATE SEQUENCE vulnerabilities_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE vulnerabilities_id_seq OWNED BY vulnerabilities.id;
+
+CREATE TABLE vulnerability_affected_packages (
+    id integer NOT NULL,
+    vulnerability_id integer NOT NULL,
+    package_name text NOT NULL,
+    language text NOT NULL,
+    namespace text NOT NULL,
+    version_constraint text[] NOT NULL,
+    fixed boolean NOT NULL,
+    fixed_in text
+);
+
+CREATE SEQUENCE vulnerability_affected_packages_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE vulnerability_affected_packages_id_seq OWNED BY vulnerability_affected_packages.id;
+
+CREATE TABLE vulnerability_affected_symbols (
+    id integer NOT NULL,
+    vulnerability_affected_package_id integer NOT NULL,
+    path text NOT NULL,
+    symbols text[] NOT NULL
+);
+
+CREATE SEQUENCE vulnerability_affected_symbols_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE vulnerability_affected_symbols_id_seq OWNED BY vulnerability_affected_symbols.id;
+
+CREATE TABLE vulnerability_matches (
+    id integer NOT NULL,
+    upload_id integer NOT NULL,
+    vulnerability_affected_package_id integer NOT NULL
+);
+
+CREATE SEQUENCE vulnerability_matches_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE vulnerability_matches_id_seq OWNED BY vulnerability_matches.id;
 
 CREATE TABLE webhook_logs (
     id bigint NOT NULL,
@@ -4343,13 +4398,13 @@ ALTER TABLE ONLY cm_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_webhooks_id
 
 ALTER TABLE ONLY codeintel_autoindex_queue ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindex_queue_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_initial_path_ranks ALTER COLUMN id SET DEFAULT nextval('codeintel_initial_path_ranks_id_seq'::regclass);
+
+ALTER TABLE ONLY codeintel_initial_path_ranks_processed ALTER COLUMN id SET DEFAULT nextval('codeintel_initial_path_ranks_processed_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_langugage_support_requests ALTER COLUMN id SET DEFAULT nextval('codeintel_langugage_support_requests_id_seq'::regclass);
 
-ALTER TABLE ONLY codeintel_lockfile_references ALTER COLUMN id SET DEFAULT nextval('codeintel_lockfile_references_id_seq'::regclass);
-
-ALTER TABLE ONLY codeintel_lockfiles ALTER COLUMN id SET DEFAULT nextval('codeintel_lockfiles_id_seq'::regclass);
-
-ALTER TABLE ONLY codeintel_path_rank_inputs ALTER COLUMN id SET DEFAULT nextval('codeintel_path_rank_inputs_id_seq'::regclass);
+ALTER TABLE ONLY codeintel_path_ranks ALTER COLUMN id SET DEFAULT nextval('codeintel_path_ranks_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_ranking_definitions ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_definitions_id_seq'::regclass);
 
@@ -4423,6 +4478,8 @@ ALTER TABLE ONLY lsif_uploads ALTER COLUMN id SET DEFAULT nextval('lsif_dumps_id
 
 ALTER TABLE ONLY lsif_uploads_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('lsif_uploads_audit_logs_seq'::regclass);
 
+ALTER TABLE ONLY lsif_uploads_vulnerability_scan ALTER COLUMN id SET DEFAULT nextval('lsif_uploads_vulnerability_scan_id_seq'::regclass);
+
 ALTER TABLE ONLY namespace_permissions ALTER COLUMN id SET DEFAULT nextval('namespace_permissions_id_seq'::regclass);
 
 ALTER TABLE ONLY notebooks ALTER COLUMN id SET DEFAULT nextval('notebooks_id_seq'::regclass);
@@ -4444,6 +4501,8 @@ ALTER TABLE ONLY outbound_webhook_jobs ALTER COLUMN id SET DEFAULT nextval('outb
 ALTER TABLE ONLY outbound_webhook_logs ALTER COLUMN id SET DEFAULT nextval('outbound_webhook_logs_id_seq'::regclass);
 
 ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound_webhooks_id_seq'::regclass);
+
+ALTER TABLE ONLY package_repo_filters ALTER COLUMN id SET DEFAULT nextval('package_repo_filters_id_seq'::regclass);
 
 ALTER TABLE ONLY package_repo_versions ALTER COLUMN id SET DEFAULT nextval('package_repo_versions_id_seq'::regclass);
 
@@ -4486,6 +4545,14 @@ ALTER TABLE ONLY user_pending_permissions ALTER COLUMN id SET DEFAULT nextval('u
 ALTER TABLE ONLY user_repo_permissions ALTER COLUMN id SET DEFAULT nextval('user_repo_permissions_id_seq'::regclass);
 
 ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
+
+ALTER TABLE ONLY vulnerabilities ALTER COLUMN id SET DEFAULT nextval('vulnerabilities_id_seq'::regclass);
+
+ALTER TABLE ONLY vulnerability_affected_packages ALTER COLUMN id SET DEFAULT nextval('vulnerability_affected_packages_id_seq'::regclass);
+
+ALTER TABLE ONLY vulnerability_affected_symbols ALTER COLUMN id SET DEFAULT nextval('vulnerability_affected_symbols_id_seq'::regclass);
+
+ALTER TABLE ONLY vulnerability_matches ALTER COLUMN id SET DEFAULT nextval('vulnerability_matches_id_seq'::regclass);
 
 ALTER TABLE ONLY webhook_logs ALTER COLUMN id SET DEFAULT nextval('webhook_logs_id_seq'::regclass);
 
@@ -4593,17 +4660,14 @@ ALTER TABLE ONLY codeintel_autoindex_queue
 ALTER TABLE ONLY codeintel_commit_dates
     ADD CONSTRAINT codeintel_commit_dates_pkey PRIMARY KEY (repository_id, commit_bytea);
 
-ALTER TABLE ONLY codeintel_lockfile_references
-    ADD CONSTRAINT codeintel_lockfile_references_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY codeintel_initial_path_ranks
+    ADD CONSTRAINT codeintel_initial_path_ranks_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY codeintel_lockfiles
-    ADD CONSTRAINT codeintel_lockfiles_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY codeintel_initial_path_ranks_processed
+    ADD CONSTRAINT codeintel_initial_path_ranks_processed_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY codeintel_path_rank_inputs
-    ADD CONSTRAINT codeintel_path_rank_inputs_graph_key_input_filename_reposit_key UNIQUE (graph_key, input_filename, repository_name);
-
-ALTER TABLE ONLY codeintel_path_rank_inputs
-    ADD CONSTRAINT codeintel_path_rank_inputs_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY codeintel_path_ranks
+    ADD CONSTRAINT codeintel_path_ranks_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_ranking_definitions
     ADD CONSTRAINT codeintel_ranking_definitions_pkey PRIMARY KEY (id);
@@ -4710,9 +4774,6 @@ ALTER TABLE ONLY insights_query_runner_jobs_dependencies
 ALTER TABLE ONLY insights_query_runner_jobs
     ADD CONSTRAINT insights_query_runner_jobs_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY last_lockfile_scan
-    ADD CONSTRAINT last_lockfile_scan_pkey PRIMARY KEY (repository_id);
-
 ALTER TABLE ONLY lsif_configuration_policies
     ADD CONSTRAINT lsif_configuration_policies_pkey PRIMARY KEY (id);
 
@@ -4764,6 +4825,9 @@ ALTER TABLE ONLY lsif_uploads
 ALTER TABLE ONLY lsif_uploads_reference_counts
     ADD CONSTRAINT lsif_uploads_reference_counts_upload_id_key UNIQUE (upload_id);
 
+ALTER TABLE ONLY lsif_uploads_vulnerability_scan
+    ADD CONSTRAINT lsif_uploads_vulnerability_scan_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_pkey PRIMARY KEY (name);
 
@@ -4811,6 +4875,9 @@ ALTER TABLE ONLY outbound_webhook_logs
 
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY package_repo_filters
+    ADD CONSTRAINT package_repo_filters_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY package_repo_versions
     ADD CONSTRAINT package_repo_versions_pkey PRIMARY KEY (id);
@@ -4862,9 +4929,6 @@ ALTER TABLE ONLY repo
 
 ALTER TABLE ONLY role_permissions
     ADD CONSTRAINT role_permissions_pkey PRIMARY KEY (permission_id, role_id);
-
-ALTER TABLE ONLY roles
-    ADD CONSTRAINT roles_name UNIQUE (name);
 
 ALTER TABLE ONLY roles
     ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
@@ -4941,6 +5005,18 @@ ALTER TABLE ONLY users
 ALTER TABLE ONLY versions
     ADD CONSTRAINT versions_pkey PRIMARY KEY (service);
 
+ALTER TABLE ONLY vulnerabilities
+    ADD CONSTRAINT vulnerabilities_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY vulnerability_affected_packages
+    ADD CONSTRAINT vulnerability_affected_packages_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY vulnerability_affected_symbols
+    ADD CONSTRAINT vulnerability_affected_symbols_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY vulnerability_matches
+    ADD CONSTRAINT vulnerability_matches_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_pkey PRIMARY KEY (id);
 
@@ -4952,6 +5028,10 @@ ALTER TABLE ONLY webhooks
 
 ALTER TABLE ONLY zoekt_repos
     ADD CONSTRAINT zoekt_repos_pkey PRIMARY KEY (repo_id);
+
+CREATE INDEX access_requests_created_at ON access_requests USING btree (created_at);
+
+CREATE INDEX access_requests_status ON access_requests USING btree (status);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
@@ -4985,8 +5065,6 @@ CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING 
 
 CREATE INDEX batch_spec_workspaces_id_batch_spec_id ON batch_spec_workspaces USING btree (id, batch_spec_id);
 
-CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id);
-
 CREATE UNIQUE INDEX batch_specs_unique_rand_id ON batch_specs USING btree (rand_id);
 
 CREATE INDEX cached_available_indexers_num_events ON cached_available_indexers USING btree (num_events DESC) WHERE ((available_indexers)::text <> '{}'::text);
@@ -5004,8 +5082,6 @@ CREATE INDEX changeset_specs_created_at ON changeset_specs USING btree (created_
 CREATE INDEX changeset_specs_external_id ON changeset_specs USING btree (external_id);
 
 CREATE INDEX changeset_specs_head_ref ON changeset_specs USING btree (head_ref);
-
-CREATE INDEX changeset_specs_rand_id ON changeset_specs USING btree (rand_id);
 
 CREATE INDEX changeset_specs_title ON changeset_specs USING btree (title);
 
@@ -5041,37 +5117,31 @@ CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
 
 CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_autoindex_queue USING btree (repository_id, rev);
 
+CREATE INDEX codeintel_initial_path_ranks_graph_key_id ON codeintel_initial_path_ranks USING btree (graph_key, id);
+
+CREATE INDEX codeintel_initial_path_ranks_graph_key_last_scanned_at ON codeintel_initial_path_ranks USING btree (graph_key, last_scanned_at NULLS FIRST, id);
+
+CREATE UNIQUE INDEX codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini ON codeintel_initial_path_ranks_processed USING btree (graph_key, codeintel_initial_path_ranks_id);
+
+CREATE INDEX codeintel_initial_path_upload_id ON codeintel_initial_path_ranks USING btree (upload_id);
+
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
 
-CREATE INDEX codeintel_lockfile_references_last_check_at ON codeintel_lockfile_references USING btree (last_check_at);
+CREATE INDEX codeintel_path_ranks_graph_key ON codeintel_path_ranks USING btree (graph_key, updated_at NULLS FIRST, id);
 
-CREATE INDEX codeintel_lockfile_references_repository_id_commit_bytea ON codeintel_lockfile_references USING btree (repository_id, commit_bytea) WHERE ((repository_id IS NOT NULL) AND (commit_bytea IS NOT NULL));
+CREATE UNIQUE INDEX codeintel_path_ranks_repository_id ON codeintel_path_ranks USING btree (repository_id);
 
-CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package_r ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_lockfile, resolution_repository_id, resolution_commit_bytea);
-
-CREATE INDEX codeintel_lockfiles_codeintel_lockfile_reference_ids ON codeintel_lockfiles USING gin (codeintel_lockfile_reference_ids gin__int_ops);
-
-CREATE INDEX codeintel_lockfiles_references_depends_on ON codeintel_lockfile_references USING gin (depends_on gin__int_ops);
-
-CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea_lockfile ON codeintel_lockfiles USING btree (repository_id, commit_bytea, lockfile);
-
-CREATE INDEX codeintel_path_rank_inputs_graph_key_repository_name_id_process ON codeintel_path_rank_inputs USING btree (graph_key, repository_name, id) WHERE (NOT processed);
-
-CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks USING btree (repository_id, "precision");
-
-CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id);
+CREATE INDEX codeintel_path_ranks_repository_id_updated_at_id ON codeintel_path_ranks USING btree (repository_id, updated_at NULLS FIRST, id);
 
 CREATE INDEX codeintel_ranking_definitions_graph_key_last_scanned_at_id ON codeintel_ranking_definitions USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 
-CREATE INDEX codeintel_ranking_definitions_symbol_name ON codeintel_ranking_definitions USING btree (symbol_name);
-
-CREATE INDEX codeintel_ranking_definitions_upload_id ON codeintel_ranking_definitions USING btree (upload_id);
+CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, upload_id, document_path);
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_and_repository ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository);
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) WHERE (NOT processed);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_pr ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository, id) INCLUDE (document_path) WHERE (NOT processed);
+CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_references USING btree (graph_key, id);
 
 CREATE INDEX codeintel_ranking_references_graph_key_last_scanned_at_id ON codeintel_ranking_references USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 
@@ -5108,8 +5178,6 @@ CREATE INDEX event_logs_source ON event_logs USING btree (source);
 CREATE INDEX event_logs_timestamp ON event_logs USING btree ("timestamp");
 
 CREATE INDEX event_logs_timestamp_at_utc ON event_logs USING btree (date(timezone('UTC'::text, "timestamp")));
-
-CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
 
 CREATE INDEX event_logs_user_id_name ON event_logs USING btree (user_id, name);
 
@@ -5171,6 +5239,10 @@ CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING 
 
 CREATE INDEX gitserver_repos_shard_id ON gitserver_repos USING btree (shard_id, repo_id);
 
+CREATE INDEX idx_repo_github_topics ON repo USING gin ((((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text))) WHERE (external_service_type = 'github'::text);
+
+COMMENT ON INDEX idx_repo_github_topics IS 'An index to speed up listing repos by topic. Intended to be used when TopicFilters are added to the RepoListOptions';
+
 CREATE INDEX insights_query_runner_jobs_cost_idx ON insights_query_runner_jobs USING btree (cost);
 
 CREATE INDEX insights_query_runner_jobs_dependencies_job_id_fk_idx ON insights_query_runner_jobs_dependencies USING btree (job_id);
@@ -5191,7 +5263,15 @@ CREATE INDEX lsif_dependency_indexing_jobs_state ON lsif_dependency_indexing_job
 
 CREATE INDEX lsif_dependency_indexing_jobs_upload_id ON lsif_dependency_syncing_jobs USING btree (upload_id);
 
-CREATE INDEX lsif_dependency_repos_name_idx ON lsif_dependency_repos USING btree (name);
+CREATE INDEX lsif_dependency_repos_blocked ON lsif_dependency_repos USING btree (blocked);
+
+CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at);
+
+CREATE INDEX lsif_dependency_repos_name_id ON lsif_dependency_repos USING btree (name, id);
+
+CREATE INDEX lsif_dependency_repos_scheme_id ON lsif_dependency_repos USING btree (scheme, id);
+
+CREATE UNIQUE INDEX lsif_dependency_repos_unique_scheme_name ON lsif_dependency_repos USING btree (scheme, name);
 
 CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs USING btree (state);
 
@@ -5243,6 +5323,8 @@ CREATE INDEX lsif_uploads_visible_at_tip_is_default_branch ON lsif_uploads_visib
 
 CREATE INDEX lsif_uploads_visible_at_tip_repository_id_upload_id ON lsif_uploads_visible_at_tip USING btree (repository_id, upload_id);
 
+CREATE UNIQUE INDEX lsif_uploads_vulnerability_scan_upload_id ON lsif_uploads_vulnerability_scan USING btree (upload_id);
+
 CREATE INDEX notebook_stars_user_id_idx ON notebook_stars USING btree (user_id);
 
 CREATE INDEX notebooks_blocks_tsvector_idx ON notebooks USING gin (blocks_tsvector);
@@ -5269,7 +5351,11 @@ CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs
 
 CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code);
 
-CREATE INDEX package_repo_versions_fk_idx ON package_repo_versions USING btree (package_id);
+CREATE UNIQUE INDEX package_repo_filters_unique_matcher_per_scheme ON package_repo_filters USING btree (scheme, matcher);
+
+CREATE INDEX package_repo_versions_blocked ON package_repo_versions USING btree (blocked);
+
+CREATE INDEX package_repo_versions_last_checked_at ON package_repo_versions USING btree (last_checked_at);
 
 CREATE UNIQUE INDEX package_repo_versions_unique_version_per_package ON package_repo_versions USING btree (package_id, version);
 
@@ -5359,6 +5445,8 @@ CREATE UNIQUE INDEX teams_name ON teams USING btree (name);
 
 CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, user_id);
 
+CREATE UNIQUE INDEX unique_role_name ON roles USING btree (name);
+
 CREATE INDEX user_credentials_credential_idx ON user_credentials USING btree (((encryption_key_id = ANY (ARRAY[''::text, 'previously-migrated'::text]))));
 
 CREATE UNIQUE INDEX user_emails_user_id_is_primary_idx ON user_emails USING btree (user_id, is_primary) WHERE (is_primary = true);
@@ -5366,6 +5454,8 @@ CREATE UNIQUE INDEX user_emails_user_id_is_primary_idx ON user_emails USING btre
 CREATE UNIQUE INDEX user_external_accounts_account ON user_external_accounts USING btree (service_type, service_id, client_id, account_id) WHERE (deleted_at IS NULL);
 
 CREATE INDEX user_external_accounts_user_id ON user_external_accounts USING btree (user_id) WHERE (deleted_at IS NULL);
+
+CREATE UNIQUE INDEX user_external_accounts_user_id_scim_service_type ON user_external_accounts USING btree (user_id, service_type) WHERE (service_type = 'scim'::text);
 
 CREATE UNIQUE INDEX user_repo_permissions_perms_unique_idx ON user_repo_permissions USING btree (user_id, user_external_account_id, repo_id);
 
@@ -5377,13 +5467,21 @@ CREATE INDEX user_repo_permissions_updated_at_idx ON user_repo_permissions USING
 
 CREATE INDEX user_repo_permissions_user_external_account_id_idx ON user_repo_permissions USING btree (user_external_account_id);
 
-CREATE INDEX user_repo_permissions_user_id_idx ON user_repo_permissions USING btree (user_id);
-
 CREATE UNIQUE INDEX users_billing_customer_id ON users USING btree (billing_customer_id) WHERE (deleted_at IS NULL);
 
 CREATE INDEX users_created_at_idx ON users USING btree (created_at);
 
 CREATE UNIQUE INDEX users_username ON users USING btree (username) WHERE (deleted_at IS NULL);
+
+CREATE UNIQUE INDEX vulnerabilities_source_id ON vulnerabilities USING btree (source_id);
+
+CREATE UNIQUE INDEX vulnerability_affected_packages_vulnerability_id_package_name ON vulnerability_affected_packages USING btree (vulnerability_id, package_name);
+
+CREATE UNIQUE INDEX vulnerability_affected_symbols_vulnerability_affected_package_i ON vulnerability_affected_symbols USING btree (vulnerability_affected_package_id, path);
+
+CREATE UNIQUE INDEX vulnerability_matches_upload_id_vulnerability_affected_package_ ON vulnerability_matches USING btree (upload_id, vulnerability_affected_package_id);
+
+CREATE INDEX vulnerability_matches_vulnerability_affected_package_id ON vulnerability_matches USING btree (vulnerability_affected_package_id);
 
 CREATE INDEX webhook_logs_external_service_id_idx ON webhook_logs USING btree (external_service_id);
 
@@ -5398,6 +5496,8 @@ CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT 
 CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
 
 CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure();
+
+CREATE TRIGGER insert_codeintel_path_ranks_statistics BEFORE INSERT ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();
 
 CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo();
 
@@ -5441,9 +5541,16 @@ CREATE TRIGGER trigger_lsif_uploads_insert AFTER INSERT ON lsif_uploads FOR EACH
 
 CREATE TRIGGER trigger_lsif_uploads_update BEFORE UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update();
 
+CREATE TRIGGER trigger_package_repo_filters_updated_at BEFORE UPDATE ON package_repo_filters FOR EACH ROW WHEN ((old.* IS DISTINCT FROM new.*)) EXECUTE FUNCTION func_package_repo_filters_updated_at();
+
+CREATE TRIGGER update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();
+
 CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column();
 
 CREATE TRIGGER versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger();
+
+ALTER TABLE ONLY access_requests
+    ADD CONSTRAINT access_requests_decision_by_user_id_fkey FOREIGN KEY (decision_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_creator_user_id_fkey FOREIGN KEY (creator_user_id) REFERENCES users(id);
@@ -5685,8 +5792,26 @@ ALTER TABLE ONLY feature_flag_overrides
 ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY codeintel_initial_path_ranks_processed
+    ADD CONSTRAINT fk_codeintel_initial_path_ranks FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY codeintel_ranking_references_processed
     ADD CONSTRAINT fk_codeintel_ranking_reference FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY vulnerability_matches
+    ADD CONSTRAINT fk_upload FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY lsif_uploads_vulnerability_scan
+    ADD CONSTRAINT fk_upload_id FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY vulnerability_affected_packages
+    ADD CONSTRAINT fk_vulnerabilities FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY vulnerability_affected_symbols
+    ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY vulnerability_matches
+    ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
@@ -5934,7 +6059,7 @@ INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retenti
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
 
-INSERT INTO roles VALUES (1, 'USER', '2023-01-04 16:29:41.195966+00', true);
-INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', true);
+INSERT INTO roles VALUES (1, '2023-01-04 16:29:41.195966+00', true, 'USER');
+INSERT INTO roles VALUES (2, '2023-01-04 16:29:41.195966+00', true, 'SITE_ADMINISTRATOR');
 
 SELECT pg_catalog.setval('roles_id_seq', 3, true);

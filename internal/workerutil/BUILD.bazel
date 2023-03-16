@@ -30,6 +30,7 @@ go_library(
 
 go_test(
     name = "workerutil_test",
+    timeout = "short",
     srcs = [
         "idset_test.go",
         "main_test.go",

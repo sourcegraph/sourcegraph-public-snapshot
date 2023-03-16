@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/elimity-com/scim"
-	"github.com/elimity-com/scim/optional"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -16,7 +15,19 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 		return scim.Resource{}, err
 	}
 
-	userRes := scim.Resource{}
+	// Only use the ID, drop the attributes
+	userRes := scim.Resource{
+		ExternalID: getOptionalExternalID(attributes),
+		Attributes: scim.ResourceAttributes{}, // It's empty because this is a replace
+		Meta:       scim.Meta{},
+	}
+
+	// Set attributes
+	changed := false
+	for k, v := range attributes {
+		newlyChanged := applyChangeToAttributes(userRes.Attributes, k, v)
+		changed = changed || newlyChanged
+	}
 
 	// Start transaction
 	err := h.db.WithTransact(r.Context(), func(tx database.DB) error {
@@ -26,32 +37,30 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 			return err
 		}
 
-		// Only use the ID and external ID, drop the attributes
-		externalIDOptional := optional.String{}
-		if user.SCIMExternalID != "" {
-			externalIDOptional = optional.NewString(user.SCIMExternalID)
-		}
-		userRes = scim.Resource{
-			ID:         strconv.FormatInt(int64(user.ID), 10),
-			ExternalID: externalIDOptional,
-			Attributes: scim.ResourceAttributes{}, // It's empty because this is a replace
-		}
+		userRes.ID = strconv.FormatInt(int64(user.ID), 10)
+		userRes.Meta.Created = &user.CreatedAt
+		userRes.Meta.LastModified = &user.UpdatedAt
 
-		// Set attributes
-		changed := false
-		for k, v := range attributes {
-			newlyChanged := applyChangeToAttributes(userRes.Attributes, k, v)
-			changed = changed || newlyChanged
-		}
-		if !changed {
+		// If nothing changed or if we'll hard delete the user, we still wanted to update userRes,
+		// but now we can return
+		if !changed || attributes[AttrActive] == false {
 			return nil
 		}
 
 		// Save user
-		return updateUser(r.Context(), tx, user, userRes)
+		return updateUser(r.Context(), tx, user, userRes.Attributes, true)
 	})
 	if err != nil {
 		return scim.Resource{}, err
+	}
+
+	// Non-intuitive behavior! If the user is being deactivated, hard delete the user!
+	// We will remove this later if soft deletion becomes a user requirement
+	if attributes[AttrActive] == false {
+		err := h.Delete(r, id)
+		if err != nil {
+			return scim.Resource{}, err
+		}
 	}
 
 	// Return user

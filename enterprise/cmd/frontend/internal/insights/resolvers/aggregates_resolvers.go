@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -50,7 +51,8 @@ const unableToModifyQueryMsg = "The search query was unable to be updated to sup
 const unableToCountGroupsMsg = "The search results were unable to be grouped successfully."     // if there was a failure while adding up the results
 
 type searchAggregateResolver struct {
-	postgresDB database.DB
+	postgresDB     database.DB
+	enterpriseJobs jobutil.EnterpriseJobs
 
 	searchQuery string
 	patternType string
@@ -150,7 +152,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 
 	requestContext, cancelReqContext := context.WithTimeout(ctx, time.Second*time.Duration(searchTimelimit))
 	defer cancelReqContext()
-	searchClient := streaming.NewInsightsSearchClient(r.postgresDB)
+	searchClient := streaming.NewInsightsSearchClient(r.postgresDB, r.enterpriseJobs)
 	searchResultsAggregator := aggregation.NewSearchResultsAggregatorWithContext(requestContext, tabulationFunc, countingFunc, r.postgresDB)
 
 	_, err = searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, searchResultsAggregator)

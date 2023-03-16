@@ -50,7 +50,8 @@ type TestChangesetOpts struct {
 	IsArchived bool
 	Archive    bool
 
-	Metadata any
+	Metadata               any
+	PreviousFailureMessage string
 }
 
 type CreateChangeseter interface {
@@ -167,6 +168,7 @@ type ChangesetAssertions struct {
 
 	ArchiveIn                  int64
 	ArchivedInOwnerBatchChange bool
+	PreviousFailureMessage     *string
 }
 
 func AssertChangeset(t *testing.T, c *btypes.Changeset, a ChangesetAssertions) {
@@ -222,6 +224,10 @@ func AssertChangeset(t *testing.T, c *btypes.Changeset, a ChangesetAssertions) {
 
 	if want, have := a.FailureMessage, c.FailureMessage; want == nil && have != nil {
 		t.Fatalf("expected no failure message, but have=%q", *have)
+	}
+
+	if want, have := a.PreviousFailureMessage, c.PreviousFailureMessage; want == nil && have != nil {
+		t.Fatalf("expected no previous failure message, but have=%q", *have)
 	}
 
 	if diff := cmp.Diff(a.DiffStat, c.DiffStat()); diff != "" {
@@ -296,7 +302,7 @@ func AssertChangeset(t *testing.T, c *btypes.Changeset, a ChangesetAssertions) {
 		}
 	}
 
-	if want := c.FailureMessage; want != nil {
+	if want := a.FailureMessage; want != nil {
 		if c.FailureMessage == nil {
 			t.Fatalf("expected failure message %q but have none", *want)
 		}
@@ -305,7 +311,16 @@ func AssertChangeset(t *testing.T, c *btypes.Changeset, a ChangesetAssertions) {
 		}
 	}
 
-	if want := c.SyncErrorMessage; want != nil {
+	if want := a.PreviousFailureMessage; want != nil {
+		if c.PreviousFailureMessage == nil {
+			t.Fatalf("expected previous failure message %q but have none", *want)
+		}
+		if want, have := *a.PreviousFailureMessage, *c.PreviousFailureMessage; have != want {
+			t.Fatalf("wrong previous failure message. want=%q, have=%q", want, have)
+		}
+	}
+
+	if want := a.SyncErrorMessage; want != nil {
 		if c.SyncErrorMessage == nil {
 			t.Fatalf("expected sync error message %q but have none", *want)
 		}

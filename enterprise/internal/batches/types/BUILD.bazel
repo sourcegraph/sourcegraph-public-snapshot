@@ -35,6 +35,7 @@ go_library(
         "//internal/executor",
         "//internal/extsvc",
         "//internal/extsvc/auth",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/github",
@@ -56,6 +57,7 @@ go_library(
 
 go_test(
     name = "types_test",
+    timeout = "short",
     srcs = [
         "batch_change_test.go",
         "batch_spec_test.go",

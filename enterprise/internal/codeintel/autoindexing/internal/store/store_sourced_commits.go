@@ -16,8 +16,8 @@ func (s *store) ProcessStaleSourcedCommits(
 	minimumTimeSinceLastCheck time.Duration,
 	commitResolverBatchSize int,
 	_ time.Duration,
-	shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
-) (int, error) {
+	shouldDelete func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
+) (int, int, error) {
 	return s.processStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, commitResolverBatchSize, shouldDelete, time.Now())
 }
 
@@ -25,15 +25,15 @@ func (s *store) processStaleSourcedCommits(
 	ctx context.Context,
 	minimumTimeSinceLastCheck time.Duration,
 	commitResolverBatchSize int,
-	shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
+	shouldDelete func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
 	now time.Time,
-) (totalDeleted int, err error) {
+) (totalScanned, totalDeleted int, err error) {
 	ctx, _, endObservation := s.operations.processStaleSourcedCommits.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -47,7 +47,7 @@ func (s *store) processStaleSourcedCommits(
 		commitResolverBatchSize,
 	)))
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
 	for _, sc := range staleIndexes {
@@ -57,8 +57,8 @@ func (s *store) processStaleSourcedCommits(
 		)
 
 		for _, commit := range sc.Commits {
-			if ok, err := shouldDelete(ctx, sc.RepositoryID, commit); err != nil {
-				return 0, err
+			if ok, err := shouldDelete(ctx, sc.RepositoryID, sc.RepositoryName, commit); err != nil {
+				return 0, 0, err
 			} else if ok {
 				remove = append(remove, commit)
 			} else {
@@ -79,13 +79,13 @@ func (s *store) processStaleSourcedCommits(
 			pq.Array(remove),
 		)))
 		if err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 
 		totalDeleted += indexesDeleted
 	}
 
-	return totalDeleted, nil
+	return len(staleIndexes), totalDeleted, nil
 }
 
 const staleIndexSourcedCommitsQuery = `

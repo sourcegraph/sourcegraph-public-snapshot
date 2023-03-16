@@ -29,6 +29,7 @@ go_library(
 
 go_test(
     name = "endpoint_test",
+    timeout = "short",
     srcs = [
         "endpoint_test.go",
         "k8s_test.go",

@@ -106,7 +106,7 @@ const (
 		WHERE (%s)`
 	accessRequestUpdateQuery = `
 		UPDATE access_requests
-		SET status = %s
+		SET status = %s, updated_at = NOW(), decision_by_user_id = %s
 		WHERE id = %s
 		RETURNING %s`
 )
@@ -126,6 +126,7 @@ var (
 		sqlf.Sprintf("email"),
 		sqlf.Sprintf("status"),
 		sqlf.Sprintf("additional_info"),
+		sqlf.Sprintf("decision_by_user_id"),
 	}
 	accessRequestInsertColumns = []*sqlf.Query{
 		sqlf.Sprintf("name"),
@@ -209,7 +210,7 @@ func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*typ
 }
 
 func (s *accessRequestStore) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
-	q := sqlf.Sprintf(accessRequestUpdateQuery, accessRequest.Status, accessRequest.ID, sqlf.Join(accessRequestColumns, ","))
+	q := sqlf.Sprintf(accessRequestUpdateQuery, accessRequest.Status, *accessRequest.DecisionByUserID, accessRequest.ID, sqlf.Join(accessRequestColumns, ","))
 	updated, err := scanAccessRequest(s.QueryRow(ctx, q))
 
 	if err != nil {
@@ -264,7 +265,7 @@ func (s *accessRequestStore) WithTransact(ctx context.Context, f func(tx AccessR
 
 func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {
 	var accessRequest types.AccessRequest
-	if err := sc.Scan(&accessRequest.ID, &accessRequest.CreatedAt, &accessRequest.UpdatedAt, &accessRequest.Name, &accessRequest.Email, &accessRequest.Status, &accessRequest.AdditionalInfo); err != nil {
+	if err := sc.Scan(&accessRequest.ID, &accessRequest.CreatedAt, &accessRequest.UpdatedAt, &accessRequest.Name, &accessRequest.Email, &accessRequest.Status, &accessRequest.AdditionalInfo, &accessRequest.DecisionByUserID); err != nil {
 		return nil, err
 	}
 

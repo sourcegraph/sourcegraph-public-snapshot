@@ -40,11 +40,16 @@ go_library(
 
 go_test(
     name = "rockskip_test",
+    timeout = "short",
     srcs = [
         "search_test.go",
         "server_test.go",
     ],
     embed = [":rockskip"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/symbols/fetcher",
         "//internal/api",

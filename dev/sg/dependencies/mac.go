@@ -92,6 +92,18 @@ var Mac = []category{
 				Fix:         cmdFix(`brew install nss`),
 			},
 			{
+				// Bazelisk is a wrapper for Bazel written in Go. It automatically picks a good version of Bazel given your current working directory
+				// Bazelisk replaces the bazel binary in your path
+				Name:  "bazelisk (bazel)",
+				Check: checkAction(check.Combine(check.InPath("bazel"), check.CommandOutputContains("bazel version", "Bazelisk version"))),
+				Fix:   cmdFix(`brew install bazelisk`),
+			},
+			{
+				Name:  "ibazel",
+				Check: checkAction(check.InPath("ibazel")),
+				Fix:   cmdFix(`brew install ibazel`),
+			},
+			{
 				Name:  "asdf",
 				Check: checkAction(check.CommandOutputContains("asdf", "version")),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
@@ -149,7 +161,7 @@ If you've installed PostgreSQL with Homebrew that should be the case.
 
 If you used another method, make sure psql is available.`,
 				Check: checkAction(check.InPath("psql")),
-				Fix:   cmdFix("brew install postgresql"),
+				Fix:   cmdFix("brew install postgresql@15"),
 			},
 			{
 				Name: "Start Postgres",
@@ -165,7 +177,7 @@ If you used another method, make sure psql is available.`,
 					}
 					return checkPostgresConnection(ctx)
 				},
-				Description: `Sourcegraph requires the PostgreSQL database to be running.
+				Description: `Sourcegraph requires the PostgreSQL database (v12+) to be running.
 
 We recommend installing it with Homebrew and starting it as a system service.
 If you know what you're doing, you can also install PostgreSQL another way.

@@ -111,4 +111,8 @@ export const mockAuthenticatedUser = {
         __typename: 'OrgConnection',
         nodes: [],
     },
+    permissions: {
+        __typename: 'PermissionConnection',
+        nodes: [],
+    },
 } as unknown as AuthenticatedUser

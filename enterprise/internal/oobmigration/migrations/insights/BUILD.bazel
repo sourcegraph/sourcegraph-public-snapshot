@@ -30,9 +30,14 @@ go_library(
 
 go_test(
     name = "insights_test",
+    timeout = "short",
     srcs = ["migrator_test.go"],
     data = glob(["testdata/**"]),
     embed = [":insights"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/basestore",

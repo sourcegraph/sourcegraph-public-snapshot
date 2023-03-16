@@ -19,6 +19,7 @@ go_library(
 
 go_test(
     name = "auth_test",
+    timeout = "short",
     srcs = [
         "basic_test.go",
         "oauth1_test.go",

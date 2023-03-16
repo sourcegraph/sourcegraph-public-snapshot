@@ -10,6 +10,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -23,10 +25,12 @@ type preciseIndexResolver struct {
 
 func NewPreciseIndexResolver(
 	ctx context.Context,
-	autoindexingSvc AutoIndexingService,
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
+	gitserverClient gitserver.Client,
 	prefetcher *Prefetcher,
+	siteAdminChecker SiteAdminChecker,
+	repoStore database.RepoStore,
 	locationResolver *CachedLocationResolver,
 	traceErrs *observation.ErrCollector,
 	upload *types.Upload,
@@ -44,7 +48,7 @@ func NewPreciseIndexResolver(
 
 	var uploadResolver resolverstubs.LSIFUploadResolver
 	if upload != nil {
-		uploadResolver = NewUploadResolver(uploadsSvc, autoindexingSvc, policySvc, *upload, prefetcher, locationResolver, traceErrs)
+		uploadResolver = NewUploadResolver(uploadsSvc, policySvc, gitserverClient, siteAdminChecker, repoStore, *upload, prefetcher, locationResolver, traceErrs)
 
 		if upload.AssociatedIndexID != nil {
 			v, ok, err := prefetcher.GetIndexByID(ctx, *upload.AssociatedIndexID)
@@ -59,7 +63,7 @@ func NewPreciseIndexResolver(
 
 	var indexResolver resolverstubs.LSIFIndexResolver
 	if index != nil {
-		indexResolver = NewIndexResolver(autoindexingSvc, uploadsSvc, policySvc, *index, prefetcher, locationResolver, traceErrs)
+		indexResolver = NewIndexResolver(uploadsSvc, policySvc, gitserverClient, siteAdminChecker, repoStore, *index, prefetcher, locationResolver, traceErrs)
 	}
 
 	return &preciseIndexResolver{

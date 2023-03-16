@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 // BatchChangeSource represents how a batch change can be created
@@ -826,6 +825,7 @@ type User struct {
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	Searchable            bool
+	SCIMControlled        bool
 }
 
 // UserForSCIM extends user with email addresses and SCIM external ID.
@@ -852,6 +852,14 @@ type Role struct {
 	Name      string
 	System    bool
 	CreatedAt time.Time
+}
+
+func (r Role) IsSiteAdmin() bool {
+	return r.Name == string(SiteAdministratorSystemRole)
+}
+
+func (r Role) IsUser() bool {
+	return r.Name == string(UserSystemRole)
 }
 
 // A PermissionNamespace represents a distinct context within which permission policies
@@ -975,9 +983,10 @@ type UserDates struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type SiteUsageStatistics struct {
-	DAUs []*SiteActivityPeriod
-	WAUs []*SiteActivityPeriod
-	MAUs []*SiteActivityPeriod
+	DAUs  []*SiteActivityPeriod
+	WAUs  []*SiteActivityPeriod
+	MAUs  []*SiteActivityPeriod
+	RMAUs []*SiteActivityPeriod
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -1300,18 +1309,22 @@ type SearchEventLatencies struct {
 // SiteUsageSummary is an alternate view of SiteUsageStatistics which is
 // calculated in the database layer.
 type SiteUsageSummary struct {
-	Month                   time.Time
-	Week                    time.Time
-	Day                     time.Time
-	UniquesMonth            int32
-	UniquesWeek             int32
-	UniquesDay              int32
-	RegisteredUniquesMonth  int32
-	RegisteredUniquesWeek   int32
-	RegisteredUniquesDay    int32
-	IntegrationUniquesMonth int32
-	IntegrationUniquesWeek  int32
-	IntegrationUniquesDay   int32
+	RollingMonth                   time.Time
+	Month                          time.Time
+	Week                           time.Time
+	Day                            time.Time
+	UniquesRollingMonth            int32
+	UniquesMonth                   int32
+	UniquesWeek                    int32
+	UniquesDay                     int32
+	RegisteredUniquesRollingMonth  int32
+	RegisteredUniquesMonth         int32
+	RegisteredUniquesWeek          int32
+	RegisteredUniquesDay           int32
+	IntegrationUniquesRollingMonth int32
+	IntegrationUniquesMonth        int32
+	IntegrationUniquesWeek         int32
+	IntegrationUniquesDay          int32
 }
 
 // SearchAggregatedEvent represents the total events, unique users, and
@@ -1358,11 +1371,14 @@ type Event struct {
 // GrowthStatistics represents the total users that were created,
 // deleted, resurrected, churned and retained over the current month.
 type GrowthStatistics struct {
-	DeletedUsers     int32
-	CreatedUsers     int32
-	ResurrectedUsers int32
-	ChurnedUsers     int32
-	RetainedUsers    int32
+	DeletedUsers           int32
+	CreatedUsers           int32
+	ResurrectedUsers       int32
+	ChurnedUsers           int32
+	RetainedUsers          int32
+	PendingAccessRequests  int32
+	ApprovedAccessRequests int32
+	RejectedAccessRequests int32
 }
 
 // IDEExtensionsUsage represents the daily, weekly and monthly numbers
@@ -1423,9 +1439,6 @@ type MigratedExtensionsUsageStatistics struct {
 	SearchExportPerformedUniqueUsers *int32
 	SearchExportFailed               *int32
 	SearchExportFailedUniqueUsers    *int32
-
-	GoImportsSearchQueryTransformed            *int32
-	GoImportsSearchQueryTransformedUniqueUsers *int32
 
 	OpenInEditor []*MigratedExtensionsOpenInEditorUsageStatistics
 }
@@ -1728,6 +1741,49 @@ type NotebooksUsageStatistics struct {
 	NotebookAddedSymbolBlocksCount   *int32
 }
 
+type OwnershipUsageStatistics struct {
+	// Whether the `search-ownership` feature flag is on anywhere on the instance.
+	FeatureFlagOn *bool `json:"feature_flag_on,omitempty"`
+
+	// Statistics about ownership data in repositories
+	ReposCount *OwnershipUsageReposCounts `json:"repos_count,omitempty"`
+
+	// Activity of selecting owners as search results using
+	// `select:file.owners`.
+	SelectFileOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"select_file_owners_search,omitempty"`
+
+	// Activity of using a `file:has.owner` predicate in search.
+	FileHasOwnerSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owner_search,omitempty"`
+
+	// Opening ownership panel.
+	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`
+}
+
+type OwnershipUsageReposCounts struct {
+	// Total number of repositories. Can be used in computing adoption
+	// ratio as denominator to number of repos with ownership.
+	Total *int32 `json:"total,omitempty"`
+
+	// Number of repos in an instance that have ownership
+	// data (of any source, either CODEOWNERS file or API).
+	WithOwnership *int32 `json:"with_ownership,omitempty"`
+
+	// Number of repos in an instance that have ownership
+	// data ingested through the API.
+	WithIngestedOwnership *int32 `json:"with_ingested_ownership,omitempty"`
+}
+
+type OwnershipUsageStatisticsActiveUsers struct {
+	// Daily-Active Users
+	DAU *int32 `json:"dau,omitempty"`
+
+	// Weekly-Active Users
+	WAU *int32 `json:"wau,omitempty"`
+
+	// Monthly-Active Users
+	MAU *int32 `json:"mau,omitempty"`
+}
+
 // Secret represents the secrets table
 type Secret struct {
 	ID int32
@@ -1885,25 +1941,17 @@ type TeamMember struct {
 	UpdatedAt time.Time
 }
 
-type CodeownersFile struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-
-	RepoID   api.RepoID
-	Contents string
-	Proto    *codeownerspb.File
-}
-
 type AccessRequestStatus string
 
 type AccessRequest struct {
-	ID             int32
-	Name           string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	Email          string
-	AdditionalInfo string
-	Status         AccessRequestStatus
+	ID               int32
+	Name             string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	Email            string
+	AdditionalInfo   string
+	Status           AccessRequestStatus
+	DecisionByUserID *int32
 }
 
 const (

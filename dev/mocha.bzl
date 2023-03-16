@@ -29,6 +29,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
     # Bundle the tests to remove the use of esm modules in tests
     esbuild(
         name = bundle_name,
+        testonly = True,
         entry_points = tests,
         platform = "node",
         target = "node12",
@@ -61,8 +62,15 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
             "MOCHA_FILE": "$$XML_OUTPUT_FILE",
 
             # TODO(bazel): e2e test environment
-            "GH_TOKEN": "fake-token",
-            "TEST_USER_PASSWORD": "fake-password",
+            "TEST_USER_EMAIL": "test@sourcegraph.com",
+            "TEST_USER_PASSWORD": "supersecurepassword",
+            "SOURCEGRAPH_BASE_URL": "https://sourcegraph.test:3443",
+            "GH_TOKEN": "fake-gh-token",
+            "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
+            "NO_CLEANUP": "true",
+            "KEEP_BROWSER": "true",
+            "DEVTOOLS": "true",
+            "BROWSER": "chrome",
         }),
         tags = ["manual"],
         **kwargs

@@ -3,14 +3,16 @@ package inference
 import (
 	"context"
 	"io"
+	"sort"
 	"strings"
 	"testing"
 
-	"github.com/grafana/regexp"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -18,19 +20,29 @@ import (
 )
 
 func testService(t *testing.T, repositoryContents map[string]string) *Service {
+	repositoryPaths := make([]string, 0, len(repositoryContents))
+	for path := range repositoryContents {
+		repositoryPaths = append(repositoryPaths, path)
+	}
+	sort.Strings(repositoryPaths)
+
 	// Real deal
 	sandboxService := luasandbox.NewService()
 
 	// Fake deal
 	gitService := NewMockGitService()
-	gitService.ListFilesFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) (paths []string, _ error) {
-		for path := range repositoryContents {
-			if pattern.MatchString(path) {
-				paths = append(paths, path)
+	gitService.LsFilesFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit string, pathspecs ...gitdomain.Pathspec) ([]string, error) {
+		var patterns []*paths.GlobPattern
+		for _, spec := range pathspecs {
+			pattern, err := paths.Compile(string(spec))
+			if err != nil {
+				return nil, err
 			}
+
+			patterns = append(patterns, pattern)
 		}
 
-		return
+		return filterPaths(repositoryPaths, patterns, nil), nil
 	})
 	gitService.ArchiveFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 		files := map[string]string{}

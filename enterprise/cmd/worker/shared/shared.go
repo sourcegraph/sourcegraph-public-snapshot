@@ -55,9 +55,11 @@ var additionalJobs = map[string]job.Job{
 	"codeintel-upload-backfiller":                 codeintel.NewUploadBackfillerJob(),
 	"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
 	"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
-	"codeintel-upload-graph-exporter":             codeintel.NewGraphExporterJob(),
+	"codeintel-ranking-file-reference-counter":    codeintel.NewRankingFileReferenceCounter(),
 	"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
 	"codeintel-crates-syncer":                     codeintel.NewCratesSyncerJob(),
+	"codeintel-sentinel-cve-scanner":              codeintel.NewSentinelCVEScannerJob(),
+	"codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
 
 	"auth-sourcegraph-operator-cleaner":  auth.NewSourcegraphOperatorCleaner(),
 	"auth-permission-sync-job-cleaner":   auth.NewPermissionSyncJobCleaner(),
@@ -67,9 +69,6 @@ var additionalJobs = map[string]job.Job{
 	"repo-embedding-job":                  repoembeddings.NewRepoEmbeddingJob(),
 	"context-detection-embedding-janitor": contextdetectionembeddings.NewContextDetectionEmbeddingJanitorJob(),
 	"context-detection-embedding-job":     contextdetectionembeddings.NewContextDetectionEmbeddingJob(),
-
-	// Note: experimental (not documented)
-	"codeintel-ranking-sourcer": codeintel.NewRankingSourcerJob(),
 }
 
 // SetAuthzProviders waits for the database to be initialized, then periodically refreshes the

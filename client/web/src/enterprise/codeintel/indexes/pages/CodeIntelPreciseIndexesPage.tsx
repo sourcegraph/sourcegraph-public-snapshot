@@ -4,16 +4,15 @@ import { useApolloClient } from '@apollo/client'
 import { mdiChevronRight, mdiDelete, mdiMapSearch, mdiRedo } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
-import { of, Subject } from 'rxjs'
+import { Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
 
-import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isErrorLike } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    Alert,
     Button,
     Checkbox,
     Container,
@@ -25,7 +24,6 @@ import {
     PageHeader,
     Text,
     Tooltip,
-    useObservable,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -47,7 +45,6 @@ import { CodeIntelStateIcon } from '../components/CodeIntelStateIcon'
 import { CodeIntelStateLabel } from '../components/CodeIntelStateLabel'
 import { EnqueueForm } from '../components/EnqueueForm'
 import { ProjectDescription } from '../components/ProjectDescription'
-import { queryCommitGraph as defaultQueryCommitGraph } from '../hooks/queryCommitGraph'
 import { queryPreciseIndexes as defaultQueryPreciseIndexes, statesFromString } from '../hooks/queryPreciseIndexes'
 import { useDeletePreciseIndex as defaultUseDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
 import { useDeletePreciseIndexes as defaultUseDeletePreciseIndexes } from '../hooks/useDeletePreciseIndexes'
@@ -64,14 +61,13 @@ export const INDEXER_LIST = gql`
 
 export interface CodeIntelPreciseIndexesPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
-    repo?: { id: string }
-    now?: () => Date
-    queryCommitGraph?: typeof defaultQueryCommitGraph
+    repo?: { id: string; name: string }
     queryPreciseIndexes?: typeof defaultQueryPreciseIndexes
     useDeletePreciseIndex?: typeof defaultUseDeletePreciseIndex
     useDeletePreciseIndexes?: typeof defaultUseDeletePreciseIndexes
     useReindexPreciseIndex?: typeof defaultUseReindexPreciseIndex
     useReindexPreciseIndexes?: typeof defaultUseReindexPreciseIndexes
+    indexingEnabled?: boolean
 }
 
 const STATE_FILTER: FilteredConnectionFilter = {
@@ -122,13 +118,12 @@ const STATE_FILTER: FilteredConnectionFilter = {
 export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseIndexesPageProps> = ({
     authenticatedUser,
     repo,
-    now,
-    queryCommitGraph = defaultQueryCommitGraph,
     queryPreciseIndexes = defaultQueryPreciseIndexes,
     useDeletePreciseIndex = defaultUseDeletePreciseIndex,
     useDeletePreciseIndexes = defaultUseDeletePreciseIndexes,
     useReindexPreciseIndex = defaultUseReindexPreciseIndex,
     useReindexPreciseIndexes = defaultUseReindexPreciseIndexes,
+    indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     telemetryService,
 }) => {
     const location = useLocation()
@@ -139,12 +134,6 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     const { handleDeletePreciseIndexes, deletesError } = useDeletePreciseIndexes()
     const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()
     const { handleReindexPreciseIndexes, reindexesError } = useReindexPreciseIndexes()
-    const commitGraphMetadata = useObservable(
-        useMemo(
-            () => (repo ? queryCommitGraph(repo?.id, apolloClient) : of(undefined)),
-            [repo, queryCommitGraph, apolloClient]
-        )
-    )
 
     const { data: indexerData } = useQuery<IndexerListResult, IndexerListVariables>(INDEXER_LIST, {})
 
@@ -215,7 +204,13 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
             setArgs(stashArgs)
             setSelection(new Set())
 
-            return queryPreciseIndexes(stashArgs, apolloClient).pipe(
+            return queryPreciseIndexes(
+                {
+                    ...args,
+                    ...stashArgs,
+                },
+                apolloClient
+            ).pipe(
                 tap(connection => {
                     setTotalCount(connection.totalCount ?? undefined)
                 })
@@ -233,6 +228,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         repo: args.repo ?? null,
                         query: args.query ?? null,
                         states: typedStates.length > 0 ? typedStates : null,
+                        indexerKey: args.indexerKey ?? null,
                         isLatestForRepo: args.isLatestForRepo ?? null,
                     },
                     update: cache => cache.modify({ fields: { node: () => {} } }),
@@ -261,6 +257,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         repo: args.repo ?? null,
                         query: args.query ?? null,
                         states: typedStates.length > 0 ? typedStates : null,
+                        indexerKey: args.indexerKey ?? null,
                         isLatestForRepo: args.isLatestForRepo ?? null,
                     },
                     update: cache => cache.modify({ fields: { node: () => {} } }),
@@ -294,30 +291,28 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
             <PageTitle title="Precise indexes" />
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Precise indexes' }]}
+                path={[
+                    {
+                        text: repo ? (
+                            <>
+                                Precise indexes for <RepoLink repoName={repo.name} to={null} />
+                            </>
+                        ) : (
+                            'Precise indexes'
+                        ),
+                    },
+                ]}
                 description="Precise code intelligence index data and auto-indexing jobs."
+                actions={
+                    repo &&
+                    authenticatedUser?.siteAdmin && (
+                        <Link to="/site-admin/code-graph/indexes">View indexes across all repositories</Link>
+                    )
+                }
                 className="mb-3"
             />
 
             {!!location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
-
-            {repo && commitGraphMetadata && (
-                <Alert variant={commitGraphMetadata.stale ? 'primary' : 'success'} aria-live="off">
-                    {commitGraphMetadata.stale ? (
-                        <>
-                            Repository commit graph is currently stale and is queued to be refreshed. Refreshing the
-                            commit graph updates which uploads are visible from which commits.
-                        </>
-                    ) : (
-                        <>Repository commit graph is currently up to date.</>
-                    )}{' '}
-                    {commitGraphMetadata.updatedAt && (
-                        <>
-                            Last refreshed <Timestamp date={commitGraphMetadata.updatedAt} now={now} />.
-                        </>
-                    )}
-                </Alert>
-            )}
 
             {repo && authenticatedUser?.siteAdmin && (
                 <Container className="mb-2">
@@ -368,34 +363,38 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                           </Label>
 
                                           <div className="text-right">
-                                              <Tooltip
-                                                  content={`Allow Sourcegraph to re-index ${
-                                                      selection === 'all' || selection.size > 1
-                                                          ? 'these commits'
-                                                          : 'this commit'
-                                                  } in the future and replace this data.`}
-                                              >
-                                                  <Button
-                                                      className="mr-2"
-                                                      variant="secondary"
-                                                      disabled={selection !== 'all' && selection.size === 0}
-                                                      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                                                      onClick={onReindex}
+                                              {indexingEnabled && (
+                                                  <Tooltip
+                                                      content={`Allow Sourcegraph to re-index ${
+                                                          selection === 'all' || selection.size > 1
+                                                              ? 'these commits'
+                                                              : 'this commit'
+                                                      } in the future and replace this data.`}
                                                   >
-                                                      <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark{' '}
-                                                      {(selection === 'all' ? totalCount : selection.size) === 0 ? (
-                                                          ''
-                                                      ) : (
-                                                          <>
-                                                              {selection === 'all' ? totalCount : selection.size}{' '}
-                                                              {(selection === 'all' ? totalCount : selection.size) === 1
-                                                                  ? 'index'
-                                                                  : 'indexes'}
-                                                          </>
-                                                      )}{' '}
-                                                      as replaceable by auto-indexing
-                                                  </Button>
-                                              </Tooltip>
+                                                      <Button
+                                                          className="mr-2"
+                                                          variant="secondary"
+                                                          disabled={selection !== 'all' && selection.size === 0}
+                                                          // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                                                          onClick={onReindex}
+                                                      >
+                                                          <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark{' '}
+                                                          {(selection === 'all' ? totalCount : selection.size) === 0 ? (
+                                                              ''
+                                                          ) : (
+                                                              <>
+                                                                  {selection === 'all' ? totalCount : selection.size}{' '}
+                                                                  {(selection === 'all'
+                                                                      ? totalCount
+                                                                      : selection.size) === 1
+                                                                      ? 'index'
+                                                                      : 'indexes'}
+                                                              </>
+                                                          )}{' '}
+                                                          as replaceable by auto-indexing
+                                                      </Button>
+                                                  </Tooltip>
+                                              )}
                                               <Button
                                                   className="mr-2"
                                                   variant="danger"
@@ -474,11 +473,11 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({
             )}
 
             <div>
-                <span className="mr-2 d-block d-mdinline-block">
+                <span className="mr-2 d-block">
                     <ProjectDescription index={node} />
                 </span>
 
-                <small className="text-mute">
+                <small className="text-muted">
                     <PreciseIndexLastUpdated index={node} />{' '}
                     {node.shouldReindex && (
                         <Tooltip content="This index has been marked as replaceable by auto-indexing.">

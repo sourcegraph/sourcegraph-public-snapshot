@@ -39,14 +39,6 @@
             "pointer": true
           }
         },
-        "setupWizard": {
-          "description": "Experimental setup wizard",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "searchContextsQuery": {
           "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
           "type": "boolean",
@@ -138,29 +130,6 @@
             "pointer": true
           }
         },
-        "codeIntelRepositoryBadge": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "description": "Show the code intelligence badge when viewing a repository.",
-              "type": "boolean",
-              "default": false,
-              "!go": {
-                "pointer": true
-              }
-            },
-            "forNerds": {
-              "description": "Show entirely too much information.",
-              "type": "boolean",
-              "default": false,
-              "!go": {
-                "pointer": true
-              }
-            }
-          },
-          "required": ["enabled"],
-          "additionalProperties": false
-        },
         "showCodeMonitoringLogs": {
           "description": "Shows code monitoring logs tab.",
           "type": "boolean",
@@ -171,14 +140,6 @@
         },
         "goCodeCheckerTemplates": {
           "description": "Shows a panel with code insights templates for go code checker results.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "enableGoImportsSearchQueryTransform": {
-          "description": "Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -440,11 +401,6 @@
       "minimum": 0,
       "default": 0
     },
-    "codeIntelligence.clickToGoToDefinition": {
-      "description": "Enable click to go to definition.",
-      "type": "boolean",
-      "default": true
-    },
     "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",
       "type": "integer",
@@ -562,11 +518,6 @@
       "enum": ["browser-extension", "native-integration"],
       "default": "browser-extension"
     },
-    "codeHost.useNativeTooltips": {
-      "description": "Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).",
-      "type": "boolean",
-      "default": false
-    },
     "search.hideSuggestions": {
       "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
       "type": "boolean",
@@ -605,7 +556,9 @@
     "perforce.codeHostToSwarmMap": {
       "description": "Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like \"perforce.company.com:1666\". Values should look like \"https://swarm.company.com/\", with a slash at the end.",
       "type": "object",
-      "additionalProperties": { "type": "string" },
+      "additionalProperties": {
+        "type": "string"
+      },
       "default": {}
     }
   },
@@ -658,8 +611,12 @@
       "description": "Performs a filter",
       "required": ["includeRepoRegexp", "excludeRepoRegexp"],
       "properties": {
-        "includeRepoRegexp": { "type": "string" },
-        "excludeRepoRegexp": { "type": "string" },
+        "includeRepoRegexp": {
+          "type": "string"
+        },
+        "excludeRepoRegexp": {
+          "type": "string"
+        },
         "repositories": {
           "type": "array",
           "items": {

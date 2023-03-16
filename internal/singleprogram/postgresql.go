@@ -54,7 +54,7 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) error {
 
 	useSinglePostgreSQLDatabase(logger, vars)
 
-	// Migration on startup is ideal for the single-program deployment because there are no other
+	// Migration on startup is ideal for the app deployment because there are no other
 	// simultaneously running services at startup that might interfere with a migration.
 	//
 	// TODO(sqs): TODO(single-binary): make this behavior more official and not just for "dev"

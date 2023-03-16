@@ -4,9 +4,8 @@ import sinon from 'sinon'
 
 import { AnchorLink } from '../Link'
 
-import { NavMenuSectionProps } from './NavMenu'
-
 import { NavMenu } from '.'
+import { NavMenuSectionProps } from './NavMenu'
 
 describe('<NavMenu />', () => {
     it('Should render Menu Items Correctly', () => {

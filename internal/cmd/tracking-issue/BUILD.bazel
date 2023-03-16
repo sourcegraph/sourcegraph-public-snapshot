@@ -38,6 +38,7 @@ go_binary(
 
 go_test(
     name = "tracking-issue_test",
+    timeout = "short",
     srcs = ["main_test.go"],
     data = glob(["testdata/**"]),
     embed = [":tracking-issue_lib"],

@@ -14,7 +14,6 @@ import (
 
 const API_URL = "https://api.anthropic.com/v1/complete"
 const CLIENT_ID = "sourcegraph/1.0"
-const ANTHROPIC_MODEL = "claude-v1"
 
 var DONE_BYTES = []byte("[DONE]")
 var STOP_SEQUENCES = []string{HUMAN_PROMPT}
@@ -33,12 +32,14 @@ type AnthropicCompletionsRequestParameters struct {
 type anthropicCompletionStreamClient struct {
 	cli         httpcli.Doer
 	accessToken string
+	model       string
 }
 
-func NewAnthropicCompletionStreamClient(cli httpcli.Doer, accessToken string) types.CompletionStreamClient {
+func NewAnthropicCompletionStreamClient(cli httpcli.Doer, accessToken string, model string) types.CompletionStreamClient {
 	return &anthropicCompletionStreamClient{
 		cli:         cli,
 		accessToken: accessToken,
+		model:       model,
 	}
 }
 
@@ -55,7 +56,7 @@ func (a *anthropicCompletionStreamClient) Stream(
 	payload := AnthropicCompletionsRequestParameters{
 		Stream:            true,
 		StopSequences:     STOP_SEQUENCES,
-		Model:             ANTHROPIC_MODEL,
+		Model:             a.model,
 		Temperature:       requestParams.Temperature,
 		MaxTokensToSample: requestParams.MaxTokensToSample,
 		TopP:              requestParams.TopP,

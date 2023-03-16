@@ -98,6 +98,7 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
                 searchable: true,
                 emails: [],
                 latestSettings: null,
+                permissions: { nodes: [] },
             },
         }),
         ...overrides,

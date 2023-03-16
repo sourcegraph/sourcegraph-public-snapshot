@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { mdiBlockHelper, mdiCog, mdiDotsHorizontal } from '@mdi/js'
 import { isEqual } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -19,6 +20,12 @@ import {
     Text,
     Code,
     Icon,
+    Menu,
+    MenuButton,
+    MenuList,
+    MenuItem,
+    MenuLink,
+    Position,
 } from '@sourcegraph/wildcard'
 
 import { externalRepoIcon } from '../components/externalServices/externalServices'
@@ -38,95 +45,103 @@ import {
     SiteAdminPackageFields,
     ExternalServiceKindsVariables,
     ExternalServiceKindsResult,
-    ExternalServiceKind,
-    PackageRepoReferenceKind,
 } from '../graphql-operations'
 
 import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from './backend'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
+import { ExternalServicePackageMap } from './packages/constants'
+import { PackagesModal } from './packages/PackagesModal'
 
 import styles from './SiteAdminPackagesPage.module.scss'
 
-const ExternalServicePackageMap: Partial<
-    Record<
-        ExternalServiceKind,
-        {
-            label: string
-            value: PackageRepoReferenceKind
-        }
-    >
-> = {
-    [ExternalServiceKind.NPMPACKAGES]: {
-        label: 'NPM',
-        value: PackageRepoReferenceKind.NPMPACKAGES,
-    },
-    [ExternalServiceKind.GOMODULES]: {
-        label: 'Go',
-        value: PackageRepoReferenceKind.GOMODULES,
-    },
-    [ExternalServiceKind.JVMPACKAGES]: {
-        label: 'JVM',
-        value: PackageRepoReferenceKind.JVMPACKAGES,
-    },
-    [ExternalServiceKind.RUBYPACKAGES]: {
-        label: 'Ruby',
-        value: PackageRepoReferenceKind.RUBYPACKAGES,
-    },
-    [ExternalServiceKind.PYTHONPACKAGES]: {
-        label: 'Python',
-        value: PackageRepoReferenceKind.PYTHONPACKAGES,
-    },
-    [ExternalServiceKind.RUSTPACKAGES]: {
-        label: 'Rust',
-        value: PackageRepoReferenceKind.RUSTPACKAGES,
-    },
-}
-
 interface PackageNodeProps {
     node: SiteAdminPackageFields
+    setFilterPackage: (node: SiteAdminPackageFields) => void
 }
 
-const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodeProps>> = ({ node }) => {
-    const PackageIconComponent = externalRepoIcon({ serviceType: node.scheme })
+const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodeProps>> = ({
+    node,
+    setFilterPackage,
+}) => {
+    const PackageIconComponent = externalRepoIcon({ serviceType: node.kind })
 
     const packageRepository = node.repository
 
     return (
         <li className="list-group-item px-0 py-2">
-            <div className={styles.node}>
-                <div>
-                    <Icon as={PackageIconComponent} aria-label="Package host logo" className="mr-2" />
-                    {packageRepository ? (
-                        <>
-                            <RepoLink repoName={node.name} to={packageRepository.url} />
-                            <RepoMirrorInfo mirrorInfo={packageRepository.mirrorInfo} />
-                        </>
-                    ) : (
-                        <>{node.name}</>
-                    )}
+            <div>
+                <div className={styles.node}>
+                    <div>
+                        <Icon as={PackageIconComponent} aria-label="Package host logo" className="mr-2" />
+                        {node.blocked ? (
+                            <>
+                                <span>{node.name}</span>
+                                <Text className="mb-0 text-danger">
+                                    <small>This package is blocked by a filter.</small>
+                                </Text>
+                            </>
+                        ) : packageRepository ? (
+                            <>
+                                <RepoLink repoName={node.name} to={packageRepository.url} />
+                                <RepoMirrorInfo mirrorInfo={packageRepository.mirrorInfo} />
+                            </>
+                        ) : (
+                            <>
+                                <span>{node.name}</span>
+                                <Text className="mb-0 text-muted">
+                                    <small>This package has not yet been synced.</small>
+                                </Text>
+                            </>
+                        )}
+                    </div>
+                    <div>
+                        <Menu>
+                            <MenuButton outline={true} aria-label="Package action">
+                                <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true} />
+                            </MenuButton>
+                            <MenuList position={Position.bottomEnd}>
+                                {packageRepository?.mirrorInfo.cloned &&
+                                    !packageRepository.mirrorInfo.lastError &&
+                                    !packageRepository.mirrorInfo.cloneInProgress && (
+                                        <MenuLink
+                                            as={Link}
+                                            to={`/${packageRepository.name}/-/settings`}
+                                            className="p-2"
+                                        >
+                                            <Icon aria-hidden={true} svgPath={mdiCog} className="mr-1" />
+                                            Settings
+                                        </MenuLink>
+                                    )}
+                                <MenuItem as={Button} onSelect={() => setFilterPackage(node)} className="p-2">
+                                    <Icon aria-hidden={true} svgPath={mdiBlockHelper} className="mr-1" />
+                                    Add filter
+                                </MenuItem>
+                            </MenuList>
+                        </Menu>
+                    </div>
                 </div>
+                {packageRepository && (
+                    <div>
+                        {packageRepository.mirrorInfo.lastError && (
+                            <div className={styles.alertWrapper}>
+                                <Alert variant="warning">
+                                    <Text className="font-weight-bold">Error syncing package:</Text>
+                                    <Code className={styles.alertContent}>
+                                        {packageRepository.mirrorInfo.lastError.replaceAll('\r', '\n')}
+                                    </Code>
+                                </Alert>
+                            </div>
+                        )}
+                        {packageRepository.mirrorInfo.isCorrupted && (
+                            <div className={styles.alertWrapper}>
+                                <Alert variant="danger">
+                                    Package is corrupt. <Link to={`/${node.name}/-/settings/mirror`}>More details</Link>
+                                </Alert>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
-            {packageRepository && (
-                <div>
-                    {packageRepository.mirrorInfo.lastError && (
-                        <div className={styles.alertWrapper}>
-                            <Alert variant="warning">
-                                <Text className="font-weight-bold">Error syncing package:</Text>
-                                <Code className={styles.alertContent}>
-                                    {packageRepository.mirrorInfo.lastError.replaceAll('\r', '\n')}
-                                </Code>
-                            </Alert>
-                        </div>
-                    )}
-                    {packageRepository.mirrorInfo.isCorrupted && (
-                        <div className={styles.alertWrapper}>
-                            <Alert variant="danger">
-                                Package is corrupt. <Link to={`/${node.name}/-/settings/mirror`}>More details</Link>
-                            </Alert>
-                        </div>
-                    )}
-                </div>
-            )}
         </li>
     )
 }
@@ -143,6 +158,8 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
 }) => {
     const location = useLocation()
     const navigate = useNavigate()
+    const [filterPackage, setFilterPackage] = useState<SiteAdminPackageFields | null>(null)
+    const [manageFilters, setManageFilters] = useState(false)
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminPackages')
@@ -154,35 +171,41 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
         error: extSvcError,
     } = useQuery<ExternalServiceKindsResult, ExternalServiceKindsVariables>(EXTERNAL_SERVICE_KINDS, {})
 
-    const filters = useMemo<FilteredConnectionFilter[]>(() => {
-        const values = [
-            {
-                label: 'All',
-                value: 'all',
-                args: {},
-            },
-        ]
+    const ecosystemFilterValues = useMemo<FilteredConnectionFilterValue[]>(() => {
+        const values = []
 
         for (const extSvc of extSvcs?.externalServices.nodes ?? []) {
-            const packageRepoScheme = ExternalServicePackageMap[extSvc.kind]
+            const packageRepoKind = ExternalServicePackageMap[extSvc.kind]
 
-            if (packageRepoScheme) {
+            if (packageRepoKind) {
                 values.push({
-                    ...packageRepoScheme,
-                    args: { scheme: packageRepoScheme.value },
+                    ...packageRepoKind,
+                    args: { kind: packageRepoKind.value },
                 })
             }
         }
 
-        return [
+        return values
+    }, [extSvcs?.externalServices.nodes])
+
+    const filters = useMemo<FilteredConnectionFilter[]>(
+        () => [
             {
                 id: 'ecosystem',
                 label: 'Ecosystem',
                 type: 'select',
-                values,
+                values: [
+                    {
+                        label: 'All',
+                        value: 'all',
+                        args: {},
+                    },
+                    ...ecosystemFilterValues,
+                ],
             },
-        ]
-    }, [extSvcs])
+        ],
+        [ecosystemFilterValues]
+    )
 
     const [filterValues, setFilterValues] = useState<Map<string, FilteredConnectionFilterValue>>(() =>
         getFilterFromURL(new URLSearchParams(location.search), filters)
@@ -227,7 +250,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
 
         return {
             name: query,
-            scheme: null,
+            kind: null,
             after: null,
             first: DEFAULT_FIRST,
             ...args,
@@ -248,7 +271,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
             return data.packageRepoReferences
         },
         options: {
-            fetchPolicy: 'cache-first',
+            fetchPolicy: 'cache-and-network',
             useURL: true,
         },
     })
@@ -257,75 +280,98 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
     const loading = extSvcLoading || packagesLoading
 
     return (
-        <div>
-            <PageTitle title="Packages - Admin" />
-            <PageHeader
-                path={[{ text: 'Packages' }]}
-                headingElement="h2"
-                description={
-                    <>
-                        Packages are synced from connected <Link to="/site-admin/external-services">code hosts</Link>.
-                    </>
-                }
-                className="mb-3"
-            />
-
-            <Container className="mb-3">
-                {error && !loading && <ErrorAlert error={error} />}
-                <Input
-                    type="search"
-                    className="flex-1"
-                    placeholder="Search packages..."
-                    name="query"
-                    value={searchValue}
-                    onChange={event => setSearchValue(event.currentTarget.value)}
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    aria-label="Search packages..."
-                    variant="regular"
+        <>
+            {filterPackage && (
+                <PackagesModal
+                    type="add"
+                    node={filterPackage}
+                    filters={ecosystemFilterValues}
+                    onDismiss={() => setFilterPackage(null)}
                 />
-                <div className="d-flex align-items-end justify-content-between mt-3">
-                    <FilterControl
-                        filters={filters}
-                        values={filterValues}
-                        onValueSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) =>
-                            setFilterValues(values => {
-                                const newValues = new Map(values)
-                                newValues.set(filter.id, value)
-                                return newValues
-                            })
-                        }
-                    />
-                    {connection && (
-                        <ConnectionSummary
-                            connection={connection}
-                            connectionQuery={query}
-                            hasNextPage={hasNextPage}
-                            first={DEFAULT_FIRST}
-                            noun="package"
-                            pluralNoun="packages"
-                            className="mb-0"
-                        />
-                    )}
-                </div>
-                {loading && !error && <LoadingSpinner className="d-block mx-auto mt-3" />}
-                {connection?.nodes && connection.nodes.length > 0 && (
-                    <ul className="list-group list-group-flush mt-2">
-                        {(connection?.nodes || []).map(node => (
-                            <PackageNode node={node} key={node.id} />
-                        ))}
-                    </ul>
-                )}
-                {connection?.nodes && connection.totalCount !== connection.nodes.length && hasNextPage && (
-                    <div>
-                        <Button variant="link" size="sm" onClick={fetchMore}>
-                            Show more
+            )}
+            {manageFilters && (
+                <PackagesModal
+                    type="manage"
+                    filters={ecosystemFilterValues}
+                    onDismiss={() => setManageFilters(false)}
+                />
+            )}
+            <div>
+                <PageTitle title="Packages - Admin" />
+                <PageHeader
+                    path={[{ text: 'Packages' }]}
+                    headingElement="h2"
+                    description={
+                        <>
+                            Packages are synced from connected{' '}
+                            <Link to="/site-admin/external-services">code hosts</Link>.
+                        </>
+                    }
+                    className="mb-3"
+                    actions={
+                        <Button variant="secondary" onClick={() => setManageFilters(true)}>
+                            Manage package filters
                         </Button>
+                    }
+                />
+
+                <Container className="mb-3">
+                    {error && !loading && <ErrorAlert error={error} />}
+                    <Input
+                        type="search"
+                        className="flex-1"
+                        placeholder="Search packages..."
+                        name="query"
+                        value={searchValue}
+                        onChange={event => setSearchValue(event.currentTarget.value)}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        aria-label="Search packages..."
+                        variant="regular"
+                    />
+                    <div className="d-flex align-items-end justify-content-between mt-3">
+                        <FilterControl
+                            filters={filters}
+                            values={filterValues}
+                            onValueSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) =>
+                                setFilterValues(values => {
+                                    const newValues = new Map(values)
+                                    newValues.set(filter.id, value)
+                                    return newValues
+                                })
+                            }
+                        />
+                        {connection && (
+                            <ConnectionSummary
+                                connection={connection}
+                                connectionQuery={query}
+                                hasNextPage={hasNextPage}
+                                first={DEFAULT_FIRST}
+                                noun="package"
+                                pluralNoun="packages"
+                                className="mb-0"
+                            />
+                        )}
                     </div>
-                )}
-            </Container>
-        </div>
+                    {loading && !error && <LoadingSpinner className="d-block mx-auto mt-3" />}
+                    {connection?.nodes && connection.nodes.length > 0 && (
+                        <ul className="list-group list-group-flush mt-2">
+                            {(connection?.nodes || []).map(node => (
+                                <PackageNode node={node} key={node.id} setFilterPackage={setFilterPackage} />
+                            ))}
+                        </ul>
+                    )}
+                    {connection?.nodes && connection.totalCount !== connection.nodes.length && hasNextPage && (
+                        <div>
+                            <Button variant="link" size="sm" onClick={fetchMore}>
+                                Show more
+                            </Button>
+                        </div>
+                    )}
+                </Container>
+            </div>
+        </>
     )
 }

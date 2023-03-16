@@ -50,6 +50,8 @@ go_library(
         "//internal/featureflag",
         "//internal/gitserver",
         "//internal/goroutine",
+        "//internal/grpc",
+        "//internal/grpc/defaults",
         "//internal/httpserver",
         "//internal/instrumentation",
         "//internal/jsonc",
@@ -57,6 +59,7 @@ go_library(
         "//internal/oobmigration",
         "//internal/redispool",
         "//internal/requestclient",
+        "//internal/search/job/jobutil",
         "//internal/service",
         "//internal/symbols",
         "//internal/sysreq",
@@ -81,13 +84,19 @@ go_library(
         "@com_github_throttled_throttled_v2//:throttled",
         "@com_github_throttled_throttled_v2//store/memstore",
         "@com_github_throttled_throttled_v2//store/redigostore",
+        "@org_golang_google_grpc//:go_default_library",
     ],
 )
 
 go_test(
     name = "cli_test",
+    timeout = "short",
     srcs = ["config_test.go"],
     embed = [":cli"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/conf/conftypes",
         "//internal/conf/deploy",

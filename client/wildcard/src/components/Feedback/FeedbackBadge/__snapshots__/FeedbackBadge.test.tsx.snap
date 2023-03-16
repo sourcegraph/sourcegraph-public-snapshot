@@ -81,33 +81,6 @@ exports[`FeedbackBadge Renders status 'new' correctly 1`] = `
 </div>
 `;
 
-exports[`FeedbackBadge Renders status 'prototype' correctly 1`] = `
-<div
-  class="feedbackBadge"
->
-  <span
-    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-  >
-    This feature is currently in prototype
-  </span>
-  <span
-    aria-hidden="true"
-    class="productStatusBadge productStatusBadge"
-    status="prototype"
-  >
-    prototype
-  </span>
-  <a
-    class="anchor"
-    href="mailto:support@sourcegraph.com"
-    rel="noopener noreferrer"
-    target="_blank"
-  >
-    Share feedback
-  </a>
-</div>
-`;
-
 exports[`FeedbackBadge Renders status 'wip' correctly 1`] = `
 <div
   class="feedbackBadge"

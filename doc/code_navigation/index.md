@@ -117,7 +117,7 @@ Code navigation is made up of multiple features that build on top of each other:
    </tbody>
 </table>
 
-- [Auto-indexing](explanations/auto_indexing.md) uses [Sourcegraph executors](../admin/executors.md) to create indexes for the code in your Sourcegraph instance, giving you up-to-date cross-repository code navigation.
+- [Auto-indexing](explanations/auto_indexing.md) uses [Sourcegraph executors](../admin/executors/index.md) to create indexes for the code in your Sourcegraph instance, giving you up-to-date cross-repository code navigation.
 - <span class="badge badge-beta">Beta</span> [Dependency navigation](explanations/features.md#dependency-navigation) allows you to navigate and search through the dependencies of your code, by leveraging precise code navigation and auto-indexing.
 
 ## Code navigation for your code

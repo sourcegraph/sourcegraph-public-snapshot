@@ -943,7 +943,13 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
+	var err error
+	req.URL.Path, err = url.JoinPath(c.URL.Path, req.URL.Path) // First join paths so that base path is kept
+	if err != nil {
+		return nil, err
+	}
 	req.URL = c.URL.ResolveReference(req.URL)
+
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	}
@@ -986,7 +992,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	if s, ok := result.(*[]byte); ok {
 		*s = bs
 	} else if result != nil {
-		return resp, json.Unmarshal(bs, result)
+		return resp, errors.Wrap(json.Unmarshal(bs, result), "failed to unmarshal response to JSON")
 	}
 
 	return resp, nil

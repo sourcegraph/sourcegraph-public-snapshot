@@ -17,10 +17,25 @@ const barData: FetchOwnersAndHistoryResult = {
                     nodes: [
                         {
                             owner: {
-                                email: '',
                                 avatarURL: null,
-                                displayName: 'xclaesse',
-                                user: null,
+                                teamDisplayName: 'Xclaesse',
+                                url: '/teams/xclaesse',
+                                name: 'xclaesse',
+                                __typename: 'Team',
+                            },
+                            __typename: 'Ownership',
+                        },
+                        {
+                            owner: {
+                                email: '',
+                                avatarURL: 'https://avatars.githubusercontent.com/u/5090588?v=4',
+                                displayName: 'pwithnall',
+                                user: {
+                                    displayName: 'Philip Withnall',
+                                    url: '/users/pwithnall',
+                                    username: 'pwithnall',
+                                    primaryEmail: null,
+                                },
                                 __typename: 'Person',
                             },
                             __typename: 'Ownership',
@@ -30,16 +45,6 @@ const barData: FetchOwnersAndHistoryResult = {
                                 email: '',
                                 avatarURL: null,
                                 displayName: 'nirbheek',
-                                user: null,
-                                __typename: 'Person',
-                            },
-                            __typename: 'Ownership',
-                        },
-                        {
-                            owner: {
-                                email: '',
-                                avatarURL: null,
-                                displayName: 'pwithnall',
                                 user: null,
                                 __typename: 'Person',
                             },

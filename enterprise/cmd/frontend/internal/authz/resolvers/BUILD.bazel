@@ -36,11 +36,13 @@ go_library(
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_exp//slices",
     ],
 )
 
 go_test(
     name = "resolvers_test",
+    timeout = "short",
     srcs = [
         "permissions_sync_jobs_test.go",
         "resolver_test.go",
@@ -75,5 +77,6 @@ go_test(
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_exp//maps",
     ],
 )

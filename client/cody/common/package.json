@@ -1,0 +1,14 @@
+{
+  "name": "@sourcegraph/cody-common",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/cody",
+    "directory": "common"
+  },
+  "main": "out/index.js",
+  "types": "out/index.d.ts",
+  "scripts": {
+    "build": "pnpm exec tsc --build"
+  }
+}

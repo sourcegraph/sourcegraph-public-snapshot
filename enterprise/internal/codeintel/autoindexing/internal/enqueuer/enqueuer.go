@@ -10,8 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,7 +22,8 @@ import (
 type IndexEnqueuer struct {
 	store           store.Store
 	repoUpdater     RepoUpdaterClient
-	gitserverClient GitserverClient
+	repoStore       database.RepoStore
+	gitserverClient gitserver.Client
 	operations      *operations
 	jobSelector     *jobselector.JobSelector
 }
@@ -28,12 +32,14 @@ func NewIndexEnqueuer(
 	observationCtx *observation.Context,
 	store store.Store,
 	repoUpdater RepoUpdaterClient,
-	gitserverClient GitserverClient,
+	repoStore database.RepoStore,
+	gitserverClient gitserver.Client,
 	jobSelector *jobselector.JobSelector,
 ) *IndexEnqueuer {
 	return &IndexEnqueuer{
 		store:           store,
 		repoUpdater:     repoUpdater,
+		repoStore:       repoStore,
 		gitserverClient: gitserverClient,
 		operations:      newOperations(observationCtx),
 		jobSelector:     jobSelector,
@@ -59,7 +65,12 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 	})
 	defer endObservation(1, observation.Args{})
 
-	commitID, err := s.gitserverClient.ResolveRevision(ctx, repositoryID, rev)
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
+	if err != nil {
+		return nil, err
+	}
+
+	commitID, err := s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.ResolveRevision")
 	}
@@ -101,14 +112,14 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependen
 		}
 		repoID = int(resp.ID)
 	} else {
-		repo, err := s.store.GetUnsafeDB().Repos().GetByName(ctx, repoName)
+		repo, err := s.repoStore.GetByName(ctx, repoName)
 		if err != nil {
 			return errors.Wrap(err, "store.Repos.GetByName")
 		}
 		repoID = int(repo.ID)
 	}
 
-	commit, err := s.gitserverClient.ResolveRevision(ctx, repoID, revision)
+	commit, err := s.gitserverClient.ResolveRevision(ctx, repoName, revision, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil

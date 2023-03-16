@@ -46,7 +46,7 @@ const SyncInnerRouterWithParent: React.FC<{ navigate: NavigateFunction }> = ({ n
         ) {
             return
         }
-        navigate(location)
+        navigate(location, { replace: true })
     }, [location, navigate, initialLocation])
     return null
 }

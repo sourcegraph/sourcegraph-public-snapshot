@@ -1009,6 +1009,7 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
         case 'has.tag':
         case 'has.owner':
         case 'has.key':
+        case 'has.topic':
             return [
                 {
                     type: 'literal',

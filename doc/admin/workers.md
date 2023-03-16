@@ -56,6 +56,18 @@ This job periodically updates an index of policy repository patterns to matching
 
 This job periodically updates the crates.io packages on the instance by syncing the crates.io index.
 
+#### `codeintel-ranking-file-reference-counter`
+
+This job periodically calculates a global reference count of text documents within a repo from other text documents on the instance.
+
+#### `codeintel-uploadstore-expirer`
+
+This job periodically compares index records against retention policies and marks them as expired if they are unprotected.
+
+#### `codeintel-package-filter-applicator`
+
+This job periodically updates the blocked status of package repo references and versions when package repo fitlers are updated or deleted.
+
 #### `insights-job`
 
 This job contains most of the background processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:

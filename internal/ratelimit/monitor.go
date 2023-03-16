@@ -1,10 +1,13 @@
 package ratelimit
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 // DefaultMonitorRegistry is the default global rate limit monitor registry. It will hold rate limit mappings
@@ -62,7 +65,7 @@ type MetricsCollector struct {
 //
 // It is intended to be embedded in an API client struct.
 type Monitor struct {
-	HeaderPrefix string // "X-" (GitHub) or "" (GitLab)
+	HeaderPrefix string // "X-" (GitHub and Azure DevOps) or "" (GitLab)
 
 	mu        sync.Mutex
 	known     bool
@@ -157,6 +160,55 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) (timeRemaining time.D
 	// an integer type, and drops fractions. We get more accurate
 	// calculations computing this the other way around:
 	return timeRemaining * time.Duration(cost) / time.Duration(limitRemaining)
+}
+
+func (c *Monitor) calcRateLimitWaitTime(cost int) time.Duration {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if !c.retry.IsZero() {
+		if timeRemaining := c.retry.Sub(c.now()); timeRemaining > 0 {
+			// Unlock before sleeping
+			return timeRemaining
+		}
+	}
+
+	// If the external rate limit is unknown,
+	// or if there are still enough remaining tokens,
+	// or if the cost is greater than the actual rate limit (in which case there will never be enough tokens),
+	// we don't wait.
+	if !c.known || c.remaining >= cost || cost > c.limit {
+		return time.Duration(0)
+	}
+
+	// If the rate limit reset is still in the future, we wait until the limit is reset.
+	// If it is in the past, the rate limit is outdated and we don't need to wait.
+	if timeRemaining := c.reset.Sub(c.now()); timeRemaining > 0 {
+		// Unlock before sleeping
+		return timeRemaining
+	}
+
+	return time.Duration(0)
+}
+
+// WaitForRateLimit determines whether or not an external rate limit is being applied
+// and sleeps an amount of time recommended by the external rate limiter.
+// It returns true if rate limiting was applying, and false if not.
+// This can be used to determine whether or not a request should be retried.
+//
+// The cost parameter can be used to check for a minimum number of available rate limit tokens.
+// For normal REST requests, this can usually be set to 1. For GraphQL requests, rate limit costs
+// can be more expensive and a different cost can be used. If there aren't enough rate limit
+// tokens available, then the function will sleep until the tokens reset.
+func (c *Monitor) WaitForRateLimit(ctx context.Context, cost int) bool {
+	sleepDuration := c.calcRateLimitWaitTime(cost)
+
+	if sleepDuration == 0 {
+		return false
+	}
+
+	timeutil.SleepWithContext(ctx, sleepDuration)
+	return true
 }
 
 // Update updates the monitor's rate limit information based on the HTTP response headers.

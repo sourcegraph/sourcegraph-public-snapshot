@@ -11,10 +11,13 @@ import (
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
+	sentinelgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/lsifuploadstore"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	uploadgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	uploadshttp "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/http"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -41,16 +44,28 @@ func Init(
 		return err
 	}
 
-	gitserverClient := gitserver.New(&observation.TestContext, db)
 	newUploadHandler := func(withCodeHostAuth bool) http.Handler {
-		return uploadshttp.GetHandler(codeIntelServices.UploadsService, db, uploadStore, withCodeHostAuth)
+		return uploadshttp.GetHandler(codeIntelServices.UploadsService, db, codeIntelServices.GitserverClient, uploadStore, withCodeHostAuth)
 	}
+
+	cloneURLToRepoName := func(ctx context.Context, submoduleURL string) (api.RepoName, error) {
+		return cloneurls.RepoSourceCloneURLToRepoName(ctx, db, submoduleURL)
+	}
+	repoStore := db.Repos()
+	siteAdminChecker := sharedresolvers.NewSiteAdminChecker(db)
+	locationResolverFactory := sharedresolvers.NewCachedLocationResolverFactory(cloneURLToRepoName, repoStore, codeIntelServices.GitserverClient)
+	prefetcherFactory := sharedresolvers.NewPrefetcherFactory(codeIntelServices.AutoIndexingService, codeIntelServices.UploadsService)
 
 	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
 		scopedContext("autoindexing"),
 		codeIntelServices.AutoIndexingService,
 		codeIntelServices.UploadsService,
 		codeIntelServices.PoliciesService,
+		codeIntelServices.GitserverClient,
+		siteAdminChecker,
+		repoStore,
+		prefetcherFactory,
+		locationResolverFactory,
 	)
 
 	codenavRootResolver, err := codenavgraphql.NewRootResolver(
@@ -59,7 +74,11 @@ func Init(
 		codeIntelServices.AutoIndexingService,
 		codeIntelServices.UploadsService,
 		codeIntelServices.PoliciesService,
-		gitserverClient,
+		codeIntelServices.GitserverClient,
+		siteAdminChecker,
+		repoStore,
+		locationResolverFactory,
+		prefetcherFactory,
 		ConfigInst.MaximumIndexesPerMonikerSearch,
 		ConfigInst.HunkCacheSize,
 	)
@@ -70,13 +89,31 @@ func Init(
 	policyRootResolver := policiesgraphql.NewRootResolver(
 		scopedContext("policies"),
 		codeIntelServices.PoliciesService,
+		repoStore,
+		siteAdminChecker,
 	)
 
 	uploadRootResolver := uploadgraphql.NewRootResolver(
 		scopedContext("upload"),
 		codeIntelServices.UploadsService,
-		codeIntelServices.AutoIndexingService,
 		codeIntelServices.PoliciesService,
+		codeIntelServices.GitserverClient,
+		siteAdminChecker,
+		repoStore,
+		prefetcherFactory,
+		locationResolverFactory,
+	)
+
+	sentinelRootResolver := sentinelgraphql.NewRootResolver(
+		scopedContext("sentinel"),
+		codeIntelServices.SentinelService,
+		codeIntelServices.UploadsService,
+		codeIntelServices.PoliciesService,
+		codeIntelServices.GitserverClient,
+		siteAdminChecker,
+		repoStore,
+		prefetcherFactory,
+		locationResolverFactory,
 	)
 
 	enterpriseServices.CodeIntelResolver = newResolver(
@@ -84,6 +121,7 @@ func Init(
 		codenavRootResolver,
 		policyRootResolver,
 		uploadRootResolver,
+		sentinelRootResolver,
 	)
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler
 	enterpriseServices.RankingService = codeIntelServices.RankingService

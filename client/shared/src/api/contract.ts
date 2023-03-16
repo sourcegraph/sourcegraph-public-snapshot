@@ -8,22 +8,21 @@ import { DeepReplace } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { GraphQLResult } from '@sourcegraph/http-client'
 
-import type { ReferenceContext, InputBoxOptions } from '../codeintel/legacy-extensions/api'
+import type { ReferenceContext } from '../codeintel/legacy-extensions/api'
+import { Occurrence } from '../codeintel/scip'
 import { ConfiguredExtension } from '../extensions/extension'
 import { SettingsCascade } from '../settings/settings'
 
 import { SettingsEdit } from './client/services/settings'
 import { ExecutableExtension } from './extension/activation'
 import { ProxySubscribable } from './extension/api/common'
-import {
-    ViewContexts,
-    PanelViewData,
-    ViewProviderResult,
-    ProgressNotification,
-    PlainNotification,
-    ContributionOptions,
-} from './extension/extensionHostApi'
+import { ViewContexts, PanelViewData, ViewProviderResult, ContributionOptions } from './extension/extensionHostApi'
 import { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
+
+export interface ScipParameters {
+    referenceOccurrence: Occurrence
+    documentOccurrences: Occurrence[]
+}
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -43,18 +42,17 @@ export interface FlatExtensionHostAPI {
 
     setSearchContext: (searchContext: string | undefined) => void
 
-    // Search
-    transformSearchQuery: (query: string) => ProxySubscribable<string>
-
     // Languages
     getHover: (parameters: TextDocumentPositionParameters) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
     getDocumentHighlights: (parameters: TextDocumentPositionParameters) => ProxySubscribable<DocumentHighlight[]>
     getDefinition: (
-        parameters: TextDocumentPositionParameters
+        parameters: TextDocumentPositionParameters,
+        scipParameters?: ScipParameters
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
     getReferences: (
         parameters: TextDocumentPositionParameters,
-        context: ReferenceContext
+        context: ReferenceContext,
+        scipParameters?: ScipParameters
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
     getLocations: (
         id: string,
@@ -134,10 +132,6 @@ export interface FlatExtensionHostAPI {
      */
     removeViewer(viewer: ViewerId): void
 
-    // Notifications
-    getPlainNotifications: () => ProxySubscribable<PlainNotification>
-    getProgressNotifications: () => ProxySubscribable<ProgressNotification & ProxyMarked>
-
     // Views
     getPanelViews: () => ProxySubscribable<PanelViewData[]>
 
@@ -191,10 +185,6 @@ export interface MainThreadAPI {
         name: string,
         command: Remote<((...args: any) => any) & ProxyMarked>
     ) => Unsubscribable & ProxyMarked
-
-    // User interaction methods
-    showMessage: (message: string) => Promise<void>
-    showInputBox: (options?: InputBoxOptions) => Promise<string | undefined>
 
     getEnabledExtensions: () => ProxySubscribable<(ConfiguredExtension | ExecutableExtension)[]>
 

@@ -253,7 +253,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 		appendTextToNode(currentCell, kind, line)
 	}
 
-	lsifToHTML(h.code, h.document, addRow, addText, validLines)
+	scipToHTML(h.code, h.document, addRow, addText, validLines)
 
 	stringRows := map[int32]string{}
 	for row, node := range htmlRows {
@@ -344,7 +344,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		otlog.Int("sizeBytes", len(p.Content)),
 		otlog.Bool("highlightLongLines", p.HighlightLongLines),
 		otlog.Bool("disableTimeout", p.DisableTimeout),
-		otlog.String("syntaxEngine", engineToDisplay[filetypeQuery.Engine]),
+		otlog.String("syntaxEngine", filetypeQuery.Engine.String()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -432,7 +432,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	//       whatever we were calculating before)
 	//    2. We are using treesitter. Always have syntect use the language provided in that
 	//       case to make sure that we have normalized the names of the language by then.
-	if filetypeQuery.LanguageOverride || filetypeQuery.Engine == EngineTreeSitter {
+	if filetypeQuery.LanguageOverride || filetypeQuery.Engine.isTreesitterBased() {
 		query.Filetype = filetypeQuery.Language
 	}
 
@@ -447,8 +447,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	//    two separate binaries, and separate processes, to function semi-reliably.
 	//
 	// Instead, in Sourcegraph App we defer to Chroma for syntax highlighting.
-	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
-	if isSingleProgram {
+	if deploy.IsApp() {
 		document, err := highlightWithChroma(code, p.Filepath)
 		if err != nil {
 			return unhighlightedCode(err, code)
@@ -514,7 +513,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 
 	// We need to return SCIP data if explicitly requested or if the selected
 	// engine is tree sitter.
-	if p.Format == gosyntect.FormatJSONSCIP || filetypeQuery.Engine == EngineTreeSitter {
+	if p.Format == gosyntect.FormatJSONSCIP || filetypeQuery.Engine.isTreesitterBased() {
 		document := new(scip.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
 

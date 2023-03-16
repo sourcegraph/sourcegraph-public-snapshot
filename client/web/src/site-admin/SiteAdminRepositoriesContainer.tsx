@@ -19,16 +19,15 @@ import {
     RepositoriesResult,
     RepositoriesVariables,
     RepositoryOrderBy,
-    RepositoryStatsResult,
     ExternalServiceIDsAndNamesVariables,
     ExternalServiceIDsAndNamesResult,
-    RepositoryStatsVariables,
     SiteAdminRepositoryFields,
+    StatusAndRepoStatsResult,
 } from '../graphql-operations'
 import { PageRoutes } from '../routes.constants'
 
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
-import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
+import { STATUS_AND_REPO_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
 import { RepositoryNode } from './RepositoryNode'
 
 const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
@@ -141,7 +140,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
         error: repoStatsError,
         startPolling,
         stopPolling,
-    } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {})
+    } = useQuery<StatusAndRepoStatsResult>(STATUS_AND_REPO_STATS, {})
     const location = useLocation()
     const navigate = useNavigate()
 
@@ -167,26 +166,25 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             return FILTERS
         }
 
-        const values = [
-            {
-                label: 'All',
-                value: 'all',
-                tooltip: 'Show all repositories',
-                args: {},
-            },
-        ]
-
-        for (const extSvc of extSvcs.externalServices.nodes) {
-            values.push({
-                label: extSvc.displayName,
-                value: extSvc.id,
-                tooltip: `Show all repositories discovered on ${extSvc.displayName}`,
-                args: { externalService: extSvc.id },
-            })
-        }
-
         const filtersWithExternalServices = FILTERS.slice() // use slice to copy array
         if (location.pathname !== PageRoutes.SetupWizard) {
+            const values = [
+                {
+                    label: 'All',
+                    value: 'all',
+                    tooltip: 'Show all repositories',
+                    args: {},
+                },
+            ]
+
+            for (const extSvc of extSvcs.externalServices.nodes) {
+                values.push({
+                    label: extSvc.displayName,
+                    value: extSvc.id,
+                    tooltip: `Show all repositories discovered on ${extSvc.displayName}`,
+                    args: { externalService: extSvc.id },
+                })
+            }
             filtersWithExternalServices.push({
                 id: 'codeHost',
                 label: 'Code Host',
@@ -200,6 +198,10 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
     const [filterValues, setFilterValues] = useState<Map<string, FilteredConnectionFilterValue>>(() =>
         getFilterFromURL(new URLSearchParams(location.search), filters)
     )
+
+    useEffect(() => {
+        setFilterValues(getFilterFromURL(new URLSearchParams(location.search), filters))
+    }, [filters, location])
 
     const [searchQuery, setSearchQuery] = useState<string>(
         () => new URLSearchParams(location.search).get('query') || ''
@@ -373,13 +375,13 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
 
     return (
         <>
-            <Container className="py-3 mb-3">
+            <Container className="py-3 mb-1">
                 {error && !loading && <ErrorAlert error={error} />}
                 {legends && <ValueLegendList items={legends} />}
             </Container>
             {extSvcs && (
                 <Container>
-                    <div className="d-flex justify-content-center">
+                    <div className="d-flex flex-sm-row flex-column-reverse justify-content-center">
                         <FilterControl
                             filters={filters}
                             values={filterValues}
@@ -393,7 +395,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
                         />
                         <Input
                             type="search"
-                            className="flex-1 ml-5"
+                            className="flex-1 md-ml-5 mb-1"
                             placeholder="Search repositories..."
                             name="query"
                             value={searchQuery}

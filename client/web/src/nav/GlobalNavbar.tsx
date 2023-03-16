@@ -3,6 +3,7 @@ import React, { SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, use
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
+import CommentQuoteOutline from 'mdi-react/CommentQuoteOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { RouteObject, useLocation } from 'react-router-dom'
 
@@ -14,7 +15,7 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
+import { addSourcegraphAppOutboundUrlParameters, buildEnterpriseTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -30,17 +31,17 @@ import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { NotebookProps } from '../notebooks'
+import { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
+import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
-
-import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
 
@@ -52,7 +53,8 @@ export interface GlobalNavbarProps
         CodeInsightsProps,
         BatchChangesProps,
         NotebookProps,
-        CodeMonitoringProps {
+        CodeMonitoringProps,
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
@@ -127,6 +129,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     searchContextsEnabled,
     codeMonitoringEnabled,
     notebooksEnabled,
+    ownEnabled,
     showFeedbackModal,
     ...props
 }) => {
@@ -165,9 +168,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
+            ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [showSearchContext])
+    }, [ownEnabled, showSearchContext])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
@@ -242,6 +246,30 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavLink>
                         </NavItem>
                     )}
+                    {isSourcegraphApp && (
+                        <NavDropdown
+                            routeMatch="something-that-never-matches"
+                            toggleItem={{
+                                path: '#',
+                                icon: CommentQuoteOutline,
+                                content: 'Feedback',
+                                variant: navLinkVariant,
+                            }}
+                            mobileHomeItem={{ content: 'Feedback' }}
+                            items={[
+                                {
+                                    content: 'Join our Discord',
+                                    path: 'https://about.sourcegraph.com/community',
+                                    target: '_blank',
+                                },
+                                {
+                                    content: 'File an issue',
+                                    path: 'https://github.com/sourcegraph/app',
+                                    target: '_blank',
+                                },
+                            ]}
+                        />
+                    )}
                 </NavGroup>
                 <NavActions>
                     {!props.authenticatedUser && (
@@ -262,16 +290,25 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </>
                     )}
                     {isSourcegraphApp && (
+                        <NavAction>
+                            <Link className={styles.link} to="/app/coming-soon">
+                                Coming soon
+                            </Link>
+                        </NavAction>
+                    )}
+                    {isSourcegraphApp && (
                         <ButtonLink
                             variant="secondary"
                             outline={true}
-                            to={buildCloudTrialURL(props.authenticatedUser)}
+                            to={addSourcegraphAppOutboundUrlParameters(
+                                buildEnterpriseTrialURL(props.authenticatedUser)
+                            )}
                             size="sm"
                             onClick={() =>
-                                eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarSourcegraphApp' })
+                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBarSourcegraphApp' })
                             }
                         >
-                            Try Sourcegraph Cloud
+                            Try Sourcegraph Enterprise
                         </ButtonLink>
                     )}
                     {props.authenticatedUser?.siteAdmin && (
@@ -341,7 +378,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 </NavActions>
             </NavBar>
             {showSearchBox && (
-                <div className="w-100 px-3 py-2 border-bottom">
+                <div className={styles.searchNavBar}>
                     <SearchNavbarItem
                         {...props}
                         isLightTheme={isLightTheme}

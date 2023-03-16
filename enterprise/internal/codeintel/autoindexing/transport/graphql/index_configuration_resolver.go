@@ -8,6 +8,8 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -15,16 +17,18 @@ import (
 )
 
 type indexConfigurationResolver struct {
-	autoindexSvc AutoIndexingService
-	repositoryID int
-	errTracer    *observation.ErrCollector
+	autoindexSvc     AutoIndexingService
+	siteAdminChecker sharedresolvers.SiteAdminChecker
+	repositoryID     int
+	errTracer        *observation.ErrCollector
 }
 
-func NewIndexConfigurationResolver(autoindexSvc AutoIndexingService, repositoryID int, errTracer *observation.ErrCollector) resolverstubs.IndexConfigurationResolver {
+func NewIndexConfigurationResolver(autoindexSvc AutoIndexingService, siteAdminChecker sharedresolvers.SiteAdminChecker, repositoryID int, errTracer *observation.ErrCollector) resolverstubs.IndexConfigurationResolver {
 	return &indexConfigurationResolver{
-		autoindexSvc: autoindexSvc,
-		repositoryID: repositoryID,
-		errTracer:    errTracer,
+		autoindexSvc:     autoindexSvc,
+		siteAdminChecker: siteAdminChecker,
+		repositoryID:     repositoryID,
+		errTracer:        errTracer,
 	}
 }
 
@@ -67,18 +71,46 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 	_ = json.Indent(&indented, marshaled, "", "\t")
 
 	return &inferredConfigurationResolver{
-		configuration: indented.String(),
-		limitErr:      limitErr,
+		siteAdminChecker: r.siteAdminChecker,
+		configuration:    indented.String(),
+		limitErr:         limitErr,
 	}, nil
 }
 
+func (r *indexConfigurationResolver) ParsedConfiguration(ctx context.Context) (*[]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+	configuration, err := r.Configuration(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if configuration == nil {
+		return nil, nil
+	}
+
+	descriptions, err := newDescriptionResolversFromJSON(r.siteAdminChecker, *configuration)
+	if err != nil {
+		return nil, err
+	}
+
+	return &descriptions, nil
+}
+
 type inferredConfigurationResolver struct {
-	configuration string
-	limitErr      error
+	siteAdminChecker sharedresolvers.SiteAdminChecker
+	configuration    string
+	limitErr         error
 }
 
 func (r *inferredConfigurationResolver) Configuration() string {
 	return r.configuration
+}
+
+func (r *inferredConfigurationResolver) ParsedConfiguration(ctx context.Context) (*[]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+	descriptions, err := newDescriptionResolversFromJSON(r.siteAdminChecker, r.configuration)
+	if err != nil {
+		return nil, err
+	}
+
+	return &descriptions, nil
 }
 
 func (r *inferredConfigurationResolver) LimitError() *string {
@@ -88,4 +120,35 @@ func (r *inferredConfigurationResolver) LimitError() *string {
 	}
 
 	return nil
+}
+
+func newDescriptionResolvers(siteAdminChecker sharedresolvers.SiteAdminChecker, indexConfiguration *config.IndexConfiguration) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
+	for _, indexJob := range indexConfiguration.IndexJobs {
+		var steps []types.DockerStep
+		for _, step := range indexJob.Steps {
+			steps = append(steps, types.DockerStep{
+				Root:     step.Root,
+				Image:    step.Image,
+				Commands: step.Commands,
+			})
+		}
+
+		resolvers = append(resolvers, &autoIndexJobDescriptionResolver{
+			siteAdminChecker: siteAdminChecker,
+			indexJob:         indexJob,
+			steps:            steps,
+		})
+	}
+
+	return resolvers, nil
+}
+
+func newDescriptionResolversFromJSON(siteAdminChecker sharedresolvers.SiteAdminChecker, configuration string) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+	indexConfiguration, err := config.UnmarshalJSON([]byte(configuration))
+	if err != nil {
+		return nil, err
+	}
+
+	return newDescriptionResolvers(siteAdminChecker, &indexConfiguration)
 }

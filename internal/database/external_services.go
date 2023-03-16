@@ -54,7 +54,7 @@ type ExternalServiceStore interface {
 	//
 	// 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always be
 	// recalculated based on whether "authorization" field is presented in
-	// `es.Config`. For Sourcegraph Cloud, the `es.Unrestricted` will always be
+	// `es.Config`. For Sourcegraph Dotcom, the `es.Unrestricted` will always be
 	// false (i.e. enforce permissions).
 	Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error
 
@@ -70,7 +70,7 @@ type ExternalServiceStore interface {
 	// each external service. If the latest sync did not have an error, the
 	// string will be empty. We exclude cloud_default external services as they
 	// are never synced.
-	GetLatestSyncErrors(ctx context.Context) (map[int64]string, error)
+	GetLatestSyncErrors(ctx context.Context) ([]*SyncError, error)
 
 	// GetByID returns the external service for id.
 	//
@@ -502,25 +502,16 @@ func validatePerforceConnection(perforceValidators []func(*schema.PerforceConnec
 	return err
 }
 
-// upsertAuthorizationToExternalService adds "authorization" field to the
-// external service config when not yet present for GitHub and GitLab.
-func upsertAuthorizationToExternalService(kind, config string) (string, error) {
-	switch kind {
-	case extsvc.KindGitHub:
-		return jsonc.Edit(config, &schema.GitHubAuthorization{}, "authorization")
-
-	case extsvc.KindGitLab:
-		return jsonc.Edit(config,
-			&schema.GitLabAuthorization{
-				IdentityProvider: schema.IdentityProvider{
-					Oauth: &schema.OAuthIdentity{
-						Type: "oauth",
-					},
-				},
-			},
-			"authorization")
+// disablePermsSyncingForExternalService removes "authorization" or
+// "enforcePermissions" fields from the external service config
+// when present on the external service config.
+func disablePermsSyncingForExternalService(config string) (string, error) {
+	withoutEnforcePermissions, err := jsonc.Remove(config, "enforcePermissions")
+	// in case removing "enforcePermissions" fails, we try to remove "authorization" anyway
+	if err != nil {
+		withoutEnforcePermissions = config
 	}
-	return config, nil
+	return jsonc.Remove(withoutEnforcePermissions, "authorization")
 }
 
 func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
@@ -538,11 +529,11 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
-	// Cloud, we always want to enforce repository permissions using OAuth to
-	// prevent unexpected resource leaking.
+	// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
+	// we always want to disable repository permissions to prevent
+	// permission syncing from trying to sync permissions from public code.
 	if envvar.SourcegraphDotComMode() {
-		rawConfig, err = upsertAuthorizationToExternalService(es.Kind, rawConfig)
+		rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
 		if err != nil {
 			return err
 		}
@@ -623,11 +614,11 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
 		}
 
-		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
-		// Cloud, we always want to enforce repository permissions using OAuth to
-		// prevent unexpected resource leaking.
+		// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
+		// we always want to disable repository permissions to prevent
+		// permission syncing from trying to sync permissions from public code.
 		if envvar.SourcegraphDotComMode() {
-			rawConfig, err = upsertAuthorizationToExternalService(s.Kind, rawConfig)
+			rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
 			if err != nil {
 				return err
 			}
@@ -849,11 +840,11 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			return err
 		}
 
-		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
-		// Cloud, we always want to enforce repository permissions using OAuth to
-		// prevent unexpected resource leaking.
+		// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
+		// we always want to disable repository permissions to prevent
+		// permission syncing from trying to sync permissions from public code.
 		if envvar.SourcegraphDotComMode() {
-			unredactedConfig, err = upsertAuthorizationToExternalService(externalService.Kind, unredactedConfig)
+			unredactedConfig, err = disablePermsSyncingForExternalService(unredactedConfig)
 			if err != nil {
 				return err
 			}
@@ -1322,7 +1313,23 @@ LIMIT 1
 	return ok, err
 }
 
-func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) (map[int64]string, error) {
+type SyncError struct {
+	ServiceID int64
+	Message   string
+}
+
+var scanSyncErrors = basestore.NewSliceScanner(scanExternalServiceSyncErrorRow)
+
+func scanExternalServiceSyncErrorRow(scanner dbutil.Scanner) (*SyncError, error) {
+	var s SyncError
+	err := scanner.Scan(
+		&s.ServiceID,
+		&dbutil.NullString{S: &s.Message},
+	)
+	return &s, err
+}
+
+func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) ([]*SyncError, error) {
 	q := sqlf.Sprintf(`
 SELECT DISTINCT ON (es.id) es.id, essj.failure_message
 FROM external_services es
@@ -1334,26 +1341,7 @@ WHERE es.deleted_at IS NULL AND NOT es.cloud_default
 ORDER BY es.id, essj.finished_at DESC
 `)
 
-	rows, err := e.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	messages := make(map[int64]string)
-
-	for rows.Next() {
-		var svcID int64
-		var message sql.NullString
-		if err := rows.Scan(&svcID, &message); err != nil {
-			return nil, err
-		}
-		messages[svcID] = message.String
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return messages, nil
+	return scanSyncErrors(e.Query(ctx, q))
 }
 
 func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -1597,6 +1585,22 @@ WHERE EXISTS(
 // `Unrestricted` and `HasWebhooks`.
 func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
 	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(rawConfig, "authorization").Exists()
+
+	// Only override the value of es.Unrestricted if `enforcePermissions` is set.
+	//
+	// All code hosts apart from Azure DevOps use the `authorization` pattern for enforcing
+	// permissions. Instead of continuing to use this pattern for Azure DevOps, it is simpler to add
+	// a boolean which has an explicit name and describes what it does better.
+	//
+	// The end result: we start to break away from the `authorization` pattern with an additional
+	// check for this new field - `enforcePermissions`.
+	//
+	// For existing auth providers, this is forwards compatible. While at the same time if they also
+	// wanted to get on the `enforcePermissions` pattern, this change is backwards compatible.
+	enforcePermissions := gjson.Get(rawConfig, "enforcePermissions")
+	if !envvar.SourcegraphDotComMode() && enforcePermissions.Exists() {
+		es.Unrestricted = !enforcePermissions.Bool()
+	}
 
 	hasWebhooks := false
 	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)

@@ -3,7 +3,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "background",
     srcs = [
-        "backfill_completed_check.go",
         "background.go",
         "data_prune.go",
         "insight_enqueuer.go",
@@ -49,8 +48,8 @@ go_library(
 
 go_test(
     name = "background_test",
+    timeout = "short",
     srcs = [
-        "backfill_completed_check_test.go",
         "data_prune_test.go",
         "insight_enqueuer_test.go",
         "license_check_test.go",
@@ -58,6 +57,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":background"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//enterprise/internal/insights/background/queryrunner",

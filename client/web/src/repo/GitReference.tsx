@@ -40,6 +40,8 @@ export interface GitReferenceNodeProps {
     nodeLinkClassName?: string
 
     ariaLabel?: string
+
+    isPackageVersion?: boolean
 }
 
 export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<GitReferenceNodeProps>> = ({
@@ -52,8 +54,10 @@ export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<G
     icon: ReferenceIcon,
     nodeLinkClassName,
     ariaLabel,
+    isPackageVersion,
 }) => {
     const mostRecentSig =
+        !isPackageVersion &&
         node.target.commit &&
         (node.target.commit.committer && node.target.commit.committer.date > node.target.commit.author.date
             ? node.target.commit.committer
@@ -177,7 +181,7 @@ export const queryGitReferences = memoizeObservable(
                 args.withBehindAhead !== undefined ? args.withBehindAhead : args.type === GitRefType.GIT_BRANCH,
         }).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node || data.node.__typename !== 'Repository' || !data.node.gitRefs) {
+                if (data?.node?.__typename !== 'Repository' || !data?.node?.gitRefs) {
                     throw createAggregateError(errors)
                 }
                 return data.node.gitRefs
