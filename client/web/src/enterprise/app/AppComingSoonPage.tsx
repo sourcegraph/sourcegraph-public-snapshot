@@ -4,17 +4,7 @@ import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import {
-    Container,
-    H1,
-    H2,
-    Icon,
-    Link,
-    PageHeader,
-    ProductStatusBadge,
-    Text,
-    useMatchMedia,
-} from '@sourcegraph/wildcard'
+import { Container, H1, H2, Icon, Link, PageHeader, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
@@ -25,7 +15,6 @@ import styles from './AppComingSoonPage.module.scss'
 export const AppComingSoonPage: React.FC = () => {
     const isLightTheme = useIsLightTheme()
     useEffect(() => eventLogger.logPageView('AppComingSoonPage'), [])
-    const allowAutoplay = useMatchMedia('(prefers-reduced-motion: no-preference)')
 
     return (
         <Page>
@@ -65,17 +54,16 @@ export const AppComingSoonPage: React.FC = () => {
                     <div className={classNames('col-12 col-md-7', styles.imageWrapper)}>
                         <img
                             src="https://storage.googleapis.com/sourcegraph-assets/app-coming-soon-cody.png"
-                            alt=""
+                            alt="Screenshot of the Cody VS Code extension. You can see it being asked the question 'Can you show me another example of using an interface from my codebase?' and it responds with a concrete TypeScript interface example from the codebase."
                             width={612}
-                            height={370}
-                            className={classNames('max-w-100 percy-hide', styles.image)}
+                            className={classNames('max-w-100 max-h-100 percy-hide', styles.image)}
                         />
                     </div>
                 </section>
             </Container>
 
             <Container className={classNames('mb-3', styles.container)}>
-                <section className={styles.section}>
+                <section className={classNames('row', styles.section)}>
                     <div className={classNames('col-12 col-md-5', styles.text)}>
                         <ProductStatusBadge status="experimental" className="mb-4 text-uppercase" />
                         <H2 as="h3" className="mb-4">
@@ -102,9 +90,8 @@ export const AppComingSoonPage: React.FC = () => {
                             src={`https://storage.googleapis.com/sourcegraph-assets/app-coming-soon-own-${
                                 isLightTheme ? 'light' : 'dark'
                             }.png`}
-                            alt=""
+                            alt="Screenshot of the Own features on the Sourcegraph web app. It shows a new tab in the bottom panel on the code view that lists ownership information for a specific file and classifies owners into exports, how often they made changes, and how they were categorized."
                             width={612}
-                            height={369}
                             className={classNames('max-w-100 percy-hide', styles.image)}
                         />
                     </div>
