@@ -97,6 +97,12 @@ func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused b
 	return false, "", nil
 }
 
+// handleSignUp is called to create a new user account. It is called for the normal user signup process (where a
+// non-admin user is created) and for the site initialization process (where the initial site admin user account is
+// created).
+//
+// 🚨 SECURITY: Any change to this function could introduce security exploits
+// and/or break sign up / initial admin account creation. Be careful.
 func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
