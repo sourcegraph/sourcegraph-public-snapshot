@@ -22,6 +22,8 @@ type ListTeamsOpts struct {
 	Cursor int32
 	// List teams of a specific parent team only.
 	WithParentID int32
+	// List teams that do not step from a specific team ID.
+	ExceptAncestorID int32
 	// Only return root teams (teams that have no parent).
 	// This is used on the main overview list of teams.
 	RootOnly bool
@@ -31,7 +33,7 @@ type ListTeamsOpts struct {
 	ForUserMember int32
 }
 
-func (opts ListTeamsOpts) SQL() (where, joins []*sqlf.Query) {
+func (opts ListTeamsOpts) SQL() (where, joins, ctes []*sqlf.Query) {
 	where = []*sqlf.Query{
 		sqlf.Sprintf("teams.id >= %s", opts.Cursor),
 	}
@@ -52,7 +54,7 @@ func (opts ListTeamsOpts) SQL() (where, joins []*sqlf.Query) {
 		where = append(where, sqlf.Sprintf("team_members.user_id = %s", opts.ForUserMember))
 	}
 
-	return where, joins
+	return where, joins, nil
 }
 
 type TeamMemberListCursor struct {
@@ -204,7 +206,7 @@ LIMIT 1
 `
 
 func (s *teamStore) ListTeams(ctx context.Context, opts ListTeamsOpts) (_ []*types.Team, next int32, err error) {
-	conds, joins := opts.SQL()
+	conds, joins, ctes := opts.SQL()
 
 	if opts.LimitOffset != nil && opts.Limit > 0 {
 		opts.Limit++
@@ -212,6 +214,7 @@ func (s *teamStore) ListTeams(ctx context.Context, opts ListTeamsOpts) (_ []*typ
 
 	q := sqlf.Sprintf(
 		listTeamsQueryFmtstr,
+		sqlf.Join(ctes, "\n"),
 		sqlf.Join(teamColumns, ","),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(conds, "AND"),
@@ -232,6 +235,7 @@ func (s *teamStore) ListTeams(ctx context.Context, opts ListTeamsOpts) (_ []*typ
 }
 
 const listTeamsQueryFmtstr = `
+%s
 SELECT %s
 FROM teams
 %s
@@ -244,10 +248,11 @@ ORDER BY
 func (s *teamStore) CountTeams(ctx context.Context, opts ListTeamsOpts) (int32, error) {
 	// Disable cursor for counting.
 	opts.Cursor = 0
-	conds, joins := opts.SQL()
+	conds, joins, ctes := opts.SQL()
 
 	q := sqlf.Sprintf(
 		countTeamsQueryFmtstr,
+		sqlf.Join(ctes, "\n"),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(conds, "AND"),
 	)
@@ -257,6 +262,7 @@ func (s *teamStore) CountTeams(ctx context.Context, opts ListTeamsOpts) (int32, 
 }
 
 const countTeamsQueryFmtstr = `
+%s
 SELECT COUNT(*)
 FROM teams
 %s
