@@ -1,29 +1,33 @@
-import { Message, QueryInfo } from '@sourcegraph/cody-common'
-
 import { ActiveTextEditor, ActiveTextEditorSelection, Editor } from '../../editor'
-import { EmbeddingSearchResults, Embeddings } from '../../embeddings'
-import { IntentDetector } from '../../intent-detector'
+import { Embeddings } from '../../embeddings'
+import { IntentDetector, QueryInfo } from '../../intent-detector'
 import { KeywordContextFetcher } from '../../keyword-context'
+import { Message } from '../../sourcegraph-api'
+import { EmbeddingsSearchResults } from '../../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements Embeddings {
     constructor(private mocks: Partial<Embeddings> = {}) {}
 
-    search(query: string, codeCount: number, markdownCount: number): Promise<EmbeddingSearchResults> {
+    search(
+        query: string,
+        codeResultsCount: number,
+        textResultsCount: number
+    ): Promise<EmbeddingsSearchResults | Error> {
         return (
-            this.mocks.search?.(query, codeCount, markdownCount) ??
-            Promise.resolve({ codeResults: [], markdownResults: [] })
+            this.mocks.search?.(query, codeResultsCount, textResultsCount) ??
+            Promise.resolve({ codeResults: [], textResults: [] })
         )
     }
 
-    queryNeedsAdditionalContext(query: string): Promise<boolean> {
-        return this.mocks.queryNeedsAdditionalContext?.(query) ?? Promise.resolve(false)
+    isContextRequiredForQuery(query: string): Promise<boolean | Error> {
+        return this.mocks.isContextRequiredForQuery?.(query) ?? Promise.resolve(false)
     }
 }
 
 export class MockIntentDetector implements IntentDetector {
     constructor(private mocks: Partial<IntentDetector> = {}) {}
 
-    detect(text: string): Promise<QueryInfo> {
+    detect(text: string): Promise<QueryInfo | Error> {
         return (
             this.mocks.detect?.(text) ??
             Promise.resolve({ needsCodebaseContext: false, needsCurrentFileContext: false })
