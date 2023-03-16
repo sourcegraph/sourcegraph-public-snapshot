@@ -426,9 +426,9 @@ func (rp *rolePermissionStore) AssignToSystemRole(ctx context.Context, opts Assi
 	return nil
 }
 
-// BulkAssignPermissionsToRole assigns multiple permissions to a system role. Note that it
-// is the only method allowed to modify the permissions of the site admin role, which it
-// does from the `UpdatePermissions` startup process.
+// BulkAssignPermissionsToSystemRoles assigns a permissions to multiple system roles. Note
+// that it is the only method allowed to modify the permissions of the
+// `SITE_ADMINISTRATOR` role, which it does from the `UpdatePermissions` startup process.
 func (rp *rolePermissionStore) BulkAssignPermissionsToSystemRoles(ctx context.Context, opts BulkAssignPermissionsToSystemRolesOpts) error {
 	if opts.PermissionID == 0 {
 		return errors.New("permission id is required")
