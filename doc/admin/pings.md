@@ -202,11 +202,11 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
     - Count interactions with the go imports search query transformation feature
     - Count of unique users who interacted with the go imports search query transformation feature
 - Sourcegraph Own usage data
-  - Whether the search-ownership feature flag is turned on.
+  - Whether the `search-ownership` feature flag is turned on.
   - Number and ratio of repositories for which ownership data is available via CODEOWNERS file or the API.
   - Aggregate monthly weekly and daily active users for the following activities:
-    - Narrowing search results by owner using file:has.owner() predicate.
-    - Selecting owner search result through select:file.owners.
+    - Narrowing search results by owner using `file:has.owners` predicate.
+    - Selecting owner search result through `select:file.owners`.
     - Displaying ownership panel in file view.
 - Histogram of cloned repository sizes
 </details>
