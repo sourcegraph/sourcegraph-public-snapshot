@@ -888,9 +888,21 @@ DO UPDATE SET
    unrestricted = %s;
 `
 
-	q := sqlf.Sprintf(format, pq.Array(ids), unrestricted, unrestricted)
+	size := 65535 / 2 // 65535 is the max number of parameters in a query, 2 is the number of parameters in each row
+	chunks, err := collections.SplitIntoChunks(ids, size)
+	if err != nil {
+		return err
+	}
 
-	return errors.Wrap(s.Exec(ctx, q), "setting unrestricted flag")
+	for _, chunk := range chunks {
+		q := sqlf.Sprintf(format, pq.Array(chunk), unrestricted, unrestricted)
+		err := s.Exec(ctx, q)
+		if err != nil {
+			return errors.Wrap(err, "setting unrestricted flag")
+		}
+	}
+
+	return nil
 }
 
 func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error {
@@ -915,23 +927,56 @@ func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []i
 		return err
 	}
 
+	if !unrestricted {
+		return txs.unsetRepoPermissionsUnrestricted(ctx, ids)
+	}
+	return txs.setRepoPermissionsUnrestricted(ctx, ids)
+}
+
+func (s *permsStore) unsetRepoPermissionsUnrestricted(ctx context.Context, ids []int32) error {
+	format := `DELETE FROM user_repo_permissions WHERE repo_id = ANY(%s) AND user_id IS NULL;`
+	size := 65535 - 1 // for unsetting unrestricted, we have only 1 parameter per row
+	chunks, err := collections.SplitIntoChunks(ids, size)
+	if err != nil {
+		return err
+	}
+	for _, chunk := range chunks {
+		err := s.Exec(ctx, sqlf.Sprintf(format, pq.Array(chunk)))
+		if err != nil {
+			return errors.Wrap(err, "removing unrestricted flag")
+		}
+	}
+
+	return nil
+}
+
+func (s *permsStore) setRepoPermissionsUnrestricted(ctx context.Context, ids []int32) error {
 	currentTime := time.Now()
 	values := make([]*sqlf.Query, 0, len(ids))
 	for _, repoID := range ids {
 		values = append(values, sqlf.Sprintf("(NULL, %d, %s, %s, %s)", repoID, currentTime, currentTime, authz.SourceAPI))
 	}
 
-	q := sqlf.Sprintf(`
+	format := `
 INSERT INTO user_repo_permissions (user_id, repo_id, created_at, updated_at, source)
 VALUES %s
-ON CONFLICT DO NOTHING`,
-		sqlf.Join(values, ","),
-	)
-	if !unrestricted {
-		q = sqlf.Sprintf(`DELETE FROM user_repo_permissions WHERE repo_id = ANY(%s)`, pq.Array(ids))
+ON CONFLICT DO NOTHING;
+`
+
+	size := 65535 / 4 // 65535 is the max number of parameters in a query, 4 is the number of parameters in each row
+	chunks, err := collections.SplitIntoChunks(values, size)
+	if err != nil {
+		return err
 	}
 
-	return errors.Wrapf(txs.Exec(ctx, q), "setting repositories as unrestricted %v %v", ids, unrestricted)
+	for _, chunk := range chunks {
+		err = s.Exec(ctx, sqlf.Sprintf(format, sqlf.Join(chunk, ",")))
+		if err != nil {
+			errors.Wrapf(err, "setting repositories as unrestricted %v", chunk)
+		}
+	}
+
+	return nil
 }
 
 // upsertRepoPermissionsQuery upserts single row of repository permissions.
