@@ -51,8 +51,8 @@ func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *h
 		if err != nil {
 			return nil, err
 		}
+		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 	}
-	req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 	if auther == nil {
 		return doer.Do(req.WithContext(ctx))
 	}
@@ -86,7 +86,9 @@ func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *h
 			return nil, errors.Wrap(err, "authenticating request after token refresh")
 		}
 		// We need to reset the body before retrying the request
-		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+		if req.Body != nil {
+			req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+		}
 		resp, err = doer.Do(req.WithContext(ctx))
 	}
 
