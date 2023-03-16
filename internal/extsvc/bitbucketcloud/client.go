@@ -231,9 +231,13 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		return err
 	}
 
-	reqBody, err := io.ReadAll(req.Body)
-	if err != nil {
-		return err
+	var err error
+	var reqBody []byte
+	if req.Body != nil {
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return err
+		}
 	}
 	req.Body = io.NopCloser(bytes.NewReader(reqBody))
 

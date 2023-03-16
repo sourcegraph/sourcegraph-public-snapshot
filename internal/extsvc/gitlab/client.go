@@ -245,9 +245,12 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
 	}
 
-	reqBody, err := io.ReadAll(req.Body)
-	if err != nil {
-		return nil, 0, err
+	var reqBody []byte
+	if req.Body != nil {
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 	req.Body = io.NopCloser(bytes.NewReader(reqBody))
 	req.URL = c.baseURL.ResolveReference(req.URL)

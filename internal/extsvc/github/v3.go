@@ -222,9 +222,12 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		c.externalRateLimiter.WaitForRateLimit(ctx, 1) // We don't care whether we waited or not, this is a preventative measure.
 	}
 
-	reqBody, err := io.ReadAll(req.Body)
-	if err != nil {
-		return nil, err
+	var reqBody []byte
+	if req.Body != nil {
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
 	}
 	req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 	var resp *httpResponseState

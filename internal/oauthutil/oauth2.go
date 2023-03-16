@@ -44,11 +44,14 @@ type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OAuthC
 // If the token is updated successfully, the same request will be retried exactly once.
 func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *http.Request, auther auth.Authenticator) (*http.Response, error) {
 	// Store the body first in case we need to retry the request
-	reqBody, err := io.ReadAll(req.Body)
-	if err != nil {
-		return nil, err
+	var err error
+	var reqBody []byte
+	if req.Body != nil {
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
 	}
-	req.Body.Close()
 	req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 	if auther == nil {
 		return doer.Do(req.WithContext(ctx))
