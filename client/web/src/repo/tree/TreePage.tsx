@@ -203,12 +203,22 @@ export const TreePage: FC<Props> = ({
         return `${repoString}`
     }
 
+    const getIcon = (): string => {
+        if (isPackage) {
+            return mdiPackageVariantClosed
+        }
+        if (repo?.isFork) {
+            return mdiSourceFork
+        }
+        return mdiSourceRepository
+    }
+
     const RootHeaderSection = (): React.ReactElement => (
         <div className="d-flex flex-wrap justify-content-between px-0">
             <div className={styles.header}>
                 <PageHeader className="mb-3 test-tree-page-title">
                     <PageHeader.Heading as="h2" styleAs="h1">
-                        <PageHeader.Breadcrumb icon={isPackage ? mdiPackageVariantClosed : repo?.isFork ? mdiSourceFork : mdiSourceRepository}>
+                        <PageHeader.Breadcrumb icon={getIcon()}>
                             {displayRepoName(repo?.name || '')}
                         </PageHeader.Breadcrumb>
                         {repo?.isFork && (
