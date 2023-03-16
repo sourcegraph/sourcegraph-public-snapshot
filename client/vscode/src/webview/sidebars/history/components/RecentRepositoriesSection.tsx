@@ -45,7 +45,7 @@ export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithC
         platformContext.telemetryService.log('VSCERecentRepositoryClick')
         extensionCoreAPI
             .streamSearch(query, {
-                // Debt: using defaults here. The saved search should override these, though.
+                // Debt: using defaults here. The recent repository should override these, though.
                 caseSensitive: false,
                 patternType: SearchPatternType.standard,
                 version: LATEST_VERSION,

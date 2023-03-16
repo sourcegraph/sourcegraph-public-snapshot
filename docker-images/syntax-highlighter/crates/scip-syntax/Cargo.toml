@@ -1,0 +1,20 @@
+[package]
+name = "scip-syntax"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+scip.workspace = true
+protobuf.workspace = true
+tree-sitter.workspace = true
+anyhow.workspace = true
+
+scip-macros = { path = "../scip-macros" }
+scip-treesitter = { path = "../scip-treesitter" }
+scip-treesitter-languages = { path = "../scip-treesitter-languages" }
+
+rustc-hash = "1.1.0"
+walkdir = "2"
+insta = "*"

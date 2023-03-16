@@ -111,6 +111,7 @@ const mirrorRepositoryInfoFieldsFragment = gql`
         cloned
         cloneInProgress
         updatedAt
+        nextSyncAt
         isCorrupted
         corruptionLogs {
             timestamp
@@ -577,16 +578,16 @@ export function createUser(username: string, email: string | undefined): Observa
     )
 }
 
-export function deleteOrganization(organization: Scalars['ID'], hard?: boolean): Promise<void> {
+export function deleteOrganization(organization: Scalars['ID']): Promise<void> {
     return requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>(
         gql`
-            mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-                deleteOrganization(organization: $organization, hard: $hard) {
+            mutation DeleteOrganization($organization: ID!) {
+                deleteOrganization(organization: $organization) {
                     alwaysNil
                 }
             }
         `,
-        { organization, hard: hard ?? null }
+        { organization }
     )
         .pipe(
             map(dataOrThrowErrors),
@@ -713,8 +714,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
     )
 }
 
-export const REPOSITORY_STATS = gql`
-    query RepositoryStats {
+export const STATUS_AND_REPO_STATS = gql`
+    query StatusAndRepoStats {
         repositoryStats {
             __typename
             total
@@ -724,6 +725,41 @@ export const REPOSITORY_STATS = gql`
             failedFetch
             corrupted
             indexed
+        }
+        statusMessages {
+            ... on GitUpdatesDisabled {
+                __typename
+
+                message
+            }
+
+            ... on CloningProgress {
+                __typename
+
+                message
+            }
+
+            ... on IndexingProgress {
+                __typename
+
+                notIndexed
+                indexed
+            }
+
+            ... on SyncError {
+                __typename
+
+                message
+            }
+
+            ... on ExternalServiceSyncError {
+                __typename
+
+                externalService {
+                    id
+                    displayName
+                }
+            }
         }
     }
 `
@@ -921,7 +957,8 @@ const siteAdminPackageFieldsFragment = gql`
     fragment SiteAdminPackageFields on PackageRepoReference {
         id
         name
-        scheme
+        kind
+        blocked
         repository {
             id
             name
@@ -937,8 +974,8 @@ const siteAdminPackageFieldsFragment = gql`
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages($scheme: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
-        packageRepoReferences(scheme: $scheme, name: $name, first: $first, after: $after) {
+    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
+        packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields
             }

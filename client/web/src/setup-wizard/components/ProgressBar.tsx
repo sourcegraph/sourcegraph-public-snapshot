@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo } from 'react'
+import { FC, useMemo } from 'react'
 
 import classNames from 'classnames'
 
@@ -10,59 +10,45 @@ import {
 } from '@sourcegraph/shared/src/components/icons'
 import { Icon, Text } from '@sourcegraph/wildcard'
 
-import { RepositoryStatsResult, RepositoryStatsVariables, StatusMessagesResult } from '../../graphql-operations'
-import { STATUS_MESSAGES } from '../../nav/StatusMessagesNavItemQueries'
-import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL } from '../../site-admin/backend'
+import { StatusAndRepoStatsResult } from '../../graphql-operations'
+import { STATUS_AND_REPO_STATS } from '../../site-admin/backend'
 
 import styles from './ProgressBar.module.scss'
 
 export const ProgressBar: FC<{}> = () => {
-    const { data, startPolling, stopPolling } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(
-        REPOSITORY_STATS,
-        {}
-    )
-
-    const { data: statusData } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
-        fetchPolicy: 'no-cache',
-        pollInterval: 10000,
+    const { data } = useQuery<StatusAndRepoStatsResult>(STATUS_AND_REPO_STATS, {
+        fetchPolicy: 'cache-and-network',
+        pollInterval: 2000,
     })
-
-    useEffect(() => {
-        if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
-            startPolling(REPO_PAGE_POLL_INTERVAL)
-        } else {
-            stopPolling()
-        }
-    }, [data, startPolling, stopPolling])
 
     const formatNumber = (num: string | number): string => num.toLocaleString('en-US')
 
     const items = useMemo(
         () => [
             {
-                value: data?.repositoryStats.total,
+                value: Math.max(data?.repositoryStats.total ?? 0, 0),
                 description: 'Repositories',
                 color: 'text-merged',
             },
             {
-                value: data?.repositoryStats.notCloned,
+                value: Math.max(data?.repositoryStats.notCloned ?? 0, 0),
                 description: 'Not cloned',
             },
             {
-                value: data?.repositoryStats.cloning,
+                value: Math.max(data?.repositoryStats.cloning ?? 0, 0),
                 description: 'Cloning',
             },
             {
-                value: data?.repositoryStats.cloned,
+                value: Math.max(data?.repositoryStats.cloned ?? 0, 0),
                 description: 'Cloned',
                 color: 'text-success',
             },
             {
-                value: data?.repositoryStats.indexed,
+                value: Math.max(data?.repositoryStats.indexed ?? 0, 0),
                 description: 'Indexed',
             },
             {
-                value: data?.repositoryStats.failedFetch,
+                value: Math.max(data?.repositoryStats.failedFetch ?? 0, 0),
                 description: 'Failed',
                 color: 'text-danger',
             },
@@ -74,16 +60,14 @@ export const ProgressBar: FC<{}> = () => {
         let codeHostMessage
         let iconProps
 
-        if (
-            !statusData ||
-            statusData.statusMessages?.some(
-                ({ __typename: type }) => type === 'CloningProgress' || type === 'IndexingProgress'
-            )
-        ) {
+        if (!data || data.statusMessages?.some(({ __typename: type }) => type === 'CloningProgress')) {
             codeHostMessage = 'Syncing'
             iconProps = { as: CloudSyncIconRefresh }
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'IndexingProgress')) {
+            codeHostMessage = 'Indexing'
+            iconProps = { as: CloudSyncIconRefresh }
         } else if (
-            statusData.statusMessages?.some(
+            data.statusMessages?.some(
                 ({ __typename: type }) =>
                     type === 'GitUpdatesDisabled' || type === 'ExternalServiceSyncError' || type === 'SyncError'
             )
@@ -99,24 +83,33 @@ export const ProgressBar: FC<{}> = () => {
         return (
             <div className="d-flex align-items-center mr-2">
                 <Icon {...iconProps} size="md" aria-label={codeHostMessage} className="mr-1" />
-                <Text className={classNames(codeHostMessage === 'Syncing' && styles.loading, 'mb-0')} size="small">
+                <Text
+                    className={classNames(
+                        (codeHostMessage === 'Syncing' || codeHostMessage === 'Indexing') && styles.loading,
+                        'mb-0'
+                    )}
+                    size="small"
+                >
                     {codeHostMessage}
                 </Text>
             </div>
         )
-    }, [statusData])
+    }, [data])
 
-    if (data?.repositoryStats.total === 0) {
+    const totalRepositories = data?.repositoryStats.total ?? 0
+
+    // If there is no repositories do not render progress bar UI
+    if (totalRepositories === 0) {
         return null
     }
 
     return (
-        <section className="d-flex align-items-center py-1">
+        <section className={styles.root}>
             {statusMessage}
 
             {items.map(item => (
                 <Text className="mb-0 mr-3" size="small" key={item.description}>
-                    <span className={classNames('font-weight-bold', item?.color)}>{formatNumber(item.value ?? 0)}</span>{' '}
+                    <span className={classNames('font-weight-bold', item?.color)}>{formatNumber(item.value)}</span>{' '}
                     {item.description}
                 </Text>
             ))}

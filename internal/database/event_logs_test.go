@@ -421,18 +421,22 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	}
 
 	expectedSummary := types.SiteUsageSummary{
-		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-		Day:                     now.Truncate(time.Hour * 24),
-		UniquesMonth:            11,
-		UniquesWeek:             7,
-		UniquesDay:              5,
-		RegisteredUniquesMonth:  10,
-		RegisteredUniquesWeek:   6,
-		RegisteredUniquesDay:    5,
-		IntegrationUniquesMonth: 11,
-		IntegrationUniquesWeek:  7,
-		IntegrationUniquesDay:   5,
+		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30),
+		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                            now.Truncate(time.Hour * 24),
+		UniquesRollingMonth:            11,
+		UniquesMonth:                   11,
+		UniquesWeek:                    7,
+		UniquesDay:                     5,
+		RegisteredUniquesRollingMonth:  10,
+		RegisteredUniquesMonth:         10,
+		RegisteredUniquesWeek:          6,
+		RegisteredUniquesDay:           5,
+		IntegrationUniquesRollingMonth: 11,
+		IntegrationUniquesMonth:        11,
+		IntegrationUniquesWeek:         7,
+		IntegrationUniquesDay:          5,
 	}
 	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
 		t.Fatal(diff)
@@ -541,18 +545,22 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedSummary := types.SiteUsageSummary{
-		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-		Day:                     now.Truncate(time.Hour * 24),
-		UniquesMonth:            4,
-		UniquesWeek:             3,
-		UniquesDay:              2,
-		RegisteredUniquesMonth:  4,
-		RegisteredUniquesWeek:   3,
-		RegisteredUniquesDay:    2,
-		IntegrationUniquesMonth: 4,
-		IntegrationUniquesWeek:  3,
-		IntegrationUniquesDay:   2,
+		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30),
+		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                            now.Truncate(time.Hour * 24),
+		UniquesRollingMonth:            4,
+		UniquesMonth:                   4,
+		UniquesWeek:                    3,
+		UniquesDay:                     2,
+		RegisteredUniquesRollingMonth:  4,
+		RegisteredUniquesMonth:         4,
+		RegisteredUniquesWeek:          3,
+		RegisteredUniquesDay:           2,
+		IntegrationUniquesRollingMonth: 4,
+		IntegrationUniquesMonth:        4,
+		IntegrationUniquesWeek:         3,
+		IntegrationUniquesDay:          2,
 	}
 	assert.Equal(t, expectedSummary, summary)
 
@@ -560,18 +568,22 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedSummary = types.SiteUsageSummary{
-		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-		Day:                     now.Truncate(time.Hour * 24),
-		UniquesMonth:            2,
-		UniquesWeek:             1,
-		UniquesDay:              0,
-		RegisteredUniquesMonth:  2,
-		RegisteredUniquesWeek:   1,
-		RegisteredUniquesDay:    0,
-		IntegrationUniquesMonth: 2,
-		IntegrationUniquesWeek:  1,
-		IntegrationUniquesDay:   0,
+		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30),
+		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                            now.Truncate(time.Hour * 24),
+		UniquesRollingMonth:            2,
+		UniquesMonth:                   2,
+		UniquesWeek:                    1,
+		UniquesDay:                     0,
+		RegisteredUniquesRollingMonth:  2,
+		RegisteredUniquesMonth:         2,
+		RegisteredUniquesWeek:          1,
+		RegisteredUniquesDay:           0,
+		IntegrationUniquesRollingMonth: 2,
+		IntegrationUniquesMonth:        2,
+		IntegrationUniquesWeek:         1,
+		IntegrationUniquesDay:          0,
 	}
 	assert.Equal(t, expectedSummary, summary)
 }
@@ -1514,4 +1526,245 @@ func TestEventLogs_IllegalPeriodType(t *testing.T) {
 			t.Error("want err to not be nil")
 		}
 	})
+}
+
+func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	ptr := func(i int32) *int32 { return &i }
+	for name, testCase := range map[string]struct {
+		now             time.Time
+		events          []*Event
+		queryEventNames []string
+		stats           map[string]*types.OwnershipUsageStatisticsActiveUsers
+	}{
+		"same day events count as MAU, WAU & DAU": {
+			now: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC), // Thursday
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(2),
+					WAU: ptr(2),
+					MAU: ptr(2),
+				},
+			},
+		},
+		"previous day, same week events count as MAU, WAU but not DAU": {
+			now: time.Date(2000, time.March, 18, 12, 0, 0, 0, time.UTC), // Saturday
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.March, 17, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.March, 17, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(0),
+					WAU: ptr(2),
+					MAU: ptr(2),
+				},
+			},
+		},
+		"previous day, different week events count as MAU, but not WAU or DAU": {
+			now: time.Date(2000, time.May, 21, 12, 0, 0, 0, time.UTC), // Sunday
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.May, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.May, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(0),
+					WAU: ptr(0),
+					MAU: ptr(2),
+				},
+			},
+		},
+		"previous day, different month events count as WAU but not MAU or DAU": {
+			now: time.Date(2000, time.August, 1, 12, 0, 0, 0, time.UTC), // Tuesday
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.July, 31, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.July, 31, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(0),
+					WAU: ptr(2),
+					MAU: ptr(0),
+				},
+			},
+		},
+		"return zeroes on missing events": {
+			now: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "mice",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "ram",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "crane",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "wolf",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    4,
+					Name:      "coyote",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"cat", "dog"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"cat": {
+					DAU: ptr(0),
+					WAU: ptr(0),
+					MAU: ptr(0),
+				},
+				"dog": {
+					DAU: ptr(0),
+					WAU: ptr(0),
+					MAU: ptr(0),
+				},
+			},
+		},
+		"only include events by name": {
+			now: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+			events: []*Event{
+				{
+					UserID:    1,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "horse",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    2,
+					Name:      "ram",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "ram",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    3,
+					Name:      "coyote",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					UserID:    4,
+					Name:      "coyote",
+					Source:    "BACKEND",
+					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			queryEventNames: []string{"horse", "ram"},
+			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+				"horse": {
+					DAU: ptr(2),
+					WAU: ptr(2),
+					MAU: ptr(2),
+				},
+				"ram": {
+					DAU: ptr(2),
+					WAU: ptr(2),
+					MAU: ptr(2),
+				},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			logger := logtest.Scoped(t)
+			db := NewDB(logger, dbtest.NewDB(logger, t))
+			ctx := context.Background()
+			for _, e := range testCase.events {
+				if err := db.EventLogs().Insert(ctx, e); err != nil {
+					t.Fatalf("failed inserting test data: %s", err)
+				}
+			}
+			stats, err := db.EventLogs().OwnershipFeatureActivity(ctx, testCase.now, testCase.queryEventNames...)
+			if err != nil {
+				t.Fatalf("querying activity failed: %s", err)
+			}
+			if diff := cmp.Diff(testCase.stats, stats); diff != "" {
+				t.Errorf("unexpected statistics returned:\n%s", diff)
+			}
+		})
+	}
 }

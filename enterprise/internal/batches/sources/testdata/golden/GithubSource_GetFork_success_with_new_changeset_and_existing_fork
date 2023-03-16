@@ -31,6 +31,9 @@
    "IsArchived": false,
    "IsLocked": false,
    "IsDisabled": false,
-   "ViewerPermission": "ADMIN"
+   "ViewerPermission": "ADMIN",
+   "RepositoryTopics": {
+    "Nodes": []
+   }
   }
  }

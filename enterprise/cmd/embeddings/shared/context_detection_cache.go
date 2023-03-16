@@ -17,7 +17,7 @@ func getCachedContextDetectionEmbeddingIndex(uploadStore uploadstore.Store) getC
 		if contextDetectionEmbeddingIndex != nil {
 			return contextDetectionEmbeddingIndex, nil
 		}
-		contextDetectionEmbeddingIndex, err = downloadJSONFile[embeddings.ContextDetectionEmbeddingIndex](ctx, uploadStore, embeddings.CONTEXT_DETECTION_INDEX_NAME)
+		contextDetectionEmbeddingIndex, err = embeddings.DownloadIndex[embeddings.ContextDetectionEmbeddingIndex](ctx, uploadStore, embeddings.CONTEXT_DETECTION_INDEX_NAME)
 		if err != nil {
 			return nil, err
 		}

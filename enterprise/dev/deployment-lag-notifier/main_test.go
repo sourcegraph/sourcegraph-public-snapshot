@@ -36,6 +36,34 @@ func TestCheckForCommit(t *testing.T) {
 	}
 }
 
+func TestGetCommitFromLiveVersion(t *testing.T) {
+	tt := []struct {
+		Name        string
+		LiveVersion string
+		Result      string
+	}{
+		{
+			Name:        "CommitFromLiveVersionSuccess",
+			LiveVersion: "203800_2023-03-06_4.5-adc006d905fe",
+			Result:      "adc006d905fe",
+		},
+		{
+			Name:        "CommitFromLiveVersionFailure",
+			LiveVersion: "203800_2023-03-06_4.5-confusion-adc006d905fe",
+			Result:      "4.5-confusion-adc006d905fe",
+		},
+	}
+
+	for _, test := range tt {
+		t.Run(test.Name, func(t *testing.T) {
+			result, _ := getCommitFromLiveVersion(test.LiveVersion)
+			if result != test.Result {
+				t.Errorf("Invalid result. Expected: %v Got %v", test.Result, result)
+			}
+		})
+	}
+}
+
 func duration(s string) time.Duration {
 	d, _ := time.ParseDuration(s)
 	return d

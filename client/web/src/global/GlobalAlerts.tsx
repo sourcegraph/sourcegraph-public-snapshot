@@ -5,37 +5,49 @@ import { parseISO } from 'date-fns'
 import differenceInDays from 'date-fns/differenceInDays'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Link, useObservable, Markdown } from '@sourcegraph/wildcard'
+import { gql, useQuery } from '@sourcegraph/http-client'
+import { useSettings } from '@sourcegraph/shared/src/settings/settings'
+import { Link, Markdown } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { siteFlags } from '../site/backend'
+import { GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables } from '../graphql-operations'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
+import { siteFlagFieldsFragment } from '../storm/pages/LayoutPage/LayoutPage.loader'
 
 import { GlobalAlert } from './GlobalAlert'
 import { Notices, VerifyEmailNotices } from './Notices'
 
 import styles from './GlobalAlerts.module.scss'
 
-interface Props extends SettingsCascadeProps {
+interface Props {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
 
+// NOTE: The name of the query is also added in the refreshSiteFlags() function
+// found in client/web/src/site/backend.tsx
+const QUERY = gql`
+    query GlobalAlertsSiteFlags {
+        site {
+            ...SiteFlagFields
+        }
+    }
+
+    ${siteFlagFieldsFragment}
+`
 /**
  * Fetches and displays relevant global alerts at the top of the page
  */
-export const GlobalAlerts: React.FunctionComponent<Props> = ({
-    authenticatedUser,
-    settingsCascade,
-    isSourcegraphDotCom,
-}) => {
-    const siteFlagsValue = useObservable(siteFlags)
+export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isSourcegraphDotCom }) => {
+    const settings = useSettings()
+    const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
+        fetchPolicy: 'cache-and-network',
+    })
+    const siteFlagsValue = data?.site
 
     const verifyEmailProps = useMemo(() => {
         if (!authenticatedUser || !isSourcegraphDotCom) {
@@ -46,6 +58,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({
             settingsURL: authenticatedUser.settingsURL as string,
         }
     }, [authenticatedUser, isSourcegraphDotCom])
+
     return (
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
             {siteFlagsValue && (
@@ -81,10 +94,9 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({
                         })()}
                 </>
             )}
-            {isSettingsValid<Settings>(settingsCascade) &&
-                settingsCascade.final.motd &&
-                Array.isArray(settingsCascade.final.motd) &&
-                settingsCascade.final.motd.map(motd => (
+            {settings?.motd &&
+                Array.isArray(settings.motd) &&
+                settings.motd.map(motd => (
                     <DismissibleAlert
                         key={motd}
                         partialStorageKey={`motd.${motd}`}
@@ -110,7 +122,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({
                     .
                 </DismissibleAlert>
             )}
-            <Notices alertClassName={styles.alert} location="top" settingsCascade={settingsCascade} />
+            <Notices alertClassName={styles.alert} location="top" />
             {!!verifyEmailProps?.emails.length && (
                 <VerifyEmailNotices alertClassName={styles.alert} {...verifyEmailProps} />
             )}

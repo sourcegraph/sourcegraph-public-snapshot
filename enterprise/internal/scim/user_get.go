@@ -2,15 +2,12 @@ package scim
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
-	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // Get returns the resource corresponding with the given identifier.
@@ -19,7 +16,7 @@ func (h *UserResourceHandler) Get(r *http.Request, idStr string) (scim.Resource,
 	if err != nil {
 		return scim.Resource{}, err
 	}
-	return h.convertUserToSCIMResource(user), nil
+	return convertUserToSCIMResource(user), nil
 }
 
 // GetAll returns a paginated list of resources.
@@ -67,6 +64,7 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 	}, nil
 }
 
+// getAllFromDB returns all users from the database, starting at the given index, and up to the given count.
 func (h *UserResourceHandler) getAllFromDB(r *http.Request, startIndex int, count *int) (totalCount int, resources []scim.Resource, err error) {
 	// Calculate offset
 	var offset int
@@ -87,7 +85,7 @@ func (h *UserResourceHandler) getAllFromDB(r *http.Request, startIndex int, coun
 	}
 	resources = make([]scim.Resource, 0, len(users))
 	for _, user := range users {
-		resources = append(resources, h.convertUserToSCIMResource(user))
+		resources = append(resources, convertUserToSCIMResource(user))
 	}
 
 	// Get total count
@@ -98,46 +96,4 @@ func (h *UserResourceHandler) getAllFromDB(r *http.Request, startIndex int, coun
 	}
 
 	return
-}
-
-// convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
-func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
-	// Convert external ID
-	externalIDOptional := optional.String{}
-	if user.SCIMExternalID != "" {
-		externalIDOptional = optional.NewString(user.SCIMExternalID)
-	}
-
-	// Convert account data – if it doesn't exist, never mind
-	resourceAttributes, err := fromAccountData(user.SCIMAccountData)
-	if err != nil {
-		// TODO: Failed to convert account data to SCIM resource attributes. Maybe log this?
-		resourceAttributes = scim.ResourceAttributes{}
-	}
-	if resourceAttributes[AttrName] == nil {
-		resourceAttributes[AttrName] = map[string]interface{}{}
-	}
-	resourceAttributes["externalId"] = user.SCIMExternalID
-	resourceAttributes[AttrName].(map[string]interface{})[AttrNameFormatted] = user.DisplayName
-	resourceAttributes[AttrDisplayName] = user.DisplayName
-	resourceAttributes["active"] = true
-
-	// Fall back to username and primary email in the user object if not set in account data
-	if resourceAttributes[AttrUserName] == nil || resourceAttributes[AttrUserName].(string) == "" {
-		resourceAttributes[AttrUserName] = user.Username
-	}
-	if (resourceAttributes[AttrEmails] == nil || len(resourceAttributes[AttrEmails].([]interface{})) == 0) && user.Emails != nil && len(user.Emails) > 0 {
-		resourceAttributes[AttrEmails] = []interface{}{
-			map[string]interface{}{
-				"value":   user.Emails[0],
-				"primary": true,
-			},
-		}
-	}
-
-	return scim.Resource{
-		ID:         strconv.FormatInt(int64(user.ID), 10),
-		ExternalID: externalIDOptional, // TODO: Get this from account data instead
-		Attributes: resourceAttributes,
-	}
 }

@@ -1,11 +1,29 @@
+# syntax=docker/dockerfile:1.3-labs
+
 ###################################
 # Build syntect_server statically #
 ###################################
 
-FROM rust:1.58-alpine3.14@sha256:fbc0cfaa6261179ca7653cc2b20ca9c3e936f3416a911a27a28694f8fb23b8b4 as ss
-RUN apk add --no-cache musl-dev>=1.1.24-r10
+# Keep Rust version in sync with /WORKSPACE
+# and docker-images/syntax-highlighter/rust-toolchain.toml
+FROM rust:1.68.0-alpine3.17@sha256:d119a621ae12f84ec0c5fed77c24795120ed1c7874b2428b5a6ccc0f294dbe18 as ss
+RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base
 COPY . /repo
 WORKDIR /repo
+RUN cargo fetch
+
+ARG TARGETARCH
+
+# Because .cargo/config.toml doesnt support triplet-specific env
+RUN <<EOF
+if [ "${TARGETARCH}" = "arm64" ]; then
+	cat <<- FOE >> .cargo/config.toml
+	[env]
+	CFLAGS="-mno-outline-atomics"
+	FOE
+fi;
+EOF
+
 RUN cargo test --release --workspace
 RUN cargo rustc --release
 RUN ls ./target
@@ -28,6 +46,9 @@ RUN go build -o /http-server-stabilizer .
 FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5
 COPY --from=ss syntax_highlighter /
 COPY --from=hss http-server-stabilizer /
+
+# even with everything, we can't get this to statically link
+RUN apk add --no-cache libstdc++
 
 EXPOSE 9238
 ENV ROCKET_ENV "production"

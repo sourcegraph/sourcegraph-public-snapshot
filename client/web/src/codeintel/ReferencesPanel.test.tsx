@@ -3,7 +3,9 @@ import { createPath } from 'react-router-dom'
 
 import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
+
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ReferencesPanel } from './ReferencesPanel'
@@ -105,7 +107,7 @@ describe('ReferencesPanel', () => {
 
         // Assert the current URL points at the reference panel
         expect(createPath(locationRef.current!)).toBe(
-            '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2&subtree=true#tab=references'
+            '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2#tab=references'
         )
         // Click on reference the second time promotes the active location to the URL (and main blob view)
         fireEvent.click(referenceButton)

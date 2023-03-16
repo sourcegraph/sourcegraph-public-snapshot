@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -40,10 +39,8 @@ func (j *uploadJanitorJob) Routines(_ context.Context, observationCtx *observati
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(observationCtx, db)
-
 	return append(
-		uploads.NewJanitor(observationCtx, services.UploadsService, gitserverClient),
+		uploads.NewJanitor(observationCtx, services.UploadsService, services.GitserverClient),
 		append(
 			uploads.NewReconciler(observationCtx, services.UploadsService),
 			uploads.NewResetters(observationCtx, db)...,

@@ -3,7 +3,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
-import { PermissionsSyncJobsTable } from './permissions-center/PermissionsSyncJobsTable'
+import { PermissionsSyncJobsPage } from './permissions-center/PermissionsSyncJobsPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 
 const AnalyticsOverviewPage = lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
@@ -43,7 +43,7 @@ const SiteAdminRepositoriesPage = lazyComponent(
     'SiteAdminRepositoriesPage'
 )
 const SiteAdminOrgsPage = lazyComponent(() => import('./SiteAdminOrgsPage'), 'SiteAdminOrgsPage')
-const UsersManagement = lazyComponent(() => import('./UserManagement'), 'UsersManagement')
+export const UsersManagement = lazyComponent(() => import('./UserManagement'), 'UsersManagement')
 const AccessRequestsPage = lazyComponent(() => import('./AccessRequestsPage'), 'AccessRequestsPage')
 
 const SiteAdminCreateUserPage = lazyComponent(() => import('./SiteAdminCreateUserPage'), 'SiteAdminCreateUserPage')
@@ -94,7 +94,7 @@ const SiteAdminWebhookUpdatePage = lazyComponent(
 )
 const SiteAdminPackagesPage = lazyComponent(() => import('./SiteAdminPackagesPage'), 'SiteAdminPackagesPage')
 
-export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
+export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/',
         render: () => <AnalyticsOverviewPage />,
@@ -146,10 +146,6 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/organizations',
         render: props => <SiteAdminOrgsPage {...props} />,
-    },
-    {
-        path: '/users',
-        render: () => <UsersManagement />,
     },
     {
         path: '/access-requests',
@@ -244,6 +240,16 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/permissions-syncs',
-        render: props => <PermissionsSyncJobsTable {...props} />,
+        render: props => <PermissionsSyncJobsPage {...props} />,
     },
+]
+
+const siteAdminUserManagementRoute: SiteAdminAreaRoute = {
+    path: '/users',
+    render: () => <UsersManagement isEnterprise={false} renderAssignmentModal={() => null} />,
+}
+
+export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
+    ...otherSiteAdminRoutes,
+    siteAdminUserManagementRoute,
 ]

@@ -29,12 +29,8 @@ type RBACResolver interface {
 	// MUTATIONS
 	DeleteRole(ctx context.Context, args *DeleteRoleArgs) (*EmptyResponse, error)
 	CreateRole(ctx context.Context, args *CreateRoleArgs) (RoleResolver, error)
-
-	// QUERIES
-	Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error)
-	Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error)
-
-	NodeResolvers() map[string]NodeByIDFunc
+	SetPermissions(ctx context.Context, args SetPermissionsArgs) (*EmptyResponse, error)
+	SetRoles(ctx context.Context, args *SetRolesArgs) (*EmptyResponse, error)
 }
 
 type DeleteRoleArgs struct {
@@ -58,4 +54,20 @@ type ListPermissionArgs struct {
 
 	Role *graphql.ID
 	User *graphql.ID
+}
+
+type SetPermissionsArgs struct {
+	Role        graphql.ID
+	Permissions []graphql.ID
+}
+
+type SetRolesArgs struct {
+	User  graphql.ID
+	Roles []graphql.ID
+}
+
+type ErrIDIsZero struct{}
+
+func (e ErrIDIsZero) Error() string {
+	return "invalid node id"
 }

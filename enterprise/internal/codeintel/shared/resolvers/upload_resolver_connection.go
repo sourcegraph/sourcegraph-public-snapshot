@@ -6,29 +6,33 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type UploadConnectionResolver struct {
 	uploadsSvc       UploadsService
-	autoindexingSvc  AutoIndexingService
 	policySvc        PolicyService
+	gitserverClient  gitserver.Client
+	siteAdminChecker SiteAdminChecker
+	repoStore        database.RepoStore
 	uploadsResolver  *UploadsResolver
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 	traceErrs        *observation.ErrCollector
 }
 
-func NewUploadConnectionResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, uploadsResolver *UploadsResolver, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) resolverstubs.LSIFUploadConnectionResolver {
-	db := autoindexingSvc.GetUnsafeDB()
+func NewUploadConnectionResolver(uploadsSvc UploadsService, policySvc PolicyService, gitserverClient gitserver.Client, siteAdminChecker SiteAdminChecker, repoStore database.RepoStore, uploadsResolver *UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, traceErrs *observation.ErrCollector) resolverstubs.LSIFUploadConnectionResolver {
 	return &UploadConnectionResolver{
 		uploadsSvc:       uploadsSvc,
-		autoindexingSvc:  autoindexingSvc,
 		policySvc:        policySvc,
+		gitserverClient:  gitserverClient,
+		siteAdminChecker: siteAdminChecker,
 		uploadsResolver:  uploadsResolver,
+		repoStore:        repoStore,
 		prefetcher:       prefetcher,
-		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient()),
+		locationResolver: locationResolver,
 		traceErrs:        traceErrs,
 	}
 }
@@ -42,7 +46,7 @@ func (r *UploadConnectionResolver) Nodes(ctx context.Context) (_ []resolverstubs
 
 	resolvers := make([]resolverstubs.LSIFUploadResolver, 0, len(r.uploadsResolver.Uploads))
 	for i := range r.uploadsResolver.Uploads {
-		resolvers = append(resolvers, NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policySvc, r.uploadsResolver.Uploads[i], r.prefetcher, r.locationResolver, r.traceErrs))
+		resolvers = append(resolvers, NewUploadResolver(r.uploadsSvc, r.policySvc, r.gitserverClient, r.siteAdminChecker, r.repoStore, r.uploadsResolver.Uploads[i], r.prefetcher, r.locationResolver, r.traceErrs))
 	}
 	return resolvers, nil
 }

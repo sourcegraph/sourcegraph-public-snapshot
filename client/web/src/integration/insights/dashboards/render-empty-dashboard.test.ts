@@ -69,6 +69,11 @@ describe('Code insights empty dashboard', () => {
                 InsightsDashboards: () => INSIGHTS_DASHBOARDS,
                 GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_EMPTY,
                 IsCodeInsightsLicensed: () => ({ enterpriseLicenseHasFeature: false }),
+                GetFrozenInsightsCount: () => ({
+                    insightViews: {
+                        nodes: [],
+                    },
+                }),
             },
         })
 

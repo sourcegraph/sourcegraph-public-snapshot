@@ -15,6 +15,7 @@ go_library(
 
 go_test(
     name = "gsm_test",
+    timeout = "short",
     srcs = ["gsm_test.go"],
     embed = [":gsm"],
     deps = [

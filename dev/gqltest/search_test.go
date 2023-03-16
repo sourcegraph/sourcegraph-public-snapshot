@@ -1302,6 +1302,21 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:  `repo:has(testkey:testval) -repo:has(noexist:false)`,
 				counts: counts{Repo: 2},
 			},
+			{
+				name:   `repo has topic`,
+				query:  `repo:has.topic(go)`, // jsonrpc2 and go-diff
+				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo has topic plus exclusion`,
+				query:  `repo:has.topic(go) -repo:has.topic(json)`, // go-diff (not jsonrpc2)
+				counts: counts{Repo: 1},
+			},
+			{
+				name:   `nonexistent topic`,
+				query:  `repo:has.topic(noexist)`,
+				counts: counts{Repo: 0},
+			},
 		}
 
 		for _, test := range tests {

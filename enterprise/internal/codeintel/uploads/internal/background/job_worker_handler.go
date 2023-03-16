@@ -20,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -34,7 +36,7 @@ func NewUploadProcessorWorker(
 	observationCtx *observation.Context,
 	store store.Store,
 	lsifStore lsifstore.LsifStore,
-	gitserverClient GitserverClient,
+	gitserverClient gitserver.Client,
 	repoStore RepoStore,
 	workerStore dbworkerstore.Store[codeinteltypes.Upload],
 	uploadStore uploadstore.Store,
@@ -72,7 +74,7 @@ func NewUploadProcessorWorker(
 type handler struct {
 	store           store.Store
 	lsifStore       lsifstore.LsifStore
-	gitserverClient GitserverClient
+	gitserverClient gitserver.Client
 	repoStore       RepoStore
 	workerStore     dbworkerstore.Store[codeinteltypes.Upload]
 	uploadStore     uploadstore.Store
@@ -92,7 +94,7 @@ func NewUploadProcessorHandler(
 	observationCtx *observation.Context,
 	store store.Store,
 	lsifStore lsifstore.LsifStore,
-	gitserverClient GitserverClient,
+	gitserverClient gitserver.Client,
 	repoStore RepoStore,
 	workerStore dbworkerstore.Store[codeinteltypes.Upload],
 	uploadStore uploadstore.Store,
@@ -186,6 +188,36 @@ func createLogFields(upload codeinteltypes.Upload) []otlog.Field {
 	return fields
 }
 
+// defaultBranchContains tells if the default branch contains the given commit ID.
+func (c *handler) defaultBranchContains(ctx context.Context, repo api.RepoName, commit string) (bool, error) {
+	// Determine default branch name.
+	descriptions, err := c.gitserverClient.RefDescriptions(ctx, authz.DefaultSubRepoPermsChecker, repo)
+	if err != nil {
+		return false, err
+	}
+	var defaultBranchName string
+	for _, descriptions := range descriptions {
+		for _, ref := range descriptions {
+			if ref.IsDefaultBranch {
+				defaultBranchName = ref.Name
+				break
+			}
+		}
+	}
+
+	// Determine if branch contains commit.
+	branches, err := c.gitserverClient.BranchesContaining(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit))
+	if err != nil {
+		return false, err
+	}
+	for _, branch := range branches {
+		if branch == defaultBranchName {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // HandleRawUpload converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
 func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload, uploadStore uploadstore.Store, trace observation.TraceLogger) (requeued bool, err error) {
@@ -194,12 +226,12 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		return false, errors.Wrap(err, "Repos.Get")
 	}
 
-	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, logger, h.repoStore, h.workerStore, upload, repo); err != nil || requeued {
+	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, logger, h.gitserverClient, h.workerStore, upload, repo); err != nil || requeued {
 		return requeued, err
 	}
 
 	// Determine if the upload is for the default Git branch.
-	isDefaultBranch, err := h.gitserverClient.DefaultBranchContains(ctx, upload.RepositoryID, upload.Commit)
+	isDefaultBranch, err := h.defaultBranchContains(ctx, repo.Name, upload.Commit)
 	if err != nil {
 		return false, errors.Wrap(err, "gitserver.DefaultBranchContains")
 	}
@@ -207,7 +239,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 	trace.AddEvent("TODO Domain Owner", attribute.Bool("defaultBranch", isDefaultBranch))
 
 	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
-		directoryChildren, err := h.gitserverClient.DirectoryChildren(ctx, upload.RepositoryID, upload.Commit, dirnames)
+		directoryChildren, err := h.gitserverClient.ListDirectoryChildren(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(upload.Commit), dirnames)
 		if err != nil {
 			return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
 		}
@@ -229,7 +261,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		// database (if not already present). We need to have the commit data of every processed upload
 		// for a repository when calculating the commit graph (triggered at the end of this handler).
 
-		_, commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
+		_, commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(upload.Commit))
 		if err != nil {
 			return errors.Wrap(err, "gitserverClient.CommitDate")
 		}
@@ -335,8 +367,8 @@ const requeueDelay = time.Minute
 // cloning or if the commit does not exist, then the upload will be requeued and this function returns a true
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
-func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, repoStore RepoStore, workerStore dbworkerstore.Store[codeinteltypes.Upload], upload codeinteltypes.Upload, repo *types.Repo) (requeued bool, _ error) {
-	_, err := repoStore.ResolveRev(ctx, repo, upload.Commit)
+func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, gitserverClient gitserver.Client, workerStore dbworkerstore.Store[codeinteltypes.Upload], upload codeinteltypes.Upload, repo *types.Repo) (requeued bool, _ error) {
+	_, err := gitserverClient.ResolveRevision(ctx, repo.Name, upload.Commit, gitserver.ResolveRevisionOptions{})
 	if err == nil {
 		// commit is resolvable
 		return false, nil

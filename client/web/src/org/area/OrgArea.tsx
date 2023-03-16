@@ -103,6 +103,7 @@ export interface OrgAreaProps
      */
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 
     location: H.Location
     navigate: NavigateFunction
@@ -137,6 +138,7 @@ export interface OrgAreaRouteContext
     authenticatedUser: AuthenticatedUser
 
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 
     orgSettingsSideBarItems: OrgSettingsSidebarItems
     orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
@@ -237,6 +239,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             namespace: this.state.orgOrError,
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
+            isSourcegraphApp: this.props.isSourcegraphApp,
             batchChangesEnabled: this.props.batchChangesEnabled,
             batchChangesExecutionEnabled: this.props.batchChangesExecutionEnabled,
             batchChangesWebhookLogsEnabled: this.props.batchChangesWebhookLogsEnabled,
@@ -280,7 +283,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
                                 />
                             )
                     )}
-                    <Route element={<NotFoundPage />} />
+                    <Route path="*" element={<NotFoundPage />} />
                 </Routes>
             </React.Suspense>
         )

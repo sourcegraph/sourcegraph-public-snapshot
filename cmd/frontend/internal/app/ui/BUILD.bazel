@@ -35,6 +35,7 @@ go_library(
         "//internal/api",
         "//internal/authz",
         "//internal/conf",
+        "//internal/conf/deploy",
         "//internal/cookie",
         "//internal/database",
         "//internal/env",
@@ -45,6 +46,7 @@ go_library(
         "//internal/lazyregexp",
         "//internal/randstring",
         "//internal/repoupdater",
+        "//internal/search/job/jobutil",
         "//internal/search/result",
         "//internal/search/symbol",
         "//internal/trace",
@@ -69,6 +71,7 @@ go_library(
 
 go_test(
     name = "ui_test",
+    timeout = "short",
     srcs = [
         "handlers_test.go",
         "help_test.go",
@@ -94,6 +97,7 @@ go_test(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/repoupdater",
+        "//internal/search/job/jobutil",
         "//internal/search/result",
         "//internal/types",
         "//internal/version",

@@ -108,7 +108,7 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
     }
 
     return {
-        url: `/${repoName}@${commit}/-/blob/${path}?L${line}:${character}&subtree=true#tab=references`,
+        url: `/${repoName}@${commit}/-/blob/${path}?L${line}:${character}#tab=references`,
         requestMocks: [
             {
                 request: {
@@ -365,7 +365,7 @@ export const defaultProps: ReferencesPanelProps = {
             skip: !result.loading,
             onCompleted: result => {
                 const data = dataOrThrowErrors(asGraphQLResult({ data: result, errors: [] }))
-                if (!data || !data.repository?.commit?.blob?.lsif) {
+                if (!data?.repository?.commit?.blob?.lsif) {
                     return
                 }
                 const lsif = data.repository.commit.blob.lsif

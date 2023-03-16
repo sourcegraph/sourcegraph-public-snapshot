@@ -98,7 +98,7 @@ function queryCustomers(args: Partial<CustomersVariables>): Observable<Customers
         }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.users || (errors && errors.length > 0)) {
+            if (!data?.users || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.users

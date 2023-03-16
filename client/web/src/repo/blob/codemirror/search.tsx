@@ -30,9 +30,8 @@ import { Button, Icon, Input, Label, Text, Tooltip } from '@sourcegraph/wildcard
 import { Keybindings } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { createElement } from '../../../util/dom'
 
-import { CodeMirrorContainer } from './react-interop'
-
 import { blobPropsFacet } from '.'
+import { CodeMirrorContainer } from './react-interop'
 
 const searchKeybinding = <Keybindings keybindings={[{ held: ['Mod'], ordered: ['F'] }]} />
 

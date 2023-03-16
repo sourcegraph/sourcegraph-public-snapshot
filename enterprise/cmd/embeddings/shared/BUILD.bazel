@@ -6,7 +6,6 @@ go_library(
         "config.go",
         "context_detection.go",
         "context_detection_cache.go",
-        "download_file.go",
         "main.go",
         "query_embeddings_cache.go",
         "repo_embedding_index_cache.go",
@@ -50,6 +49,7 @@ go_library(
 
 go_test(
     name = "shared_test",
+    timeout = "short",
     srcs = ["repo_embedding_index_cache_test.go"],
     embed = [":shared"],
     deps = [

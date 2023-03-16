@@ -10,6 +10,7 @@ import { getRepoMatchLabel, RepositoryMatch } from '@sourcegraph/shared/src/sear
 import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
+
 export interface RepoSearchResultProps {
     result: RepositoryMatch
     repoName: string

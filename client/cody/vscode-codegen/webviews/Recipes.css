@@ -1,0 +1,12 @@
+.recipes {
+    padding: 1rem;
+}
+
+.recipe-button {
+    width: 100%;
+    justify-content: center;
+    padding: 5px;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0rem;
+    font-weight: bold;
+}

@@ -45,7 +45,7 @@ func (r *permissionsInfoResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.updatedAt}
 }
 
-func (r *permissionsInfoResolver) Unrestricted() bool {
+func (r *permissionsInfoResolver) Unrestricted(ctx context.Context) bool {
 	return r.unrestricted
 }
 
@@ -138,5 +138,92 @@ func (r permissionsInfoRepositoryResolver) Reason() string {
 }
 
 func (r permissionsInfoRepositoryResolver) UpdatedAt() *gqlutil.DateTime {
+	return gqlutil.FromTime(r.perm.UpdatedAt)
+}
+
+var permissionsInfoUserConnectionMaxPageSize = 100
+
+var permissionsInfoUserConnectionOptions = &graphqlutil.ConnectionResolverOptions{
+	OrderBy:     database.OrderBy{{Field: "users.username"}},
+	Ascending:   true,
+	MaxPageSize: &permissionsInfoUserConnectionMaxPageSize,
+}
+
+func (r *permissionsInfoResolver) Users(_ context.Context, args graphqlbackend.PermissionsInfoUsersArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoUserResolver], error) {
+	if r.repoID == 0 {
+		return nil, nil
+	}
+
+	query := ""
+	if args.Query != nil {
+		query = *args.Query
+	}
+
+	connectionStore := &permissionsInfoUsersStore{
+		repoID: r.repoID,
+		db:     r.db,
+		ossDB:  r.ossDB,
+		query:  query,
+	}
+
+	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsInfoUserResolver](connectionStore, &args.ConnectionResolverArgs, permissionsInfoUserConnectionOptions)
+}
+
+type permissionsInfoUsersStore struct {
+	repoID api.RepoID
+	db     edb.EnterpriseDB
+	ossDB  database.DB
+	query  string
+}
+
+func (s *permissionsInfoUsersStore) MarshalCursor(node graphqlbackend.PermissionsInfoUserResolver, _ database.OrderBy) (*string, error) {
+	cursor := node.User().Username()
+
+	return &cursor, nil
+}
+
+func (s *permissionsInfoUsersStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	cursorSQL := fmt.Sprintf("'%s'", cursor)
+
+	return &cursorSQL, nil
+}
+
+// TODO(naman): implement total count
+func (s *permissionsInfoUsersStore) ComputeTotal(ctx context.Context) (*int32, error) {
+	return nil, nil
+}
+
+func (s *permissionsInfoUsersStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoUserResolver, error) {
+	permissions, err := s.db.Perms().ListRepoPermissions(ctx, s.repoID, &edb.ListRepoPermissionsArgs{Query: s.query, PaginationArgs: args})
+	if err != nil {
+		return nil, err
+	}
+
+	permissionResolvers := make([]graphqlbackend.PermissionsInfoUserResolver, 0, len(permissions))
+	for _, perm := range permissions {
+		permissionResolvers = append(permissionResolvers, permissionsInfoUserResolver{perm: perm, db: s.ossDB})
+	}
+
+	return permissionResolvers, nil
+}
+
+type permissionsInfoUserResolver struct {
+	db   database.DB
+	perm *edb.RepoPermission
+}
+
+func (r permissionsInfoUserResolver) ID() graphql.ID {
+	return graphqlbackend.MarshalUserID(r.perm.User.ID)
+}
+
+func (r permissionsInfoUserResolver) User() *graphqlbackend.UserResolver {
+	return graphqlbackend.NewUserResolver(r.db, r.perm.User)
+}
+
+func (r permissionsInfoUserResolver) Reason() string {
+	return string(r.perm.Reason)
+}
+
+func (r permissionsInfoUserResolver) UpdatedAt() *gqlutil.DateTime {
 	return gqlutil.FromTime(r.perm.UpdatedAt)
 }

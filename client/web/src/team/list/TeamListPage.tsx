@@ -47,7 +47,7 @@ export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamL
                 }
                 description={
                     <>
-                        A team is a set of users. See <Link to="/help/admin/teams/teams">Teams documentation</Link> for
+                        A team is a set of users. See the <Link to="/help/admin/teams">Teams documentation</Link> for
                         more information about configuring teams.
                     </>
                 }
@@ -55,7 +55,7 @@ export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamL
             >
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <PageHeader.Breadcrumb icon={mdiAccountMultiple}>
-                        Teams <ProductStatusBadge status="prototype" />
+                        Teams <ProductStatusBadge status="experimental" />
                     </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>

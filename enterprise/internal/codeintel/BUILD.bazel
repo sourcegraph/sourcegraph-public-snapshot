@@ -11,6 +11,7 @@ go_library(
         "//enterprise/internal/codeintel/dependencies",
         "//enterprise/internal/codeintel/policies",
         "//enterprise/internal/codeintel/ranking",
+        "//enterprise/internal/codeintel/sentinel",
         "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/codeintel/shared/gitserver",
         "//enterprise/internal/codeintel/uploads",

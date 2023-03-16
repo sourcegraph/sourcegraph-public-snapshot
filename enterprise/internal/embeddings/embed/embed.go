@@ -54,6 +54,14 @@ func EmbedRepo(
 	return &embeddings.RepoEmbeddingIndex{RepoName: repoName, Revision: revision, CodeIndex: codeIndex, TextIndex: textIndex}, nil
 }
 
+func createEmptyEmbeddingIndex(columnDimension int) embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata] {
+	return embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata]{
+		Embeddings:      []float32{},
+		RowMetadata:     []embeddings.RepoEmbeddingRowMetadata{},
+		ColumnDimension: columnDimension,
+	}
+}
+
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
 // entire files. So we split the file contents into chunks and get embeddings for the chunks in batches. Functions returns an EmbeddingIndex containing
 // the embeddings and metadata about the chunks the embeddings correspond to.
@@ -63,16 +71,17 @@ func embedFiles(
 	splitOptions split.SplitOptions,
 	readFile readFile,
 	maxEmbeddingVectors int,
-) (*embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata], error) {
-	if len(fileNames) == 0 {
-		return nil, nil
-	}
-
+) (embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata], error) {
 	dimensions, err := client.GetDimensions()
 	if err != nil {
-		return nil, err
+		return createEmptyEmbeddingIndex(dimensions), err
 	}
-	index := &embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata]{
+
+	if len(fileNames) == 0 {
+		return createEmptyEmbeddingIndex(dimensions), nil
+	}
+
+	index := embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata]{
 		Embeddings:      make([]float32, 0, len(fileNames)*dimensions),
 		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames)),
 		ColumnDimension: dimensions,
@@ -109,7 +118,7 @@ func embedFiles(
 
 		contentBytes, err := readFile(fileName)
 		if err != nil {
-			return nil, errors.Wrap(err, "error while reading a file")
+			return createEmptyEmbeddingIndex(dimensions), errors.Wrap(err, "error while reading a file")
 		}
 		if binary.IsBinary(contentBytes) {
 			continue
@@ -124,7 +133,7 @@ func embedFiles(
 		if len(embeddableChunks) > EMBEDDING_BATCHES*EMBEDDING_BATCH_SIZE {
 			err := addEmbeddableChunks(embeddableChunks, EMBEDDING_BATCH_SIZE)
 			if err != nil {
-				return nil, err
+				return createEmptyEmbeddingIndex(dimensions), err
 			}
 			embeddableChunks = []split.EmbeddableChunk{}
 		}
@@ -133,7 +142,7 @@ func embedFiles(
 	if len(embeddableChunks) > 0 {
 		err := addEmbeddableChunks(embeddableChunks, EMBEDDING_BATCH_SIZE)
 		if err != nil {
-			return nil, err
+			return createEmptyEmbeddingIndex(dimensions), err
 		}
 	}
 

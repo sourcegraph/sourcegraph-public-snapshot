@@ -10,6 +10,7 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -152,6 +153,14 @@ func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.Handler
 
 func handleListLanguages(ctagsBinary string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if deploy.IsSingleBinary() && ctagsBinary == "" {
+			// app: ctags is not available
+			var mapping map[string][]string
+			if err := json.NewEncoder(w).Encode(mapping); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
 		mapping, err := ctags.ListLanguageMappings(r.Context(), ctagsBinary)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

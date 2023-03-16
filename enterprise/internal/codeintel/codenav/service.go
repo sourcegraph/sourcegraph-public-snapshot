@@ -11,12 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,8 +24,9 @@ import (
 
 type Service struct {
 	store      store.Store
+	repoStore  database.RepoStore
 	lsifstore  lsifstore.LsifStore
-	gitserver  GitserverClient
+	gitserver  gitserver.Client
 	uploadSvc  UploadService
 	operations *operations
 	logger     log.Logger
@@ -34,12 +35,14 @@ type Service struct {
 func newService(
 	observationCtx *observation.Context,
 	store store.Store,
+	repoStore database.RepoStore,
 	lsifstore lsifstore.LsifStore,
 	uploadSvc UploadService,
-	gitserver GitserverClient,
+	gitserver gitserver.Client,
 ) *Service {
 	return &Service{
 		store:      store,
+		repoStore:  repoStore,
 		lsifstore:  lsifstore,
 		gitserver:  gitserver,
 		uploadSvc:  uploadSvc,
@@ -605,13 +608,14 @@ func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState R
 // removeUploadsWithUnknownCommits removes uploads for commits which are unknown to gitserver from the given
 // slice. The slice is filtered in-place and returned (to update the slice length).
 func (s *Service) removeUploadsWithUnknownCommits(ctx context.Context, uploads []types.Dump, requestState RequestState) ([]types.Dump, error) {
-	rcs := make([]codeintelgitserver.RepositoryCommit, 0, len(uploads))
+	rcs := make([]RepositoryCommit, 0, len(uploads))
 	for _, upload := range uploads {
-		rcs = append(rcs, codeintelgitserver.RepositoryCommit{
+		rcs = append(rcs, RepositoryCommit{
 			RepositoryID: upload.RepositoryID,
 			Commit:       upload.Commit,
 		})
 	}
+
 	exists, err := requestState.commitCache.AreCommitsResolvable(ctx, rcs)
 	if err != nil {
 		return nil, err
@@ -1125,10 +1129,8 @@ func (s *Service) GetStencil(ctx context.Context, args shared.RequestArgs, reque
 	return dedupeRanges(sortedRanges), nil
 }
 
-func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error) {
-	ctx, _, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+// TODO(#48681) - do not proxy this
+func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) ([]types.Dump, error) {
 	return s.uploadSvc.GetDumpsByIDs(ctx, ids)
 }
 
@@ -1154,7 +1156,7 @@ func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, 
 		attribute.Int("numCandidates", len(candidates)),
 		attribute.String("candidates", uploadIDsToString(uploadCandidates)))
 
-	commitChecker := NewCommitCache(s.gitserver)
+	commitChecker := NewCommitCache(s.repoStore, s.gitserver)
 	commitChecker.SetResolvableCommit(repositoryID, commit)
 
 	candidatesWithCommits, err := filterUploadsWithCommits(ctx, commitChecker, uploadCandidates)
@@ -1191,16 +1193,12 @@ func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, 
 	return filtered, nil
 }
 
-func (s *Service) GetUnsafeDB() database.DB {
-	return s.store.GetUnsafeDB()
-}
-
 // filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given
 // slice. The slice is filtered in-place and returned (to update the slice length).
 func filterUploadsWithCommits(ctx context.Context, commitCache CommitCache, uploads []types.Dump) ([]types.Dump, error) {
-	rcs := make([]codeintelgitserver.RepositoryCommit, 0, len(uploads))
+	rcs := make([]RepositoryCommit, 0, len(uploads))
 	for _, upload := range uploads {
-		rcs = append(rcs, codeintelgitserver.RepositoryCommit{
+		rcs = append(rcs, RepositoryCommit{
 			RepositoryID: upload.RepositoryID,
 			Commit:       upload.Commit,
 		})

@@ -1,4 +1,3 @@
-import { action } from '@storybook/addon-actions'
 import { createMemoryHistory } from 'history'
 import { of } from 'rxjs'
 
@@ -24,7 +23,6 @@ export const commonProps = (): HoverOverlayProps & SettingsCascadeProps => ({
     extensionsController: NOOP_EXTENSIONS_CONTROLLER,
     platformContext: NOOP_PLATFORM_CONTEXT,
     overlayPosition: { top: 16, left: 16 },
-    onAlertDismissed: action('onAlertDismissed'),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
 })
 
@@ -47,7 +45,7 @@ export const FIXTURE_ACTIONS: ActionItemAction[] = [
             id: 'goToDefinition.preloaded',
             title: 'Go to definition',
             command: 'open',
-            commandArguments: ['/github.com/sourcegraph/codeintellify/-/blob/src/hoverifier.ts?subtree=true#L57:1'],
+            commandArguments: ['/github.com/sourcegraph/codeintellify/-/blob/src/hoverifier.ts#L57:1'],
         },
         active: true,
     },
@@ -56,9 +54,7 @@ export const FIXTURE_ACTIONS: ActionItemAction[] = [
             id: 'findReferences',
             title: 'Find references',
             command: 'open',
-            commandArguments: [
-                '/github.com/sourcegraph/codeintellify/-/blob/src/hoverifier.ts?subtree=true#L57:18&tab=references',
-            ],
+            commandArguments: ['/github.com/sourcegraph/codeintellify/-/blob/src/hoverifier.ts?tab=references#L57:18'],
         },
         active: true,
     },

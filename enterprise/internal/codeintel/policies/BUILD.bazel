@@ -4,15 +4,16 @@ go_library(
     name = "policies",
     srcs = [
         "config.go",
+        "extractor.go",
         "iface.go",
         "init.go",
+        "matcher.go",
         "observability.go",
         "service.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/policies/enterprise",
         "//enterprise/internal/codeintel/policies/internal/background",
         "//enterprise/internal/codeintel/policies/internal/store",
         "//enterprise/internal/codeintel/policies/shared",
@@ -26,12 +27,18 @@ go_library(
         "//internal/observation",
         "//internal/timeutil",
         "//lib/errors",
+        "@com_github_gobwas_glob//:glob",
     ],
 )
 
 go_test(
     name = "policies_test",
+    timeout = "short",
     srcs = [
+        "helpers_test.go",
+        "matcher_common_test.go",
+        "matcher_indexing_test.go",
+        "matcher_retention_test.go",
         "mocks_test.go",
         "service_test.go",
     ],
@@ -40,9 +47,9 @@ go_test(
         "//enterprise/internal/codeintel/policies/internal/store",
         "//enterprise/internal/codeintel/policies/shared",
         "//enterprise/internal/codeintel/shared/types",
-        "//internal/database",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
+        "//internal/timeutil",
         "@com_github_derision_test_glock//:glock",
         "@com_github_google_go_cmp//cmp",
     ],

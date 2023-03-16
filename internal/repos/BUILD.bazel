@@ -46,6 +46,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
+        "//cmd/gitserver/server",
         "//internal/api",
         "//internal/codeintel/dependencies",
         "//internal/conf",
@@ -67,7 +68,6 @@ go_library(
         "//internal/extsvc/gitlab",
         "//internal/extsvc/gitolite",
         "//internal/extsvc/gomodproxy",
-        "//internal/extsvc/jvmpackages/coursier",
         "//internal/extsvc/npm",
         "//internal/extsvc/pagure",
         "//internal/extsvc/perforce",
@@ -83,11 +83,13 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//internal/ratelimit",
+        "//internal/repoupdater",
         "//internal/repoupdater/protocol",
         "//internal/timeutil",
         "//internal/trace",
         "//internal/types",
         "//internal/types/typestest",
+        "//internal/vcs",
         "//internal/workerutil",
         "//internal/workerutil/dbworker",
         "//internal/workerutil/dbworker/store",
@@ -146,7 +148,12 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":repos"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
+        "//cmd/frontend/envvar",
         "//internal/api",
         "//internal/codeintel/dependencies",
         "//internal/conf",

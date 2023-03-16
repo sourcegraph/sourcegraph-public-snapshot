@@ -26,6 +26,7 @@ go_library(
 
 go_test(
     name = "bitbucketserver_test",
+    timeout = "short",
     srcs = [
         "integration_test.go",
         "main_test.go",

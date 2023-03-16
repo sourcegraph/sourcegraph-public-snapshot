@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
+import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Alert, Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
@@ -93,14 +94,24 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                                 // it's safe to use the index as a key.
                                 // eslint-disable-next-line react/no-array-index-key
                                 <div className={styles.ownItem} key={index}>
-                                    {ownership.owner.__typename === 'Person' ? (
+                                    {ownership.owner.__typename === 'Person' && (
                                         <>
-                                            <UserAvatar user={ownership.owner} className="mx-2" />
+                                            <UserAvatar user={ownership.owner} className="mx-2" inline={true} />
                                             {formatPersonName(ownership.owner)}
                                         </>
-                                    ) : (
-                                        // TODO #48303: Add support for teams.
-                                        <></>
+                                    )}
+                                    {ownership.owner.__typename === 'Team' && (
+                                        <>
+                                            <TeamAvatar
+                                                team={{
+                                                    ...ownership.owner,
+                                                    displayName: ownership.owner.teamDisplayName,
+                                                }}
+                                                className="mx-2"
+                                                inline={true}
+                                            />
+                                            {ownership.owner.teamDisplayName || ownership.owner.name}
+                                        </>
                                     )}
                                 </div>
                             ))}

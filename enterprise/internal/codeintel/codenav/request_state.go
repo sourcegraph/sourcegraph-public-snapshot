@@ -5,6 +5,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	sgTypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -30,8 +32,9 @@ type RequestState struct {
 
 func NewRequestState(
 	uploads []types.Dump,
+	repoStore database.RepoStore,
 	authChecker authz.SubRepoPermissionChecker,
-	gitclient GitserverClient,
+	gitserverClient gitserver.Client,
 	repo *sgTypes.Repo,
 	commit string,
 	path string,
@@ -39,14 +42,15 @@ func NewRequestState(
 	hunkCache HunkCache,
 ) RequestState {
 	r := &RequestState{
+		// repoStore:    repoStore,
 		RepositoryID: int(repo.ID),
 		Commit:       commit,
 		Path:         path,
 	}
 	r.SetUploadsDataLoader(uploads)
 	r.SetAuthChecker(authChecker)
-	r.SetLocalGitTreeTranslator(gitclient, repo, commit, path, hunkCache)
-	r.SetLocalCommitCache(gitclient)
+	r.SetLocalGitTreeTranslator(gitserverClient, repo, commit, path, hunkCache)
+	r.SetLocalCommitCache(repoStore, gitserverClient)
 	r.SetMaximumIndexesPerMonikerSearch(maxIndexes)
 
 	return *r
@@ -75,7 +79,7 @@ func (r *RequestState) SetUploadsDataLoader(uploads []types.Dump) {
 	}
 }
 
-func (r *RequestState) SetLocalGitTreeTranslator(client GitserverClient, repo *sgTypes.Repo, commit, path string, hunkCache HunkCache) error {
+func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit, path string, hunkCache HunkCache) error {
 	args := &requestArgs{
 		repo:   repo,
 		commit: commit,
@@ -87,8 +91,8 @@ func (r *RequestState) SetLocalGitTreeTranslator(client GitserverClient, repo *s
 	return nil
 }
 
-func (r *RequestState) SetLocalCommitCache(client GitserverClient) {
-	r.commitCache = NewCommitCache(client)
+func (r *RequestState) SetLocalCommitCache(repoStore database.RepoStore, client gitserver.Client) {
+	r.commitCache = NewCommitCache(repoStore, client)
 }
 
 func (r *RequestState) SetMaximumIndexesPerMonikerSearch(maxNumber int) {

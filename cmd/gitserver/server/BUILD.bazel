@@ -119,6 +119,13 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":server"],
+    # This test loads coursier as a side effect, so we ensure the
+    # path is sandboxed properly.
+    env = {"COURSIER_CACHE_DIR": "/tmp"},
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/api",

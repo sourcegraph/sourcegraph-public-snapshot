@@ -1,12 +1,12 @@
 import { map } from 'rxjs/operators'
 
-import type { PageLoad } from './$types'
-
 import { isErrorLike } from '$lib/common'
 import type { PagedRepositoryContributorsResult, PagedRepositoryContributorsVariables } from '$lib/graphql-operations'
 import { CONTRIBUTORS_QUERY } from '$lib/loader/repo'
 import { getPaginationParams } from '$lib/Paginator.svelte'
 import { asStore } from '$lib/utils'
+
+import type { PageLoad } from './$types'
 
 const pageSize = 20
 

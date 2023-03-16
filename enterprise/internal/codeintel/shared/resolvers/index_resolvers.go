@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -17,16 +19,18 @@ import (
 )
 
 type indexResolver struct {
-	autoindexingSvc  AutoIndexingService
 	uploadsSvc       UploadsService
 	policySvc        PolicyService
+	gitserverClient  gitserver.Client
+	siteAdminChecker SiteAdminChecker
+	repoStore        database.RepoStore
 	index            types.Index
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 	traceErrs        *observation.ErrCollector
 }
 
-func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, index types.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) resolverstubs.LSIFIndexResolver {
+func NewIndexResolver(uploadsSvc UploadsService, policySvc PolicyService, gitserverClient gitserver.Client, siteAdminChecker SiteAdminChecker, repoStore database.RepoStore, index types.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) resolverstubs.LSIFIndexResolver {
 	if index.AssociatedUploadID != nil {
 		// Request the next batch of upload fetches to contain the record's associated
 		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID
@@ -36,10 +40,12 @@ func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsSer
 	}
 
 	return &indexResolver{
-		autoindexingSvc:  autoindexingSvc,
 		uploadsSvc:       uploadsSvc,
 		policySvc:        policySvc,
+		gitserverClient:  gitserverClient,
+		siteAdminChecker: siteAdminChecker,
 		index:            index,
+		repoStore:        repoStore,
 		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
 		traceErrs:        errTrace,
@@ -61,12 +67,12 @@ func (r *indexResolver) FinishedAt() *gqlutil.DateTime {
 }
 
 func (r *indexResolver) Steps() resolverstubs.IndexStepsResolver {
-	return NewIndexStepsResolver(r.autoindexingSvc, r.index)
+	return NewIndexStepsResolver(r.siteAdminChecker, r.index)
 }
 func (r *indexResolver) PlaceInQueue() *int32 { return toInt32(r.index.Rank) }
 
 func (r *indexResolver) Tags(ctx context.Context) (tagsNames []string, err error) {
-	tags, err := r.autoindexingSvc.GetListTags(ctx, api.RepoName(r.index.RepositoryName), r.index.Commit)
+	tags, err := r.gitserverClient.ListTags(ctx, api.RepoName(r.index.RepositoryName), r.index.Commit)
 	if err != nil {
 		if gitdomain.IsRepoNotExist(err) {
 			return tagsNames, nil
@@ -103,7 +109,7 @@ func (r *indexResolver) AssociatedUpload(ctx context.Context) (_ resolverstubs.L
 		return nil, err
 	}
 
-	return NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policySvc, upload, r.prefetcher, r.locationResolver, r.traceErrs), nil
+	return NewUploadResolver(r.uploadsSvc, r.policySvc, r.gitserverClient, r.siteAdminChecker, r.repoStore, upload, r.prefetcher, r.locationResolver, r.traceErrs), nil
 }
 
 func (r *indexResolver) ShouldReindex(ctx context.Context) bool {
@@ -113,7 +119,7 @@ func (r *indexResolver) ShouldReindex(ctx context.Context) bool {
 func (r *indexResolver) ProjectRoot(ctx context.Context) (_ resolverstubs.GitTreeEntryResolver, err error) {
 	defer r.traceErrs.Collect(&err, log.String("indexResolver.field", "projectRoot"))
 
-	resolver, err := r.locationResolver.Path(ctx, api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root)
+	resolver, err := r.locationResolver.Path(ctx, api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root, true)
 	if err != nil || resolver == nil {
 		// Do not return typed nil interface
 		return nil, err
@@ -124,5 +130,5 @@ func (r *indexResolver) ProjectRoot(ctx context.Context) (_ resolverstubs.GitTre
 }
 
 func (r *indexResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	return types.NewCodeIntelIndexerResolver(r.index.Indexer)
+	return types.NewCodeIntelIndexerResolver(r.index.Indexer, r.index.Indexer)
 }

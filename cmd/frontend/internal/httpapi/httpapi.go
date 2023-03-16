@@ -12,8 +12,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
-
 	sglog "github.com/sourcegraph/log"
+	"google.golang.org/grpc"
+
+	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -33,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -53,6 +56,7 @@ type Handlers struct {
 	BatchesGitLabWebhook            webhooks.RegistererHandler
 	BatchesBitbucketServerWebhook   webhooks.RegistererHandler
 	BatchesBitbucketCloudWebhook    webhooks.RegistererHandler
+	BatchesAzureDevOpsWebhook       webhooks.Registerer
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
@@ -81,6 +85,7 @@ type Handlers struct {
 // and sets the actor in the request context.
 func NewHandler(
 	db database.DB,
+	enterpriseJobs jobutil.EnterpriseJobs,
 	m *mux.Router,
 	schema *graphql.Schema,
 	rateLimiter graphqlbackend.LimitWatcher,
@@ -123,7 +128,7 @@ func NewHandler(
 	handlers.GitHubSyncWebhook.Register(&wh)
 	handlers.GitLabSyncWebhook.Register(&wh)
 	handlers.PermissionsGitHubWebhook.Register(&wh)
-
+	handlers.BatchesAzureDevOpsWebhook.Register(&wh)
 	// 🚨 SECURITY: This handler implements its own secret-based auth
 	webhookHandler := webhooks.NewHandler(logger, db, &wh)
 
@@ -156,7 +161,7 @@ func NewHandler(
 	m.Get(apirouter.SCIM).Handler(trace.Route(handlers.SCIMHandler))
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimiter, false))))
 
-	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
+	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db, enterpriseJobs)))
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
@@ -178,25 +183,25 @@ func NewHandler(
 	return m
 }
 
-// NewInternalHandler returns a new API handler for internal endpoints that uses
-// the provided API router, which must have been created by httpapi/router.NewInternal.
+// RegisterInternalServices registers REST and gRPC handlers for Sourcegraph's internal API on the
+// provided mux.Router and gRPC server.
 //
 // 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
 // This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
-func NewInternalHandler(
+func RegisterInternalServices(
 	m *mux.Router,
+	s *grpc.Server,
+
 	db database.DB,
+	enterpriseJobs jobutil.EnterpriseJobs,
 	schema *graphql.Schema,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
 	rankingService enterprise.RankingService,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
-) http.Handler {
+) {
 	logger := sglog.Scoped("InternalHandler", "frontend internal HTTP API handler")
-	if m == nil {
-		m = apirouter.New(nil)
-	}
 	m.StrictSlash(true)
 
 	handler := jsonMiddleware(&errorHandler{
@@ -228,6 +233,8 @@ func NewInternalHandler(
 	m.Get(apirouter.DocumentRanks).Handler(trace.Route(handler(indexer.serveDocumentRanks)))
 	m.Get(apirouter.UpdateIndexStatus).Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
 
+	proto.RegisterZoektConfigurationServiceServer(s, &searchIndexerGRPCServer{server: indexer})
+
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
 	gitService := &gitServiceHandler{
@@ -239,7 +246,7 @@ func NewInternalHandler(
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimitWatcher, true))))
 	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
-	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db)))
+	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db, enterpriseJobs)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
 
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
@@ -250,8 +257,6 @@ func NewInternalHandler(
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
 		http.Error(w, "no route", http.StatusNotFound)
 	})
-
-	return m
 }
 
 var schemaDecoder = schema.NewDecoder()

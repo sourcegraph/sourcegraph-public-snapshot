@@ -52,10 +52,10 @@ func TestProcessStaleSourcedCommits(t *testing.T) {
 	)
 
 	// First update
-	deleteCommit3 := func(ctx context.Context, repositoryID int, commit string) (bool, error) {
+	deleteCommit3 := func(ctx context.Context, repositoryID int, respositoryName, commit string) (bool, error) {
 		return commit == makeCommit(3), nil
 	}
-	if numDeleted, err := store.processStaleSourcedCommits(
+	if _, numDeleted, err := store.processStaleSourcedCommits(
 		ctx,
 		minimumTimeSinceLastCheck,
 		commitResolverBatchSize,
@@ -82,10 +82,10 @@ func TestProcessStaleSourcedCommits(t *testing.T) {
 	}
 
 	// Too soon after last update
-	deleteCommit2 := func(ctx context.Context, repositoryID int, commit string) (bool, error) {
+	deleteCommit2 := func(ctx context.Context, repositoryID int, respositoryName, commit string) (bool, error) {
 		return commit == makeCommit(2), nil
 	}
-	if numDeleted, err := store.processStaleSourcedCommits(
+	if _, numDeleted, err := store.processStaleSourcedCommits(
 		ctx,
 		minimumTimeSinceLastCheck,
 		commitResolverBatchSize,
@@ -106,7 +106,7 @@ func TestProcessStaleSourcedCommits(t *testing.T) {
 	}
 
 	// Enough time after previous update(s)
-	if numDeleted, err := store.processStaleSourcedCommits(
+	if _, numDeleted, err := store.processStaleSourcedCommits(
 		ctx,
 		minimumTimeSinceLastCheck,
 		commitResolverBatchSize,
