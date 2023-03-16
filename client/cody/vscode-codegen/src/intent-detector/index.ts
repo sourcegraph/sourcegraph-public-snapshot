@@ -1,5 +1,8 @@
-import { QueryInfo } from '@sourcegraph/cody-common'
+export interface QueryInfo {
+    needsCodebaseContext: boolean
+    needsCurrentFileContext: boolean
+}
 
 export interface IntentDetector {
-    detect(text: string): Promise<QueryInfo>
+    detect(text: string): Promise<QueryInfo | Error>
 }
