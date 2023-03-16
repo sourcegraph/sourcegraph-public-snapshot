@@ -35,19 +35,24 @@ describe('overrideContextOnPaste', () => {
         return state.update({ ...state.replaceSelection(insert), userEvent: 'input.paste' }).state.sliceDoc()
     }
 
-    it('removes the existing global context: filter if the new input would have multiple global context: filters', () => {
-        expect(test('context:global one |two| three', 'context:foo bar')).toStrictEqual('one context:foo bar three')
-        expect(test('context:global one |two three', 'context:foo bar')).toStrictEqual('one context:foo bartwo three')
+    it('removes the existing global context: filter if it is considered "empty"', () => {
         expect(test('context:global |', 'context:foo bar')).toStrictEqual('context:foo bar')
         expect(test('context:global|', 'bar context:foo')).toStrictEqual('bar context:foo')
     })
 
-    it('keeps the filter if the new value contains subexpressions', () => {
-        expect(test('context:global foo ', 'OR context:foo bar')).toStrictEqual('context:global foo OR context:foo bar')
+    it('removes the new context: filter if the existing query is not "empty"', () => {
+        expect(test('context:global one |two| three', 'context:foo bar')).toStrictEqual('context:global one bar three')
+
+    })
+
+    it('keeps the filter the query contains kewords', () => {
+        expect(test('context:global foo |', 'OR context:foo bar')).toStrictEqual('context:global foo OR context:foo bar')
+        expect(test('context:global |foo OR bar ', 'context:foo bar')).toStrictEqual('context:global context:foo barfoo OR bar ')
     })
 
     it('keeps the filter if the new value does not contain a context filter', () => {
         expect(test('context:global ', 'foo')).toStrictEqual('context:global foo')
+        expect(test('context:global | bar', 'foo')).toStrictEqual('context:global foo bar')
     })
 
     it('keeps the filter if the current value contains the word "context"', () => {
@@ -56,6 +61,7 @@ describe('overrideContextOnPaste', () => {
 
     it('keeps the filter if the new value contains the word "context"', () => {
         expect(test('context:global ', 'context bar')).toStrictEqual('context:global context bar')
+        expect(test('context:global ', 'content:"context:foo" bar')).toStrictEqual('context:global content:"context:foo" bar')
     })
 
     it('does not remove the filter if the new value somehow "breaks" the context filters', () => {

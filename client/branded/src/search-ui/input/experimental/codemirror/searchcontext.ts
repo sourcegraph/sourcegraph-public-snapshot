@@ -1,4 +1,4 @@
-import { ChangeDesc, ChangeSpec, EditorState, Extension, StateField } from '@codemirror/state'
+import { ChangeSpec, EditorSelection, EditorState, Extension, StateField } from '@codemirror/state'
 import { mdiFilterOutline } from '@mdi/js'
 import { inRange } from 'lodash'
 
@@ -6,17 +6,16 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import {
     FilterKind,
     findFilter,
-    findFilters,
     getGlobalSearchContextFilter,
 } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { isFilterType } from '@sourcegraph/shared/src/search/query/validate'
 
-import { getQueryInformation } from '../../codemirror/parsedQuery'
+import { getQueryInformation, tokens } from '../../codemirror/parsedQuery'
 import { filterValueRenderer } from '../optionRenderer'
 import { suggestionSources } from '../suggestionsExtension'
+import { EditorView } from '@codemirror/view'
 
 /**
  * A suggestion extension which will show most recently entered context: filter if the
@@ -99,9 +98,31 @@ const lastContextField = StateField.define<string | undefined>({
 })
 
 /**
- * If the current value only contains a context filter (plus optional whitespace) and the pasted value
- * also contains a context filter, we are replacing the whole value.
- * Requires parseInputAsQuery to be set.
+ * Allows the user to overwrite the existing input value when pasting by pressing "Shift"
+ */
+export function shiftPasteOverwrite() {
+    let shiftPressed = false
+    return EditorView.domEventHandlers({
+        keydown(event) {
+            shiftPressed = event.shiftKey
+        },
+        keyup() {
+            shiftPressed = false
+        },
+        paste(_event, view) {
+            if (shiftPressed) {
+                // Select the existing value to let the paste event overwrite it
+                view.dispatch({
+                    selection: EditorSelection.range(0, view.state.doc.length),
+                })
+            }
+        }
+    })
+}
+
+/**
+ * When the user pastes a new value into the input, this extension tries to be smart about
+ * using the correct context: filter.
  */
 export const overrideContextOnPaste = EditorState.transactionFilter.of(transaction => {
     if (!transaction.isUserEvent('input.paste')) {
@@ -120,31 +141,37 @@ export const overrideContextOnPaste = EditorState.transactionFilter.of(transacti
         return transaction
     }
 
+    // Common situation: New query is pasted into "empty" input (only contains context: filter)
+    // We assume that the pasted query is always "complete" and clear the current input
+    if (tokens(transaction.startState).every(token => token.type === 'whitespace' || isFilterType(token, FilterType.context))) {
+        return [{changes: {from: 0, to: transaction.startState.doc.length}}, transaction]
+    }
+
+    // Less common situation: New query pasted into _non-empty_ query input. We assume that the existing query
+    // should be extended and remove the additionaly context filter.
+    // CAVEAT: It's valid to have multiple context: filters in different OR branches or to negate a context:
+    // filter via NOT. Detecting this properly is tricky and likely not useful in most cases. That's why
+    // we bail if the new query contains any keywords.
+
+    const scanResult = scanSearchQuery(newValue)
+    if (scanResult.type !== 'success' || scanResult.term.some(token => token.type === 'keyword')) {
+        return transaction
+    }
+
+    // Also unlikely: User pastes new query before the existing context: filter
     const newRangeOfCurrentContextFilter = {
         start: transaction.changes.mapPos(currentGlobalContext.filter.range.start, 0),
         end: transaction.changes.mapPos(currentGlobalContext.filter.range.end),
     }
 
-    const scanResult = scanSearchQuery(newValue)
-    if (scanResult.type !== 'success') {
-        return transaction
+    const changes: ChangeSpec[] = []
+    for (const token of scanResult.term) {
+        if (isFilterType(token, FilterType.context) && token.range.start !== newRangeOfCurrentContextFilter.start) {
+             // Trim whitespace after context filter. range.end is exclusive so this is our starting point.
+            const match = newValue.slice(currentGlobalContext.filter.range.end).match(/\s+/)
+            changes.push({from: token.range.start, to: token.range.end + (match?.[0].length ?? 0)})
+        }
     }
-    // Does omitting the current filter from the new value (if present) result in a single global filter?
-    const hasGlobalContext = !!getGlobalSearchContextFilter(
-        omitFilter(newValue, { ...currentGlobalContext.filter, range: newRangeOfCurrentContextFilter })
-    )
-    if (hasGlobalContext) {
-        // Trim whitespace after context filter. range.end is exclusive so this is our starting point.
-        const match = transaction.startState.sliceDoc(currentGlobalContext.filter.range.end).match(/\s+/)
-        return [
-            {
-                changes: {
-                    from: currentGlobalContext.filter.range.start,
-                    to: currentGlobalContext.filter.range.end + (match?.length ?? 0),
-                },
-            },
-            transaction,
-        ]
-    }
-    return transaction
+
+    return [transaction, {changes, sequential: true}]
 })
