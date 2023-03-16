@@ -676,32 +676,46 @@ func (s *store) ShouldRefilterPackageRepoRefs(ctx context.Context) (exists bool,
 	ctx, _, endObservation := s.operations.shouldRefilterPackageRepoRefs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	exists, _, err = basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(doPackageRepoRefsRequireRefilteringQuery)))
+	_, exists, err = basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(doPackageRepoRefsRequireRefilteringQuery)))
 	return
 }
 
 const doPackageRepoRefsRequireRefilteringQuery = `
-WITH most_recent_filters_change AS (
-	SELECT COALESCE(deleted_at, updated_at)
+WITH least_recently_checked AS (
+	-- select oldest last_checked_at from either package_repo_versions
+	-- or lsif_dependency_repos, prioritising NULL
+    SELECT * FROM (
+        (
+			SELECT last_checked_at FROM lsif_dependency_repos
+			ORDER BY last_checked_at ASC NULLS FIRST
+			LIMIT 1
+		)
+        UNION ALL
+        (
+			SELECT last_checked_at FROM package_repo_versions
+			ORDER BY last_checked_at ASC NULLS FIRST
+			LIMIT 1
+		)
+    ) p
+    ORDER BY last_checked_at ASC NULLS FIRST
+    LIMIT 1
+),
+most_recently_updated_filter AS (
+    SELECT COALESCE(deleted_at, updated_at)
 	FROM package_repo_filters
 	ORDER BY COALESCE(deleted_at, updated_at) DESC
 	LIMIT 1
 )
-SELECT EXISTS (
-	SELECT 1
-	FROM lsif_dependency_repos
-	WHERE
-		last_checked_at IS NULL
-		OR last_checked_at < (SELECT * FROM most_recent_filters_change)
-	LIMIT 1
-) OR EXISTS (
-	SELECT 1
-	FROM package_repo_versions
-	WHERE
-		last_checked_at IS NULL
-		OR last_checked_at < (SELECT * FROM most_recent_filters_change)
-	LIMIT 1
-)
+SELECT 1
+WHERE
+	-- comparisons on empty table from either least_recently_checked or most_recently_updated_filter
+	-- will yield NULL, making the query return 1 if either CTE returns nothing
+    (SELECT COUNT(*) FROM most_recently_updated_filter) <> 0 AND
+    (SELECT COUNT(*) FROM least_recently_checked) <> 0 AND
+    (
+        (SELECT * FROM least_recently_checked) IS NULL OR
+        (SELECT * FROM least_recently_checked) < (SELECT * FROM most_recently_updated_filter)
+    );
 `
 
 func (s *store) UpdateAllBlockedStatuses(ctx context.Context, pkgs []shared.PackageRepoReference, startTime time.Time) (pkgsUpdated, versionsUpdated int, err error) {
