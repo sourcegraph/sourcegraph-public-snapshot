@@ -1,10 +1,8 @@
 package sharedresolvers
 
 import (
-	"encoding/base64"
 	"io/fs"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -21,10 +19,6 @@ func strPtr(val string) *string {
 	}
 
 	return &val
-}
-
-func marshalLSIFIndexGQLID(indexID int64) graphql.ID {
-	return relay.MarshalID("LSIFIndex", indexID)
 }
 
 // toInt32 translates the given int pointer into an int32 pointer.
@@ -64,41 +58,6 @@ func NextPageCursor(endCursor string) *pageInfo {
 
 func (r *pageInfo) EndCursor() *string { return r.endCursor }
 func (r *pageInfo) HasNextPage() bool  { return r.hasNextPage }
-
-// EncodeIntCursor creates a PageInfo object from the given new offset value. If the
-// new offset value, then an object indicating the end of the result set is returned.
-// The cursor is base64 encoded for transfer, and should be decoded using the function
-// decodeIntCursor.
-func EncodeIntCursor(val *int32) *pageInfo {
-	if val == nil {
-		return EncodeCursor(nil)
-	}
-
-	str := strconv.FormatInt(int64(*val), 10)
-	return EncodeCursor(&str)
-}
-
-// EncodeCursor creates a PageInfo object from the given cursor. If the cursor is not
-// defined, then an object indicating the end of the result set is returned. The cursor
-// is base64 encoded for transfer, and should be decoded using the function decodeCursor.
-func EncodeCursor(val *string) *pageInfo {
-	if val != nil {
-		return NextPageCursor(base64.StdEncoding.EncodeToString([]byte(*val)))
-	}
-
-	return HasNextPage(false)
-}
-
-// NextOffset determines the offset that should be used for a subsequent request.
-// If there are no more results in the paged result set, this function returns nil.
-func NextOffset(offset, count, totalCount int) *int {
-	if offset+count < totalCount {
-		val := offset + count
-		return &val
-	}
-
-	return nil
-}
 
 func CreateFileInfo(path string, isDir bool) fs.FileInfo {
 	return fileInfo{path: path, isDir: isDir}
