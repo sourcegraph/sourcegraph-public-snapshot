@@ -58,8 +58,8 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                         }
                     })
                     // Set the length of fileCounts as files searched
-                    const filesSearched = Object.entries(fileCounts).length || -1
-                    totalFilesSearched += filesSearched > 0 ? filesSearched : 0
+                    const filesSearched = Object.entries(fileCounts).length || 0
+                    totalFilesSearched += filesSearched
                     return { fileCounts, filesSearched }
                 })
             )
@@ -93,15 +93,11 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         const stemmedTerms = terms.map(term => this.escapeRegex(term))
         // unique stemmed keywords, our representation of the user query
         const filteredTerms = Array.from(new Set(removeStopwords(stemmedTerms).filter(term => term.length >= 3)))
-
         const { fileTermCounts, termTotalFiles, totalFiles } = await this.fetchFileMatches(filteredTerms, rootPath)
-
         const idfDict = this.idf(termTotalFiles, totalFiles)
-
         const filenamesWithScores = Object.entries(fileTermCounts)
             .map(([filename, termCounts]) => {
                 const { score, scoreComponents } = this.idfLogScore(filteredTerms, termCounts, idfDict)
-
                 return {
                     filename,
                     score,
@@ -109,7 +105,6 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 }
             })
             .sort(({ score: score1 }, { score: score2 }) => score2 - score1)
-
         return filenamesWithScores
     }
 
