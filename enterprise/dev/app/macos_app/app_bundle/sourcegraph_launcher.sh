@@ -105,6 +105,10 @@ pgdir="${sgdir}/postgresql"
 # panic: env var "PROCESSING_TIMEOUT" already registered with a different description or value
 export PROCESSING_TIMEOUT=2h
 
+# if I don't set SRC_REPOS_DIR, the app panics with the error,
+# panic: env var "SRC_REPOS_DIR" already registered with a different description or value
+export SRC_REPOS_DIR="${sgdir}/repos"
+
 # pre-set the path to universal-ctags so that the app will know where to look for it
 # and won't create a temporary shell script that runs a Docker image
 # the universal-ctags binary includes in this app package is a universal bvinary
