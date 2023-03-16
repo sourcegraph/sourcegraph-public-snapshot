@@ -222,6 +222,14 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		c.externalRateLimiter.WaitForRateLimit(ctx, 1) // We don't care whether we waited or not, this is a preventative measure.
 	}
 
+	var reqBody []byte
+	if req.Body != nil {
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
+		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+	}
 	var resp *httpResponseState
 	resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
 
@@ -235,6 +243,9 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
 		// If we end up waiting because of an external rate limit, we need to retry the request.
 		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
+			if req.Body != nil {
+				req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+			}
 			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
 			numRetries++
 		} else {

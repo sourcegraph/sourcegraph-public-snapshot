@@ -17,8 +17,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "client_test",
+    timeout = "short",
     srcs = [
         "compute_text_client_test.go",
         "match_context_client_test.go",

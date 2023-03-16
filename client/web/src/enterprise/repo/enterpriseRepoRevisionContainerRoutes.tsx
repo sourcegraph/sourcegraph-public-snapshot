@@ -1,4 +1,12 @@
-import { RepoRevisionContainerRoute } from '../../repo/RepoRevisionContainer'
-import { repoRevisionContainerRoutes } from '../../repo/repoRevisionContainerRoutes'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-export const enterpriseRepoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = repoRevisionContainerRoutes
+import { RepoRevisionContainerRoute } from '../../repo/RepoRevisionContainer'
+import { createRepoRevisionContainerRoutes } from '../../repo/repoRevisionContainerRoutes'
+
+const EnterpriseRepositoryFileTreePage = lazyComponent(
+    () => import('./EnterpriseRepositoryFileTreePage'),
+    'EnterpriseRepositoryFileTreePage'
+)
+
+export const enterpriseRepoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] =
+    createRepoRevisionContainerRoutes(EnterpriseRepositoryFileTreePage)

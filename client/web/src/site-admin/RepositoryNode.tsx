@@ -119,20 +119,26 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
             data-test-repository={node.name}
             data-test-cloned={node.mirrorInfo.cloned}
         >
-            <div className="d-flex align-items-center justify-content-between">
-                <div className="d-flex col-11 pl-0">
+            <div className="d-flex align-items-center justify-content-between overflow-auto">
+                <div className={classNames('d-flex col-11 pl-0', styles.repoDescription)}>
                     <div className="d-flex col-10 pl-0">
-                        <div className={classNames('px-0 my-auto h-100', styles.badgeWrapper)}>
+                        <div className={classNames('col-2 px-0 my-auto h-100', styles.badgeWrapper)}>
                             <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
                             {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
                         </div>
-
                         <div className="d-flex flex-column ml-2">
                             <div>
                                 <ExternalRepositoryIcon externalRepo={node.externalRepository} />
                                 <RepoLink repoName={node.name} to={node.url} />
                             </div>
-                            <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
+
+                            <div className="d-flex flex-column ml-2">
+                                <div>
+                                    <ExternalRepositoryIcon externalRepo={node.externalRepository} />
+                                    <RepoLink repoName={node.name} to={node.url} />
+                                </div>
+                                <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
+                            </div>
                         </div>
                     </div>
                     <div className="d-flex col-2 pr-0 justify-content-end">

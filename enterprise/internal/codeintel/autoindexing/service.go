@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -15,9 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -26,9 +26,10 @@ import (
 
 type Service struct {
 	store           store.Store
+	repoStore       database.RepoStore
 	inferenceSvc    InferenceService
 	repoUpdater     RepoUpdaterClient
-	gitserverClient GitserverClient
+	gitserverClient gitserver.Client
 	symbolsClient   *symbols.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
 	jobSelector     *jobselector.JobSelector
@@ -42,7 +43,7 @@ func newService(
 	inferenceSvc InferenceService,
 	repoUpdater RepoUpdaterClient,
 	repoStore database.RepoStore,
-	gitserver GitserverClient,
+	gitserverClient gitserver.Client,
 	symbolsClient *symbols.Client,
 ) *Service {
 	// NOTE - this should go up a level in init.go.
@@ -54,8 +55,9 @@ func newService(
 
 	jobSelector := jobselector.NewJobSelector(
 		store,
+		repoStore,
 		inferenceSvc,
-		gitserver,
+		gitserverClient,
 		log.Scoped("autoindexing job selector", ""),
 	)
 
@@ -64,15 +66,15 @@ func newService(
 		store,
 		repoUpdater,
 		repoStore,
-		gitserver,
+		gitserverClient,
 		jobSelector,
 	)
 
 	return &Service{
 		store:           store,
+		repoStore:       repoStore,
 		inferenceSvc:    inferenceSvc,
-		repoUpdater:     repoUpdater,
-		gitserverClient: gitserver,
+		gitserverClient: gitserverClient,
 		symbolsClient:   symbolsClient,
 		indexEnqueuer:   indexEnqueuer,
 		jobSelector:     jobSelector,
@@ -131,14 +133,19 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 	})
 	defer endObservation(1, observation.Args{})
 
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
+	if err != nil {
+		return nil, nil, err
+	}
+
 	if commit == "" {
 		var ok bool
-		commit, ok, err = s.gitserverClient.Head(ctx, repositoryID)
+		commit, ok, err = s.gitserverClient.Head(ctx, authz.DefaultSubRepoPermsChecker, repo.Name)
 		if err != nil || !ok {
 			return nil, nil, errors.Wrapf(err, "gitserver.Head: error resolving HEAD for %d", repositoryID)
 		}
 	} else {
-		exists, err := s.gitserverClient.CommitExists(ctx, repositoryID, commit)
+		exists, err := s.gitserverClient.CommitExists(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(commit))
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "gitserver.CommitExists: error checking %s for %d", commit, repositoryID)
 		}
@@ -172,10 +179,6 @@ func (s *Service) UpdateIndexConfigurationByRepositoryID(ctx context.Context, re
 	return s.store.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, data)
 }
 
-func (s *Service) ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
-	return s.gitserverClient.ListFiles(ctx, repositoryID, commit, pattern)
-}
-
 func (s *Service) GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error) {
 	mappings, err := s.symbolsClient.ListLanguageMappings(ctx, repoName)
 	if err != nil {
@@ -199,10 +202,6 @@ func (s *Service) SetRequestLanguageSupport(ctx context.Context, userID int, lan
 
 func (s *Service) GetLanguagesRequestedBy(ctx context.Context, userID int) ([]string, error) {
 	return s.store.GetLanguagesRequestedBy(ctx, userID)
-}
-
-func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error) {
-	return s.gitserverClient.ListTags(ctx, repo, commitObjs...)
 }
 
 func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string) error {

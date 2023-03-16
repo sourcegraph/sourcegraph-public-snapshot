@@ -32,8 +32,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "sourcegraphoperator_test",
+    timeout = "short",
     srcs = [
         "associate_test.go",
         "config_test.go",

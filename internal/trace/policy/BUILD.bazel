@@ -16,8 +16,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "policy_test",
+    timeout = "short",
     srcs = ["grpc_test.go"],
     embed = [":policy"],
     deps = [

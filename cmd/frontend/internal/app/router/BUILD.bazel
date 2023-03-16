@@ -17,8 +17,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "router_test",
+    timeout = "short",
     srcs = ["old_tree_redirects_test.go"],
     embed = [":router"],
 )

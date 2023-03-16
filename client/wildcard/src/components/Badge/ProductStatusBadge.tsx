@@ -19,11 +19,12 @@ const STATUS_VARIANT_MAPPING: Record<ProductStatusType, typeof BADGE_VARIANTS[nu
     wip: 'warning',
     experimental: 'warning',
     beta: 'info',
+    'private-beta': 'info',
     new: 'info',
 }
 
 type Extends<T, U extends T> = U
-export type ProductStatusLinked = Extends<ProductStatusType, 'beta' | 'experimental'>
+export type ProductStatusLinked = Extends<ProductStatusType, 'beta' | 'experimental' | 'private-beta'>
 
 /**
  * Map badge status to a relevant docs page describing that product status
@@ -31,6 +32,7 @@ export type ProductStatusLinked = Extends<ProductStatusType, 'beta' | 'experimen
 const STATUS_LINK_MAPPING: Record<ProductStatusLinked, string> = {
     experimental: 'https://docs.sourcegraph.com/admin/beta_and_experimental_features#experimental-features',
     beta: 'https://docs.sourcegraph.com/admin/beta_and_experimental_features#beta-features',
+    'private-beta': 'https://docs.sourcegraph.com/admin/beta_and_experimental_features#beta-features',
 } as const
 
 /**
@@ -67,7 +69,10 @@ export const ProductStatusBadge = React.forwardRef(function ProductStatusBadge(p
             ? 'This feature is a work in progress'
             : props.status === 'new'
             ? 'This feature is new'
+            : props.status === 'private-beta'
+            ? 'This feature is in private beta'
             : ''
+    const status = props.status === 'private-beta' ? 'private beta' : props.status
 
     if ('linkToDocs' in props) {
         return (
@@ -80,7 +85,7 @@ export const ProductStatusBadge = React.forwardRef(function ProductStatusBadge(p
                     className={className}
                     aria-hidden={true}
                 >
-                    {props.status}
+                    {status}
                 </Badge>
             </>
         )
@@ -90,7 +95,7 @@ export const ProductStatusBadge = React.forwardRef(function ProductStatusBadge(p
         <>
             <VisuallyHidden>{`This feature is currently in ${props.status}`}</VisuallyHidden>
             <Badge ref={reference} {...props} variant={variant} className={className} aria-hidden={true}>
-                {props.status}
+                {status}
             </Badge>
         </>
     )

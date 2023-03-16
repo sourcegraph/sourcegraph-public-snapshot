@@ -12,15 +12,16 @@ import (
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type rootResolver struct {
 	sentinelSvc             SentinelService
-	autoindexSvc            sharedresolvers.AutoIndexingService
 	uploadSvc               sharedresolvers.UploadsService
 	policySvc               sharedresolvers.PolicyService
+	gitserverClient         gitserver.Client
 	siteAdminChecker        sharedresolvers.SiteAdminChecker
 	repoStore               database.RepoStore
 	prefetcherFactory       *sharedresolvers.PrefetcherFactory
@@ -32,9 +33,9 @@ type rootResolver struct {
 func NewRootResolver(
 	observationCtx *observation.Context,
 	sentinelSvc SentinelService,
-	autoindexSvc sharedresolvers.AutoIndexingService,
 	uploadSvc sharedresolvers.UploadsService,
 	policySvc sharedresolvers.PolicyService,
+	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
 	prefetcherFactory *sharedresolvers.PrefetcherFactory,
@@ -42,9 +43,9 @@ func NewRootResolver(
 ) resolverstubs.SentinelServiceResolver {
 	return &rootResolver{
 		sentinelSvc:             sentinelSvc,
-		autoindexSvc:            autoindexSvc,
 		uploadSvc:               uploadSvc,
 		policySvc:               policySvc,
+		gitserverClient:         gitserverClient,
 		siteAdminChecker:        siteAdminChecker,
 		repoStore:               repoStore,
 		prefetcherFactory:       prefetcherFactory,
@@ -127,8 +128,7 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 
 	return &vulnerabilityMatchConnectionResolver{
 		sentinelSvc:      r.sentinelSvc,
-		autoindexSvc:     r.autoindexSvc,
-		uploadSvc:        r.uploadSvc,
+		uploadsSvc:       r.uploadSvc,
 		policySvc:        r.policySvc,
 		siteAdminChecker: r.siteAdminChecker,
 		prefetcher:       prefetcher,
@@ -173,10 +173,10 @@ func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, gqlID graphql
 	}
 
 	return &vulnerabilityMatchResolver{
+		uploadsSvc:       r.uploadSvc,
 		sentinelSvc:      r.sentinelSvc,
-		autoindexSvc:     r.autoindexSvc,
-		uploadSvc:        r.uploadSvc,
 		policySvc:        r.policySvc,
+		gitserverClient:  r.gitserverClient,
 		siteAdminChecker: r.siteAdminChecker,
 		repoStore:        r.repoStore,
 		prefetcher:       r.prefetcherFactory.Create(),
@@ -295,9 +295,9 @@ func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (shared.V
 
 type vulnerabilityMatchResolver struct {
 	sentinelSvc      SentinelService
-	autoindexSvc     sharedresolvers.AutoIndexingService
-	uploadSvc        sharedresolvers.UploadsService
+	uploadsSvc       sharedresolvers.UploadsService
 	policySvc        sharedresolvers.PolicyService
+	gitserverClient  gitserver.Client
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	repoStore        database.RepoStore
 	prefetcher       *sharedresolvers.Prefetcher
@@ -332,9 +332,9 @@ func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolver
 
 	return sharedresolvers.NewPreciseIndexResolver(
 		ctx,
-		r.autoindexSvc,
-		r.uploadSvc,
+		r.uploadsSvc,
 		r.policySvc,
+		r.gitserverClient,
 		r.prefetcher,
 		r.siteAdminChecker,
 		r.repoStore,
@@ -402,9 +402,9 @@ func (r *vulnerabilityConnectionResolver) PageInfo() resolverstubs.PageInfo {
 
 type vulnerabilityMatchConnectionResolver struct {
 	sentinelSvc      SentinelService
-	autoindexSvc     sharedresolvers.AutoIndexingService
-	uploadSvc        sharedresolvers.UploadsService
+	uploadsSvc       sharedresolvers.UploadsService
 	policySvc        sharedresolvers.PolicyService
+	gitserverClient  gitserver.Client
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	prefetcher       *sharedresolvers.Prefetcher
 	locationResolver *sharedresolvers.CachedLocationResolver
@@ -419,10 +419,10 @@ func (r *vulnerabilityMatchConnectionResolver) Nodes() []resolverstubs.Vulnerabi
 	var resolvers []resolverstubs.VulnerabilityMatchResolver
 	for _, m := range r.matches {
 		resolvers = append(resolvers, &vulnerabilityMatchResolver{
+			uploadsSvc:       r.uploadsSvc,
 			sentinelSvc:      r.sentinelSvc,
-			autoindexSvc:     r.autoindexSvc,
-			uploadSvc:        r.uploadSvc,
 			policySvc:        r.policySvc,
+			gitserverClient:  r.gitserverClient,
 			siteAdminChecker: r.siteAdminChecker,
 			prefetcher:       r.prefetcher,
 			locationResolver: r.locationResolver,

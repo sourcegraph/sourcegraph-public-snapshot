@@ -20,8 +20,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "docker_test",
+    timeout = "short",
     srcs = ["lints_test.go"],
     embed = [":docker"],
     deps = [

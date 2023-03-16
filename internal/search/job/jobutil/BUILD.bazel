@@ -61,8 +61,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "jobutil_test",
+    timeout = "short",
     srcs = [
         "alert_test.go",
         "combinators_test.go",

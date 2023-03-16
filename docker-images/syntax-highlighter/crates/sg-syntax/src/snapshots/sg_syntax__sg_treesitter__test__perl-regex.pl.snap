@@ -1,0 +1,124 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+assertion_line: 497
+expression: "dump_document(&document, &contents)"
+---
+  package URI;
+//^^^^^^^ Keyword 
+//        ^^^ IdentifierType 
+  
+  use strict;
+//^^^ Keyword 
+//    ^^^^^^ IdentifierType 
+  use vars qw($VERSION);
+//^^^ Keyword 
+//    ^^^^ IdentifierType 
+//         ^^^^^^^^^^^^ StringLiteral 
+  
+  sub new
+//^^^ Keyword 
+//    ^^^ IdentifierFunction 
+  {
+      my($class, $uri, $scheme) = @_;
+//    ^^ Keyword 
+//       ^^^^^^ Identifier  local 1
+//               ^^^^ Identifier  local 2
+//                     ^^^^^^^ Identifier  local 3
+//                              ^ IdentifierOperator 
+//                                ^^ Identifier 
+  
+      $uri = defined ($uri) ? "$uri" : "";
+//    ^^^^ Identifier  local 2
+//         ^ IdentifierOperator 
+//           ^^^^^^^ IdentifierBuiltin 
+//                    ^^^^ Identifier  local 2
+//                            ^ StringLiteral 
+//                             ^^^^ Identifier  local 2
+//                                 ^ StringLiteral 
+//                                     ^^ StringLiteral 
+      $uri =~ s/^<(?:URL:)?(.*)>$/$1/;  #
+//    ^^^^ Identifier  local 2
+//         ^^ IdentifierOperator 
+//            ^ Keyword 
+//             ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//                                      ^ Comment 
+      $uri =~ s/^"(.*)"$/$1/;
+//    ^^^^ Identifier  local 2
+//         ^^ IdentifierOperator 
+//            ^ Keyword 
+//             ^^^^^^^^^^^^^ StringLiteral 
+      $uri =~ s/^\s+//;
+//    ^^^^ Identifier  local 2
+//         ^^ IdentifierOperator 
+//            ^ Keyword 
+//             ^^^^^^^ StringLiteral 
+      $uri =~ s/\s+$//;
+//    ^^^^ Identifier  local 2
+//         ^^ IdentifierOperator 
+//            ^ Keyword 
+//             ^^^^^^^ StringLiteral 
+  
+      my $impclass;
+//    ^^ Keyword 
+//       ^^^^^^^^^ Identifier  local 4
+      if ($uri =~ m/^($scheme_re):/so) {
+//    ^^ Keyword 
+//        ^^^^ Identifier  local 2
+//             ^^ IdentifierOperator 
+//                ^ Keyword 
+//                                 ^^ Keyword 
+          $scheme = $1;
+//        ^^^^^^^ Identifier  local 3
+//                ^ IdentifierOperator 
+//                  ^^ Identifier 
+      }
+      else {
+//    ^^^^ Keyword 
+          if (($impclass = ref($scheme))) {
+//        ^^ Keyword 
+//             ^^^^^^^^^ Identifier  local 4
+//                       ^ IdentifierOperator 
+//                         ^^^ IdentifierBuiltin 
+//                             ^^^^^^^ Identifier  local 3
+              $scheme = $scheme->scheme;
+//            ^^^^^^^ Identifier  local 3
+//                    ^ IdentifierOperator 
+//                      ^^^^^^^ Identifier  local 3
+//                               ^^^^^^ IdentifierFunction 
+          }
+          elsif ($scheme && $scheme =~ m/^($scheme_re)(?::|$)/o) {
+//        ^^^^^ Keyword 
+//               ^^^^^^^ Identifier  local 3
+//                          ^^^^^^^ Identifier  local 3
+//                                  ^^ IdentifierOperator 
+//                                     ^ Keyword 
+//                                                            ^ Keyword 
+              $scheme = $1;
+//            ^^^^^^^ Identifier  local 3
+//                    ^ IdentifierOperator 
+//                      ^^ Identifier 
+          }
+      }
+      $impclass ||= implementor($scheme) ||
+//    ^^^^^^^^^ Identifier  local 4
+//                  ^^^^^^^^^^^ IdentifierFunction 
+//                              ^^^^^^^ Identifier  local 3
+      do {
+//    ^^ Keyword 
+          require URI::_foreign;
+//        ^^^^^^^ Keyword 
+//                ^^^^^^^^^^^^^ IdentifierType 
+          $impclass = 'URI::_foreign';
+//        ^^^^^^^^^ Identifier  local 4
+//                  ^ IdentifierOperator 
+//                    ^^^^^^^^^^^^^^^ StringLiteral 
+      };
+  
+      return $impclass->_init($uri, $scheme);
+//    ^^^^^^ Keyword 
+//           ^^^^^^^^^ Identifier  local 4
+//                      ^^^^^ IdentifierFunction 
+//                            ^^^^ Identifier  local 2
+//                                  ^^^^^^^ Identifier  local 3
+  }
+

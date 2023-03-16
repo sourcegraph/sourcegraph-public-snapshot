@@ -140,7 +140,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                 className="my-3 pt-3"
             />
             <Container className="mb-3">
-                <div className="d-flex">
+                <div className="d-flex mb-3">
                     <Input
                         type="search"
                         placeholder="Search repositories..."

@@ -5,6 +5,7 @@ import (
 	codenavstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -13,7 +14,7 @@ func NewService(
 	db database.DB,
 	codeIntelDB codeintelshared.CodeIntelDB,
 	uploadSvc UploadService,
-	gitserver GitserverClient,
+	gitserver gitserver.Client,
 ) *Service {
 	store := codenavstore.New(scopedContext("store", observationCtx), db)
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
@@ -21,6 +22,7 @@ func NewService(
 	return newService(
 		observationCtx,
 		store,
+		db.Repos(),
 		lsifStore,
 		uploadSvc,
 		gitserver,

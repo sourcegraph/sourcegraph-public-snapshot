@@ -152,7 +152,7 @@ func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ resolverst
 	return r.uploadsRootResolver.CommitGraph(ctx, id)
 }
 
-func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.LSIFIndexResolver, err error) {
+func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.PreciseIndexResolver, err error) {
 	return r.autoIndexingRootResolver.QueueAutoIndexJobsForRepo(ctx, args)
 }
 

@@ -24,8 +24,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "symbol_test",
+    timeout = "short",
     srcs = [
         "mocks_test.go",
         "symbol_test.go",

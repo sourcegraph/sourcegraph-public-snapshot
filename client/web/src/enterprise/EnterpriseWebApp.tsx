@@ -16,7 +16,6 @@ import { AppShellInit } from '../storm/app-shell-init'
 import { routes } from '../storm/routes'
 
 import { BrainDot } from './codeintel/dashboard/components/BrainDot'
-import { useCodeIntel } from './codeintel/useCodeIntel'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
 import { enterpriseOrgSettingsAreaRoutes } from './organizations/settings/routes'
@@ -60,7 +59,6 @@ const injectedValuesConfig = {
     /**
      * Per feature injections
      */
-    useCodeIntel,
     brainDot: BrainDot,
 } satisfies StaticInjectedAppConfig
 

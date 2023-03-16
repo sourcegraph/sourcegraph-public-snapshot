@@ -12,6 +12,7 @@ import (
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -21,12 +22,14 @@ func TestUploadExpirer(t *testing.T) {
 	uploadSvc := setupMockUploadService(now)
 	policySvc := setupMockPolicyService()
 	policyMatcher := testUploadExpirerMockPolicyMatcher()
+	repoStore := defaultMockRepoStore()
 	expirationMetrics := NewExpirationMetrics(&observation.TestContext)
 
 	uploadExpirer := &expirer{
 		store:         uploadSvc,
 		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
+		repoStore:     repoStore,
 	}
 
 	if err := uploadExpirer.HandleExpiredUploadsBatch(context.Background(), expirationMetrics, ExpirerConfig{
@@ -67,7 +70,7 @@ func TestUploadExpirer(t *testing.T) {
 	}
 	for _, call := range calls {
 		var policyIDs []int
-		for _, policy := range call.Arg2 {
+		for _, policy := range call.Arg3 {
 			policyIDs = append(policyIDs, policy.ID)
 		}
 		sort.Ints(policyIDs)
@@ -246,7 +249,7 @@ func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
 		},
 	}
 
-	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []types.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policies.PolicyMatch, error) {
+	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, repoName api.RepoName, policies []types.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policies.PolicyMatch, error) {
 		return policyMatches[repositoryID], nil
 	}
 

@@ -23,8 +23,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "stitch_test",
+    timeout = "short",
     srcs = ["stitch_test.go"],
     embed = [":stitch"],
     deps = [

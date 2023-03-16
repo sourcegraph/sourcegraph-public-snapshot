@@ -18,8 +18,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "reader_test",
+    timeout = "short",
     srcs = [
         "interner_test.go",
         "reader_test.go",

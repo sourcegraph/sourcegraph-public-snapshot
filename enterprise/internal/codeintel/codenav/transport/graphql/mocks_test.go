@@ -11,16 +11,11 @@ import (
 	"sync"
 	"time"
 
-	diff "github.com/sourcegraph/go-diff/diff"
 	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	codenav "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	shared2 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	api "github.com/sourcegraph/sourcegraph/internal/api"
-	authz "github.com/sourcegraph/sourcegraph/internal/authz"
-	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // MockAutoIndexingService is a mock implementation of the
@@ -34,9 +29,6 @@ type MockAutoIndexingService struct {
 	// GetIndexesByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetIndexesByIDs.
 	GetIndexesByIDsFunc *AutoIndexingServiceGetIndexesByIDsFunc
-	// GetListTagsFunc is an instance of a mock function object controlling
-	// the behavior of the method GetListTags.
-	GetListTagsFunc *AutoIndexingServiceGetListTagsFunc
 	// NumRepositoriesWithCodeIntelligenceFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// NumRepositoriesWithCodeIntelligence.
@@ -65,11 +57,6 @@ func NewMockAutoIndexingService() *MockAutoIndexingService {
 		},
 		GetIndexesByIDsFunc: &AutoIndexingServiceGetIndexesByIDsFunc{
 			defaultHook: func(context.Context, ...int) (r0 []types.Index, r1 error) {
-				return
-			},
-		},
-		GetListTagsFunc: &AutoIndexingServiceGetListTagsFunc{
-			defaultHook: func(context.Context, api.RepoName, ...string) (r0 []*gitdomain.Tag, r1 error) {
 				return
 			},
 		},
@@ -111,11 +98,6 @@ func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 				panic("unexpected invocation of MockAutoIndexingService.GetIndexesByIDs")
 			},
 		},
-		GetListTagsFunc: &AutoIndexingServiceGetListTagsFunc{
-			defaultHook: func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-				panic("unexpected invocation of MockAutoIndexingService.GetListTags")
-			},
-		},
 		NumRepositoriesWithCodeIntelligenceFunc: &AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc{
 			defaultHook: func(context.Context) (int, error) {
 				panic("unexpected invocation of MockAutoIndexingService.NumRepositoriesWithCodeIntelligence")
@@ -149,9 +131,6 @@ func NewMockAutoIndexingServiceFrom(i AutoIndexingService) *MockAutoIndexingServ
 		},
 		GetIndexesByIDsFunc: &AutoIndexingServiceGetIndexesByIDsFunc{
 			defaultHook: i.GetIndexesByIDs,
-		},
-		GetListTagsFunc: &AutoIndexingServiceGetListTagsFunc{
-			defaultHook: i.GetListTags,
 		},
 		NumRepositoriesWithCodeIntelligenceFunc: &AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc{
 			defaultHook: i.NumRepositoriesWithCodeIntelligence,
@@ -396,126 +375,6 @@ func (c AutoIndexingServiceGetIndexesByIDsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c AutoIndexingServiceGetIndexesByIDsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// AutoIndexingServiceGetListTagsFunc describes the behavior when the
-// GetListTags method of the parent MockAutoIndexingService instance is
-// invoked.
-type AutoIndexingServiceGetListTagsFunc struct {
-	defaultHook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)
-	hooks       []func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)
-	history     []AutoIndexingServiceGetListTagsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetListTags delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockAutoIndexingService) GetListTags(v0 context.Context, v1 api.RepoName, v2 ...string) ([]*gitdomain.Tag, error) {
-	r0, r1 := m.GetListTagsFunc.nextHook()(v0, v1, v2...)
-	m.GetListTagsFunc.appendCall(AutoIndexingServiceGetListTagsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetListTags method
-// of the parent MockAutoIndexingService instance is invoked and the hook
-// queue is empty.
-func (f *AutoIndexingServiceGetListTagsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetListTags method of the parent MockAutoIndexingService instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *AutoIndexingServiceGetListTagsFunc) PushHook(hook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *AutoIndexingServiceGetListTagsFunc) SetDefaultReturn(r0 []*gitdomain.Tag, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *AutoIndexingServiceGetListTagsFunc) PushReturn(r0 []*gitdomain.Tag, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-		return r0, r1
-	})
-}
-
-func (f *AutoIndexingServiceGetListTagsFunc) nextHook() func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *AutoIndexingServiceGetListTagsFunc) appendCall(r0 AutoIndexingServiceGetListTagsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of AutoIndexingServiceGetListTagsFuncCall
-// objects describing the invocations of this function.
-func (f *AutoIndexingServiceGetListTagsFunc) History() []AutoIndexingServiceGetListTagsFuncCall {
-	f.mutex.Lock()
-	history := make([]AutoIndexingServiceGetListTagsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// AutoIndexingServiceGetListTagsFuncCall is an object that describes an
-// invocation of method GetListTags on an instance of
-// MockAutoIndexingService.
-type AutoIndexingServiceGetListTagsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*gitdomain.Tag
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c AutoIndexingServiceGetListTagsFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c AutoIndexingServiceGetListTagsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -2193,297 +2052,6 @@ func (c CodeNavServiceGetStencilFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// MockGitserverClient is a mock implementation of the GitserverClient
-// interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/transport/graphql)
-// used for unit testing.
-type MockGitserverClient struct {
-	// CommitsExistFunc is an instance of a mock function object controlling
-	// the behavior of the method CommitsExist.
-	CommitsExistFunc *GitserverClientCommitsExistFunc
-	// DiffPathFunc is an instance of a mock function object controlling the
-	// behavior of the method DiffPath.
-	DiffPathFunc *GitserverClientDiffPathFunc
-}
-
-// NewMockGitserverClient creates a new mock of the GitserverClient
-// interface. All methods return zero values for all results, unless
-// overwritten.
-func NewMockGitserverClient() *MockGitserverClient {
-	return &MockGitserverClient{
-		CommitsExistFunc: &GitserverClientCommitsExistFunc{
-			defaultHook: func(context.Context, []gitserver.RepositoryCommit) (r0 []bool, r1 error) {
-				return
-			},
-		},
-		DiffPathFunc: &GitserverClientDiffPathFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, string, string) (r0 []*diff.Hunk, r1 error) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockGitserverClient creates a new mock of the GitserverClient
-// interface. All methods panic on invocation, unless overwritten.
-func NewStrictMockGitserverClient() *MockGitserverClient {
-	return &MockGitserverClient{
-		CommitsExistFunc: &GitserverClientCommitsExistFunc{
-			defaultHook: func(context.Context, []gitserver.RepositoryCommit) ([]bool, error) {
-				panic("unexpected invocation of MockGitserverClient.CommitsExist")
-			},
-		},
-		DiffPathFunc: &GitserverClientDiffPathFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-				panic("unexpected invocation of MockGitserverClient.DiffPath")
-			},
-		},
-	}
-}
-
-// NewMockGitserverClientFrom creates a new mock of the MockGitserverClient
-// interface. All methods delegate to the given implementation, unless
-// overwritten.
-func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
-	return &MockGitserverClient{
-		CommitsExistFunc: &GitserverClientCommitsExistFunc{
-			defaultHook: i.CommitsExist,
-		},
-		DiffPathFunc: &GitserverClientDiffPathFunc{
-			defaultHook: i.DiffPath,
-		},
-	}
-}
-
-// GitserverClientCommitsExistFunc describes the behavior when the
-// CommitsExist method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientCommitsExistFunc struct {
-	defaultHook func(context.Context, []gitserver.RepositoryCommit) ([]bool, error)
-	hooks       []func(context.Context, []gitserver.RepositoryCommit) ([]bool, error)
-	history     []GitserverClientCommitsExistFuncCall
-	mutex       sync.Mutex
-}
-
-// CommitsExist delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitsExist(v0 context.Context, v1 []gitserver.RepositoryCommit) ([]bool, error) {
-	r0, r1 := m.CommitsExistFunc.nextHook()(v0, v1)
-	m.CommitsExistFunc.appendCall(GitserverClientCommitsExistFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the CommitsExist method
-// of the parent MockGitserverClient instance is invoked and the hook queue
-// is empty.
-func (f *GitserverClientCommitsExistFunc) SetDefaultHook(hook func(context.Context, []gitserver.RepositoryCommit) ([]bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitsExist method of the parent MockGitserverClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *GitserverClientCommitsExistFunc) PushHook(hook func(context.Context, []gitserver.RepositoryCommit) ([]bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientCommitsExistFunc) SetDefaultReturn(r0 []bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, []gitserver.RepositoryCommit) ([]bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientCommitsExistFunc) PushReturn(r0 []bool, r1 error) {
-	f.PushHook(func(context.Context, []gitserver.RepositoryCommit) ([]bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientCommitsExistFunc) nextHook() func(context.Context, []gitserver.RepositoryCommit) ([]bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientCommitsExistFunc) appendCall(r0 GitserverClientCommitsExistFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientCommitsExistFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientCommitsExistFunc) History() []GitserverClientCommitsExistFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientCommitsExistFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientCommitsExistFuncCall is an object that describes an
-// invocation of method CommitsExist on an instance of MockGitserverClient.
-type GitserverClientCommitsExistFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []gitserver.RepositoryCommit
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientCommitsExistFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientCommitsExistFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientDiffPathFunc describes the behavior when the DiffPath
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientDiffPathFunc struct {
-	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, string, string) ([]*diff.Hunk, error)
-	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, string, string) ([]*diff.Hunk, error)
-	history     []GitserverClientDiffPathFuncCall
-	mutex       sync.Mutex
-}
-
-// DiffPath delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) DiffPath(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 string, v4 string, v5 string) ([]*diff.Hunk, error) {
-	r0, r1 := m.DiffPathFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.DiffPathFunc.appendCall(GitserverClientDiffPathFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the DiffPath method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientDiffPathFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, string, string) ([]*diff.Hunk, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DiffPath method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientDiffPathFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, string, string) ([]*diff.Hunk, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientDiffPathFunc) SetDefaultReturn(r0 []*diff.Hunk, r1 error) {
-	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientDiffPathFunc) PushReturn(r0 []*diff.Hunk, r1 error) {
-	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientDiffPathFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientDiffPathFunc) appendCall(r0 GitserverClientDiffPathFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientDiffPathFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientDiffPathFunc) History() []GitserverClientDiffPathFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientDiffPathFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientDiffPathFuncCall is an object that describes an invocation
-// of method DiffPath on an instance of MockGitserverClient.
-type GitserverClientDiffPathFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 authz.SubRepoPermissionChecker
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.RepoName
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*diff.Hunk
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientDiffPathFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientDiffPathFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // MockPolicyService is a mock implementation of the PolicyService interface
 // (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/transport/graphql)
@@ -2668,9 +2236,6 @@ type MockUploadsService struct {
 	// GetAuditLogsForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method GetAuditLogsForUpload.
 	GetAuditLogsForUploadFunc *UploadsServiceGetAuditLogsForUploadFunc
-	// GetListTagsFunc is an instance of a mock function object controlling
-	// the behavior of the method GetListTags.
-	GetListTagsFunc *UploadsServiceGetListTagsFunc
 	// GetUploadDocumentsForPathFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetUploadDocumentsForPath.
@@ -2689,11 +2254,6 @@ func NewMockUploadsService() *MockUploadsService {
 	return &MockUploadsService{
 		GetAuditLogsForUploadFunc: &UploadsServiceGetAuditLogsForUploadFunc{
 			defaultHook: func(context.Context, int) (r0 []types.UploadLog, r1 error) {
-				return
-			},
-		},
-		GetListTagsFunc: &UploadsServiceGetListTagsFunc{
-			defaultHook: func(context.Context, api.RepoName, ...string) (r0 []*gitdomain.Tag, r1 error) {
 				return
 			},
 		},
@@ -2724,11 +2284,6 @@ func NewStrictMockUploadsService() *MockUploadsService {
 				panic("unexpected invocation of MockUploadsService.GetAuditLogsForUpload")
 			},
 		},
-		GetListTagsFunc: &UploadsServiceGetListTagsFunc{
-			defaultHook: func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-				panic("unexpected invocation of MockUploadsService.GetListTags")
-			},
-		},
 		GetUploadDocumentsForPathFunc: &UploadsServiceGetUploadDocumentsForPathFunc{
 			defaultHook: func(context.Context, int, string) ([]string, int, error) {
 				panic("unexpected invocation of MockUploadsService.GetUploadDocumentsForPath")
@@ -2754,9 +2309,6 @@ func NewMockUploadsServiceFrom(i UploadsService) *MockUploadsService {
 	return &MockUploadsService{
 		GetAuditLogsForUploadFunc: &UploadsServiceGetAuditLogsForUploadFunc{
 			defaultHook: i.GetAuditLogsForUpload,
-		},
-		GetListTagsFunc: &UploadsServiceGetListTagsFunc{
-			defaultHook: i.GetListTags,
 		},
 		GetUploadDocumentsForPathFunc: &UploadsServiceGetUploadDocumentsForPathFunc{
 			defaultHook: i.GetUploadDocumentsForPath,
@@ -2878,124 +2430,6 @@ func (c UploadsServiceGetAuditLogsForUploadFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UploadsServiceGetAuditLogsForUploadFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// UploadsServiceGetListTagsFunc describes the behavior when the GetListTags
-// method of the parent MockUploadsService instance is invoked.
-type UploadsServiceGetListTagsFunc struct {
-	defaultHook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)
-	hooks       []func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)
-	history     []UploadsServiceGetListTagsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetListTags delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockUploadsService) GetListTags(v0 context.Context, v1 api.RepoName, v2 ...string) ([]*gitdomain.Tag, error) {
-	r0, r1 := m.GetListTagsFunc.nextHook()(v0, v1, v2...)
-	m.GetListTagsFunc.appendCall(UploadsServiceGetListTagsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetListTags method
-// of the parent MockUploadsService instance is invoked and the hook queue
-// is empty.
-func (f *UploadsServiceGetListTagsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetListTags method of the parent MockUploadsService instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *UploadsServiceGetListTagsFunc) PushHook(hook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UploadsServiceGetListTagsFunc) SetDefaultReturn(r0 []*gitdomain.Tag, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadsServiceGetListTagsFunc) PushReturn(r0 []*gitdomain.Tag, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-		return r0, r1
-	})
-}
-
-func (f *UploadsServiceGetListTagsFunc) nextHook() func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UploadsServiceGetListTagsFunc) appendCall(r0 UploadsServiceGetListTagsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UploadsServiceGetListTagsFuncCall objects
-// describing the invocations of this function.
-func (f *UploadsServiceGetListTagsFunc) History() []UploadsServiceGetListTagsFuncCall {
-	f.mutex.Lock()
-	history := make([]UploadsServiceGetListTagsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UploadsServiceGetListTagsFuncCall is an object that describes an
-// invocation of method GetListTags on an instance of MockUploadsService.
-type UploadsServiceGetListTagsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*gitdomain.Tag
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c UploadsServiceGetListTagsFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UploadsServiceGetListTagsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

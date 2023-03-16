@@ -27,8 +27,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "search_test",
+    timeout = "short",
     srcs = [
         "filter_job_test.go",
         "select_job_test.go",
