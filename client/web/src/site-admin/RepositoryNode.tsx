@@ -120,102 +120,105 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
             data-test-cloned={node.mirrorInfo.cloned}
         >
             <div className="d-flex align-items-center justify-content-between">
-                <div className="d-flex col-10 pl-0">
+                <div className="d-flex col-11 pl-0">
                     <div className={classNames('col-1 px-0 my-auto h-100', styles.badgeWrapper)}>
                         <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
                         {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
                     </div>
 
-                    <div className="d-flex flex-column ml-2">
+                    <div className="col-9 d-flex flex-column ml-2">
                         <div>
                             <ExternalRepositoryIcon externalRepo={node.externalRepository} />
                             <RepoLink repoName={node.name} to={node.url} />
                         </div>
                         <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
                     </div>
+                    <div className="col-2 d-flex align-items-center">
+                        {node.name === 'dev.azure.com/sgtestazure/sgtestazure/mytest' && (
+                            <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
+                                <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
+                                    <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See errors
+                                </PopoverTrigger>
+
+                                <PopoverContent position={Position.left} className={styles.errorContent}>
+                                    <div className="d-flex">
+                                        <H4 className="m-2">
+                                            <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
+                                            <ExternalRepositoryIcon
+                                                externalRepo={node.externalRepository}
+                                                className="mx-2"
+                                            />
+                                            <RepoLink repoName={node.name} to={null} />
+                                        </H4>
+
+                                        <Button
+                                            aria-label="Dismiss error"
+                                            variant="icon"
+                                            className="ml-auto mr-2"
+                                            onClick={() => setIsPopoverOpen(false)}
+                                        >
+                                            <Icon aria-hidden={true} svgPath={mdiClose} />
+                                        </Button>
+                                    </div>
+
+                                    <MenuDivider />
+
+                                    <Alert variant="warning" className={classNames('m-2', styles.alertOverflow)}>
+                                        <H4>Error syncing repository:</H4>
+                                        {node.mirrorInfo.lastError}
+                                    </Alert>
+                                </PopoverContent>
+                                <PopoverTail size="sm" />
+                            </Popover>
+                        )}
+                    </div>
                 </div>
-
-                <div className="col-auto pr-0">
-                    {node.mirrorInfo.lastError && (
-                        <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
-                            <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
-                                <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See errors
-                            </PopoverTrigger>
-
-                            <PopoverContent position={Position.left} className={styles.errorContent}>
-                                <div className="d-flex">
-                                    <H4 className="m-2">
-                                        <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
-                                        <ExternalRepositoryIcon
-                                            externalRepo={node.externalRepository}
-                                            className="mx-2"
-                                        />
-                                        <RepoLink repoName={node.name} to={null} />
-                                    </H4>
-
-                                    <Button
-                                        aria-label="Dismiss error"
-                                        variant="icon"
-                                        className="ml-auto mr-2"
-                                        onClick={() => setIsPopoverOpen(false)}
-                                    >
-                                        <Icon aria-hidden={true} svgPath={mdiClose} />
-                                    </Button>
-                                </div>
-
-                                <MenuDivider />
-
-                                <Alert variant="warning" className={classNames('m-2', styles.alertOverflow)}>
-                                    <H4>Error syncing repository:</H4>
-                                    {node.mirrorInfo.lastError}
-                                </Alert>
-                            </PopoverContent>
-                            <PopoverTail size="sm" />
-                        </Popover>
+                <div className="col-auto">
+                    {!window.location.pathname.includes('/setup') && (
+                        <Menu>
+                            <MenuButton outline={true} aria-label="Repository action">
+                                <Icon svgPath={mdiDotsVertical} inline={false} aria-hidden={true} />
+                            </MenuButton>
+                            <MenuList position={Position.bottomEnd}>
+                                <MenuItem
+                                    as={Button}
+                                    disabled={!repoClonedAndHealthy(node)}
+                                    onSelect={() => navigate(`/${node.name}/-/code-graph`)}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiBrain} className="mr-1" />
+                                    Code graph data
+                                </MenuItem>
+                                <MenuItem
+                                    as={Button}
+                                    disabled={!repoClonedAndHealthy(node)}
+                                    onSelect={() => updateRepo()}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiRefresh} className="mr-1" />
+                                    Refetch
+                                </MenuItem>
+                                <MenuItem
+                                    as={Button}
+                                    disabled={!repoClonedAndHealthy(node)}
+                                    onSelect={() => recloneAndFetch()}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiDatabaseRefresh} className="mr-1" />
+                                    Reclone
+                                </MenuItem>
+                                <MenuItem
+                                    as={Button}
+                                    disabled={!repoClonedAndHealthy(node)}
+                                    onSelect={() => navigate(`/${node.name}/-/settings`)}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiCog} className="mr-1" />
+                                    Settings
+                                </MenuItem>
+                            </MenuList>
+                        </Menu>
                     )}
-                    <Menu>
-                        <MenuButton outline={true} aria-label="Repository action">
-                            <Icon svgPath={mdiDotsVertical} inline={false} aria-hidden={true} />
-                        </MenuButton>
-                        <MenuList position={Position.bottomEnd}>
-                            <MenuItem
-                                as={Button}
-                                disabled={window.location.pathname.includes('/setup') || !repoClonedAndHealthy(node)}
-                                onSelect={() => navigate(`/${node.name}/-/code-graph`)}
-                                className="p-2"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiBrain} className="mr-1" />
-                                Code graph data
-                            </MenuItem>
-                            <MenuItem
-                                as={Button}
-                                disabled={window.location.pathname.includes('/setup') || !repoClonedAndHealthy(node)}
-                                onSelect={() => updateRepo()}
-                                className="p-2"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiRefresh} className="mr-1" />
-                                Refetch
-                            </MenuItem>
-                            <MenuItem
-                                as={Button}
-                                disabled={window.location.pathname.includes('/setup') || !repoClonedAndHealthy(node)}
-                                onSelect={() => recloneAndFetch()}
-                                className="p-2"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiDatabaseRefresh} className="mr-1" />
-                                Reclone
-                            </MenuItem>
-                            <MenuItem
-                                as={Button}
-                                disabled={!repoClonedAndHealthy(node)}
-                                onSelect={() => navigate(`/${node.name}/-/settings`)}
-                                className="p-2"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiCog} className="mr-1" />
-                                Settings
-                            </MenuItem>
-                        </MenuList>
-                    </Menu>
                 </div>
             </div>
 
