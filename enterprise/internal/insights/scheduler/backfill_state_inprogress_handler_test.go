@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -342,6 +343,166 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateCompleted {
 		t.Fatal(errors.New("backfill should be state completed"))
+	}
+}
+
+func Test_BackfillWithRepoNotFound(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+	permStore := store.NewInsightPermissionStore(database.NewMockDB())
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID) (*itypes.Repo, error) {
+		if ri == 1 {
+			return &itypes.Repo{ID: 1, Name: "repo1"}, nil
+		}
+		return nil, &database.RepoNotFoundErr{ID: ri}
+	})
+	insightsStore := store.NewInsightStore(insightsDB)
+	seriesStore := store.New(insightsDB, permStore)
+
+	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	clock := glock.NewMockClockAt(now)
+	bfs := newBackfillStoreWithClock(insightsDB, clock)
+
+	config := JobMonitorConfig{
+		InsightsDB:     insightsDB,
+		RepoStore:      repos,
+		InsightStore:   seriesStore,
+		ObservationCtx: &observation.TestContext,
+		BackfillRunner: &noopBackfillRunner{},
+		CostAnalyzer:   priority.NewQueryAnalyzer(),
+	}
+	monitor := NewBackgroundJobMonitor(ctx, config)
+
+	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:            "series1",
+		Query:               "asdf",
+		SampleIntervalUnit:  string(types.Month),
+		Repositories:        []string{"repo1", "repo2"},
+		SampleIntervalValue: 1,
+		GenerationMethod:    types.Search,
+	})
+	require.NoError(t, err)
+
+	backfill, err := bfs.NewBackfill(ctx, series)
+	require.NoError(t, err)
+	backfill, err = backfill.SetScope(ctx, bfs, []int32{1, 2}, 0)
+	require.NoError(t, err)
+	err = backfill.setState(ctx, bfs, BackfillStateProcessing)
+	require.NoError(t, err)
+
+	err = enqueueBackfill(ctx, bfs.Handle(), backfill)
+	require.NoError(t, err)
+
+	runner := &delegateBackfillRunner{
+		doSomething: func(ctx context.Context, req pipeline.BackfillRequest) error {
+			return nil
+		},
+	}
+
+	dequeue, _, _ := monitor.inProgressStore.Dequeue(ctx, "test", nil)
+	handler := inProgressHandler{
+		workerStore:        monitor.newBackfillStore,
+		backfillStore:      bfs,
+		seriesReadComplete: insightsStore,
+		repoStore:          repos,
+		insightsStore:      seriesStore,
+		backfillRunner:     runner,
+		config:             newHandlerConfig(),
+		clock:              clock,
+	}
+
+	// we should not get an error because it's a repo not found error
+	err = handler.Handle(ctx, logger, dequeue)
+	require.NoError(t, err)
+
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
+	require.NoError(t, err)
+	if completedBackfill.State != BackfillStateCompleted {
+		t.Fatal(errors.New("backfill should be state completed"))
+	}
+}
+
+func Test_BackfillWithARepoError(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+	permStore := store.NewInsightPermissionStore(database.NewMockDB())
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID) (*itypes.Repo, error) {
+		if ri == 1 {
+			return &itypes.Repo{ID: 1, Name: "repo1"}, nil
+		}
+		return nil, errors.New("some error")
+	})
+	insightsStore := store.NewInsightStore(insightsDB)
+	seriesStore := store.New(insightsDB, permStore)
+
+	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	clock := glock.NewMockClockAt(now)
+	bfs := newBackfillStoreWithClock(insightsDB, clock)
+
+	config := JobMonitorConfig{
+		InsightsDB:     insightsDB,
+		RepoStore:      repos,
+		InsightStore:   seriesStore,
+		ObservationCtx: &observation.TestContext,
+		BackfillRunner: &noopBackfillRunner{},
+		CostAnalyzer:   priority.NewQueryAnalyzer(),
+	}
+	monitor := NewBackgroundJobMonitor(ctx, config)
+
+	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:            "series1",
+		Query:               "asdf",
+		SampleIntervalUnit:  string(types.Month),
+		Repositories:        []string{"repo1", "repo2"},
+		SampleIntervalValue: 1,
+		GenerationMethod:    types.Search,
+	})
+	require.NoError(t, err)
+
+	backfill, err := bfs.NewBackfill(ctx, series)
+	require.NoError(t, err)
+	backfill, err = backfill.SetScope(ctx, bfs, []int32{1, 2}, 0)
+	require.NoError(t, err)
+	err = backfill.setState(ctx, bfs, BackfillStateProcessing)
+	require.NoError(t, err)
+
+	err = enqueueBackfill(ctx, bfs.Handle(), backfill)
+	require.NoError(t, err)
+
+	runner := &delegateBackfillRunner{
+		doSomething: func(ctx context.Context, req pipeline.BackfillRequest) error {
+			return nil
+		},
+	}
+
+	dequeue, _, _ := monitor.inProgressStore.Dequeue(ctx, "test", nil)
+	handler := inProgressHandler{
+		workerStore:        monitor.newBackfillStore,
+		backfillStore:      bfs,
+		seriesReadComplete: insightsStore,
+		repoStore:          repos,
+		insightsStore:      seriesStore,
+		backfillRunner:     runner,
+		config:             newHandlerConfig(),
+		clock:              clock,
+	}
+
+	// The handler should not error
+	err = handler.Handle(ctx, logger, dequeue)
+	require.NoError(t, err)
+
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
+	require.NoError(t, err)
+	it, err := completedBackfill.repoIterator(ctx, bfs)
+	require.NoError(t, err)
+
+	require.Equal(t, 1, it.ErroredRepos())
+	if completedBackfill.State == BackfillStateCompleted {
+		t.Fatal(errors.New("backfill should not be completed"))
 	}
 }
 
