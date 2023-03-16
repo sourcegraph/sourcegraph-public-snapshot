@@ -3,17 +3,14 @@ package graphql
 import (
 	"encoding/base64"
 	"strconv"
-	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
-func unmarshalLSIFUploadGQLID(id graphql.ID) (uploadID int64, err error) {
+func UnmarshalLSIFUploadGQLID(id graphql.ID) (uploadID int64, err error) {
 	// First, try to unmarshal the ID as a string and then convert it to an
 	// integer. This is here to maintain backwards compatibility with the
 	// src-cli lsif upload command, which constructs its own relay identifier
@@ -40,69 +37,6 @@ func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 }
 
 const DefaultUploadPageSize = 50
-
-// makeGetUploadsOptions translates the given GraphQL arguments into options defined by the
-// store.GetUploads operations.
-func makeGetUploadsOptions(args *resolverstubs.LSIFRepositoryUploadsQueryArgs) (shared.GetUploadsOptions, error) {
-	repositoryID, err := resolveRepositoryID(args.RepositoryID)
-	if err != nil {
-		return shared.GetUploadsOptions{}, err
-	}
-
-	var dependencyOf int64
-	if args.DependencyOf != nil {
-		dependencyOf, err = unmarshalLSIFUploadGQLID(*args.DependencyOf)
-		if err != nil {
-			return shared.GetUploadsOptions{}, err
-		}
-	}
-
-	var dependentOf int64
-	if args.DependentOf != nil {
-		dependentOf, err = unmarshalLSIFUploadGQLID(*args.DependentOf)
-		if err != nil {
-			return shared.GetUploadsOptions{}, err
-		}
-	}
-
-	offset, err := decodeIntCursor(args.After)
-	if err != nil {
-		return shared.GetUploadsOptions{}, err
-	}
-
-	return shared.GetUploadsOptions{
-		RepositoryID:       repositoryID,
-		State:              strings.ToLower(derefString(args.State, "")),
-		Term:               derefString(args.Query, ""),
-		VisibleAtTip:       derefBool(args.IsLatestForRepo, false),
-		DependencyOf:       int(dependencyOf),
-		DependentOf:        int(dependentOf),
-		Limit:              derefInt32(args.First, DefaultUploadPageSize),
-		Offset:             offset,
-		AllowExpired:       true,
-		AllowDeletedUpload: derefBool(args.IncludeDeleted, false),
-	}, nil
-}
-
-// makeDeleteUploadsOptions translates the given GraphQL arguments into options defined by the
-// store.DeleteUploads operations.
-func makeDeleteUploadsOptions(args *resolverstubs.DeleteLSIFUploadsArgs) (shared.DeleteUploadsOptions, error) {
-	var repository int
-	if args.Repository != nil {
-		var err error
-		repository, err = resolveRepositoryID(*args.Repository)
-		if err != nil {
-			return shared.DeleteUploadsOptions{}, err
-		}
-	}
-
-	return shared.DeleteUploadsOptions{
-		States:       []string{strings.ToLower(derefString(args.State, ""))},
-		Term:         derefString(args.Query, ""),
-		VisibleAtTip: derefBool(args.IsLatestForRepo, false),
-		RepositoryID: repository,
-	}, nil
-}
 
 // resolveRepositoryByID gets a repository's internal identifier from a GraphQL identifier.
 func resolveRepositoryID(id graphql.ID) (int, error) {

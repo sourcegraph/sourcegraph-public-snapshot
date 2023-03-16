@@ -3,14 +3,11 @@ package graphql
 import (
 	"encoding/base64"
 	"strconv"
-	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
 // strPtr creates a pointer to the given value. If the value is an
@@ -38,28 +35,6 @@ type ConnectionArgs struct {
 }
 
 const DefaultIndexPageSize = 50
-
-// makeGetIndexesOptions translates the given GraphQL arguments into options defined by the
-// store.GetIndexes operations.
-func makeGetIndexesOptions(args *resolverstubs.LSIFRepositoryIndexesQueryArgs) (shared.GetIndexesOptions, error) {
-	repositoryID, err := resolveRepositoryID(args.RepositoryID)
-	if err != nil {
-		return shared.GetIndexesOptions{}, err
-	}
-
-	offset, err := resolverstubs.DecodeIntCursor(args.After)
-	if err != nil {
-		return shared.GetIndexesOptions{}, err
-	}
-
-	return shared.GetIndexesOptions{
-		RepositoryID: repositoryID,
-		State:        strings.ToLower(derefString(args.State, "")),
-		Term:         derefString(args.Query, ""),
-		Limit:        derefInt32(args.First, DefaultIndexPageSize),
-		Offset:       offset,
-	}, nil
-}
 
 // resolveRepositoryByID gets a repository's internal identifier from a GraphQL identifier.
 func resolveRepositoryID(id graphql.ID) (int, error) {
@@ -183,42 +158,4 @@ func EncodeCursor(val *string) *PageInfo {
 	}
 
 	return HasNextPage(false)
-}
-
-// makeDeleteIndexesOptions translates the given GraphQL arguments into options defined by the
-// store.DeleteIndexes operations.
-func makeDeleteIndexesOptions(args *resolverstubs.DeleteLSIFIndexesArgs) (shared.DeleteIndexesOptions, error) {
-	var repository int
-	if args.Repository != nil {
-		var err error
-		repository, err = resolveRepositoryID(*args.Repository)
-		if err != nil {
-			return shared.DeleteIndexesOptions{}, err
-		}
-	}
-
-	return shared.DeleteIndexesOptions{
-		States:       []string{strings.ToLower(derefString(args.State, ""))},
-		Term:         derefString(args.Query, ""),
-		RepositoryID: repository,
-	}, nil
-}
-
-// makeReindexIndexesOptions translates the given GraphQL arguments into options defined by the
-// store.ReindexIndexes operations.
-func makeReindexIndexesOptions(args *resolverstubs.ReindexLSIFIndexesArgs) (shared.ReindexIndexesOptions, error) {
-	var repository int
-	if args.Repository != nil {
-		var err error
-		repository, err = resolveRepositoryID(*args.Repository)
-		if err != nil {
-			return shared.ReindexIndexesOptions{}, err
-		}
-	}
-
-	return shared.ReindexIndexesOptions{
-		States:       []string{strings.ToLower(derefString(args.State, ""))},
-		Term:         derefString(args.Query, ""),
-		RepositoryID: repository,
-	}, nil
 }

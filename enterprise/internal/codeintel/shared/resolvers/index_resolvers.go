@@ -30,7 +30,7 @@ type indexResolver struct {
 	traceErrs        *observation.ErrCollector
 }
 
-func NewIndexResolver(uploadsSvc UploadsService, policySvc PolicyService, gitserverClient gitserver.Client, siteAdminChecker SiteAdminChecker, repoStore database.RepoStore, index types.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) resolverstubs.LSIFIndexResolver {
+func NewIndexResolver(uploadsSvc UploadsService, policySvc PolicyService, gitserverClient gitserver.Client, siteAdminChecker SiteAdminChecker, repoStore database.RepoStore, index types.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) *indexResolver {
 	if index.AssociatedUploadID != nil {
 		// Request the next batch of upload fetches to contain the record's associated
 		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID
@@ -94,7 +94,7 @@ func (r *indexResolver) State() string {
 	return state
 }
 
-func (r *indexResolver) AssociatedUpload(ctx context.Context) (_ resolverstubs.LSIFUploadResolver, err error) {
+func (r *indexResolver) AssociatedUpload(ctx context.Context) (_ *UploadResolver, err error) {
 	if r.index.AssociatedUploadID == nil {
 		return nil, nil
 	}
