@@ -17,7 +17,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 # gazelle:js_npm_package_target_name {dirname}_pkg
 
 # Enable: Aspect javascript, standard go
-# gazelle:lang js,go,protobuf
+# gazelle:lang js,go,proto
 
 package(default_visibility = ["//visibility:public"])
 
