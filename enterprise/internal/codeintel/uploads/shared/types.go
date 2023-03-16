@@ -227,6 +227,7 @@ type RankingReferences struct {
 type ExportedUpload struct {
 	ID           int
 	Repo         string
+	RepoID       int
 	Root         string
 	ObjectPrefix string
 }
