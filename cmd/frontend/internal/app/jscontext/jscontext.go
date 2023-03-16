@@ -14,6 +14,7 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -204,6 +205,10 @@ type JSContext struct {
 	LocalFilePickerAvailable bool `json:"localFilePickerAvailable"`
 
 	SrcServeGitUrl string `json:"srcServeGitUrl"`
+
+	TotalLocalRepositories int `json:"totalLocalRepositories"`
+
+	TotalRemoteRepositories int `json:"totalRemoteRepositories"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -293,6 +298,17 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	runningOnMacOS := runtime.GOOS == "darwin"
 	srcServeGitUrl := envvar.SrcServeGitUrl()
 
+	remoteCount, localCount, err := backend.NewAppExternalServices(db).RepositoriesCounts(ctx)
+	if err != nil {
+		// assume no repositories (remote or local) on ExternalServices read error
+		remoteCount = 0
+		localCount = 0
+	} else if !deploy.IsApp() {
+		// if this is not a sourcegraph app deploy then the local repos count should be zero because
+		// the serve-git service only runs in sourcegraph app
+		localCount = 0
+	}
+
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -378,6 +394,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		LocalFilePickerAvailable: deploy.IsApp() && filepicker.Available(),
 
 		SrcServeGitUrl: srcServeGitUrl,
+
+		TotalLocalRepositories: int(localCount),
+
+		TotalRemoteRepositories: int(remoteCount),
 	}
 }
 
