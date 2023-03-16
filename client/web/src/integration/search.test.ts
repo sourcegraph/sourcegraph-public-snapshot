@@ -279,9 +279,7 @@ describe('Search', () => {
                     await driver.page.goBack()
                     await editor.waitForIt()
                     await driver.page.waitForSelector('[data-testid="results-info-bar"]')
-                    expect(await editor.getValue()).toStrictEqual(
-                        name === 'experimental-search-input' ? 'context:global foo' : 'foo'
-                    )
+                    expect(await editor.getValue()).toStrictEqual('foo')
                 })
 
                 test('Normalizes input with line breaks', async () => {

@@ -19,7 +19,7 @@ import {
     createFileNamesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { createEditorAPI } from './utils'
+import { createEditorAPI, removeContextFromQuery } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -103,7 +103,7 @@ describe('GlobalNavbar', () => {
             await (await driver.page.waitForSelector('.test-breadcrumb-part-last'))?.click()
 
             const input = await createEditorAPI(driver, '.test-query-input')
-            expect(await input.getValue()).toContain('repo:^github\\.com/sourcegraph/sourcegraph$ file:^README\\.md')
+            expect(removeContextFromQuery(await input.getValue() ?? '')).toStrictEqual('repo:^github\\.com/sourcegraph/sourcegraph$ file:^README\\.md')
         })
     })
 

@@ -578,7 +578,7 @@ describe('Repository', () => {
             await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
 
             {
-                const queryInput = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
+                const queryInput = await createEditorAPI(driver, '.test-query-input')
                 assert.strictEqual(
                     removeContextFromQuery((await queryInput.getValue()) ?? ''),
                     'repo:^ubuntu/\\+source/quemu$ '
