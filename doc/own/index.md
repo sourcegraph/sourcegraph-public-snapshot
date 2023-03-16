@@ -85,7 +85,7 @@ The ownership information is available for browsing once ownership data is avail
 When displaying a source file, there is a bar above the file contents.
 
 *   On the left hand side, it displays the most recent change to the file.
-*   On the right hand side it displays the Own bar with at most 2 file owners.
+*   On the right hand side it displays the Own bar with at most 2 file owners. Any additional number of owners is also displayed.
 
 ![File view showing own bar on the right hand side above the file contents](https://storage.googleapis.com/sourcegraph-assets/docs/own/blob-view.png)
 
@@ -93,7 +93,9 @@ After clicking on the Own bar, a bottom panel appears listing all the owners.
 
 ![File view with the ownership tab selected in the bottom panel](https://storage.googleapis.com/sourcegraph-assets/docs/own/blob-view-panel.png)
 
-There is always a single rule in a CODEOWNERS file that determines ownership (if any). Next to each of the owners listed in the bottom panel, there is a description: _Owner is associated with a rule in a CODEOWNERS file_. This description links to the line containing the responsible rule in the CODEOWNERS file.
+There is always a single rule in a CODEOWNERS file that determines ownership (if any). Each owner listed in the bottom panel has a description found by clicking the collapsible arrow: _Owner is associated with a rule in a CODEOWNERS file_. Clicking this description links to the line containing the responsible rule in the CODEOWNERS file.
+
+If any email information has been found for the owner, clicking the mail icon will  start an email to them. 
 
 ## Ownership search
 
@@ -107,6 +109,6 @@ Ownership predicate can also be used without parameters:
 *   `file:has.owner()` will only include files with an owner assigned to them.
 *   `-file:has.owner()` will only include files without an owner.
 
-When performing a search a `select:file.owners` makes the query return owners.
+When performing a search the `select:file.owners` predicate will return the owners for the result of that search.
 
 For instance one can find all the owners of TypeScript files in a given repository by using `repo:^github\.com/sourcegraph/sourcegraph$ lang:TypeScript select:file.owners`.

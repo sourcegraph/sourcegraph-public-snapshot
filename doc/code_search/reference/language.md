@@ -722,7 +722,7 @@ ComplexDiagram(
 Search only inside files that have an owner associated matching given string.
 
 _Note:_ When no parameter is supplied, the predicate only includes files with _any_ owner assigned to them:
-*   `file:has.owner()` will inlcude files with any owner assigned.  
+*   `file:has.owner()` will include files with any owner assigned.  
 *   `-file:has.owner()` will only include files without an owner.  
 
 ## Regular expression
