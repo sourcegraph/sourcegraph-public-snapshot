@@ -29,7 +29,7 @@ type UploadResolver struct {
 	traceErrs        *observation.ErrCollector
 }
 
-func NewUploadResolver(uploadsSvc UploadsService, policySvc PolicyService, gitserverClient gitserver.Client, siteAdminChecker SiteAdminChecker, repoStore database.RepoStore, upload types.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, traceErrs *observation.ErrCollector) resolverstubs.LSIFUploadResolver {
+func NewUploadResolver(uploadsSvc UploadsService, policySvc PolicyService, gitserverClient gitserver.Client, siteAdminChecker SiteAdminChecker, repoStore database.RepoStore, upload types.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, traceErrs *observation.ErrCollector) *UploadResolver {
 	if upload.AssociatedIndexID != nil {
 		// Request the next batch of index fetches to contain the record's associated
 		// index id, if one exists it exists. This allows the prefetcher.GetIndexByID
@@ -88,7 +88,7 @@ func (r *UploadResolver) State() string {
 	return state
 }
 
-func (r *UploadResolver) AssociatedIndex(ctx context.Context) (_ resolverstubs.LSIFIndexResolver, err error) {
+func (r *UploadResolver) AssociatedIndex(ctx context.Context) (_ *indexResolver, err error) {
 	// TODO - why are a bunch of them zero?
 	if r.upload.AssociatedIndexID == nil || *r.upload.AssociatedIndexID == 0 {
 		return nil, nil
@@ -150,20 +150,6 @@ func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *reso
 
 func (r *UploadResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
 	return types.NewCodeIntelIndexerResolver(r.upload.Indexer, "")
-}
-
-func (r *UploadResolver) DocumentPaths(ctx context.Context, args *resolverstubs.LSIFUploadDocumentPathsQueryArgs) (resolverstubs.LSIFUploadDocumentPathsConnectionResolver, error) {
-	pattern := "%%"
-	if args.Pattern != "" {
-		pattern = args.Pattern
-	}
-
-	documents, totalCount, err := r.uploadsSvc.GetUploadDocumentsForPath(ctx, r.upload.ID, pattern)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewUploadDocumentPathsConnectionResolver(totalCount, documents), nil
 }
 
 func (r *UploadResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.LSIFUploadsAuditLogsResolver, error) {

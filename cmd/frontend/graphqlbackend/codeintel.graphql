@@ -67,89 +67,6 @@ extend type Mutation {
     queueAutoIndexJobsForRepo(repository: ID!, rev: String, configuration: String): [PreciseIndex!]!
 
     """
-    Deletes an LSIF upload.
-    """
-    deleteLSIFUpload(id: ID!): EmptyResponse
-
-    """
-    Deletes LSIF uploads by filter criteria.
-    """
-    deleteLSIFUploads(
-        """
-        An (optional) search query that filters the state, repository name,
-        commit, root, and indexer properties.
-        """
-        query: String
-
-        """
-        The upload state.
-        """
-        state: LSIFUploadState
-
-        """
-        When specified, only deletes uploads that are latest for the given repository.
-        """
-        isLatestForRepo: Boolean
-
-        """
-        The repository.
-        """
-        repository: ID
-    ): EmptyResponse
-
-    """
-    Deletes an LSIF index.
-    """
-    deleteLSIFIndex(id: ID!): EmptyResponse
-
-    """
-    Deletes LSIF indexes by filter criteria.
-    """
-    deleteLSIFIndexes(
-        """
-        An (optional) search query that filters the state, repository name,
-        commit, root, and indexer properties.
-        """
-        query: String
-
-        """
-        The upload state.
-        """
-        state: LSIFIndexState
-
-        """
-        The repository.
-        """
-        repository: ID
-    ): EmptyResponse
-
-    """
-    Reindexes an LSIF index.
-    """
-    reindexLSIFIndex(id: ID!): EmptyResponse
-
-    """
-    Reindexes LSIF indexes by filter criteria.
-    """
-    reindexLSIFIndexes(
-        """
-        An (optional) search query that filters the state, repository name,
-        commit, root, and indexer properties.
-        """
-        query: String
-
-        """
-        The upload state.
-        """
-        state: LSIFIndexState
-
-        """
-        The repository.
-        """
-        repository: ID
-    ): EmptyResponse
-
-    """
     Deletes a precise index.
     """
     deletePreciseIndex(id: ID!): EmptyResponse
@@ -218,11 +135,6 @@ extend type Mutation {
         """
         repository: ID
     ): EmptyResponse
-
-    """
-    Request support for a particular language.
-    """
-    requestLanguageSupport(language: String!): EmptyResponse
 
     """
     Updates the previously set/overrides the default global auto-indexing job inference Lua script
@@ -350,91 +262,6 @@ extend type Query {
     codeIntelSummary: CodeIntelSummary!
 
     """
-    The repository's LSIF uploads.
-    """
-    lsifUploads(
-        """
-        An (optional) search query that searches over the state, repository name,
-        commit, root, and indexer properties.
-        """
-        query: String
-
-        """
-        The state of returned uploads.
-        """
-        state: LSIFUploadState
-
-        """
-        When specified, shows only uploads that are a dependency of the specified upload.
-        """
-        dependencyOf: ID
-
-        """
-        When specified, shows only uploads that are a dependent of the specified upload.
-        """
-        dependentOf: ID
-
-        """
-        When specified, shows only uploads that are latest for the given repository.
-        """
-        isLatestForRepo: Boolean
-
-        """
-        When specified, indicates that this request should be paginated and
-        the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page.
-        """
-        first: Int
-
-        """
-        When specified, indicates that this request should be paginated and
-        to fetch results starting at this cursor.
-
-        A future request can be made for more results by passing in the
-        'LSIFUploadConnection.pageInfo.endCursor' that is returned.
-        """
-        after: String
-
-        """
-        When specified, merges the list of existing uploads with data from
-        uploads that have been deleted but for which audit logs still exist.
-        Only makes sense when state filter is unset or equal to 'DELETED'.
-        """
-        includeDeleted: Boolean
-    ): LSIFUploadConnection!
-
-    """
-    The repository's LSIF uploads.
-    """
-    lsifIndexes(
-        """
-        An (optional) search query that searches over the state, repository name,
-        and commit properties.
-        """
-        query: String
-
-        """
-        The state of returned uploads.
-        """
-        state: LSIFIndexState
-
-        """
-        When specified, indicates that this request should be paginated and
-        the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page.
-        """
-        first: Int
-
-        """
-        When specified, indicates that this request should be paginated and
-        to fetch results starting at this cursor.
-        A future request can be made for more results by passing in the
-        'LSIFIndexConnection.pageInfo.endCursor' that is returned.
-        """
-        after: String
-    ): LSIFIndexConnection!
-
-    """
     The set of repositories that match the given glob pattern. This resolver is used by the UI to
     preview what repositories match a code intelligence policy in a given repository.
     """
@@ -449,11 +276,6 @@ extend type Query {
         """
         first: Int
     ): RepositoryFilterPreview!
-
-    """
-    Return the languages that this user has requested support for.
-    """
-    requestedLanguageSupport: [String!]!
 
     """
     Return the currently set auto-indexing job inference script. Does not return
@@ -672,90 +494,6 @@ extend type Repository {
     Gets the indexing configuration associated with the repository.
     """
     indexConfiguration: IndexConfiguration
-
-    """
-    The repository's LSIF uploads.
-    """
-    lsifUploads(
-        """
-        An (optional) search query that searches over the state, repository name,
-        commit, root, and indexer properties.
-        """
-        query: String
-
-        """
-        The state of returned uploads.
-        """
-        state: LSIFUploadState
-
-        """
-        When specified, shows only uploads that are latest for the given repository.
-        """
-        isLatestForRepo: Boolean
-
-        """
-        When specified, shows only uploads that are a dependency of the specified upload.
-        """
-        dependencyOf: ID
-
-        """
-        When specified, shows only uploads that are a dependent of the specified upload.
-        """
-        dependentOf: ID
-
-        """
-        When specified, indicates that this request should be paginated and
-        the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page.
-        """
-        first: Int
-
-        """
-        When specified, indicates that this request should be paginated and
-        to fetch results starting at this cursor.
-        A future request can be made for more results by passing in the
-        'LSIFUploadConnection.pageInfo.endCursor' that is returned.
-        """
-        after: String
-
-        """
-        When specified, merges the list of existing uploads with data from
-        uploads that have been deleted but for which audit logs still exist.
-        Only makes sense when state filter is unset or equal to 'DELETED'.
-        """
-        includeDeleted: Boolean
-    ): LSIFUploadConnection!
-
-    """
-    The repository's LSIF uploads.
-    """
-    lsifIndexes(
-        """
-        An (optional) search query that searches over the state, repository name,
-        and commit properties.
-        """
-        query: String
-
-        """
-        The state of returned uploads.
-        """
-        state: LSIFIndexState
-
-        """
-        When specified, indicates that this request should be paginated and
-        the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page.
-        """
-        first: Int
-
-        """
-        When specified, indicates that this request should be paginated and
-        to fetch results starting at this cursor.
-        A future request can be made for more results by passing in the
-        'LSIFIndexConnection.pageInfo.endCursor' that is returned.
-        """
-        after: String
-    ): LSIFIndexConnection!
 
     """
     Provides a summary of the most recent upload and index status.
@@ -1072,20 +810,6 @@ A summary of the most recent upload and index status.
 """
 type CodeIntelRepositorySummary {
     """
-    A list of recent uploads for a specific repository. This list contains processing,
-    recently queued, and the most recently processed uploads for each distinct indexer
-    and root.
-    """
-    recentUploads: [LSIFUploadsWithRepositoryNamespace!]!
-
-    """
-    A list of recent indexes for a specific repository. This list contains processing,
-    recently queued, and the most recently processed indexes for each distinct indexer
-    and root.
-    """
-    recentIndexes: [LSIFIndexesWithRepositoryNamespace!]!
-
-    """
     A list of recent precise indexes for a specific repository. This list contains processing,
     recently queued, and the most recently processed precise indexes for each distinct indexer
     and root.
@@ -1152,46 +876,6 @@ type RootWithKey {
 }
 
 """
-A group of uploads that share the same root and indexer values.
-"""
-type LSIFUploadsWithRepositoryNamespace {
-    """
-    The root of all uploads in the associated connection.
-    """
-    root: String!
-
-    """
-    The indexer used to produce the each upload in the associated connection.
-    """
-    indexer: CodeIntelIndexer!
-
-    """
-    A list of uploads.
-    """
-    uploads: [LSIFUpload!]!
-}
-
-"""
-A group of indexes that share the same root and indexer values.
-"""
-type LSIFIndexesWithRepositoryNamespace {
-    """
-    The root of all indexes in the associated connection.
-    """
-    root: String!
-
-    """
-    The configured indexer of each index in the associated connection.
-    """
-    indexer: CodeIntelIndexer!
-
-    """
-    A list of indexes.
-    """
-    indexes: [LSIFIndex!]!
-}
-
-"""
 A decorated connection of Git objects resulting from 'previewGitObjectFilter'.
 """
 type GitObjectFilterPreview {
@@ -1243,11 +927,6 @@ interface TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
-
-    """
-    The list of LSIF uploads that may be used to service code-intel requests for this TreeEntry.
-    """
-    lsifUploads: [LSIFUpload!]!
 }
 
 """
@@ -1259,11 +938,6 @@ type GitTreeLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
-
-    """
-    The list of LSIF uploads that may be used to service code-intel requests for this TreeEntry.
-    """
-    lsifUploads: [LSIFUpload!]!
 }
 
 """
@@ -1395,56 +1069,6 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
-
-    """
-    The list of LSIF uploads that may be used to service code-intel requests for this GitBlob.
-    """
-    lsifUploads: [LSIFUpload!]!
-}
-
-"""
-The state an LSIF upload can be in.
-"""
-enum LSIFUploadState {
-    """
-    This upload is being processed.
-    """
-    PROCESSING
-
-    """
-    This upload failed to be processed.
-    """
-    ERRORED
-
-    """
-    This upload was processed successfully.
-    """
-    COMPLETED
-
-    """
-    This upload is queued to be processed later.
-    """
-    QUEUED
-
-    """
-    This upload is currently being transferred to Sourcegraph.
-    """
-    UPLOADING
-
-    """
-    This upload is queued for deletion. This upload was previously in the
-    COMPLETED state and evicted, replaced by a newer upload, or deleted by
-    a user. This upload is able to answer code intelligence queries until
-    the commit graph of the upload's repository is next calculated, at which
-    point the upload will become unreachable.
-    """
-    DELETING
-
-    """
-    This upload is deleted and its metadata is reconstructed from existing
-    audit log entries.
-    """
-    DELETED
 }
 
 """
@@ -1602,163 +1226,6 @@ type PreciseIndex implements Node {
 }
 
 """
-Metadata and status about an LSIF upload.
-"""
-type LSIFUpload implements Node {
-    """
-    The ID.
-    """
-    id: ID!
-
-    """
-    The project for which this upload provides code intelligence.
-    """
-    projectRoot: CodeIntelGitTree
-
-    """
-    The original 40-character commit commit supplied at upload time.
-    """
-    inputCommit: String!
-
-    """
-    The tags, if any, associated with this commit.
-    """
-    tags: [String!]!
-
-    """
-    The original root supplied at upload time.
-    """
-    inputRoot: String!
-
-    """
-    The original indexer name supplied at upload time.
-    """
-    inputIndexer: String!
-
-    """
-    The indexer used to produce this index.
-    """
-    indexer: CodeIntelIndexer
-
-    """
-    The upload's current state.
-    """
-    state: LSIFUploadState!
-
-    """
-    The time the upload was uploaded.
-    """
-    uploadedAt: DateTime!
-
-    """
-    The time the upload was processed.
-    """
-    startedAt: DateTime
-
-    """
-    The time the upload completed or errored.
-    """
-    finishedAt: DateTime
-
-    """
-    The processing error message (not set if state is not ERRORED).
-    """
-    failure: String
-
-    """
-    Whether or not this upload provides intelligence for the tip of the default branch. Find reference
-    queries will return symbols from remote repositories only when this property is true. This property
-    is updated asynchronously and is eventually consistent with the git data known by the Sourcegraph
-    instance.
-    """
-    isLatestForRepo: Boolean!
-
-    """
-    The rank of this upload in the queue. The value of this field is null if the upload has been processed.
-    """
-    placeInQueue: Int
-
-    """
-    The LSIF indexing job that created this upload record.
-    """
-    associatedIndex: LSIFIndex
-
-    """
-    The list of retention policies, optionally filtered by only ones that match/apply to this upload and/or
-    by name substring match.
-    """
-    retentionPolicyOverview(
-        matchesOnly: Boolean!
-
-        """
-        An (optional) search query that searches over the name property.
-        """
-        query: String
-
-        """
-        When specified, indicates that this request should be paginated and
-        to fetch results starting at this cursor.
-        A future request can be made for more results by passing in the
-        'CodeIntelligenceRetentionPolicyMatchesConnection.pageInfo.endCursor' that is returned.
-        """
-        after: String
-
-        """
-        When specified, indicates that this request should be paginated and
-        the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page.
-        """
-        first: Int
-    ): CodeIntelligenceRetentionPolicyMatchesConnection!
-
-    """
-    The list of documents contained in this processed upload, matching the Postgres
-    pattern. Pattern type is subject to change.
-    """
-    documentPaths(pattern: String!): LSIFUploadDocumentPathsConnection!
-
-    """
-    Audit logs representing each state change of the upload in order from earliest to latest.
-    """
-    auditLogs: [LSIFUploadAuditLog!]
-}
-
-"""
-A list of LSIF uploads.
-"""
-type LSIFUploadConnection {
-    """
-    A list of LSIF uploads.
-    """
-    nodes: [LSIFUpload!]!
-
-    """
-    The total number of uploads in this result set.
-    """
-    totalCount: Int
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-A list of document paths in an LSIF upload.
-"""
-type LSIFUploadDocumentPathsConnection {
-    """
-    The first 100 document paths. Pagination to be added at a later date.
-    """
-    nodes: [String!]!
-
-    """
-    The total number of docuemnt paths.
-    """
-    totalCount: Int
-}
-
-"""
 Contains the metadata and upload data for a single state change of an upload.
 """
 type LSIFUploadAuditLog {
@@ -1848,116 +1315,6 @@ enum AuditLogOperation {
 }
 
 """
-The state an LSIF index can be in.
-"""
-enum LSIFIndexState {
-    """
-    This index is being processed.
-    """
-    PROCESSING
-
-    """
-    This index failed to be processed.
-    """
-    ERRORED
-
-    """
-    This index was processed successfully.
-    """
-    COMPLETED
-
-    """
-    This index is queued to be processed later.
-    """
-    QUEUED
-}
-
-"""
-Metadata and status about an LSIF index.
-"""
-type LSIFIndex implements Node {
-    """
-    The ID.
-    """
-    id: ID!
-
-    """
-    The project for which this upload provides code intelligence.
-    """
-    projectRoot: CodeIntelGitTree
-
-    """
-    The original 40-character commit commit supplied at index time.
-    """
-    inputCommit: String!
-
-    """
-    The tags, if any, associated with this commit.
-    """
-    tags: [String!]!
-
-    """
-    The original root supplied at index schedule time.
-    """
-    inputRoot: String!
-
-    """
-    The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
-    """
-    inputIndexer: String!
-
-    """
-    The indexer used to produce the index artifact.
-    """
-    indexer: CodeIntelIndexer
-
-    """
-    The index's current state.
-    """
-    state: LSIFIndexState!
-
-    """
-    The time the index was queued.
-    """
-    queuedAt: DateTime!
-
-    """
-    The time the index was processed.
-    """
-    startedAt: DateTime
-
-    """
-    The time the index completed or errored.
-    """
-    finishedAt: DateTime
-
-    """
-    The processing error message (not set if state is not ERRORED).
-    """
-    failure: String
-
-    """
-    The configuration and execution summary (if completed or errored) of this index job.
-    """
-    steps: IndexSteps!
-
-    """
-    The rank of this index in the queue. The value of this field is null if the index has been processed.
-    """
-    placeInQueue: Int
-
-    """
-    The LSIF upload created as part of this indexing job.
-    """
-    associatedUpload: LSIFUpload
-
-    """
-    Whether or not this index has been marked for reindexing.
-    """
-    shouldReindex: Boolean!
-}
-
-"""
 Configuration and execution summary of an index job.
 """
 type IndexSteps {
@@ -2041,26 +1398,6 @@ type IndexStep {
     The execution summary (if completed or errored) of the index command.
     """
     logEntry: ExecutionLogEntry
-}
-
-"""
-A list of LSIF indexes.
-"""
-type LSIFIndexConnection {
-    """
-    A list of LSIF indexes.
-    """
-    nodes: [LSIFIndex!]!
-
-    """
-    The total number of indexes in this result set.
-    """
-    totalCount: Int
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
 }
 
 """

@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -276,32 +275,6 @@ func (r *gitBlobLSIFDataResolver) Hover(ctx context.Context, args *resolverstubs
 	}
 
 	return NewHoverResolver(text, sharedRangeTolspRange(rx)), nil
-}
-
-// LSIFUploads returns the list of dbstore.Uploads for the store.Dumps determined to be applicable
-// for answering code-intel queries.
-func (r *gitBlobLSIFDataResolver) LSIFUploads(ctx context.Context) (_ []resolverstubs.LSIFUploadResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "lsifUploads"))
-
-	cacheUploads := r.requestState.GetCacheUploads()
-	ids := make([]int, 0, len(cacheUploads))
-	for _, dump := range cacheUploads {
-		ids = append(ids, dump.ID)
-	}
-
-	uploads, err := r.codeNavSvc.GetDumpsByIDs(ctx, ids)
-
-	dbUploads := []types.Upload{}
-	for _, u := range uploads {
-		dbUploads = append(dbUploads, sharedDumpToDbstoreUpload(u))
-	}
-
-	resolvers := make([]resolverstubs.LSIFUploadResolver, 0, len(uploads))
-	for _, upload := range dbUploads {
-		resolvers = append(resolvers, sharedresolvers.NewUploadResolver(r.uploadsSvc, r.policiesSvc, r.gitserverClient, r.siteAdminChecker, r.repoStore, upload, r.prefetcher, r.locationResolver, r.errTracer))
-	}
-
-	return resolvers, nil
 }
 
 // DefaultDiagnosticsPageSize is the diagnostic result page size when no limit is supplied.

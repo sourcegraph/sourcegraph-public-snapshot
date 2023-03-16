@@ -76,14 +76,6 @@ func (r *Resolver) IndexerKeys(ctx context.Context, opts *resolverstubs.IndexerK
 	return r.autoIndexingRootResolver.IndexerKeys(ctx, opts)
 }
 
-func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ resolverstubs.LSIFUploadResolver, err error) {
-	return r.uploadsRootResolver.LSIFUploadByID(ctx, id)
-}
-
-func (r *Resolver) LSIFUploads(ctx context.Context, args *resolverstubs.LSIFUploadsQueryArgs) (_ resolverstubs.LSIFUploadConnectionResolver, err error) {
-	return r.uploadsRootResolver.LSIFUploads(ctx, args)
-}
-
 func (r *Resolver) PreciseIndexes(ctx context.Context, args *resolverstubs.PreciseIndexesQueryArgs) (_ resolverstubs.PreciseIndexConnectionResolver, err error) {
 	return r.autoIndexingRootResolver.PreciseIndexes(ctx, args)
 }
@@ -108,46 +100,6 @@ func (r *Resolver) ReindexPreciseIndexes(ctx context.Context, args *resolverstub
 	return r.autoIndexingRootResolver.ReindexPreciseIndexes(ctx, args)
 }
 
-func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *resolverstubs.LSIFRepositoryUploadsQueryArgs) (_ resolverstubs.LSIFUploadConnectionResolver, err error) {
-	return r.uploadsRootResolver.LSIFUploadsByRepo(ctx, args)
-}
-
-func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
-	return r.uploadsRootResolver.DeleteLSIFUpload(ctx, args)
-}
-
-func (r *Resolver) DeleteLSIFUploads(ctx context.Context, args *resolverstubs.DeleteLSIFUploadsArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	return r.uploadsRootResolver.DeleteLSIFUploads(ctx, args)
-}
-
-func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ resolverstubs.LSIFIndexResolver, err error) {
-	return r.autoIndexingRootResolver.LSIFIndexByID(ctx, id)
-}
-
-func (r *Resolver) LSIFIndexes(ctx context.Context, args *resolverstubs.LSIFIndexesQueryArgs) (_ resolverstubs.LSIFIndexConnectionResolver, err error) {
-	return r.autoIndexingRootResolver.LSIFIndexes(ctx, args)
-}
-
-func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *resolverstubs.LSIFRepositoryIndexesQueryArgs) (_ resolverstubs.LSIFIndexConnectionResolver, err error) {
-	return r.autoIndexingRootResolver.LSIFIndexesByRepo(ctx, args)
-}
-
-func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
-	return r.autoIndexingRootResolver.DeleteLSIFIndex(ctx, args)
-}
-
-func (r *Resolver) DeleteLSIFIndexes(ctx context.Context, args *resolverstubs.DeleteLSIFIndexesArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	return r.autoIndexingRootResolver.DeleteLSIFIndexes(ctx, args)
-}
-
-func (r *Resolver) ReindexLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
-	return r.autoIndexingRootResolver.ReindexLSIFIndex(ctx, args)
-}
-
-func (r *Resolver) ReindexLSIFIndexes(ctx context.Context, args *resolverstubs.ReindexLSIFIndexesArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	return r.autoIndexingRootResolver.ReindexLSIFIndexes(ctx, args)
-}
-
 func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelligenceCommitGraphResolver, err error) {
 	return r.uploadsRootResolver.CommitGraph(ctx, id)
 }
@@ -158,14 +110,6 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolver
 
 func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ []resolverstubs.AutoIndexJobDescriptionResolver, err error) {
 	return r.autoIndexingRootResolver.InferAutoIndexJobsForRepo(ctx, args)
-}
-
-func (r *Resolver) RequestLanguageSupport(ctx context.Context, args *resolverstubs.RequestLanguageSupportArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	return r.autoIndexingRootResolver.RequestLanguageSupport(ctx, args)
-}
-
-func (r *Resolver) RequestedLanguageSupport(ctx context.Context) (_ []string, err error) {
-	return r.autoIndexingRootResolver.RequestedLanguageSupport(ctx)
 }
 
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ resolverstubs.GitBlobLSIFDataResolver, err error) {
