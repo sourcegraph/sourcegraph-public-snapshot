@@ -27,6 +27,7 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
                 username
                 displayName
                 email
+                avatarURL
             }
         }
         triggeredByUser {

@@ -38,8 +38,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "githuboauth_test",
+    timeout = "short",
     srcs = [
         "config_test.go",
         "main_test.go",

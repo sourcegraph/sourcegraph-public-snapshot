@@ -21,8 +21,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "batches_test",
+    timeout = "short",
     srcs = [
         "extsvc_webhook_migrator_test.go",
         "role_assignment_migrator_test.go",

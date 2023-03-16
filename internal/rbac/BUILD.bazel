@@ -23,8 +23,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "rbac_test",
+    timeout = "short",
     srcs = [
         "parser_test.go",
         "permission_test.go",

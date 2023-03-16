@@ -195,6 +195,7 @@ Sourcegraph aggregates usage and performance metrics for some product features. 
     - Narrowing search results by owner using `file:has.owners` predicate.
     - Selecting owner search result through `select:file.owners`.
     - Displaying ownership panel in file view.
+- Histogram of cloned repository sizes
 </details>
 
 ## CIDR Range for Sourcegraph

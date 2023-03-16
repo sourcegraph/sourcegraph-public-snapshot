@@ -10,15 +10,7 @@ import { map } from 'rxjs/operators'
 
 import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/branded'
 import { HoveredToken } from '@sourcegraph/codeintellify'
-import {
-    addLineRangeQueryParameter,
-    ErrorLike,
-    formatSearchParameters,
-    logger,
-    lprToRange,
-    pluralize,
-    toPositionOrRangeQueryParameter,
-} from '@sourcegraph/common'
+import { ErrorLike, logger, pluralize } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
@@ -160,7 +152,7 @@ export const ReferencesPanel: React.FunctionComponent<React.PropsWithChildren<Re
     )
 }
 
-export const RevisionResolvingReferencesList: React.FunctionComponent<
+const RevisionResolvingReferencesList: React.FunctionComponent<
     React.PropsWithChildren<
         ReferencesPanelProps & {
             repoName: string
@@ -1107,26 +1099,6 @@ const LoadingCodeIntelFailed: React.FunctionComponent<React.PropsWithChildren<{ 
         </div>
     </>
 )
-
-export function locationWithoutViewState(location: H.Location): H.LocationDescriptorObject {
-    const parsedQuery = parseQueryAndHash(location.search, location.hash)
-    delete parsedQuery.viewState
-
-    const lineRangeQueryParameter = toPositionOrRangeQueryParameter({ range: lprToRange(parsedQuery) })
-    const result = {
-        search: formatSearchParameters(
-            addLineRangeQueryParameter(new URLSearchParams(location.search), lineRangeQueryParameter)
-        ),
-        hash: '',
-    }
-    return result
-}
-
-export const appendJumpToFirstQueryParameter = (url: string): string => {
-    const newUrl = new URL(url, window.location.href)
-    newUrl.searchParams.set('jumpToFirst', 'true')
-    return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
-}
 
 function sessionStorageKeyFromToken(token: Token): string {
     return `${token.repoName}@${token.commitID}/${token.filePath}?L${token.line}:${token.character}`

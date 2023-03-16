@@ -17,8 +17,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "recorder_test",
+    timeout = "short",
     srcs = ["common_test.go"],
     embed = [":recorder"],
     tags = [

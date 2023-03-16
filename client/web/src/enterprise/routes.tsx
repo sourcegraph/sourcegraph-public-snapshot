@@ -32,6 +32,7 @@ const EditSearchContextPage = lazyComponent(
 const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
 const GlobalCodyArea = lazyComponent(() => import('./cody/GlobalCodyArea'), 'GlobalCodyArea')
 const OwnPage = lazyComponent(() => import('./own/OwnPage'), 'OwnPage')
+const AppComingSoonPage = lazyComponent(() => import('./app/AppComingSoonPage'), 'AppComingSoonPage')
 
 export const enterpriseRoutes: RouteObject[] = [
     {
@@ -85,11 +86,17 @@ export const enterpriseRoutes: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.Cody,
-        element: <LegacyRoute render={props => <GlobalCodyArea />} />,
+        element: <GlobalCodyArea />,
     },
     {
         path: EnterprisePageRoutes.Own,
-        element: <LegacyRoute render={props => <OwnPage />} />,
+        element: <OwnPage />,
+    },
+    {
+        path: EnterprisePageRoutes.AppComingSoon,
+        element: (
+            <LegacyRoute render={() => <AppComingSoonPage />} condition={({ isSourcegraphApp }) => isSourcegraphApp} />
+        ),
     },
     ...routes,
 ]

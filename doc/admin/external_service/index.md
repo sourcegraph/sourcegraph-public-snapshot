@@ -183,16 +183,16 @@ We recognize there are other code hosts including CVS, SVN, and many more. Today
 
 ## Rate limits
 
-Sourcegraph makes our best effort to use the least amount of calls to your code host. However, it is possible for Sourcegraph
-to encounter rate limits in some scenarios. Please see the specific code host documentation for more information and how to
+Sourcegraph makes our best effort to use the least amount of calls to your code host. However, it is possible for Sourcegraph 
+to encounter rate limits in some scenarios. Please see the specific code host documentation for more information and how to 
 mitigate these issues.
 
 ### Rate limit syncing
 
-Sourcegraph has a mechanism of syncing code host rate limits. When Sourcegraph is started, code host configurations of all
+Sourcegraph has a mechanism of syncing code host rate limits. When Sourcegraph is started, code host configurations of all 
 external services are checked for rate limits and these rate limits are stored and used.
 
-When any of code host configurations is edited, rate limits are synchronized and updated if needed, this way Sourcegraph always
+When any of code host configurations is edited, rate limits are synchronized and updated if needed, this way Sourcegraph always 
 knows how many requests to which code host can be sent at a given point of time.
 
 ### Current rate limit settings
@@ -200,7 +200,7 @@ knows how many requests to which code host can be sent at a given point of time.
 Current rate limit settings can be viewed by site admins on the following page: `Site Admin -> Instrumentation -> Repo Updater -> Rate Limiter State`.
 This page includes rate limit settings for all external services configured in Sourcegraph.
 
-Here is an example of one external service, including information about external service name, maximum allowed burst of requests,
+Here is an example of one external service, including information about external service name, maximum allowed burst of requests, 
 maximum allowed requests per second and whether the limiter is infinite (there is no rate limiting):
 
 ```json

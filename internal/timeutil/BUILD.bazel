@@ -13,8 +13,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "timeutil_test",
+    timeout = "short",
     srcs = ["week_test.go"],
     embed = [":timeutil"],
 )

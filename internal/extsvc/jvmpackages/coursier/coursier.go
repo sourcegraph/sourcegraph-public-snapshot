@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -26,31 +25,26 @@ var CoursierBinary = "coursier"
 
 var (
 	invocTimeout, _ = time.ParseDuration(env.Get("SRC_COURSIER_TIMEOUT", "2m", "Time limit per Coursier invocation, which is used to resolve JVM/Java dependencies."))
-	// if COURSIER_CACHE_DIR is set, try create that dir and use it. If not set, use the SRC_REPOS_DIR value (or default).
-	// This is expected to only be used in gitserver, if this assumption changes, please revisit this due to the failability
-	// of this on read-only filesystems.
-	coursierCacheDir = env.Get("COURSIER_CACHE_DIR", "", "Directory in which coursier data is cached for JVM package repos.")
-	srcReposDir      = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
-	mkdirOnce        sync.Once
+	mkdirOnce       sync.Once
 )
 
 type CoursierHandle struct {
 	operations *operations
+	cacheDir   string
 }
 
-func NewCoursierHandle(obsctx *observation.Context) *CoursierHandle {
+func NewCoursierHandle(obsctx *observation.Context, cacheDir string) *CoursierHandle {
 	mkdirOnce.Do(func() {
-		if coursierCacheDir == "" && srcReposDir != "" {
-			coursierCacheDir = filepath.Join(srcReposDir, "coursier")
+		if cacheDir == "" {
+			return
 		}
-		if coursierCacheDir != "" {
-			if err := os.MkdirAll(coursierCacheDir, os.ModePerm); err != nil {
-				panic(fmt.Sprintf("failed to create coursier cache dir in %q: %s\n", coursierCacheDir, err))
-			}
+		if err := os.MkdirAll(cacheDir, os.ModePerm); err != nil {
+			panic(fmt.Sprintf("failed to create coursier cache dir in %q: %s\n", cacheDir, err))
 		}
 	})
 	return &CoursierHandle{
 		operations: newOperations(obsctx),
+		cacheDir:   cacheDir,
 	}
 }
 
@@ -183,8 +177,8 @@ func (c *CoursierHandle) runCoursierCommand(ctx context.Context, config *schema.
 			fmt.Sprintf("COURSIER_REPOSITORIES=%v", strings.Join(config.Maven.Repositories, "|")),
 		)
 	}
-	if coursierCacheDir != "" {
-		cmd.Env = append(cmd.Env, "COURSIER_CACHE="+coursierCacheDir)
+	if c.cacheDir != "" {
+		cmd.Env = append(cmd.Env, "COURSIER_CACHE="+c.cacheDir)
 	}
 
 	var stdout, stderr bytes.Buffer

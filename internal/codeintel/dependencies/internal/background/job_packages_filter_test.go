@@ -25,12 +25,12 @@ func TestPackageRepoFiltersBlockOnly(t *testing.T) {
 	s := store.New(&observation.TestContext, db)
 
 	deps := []shared.MinimalPackageRepoRef{
-		{Scheme: "npm", Name: "bar", Versions: []string{"2.0.0", "2.0.1", "3.0.0"}},
-		{Scheme: "npm", Name: "foo", Versions: []string{"1.0.0"}},
-		{Scheme: "npm", Name: "banana", Versions: []string{"2.0.0"}},
-		{Scheme: "rust-analyzer", Name: "burger", Versions: []string{"1.0.0", "1.0.1", "1.0.2"}},
+		{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}, {Version: "2.0.1"}, {Version: "3.0.0"}}},
+		{Scheme: "npm", Name: "foo", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}},
+		{Scheme: "npm", Name: "banana", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
+		{Scheme: "rust-analyzer", Name: "burger", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}, {Version: "1.0.1"}, {Version: "1.0.2"}}},
 		// make sure filters only apply to their respective scheme
-		{Scheme: "semanticdb", Name: "burger", Versions: []string{"1.0.3"}},
+		{Scheme: "semanticdb", Name: "burger", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.3"}}},
 	}
 
 	if _, _, err := s.InsertPackageRepoRefs(ctx, deps); err != nil {
@@ -117,12 +117,12 @@ func TestPackageRepoFiltersBlockAllow(t *testing.T) {
 	s := store.New(&observation.TestContext, db)
 
 	deps := []shared.MinimalPackageRepoRef{
-		{Scheme: "npm", Name: "bar", Versions: []string{"2.0.0", "2.0.1", "3.0.0"}},
-		{Scheme: "npm", Name: "foo", Versions: []string{"1.0.0"}},
-		{Scheme: "npm", Name: "banana", Versions: []string{"2.0.0"}},
-		{Scheme: "rust-analyzer", Name: "burger", Versions: []string{"1.0.0", "1.0.1", "1.0.2"}},
-		{Scheme: "rust-analyzer", Name: "frogger", Versions: []string{"4.1.2", "3.0.0"}},
-		{Scheme: "semanticdb", Name: "burger", Versions: []string{"1.0.3"}},
+		{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}, {Version: "2.0.1"}, {Version: "3.0.0"}}},
+		{Scheme: "npm", Name: "foo", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}},
+		{Scheme: "npm", Name: "banana", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
+		{Scheme: "rust-analyzer", Name: "burger", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}, {Version: "1.0.1"}, {Version: "1.0.2"}}},
+		{Scheme: "rust-analyzer", Name: "frogger", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "4.1.2"}, {Version: "3.0.0"}}},
+		{Scheme: "semanticdb", Name: "burger", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.3"}}},
 	}
 
 	if _, _, err := s.InsertPackageRepoRefs(ctx, deps); err != nil {

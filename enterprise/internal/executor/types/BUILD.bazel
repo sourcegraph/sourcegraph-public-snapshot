@@ -12,8 +12,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "types_test",
+    timeout = "short",
     srcs = ["job_test.go"],
     embed = [":types"],
     deps = [

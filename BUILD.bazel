@@ -208,6 +208,7 @@ nogo(
     deps = [
         "//dev/linters/bodyclose",
         "//dev/linters/forbidigo",
+        "//dev/linters/gocritic",
         "//dev/linters/ineffassign",
     ],
 )

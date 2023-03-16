@@ -23,8 +23,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "dbworker_test",
+    timeout = "short",
     srcs = ["resetter_test.go"],
     embed = [":dbworker"],
     deps = [

@@ -25,8 +25,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "uploadhandler_test",
+    timeout = "short",
     srcs = [
         "mocks_test.go",
         "upload_handler_test.go",

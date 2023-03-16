@@ -43,8 +43,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "graphql_test",
+    timeout = "short",
     srcs = [
         "gitblob_lsif_data_resolver_test.go",
         "mocks_test.go",

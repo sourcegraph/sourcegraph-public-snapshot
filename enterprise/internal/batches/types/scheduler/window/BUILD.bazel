@@ -20,8 +20,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "window_test",
+    timeout = "short",
     srcs = [
         "config_test.go",
         "rate_test.go",
