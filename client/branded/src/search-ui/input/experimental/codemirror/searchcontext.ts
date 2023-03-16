@@ -1,16 +1,27 @@
-import { Extension, StateField } from '@codemirror/state'
+import { ChangeDesc, ChangeSpec, EditorState, Extension, StateField } from '@codemirror/state'
 import { mdiFilterOutline } from '@mdi/js'
 import { inRange } from 'lodash'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import {
+    FilterKind,
+    findFilter,
+    findFilters,
+    getGlobalSearchContextFilter,
+} from '@sourcegraph/shared/src/search/query/query'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { isFilterType } from '@sourcegraph/shared/src/search/query/validate'
 
 import { getQueryInformation } from '../../codemirror/parsedQuery'
 import { filterValueRenderer } from '../optionRenderer'
 import { suggestionSources } from '../suggestionsExtension'
 
+/**
+ * A suggestion extension which will show most recently entered context: filter if the
+ * current query doesn't contain a context: filter.
+ */
 export function lastUsedContextSuggestion(config: { getContext: () => string | undefined }): Extension {
     return [
         lastContextField,
@@ -85,4 +96,55 @@ const lastContextField = StateField.define<string | undefined>({
         }
         return value
     },
+})
+
+/**
+ * If the current value only contains a context filter (plus optional whitespace) and the pasted value
+ * also contains a context filter, we are replacing the whole value.
+ * Requires parseInputAsQuery to be set.
+ */
+export const overrideContextOnPaste = EditorState.transactionFilter.of(transaction => {
+    if (!transaction.isUserEvent('input.paste')) {
+        return transaction
+    }
+
+    const currentGlobalContext = getGlobalSearchContextFilter(transaction.startState.sliceDoc(0))
+    if (!currentGlobalContext) {
+        return transaction
+    }
+
+    const newValue = transaction.newDoc.sliceString(0)
+    const newGlobalContext = getGlobalSearchContextFilter(newValue)
+    if (newGlobalContext) {
+        // Only a single (global) context: filter present -> nothing to do
+        return transaction
+    }
+
+    const newRangeOfCurrentContextFilter = {
+        start: transaction.changes.mapPos(currentGlobalContext.filter.range.start, 0),
+        end: transaction.changes.mapPos(currentGlobalContext.filter.range.end),
+    }
+
+    const scanResult = scanSearchQuery(newValue)
+    if (scanResult.type !== 'success') {
+        return transaction
+    }
+    // Does omitting the current filter from the new value (if present) result in a single global filter?
+    const hasGlobalContext = !!getGlobalSearchContextFilter(
+        omitFilter(newValue, { ...currentGlobalContext.filter, range: newRangeOfCurrentContextFilter })
+    )
+    if (hasGlobalContext) {
+        // Trim whitespace after context filter. range.end is exclusive so this is our starting point.
+        const match = transaction.startState.sliceDoc(currentGlobalContext.filter.range.end).match(/\s+/)
+        return [
+            {
+                changes: {
+                    from: currentGlobalContext.filter.range.start,
+                    to: currentGlobalContext.filter.range.end + (match?.length ?? 0),
+                },
+            },
+            transaction,
+        ]
+    }
+    return transaction
 })
