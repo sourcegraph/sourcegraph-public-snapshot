@@ -39,6 +39,35 @@
       # recursiveUpdate is just for recursively merging sets
       packages = nixpkgs.lib.recursiveUpdate
         {
+          x86_64-linux.comby =
+            let
+              pkgs = nixpkgs.legacyPackages.x86_64-linux.pkgsMusl;
+              pkgsStatic = nixpkgs.legacyPackages.x86_64-linux.pkgsStatic;
+            in
+            (pkgs.comby.override {
+              sqlite = pkgsStatic.sqlite;
+              zlib = pkgsStatic.zlib.dev;
+              libev = pkgsStatic.libev;
+              gmp = (pkgsStatic.gmp.override {
+                withStatic = true;
+              });
+              ocamlPackages = pkgs.ocamlPackages.overrideScope' (self: super: {
+                ocaml_pcre = super.ocaml_pcre.override {
+                  pcre = pkgsStatic.pcre.dev;
+                };
+                ssl = super.ssl.override {
+                  openssl = pkgs.openssl.override {
+                    static = true;
+                  };
+                };
+              });
+            }).overrideAttrs (oldAttrs: {
+              postFixup = ''
+                patchelf \
+                  --set-interpreter /lib/ld-musl-x86_64.so.1 \
+                  $out/bin/comby
+              '';
+            });
           x86_64-linux.p4-fusion-portable = self.packages.x86_64-linux.p4-fusion.overrideAttrs (oldAttrs: {
             # patch the ELF interpreter for non-nix(os) distros.
             postFixup = ''
