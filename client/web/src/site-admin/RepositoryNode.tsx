@@ -135,7 +135,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                         </div>
                     </div>
                     <div className="d-flex col-2 pr-0 justify-content-end">
-                        {node.name === 'dev.azure.com/sgtestazure/sgtestazure/mytest' && (
+                        {node.mirrorInfo.lastError && (
                             <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
                                 <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
                                     <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See errors
