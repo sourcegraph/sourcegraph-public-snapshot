@@ -76,10 +76,7 @@ interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
-const updateNodeFromData = (
-    node: SiteAdminRepositoryFields,
-    data: SettingsAreaRepositoryResult | undefined
-): SiteAdminRepositoryFields => {
+const updateNodeFromData = (node: SiteAdminRepositoryFields, data: SettingsAreaRepositoryResult | undefined) => {
     if (data?.repository && data.repository?.mirrorInfo) {
         node.mirrorInfo.lastError = data.repository.mirrorInfo.lastError
         node.mirrorInfo.cloned = data.repository.mirrorInfo.cloned
@@ -88,7 +85,6 @@ const updateNodeFromData = (
         node.mirrorInfo.isCorrupted = data.repository.mirrorInfo.isCorrupted
         node.mirrorInfo.corruptionLogs = data.repository.mirrorInfo.corruptionLogs
     }
-    return node
 }
 
 export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
